@@ -26,6 +26,10 @@ for module in (dashboard, compounds, purchases, vials, coas, doses, supplies, vi
     app.include_router(module.router)
 
 
+@app.get("/ping")
+def ping():
+    return{"status": "alive"}
+
 @app.get("/healthz", include_in_schema=False)
 def healthz():
     return {"ok": True}

@@ -49,5 +49,5 @@ def home(request: Request, db: Session = Depends(get_db)):
         inventory_value=sum(d.remaining_value_cents for _, d in active),
         by_compound=sorted(by_compound.items(), key=lambda kv: -kv[1]),
         by_month=sorted(by_month.items(), reverse=True)[:6],
-        no_coa=sum(1 for v in vials if v.status != "discarded" and not v.coas),
+        no_coa=sum(1 for v in vials if v.status != "discarded" and v.coa_id is None),
     )

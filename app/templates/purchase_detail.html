@@ -25,7 +25,7 @@
       <td class="n">{{ v.unit_price_cents|money }}</td>
       <td class="n">{{ d.landed_cents|money }}</td>
       <td>{{ v.status|replace('_', ' ') }}</td>
-      <td>{{ 'yes' if v.coas else 'none' }}</td>
+      <td>{{ 'yes' if v.coa else 'none' }}</td>
     </tr>
     {% else %}<tr><td colspan="7" class="empty">No vials yet. Add them below.</td></tr>{% endfor %}
     </tbody>

@@ -42,7 +42,7 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_db)):
     vd = services.vial_views(db, [v])[v.id]
     label_base, _ = U.to_base(v.content_value, v.content_unit)
     coa_variance = None
-    for c in sorted(v.coas + v.linked_coas, key=lambda c: c.id, reverse=True):
+    for c in ([v.coa] if v.coa else []):
         if c.reported_content_value and c.reported_content_unit:
             coa_base, _ = U.to_base(c.reported_content_value, c.reported_content_unit)
             coa_variance = {"coa": c, "pct": 100 * (coa_base - label_base) / label_base}
@@ -121,11 +121,6 @@ def delete_vial(vid: int, db: Session = Depends(get_db)):
         return services.flash_redirect(
             f"/vials/{vid}", err="This vial has logged doses. Mark it discarded instead.")
     pid = v.purchase_id
-    if any(c.linked_vials for c in v.coas):
-        return services.flash_redirect(f"/vials/{vid}", err="Reassign or remove shared COAs before deleting their original vial.")
-    for coa in v.coas:
-        if coa.stored_name and not coa.linked_vials:
-            services.delete_stored_file(coa.stored_name)
     db.delete(v)
     db.commit()
     return services.flash_redirect(f"/purchases/{pid}" if pid else "/vials", msg="Vial deleted.")

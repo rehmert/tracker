@@ -33,7 +33,7 @@
     <td class="n">{{ d.remaining_base|amt(d.dim) }} <small>of {{ d.content_base|amt(d.dim) }}</small></td>
     <td class="n">{{ d.landed_cents|money }}</td>
     <td>{{ d|unit_cost }}</td>
-    <td>{{ 'yes' if v.coas else 'none' }}</td>
+    <td>{{ 'yes' if v.coa else 'none' }}</td>
     <td>{{ v.status|replace('_', ' ') }}</td>
   </tr>
   {% else %}<tr><td colspan="8" class="empty">No vials match. Vials are added from a <a href="/purchases">purchase</a>.</td></tr>{% endfor %}

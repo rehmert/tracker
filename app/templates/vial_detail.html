@@ -21,16 +21,16 @@
   <p class="note">Newest COA reports {{ coa_variance.coa.reported_content_value|num }} {{ coa_variance.coa.reported_content_unit }}, {{ '%+.1f'|format(coa_variance.pct) }}% versus the label ({{ v.content_value|num }} {{ v.content_unit }}).
   {% if v.use_coa_content %}Calculations use the COA figure.{% else %}Calculations use the label figure; switch below to use the COA figure.{% endif %}</p>
   {% endif %}
-  {% if v.coas or v.linked_coas %}
+  {% if v.coa %}
   <div class="scroll"><table>
     <thead><tr><th>File</th><th>Lab</th><th>Tested</th><th class="n">Purity</th><th class="n">Reported content</th><th></th></tr></thead>
-    <tbody>{% for c in (v.coas + v.linked_coas)|sort(attribute="id", reverse=true) %}
+    <tbody>{% for c in [v.coa] %}
       <tr>
         <td>{% if c.original_name %}<a href="/coas/{{ c.id }}/file" target="_blank" rel="noopener">{{ c.original_name }}</a>{% else %}Manual entry{% endif %}<br><small>{{ c.job_id }} · {{ c.verify_code }}</small></td>
         <td>{{ c.lab_name or '—' }}</td><td>{{ c.tested_on|dt }}</td>
         <td class="n">{{ (c.purity_pct|num ~ '%') if c.purity_pct is not none else '—' }}</td>
         <td class="n">{% if c.reported_content_value %}{{ c.reported_content_value|num }} {{ c.reported_content_unit }}{% else %}—{% endif %}</td>
-        <td>{% if c.vial_id == v.id %}<form method="post" action="/coas/{{ c.id }}/delete" onsubmit="return confirm('Delete this COA file?')"><button class="link danger">Delete</button></form>{% endif %}</td>
+        <td>{% if v.coa_id == c.id %}<form method="post" action="/coas/{{ c.id }}/delete" onsubmit="return confirm('Delete this COA file?')"><button class="link danger">Delete</button></form>{% endif %}</td>
       </tr>{% endfor %}</tbody>
   </table></div>
   {% else %}<p class="empty">No COA uploaded for this vial.</p>{% endif %}

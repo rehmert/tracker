@@ -72,7 +72,9 @@ def test_vitals_and_notes(client):
     client.post("/vitals", data={"weight": "180", "weight_unit": "lb", "systolic": "118",
                                  "diastolic": "76", "pulse": "62", "context": "morning"})
     page = client.get("/vitals").text
-    assert "81.6" in page and "118/76" in page and "<svg" in page
+    from app import config
+    expected_weight = "81.6" if config.WEIGHT_UNIT == "kg" else "180.0"
+    assert expected_weight in page and "118/76" in page and "<svg" in page
     bad = client.post("/vitals", data={"systolic": "70", "diastolic": "120"})
     assert "swapped" in bad.text
     assert "at least one" in client.post("/vitals", data={}).text.lower()

@@ -53,10 +53,13 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
                           content_type="", size_bytes=0, sha256="")
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
-    db.add(Coa(vial_id=vid, lab_name=lab_name.strip(), tested_on=tested, purity_pct=purity,
-               reported_content_value=reported, reported_content_unit=unit,
-               notes=notes.strip(), endotoxin_pct=endotoxin, job_id=job_id.strip(),
-               verify_code=verify_code.strip(), **stored))
+    coa = Coa(lab_name=lab_name.strip(), tested_on=tested, purity_pct=purity,
+              reported_content_value=reported, reported_content_unit=unit,
+              notes=notes.strip(), endotoxin_pct=endotoxin, job_id=job_id.strip(),
+              verify_code=verify_code.strip(), **stored)
+    db.add(coa)
+    db.flush()
+    v.coa_id = coa.id
     db.commit()
     return services.flash_redirect(back, msg="COA uploaded.")
 
@@ -77,12 +80,13 @@ def delete_coa(cid: int, db: Session = Depends(get_db)):
     c = db.get(Coa, cid)
     if c is None:
         raise HTTPException(404, "COA not found")
-    vid = c.vial_id
-    if c.original_name:
-        services.delete_stored_file(c.stored_name)
+    vid = c.vials[0].id if c.vials else None
+    stored_name = c.stored_name if c.original_name else None
     db.delete(c)
     db.commit()
-    return services.flash_redirect(f"/vials/{vid}", msg="COA deleted.")
+    if stored_name:
+        services.delete_stored_file(stored_name)
+    return services.flash_redirect(f"/vials/{vid}" if vid else "/coas", msg="COA deleted.")
 
 
 @router.post("/coas/{cid}/assign")
@@ -91,14 +95,18 @@ def assign_coa(cid: int, vial_ids: list[int] = Form([]), db: Session = Depends(g
     if not coa: raise HTTPException(404)
     if not vial_ids:
         return services.flash_redirect("/coas", err="Select at least one vial.")
-    owner = db.get(Vial, coa.vial_id)
-    owner_dim = U.parse_unit(owner.content_unit).dim
-    for vid in set(vial_ids):
-        vial = db.get(Vial, vid)
-        if not vial or vial.compound_id != owner.compound_id or U.parse_unit(vial.content_unit).dim != owner_dim:
-            return services.flash_redirect("/coas", err="COA can only be assigned to vials of the same compound and unit dimension.")
-        if vial.id != owner.id and vial not in coa.linked_vials:
-            coa.linked_vials.append(vial)
+    # A COA may be shared, but all assigned vials must contain the same compound.
+    # Preserve the compound of already-linked vials, if any.
+    existing = coa.vials
+    selected = [db.get(Vial, vid) for vid in set(vial_ids)]
+    if any(v is None for v in selected):
+        return services.flash_redirect("/coas", err="Unknown vial selected.")
+    compound_ids = {v.compound_id for v in existing + selected}
+    dimensions = {U.parse_unit(v.content_unit).dim for v in existing + selected}
+    if len(compound_ids) > 1 or len(dimensions) > 1:
+        return services.flash_redirect("/coas", err="A COA must refer to one compound and unit dimension.")
+    for vial in selected:
+        vial.coa_id = coa.id
     db.commit()
     return services.flash_redirect("/coas", msg="COA assigned to selected vials.")
 
@@ -113,6 +121,6 @@ def coa_index(request: Request, compound_id: str | None = None, db: Session = De
     coas = list(db.scalars(select(Coa).order_by(Coa.id.desc())))
     if compound_id is not None:
         vials = [v for v in vials if v.compound_id == compound_id]
-        coas = [c for c in coas if c.vial.compound_id == compound_id]
+        coas = [c for c in coas if any(v.compound_id == compound_id for v in c.vials)]
     return render(request, "coas.html", coas=coas, vials=vials, compound_id=compound_id,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))))

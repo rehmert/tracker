@@ -27,7 +27,7 @@ def test_new_inventory_and_coa_flow():
             assert coa.original_name=='' and coa.job_id=='J1'
         assert client.post(f'/coas/{coa_id}/assign',data={'vial_ids':[str(i) for i in ids]}).status_code==303
         with SessionLocal() as db:
-            assert len(db.get(Coa,coa_id).linked_vials)==9
+            assert len(db.get(Coa,coa_id).vials)==10
         assert 'Lab Test' in client.get(f'/vials/{ids[1]}').text
         assert client.post('/supplies',data={'purchase_id':pid,'name':'BAC 30 mL','kind':'bac_water','quantity':'30'}).status_code==303
         with SessionLocal() as db:

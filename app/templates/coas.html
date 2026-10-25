@@ -14,13 +14,13 @@
     </label>
 </form>
 {% for c in coas %}
-<section><h2>COA #{{ c.id }} · {{ c.vial.compound.name }}</h2>
+<section><h2>COA #{{ c.id }} · {{ c.vials[0].compound.name if c.vials else "Unassigned" }}</h2>
     <p>{{ c.lab_name }} · {{ c.tested_on or '' }} · purity {{ c.purity_pct if c.purity_pct is not none else '—' }}% · job {{ c.job_id }} · verify {{ c.verify_code }}</p>
     <form method="post" action="/coas/{{ c.id }}/assign">
         <p>Select vials (Ctrl/Shift for multiple):</p>
         <select name="vial_ids" multiple size="20" style="min-width:22rem">
-            {% for v in vials if v.compound_id == c.vial.compound_id %}
-            <option value="{{ v.id }}" {% if v.id == c.vial_id or v in c.linked_vials %}selected{% endif %}>
+            {% for v in vials if not c.vials or v.compound_id == c.vials[0].compound_id %}
+            <option value="{{ v.id }}" {% if v.coa_id == c.id %}selected{% endif %}>
                 #{{ v.id }} · {{ v.label }} · {{ v.lot }} · {{ v.kit_ref }}
             </option>
             {% endfor %}

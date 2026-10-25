@@ -37,6 +37,7 @@ CREATE TABLE vials (
   reconstituted_on  DATE,
   expires_on        DATE,
   status            VARCHAR(12) NOT NULL DEFAULT 'sealed',          -- sealed | in_use | finished | discarded
+  coa_id            INTEGER REFERENCES coas(id) ON DELETE SET NULL,
   use_coa_content   BOOLEAN NOT NULL DEFAULT 0,
   unit_price_cents  INTEGER NOT NULL DEFAULT 0,
   notes             TEXT NOT NULL DEFAULT '',
@@ -47,7 +48,6 @@ CREATE INDEX ix_vials_purchase ON vials(purchase_id);
 
 CREATE TABLE coas (
   id                      INTEGER PRIMARY KEY,
-  vial_id                 INTEGER NOT NULL REFERENCES vials(id) ON DELETE CASCADE,
   original_name           VARCHAR(255) NOT NULL,
   stored_name             VARCHAR(80)  NOT NULL UNIQUE,   -- random name under data/uploads/coa/
   content_type            VARCHAR(80)  NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE coas (
   notes                   TEXT NOT NULL DEFAULT '',
   uploaded_at             DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX ix_coas_vial ON coas(vial_id);
+
 
 CREATE TABLE dose_logs (
   id             INTEGER PRIMARY KEY,
