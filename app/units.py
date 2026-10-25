@@ -46,7 +46,7 @@ _reg("volume", "mL", 1.0, "cc")
 _reg("volume", "uL", 0.001, "µl", "μl")
 _reg("iu", "IU", 1.0)
 
-CONTENT_UNITS = ["mcg", "mg", "g", "IU", "mL"]     # what a vial can contain
+CONTENT_UNITS = ["mcg", "mg", "g", "IU"]     # what a vial can contain
 DOSE_UNITS = ["mcg", "mg", "g", "IU", "mL", "uL"]  # what a dose can be entered in
 
 
