@@ -20,6 +20,6 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 LAB_DIR.mkdir(parents=True, exist_ok=True)
 
-WEIGHT_UNIT = os.getenv("TRACKER_WEIGHT_UNIT", "kg").strip().lower()
+WEIGHT_UNIT = os.getenv("TRACKER_WEIGHT_UNIT", "lb").strip().lower()
 if WEIGHT_UNIT not in ("kg", "lb"):
-    WEIGHT_UNIT = "kg"
+    WEIGHT_UNIT = "lb"
