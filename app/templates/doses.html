@@ -11,7 +11,7 @@
     <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="input delay:200ms, change" hx-target="#dose-preview">
       <label class="field"><span>Vial</span>
         <select name="vial_id" required>
-          {% for v in vials %}{% set d = views[v.id] %}
+          {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
           <option value="{{ v.id }}">{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
           {% endfor %}
         </select></label>
