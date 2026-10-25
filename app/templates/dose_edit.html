@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Edit dose{% endblock %}{% block content %}<h1>Edit dose #{{ dose.id }}</h1><p>{{ dose.vial.compound.name }} · vial #{{ dose.vial_id }}</p>
+<form method="post" action="/doses/{{ dose.id }}/edit" class="grid"><label class="field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ dose.taken_at.strftime('%Y-%m-%dT%H:%M') }}"></label>
+<label class="field"><span>Amount</span><input name="amount" type="number" step="any" min="0" value="{{ dose.entered_value }}" required></label>
+<label class="field"><span>Unit</span><select name="unit">{% for u in DOSE_UNITS %}<option value="{{ u }}" {% if u == dose.entered_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+<label class="field"><span>Type</span><select name="kind"><option value="dose" {% if dose.kind == 'dose' %}selected{% endif %}>Dose</option><option value="waste" {% if dose.kind == 'waste' %}selected{% endif %}>Waste</option></select></label>
+<label class="field"><span>Site</span><select name="site"><option value="">Not recorded</option>{% for site in sites %}<option value="{{ site }}" {% if site == dose.site %}selected{% endif %}>{{ site }}</option>{% endfor %}</select></label>
+<label class="field wide"><span>Notes</span><input name="notes" value="{{ dose.notes }}"></label><button class="primary">Save entry</button><a href="/doses">Cancel</a></form>{% endblock %}

@@ -54,7 +54,7 @@ def effective_content(vial: Vial) -> tuple[float, str]:
     content when the vial is set to trust it, otherwise the label claim."""
     value, unit = vial.content_value, vial.content_unit
     if vial.use_coa_content:
-        for coa in vial.coas:  # newest first
+        for coa in sorted(vial.coas + vial.linked_coas, key=lambda c: c.id, reverse=True):
             if coa.reported_content_value and coa.reported_content_unit:
                 value, unit = coa.reported_content_value, coa.reported_content_unit
                 break

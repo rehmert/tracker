@@ -5,5 +5,5 @@
   <td class="n">{{ r.dose.amount_base|amt(r.vd.dim) }}</td>
   <td class="n">{{ r.cost|money }}</td>
   <td>{{ r.dose.site or '—' }}</td>
-  <td><button class="link danger" hx-delete="/doses/{{ r.dose.id }}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this entry?">Delete</button></td>
+  <td><a href="/doses/{{ r.dose.id }}/edit">Edit</a> <button class="link danger" hx-delete="/doses/{{ r.dose.id }}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this entry?">Delete</button></td>
 </tr>{% else %}<tr><td colspan="7" class="empty">No entries yet.</td></tr>{% endfor %}

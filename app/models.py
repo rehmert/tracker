@@ -47,6 +47,8 @@ class Vial(Base):
     purchase_id: Mapped[int | None] = mapped_column(ForeignKey("purchases.id"), nullable=True)
     label: Mapped[str] = mapped_column(String(160), default="")
     lot: Mapped[str] = mapped_column(String(80), default="")
+    cap_color: Mapped[str] = mapped_column(String(60), default="")
+    kit_ref: Mapped[str] = mapped_column(String(120), default="")
     form: Mapped[str] = mapped_column(String(20), default="lyophilized")
     content_value: Mapped[float] = mapped_column(Float)          # label claim, whole vial
     content_unit: Mapped[str] = mapped_column(String(8))          # mcg | mg | g | IU
@@ -61,29 +63,56 @@ class Vial(Base):
 
     compound: Mapped[Compound] = relationship(back_populates="vials")
     purchase: Mapped[Purchase | None] = relationship(back_populates="vials")
-    coas: Mapped[list[Coa]] = relationship(back_populates="vial", cascade="all, delete-orphan",
-                                           order_by="Coa.id.desc()")
+
     doses: Mapped[list[DoseLog]] = relationship(back_populates="vial")
+
+    coa_id: Mapped[int | None] = mapped_column(ForeignKey("coas.id", ondelete="SET NULL"), nullable=True, index=True)
+    coa: Mapped["Coa | None"] = relationship("Coa", back_populates="vials")
 
 
 class Coa(Base):
     """Certificate of analysis file plus the numbers transcribed from it."""
     __tablename__ = "coas"
     id: Mapped[int] = mapped_column(primary_key=True)
-    vial_id: Mapped[int] = mapped_column(ForeignKey("vials.id", ondelete="CASCADE"))
-    original_name: Mapped[str] = mapped_column(String(255))
-    stored_name: Mapped[str] = mapped_column(String(80), unique=True)
-    content_type: Mapped[str] = mapped_column(String(80))
-    size_bytes: Mapped[int] = mapped_column(Integer)
-    sha256: Mapped[str] = mapped_column(String(64))
+    original_name: Mapped[str] = mapped_column(String(255), default="")
+    stored_name: Mapped[str | None] = mapped_column(String(80), unique=True, nullable=True)
+    content_type: Mapped[str] = mapped_column(String(80), default="")
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    sha256: Mapped[str] = mapped_column(String(64), default="")
     lab_name: Mapped[str] = mapped_column(String(160), default="")
     tested_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     purity_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    endotoxin_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    job_id: Mapped[str] = mapped_column(String(120), default="")
+    verify_code: Mapped[str] = mapped_column(String(120), default="")
     reported_content_value: Mapped[float | None] = mapped_column(Float, nullable=True)
     reported_content_unit: Mapped[str | None] = mapped_column(String(8), nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="")
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    vial: Mapped[Vial] = relationship(back_populates="coas")
+    vials: Mapped[list["Vial"]] = relationship("Vial", back_populates="coa")
+
+
+class Supply(Base):
+    __tablename__ = "supplies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    purchase_id: Mapped[int] = mapped_column(ForeignKey("purchases.id"))
+    compound_id: Mapped[int | None] = mapped_column(ForeignKey("compounds.id"), nullable=True)
+    name: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(20))  # bac_water | pill
+    purchased_qty: Mapped[float] = mapped_column(Float)
+    remaining_qty: Mapped[float] = mapped_column(Float)
+    unit_price_cents: Mapped[int] = mapped_column(Integer, default=0)
+    notes: Mapped[str] = mapped_column(Text, default="")
+
+
+class SupplyUsage(Base):
+    __tablename__ = "supply_usages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    supply_id: Mapped[int] = mapped_column(ForeignKey("supplies.id"))
+    vial_id: Mapped[int | None] = mapped_column(ForeignKey("vials.id"), nullable=True)
+    dose_id: Mapped[int | None] = mapped_column(ForeignKey("dose_logs.id"), nullable=True)
+    amount: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class DoseLog(Base):

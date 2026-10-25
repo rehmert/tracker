@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from .. import calc, services, units as U
 from ..db import get_db
-from ..models import Compound, Purchase, Vial
+from ..models import Compound, Purchase, Vial, Supply
 from ..templating import render
 
 router = APIRouter()
@@ -48,7 +48,8 @@ def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
     views = services.vial_views(db, list(p.vials))
     subtotal = sum(v.unit_price_cents for v in p.vials)
     compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
-    return render(request, "purchase_detail.html", p=p, views=views, subtotal=subtotal,
+    supplies = list(db.scalars(select(Supply).where(Supply.purchase_id == pid)))
+    return render(request, "purchase_detail.html", p=p, views=views, supplies=supplies, subtotal=subtotal,
                   total=sum(d.landed_cents for d in views.values()), compounds=compounds)
 
 
@@ -80,7 +81,9 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
               quantity: int = Form(1), content_value: str = Form(""), content_unit: str = Form("mg"),
               volume_ml: str = Form(""), concentration: str = Form(""),
               unit_price: str = Form("0"), label: str = Form(""), lot: str = Form(""),
-              expires_on: str = Form(""), notes: str = Form(""), db: Session = Depends(get_db)):
+              expires_on: str = Form(""), notes: str = Form(""),
+              kit_size: int = Form(1), kit_count: int = Form(1), cap_color: str = Form(""),
+              db: Session = Depends(get_db)):
     p = db.get(Purchase, pid)
     if p is None:
         raise HTTPException(404, "Purchase not found")
@@ -88,7 +91,10 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
     try:
         if db.get(Compound, compound_id) is None:
             raise ValueError("Choose a compound first (add one on the Compounds page).")
-        if not 1 <= quantity <= 200:
+        if kit_size not in (1, 5, 10) or not 1 <= kit_count <= 100:
+            raise ValueError("Kit size must be 1, 5 or 10 and count must be 1-100.")
+        quantity = kit_size * kit_count if kit_size != 1 else quantity
+        if not 1 <= quantity <= 1000:
             raise ValueError("Quantity must be between 1 and 200.")
         def number(text: str, what: str) -> float:
             try:
@@ -125,8 +131,8 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
 
-    for _ in range(quantity):
-        db.add(Vial(compound_id=compound_id, purchase_id=pid, label=label.strip(),
+    for i in range(quantity):
+        db.add(Vial(cap_color=cap_color.strip(), kit_ref=(f"purchase-{pid}-kit-{i // kit_size + 1}" if kit_size > 1 else ""),compound_id=compound_id, purchase_id=pid, label=label.strip(),
                     lot=lot.strip(), form=form, content_value=content,
                     content_unit=unit.name, volume_ml=vol, expires_on=expiry,
                     unit_price_cents=price, notes=notes.strip()))

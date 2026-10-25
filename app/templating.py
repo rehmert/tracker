@@ -52,11 +52,11 @@ templates.env.globals.update(
     PERIOD_LABELS=calc.PERIOD_LABELS, currency=config.CURRENCY)
 
 
-def render(request, name: str, **ctx):
+def render(request, template_name: str, **ctx):
     ctx.setdefault("msg", request.query_params.get("msg"))
     ctx.setdefault("err", request.query_params.get("err"))
     ctx["path"] = request.url.path
-    return templates.TemplateResponse(request, name, ctx)
+    return templates.TemplateResponse(request, template_name, ctx)
 
 
 def unit_cost(vd) -> str:

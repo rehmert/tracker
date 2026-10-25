@@ -3,6 +3,8 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from .. import config, services, units as U
+from ..templating import render
+from fastapi import Request
 from ..db import get_db
 from ..models import Coa, Vial
 
@@ -15,10 +17,12 @@ def _opt_float(text: str) -> float | None:
 
 
 @router.post("/vials/{vid}/coas")
-async def upload_coa(vid: int, file: UploadFile = File(...), lab_name: str = Form(""),
+async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: str = Form(""),
                      tested_on: str = Form(""), purity_pct: str = Form(""),
                      reported_content: str = Form(""), reported_unit: str = Form("mg"),
-                     notes: str = Form(""), db: Session = Depends(get_db)):
+                     notes: str = Form(""), endotoxin_pct: str = Form(""),
+                     job_id: str = Form(""), verify_code: str = Form(""),
+                     db: Session = Depends(get_db)):
     v = db.get(Vial, vid)
     if v is None:
         raise HTTPException(404, "Vial not found")
@@ -38,12 +42,21 @@ async def upload_coa(vid: int, file: UploadFile = File(...), lab_name: str = For
                 raise ValueError("The COA's unit must match the vial's (mass vs IU).")
             unit = u.name
         tested = services.parse_date(tested_on)
-        stored = await services.save_upload(file)
+        endotoxin = _opt_float(endotoxin_pct)
+        if endotoxin is not None and not 0 <= endotoxin <= 100:
+            raise ValueError("Endotoxin percentage must be 0-100.")
+        if file and file.filename:
+            stored = await services.save_upload(file)
+        else:
+            import uuid
+            stored = dict(original_name="", stored_name="metadata-" + uuid.uuid4().hex,
+                          content_type="", size_bytes=0, sha256="")
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
     db.add(Coa(vial_id=vid, lab_name=lab_name.strip(), tested_on=tested, purity_pct=purity,
                reported_content_value=reported, reported_content_unit=unit,
-               notes=notes.strip(), **stored))
+               notes=notes.strip(), endotoxin_pct=endotoxin, job_id=job_id.strip(),
+               verify_code=verify_code.strip(), **stored))
     db.commit()
     return services.flash_redirect(back, msg="COA uploaded.")
 
@@ -52,7 +65,7 @@ async def upload_coa(vid: int, file: UploadFile = File(...), lab_name: str = For
 def coa_file(cid: int, db: Session = Depends(get_db)):
     c = db.get(Coa, cid)
     path = config.UPLOAD_DIR / c.stored_name if c else None
-    if c is None or not path.exists():
+    if c is None or not c.original_name or not path.exists():
         raise HTTPException(404, "File not found")
     return FileResponse(path, media_type=c.content_type, filename=c.original_name,
                         content_disposition_type="inline",
@@ -65,7 +78,41 @@ def delete_coa(cid: int, db: Session = Depends(get_db)):
     if c is None:
         raise HTTPException(404, "COA not found")
     vid = c.vial_id
-    services.delete_stored_file(c.stored_name)
+    if c.original_name:
+        services.delete_stored_file(c.stored_name)
     db.delete(c)
     db.commit()
     return services.flash_redirect(f"/vials/{vid}", msg="COA deleted.")
+
+
+@router.post("/coas/{cid}/assign")
+def assign_coa(cid: int, vial_ids: list[int] = Form([]), db: Session = Depends(get_db)):
+    coa = db.get(Coa, cid)
+    if not coa: raise HTTPException(404)
+    if not vial_ids:
+        return services.flash_redirect("/coas", err="Select at least one vial.")
+    owner = db.get(Vial, coa.vial_id)
+    owner_dim = U.parse_unit(owner.content_unit).dim
+    for vid in set(vial_ids):
+        vial = db.get(Vial, vid)
+        if not vial or vial.compound_id != owner.compound_id or U.parse_unit(vial.content_unit).dim != owner_dim:
+            return services.flash_redirect("/coas", err="COA can only be assigned to vials of the same compound and unit dimension.")
+        if vial.id != owner.id and vial not in coa.linked_vials:
+            coa.linked_vials.append(vial)
+    db.commit()
+    return services.flash_redirect("/coas", msg="COA assigned to selected vials.")
+
+@router.get("/coas")
+def coa_index(request: Request, compound_id: str | None = None, db: Session = Depends(get_db)):
+    # Convert compound_id to integer, treating empty strings as None
+    compound_id = int(compound_id) if compound_id and compound_id.isdigit() else None
+
+    from sqlalchemy import select
+    from ..models import Compound
+    vials = list(db.scalars(select(Vial).order_by(Vial.id)))
+    coas = list(db.scalars(select(Coa).order_by(Coa.id.desc())))
+    if compound_id is not None:
+        vials = [v for v in vials if v.compound_id == compound_id]
+        coas = [c for c in coas if c.vial.compound_id == compound_id]
+    return render(request, "coas.html", coas=coas, vials=vials, compound_id=compound_id,
+                  compounds=list(db.scalars(select(Compound).order_by(Compound.name))))

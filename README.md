@@ -128,3 +128,37 @@ This is health-adjacent data, so keep it off the open internet.
 ## Ideas for the next milestone
 
 Editing lab report headers, full-text search (SQLite FTS5), CSV export, vial beyond-use reminders, edit log entries, per-vial price history, multi-compound blends, Alembic migrations.
+
+## Inventory extension (October 2026)
+
+New navigation pages: **Supplies** for BAC water (mL) and pills/capsules (counts), and
+**COAs** for assigning a certificate to multiple existing vials of the same compound.
+
+On a purchase detail page, choose individual vials, 5-vial half kits, or 10-vial full kits.
+Kit purchases create individual vial rows with a common kit reference. The entered
+price remains **per vial**, not per kit. Cap color is stored per vial.
+
+Create a COA on a vial detail page with or without an attachment. To reuse the COA,
+open the COAs page and select the other vial IDs. A COA's original vial cannot be
+deleted while the COA is shared. Manual COAs use an internal metadata placeholder;
+no fake document is created. Endotoxin is currently recorded as a **percentage**;
+check your lab's reporting units before entering a value.
+
+For powder vials, the reconstitution calculator displays mathematical conversions
+between vial mg, diluent mL, mg/mL, and mg dose. Recording reconstitution can debit
+an existing BAC water supply. This calculator is not a dosing recommendation.
+
+Existing SQLite databases receive additive columns automatically on startup. **Back
+up your data directory before upgrading**. Do not deploy over a running older
+instance using the same SQLite database. Test in a copy of the database first.
+
+Run the tests using:
+
+```bash
+TRACKER_WEIGHT_UNIT=kg PYTHONPATH=. pytest -q
+```
+
+Current limitations: pill consumption is tracked as supply usage, not as an entry in
+the injectable dose log; COA bulk selection supports individual vial IDs rather than
+one-click kit selection; and reconstitution editing does not automatically reverse
+previous BAC-water deductions. The vial calculator requires mass in mg, not IU.

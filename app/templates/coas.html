@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}COAs{% endblock %}
+{% block content %}<h1>COA bulk assignment</h1>
+<form method="get" class="inline">
+    <label class="field"><span>Compound</span>
+        <select name="compound_id" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for c in compounds %}
+            <option value="{{ c.id }}" {% if compound_id == c.id %}selected{% endif %}>
+                {{ c.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+</form>
+{% for c in coas %}
+<section><h2>COA #{{ c.id }} · {{ c.vial.compound.name }}</h2>
+    <p>{{ c.lab_name }} · {{ c.tested_on or '' }} · purity {{ c.purity_pct if c.purity_pct is not none else '—' }}% · job {{ c.job_id }} · verify {{ c.verify_code }}</p>
+    <form method="post" action="/coas/{{ c.id }}/assign">
+        <p>Select vials (Ctrl/Shift for multiple):</p>
+        <select name="vial_ids" multiple size="20" style="min-width:22rem">
+            {% for v in vials if v.compound_id == c.vial.compound_id %}
+            <option value="{{ v.id }}" {% if v.id == c.vial_id or v in c.linked_vials %}selected{% endif %}>
+                #{{ v.id }} · {{ v.label }} · {{ v.lot }} · {{ v.kit_ref }}
+            </option>
+            {% endfor %}
+        </select>
+        <p><button class="primary">Assign COA to selected vials</button></p>
+    </form>
+</section>
+{% else %}
+<p>No COAs yet. Create one from a vial detail page.</p>
+{% endfor %}
+{% endblock %}

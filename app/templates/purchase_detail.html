@@ -39,6 +39,9 @@
       <select name="compound_id" required>{% for c in compounds %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
     <label class="field"><span>Form</span>
       <select name="form"><option value="lyophilized">Lyophilized Powder</option><option value="solution">Ready-Made Solution</option></select></label>
+    <label class="field"><span>Package size</span><select name="kit_size"><option value="1">Individual vials</option><option value="5">Half kit (5)</option><option value="10">Full kit (10)</option></select></label>
+    <label class="field"><span>Number of kits (for kits)</span><input name="kit_count" type="number" value="1" min="1" max="100"></label>
+    <label class="field"><span>Cap color</span><input name="cap_color"></label>
     <label class="field"><span>Number of identical vials</span><input type="number" name="quantity" min="1" max="200" value="1"></label>
     <label class="field"><span>Contents per vial</span><input type="number" name="content_value" step="any" min="0"></label>
     <label class="field"><span>Contents unit</span>
