@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Protocols{% endblock %}
+{% block content %}
+<h1>Protocols</h1>
+<p class="note">A protocol is a what-if plan: amounts and frequencies you choose, run against your current inventory and prices. Saving one never changes stock or the log.</p>
+<div class="scroll"><table>
+  <thead><tr><th>Name</th><th class="n">Items</th><th class="n">Est. cost / month</th><th>Updated</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr><td><a href="/protocols/{{ r.p.id }}">{{ r.p.name }}</a></td><td class="n">{{ r.p.items|length }}</td><td class="n">{{ r.t.month|money }}</td><td>{{ r.p.updated_at|dt }}</td></tr>
+  {% else %}<tr><td colspan="4" class="empty">No protocols yet.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<section>
+  <h2>New protocol</h2>
+  <form method="post" action="/protocols" class="inline">
+    <label class="field"><span>Name</span><input name="name" value="New plan" required></label>
+    <button class="primary">Create</button>
+  </form>
+</section>
+{% endblock %}

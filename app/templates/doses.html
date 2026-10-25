@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Dose log{% endblock %}
+{% block content %}
+<h1>Dose log</h1>
+
+<section>
+  <h2>Add an entry</h2>
+  {% if vials %}
+  <form class="grid" hx-post="/doses" hx-target="#dose-body" hx-swap="innerHTML"
+        hx-on::after-request="if(event.target===this&&!event.detail.xhr.getResponseHeader('HX-Retarget')){this.reset();document.getElementById('form-msg').innerHTML='';document.getElementById('dose-preview').innerHTML='';}">
+    <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="input delay:200ms, change" hx-target="#dose-preview">
+      <label class="field"><span>Vial</span>
+        <select name="vial_id" required>
+          {% for v in vials %}{% set d = views[v.id] %}
+          <option value="{{ v.id }}">{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
+          {% endfor %}
+        </select></label>
+      <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" required></label>
+      <label class="field"><span>Unit</span>
+        <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == 'mg' %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+    </div>
+    <div id="dose-preview" class="wide preview" aria-live="polite"></div>
+    <label class="field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ now }}"></label>
+    <label class="field"><span>Type</span><select name="kind"><option value="dose">Logged dose</option><option value="waste">Wasted or discarded</option></select></label>
+    <label class="field"><span>Site</span><input name="site"></label>
+    <label class="field wide"><span>Notes</span><input name="notes"></label>
+    <div id="form-msg" class="wide"></div>
+    <div><button class="primary">Add to log</button></div>
+  </form>
+  {% else %}
+  <p class="empty">No vials in stock to log against. Add one from a <a href="/purchases">purchase</a>.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>History</h2>
+  <form method="get" class="inline">
+    <label class="field"><span>Compound</span>
+      <select name="compound_id" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for c in compounds %}<option value="{{ c.id }}" {% if compound_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select></label>
+  </form>
+  <div class="scroll"><table>
+    <thead><tr><th>When</th><th>Compound</th><th class="n">Entered</th><th class="n">Counted</th><th class="n">Cost</th><th>Site</th><th></th></tr></thead>
+    <tbody id="dose-body">{% include "_dose_rows.html" %}</tbody>
+  </table></div>
+</section>
+{% endblock %}

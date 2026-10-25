@@ -1,0 +1,9 @@
+{% for r in rows %}<tr>
+  <td>{{ r.dose.taken_at|dt }}</td>
+  <td><a href="/vials/{{ r.vial.id }}">{{ r.vial.compound.name }}</a>{% if r.dose.kind == 'waste' %} <span class="tag">waste</span>{% endif %}</td>
+  <td class="n">{{ r.dose.entered_value|num }} {{ r.dose.entered_unit }}</td>
+  <td class="n">{{ r.dose.amount_base|amt(r.vd.dim) }}</td>
+  <td class="n">{{ r.cost|money }}</td>
+  <td>{{ r.dose.site or '—' }}</td>
+  <td><button class="link danger" hx-delete="/doses/{{ r.dose.id }}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this entry?">Delete</button></td>
+</tr>{% else %}<tr><td colspan="7" class="empty">No entries yet.</td></tr>{% endfor %}

@@ -1,0 +1,9 @@
+{% if error %}
+<p class="error">{{ error }}</p>
+{% else %}
+<p>Counted as <strong>{{ base|amt(vd.dim) }}</strong>{% if unit|lower in ('ml', 'ul', 'cc') %} ({{ value|num }} {{ unit }} at {{ vd.conc_per_ml|conc(vd.dim) }}){% endif %}.
+Cost {{ cost|money }}.
+{% if after < 0 %}<span class="error">That is {{ (-after)|amt(vd.dim) }} more than this vial has left.</span>
+{% else %}{{ after|amt(vd.dim) }} would remain.{% endif %}
+{% if draw is not none %}<br><small>At {{ vd.conc_per_ml|conc(vd.dim) }} this is {{ draw|num }} mL, or {{ marks|num }} marks on a U-100 syringe.</small>{% endif %}</p>
+{% endif %}

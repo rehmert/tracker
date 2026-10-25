@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_macros.html" import gauge %}
+{% block title %}Vials{% endblock %}
+{% block content %}
+<h1>Vials</h1>
+<p class="filters">
+  {% for key, text in [('active', 'In stock'), ('sealed', 'Sealed'), ('in_use', 'In use'), ('finished', 'Finished'), ('discarded', 'Discarded'), ('all', 'All')] %}
+  <a href="/vials?status={{ key }}" {% if status == key %}aria-current="true"{% endif %}>{{ text }}</a>
+  {% endfor %}
+</p>
+<div class="scroll"><table>
+  <thead><tr><th>Compound</th><th>Vial</th><th>Remaining</th><th class="n">Amount left</th><th class="n">Landed cost</th><th>Cost</th><th>COA</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for v in vials %}{% set d = views[v.id] %}
+  <tr>
+    <td>{{ v.compound.name }}</td>
+    <td><a href="/vials/{{ v.id }}">{{ v.label or ('#' ~ v.id) }}</a>{% if v.lot %}<br><small>lot {{ v.lot }}</small>{% endif %}</td>
+    <td>{{ gauge(d.pct_remaining, v.status) }}</td>
+    <td class="n">{{ d.remaining_base|amt(d.dim) }} <small>of {{ d.content_base|amt(d.dim) }}</small></td>
+    <td class="n">{{ d.landed_cents|money }}</td>
+    <td>{{ d|unit_cost }}</td>
+    <td>{{ 'yes' if v.coas else 'none' }}</td>
+    <td>{{ v.status|replace('_', ' ') }}</td>
+  </tr>
+  {% else %}<tr><td colspan="8" class="empty">No vials match. Vials are added from a <a href="/purchases">purchase</a>.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% macro gauge(pct, status) -%}
+<span class="gauge{% if status == 'in_use' and pct < 20 %} low{% endif %}" role="img"
+      aria-label="{{ pct|round|int }} percent remaining">
+  <span class="gauge-fill" style="width: {{ [pct, 100]|min }}%"></span>
+</span>
+{%- endmacro %}
+
+{% macro field(label, hint='') -%}
+<label class="field"><span>{{ label }}</span>{{ caller() }}{% if hint %}<small>{{ hint }}</small>{% endif %}</label>
+{%- endmacro %}

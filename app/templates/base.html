@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Ledger{% endblock %} · Peptide &amp; TRT Ledger</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" aria-label="Main">
+    <a class="brand" href="/">Ledger</a>
+    {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/doses', 'Dose log'),
+                    ('/purchases', 'Purchases'), ('/compounds', 'Compounds'),
+                    ('/protocols', 'Protocols')] %}
+    <ul>
+      {% for href, text in links %}
+      <li><a href="{{ href }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}>{{ text }}</a></li>
+      {% endfor %}
+    </ul>
+    <p class="rail-note">Personal records only. This app does arithmetic on numbers you enter and never suggests doses.</p>
+  </nav>
+  <main>
+    {% if msg %}<p class="flash ok" role="status">{{ msg }}</p>{% endif %}
+    {% if err %}<p class="flash error" role="alert">{{ err }}</p>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

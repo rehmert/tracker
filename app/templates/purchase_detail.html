@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ p.vendor }}{% endblock %}
+{% block content %}
+<h1>{{ p.vendor }} <small class="sub">{{ p.purchased_on|dt }}</small></h1>
+
+<dl class="stats">
+  <div><dt>Vials subtotal</dt><dd>{{ subtotal|money }}</dd></div>
+  <div><dt>Shipping</dt><dd>{{ p.shipping_cents|money }}</dd></div>
+  <div><dt>Tax</dt><dd>{{ p.tax_cents|money }}</dd></div>
+  <div><dt>Discount</dt><dd>{{ p.discount_cents|money }}</dd></div>
+  <div><dt>Total</dt><dd>{{ total|money }}</dd></div>
+</dl>
+<p class="note">Shipping, tax and discount are spread across the vials in proportion to their prices to give each vial's landed cost.</p>
+
+<section>
+  <h2>Vials in this purchase</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Vial</th><th>Compound</th><th>Contents</th><th class="n">Price</th><th class="n">Landed</th><th>Status</th><th>COA</th></tr></thead>
+    <tbody>
+    {% for v in p.vials %}{% set d = views[v.id] %}
+    <tr>
+      <td><a href="/vials/{{ v.id }}">{{ v.label or ('#' ~ v.id) }}</a></td>
+      <td>{{ v.compound.name }}</td>
+      <td>{{ v.content_value|num }} {{ v.content_unit }}{% if v.volume_ml %} in {{ v.volume_ml|num }} mL{% endif %}</td>
+      <td class="n">{{ v.unit_price_cents|money }}</td>
+      <td class="n">{{ d.landed_cents|money }}</td>
+      <td>{{ v.status|replace('_', ' ') }}</td>
+      <td>{{ 'yes' if v.coas else 'none' }}</td>
+    </tr>
+    {% else %}<tr><td colspan="7" class="empty">No vials yet. Add them below.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Add vials to this purchase</h2>
+  <form method="post" action="/purchases/{{ p.id }}/vials" class="grid">
+    <label class="field"><span>Compound</span>
+      <select name="compound_id" required>{% for c in compounds %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+    <label class="field"><span>Form</span>
+      <select name="form"><option value="lyophilized">Lyophilized powder</option><option value="solution">Ready-made solution</option></select></label>
+    <label class="field"><span>Number of identical vials</span><input type="number" name="quantity" min="1" max="200" value="1"></label>
+    <label class="field"><span>Contents per vial</span><input type="number" name="content_value" step="any" min="0"></label>
+    <label class="field"><span>Contents unit</span>
+      <select name="content_unit">{% for u in CONTENT_UNITS %}<option {% if u == 'mg' %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+    <label class="field"><span>Liquid volume (mL)</span><input type="number" name="volume_ml" step="any" min="0"><small>Solutions: the volume in the vial. Powders: leave blank until reconstituted.</small></label>
+    <label class="field"><span>Or concentration per mL</span><input type="number" name="concentration" step="any" min="0"><small>Solutions only, in the contents unit. Used if "Contents" is blank.</small></label>
+    <label class="field"><span>Price per vial ({{ currency }})</span><input type="number" name="unit_price" step="0.01" min="0" value="0"></label>
+    <label class="field"><span>Label</span><input name="label" placeholder="e.g. 10 mg vial"></label>
+    <label class="field"><span>Lot / batch</span><input name="lot"></label>
+    <label class="field"><span>Expires</span><input type="date" name="expires_on"></label>
+    <label class="field wide"><span>Notes</span><input name="notes"></label>
+    <div><button class="primary">Add vial(s)</button></div>
+  </form>
+</section>
+
+<section>
+  <h2>Purchase details</h2>
+  <form method="post" action="/purchases/{{ p.id }}" class="grid">
+    <label class="field"><span>Vendor</span><input name="vendor" value="{{ p.vendor }}" required></label>
+    <label class="field"><span>Date</span><input type="date" name="purchased_on" value="{{ p.purchased_on }}"></label>
+    <label class="field"><span>Order reference</span><input name="order_ref" value="{{ p.order_ref }}"></label>
+    <label class="field"><span>Shipping</span><input name="shipping" type="number" step="0.01" min="0" value="{{ '%.2f'|format(p.shipping_cents / 100) }}"></label>
+    <label class="field"><span>Tax</span><input name="tax" type="number" step="0.01" min="0" value="{{ '%.2f'|format(p.tax_cents / 100) }}"></label>
+    <label class="field"><span>Discount</span><input name="discount" type="number" step="0.01" min="0" value="{{ '%.2f'|format(p.discount_cents / 100) }}"></label>
+    <label class="field wide"><span>Notes</span><input name="notes" value="{{ p.notes }}"></label>
+    <div class="row"><button class="primary">Save changes</button></div>
+  </form>
+  <form method="post" action="/purchases/{{ p.id }}/delete" onsubmit="return confirm('Delete this purchase?')"><button class="link danger">Delete purchase</button></form>
+</section>
+{% endblock %}

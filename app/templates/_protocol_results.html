@@ -1,0 +1,43 @@
+{% macro delta(new, old) -%}
+  {%- if old is not none and (new - old)|abs >= 0.5 %} <small class="{{ 'up' if new > old else 'down' }}">{{ '+' if new > old else '−' }}{{ (new - old)|abs|money }} vs saved</small>{% endif -%}
+{%- endmacro %}
+
+{% if not results %}
+<p class="empty">Add an item to see cost and inventory effects.</p>
+{% else %}
+<dl class="stats">
+  <div><dt>Cost per week</dt><dd>{{ t.week|money }}</dd><dd class="sm">{{ delta(t.week, saved.week if saved else none) }}</dd></div>
+  <div><dt>Cost per month</dt><dd>{{ t.month|money }}</dd><dd class="sm">{{ delta(t.month, saved.month if saved else none) }}</dd></div>
+  <div><dt>Cost over {{ weeks|num }} weeks</dt><dd>{{ t.horizon|money }}</dd><dd class="sm">{% if not changed_horizon %}{{ delta(t.horizon, saved.horizon if saved else none) }}{% endif %}</dd></div>
+  <div><dt>To buy for {{ weeks|num }} weeks</dt><dd>{{ t.buy|money }}</dd><dd class="sm">at the newest vial's landed cost</dd></div>
+</dl>
+
+<div class="scroll"><table class="results">
+  <thead>
+    <tr><th rowspan="2">Compound</th><th colspan="3">Usage</th><th colspan="3">Cost</th><th colspan="2">Current stock</th><th colspan="3">Over {{ weeks|num }} weeks</th></tr>
+    <tr><th class="n">Per entry</th><th class="n">Per week</th><th class="n">Per month</th><th class="n">Per entry</th><th class="n">Per week</th><th class="n">Per month</th><th class="n">On hand</th><th>Lasts</th><th class="n">Needed</th><th class="n">Shortfall</th><th class="n">Vials to buy</th></tr>
+  </thead>
+  <tbody>
+  {% for r in results %}
+  {% if r.ok %}
+  <tr>
+    <td>{{ r.compound_name }}</td>
+    <td class="n">{{ r.dose_base|amt(r.dim) }}{% if r.draw_ml is not none %}<br><small>{{ r.draw_ml|num }} mL · {{ r.syringe_marks|num }} marks (U-100)</small>{% endif %}</td>
+    <td class="n">{{ r.per_week_base|amt(r.dim) }}{% if r.actual_per_week_base %}<br><small>logged: {{ r.actual_per_week_base|amt(r.dim) }}/wk (4 wk avg)</small>{% endif %}</td>
+    <td class="n">{{ r.per_month_base|amt(r.dim) }}</td>
+    <td class="n">{{ r.cost_per_dose|money }}</td><td class="n">{{ r.cost_per_week|money }}</td><td class="n">{{ r.cost_per_month|money }}</td>
+    <td class="n">{{ r.on_hand_base|amt(r.dim) }}</td>
+    <td>{% if r.days_supply is none %}—{% elif r.runout %}{{ r.days_supply|round(1) }} days<br><small>until {{ r.runout|dt }}</small>{% else %}over 100 years{% endif %}</td>
+    <td class="n">{{ r.horizon_need_base|amt(r.dim) }}</td>
+    <td class="n">{{ r.shortfall_base|amt(r.dim) if r.shortfall_base > 0 else 'none' }}</td>
+    <td class="n">{% if r.vials_to_buy %}{{ r.vials_to_buy }}{% if r.buy_cents is not none %}<br><small>{{ r.buy_cents|money }}</small>{% endif %}{% else %}0{% endif %}</td>
+  </tr>
+  {% if r.warnings %}<tr class="warn"><td colspan="12">{{ r.compound_name }}: {{ r.warnings|join(' ') }}</td></tr>{% endif %}
+  {% else %}
+  <tr class="warn"><td colspan="12" class="error">{{ r.compound_name }}: {{ r.warnings|join(' ') }}</td></tr>
+  {% endif %}
+  {% endfor %}
+  </tbody>
+</table></div>
+<p class="note">Costs use the average landed price of vials currently in stock; stock counts only sealed and in-use vials. Run-out dates assume the plan starts today and that nothing else is drawn from the same vials.</p>
+{% endif %}

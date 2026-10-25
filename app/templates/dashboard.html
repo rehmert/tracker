@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "_macros.html" import gauge %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<h1>Overview</h1>
+
+<dl class="stats">
+  <div><dt>Stock value on hand</dt><dd>{{ inventory_value|money }}</dd></div>
+  <div><dt>Total spent (landed)</dt><dd>{{ total_spend|money }}</dd></div>
+  <div><dt>Vials in stock</dt><dd>{{ active|length }}</dd></div>
+  <div><dt>Vials with no COA</dt><dd>{{ no_coa }}</dd></div>
+</dl>
+
+{% if low %}
+<section>
+  <h2>Running low</h2>
+  <ul class="plain">
+    {% for v, d in low %}
+    <li><a href="/vials/{{ v.id }}">{{ v.compound.name }} {{ v.label }}</a>: {{ d.remaining_base|amt(d.dim) }} left ({{ d.pct_remaining|round|int }}%)</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section>
+  <h2>In stock</h2>
+  {% if active %}
+  <div class="scroll"><table>
+    <thead><tr><th>Compound</th><th>Vial</th><th>Remaining</th><th class="n">Amount left</th><th class="n">Value left</th><th>Cost</th></tr></thead>
+    <tbody>
+    {% for v, d in active %}
+    <tr>
+      <td><a href="/vials/{{ v.id }}">{{ v.compound.name }}</a></td>
+      <td>{{ v.label or ('#' ~ v.id) }}{% if v.status == 'sealed' %} <span class="tag">sealed</span>{% endif %}</td>
+      <td>{{ gauge(d.pct_remaining, v.status) }}</td>
+      <td class="n">{{ d.remaining_base|amt(d.dim) }}</td>
+      <td class="n">{{ d.remaining_value_cents|money }}</td>
+      <td>{{ d|unit_cost }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="empty">Nothing in stock yet. Add a <a href="/compounds">compound</a>, then record a <a href="/purchases">purchase</a> with its vials.</p>
+  {% endif %}
+</section>
+
+<div class="cols">
+  <section>
+    <h2>Spend by compound</h2>
+    {% if by_compound %}
+    <table><tbody>{% for name, cents in by_compound %}<tr><td>{{ name }}</td><td class="n">{{ cents|money }}</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="empty">No purchases recorded.</p>{% endif %}
+  </section>
+  <section>
+    <h2>Spend by month</h2>
+    {% if by_month %}
+    <table><tbody>{% for m, cents in by_month %}<tr><td>{{ m }}</td><td class="n">{{ cents|money }}</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="empty">No purchases recorded.</p>{% endif %}
+  </section>
+</div>
+
+<section>
+  <h2>Recent log entries</h2>
+  {% if recent %}
+  <div class="scroll"><table>
+    <thead><tr><th>When</th><th>Compound</th><th class="n">Amount</th><th class="n">Cost</th></tr></thead>
+    <tbody>{% for r in recent %}
+      <tr><td>{{ r.dose.taken_at|dt }}</td><td><a href="/vials/{{ r.vial.id }}">{{ r.vial.compound.name }}</a>{% if r.dose.kind == 'waste' %} <span class="tag">waste</span>{% endif %}</td>
+      <td class="n">{{ r.dose.amount_base|amt(r.vd.dim) }}</td><td class="n">{{ r.cost|money }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty">No entries yet. Use the <a href="/doses">dose log</a>.</p>{% endif %}
+</section>
+{% endblock %}

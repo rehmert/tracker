@@ -1,0 +1,20 @@
+[Unit]
+Description=Tracker
+After=network.target
+
+[Service]
+User=tracker
+Group=tracker
+WorkingDirectory=/opt/tracker
+EnvironmentFile=/etc/tracker.env
+ExecStart=/opt/tracker/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 80
+Restart=on-failure
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/tracker/data
+
+[Install]
+WantedBy=multi-user.target

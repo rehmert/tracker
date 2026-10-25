@@ -1,0 +1,48 @@
+from fastapi import APIRouter, Depends, Form, Request
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from .. import services
+from ..db import get_db
+from ..models import CATEGORIES, Compound, ProtocolItem, Vial
+from ..templating import render
+
+router = APIRouter()
+
+
+@router.get("/compounds")
+def compounds_page(request: Request, db: Session = Depends(get_db)):
+    compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
+    return render(request, "compounds.html", compounds=compounds,
+                  refs=services.compound_refs(db), categories=CATEGORIES)
+
+
+@router.post("/compounds")
+def create_compound(name: str = Form(...), category: str = Form("peptide"),
+                    notes: str = Form(""), db: Session = Depends(get_db)):
+    name = name.strip()
+    if not name:
+        return services.flash_redirect("/compounds", err="Give the compound a name.")
+    if category not in CATEGORIES:
+        category = "other"
+    if db.scalar(select(Compound).where(func.lower(Compound.name) == name.lower())):
+        return services.flash_redirect("/compounds", err=f"'{name}' already exists.")
+    db.add(Compound(name=name, category=category, notes=notes.strip()))
+    db.commit()
+    return services.flash_redirect("/compounds", msg=f"Added {name}.")
+
+
+@router.post("/compounds/{cid}/delete")
+def delete_compound(cid: int, db: Session = Depends(get_db)):
+    c = db.get(Compound, cid)
+    if c is None:
+        return services.flash_redirect("/compounds", err="Compound not found.")
+    in_use = db.scalar(select(func.count()).select_from(Vial).where(Vial.compound_id == cid)) \
+        or db.scalar(select(func.count()).select_from(ProtocolItem)
+                     .where(ProtocolItem.compound_id == cid))
+    if in_use:
+        return services.flash_redirect(
+            "/compounds", err=f"{c.name} is used by vials or protocols, so it can't be deleted.")
+    db.delete(c)
+    db.commit()
+    return services.flash_redirect("/compounds", msg=f"Deleted {c.name}.")

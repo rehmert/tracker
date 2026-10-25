@@ -1,0 +1,5 @@
+# Optional TLS reverse proxy (internal CA is fine for a homelab).
+ledger.home.lan {
+    tls internal
+    reverse_proxy 127.0.0.1:8000
+}

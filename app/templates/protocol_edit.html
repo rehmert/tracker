@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<h1>{{ p.name }}</h1>
+<p class="note">Change any amount, unit or frequency and the results update as you type. Nothing is stored until you press Save.</p>
+
+<form id="protoform" onsubmit="return false"
+      hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
+  <div class="grid">
+    <label class="field"><span>Name</span><input name="name" value="{{ p.name }}"></label>
+    <label class="field"><span>Look-ahead (weeks)</span><input type="number" name="horizon_weeks" step="any" min="0.1" max="520" value="{{ p.horizon_weeks|num }}"></label>
+    <label class="field wide"><span>Notes</span><input name="notes" value="{{ p.notes }}"></label>
+  </div>
+
+  <div class="scroll"><table class="items">
+    <thead><tr><th>Compound</th><th>Amount per entry</th><th>Unit</th><th>How often</th><th></th></tr></thead>
+    <tbody id="items">
+      {% for item in p.items %}{% include "_protocol_row.html" %}{% endfor %}
+    </tbody>
+  </table></div>
+
+  <p class="row">
+    {% if compounds %}
+    <button type="button" hx-get="/protocols/row" hx-target="#items" hx-swap="beforeend"
+            hx-on::after-swap="htmx.trigger('#protoform','change')">Add item</button>
+    {% else %}<span class="empty">Add a compound first.</span>{% endif %}
+    <button type="button" class="primary" hx-post="/protocols/{{ p.id }}/save" hx-include="#protoform"
+            hx-target="#save-msg" hx-swap="innerHTML">Save protocol</button>
+    <span id="save-msg" role="status"></span>
+  </p>
+</form>
+
+<section>
+  <h2>Results</h2>
+  <div id="results" aria-live="polite"><p class="empty">Calculating…</p></div>
+</section>
+
+<section class="row">
+  <form method="post" action="/protocols/{{ p.id }}/duplicate"><button>Duplicate as a new what-if</button></form>
+  <form method="post" action="/protocols/{{ p.id }}/delete" onsubmit="return confirm('Delete this protocol?')"><button class="link danger">Delete protocol</button></form>
+</section>
+{% endblock %}

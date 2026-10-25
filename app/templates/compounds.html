@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Compounds{% endblock %}
+{% block content %}
+<h1>Compounds</h1>
+<div class="scroll"><table>
+  <thead><tr><th>Name</th><th>Category</th><th class="n">On hand</th><th>Price basis</th><th></th></tr></thead>
+  <tbody>
+  {% for c in compounds %}{% set r = refs[c.id] %}
+  <tr>
+    <td>{{ c.name }}{% if c.notes %}<br><small>{{ c.notes }}</small>{% endif %}</td>
+    <td>{{ c.category }}</td>
+    <td class="n">{{ r.on_hand_base|amt(r.dim) if r.dim else '—' }}</td>
+    <td>{% if r.cost_per_base is not none %}{% if r.dim == 'iu' %}{{ r.cost_per_base|money_precise }} / IU{% else %}{{ (r.cost_per_base * 1000)|money }} / mg{% endif %}{% else %}—{% endif %}</td>
+    <td><form method="post" action="/compounds/{{ c.id }}/delete" onsubmit="return confirm('Delete {{ c.name|e }}?')"><button class="link danger">Delete</button></form></td>
+  </tr>
+  {% else %}<tr><td colspan="5" class="empty">No compounds yet.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+
+<section>
+  <h2>Add a compound</h2>
+  <form method="post" action="/compounds" class="grid">
+    <label class="field"><span>Name</span><input name="name" required maxlength="120"></label>
+    <label class="field"><span>Category</span>
+      <select name="category">{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select></label>
+    <label class="field wide"><span>Notes</span><input name="notes"></label>
+    <div><button class="primary">Add compound</button></div>
+  </form>
+</section>
+{% endblock %}
