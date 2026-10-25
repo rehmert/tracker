@@ -11,7 +11,7 @@
 <div class="scroll"><table>
   <thead><tr><th>Compound</th><th>Vial</th><th>Remaining</th><th class="n">Amount left</th><th class="n">Landed cost</th><th>Cost</th><th>COA</th><th>Status</th></tr></thead>
   <tbody>
-  {% for v in vials %}{% set d = views[v.id] %}
+  {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
   <tr>
     <td>{{ v.compound.name }}</td>
     <td><a href="/vials/{{ v.id }}">{{ v.label or ('#' ~ v.id) }}</a>{% if v.lot %}<br><small>lot {{ v.lot }}</small>{% endif %}</td>
