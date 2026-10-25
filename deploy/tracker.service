@@ -7,7 +7,7 @@ User=tracker
 Group=tracker
 WorkingDirectory=/opt/tracker
 EnvironmentFile=/etc/tracker.env
-ExecStart=/opt/tracker/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 80
+ExecStart=/opt/tracker/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=on-failure
 # Hardening
 NoNewPrivileges=true
