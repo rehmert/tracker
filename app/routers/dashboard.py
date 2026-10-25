@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import services
+from .. import config, metrics, services
 from ..db import get_db
-from ..models import DoseLog, Vial
+from ..models import DoseLog, Vial, VitalReading
 from ..templating import render
 
 router = APIRouter()
@@ -33,8 +33,17 @@ def home(request: Request, db: Session = Depends(get_db)):
         recent.append({"dose": dose, "vial": dose.vial, "vd": vd,
                        "cost": vd.cost_per_base * dose.amount_base})
 
+    def latest(column):
+        return db.scalar(select(VitalReading).where(column.is_not(None))
+                         .order_by(VitalReading.measured_at.desc(), VitalReading.id.desc()).limit(1))
+
+    lw, lbp, lhr = latest(VitalReading.weight_kg), latest(VitalReading.systolic), \
+        latest(VitalReading.pulse_bpm)
+    vitals = {"weight": metrics.weight_from_kg(lw.weight_kg, config.WEIGHT_UNIT) if lw else None,
+              "unit": config.WEIGHT_UNIT, "bp": lbp, "pulse": lhr.pulse_bpm if lhr else None}
+
     return render(
-        request, "dashboard.html",
+        request, "dashboard.html", vitals=vitals,
         active=active, low=low, recent=recent,
         total_spend=sum(d.landed_cents for d in views.values()),
         inventory_value=sum(d.remaining_value_cents for _, d in active),

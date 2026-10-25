@@ -69,3 +69,18 @@ def unit_cost(vd) -> str:
 
 
 templates.env.filters["unit_cost"] = unit_cost
+
+
+def n1(x) -> str:
+    return "—" if x is None else f"{x:.1f}"
+
+
+def n0(x) -> str:
+    return "—" if x is None else f"{x:.0f}"
+
+
+def signed(x) -> str:
+    return "—" if x is None else f"{x:+.1f}"
+
+
+templates.env.filters.update(n1=n1, n0=n0, signed=signed)

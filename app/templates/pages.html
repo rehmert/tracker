@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Notes{% endblock %}
+{% block content %}
+<h1>Notes</h1>
+<p class="note">Your own write-ups of things you've read or found, each with its sources. Link pages together with [[Page title]].</p>
+
+<form method="get" class="inline" role="search">
+  <label class="field"><span>Search</span><input type="search" name="q" value="{{ q }}" placeholder="title, text, tags, sources"></label>
+  <label class="field"><span>Tag</span>
+    <select name="tag"><option value="">Any</option>{% for t in all_tags %}<option {% if t == tag %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Compound</span>
+    <select name="compound_id"><option value="">Any</option>{% for c in compounds %}<option value="{{ c.id }}" {% if compound_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+  <button>Filter</button>
+  <a class="btn primary" href="/pages/new">New page</a>
+</form>
+
+{% if pages %}
+<ul class="cards">
+  {% for p in pages %}
+  <li>
+    <a class="card-title" href="/pages/{{ p.id }}">{{ p.title }}</a>
+    <p>{{ snippet(p.body) }}</p>
+    <p class="meta">
+      {% for t in p.tag_list %}<a class="tag" href="/pages?tag={{ t|urlencode }}">{{ t }}</a> {% endfor %}
+      {% for c in p.compounds %}<a class="tag" href="/pages?compound_id={{ c.id }}">{{ c.name }}</a> {% endfor %}
+      <small>{{ p.sources|length }} source{{ '' if p.sources|length == 1 else 's' }} · updated {{ p.updated_at|dt }}</small>
+    </p>
+  </li>
+  {% endfor %}
+</ul>
+{% elif total %}
+<p class="empty">No pages match. <a href="/pages">Clear filters</a>.</p>
+{% else %}
+<p class="empty">No pages yet. <a href="/pages/new">Write the first one.</a></p>
+{% endif %}
+{% endblock %}

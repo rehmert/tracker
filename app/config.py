@@ -4,6 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = Path(os.getenv("TRACKER_DATA_DIR", BASE_DIR.parent / "data")).resolve()
 UPLOAD_DIR = DATA_DIR / "uploads" / "coa"
+LAB_DIR = DATA_DIR / "uploads" / "labs"
 DB_PATH = DATA_DIR / "tracker.db"
 DB_URL = f"sqlite:///{DB_PATH}"
 
@@ -17,3 +18,8 @@ AUTH_PASS = os.getenv("TRACKER_PASS", "")
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+LAB_DIR.mkdir(parents=True, exist_ok=True)
+
+WEIGHT_UNIT = os.getenv("TRACKER_WEIGHT_UNIT", "kg").strip().lower()
+if WEIGHT_UNIT not in ("kg", "lb"):
+    WEIGHT_UNIT = "kg"

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Lab results{% endblock %}
+{% block content %}
+<h1>Lab results</h1>
+<p class="note">Enter results exactly as printed on your report, including the unit and the lab's own reference range if it shows one. The charts show your numbers over time with that printed range shaded. This page doesn't tell you what a result means.</p>
+<p><a class="btn primary" href="/labs/new">Add a lab report</a></p>
+
+{% if cards %}
+<section>
+  <h2>Trends by analyte</h2>
+  <div class="labgrid">
+    {% for c in cards %}
+    <article class="labcard">
+      <h3><a href="/labs/analyte?name={{ c.key|urlencode }}">{{ c.name }}</a></h3>
+      <p class="latest"><strong>{{ c.res.value|num }} {{ c.res.unit }}</strong>
+        <small>{{ c.rep.drawn_on|dt }}{% if c.res.ref_low is not none %} · printed range {{ c.res.ref_low|num }} to {{ c.res.ref_high|num }}{% if c.status %} · {{ c.status }} that range{% endif %}{% endif %}</small></p>
+      <div class="chartbox">{{ c.svg|safe }}</div>
+      <p class="meta">{{ c.n }} result{{ '' if c.n == 1 else 's' }}{% if c.skipped %} · {{ c.skipped }} in other units not drawn{% endif %}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section>
+  <h2>Reports</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Drawn</th><th>Lab</th><th class="n">Results</th><th>File</th></tr></thead>
+    <tbody>
+    {% for r in reports %}
+    <tr><td><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td><td>{{ r.lab_name or '—' }}</td><td class="n">{{ r.results|length }}</td><td>{{ 'yes' if r.stored_name else '—' }}</td></tr>
+    {% else %}<tr><td colspan="4" class="empty">No lab reports yet.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

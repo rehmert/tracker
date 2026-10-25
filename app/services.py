@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import quote
@@ -13,8 +13,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from . import calc, config, units as U
-from .models import Compound, DoseLog, Vial
+from . import calc, charts, config, units as U
+from .models import Compound, DoseLog, LabReport, Purchase, Vial
 
 
 # ------------------------------------------------------------------ parsing
@@ -121,7 +121,7 @@ def _magic_ok(ext: str, head: bytes) -> bool:
     return any(head.startswith(m) for m in _MAGIC[ext])
 
 
-async def save_upload(file: UploadFile) -> dict:
+async def save_upload(file: UploadFile, directory: Path | None = None) -> dict:
     """Stream an upload to disk with a size cap, extension allow-list and
     magic-byte check. Stored under a random name; the original is kept for display."""
     original = Path(file.filename or "").name
@@ -129,7 +129,7 @@ async def save_upload(file: UploadFile) -> dict:
     if ext not in config.ALLOWED_UPLOAD_EXT:
         raise ValueError("Upload a PDF, PNG, JPG or WEBP file.")
     stored = f"{uuid4().hex}{ext}"
-    path = config.UPLOAD_DIR / stored
+    path = (directory or config.UPLOAD_DIR) / stored
     digest, size, head = hashlib.sha256(), 0, b""
     try:
         with path.open("wb") as out:
@@ -152,5 +152,44 @@ async def save_upload(file: UploadFile) -> dict:
             "content_type": _MIME[ext], "size_bytes": size, "sha256": digest.hexdigest()}
 
 
-def delete_stored_file(stored_name: str) -> None:
-    (config.UPLOAD_DIR / stored_name).unlink(missing_ok=True)
+def delete_stored_file(stored_name: str, directory: Path | None = None) -> None:
+    ((directory or config.UPLOAD_DIR) / stored_name).unlink(missing_ok=True)
+
+
+# ------------------------------------------------------------------- events
+def _noon(d: date) -> datetime:
+    return datetime.combine(d, time(12))
+
+
+def events_between(db: Session, start: datetime, end: datetime) -> list[charts.Event]:
+    """Dose entries (one lane per compound) and vial / purchase / lab markers that
+    fall inside [start, end], for overlaying on charts."""
+    events: list[charts.Event] = []
+
+    rows = db.execute(
+        select(DoseLog, Compound.name)
+        .join(Vial, DoseLog.vial_id == Vial.id).join(Compound, Vial.compound_id == Compound.id)
+        .where(DoseLog.kind == "dose", DoseLog.taken_at >= start, DoseLog.taken_at <= end)
+        .order_by(DoseLog.taken_at)).all()
+    for d, name in rows:
+        events.append(charts.Event(d.taken_at, "dose",
+                                   f"{name}: {d.entered_value:g} {d.entered_unit}", name))
+
+    use = {vid: (first, last) for vid, first, last in db.execute(
+        select(DoseLog.vial_id, func.min(DoseLog.taken_at), func.max(DoseLog.taken_at))
+        .where(DoseLog.kind == "dose").group_by(DoseLog.vial_id)).all()}
+    for v in db.scalars(select(Vial)):
+        name = f"{v.compound.name} {v.label or '#' + str(v.id)}"
+        if v.reconstituted_on:
+            events.append(charts.Event(_noon(v.reconstituted_on), "marker", name, mark="R"))
+        if v.id in use:
+            first, last = use[v.id]
+            events.append(charts.Event(first, "marker", name, mark="S"))
+            if v.status in ("finished", "discarded"):
+                events.append(charts.Event(last, "marker", name, mark="F"))
+    for p in db.scalars(select(Purchase)):
+        events.append(charts.Event(_noon(p.purchased_on), "marker", f"Purchase from {p.vendor}", mark="P"))
+    for r in db.scalars(select(LabReport)):
+        events.append(charts.Event(_noon(r.drawn_on), "marker",
+                                   f"Lab draw{': ' + r.lab_name if r.lab_name else ''}", mark="L"))
+    return [e for e in events if start <= e.at <= end]

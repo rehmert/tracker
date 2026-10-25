@@ -5,7 +5,8 @@ from fastapi.staticfiles import StaticFiles
 
 from . import config, models  # noqa: F401  (models import registers tables)
 from .db import Base, engine
-from .routers import coas, compounds, dashboard, doses, protocols, purchases, vials
+from .routers import (coas, compounds, dashboard, doses, labs, pages, protocols, purchases,
+                      vials, vitals)
 from .security import require_auth
 
 
@@ -15,11 +16,11 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Peptide & TRT Ledger", dependencies=[Depends(require_auth)],
+app = FastAPI(title="Tracker", dependencies=[Depends(require_auth)],
               lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=config.BASE_DIR / "static"), name="static")
 
-for module in (dashboard, compounds, purchases, vials, coas, doses, protocols):
+for module in (dashboard, compounds, purchases, vials, coas, doses, vitals, labs, protocols, pages):
     app.include_router(module.router)
 
 

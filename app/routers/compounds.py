@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from .. import services
 from ..db import get_db
-from ..models import CATEGORIES, Compound, ProtocolItem, Vial
+from ..models import CATEGORIES, Compound, ProtocolItem, Vial, page_compounds
 from ..templating import render
 
 router = APIRouter()
@@ -13,7 +13,9 @@ router = APIRouter()
 @router.get("/compounds")
 def compounds_page(request: Request, db: Session = Depends(get_db)):
     compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
-    return render(request, "compounds.html", compounds=compounds,
+    notes = dict(db.execute(select(page_compounds.c.compound_id, func.count())
+                            .group_by(page_compounds.c.compound_id)).all())
+    return render(request, "compounds.html", compounds=compounds, notes=notes,
                   refs=services.compound_refs(db), categories=CATEGORIES)
 
 

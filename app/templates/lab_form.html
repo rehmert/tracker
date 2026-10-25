@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Add lab report{% endblock %}
+{% block content %}
+<h1>Add a lab report</h1>
+<form method="post" action="/labs" enctype="multipart/form-data">
+  <div class="grid">
+    <label class="field"><span>Date drawn</span><input type="date" name="drawn_on" value="{{ v.drawn_on }}" required></label>
+    <label class="field"><span>Lab</span><input name="lab_name" value="{{ v.lab_name }}" maxlength="160"></label>
+    <label class="field"><span>Copy of the report (PDF or image, optional)</span><input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
+    <label class="field wide"><span>Notes</span><input name="notes" value="{{ v.notes }}"></label>
+  </div>
+
+  <h2>Results</h2>
+  <p class="note">One row per analyte. Use the unit printed on the report. The printed range is optional; enter both ends or neither.</p>
+  <div class="scroll"><table class="items">
+    <thead><tr><th>Analyte</th><th>Value</th><th>Unit</th><th>Printed range, low</th><th>Printed range, high</th><th></th></tr></thead>
+    <tbody id="lab-rows">{% for row in rows %}{% include "_lab_row.html" %}{% endfor %}</tbody>
+  </table></div>
+  <datalist id="analyte-names">{% for n in names %}<option value="{{ n }}">{% endfor %}</datalist>
+  <p class="row">
+    <button type="button" hx-get="/labs/row" hx-target="#lab-rows" hx-swap="beforeend">Add row</button>
+    <button class="primary">Save report</button>
+    <a href="/labs">Cancel</a>
+  </p>
+</form>
+{% endblock %}

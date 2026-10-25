@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import (Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey,
-                        Integer, String, Text, func)
+from sqlalchemy import (Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey,
+                        Index, Integer, String, Table, Text, func)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -127,3 +127,96 @@ class ProtocolItem(Base):
     freq_period: Mapped[str] = mapped_column(String(10))  # day | week | month | interval
     protocol: Mapped[Protocol] = relationship(back_populates="items")
     compound: Mapped[Compound] = relationship()
+
+
+class VitalReading(Base):
+    """One sitting: any mix of weight (stored in kg), blood pressure and pulse."""
+    __tablename__ = "vital_readings"
+    __table_args__ = (
+        CheckConstraint("weight_kg IS NOT NULL OR systolic IS NOT NULL OR pulse_bpm IS NOT NULL",
+                        name="ck_reading_has_value"),
+        Index("ix_vital_readings_time", "measured_at"),
+    )
+    id: Mapped[int] = mapped_column(primary_key=True)
+    measured_at: Mapped[datetime] = mapped_column(DateTime)
+    weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
+    systolic: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    diastolic: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    pulse_bpm: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    context: Mapped[str] = mapped_column(String(80), default="")   # e.g. "morning, seated"
+    notes: Mapped[str] = mapped_column(Text, default="")
+
+
+page_compounds = Table(
+    "page_compounds", Base.metadata,
+    Column("page_id", ForeignKey("pages.id", ondelete="CASCADE"), primary_key=True),
+    Column("compound_id", ForeignKey("compounds.id", ondelete="CASCADE"), primary_key=True),
+)
+
+SOURCE_KINDS = ("web", "book", "paper", "other")
+
+
+class Page(Base):
+    """A free-text note. Body is markdown-style text; [[Title]] links to other pages."""
+    __tablename__ = "pages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), unique=True)
+    body: Mapped[str] = mapped_column(Text, default="")
+    tags: Mapped[str] = mapped_column(String(400), default="")      # comma separated, lower case
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(),
+                                                 onupdate=func.now())
+    sources: Mapped[list[Source]] = relationship(
+        back_populates="page", cascade="all, delete-orphan", order_by="Source.id")
+    compounds: Mapped[list[Compound]] = relationship(secondary=page_compounds)
+
+    @property
+    def tag_list(self) -> list[str]:
+        return [t for t in self.tags.split(",") if t]
+
+
+class Source(Base):
+    """Where a piece of information came from: a link, a book, a paper."""
+    __tablename__ = "sources"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    page_id: Mapped[int] = mapped_column(ForeignKey("pages.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(String(10), default="web")
+    title: Mapped[str] = mapped_column(String(300), default="")
+    url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    author: Mapped[str] = mapped_column(String(200), default="")
+    publication: Mapped[str] = mapped_column(String(200), default="")  # site, journal, publisher
+    location: Mapped[str] = mapped_column(String(120), default="")     # chapter / page / DOI
+    accessed_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    note: Mapped[str] = mapped_column(Text, default="")
+    page: Mapped[Page] = relationship(back_populates="sources")
+
+
+class LabReport(Base):
+    """One blood draw / lab report, with an optional copy of the report file."""
+    __tablename__ = "lab_reports"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    drawn_on: Mapped[date] = mapped_column(Date)
+    lab_name: Mapped[str] = mapped_column(String(160), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    original_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    stored_name: Mapped[str | None] = mapped_column(String(80), nullable=True, unique=True)
+    content_type: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    results: Mapped[list[LabResult]] = relationship(
+        back_populates="report", cascade="all, delete-orphan", order_by="LabResult.id")
+
+
+class LabResult(Base):
+    """One analyte value. ref_low / ref_high are the range PRINTED on the report."""
+    __tablename__ = "lab_results"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey("lab_reports.id", ondelete="CASCADE"))
+    analyte: Mapped[str] = mapped_column(String(120))
+    value: Mapped[float] = mapped_column(Float)
+    unit: Mapped[str] = mapped_column(String(30))
+    ref_low: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ref_high: Mapped[float | None] = mapped_column(Float, nullable=True)
+    note: Mapped[str] = mapped_column(String(300), default="")
+    report: Mapped[LabReport] = relationship(back_populates="results")

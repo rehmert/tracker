@@ -11,6 +11,18 @@
   <div><dt>Vials with no COA</dt><dd>{{ no_coa }}</dd></div>
 </dl>
 
+{% if vitals.weight is not none or vitals.bp or vitals.pulse is not none %}
+<section>
+  <h2>Latest vitals</h2>
+  <dl class="stats">
+    {% if vitals.weight is not none %}<div><dt>Weight</dt><dd>{{ vitals.weight|n1 }} {{ vitals.unit }}</dd></div>{% endif %}
+    {% if vitals.bp %}<div><dt>Blood pressure</dt><dd>{{ vitals.bp.systolic }}/{{ vitals.bp.diastolic }}</dd><dd class="sm">{{ vitals.bp.measured_at|dt }}</dd></div>{% endif %}
+    {% if vitals.pulse is not none %}<div><dt>Pulse</dt><dd>{{ vitals.pulse }} bpm</dd></div>{% endif %}
+  </dl>
+  <p><a href="/vitals">All readings and charts</a></p>
+</section>
+{% endif %}
+
 {% if low %}
 <section>
   <h2>Running low</h2>

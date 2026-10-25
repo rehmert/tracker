@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ p.title }}{% endblock %}
+{% block content %}
+<h1>{{ p.title }}</h1>
+<p class="meta">
+  {% for t in p.tag_list %}<a class="tag" href="/pages?tag={{ t|urlencode }}">{{ t }}</a> {% endfor %}
+  {% for c in p.compounds %}<a class="tag" href="/pages?compound_id={{ c.id }}">{{ c.name }}</a> {% endfor %}
+  <small>updated {{ p.updated_at|dt }} · <a href="/pages/{{ p.id }}/edit">Edit</a></small>
+</p>
+
+<article class="prose">{{ html|safe }}</article>
+
+<section id="sources">
+  <h2>Sources</h2>
+  {% if p.sources %}
+  <ol class="sources">
+    {% for s in p.sources %}
+    <li>
+      <span class="tag">{{ s.kind }}</span>
+      {% set safe_url = s.url and s.url.lower().startswith(('http://', 'https://')) %}
+      {% if safe_url %}<a href="{{ s.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ s.title or s.url }}</a>{% else %}<strong>{{ s.title or 'Untitled source' }}</strong>{% endif %}
+      {% if s.author %} · {{ s.author }}{% endif %}{% if s.publication %} · <em>{{ s.publication }}</em>{% endif %}{% if s.location %} · {{ s.location }}{% endif %}
+      {% if s.accessed_on %}<small> · accessed {{ s.accessed_on|dt }}</small>{% endif %}
+      {% if s.note %}<br><small>{{ s.note }}</small>{% endif %}
+      <form method="post" action="/sources/{{ s.id }}/delete" class="inlineform" onsubmit="return confirm('Remove this source?')"><button class="link danger">Remove</button></form>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}<p class="empty">No sources yet. Add the book or link this came from so you can find it again.</p>{% endif %}
+
+  <h3>Add a source</h3>
+  <form method="post" action="/pages/{{ p.id }}/sources" class="grid">
+    <label class="field"><span>Type</span><select name="kind">{% for k in kinds %}<option>{{ k }}</option>{% endfor %}</select></label>
+    <label class="field"><span>Title</span><input name="title" maxlength="300"></label>
+    <label class="field"><span>Link (http or https)</span><input type="url" name="url" maxlength="2000" placeholder="https://"></label>
+    <label class="field"><span>Author</span><input name="author" maxlength="200"></label>
+    <label class="field"><span>Site, journal or publisher</span><input name="publication" maxlength="200"></label>
+    <label class="field"><span>Chapter, page or DOI</span><input name="location" maxlength="120"></label>
+    <label class="field"><span>Accessed</span><input type="date" name="accessed_on" value="{{ today }}"></label>
+    <label class="field wide"><span>Note (keep quotes short; paraphrase)</span><input name="note"></label>
+    <div><button class="primary">Add source</button></div>
+  </form>
+</section>
+
+{% if backlinks %}
+<section>
+  <h2>Linked from</h2>
+  <ul class="plain">{% for b in backlinks %}<li><a href="/pages/{{ b.id }}">{{ b.title }}</a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+<section>
+  <form method="post" action="/pages/{{ p.id }}/delete" onsubmit="return confirm('Delete this page and its sources?')"><button class="link danger">Delete page</button></form>
+</section>
+{% endblock %}

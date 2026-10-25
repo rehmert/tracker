@@ -101,3 +101,66 @@ button.link.danger { color: var(--brick); }
   .rail ul { display: flex; flex-wrap: wrap; gap: .2rem; }
   .rail-note { display: none; }
 }
+
+/* ---- charts ---- */
+.chartbox { border: 1px solid var(--rule); background: var(--surface); padding: .5rem; }
+.chart { width: 100%; height: auto; display: block; max-height: 240px; }
+.chart .gl { stroke: var(--rule); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font: 11px var(--sans); }
+.chart .line { fill: none; stroke-width: 2; }
+.chart .line.s1, .chart .dot.s1 { stroke: var(--teal); }
+.chart .dot.s1 { fill: var(--teal); }
+.chart .line.s2, .chart .dot.s2 { stroke: var(--amber); }
+.chart .dot.s2 { fill: var(--amber); }
+.chart .line.s2 { stroke-dasharray: 6 4; }
+.legend { margin: .3rem 0 0; font-size: .85rem; display: flex; gap: 1rem; }
+.key::before { content: ""; display: inline-block; width: 1.4rem; border-top: 2px solid var(--teal); margin-right: .35rem; vertical-align: middle; }
+.key.s2::before { border-top: 2px dashed var(--amber); }
+
+/* ---- notes pages ---- */
+.btn { display: inline-block; padding: .45rem .9rem; border-radius: 4px; text-decoration: none; border: 1px solid var(--teal); }
+.btn.primary { background: var(--teal); color: var(--teal-ink); }
+.cards { list-style: none; margin: 1rem 0; padding: 0; display: grid; gap: .8rem; }
+.cards li { border: 1px solid var(--rule); background: var(--surface); padding: .8rem 1rem; }
+.cards p { margin: .3rem 0; }
+.card-title { font: 600 1.15rem var(--serif); }
+.meta { color: var(--muted); font-size: .9rem; margin: .2rem 0 1rem; }
+a.tag { text-decoration: none; color: var(--teal); }
+.prose { max-width: 68ch; }
+.prose h2, .prose h3, .prose h4 { margin: 1.4rem 0 .4rem; }
+.prose blockquote { margin: .8rem 0; padding: .2rem 1rem; border-left: 3px solid var(--rule); color: var(--muted); }
+.prose pre { overflow-x: auto; background: var(--wash); padding: .7rem; border-radius: 4px; }
+.prose code { background: var(--wash); padding: 0 .25rem; border-radius: 3px; }
+.prose pre code { background: none; padding: 0; }
+.wikilink.missing { color: var(--brick); text-decoration: underline dotted; }
+.sources { padding-left: 1.2rem; }
+.sources li { margin: .5rem 0; }
+.inlineform { display: inline; margin-left: .6rem; }
+.editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1rem; margin: 1rem 0; }
+textarea { width: 100%; padding: .6rem; font: .95rem/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 4px; resize: vertical; }
+.box { border: 1px solid var(--rule); background: var(--surface); padding: .6rem 1rem; min-height: 8rem; }
+.lbl { font-size: .9rem; color: var(--muted); display: block; margin-bottom: .2rem; }
+fieldset.field { border: 1px solid var(--rule); padding: .4rem .7rem; margin: 0; }
+fieldset legend { color: var(--muted); padding: 0 .3rem; }
+
+/* ---- chart events and bands ---- */
+.chart .band { fill: var(--teal); opacity: .13; }
+.chart .evline { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .evbadge circle { fill: var(--surface); stroke: var(--ink); stroke-width: 1; }
+.chart .evbadge text { fill: var(--ink); font: 700 9px var(--sans); }
+.chart .tick { stroke-width: 2; }
+.chart .tick.l0, .lane.l0::before { stroke: var(--teal); border-color: var(--teal); }
+.chart .tick.l1, .lane.l1::before { stroke: var(--amber); border-color: var(--amber); }
+.chart .tick.l2, .lane.l2::before { stroke: var(--brick); border-color: var(--brick); }
+.chart .tick.l3, .lane.l3::before { stroke: var(--ink); border-color: var(--ink); }
+.chart .tick.l4, .lane.l4::before { stroke: var(--muted); border-color: var(--muted); }
+.chart .tick.l5, .lane.l5::before { stroke: var(--teal); border-color: var(--teal); opacity: .6; }
+.legend { flex-wrap: wrap; align-items: center; }
+.lane::before { content: ""; display: inline-block; height: .9rem; border-left: 3px solid; margin-right: .35rem; vertical-align: middle; }
+.mk b { display: inline-block; min-width: 1.3rem; text-align: center; border: 1px solid var(--ink); border-radius: 50%; font-size: .75rem; }
+.key.band::before { border: 0; width: 1.4rem; height: .7rem; background: var(--teal); opacity: .2; }
+.labgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: 1rem; }
+.labcard h3 { margin: 0 0 .2rem; font-family: var(--serif); }
+.labcard .latest { margin: 0 0 .4rem; }
+.labcard .meta { margin: .3rem 0 0; }

@@ -95,3 +95,74 @@ CREATE TABLE protocol_items (
   freq_count   FLOAT NOT NULL,
   freq_period  VARCHAR(10) NOT NULL                       -- day | week | month | interval (= once every N days)
 );
+
+-- ---- vitals ----
+CREATE TABLE vital_readings (
+  id           INTEGER PRIMARY KEY,
+  measured_at  DATETIME NOT NULL,
+  weight_kg    FLOAT,                          -- always kg; shown in kg or lb per TRACKER_WEIGHT_UNIT
+  systolic     INTEGER,
+  diastolic    INTEGER,
+  pulse_bpm    INTEGER,
+  context      VARCHAR(80) NOT NULL DEFAULT '',
+  notes        TEXT NOT NULL DEFAULT '',
+  CONSTRAINT ck_reading_has_value CHECK (weight_kg IS NOT NULL OR systolic IS NOT NULL OR pulse_bpm IS NOT NULL)
+);
+CREATE INDEX ix_vital_readings_time ON vital_readings(measured_at);
+
+-- ---- notes pages ----
+CREATE TABLE pages (
+  id          INTEGER PRIMARY KEY,
+  title       VARCHAR(200) NOT NULL UNIQUE,
+  body        TEXT NOT NULL DEFAULT '',        -- markdown-style text; [[Title]] links to other pages
+  tags        VARCHAR(400) NOT NULL DEFAULT '',-- comma separated, lower case
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE page_compounds (
+  page_id      INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+  compound_id  INTEGER NOT NULL REFERENCES compounds(id) ON DELETE CASCADE,
+  PRIMARY KEY (page_id, compound_id)
+);
+
+CREATE TABLE sources (
+  id           INTEGER PRIMARY KEY,
+  page_id      INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+  kind         VARCHAR(10) NOT NULL DEFAULT 'web',   -- web | book | paper | other
+  title        VARCHAR(300) NOT NULL DEFAULT '',
+  url          VARCHAR(2000),                         -- http(s) only, validated on input
+  author       VARCHAR(200) NOT NULL DEFAULT '',
+  publication  VARCHAR(200) NOT NULL DEFAULT '',      -- site, journal or publisher
+  location     VARCHAR(120) NOT NULL DEFAULT '',      -- chapter, page or DOI
+  accessed_on  DATE,
+  note         TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX ix_sources_page ON sources(page_id);
+
+-- ---- lab results ----
+CREATE TABLE lab_reports (
+  id             INTEGER PRIMARY KEY,
+  drawn_on       DATE NOT NULL,
+  lab_name       VARCHAR(160) NOT NULL DEFAULT '',
+  notes          TEXT NOT NULL DEFAULT '',
+  original_name  VARCHAR(255),                 -- optional copy of the report (data/uploads/labs/)
+  stored_name    VARCHAR(80) UNIQUE,
+  content_type   VARCHAR(80),
+  size_bytes     INTEGER,
+  sha256         VARCHAR(64),
+  created_at     DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE lab_results (
+  id         INTEGER PRIMARY KEY,
+  report_id  INTEGER NOT NULL REFERENCES lab_reports(id) ON DELETE CASCADE,
+  analyte    VARCHAR(120) NOT NULL,
+  value      FLOAT NOT NULL,
+  unit       VARCHAR(30)  NOT NULL,            -- as printed on the report
+  ref_low    FLOAT,                            -- range PRINTED on the report (both or neither)
+  ref_high   FLOAT,
+  note       VARCHAR(300) NOT NULL DEFAULT ''
+);
+CREATE INDEX ix_lab_results_report ON lab_results(report_id);
+CREATE INDEX ix_lab_results_analyte ON lab_results(analyte);

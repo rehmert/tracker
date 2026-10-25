@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ name }}{% endblock %}
+{% block content %}
+<h1>{{ name }} <small class="sub">in {{ unit }}</small></h1>
+<p class="filters">
+  {% for d, text in ranges.items() %}<a href="/labs/analyte?name={{ key|urlencode }}&days={{ d }}&events={{ 1 if events_on else 0 }}" {% if d == days %}aria-current="true"{% endif %}>{{ text }}</a>{% endfor %}
+  <a href="/labs/analyte?name={{ key|urlencode }}&days={{ days }}&events={{ 0 if events_on else 1 }}">{{ 'Hide' if events_on else 'Show' }} dose and vial events</a>
+</p>
+<div class="chartbox">{{ svg|safe }}</div>
+{% if events_on %}<p class="note">Ticks are logged doses (one lane per compound); lettered dashed lines are vial, purchase and lab events. Proximity on a chart isn't evidence that one affected the other.</p>{% endif %}
+{% if skipped %}<p class="note">{{ skipped }} result(s) are in a unit this app can't convert to {{ unit }}, so they aren't drawn but are listed below.</p>{% endif %}
+
+<section>
+  <h2>All results</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Drawn</th><th class="n">Value</th><th class="n">In {{ unit }}</th><th class="n">Printed range</th><th>Compared with printed range</th><th>Lab</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="/labs/{{ r.rep.id }}">{{ r.rep.drawn_on|dt }}</a></td>
+      <td class="n">{{ r.res.value|num }} {{ r.res.unit }}</td>
+      <td class="n">{% if r.converted is not none %}{{ r.converted|num }}{% else %}not convertible{% endif %}</td>
+      <td class="n">{% if r.res.ref_low is not none %}{{ r.res.ref_low|num }} to {{ r.res.ref_high|num }}{% else %}—{% endif %}</td>
+      <td>{{ r.status or '—' }}</td><td>{{ r.rep.lab_name or '—' }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="note">Unit conversions are shown only for a few common analytes (for example testosterone, estradiol, glucose, cholesterol and creatinine) and are approximate. Check the printed values on your report for anything important.</p>
+</section>
+{% endblock %}

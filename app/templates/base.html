@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Ledger{% endblock %} · Peptide &amp; TRT Ledger</title>
+  <title>{% block title %}Home{% endblock %} · Tracker</title>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/vendor/htmx.min.js" defer></script>
 </head>
 <body>
 <div class="shell">
   <nav class="rail" aria-label="Main">
-    <a class="brand" href="/">Ledger</a>
+    <a class="brand" href="/">Tracker</a>
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/doses', 'Dose log'),
-                    ('/purchases', 'Purchases'), ('/compounds', 'Compounds'),
-                    ('/protocols', 'Protocols')] %}
+                    ('/vitals', 'Vitals'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
+                    ('/compounds', 'Compounds'), ('/protocols', 'Protocols'),
+                    ('/pages', 'Notes')] %}
     <ul>
       {% for href, text in links %}
       <li><a href="{{ href }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}>{{ text }}</a></li>

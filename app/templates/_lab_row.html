@@ -1,0 +1,8 @@
+<tr>
+  <td><input name="analyte" list="analyte-names" value="{{ row.analyte }}" aria-label="Analyte" maxlength="120"></td>
+  <td><input name="value" type="number" step="any" value="{{ row.value }}" aria-label="Value"></td>
+  <td><input name="unit" value="{{ row.unit }}" aria-label="Unit" maxlength="30" placeholder="e.g. ng/dL" size="9"></td>
+  <td><input name="ref_low" type="number" step="any" value="{{ row.ref_low }}" aria-label="Printed range, low"></td>
+  <td><input name="ref_high" type="number" step="any" value="{{ row.ref_high }}" aria-label="Printed range, high"></td>
+  <td><button type="button" class="link danger" hx-on:click="this.closest('tr').remove()">Remove</button></td>
+</tr>

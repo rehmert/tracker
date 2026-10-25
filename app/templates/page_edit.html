@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit ' ~ p.title if p else 'New page' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Edit page' if p else 'New page' }}</h1>
+<form method="post" action="{{ '/pages/' ~ p.id if p else '/pages' }}">
+  <div class="grid">
+    <label class="field wide"><span>Title</span><input name="title" value="{{ title }}" maxlength="200" required></label>
+    <label class="field"><span>Tags (comma separated)</span><input name="tags" value="{{ p.tags|replace(',', ', ') if p else '' }}"></label>
+    <fieldset class="field">
+      <legend>About these compounds</legend>
+      {% for c in compounds %}<label class="check"><input type="checkbox" name="compound_ids" value="{{ c.id }}" {% if c.id in selected %}checked{% endif %}> {{ c.name }}</label>{% else %}<small>No compounds yet.</small>{% endfor %}
+    </fieldset>
+  </div>
+
+  <div class="editor">
+    <label class="field"><span>Text</span>
+      <textarea name="body" rows="22" spellcheck="true"
+                hx-post="/pages/preview" hx-trigger="input delay:400ms, load" hx-target="#preview" hx-swap="innerHTML">{{ p.body if p else '' }}</textarea>
+      <small>Headings with #, lists with - or 1., **bold**, *italic*, `code`, &gt; quotes, [text](https://link), [[Other page title]]. HTML is not interpreted.</small>
+    </label>
+    <div><span class="lbl">Preview</span><div id="preview" class="prose box" aria-live="polite"></div></div>
+  </div>
+
+  <p class="row">
+    <button class="primary">Save page</button>
+    <a href="{{ '/pages/' ~ p.id if p else '/pages' }}">Cancel</a>
+  </p>
+</form>
+{% endblock %}

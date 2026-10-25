@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Vitals{% endblock %}
+{% block content %}
+<h1>Vitals</h1>
+<p class="note">Weight, blood pressure and pulse as you record them. This page shows your numbers and simple averages; it doesn't interpret them. Take questions about what a reading means to a clinician.</p>
+
+<section>
+  <h2>Add a reading</h2>
+  <form method="post" action="/vitals" class="grid">
+    <label class="field"><span>When</span><input type="datetime-local" name="measured_at" value="{{ now }}"></label>
+    <label class="field"><span>Weight</span><input type="number" name="weight" step="any" min="0"></label>
+    <label class="field"><span>Weight unit</span><select name="weight_unit"><option {% if unit == 'kg' %}selected{% endif %}>kg</option><option {% if unit == 'lb' %}selected{% endif %}>lb</option></select></label>
+    <label class="field"><span>Blood pressure, top number</span><input type="number" name="systolic" step="1" min="0"></label>
+    <label class="field"><span>Blood pressure, bottom number</span><input type="number" name="diastolic" step="1" min="0"></label>
+    <label class="field"><span>Pulse (beats per minute)</span><input type="number" name="pulse" step="1" min="0"></label>
+    <label class="field"><span>Context</span><input name="context" maxlength="80" placeholder="e.g. morning, seated, after coffee"></label>
+    <label class="field wide"><span>Notes</span><input name="notes"></label>
+    <div><button class="primary">Save reading</button></div>
+  </form>
+  <p class="note">Fill in any combination. Blood pressure needs both numbers. Entries outside physically possible ranges are rejected as likely typos.</p>
+</section>
+
+<p class="filters" aria-label="Time range">
+  {% for d, text in ranges.items() %}<a href="/vitals?days={{ d }}&events={{ 1 if events_on else 0 }}" {% if d == days %}aria-current="true"{% endif %}>{{ text }}</a>{% endfor %}
+  <a href="/vitals?days={{ days }}&events={{ 0 if events_on else 1 }}">{{ 'Hide' if events_on else 'Show' }} dose and vial events</a>
+</p>
+
+<section>
+  <h2>Weight</h2>
+  <dl class="stats">
+    <div><dt>Latest</dt><dd>{{ w.latest|n1 }} {{ unit }}</dd><dd class="sm">{{ w.latest_at|dt }}</dd></div>
+    <div><dt>7-day average</dt><dd>{{ w.avg7|n1 }}</dd></div>
+    <div><dt>30-day average</dt><dd>{{ w.avg30|n1 }}</dd></div>
+    <div><dt>Change in last 30 days</dt><dd>{{ w.change30|signed }}</dd><dd class="sm">first to last reading</dd></div>
+    <div><dt>30-day range</dt><dd>{{ w.min30|n1 }} to {{ w.max30|n1 }}</dd></div>
+  </dl>
+  <div class="chartbox">{{ weight_chart|safe }}</div>
+</section>
+
+<section>
+  <h2>Blood pressure</h2>
+  <dl class="stats">
+    <div><dt>7-day average</dt><dd>{{ sy.avg7|n0 }}/{{ di.avg7|n0 }}</dd></div>
+    <div><dt>30-day average</dt><dd>{{ sy.avg30|n0 }}/{{ di.avg30|n0 }}</dd></div>
+    <div><dt>30-day range, top number</dt><dd>{{ sy.min30|n0 }} to {{ sy.max30|n0 }}</dd></div>
+    <div><dt>30-day range, bottom number</dt><dd>{{ di.min30|n0 }} to {{ di.max30|n0 }}</dd></div>
+  </dl>
+  <div class="chartbox">{{ bp_chart|safe }}</div>
+</section>
+
+<section>
+  <h2>Pulse</h2>
+  <dl class="stats">
+    <div><dt>Latest</dt><dd>{{ hr.latest|n0 }} bpm</dd><dd class="sm">{{ hr.latest_at|dt }}</dd></div>
+    <div><dt>7-day average</dt><dd>{{ hr.avg7|n0 }}</dd></div>
+    <div><dt>30-day average</dt><dd>{{ hr.avg30|n0 }}</dd></div>
+    <div><dt>30-day range</dt><dd>{{ hr.min30|n0 }} to {{ hr.max30|n0 }}</dd></div>
+  </dl>
+  <div class="chartbox">{{ hr_chart|safe }}</div>
+</section>
+
+{% if events_on %}
+<section>
+  <h2>Events on these charts</h2>
+  <p class="note">Ticks under each chart are logged doses, one lane per compound. Dashed lines with letters are vial, purchase and lab events. Hover or focus a mark for details. Sitting next to a reading on a chart doesn't mean one caused the other.</p>
+  <div class="cols">
+    <div>
+      <h3>Logged doses in range</h3>
+      {% if dose_counts %}<table><tbody>{% for name, n in dose_counts.items() %}<tr><td>{{ name }}</td><td class="n">{{ n }}</td></tr>{% endfor %}</tbody></table>
+      {% else %}<p class="empty">None.</p>{% endif %}
+    </div>
+    <div>
+      <h3>Vial, purchase and lab events</h3>
+      {% if markers %}<table><tbody>{% for e in markers %}<tr><td>{{ e.at|dt }}</td><td><b>{{ e.mark }}</b></td><td>{{ e.label }}</td></tr>{% endfor %}</tbody></table>
+      {% else %}<p class="empty">None.</p>{% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section>
+  <h2>Readings</h2>
+  <p class="note">Averages are per reading, not per day, so several readings on one day weigh more than a single one.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>When</th><th class="n">Weight ({{ unit }})</th><th class="n">Blood pressure</th><th class="n">Pulse</th><th>Context</th><th>Notes</th><th></th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.measured_at|dt }}</td>
+      <td class="n">{{ weight_unit_display(r.weight_kg)|n1 }}</td>
+      <td class="n">{% if r.systolic %}{{ r.systolic }}/{{ r.diastolic }}{% else %}—{% endif %}</td>
+      <td class="n">{{ r.pulse_bpm if r.pulse_bpm else '—' }}</td>
+      <td>{{ r.context or '—' }}</td><td>{{ r.notes or '—' }}</td>
+      <td><button class="link danger" hx-delete="/vitals/{{ r.id }}" hx-confirm="Delete this reading?">Delete</button></td>
+    </tr>
+    {% else %}<tr><td colspan="7" class="empty">No readings in this range.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}
