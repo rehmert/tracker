@@ -83,7 +83,7 @@ cp deploy/tracker.service /etc/systemd/system/
 systemctl daemon-reload && systemctl enable --now tracker
 ```
 
-The unit binds to `127.0.0.1:8000`. To reach it from other machines, put a reverse proxy in front (`deploy/Caddyfile.example`) or change `--host`.
+The unit binds to `127.0.0.1:80`. To reach it from other machines, put a reverse proxy in front (`deploy/Caddyfile.example`) or change `--host`.
 
 ### Security notes
 

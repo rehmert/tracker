@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+data/*
+!data/.gitkeep
+.env
+app/static/vendor/
