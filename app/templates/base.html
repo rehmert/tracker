@@ -10,7 +10,7 @@
   <script src="/static/density.js?v=ui-density-20261026"></script>
   <script src="/static/theme.js?v=release6-personalization-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
-  <script src="/static/nav_sort.js?v=v23-alerts-nav" defer></script>
+  <script src="/static/nav_sort.js?v=v23-preferences-nav" defer></script>
   <script src="/static/workspace_toolbar.js?v=v23-clean-nav" defer></script>
   <script src="/static/layout.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/everyday.js?v=release6-personalization-20261026" defer></script>
@@ -26,8 +26,6 @@
                     ('/vitals', 'Vitals'), ('/health-timeline', 'Health timeline'), ('/health-insights', 'Health insights'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
                     ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes'), ('/exports', 'Exports'), ('/reconciliation', 'Reconcile inventory'), ('/consumption', 'Consumption'), ('/data-integrity', 'Data integrity'), ('/quick-entry', 'Quick entry'), ('/backups', 'Backups')] %}
-    <div class="nav-sort-controls"><label for="nav-sort-mode">Menu order</label><select id="nav-sort-mode" aria-label="Navigation order"><option value="default">Default</option><option value="alpha">A–Z</option><option value="custom">Custom</option></select><button type="button" id="nav-edit-toggle" aria-pressed="false" title="Reorder navigation">Reorder</button><button type="button" id="nav-reset" title="Restore default navigation order">Reset</button></div>
-    <p class="nav-sort-help" id="nav-sort-help" hidden>Use ↑ and ↓ to move menu items. Changes save in this browser.</p>
     <ul class="nav-links" id="nav-sortable">
       {% for href, text in links %}
       <li data-nav-key="{{ href }}"><a href="{{ href }}" title="{{ text }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a><span class="nav-move" hidden><button type="button" class="nav-up" aria-label="Move {{ text }} up">↑</button><button type="button" class="nav-down" aria-label="Move {{ text }} down">↓</button></span></li>
@@ -49,6 +47,11 @@
           <div class="theme-picker" role="group" aria-label="Appearance">
             <span class="theme-label">Appearance</span>
             <div class="theme-options"><button type="button" data-theme-choice="light" aria-pressed="true">Light</button><button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button><button type="button" data-theme-choice="system" aria-pressed="false">Auto</button></div>
+          </div>
+          <div class="workspace-nav-order" role="group" aria-label="Navigation ordering">
+            <strong>Navigation order</strong>
+    <div class="nav-sort-controls"><label for="nav-sort-mode">Menu order</label><select id="nav-sort-mode" aria-label="Navigation order"><option value="default">Default</option><option value="alpha">A–Z</option><option value="custom">Custom</option></select><button type="button" id="nav-edit-toggle" aria-pressed="false" title="Reorder navigation">Reorder</button><button type="button" id="nav-reset" title="Restore default navigation order">Reset</button></div>
+    <p class="nav-sort-help" id="nav-sort-help" hidden>Use ↑ and ↓ to move menu items. Changes save in this browser.</p>
           </div>
           <div class="workspace-shortcuts"><strong>Keyboard shortcuts</strong><p><kbd>Ctrl</kbd>+<kbd>K</kbd> Search</p><p><kbd>Alt</kbd>+<kbd>1</kbd> Overview · <kbd>Alt</kbd>+<kbd>2</kbd> Doses · <kbd>Alt</kbd>+<kbd>3</kbd> Vitals</p></div>
           <p class="workspace-settings-note"><a href="/release-info">Release information</a> · Personal records only; no dosing recommendations.</p>

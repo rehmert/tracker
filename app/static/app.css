@@ -557,3 +557,11 @@ th,td { white-space:nowrap; }
 .workspace-settings-note{border-top:1px solid var(--rule);padding-top:.7rem;font-size:.75rem;color:var(--muted)}
 @media(max-width:760px){.workspace-toolbar{margin:.2rem 0 1rem}.workspace-search{min-width:0;flex:1}.workspace-search kbd{display:none}.workspace-settings-panel{right:0}}
 @media(max-width:390px){.workspace-search span{font-size:.82rem}.workspace-settings>button{font-size:.82rem;padding:.45rem .55rem}}
+
+/* Navigation order controls live in the Preferences popover. */
+.workspace-settings-panel .workspace-nav-order{border-top:1px solid var(--rule);padding:.8rem 0 1rem;margin:0}
+.workspace-settings-panel .workspace-nav-order>strong{display:block;font-size:.82rem;color:var(--muted);margin-bottom:.4rem}
+.workspace-settings-panel .nav-sort-controls{padding:0;display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.workspace-settings-panel .nav-sort-controls label{font-size:.78rem}
+.workspace-settings-panel .nav-sort-controls select{flex:1;min-width:6rem;max-width:none}
+.workspace-settings-panel .nav-sort-help{padding:0;margin:.45rem 0 0}
