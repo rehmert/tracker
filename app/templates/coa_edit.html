@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ 'COA #' ~ coa.id if coa else 'New COA' }}{% endblock %}
+{% block content %}
+<p><a href="/coas">← All COAs</a></p><h1>{{ 'COA #' ~ coa.id if coa else 'Add certificate of analysis' }}</h1>
+{% if coa and coa.original_name %}<p><a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener">View existing document: {{ coa.original_name }}</a> · {{ coa.size_bytes }} bytes</p>{% endif %}
+<section><h2>{{ 'Edit certificate' if coa else 'New certificate' }}</h2>
+<form method="post" action="{{ '/coas/' ~ coa.id ~ '/edit' if coa else '/coas/new' }}" enctype="multipart/form-data" class="grid">
+{% if not coa %}<label class="field wide"><span>Initial vial (required)</span><select name="vial_id" required><option value="">Choose a vial</option>{% for v in vials %}<option value="{{ v.id }}">{{ v.compound.name }} · #{{ v.id }} · {{ v.label or 'Unlabeled' }}</option>{% endfor %}</select></label>{% endif %}
+<label class="field wide"><span>{{ 'Replace document (optional)' if coa else 'COA document (optional)' }} · PDF, PNG, JPG, WEBP (15 MB max)</span><input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
+<label class="field"><span>Laboratory</span><input name="lab_name" value="{{ coa.lab_name if coa else '' }}"></label>
+<label class="field"><span>Tested on</span><input type="date" name="tested_on" value="{{ coa.tested_on or '' if coa else '' }}"></label>
+<label class="field"><span>Purity (%)</span><input type="number" min="0" max="100" step="any" name="purity_pct" value="{{ coa.purity_pct if coa and coa.purity_pct is not none else '' }}"></label>
+<label class="field"><span>Endotoxin (%)</span><input type="number" min="0" max="100" step="any" name="endotoxin_pct" value="{{ coa.endotoxin_pct if coa and coa.endotoxin_pct is not none else '' }}"></label>
+<label class="field"><span>Reported content</span><input type="number" min="0" step="any" name="reported_content" value="{{ coa.reported_content_value if coa and coa.reported_content_value is not none else '' }}"></label>
+<label class="field"><span>Content unit</span><select name="reported_unit">{% for unit in CONTENT_UNITS %}<option value="{{ unit }}" {% if coa and coa.reported_content_unit == unit %}selected{% elif not coa and unit == 'mg' %}selected{% endif %}>{{ unit }}</option>{% endfor %}</select></label>
+<label class="field"><span>Job / task ID</span><input name="job_id" value="{{ coa.job_id if coa else '' }}"></label>
+<label class="field"><span>Verification code</span><input name="verify_code" value="{{ coa.verify_code if coa else '' }}"></label>
+<label class="field wide"><span>Notes</span><textarea name="notes" rows="4">{{ coa.notes if coa else '' }}</textarea></label>
+<div><button class="primary">{{ 'Save changes' if coa else 'Create COA' }}</button></div>
+</form></section>
+{% if coa %}
+<section><h2>Verification</h2><p class="note">This is your recorded review status, not independent laboratory authentication.</p>
+<form method="post" action="/coas/{{ coa.id }}/verify" class="grid">
+<label class="field"><span>Status</span><select name="status">{% for status in statuses %}<option value="{{ status }}" {% if coa.verification_status == status %}selected{% endif %}>{{ status|replace('_',' ')|title }}</option>{% endfor %}</select></label>
+<label class="field wide"><span>Review notes</span><textarea name="verification_notes" maxlength="2000" rows="3">{{ coa.verification_notes or '' }}</textarea></label>
+<div><button>Save review</button></div></form>
+{% if coa.verified_at %}<p class="note">Marked verified: {{ coa.verified_at|dt }}</p>{% endif %}</section>
+<section><h2>Related certificates</h2><p class="note">Other COAs matching a linked vial's compound and lot, or the same job/task ID. Compare results without overwriting previous certificates.</p>
+<div class="scroll"><table><thead><tr><th>COA</th><th>Tested</th><th>Laboratory</th><th>Purity</th><th>Reported content</th><th>Status</th></tr></thead><tbody>
+<tr><td><strong>Current #{{ coa.id }}</strong></td><td>{{ coa.tested_on|dt }}</td><td>{{ coa.lab_name }}</td><td>{{ coa.purity_pct|num }}%</td><td>{{ coa.reported_content_value|num }} {{ coa.reported_content_unit or '' }}</td><td>{{ coa.verification_status }}</td></tr>
+{% for other in comparisons %}<tr><td><a href="/coas/{{ other.id }}">#{{ other.id }}</a></td><td>{{ other.tested_on|dt }}</td><td>{{ other.lab_name }}</td><td>{{ other.purity_pct|num }}%</td><td>{{ other.reported_content_value|num }} {{ other.reported_content_unit or '' }}</td><td>{{ other.verification_status }}</td></tr>{% else %}<tr><td colspan="6">No other certificates found for this lot or job ID.</td></tr>{% endfor %}</tbody></table></div></section>
+<section><h2>Change history</h2><p class="note">Previous metadata is retained before each edit or review-status change. Replaced documents are not archived.</p>
+{% for revision in history %}<details><summary>{{ revision.changed_at|dt }} · {{ revision.event }}</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ revision.snapshot_json }}</pre></details>{% else %}<p class="note">No changes recorded yet.</p>{% endfor %}</section>
+{% endif %}
+{% if coa %}<section><h2>Linked vials</h2><p class="note">A certificate can be linked to multiple vials of the same compound. Removing a link does not delete the certificate.</p>
+<div class="scroll"><table><thead><tr><th>Vial</th><th>Compound</th><th>Lot</th><th>Action</th></tr></thead><tbody>{% for v in coa.vials %}<tr><td><a href="/vials/{{ v.id }}">#{{ v.id }} · {{ v.label }}</a></td><td>{{ v.compound.name }}</td><td>{{ v.lot or '—' }}</td><td><form method="post" action="/coas/{{ coa.id }}/unlink/{{ v.id }}" onsubmit="return confirm('Unlink this vial?')"><button class="link">Unlink</button></form></td></tr>{% else %}<tr><td colspan="4">No linked vials.</td></tr>{% endfor %}</tbody></table></div>
+<form method="post" action="/coas/{{ coa.id }}/assign" class="inline"><label class="field"><span>Link additional vial(s)</span><select name="vial_ids" multiple size="7" required>{% for v in vials if not coa.vials or (v.compound_id == coa.vials[0].compound_id and v.content_unit in CONTENT_UNITS) %}<option value="{{ v.id }}" {% if v.coa_id == coa.id %}selected{% endif %}>{{ v.compound.name }} · #{{ v.id }} · {{ v.label }}</option>{% endfor %}</select></label><button>Link selected vials</button></form></section>
+<section><h2>Delete certificate</h2><p class="note">This removes the certificate and its uploaded document, and unlinks all associated vials. It does not delete vials.</p><form method="post" action="/coas/{{ coa.id }}/delete" onsubmit="return confirm('Permanently delete this COA and unlink all associated vials?')"><button class="danger">Delete COA</button></form></section>{% endif %}
+{% endblock %}

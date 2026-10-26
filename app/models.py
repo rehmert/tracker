@@ -96,7 +96,20 @@ class Coa(Base):
     reported_content_unit: Mapped[str | None] = mapped_column(String(8), nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="")
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    verification_status: Mapped[str] = mapped_column(String(20), default="unreviewed", server_default="unreviewed")
+    verification_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     vials: Mapped[list["Vial"]] = relationship("Vial", back_populates="coa")
+
+
+class CoaRevision(Base):
+    """Immutable snapshot of a COA before an edit or status change."""
+    __tablename__ = "coa_revisions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    coa_id: Mapped[int | None] = mapped_column(ForeignKey("coas.id", ondelete="SET NULL"), nullable=True, index=True)
+    event: Mapped[str] = mapped_column(String(40), nullable=False)
+    snapshot_json: Mapped[str] = mapped_column(Text, nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class SupplyCategory(Base):

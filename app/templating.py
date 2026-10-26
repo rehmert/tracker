@@ -85,3 +85,11 @@ def signed(x) -> str:
 
 
 templates.env.filters.update(n1=n1, n0=n0, signed=signed)
+
+
+def signed_decimal(x):
+    if x is None:
+        return "—"
+    return ("+" if x > 0 else "") + U._num(float(x))
+
+templates.env.filters["signed_decimal"] = signed_decimal

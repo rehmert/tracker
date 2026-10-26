@@ -37,6 +37,9 @@ def migrate(engine):
                 "endotoxin_pct": "FLOAT",
                 "job_id": "VARCHAR(120) NOT NULL DEFAULT ''",
                 "verify_code": "VARCHAR(120) NOT NULL DEFAULT ''",
+                "verification_status": "VARCHAR(20) NOT NULL DEFAULT 'unreviewed'",
+                "verification_notes": "TEXT NOT NULL DEFAULT ''",
+                "verified_at": "DATETIME",
             }.items():
                 if name not in cols:
                     conn.exec_driver_sql(f"ALTER TABLE coas ADD COLUMN {name} {sql}")

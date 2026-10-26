@@ -1,34 +1,12 @@
 {% extends "base.html" %}
-{% block title %}COAs{% endblock %}
-{% block content %}<h1>COA bulk assignment</h1>
-<form method="get" class="inline">
-    <label class="field"><span>Compound</span>
-        <select name="compound_id" onchange="this.form.submit()">
-            <option value="">All</option>
-            {% for c in compounds %}
-            <option value="{{ c.id }}" {% if compound_id == c.id %}selected{% endif %}>
-                {{ c.name }}
-            </option>
-            {% endfor %}
-        </select>
-    </label>
-</form>
-{% for c in coas %}
-<section><h2>COA #{{ c.id }} · {{ c.vials[0].compound.name if c.vials else "Unassigned" }}</h2>
-    <p>{{ c.lab_name }} · {{ c.tested_on or '' }} · purity {{ c.purity_pct if c.purity_pct is not none else '—' }}% · job {{ c.job_id }} · verify {{ c.verify_code }}</p>
-    <form method="post" action="/coas/{{ c.id }}/assign">
-        <p>Select vials (Ctrl/Shift for multiple):</p>
-        <select name="vial_ids" multiple size="20" style="min-width:22rem">
-            {% for v in vials if not c.vials or v.compound_id == c.vials[0].compound_id %}
-            <option value="{{ v.id }}" {% if v.coa_id == c.id %}selected{% endif %}>
-                #{{ v.id }} · {{ v.label }} · {{ v.lot }} · {{ v.kit_ref }}
-            </option>
-            {% endfor %}
-        </select>
-        <p><button class="primary">Assign COA to selected vials</button></p>
-    </form>
-</section>
-{% else %}
-<p>No COAs yet. Create one from a vial detail page.</p>
-{% endfor %}
+{% block title %}Certificates of analysis{% endblock %}
+{% block content %}
+<h1>Certificates of analysis</h1>
+<p class="note">Manage certificates, test results, documents, and vial assignments in one place.</p>
+<p><a class="primary button" href="/coas/new">+ Add COA</a></p>
+<form method="get" class="inline"><label class="field"><span>Compound</span><select name="compound_id" onchange="this.form.submit()"><option value="">All compounds</option>{% for compound in compounds %}<option value="{{ compound.id }}" {% if compound_id == compound.id %}selected{% endif %}>{{ compound.name }}</option>{% endfor %}</select></label><button>Filter</button></form>
+<section><div class="scroll"><table><thead><tr><th>COA</th><th>Compound / linked vials</th><th>Lab</th><th>Test date</th><th>Purity</th><th>Review</th><th>Document</th><th>Actions</th></tr></thead><tbody>
+{% for c in coas %}<tr><td><a href="/coas/{{ c.id }}">#{{ c.id }}</a></td><td>{% if c.vials %}{{ c.vials[0].compound.name }} · {{ c.vials|length }} vial(s){% else %}Unassigned{% endif %}</td><td>{{ c.lab_name or '—' }}</td><td>{{ c.tested_on|dt }}</td><td>{{ (c.purity_pct|num ~ '%') if c.purity_pct is not none else '—' }}</td><td>{{ c.verification_status|replace("_", " ")|title }}</td><td>{% if c.original_name %}<a href="/coas/{{ c.id }}/file" target="_blank" rel="noopener">View file</a>{% else %}Metadata only{% endif %}</td><td><a href="/coas/{{ c.id }}">View / edit</a></td></tr>
+{% else %}<tr><td colspan="8">No certificates yet. Select Add COA to create one.</td></tr>{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

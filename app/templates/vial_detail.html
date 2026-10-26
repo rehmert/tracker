@@ -30,7 +30,7 @@
         <td>{{ c.lab_name or '—' }}</td><td>{{ c.tested_on|dt }}</td>
         <td class="n">{{ (c.purity_pct|num ~ '%') if c.purity_pct is not none else '—' }}</td>
         <td class="n">{% if c.reported_content_value %}{{ c.reported_content_value|num }} {{ c.reported_content_unit }}{% else %}—{% endif %}</td>
-        <td>{% if v.coa_id == c.id %}<form method="post" action="/coas/{{ c.id }}/delete" onsubmit="return confirm('Delete this COA file?')"><button class="link danger">Delete</button></form>{% endif %}</td>
+        <td><a href="/coas/{{ c.id }}">View / edit</a> {% if v.coa_id == c.id %}<form method="post" action="/coas/{{ c.id }}/delete" onsubmit="return confirm('Delete this COA for all linked vials?')"><button class="link danger">Delete</button></form>{% endif %}</td>
       </tr>{% endfor %}</tbody>
   </table></div>
   {% else %}<p class="empty">No COA uploaded for this vial.</p>{% endif %}

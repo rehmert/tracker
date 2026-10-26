@@ -42,7 +42,7 @@ def labs_index(request: Request, db: Session = Depends(get_db)):
         res, rep = max(items, key=lambda it: (it[1].drawn_on, it[0].id))
         sr = labs.build_series(res.analyte, _points(items))
         svg = charts.line_chart(
-            [charts.Series(res.analyte, sr.points, fmt="{:.4g}")], width=420, plot_h=90,
+            [charts.Series(res.analyte, sr.points, fmt="{:.8f}")], width=420, plot_h=90,
             unit=f" {sr.unit}", band=sr.band, band_label="Range printed on the latest report")
         cards.append({"key": key, "name": res.analyte, "res": res, "rep": rep, "n": len(items),
                       "svg": svg, "skipped": sr.skipped, "unit": sr.unit,
@@ -169,7 +169,7 @@ def analyte_page(request: Request, name: str, days: int = 3650, events: int = 1,
     start = now - timedelta(days=days) if days < 3650 else first - timedelta(days=2)
     pts = [(t, v) for t, v in sr.points if t >= start]
     ev = services.events_between(db, start, now) if events else []
-    svg = charts.line_chart([charts.Series(latest.analyte, pts, fmt="{:.4g}")], unit=f" {sr.unit}",
+    svg = charts.line_chart([charts.Series(latest.analyte, pts, fmt="{:.8f}")], unit=f" {sr.unit}",
                             x_range=(start, now), events=ev, band=sr.band,
                             band_label="Range printed on the latest report")
     rows = []

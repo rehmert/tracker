@@ -9,7 +9,7 @@
 <button type="submit">Compare</button>
 </form>
 {% if left and right %}<div class="scroll"><table><thead><tr><th>Analyte</th><th>Report A</th><th>Report B</th><th>Change A − B</th></tr></thead><tbody>
-{% for r in rows %}<tr><td>{{ r.name }}</td><td>{% if r.newer %}{{ r.newer.value|num }} {{ r.newer.unit }}{% else %}—{% endif %}</td><td>{% if r.older %}{{ r.older.value|num }} {{ r.older.unit }}{% else %}—{% endif %}</td><td>{% if r.comparable %}{{ '%+.4g'|format(r.delta) }} {{ r.newer.unit }}{% else %}—{% endif %}</td></tr>{% endfor %}
+{% for r in rows %}<tr><td>{{ r.name }}</td><td>{% if r.newer %}{{ r.newer.value|num }} {{ r.newer.unit }}{% else %}—{% endif %}</td><td>{% if r.older %}{{ r.older.value|num }} {{ r.older.unit }}{% else %}—{% endif %}</td><td>{% if r.comparable %}{{ r.delta|signed_decimal }} {{ r.newer.unit }}{% else %}—{% endif %}</td></tr>{% endfor %}
 </tbody></table></div>{% else %}<p>At least two lab reports are needed.</p>{% endif %}
 <p><a href="/labs">← Lab results</a></p>
 {% endblock %}
