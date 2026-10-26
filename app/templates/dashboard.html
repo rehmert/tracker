@@ -11,6 +11,55 @@
   <div><dt>Vials with no COA</dt><dd>{{ no_coa }}</dd></div>
 </dl>
 
+<section>
+  <h2>Current Protocols</h2>
+
+  {% if protocol_summaries %}
+    {% for protocol in protocol_summaries %}
+
+    <h3><a href="/protocols">{{ protocol.name }}</a></h3>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Compound</th><th>Dosage</th><th>Frequency</th><th class="n">Inventory Remaining</th><th class="n">Doses Remaining</th></tr>
+        </thead>
+
+        <tbody>
+          {% for item in protocol.compounds %}
+          <tr>
+            <td>{{ item.compound }}</td>
+            <td>{{ item.amount|n1 }} {{ item.unit }}</td>
+            <td>{{ item.frequency }}</td>
+            <td class="n">
+              {% if item.remaining is not none %}
+                {{ item.remaining|round(2) }} {{ item.unit }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="n">
+              {% if item.doses_remaining is not none %}
+                {{ item.doses_remaining|round(2) }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% endfor %}
+  {% else %}
+    <p class="empty">
+      No protocols configured.
+      <a href="/protocols">Create a protocol</a>.
+    </p>
+  {% endif %}
+</section>
+
 {% if vitals.weight is not none or vitals.bp or vitals.pulse is not none %}
 <section>
   <h2>Latest vitals</h2>
