@@ -4,21 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css?v=stage1-20261026">
-  <script src="/static/theme.js?v=stage1-20261026"></script>
+  <link rel="stylesheet" href="/static/app.css?v=stage2-20261026">
+  <script src="/static/theme.js?v=stage2-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/layout.js?v=stage2-20261026" defer></script>
 </head>
 <body>
-<div class="shell">
-  <nav class="rail" aria-label="Main">
+<div class="shell" id="app-shell">
+  <button class="sidebar-backdrop" type="button" data-close-sidebar aria-label="Close navigation" tabindex="-1"></button>
+  <nav class="rail" id="app-sidebar" aria-label="Main navigation">
+    <div class="rail-top"><span class="rail-kicker">YOUR WORKSPACE</span><button type="button" class="sidebar-collapse" id="sidebar-collapse" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="app-sidebar" title="Collapse sidebar">‹</button></div>
     <a class="brand" href="/">Tracker</a>
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/doses', 'Dose log'),
                     ('/vitals', 'Vitals'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
                     ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes')] %}
-    <ul>
+    <ul class="nav-links">
       {% for href, text in links %}
-      <li><a href="{{ href }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}>{{ text }}</a></li>
+      <li><a href="{{ href }}" title="{{ text }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a></li>
       {% endfor %}
     </ul>
     <div class="rail-footer">
@@ -33,7 +36,8 @@
     <p class="rail-note">Personal records only. This app does arithmetic on numbers you enter and never suggests doses.</p>
     </div>
   </nav>
-  <main>
+  <main id="main-content">
+    <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker</span><a href="/" aria-label="Overview">Overview</a></div>
     {% if msg %}<p class="flash ok" role="status">{{ msg }}</p>{% endif %}
     {% if err %}<p class="flash error" role="alert">{{ err }}</p>{% endif %}
     {% block content %}{% endblock %}

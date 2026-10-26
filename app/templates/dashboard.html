@@ -2,16 +2,16 @@
 {% from "_macros.html" import gauge %}
 {% block title %}Overview{% endblock %}
 {% block content %}
-<h1>Overview</h1>
+<header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div><div class="hero-actions"><a class="dashboard-action" href="/doses">+ Record dose</a><a class="dashboard-action secondary" href="/vitals">+ Add vitals</a></div></header>
 
-<dl class="stats">
+<dl class="stats dashboard-metrics">
   <div><dt>Stock value on hand</dt><dd>{{ inventory_value|money }}</dd></div>
   <div><dt>Total spent (landed)</dt><dd>{{ total_spend|money }}</dd></div>
   <div><dt>Vials in stock</dt><dd>{{ active|length }}</dd></div>
   <div><dt>Vials with no COA</dt><dd>{{ no_coa }}</dd></div>
 </dl>
 
-<section aria-labelledby="today-heading">
+<section class="dashboard-panel" aria-labelledby="today-heading">
   <h2 id="today-heading">Today <span class="sub">{{ now_date }}</span></h2>
   <p class="note">Scheduled entries are projections from active protocols. A matching recorded administration is identified by compound and date, not by dose amount. Nothing here changes inventory or dose logs.</p>
   <div class="today-cards">
@@ -58,14 +58,17 @@
   <p><a href="/calendar">Open calendar</a> · <a href="/doses">Record an administration</a></p>
 </section>
 
-<section>
-  <h2>Current Protocols</h2>
+<section class="dashboard-panel" id="current-protocols">
+  <div class="panel-heading"><h2>Current Protocols</h2><a href="/protocols">Manage protocols →</a></div>
   <p class="note">Only active protocols contribute to inventory forecasts. Saved what-if plans do not.</p>
 
   {% if protocol_summaries %}
+    <label class="dashboard-search"><span>Find protocol or compound</span><input type="search" placeholder="Search protocols…" data-filter-target="protocol-cards" aria-label="Filter protocols"></label>
+    <div id="protocol-cards" class="protocol-card-list">
     {% for protocol in protocol_summaries %}
 
-    <h3><a href="/protocols/{{ protocol.id }}">{{ protocol.name }}</a> <span class="tag">{{ "Active" if protocol.is_active else "What-if" }}</span></h3>
+    <article class="protocol-card" data-search="{{ protocol.name }} {% for item in protocol.compounds %} {{ item.compound }} {% endfor %}">
+    <h3><a href="/protocols/{{ protocol.id }}">{{ protocol.name }}</a> <span class="tag {{ 'tag-active' if protocol.is_active else 'tag-muted' }}">{{ "Active" if protocol.is_active else "What-if" }}</span></h3>
 
     <div class="scroll">
       <table>
@@ -98,8 +101,9 @@
         </tbody>
       </table>
     </div>
-
+    </article>
     {% endfor %}
+    </div>
   {% else %}
     <p class="empty">
       No protocols configured.
@@ -108,7 +112,7 @@
   {% endif %}
 </section>
 
-<section>
+<section class="dashboard-panel">
   <h2 id="inventory-forecast">Inventory forecast</h2>
   <p class="note">Based on combined weekly usage in active protocols; excludes expired and discarded vials. Assumes unchanged schedules and no future purchases or losses. Low stock means under 21 days of supply.</p>
   {% if forecasts %}
@@ -117,7 +121,7 @@
   </tbody></table></div>
   {% else %}<p class="empty">Mark a saved protocol as active to enable supply forecasting.</p>{% endif %}
 </section>
-<section>
+<section class="dashboard-panel">
   <h2>Vitals trends</h2>
   <p class="note">7-day and 30-day averages use individual recorded measurements. Change is last minus first reading within 30 days.</p>
   <div class="scroll"><table><thead><tr><th>Metric</th><th>7-day avg.</th><th>30-day avg.</th><th>30-day change</th></tr></thead><tbody>
@@ -161,14 +165,15 @@
 </section>
 {% endif %}
 
-<section>
-  <h2>In stock</h2>
+<section class="dashboard-panel" id="inventory-list">
+  <div class="panel-heading"><h2>In stock</h2><a href="/vials">View vials →</a></div>
   {% if active %}
+  <label class="dashboard-search"><span>Find inventory</span><input type="search" placeholder="Search compounds or vials…" data-filter-target="inventory-rows" aria-label="Filter inventory"></label>
   <div class="scroll"><table>
     <thead><tr><th>Compound</th><th>Vial</th><th>Remaining</th><th class="n">Amount left</th><th class="n">Value left</th><th>Cost</th></tr></thead>
-    <tbody>
+    <tbody id="inventory-rows">
     {% for v, d in active %}
-    <tr>
+    <tr data-search="{{ v.compound.name }} {{ v.label or v.id }}">
       <td><a href="/vials/{{ v.id }}">{{ v.compound.name }}</a></td>
       <td>{{ v.label or ('#' ~ v.id) }}{% if v.status == 'sealed' %} <span class="tag">sealed</span>{% endif %}</td>
       <td>{{ gauge(d.pct_remaining, v.status) }}</td>
