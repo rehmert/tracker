@@ -100,6 +100,14 @@
       span.textContent='● '+line.name+'  ';span.style.color=colors[j];$('compareLegend').append(span);});
   }
   $('compareBtn').onclick=()=>compare().catch(error);
+  $('exportCompareCsv').onclick=()=>{
+    if(!cid()){error(new Error('Select a compound first.'));return;}
+    const selected=[...$('compareScenarios').selectedOptions].map(o=>o.value);
+    if(selected.length>4){error(new Error('Select at most four scenarios.'));return;}
+    const q=new URLSearchParams({compound_id:cid(),scenario_ids:selected.join(','),
+      days_back:$('back').value,days_forward:$('forward').value});
+    window.location.assign('/pk/compare.csv?'+q);
+  };
   $('refresh').onclick=()=>refresh().catch(error);
   $('save').onclick=async()=>{try{const r=await request('/pk/scenarios','POST',params());current={id:r.id};await load();}catch(e){error(e);}};
   $('update').onclick=async()=>{if(!current)return;try{await request('/pk/scenarios/'+current.id,'PUT',params());await load();}catch(e){error(e);}};

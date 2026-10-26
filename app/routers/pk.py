@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta
+import csv
+import io
+from fastapi.responses import Response
 from math import isfinite
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -170,3 +173,27 @@ def compare_scenarios(compound_id: int, scenario_ids: str = '', days_back: int =
     return {'at':[r['at'] for r in base], 'series':results,
             'units':'modeled mg-equivalent exposure',
             'disclaimer':'Hypothetical modeled exposure, not measured blood levels or a dosing recommendation.'}
+
+
+@router.get('/compare.csv')
+def export_scenario_comparison_csv(compound_id: int, scenario_ids: str = '',
+                                   days_back: int = 30, days_forward: int = 60,
+                                   db: Session = Depends(get_db)):
+    """Export the exact PK comparison timeline as a spreadsheet-friendly CSV.
+
+    Uses the same validation and model as /pk/compare; does not persist data.
+    """
+    comparison = compare_scenarios(compound_id, scenario_ids, days_back, days_forward, db)
+    output = io.StringIO(newline='')
+    writer = csv.writer(output)
+
+    def safe_cell(value: str) -> str:
+        # Prevent spreadsheet formula evaluation from user-controlled scenario names.
+        return "'" + value if value.lstrip().startswith(('=', '+', '-', '@', '\t', '\r')) else value
+
+    writer.writerow(['Timestamp'] + [safe_cell(s['name']) for s in comparison['series']])
+    for i, at in enumerate(comparison['at']):
+        writer.writerow([at] + [s['values'][i] for s in comparison['series']])
+    return Response(content=output.getvalue(), media_type='text/csv; charset=utf-8',
+                    headers={'Content-Disposition': 'attachment; filename="tracker-pk-comparison.csv"',
+                             'Cache-Control': 'no-store'})
