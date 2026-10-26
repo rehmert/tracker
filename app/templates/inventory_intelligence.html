@@ -10,6 +10,17 @@
   <div class="inventory-kpi"><small>Recorded administration cost</small><strong>{{ totals.used_cents|money }}</strong></div>
   <div class="inventory-kpi"><small>Recorded waste cost</small><strong>{{ totals.wasted_cents|money }}</strong></div>
 </div>
+<section class="inventory-card">
+  <div class="inventory-heading"><div><h2>Inventory depletion outlook</h2><p class="muted">Descriptive estimate based on recorded use, not a suggested protocol or purchase quantity. No history means no depletion estimate.</p></div>
+  <form method="get" action="/inventory-intelligence"><label>Usage history <select name="days" onchange="this.form.submit()"><option value="30" {% if forecast_days == 30 %}selected{% endif %}>30 days</option><option value="90" {% if forecast_days == 90 %}selected{% endif %}>90 days</option><option value="180" {% if forecast_days == 180 %}selected{% endif %}>180 days</option></select></label><noscript><button type="submit">Apply</button></noscript></form></div>
+  <h3>Compounds</h3><div class="scroll"><table><thead><tr><th>Compound</th><th class="n">Usable remaining</th><th class="n">Recorded use</th><th class="n">Estimated days left</th><th>Projected depletion</th></tr></thead><tbody>
+  {% for f in forecasts %}<tr><td>{{ f.name }}</td><td class="n">{{ '%.4g'|format(f.remaining) }} {{ f.unit }}</td><td class="n">{{ '%.4g'|format(f.used) }} {{ f.unit }}</td><td class="n">{% if f.days_left is not none %}{{ '%.1f'|format(f.days_left) }}{% else %}—{% endif %}</td><td>{% if f.warning %}<span class="inventory-status inventory-warning">Within 21 days</span> {% endif %}{{ f.depletion or 'Insufficient history' }}</td></tr>
+  {% else %}<tr><td colspan="5">No usable active vial inventory.</td></tr>{% endfor %}</tbody></table></div>
+  <h3>Consumables</h3><div class="scroll"><table><thead><tr><th>Supply</th><th class="n">Remaining</th><th class="n">Recorded use</th><th class="n">Estimated days left</th><th>Projected depletion</th></tr></thead><tbody>
+  {% for f in supply_forecasts %}<tr><td>{{ f.name }} (#{{ f.id }})</td><td class="n">{{ '%.4g'|format(f.remaining) }}</td><td class="n">{{ '%.4g'|format(f.used) }}</td><td class="n">{% if f.days_left is not none %}{{ '%.1f'|format(f.days_left) }}{% else %}—{% endif %}</td><td>{% if f.warning %}<span class="inventory-status inventory-warning">Within 21 days</span> {% endif %}{{ f.depletion or 'Insufficient history' }}</td></tr>
+  {% else %}<tr><td colspan="5">No consumables recorded.</td></tr>{% endfor %}</tbody></table></div>
+  <p class="muted">Forecasts use historical dose logs or recorded supply usage across the selected calendar window. Expired and past-beyond-use vials are excluded. Future usage, planned protocols, waste and changes in consumption can make actual depletion differ. Supply quantities use each item's recorded unit.</p>
+</section>
 <section class="inventory-card"><div class="inventory-heading"><div><h2>Vial-level insights</h2><p class="muted">Select a row to inspect usage and cost details. Costs are estimates allocated from landed purchase costs.</p></div><input type="search" id="inventory-filter" placeholder="Filter compound, lot, status…" aria-label="Filter inventory"></div>
 <div class="scroll"><table class="inventory-table"><thead><tr><th>Details</th><th>Compound</th><th>Vial</th><th>Status</th><th>Expires</th><th class="n">Remaining</th><th class="n">Landed cost</th></tr></thead><tbody>
 {% for r in rows %}{% set v=r.vial %}{% set d=r.view %}

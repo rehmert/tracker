@@ -1,13 +1,14 @@
 """Read-only inventory intelligence, derived from existing vial and dose records."""
 from collections import defaultdict
 from datetime import date, timedelta
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..db import get_db
 from ..models import Vial, DoseLog
 from ..services import vial_views
 from ..templating import render
+from ..forecasting import forecast_inventory
 
 router = APIRouter()
 
@@ -52,6 +53,8 @@ def inventory_summary(db: Session, today: date | None = None):
 
 
 @router.get("/inventory-intelligence")
-def inventory_intelligence(request: Request, db: Session = Depends(get_db)):
+def inventory_intelligence(request: Request, days: int = Query(90, ge=30, le=180), db: Session = Depends(get_db)):
     rows, totals = inventory_summary(db)
-    return render(request, "inventory_intelligence.html", rows=rows, totals=totals)
+    window = days if days in (30, 90, 180) else 90
+    forecasts, supply_forecasts = forecast_inventory(db, window_days=window)
+    return render(request, "inventory_intelligence.html", rows=rows, totals=totals, forecasts=forecasts, supply_forecasts=supply_forecasts, forecast_days=window)
