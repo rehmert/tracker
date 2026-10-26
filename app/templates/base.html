@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css?v=release6-personalization-20261026">
+  <link rel="stylesheet" href="/static/app.css?v=ui-density-20261026">
+  <script src="/static/density.js?v=ui-density-20261026"></script>
   <script src="/static/theme.js?v=release6-personalization-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
   <script src="/static/layout.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/everyday.js?v=release6-personalization-20261026" defer></script>
-  <script src="/static/personalize.js?v=release6-personalization-20261026" defer></script>
+  <script src="/static/personalize.js?v=dashboard-order-fix-20261026" defer></script>
 </head>
 <body>
 <div class="shell" id="app-shell">
@@ -29,6 +30,14 @@
     </ul>
     <div class="rail-footer">
       <div class="shortcut-tip" title="Keyboard shortcuts">Shortcuts: <kbd>Alt</kbd>+<kbd>1</kbd> Overview · <kbd>Alt</kbd>+<kbd>2</kbd> Doses · <kbd>Alt</kbd>+<kbd>3</kbd> Vitals</div>
+      <div class="density-picker" role="group" aria-label="Display density">
+        <span class="density-label">Display density</span>
+        <div class="density-options">
+          <button type="button" data-density-choice="comfortable" aria-pressed="false">Comfortable</button>
+          <button type="button" data-density-choice="balanced" aria-pressed="true">Balanced</button>
+          <button type="button" data-density-choice="compact" aria-pressed="false">Compact</button>
+        </div>
+      </div>
       <div class="theme-picker" role="group" aria-label="Appearance">
         <span class="theme-label">Appearance</span>
         <div class="theme-options">
