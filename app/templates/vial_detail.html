@@ -80,7 +80,7 @@
     <div><button class="primary">Record filtering supplies</button></div>
   </form></details>
   {% if prep_events %}<details><summary>Preparation history ({{ prep_events|length }})</summary>
-  <ul>{% for e in prep_events %}<li>{{ e.occurred_at|dt }} · {{ e.kind }}{% if e.notes %} · {{ e.notes }}{% endif %}</li>{% endfor %}</ul>
+  <ul>{% for e in prep_events %}<li>{{ e.occurred_at|dt }} · {{ e.kind }}{% if e.notes %} · {{ e.notes }}{% endif %} · <a href='/vials/{{ v.id }}/preparations/{{ e.id }}/edit'>Edit supplies</a>{% if e.kind != 'reconstitution' %}<form method='post' action='/vials/{{ v.id }}/preparations/{{ e.id }}/delete' style='display:inline' onsubmit="return confirm('Delete preparation and restore supplies?')"><button class='link danger'>Delete</button></form>{% endif %}</li>{% endfor %}</ul>
   </details>{% endif %}
   <form method="post" action="/vials/{{ v.id }}" class="grid">
     <label class="field"><span>Label</span><input name="label" value="{{ v.label }}"></label>

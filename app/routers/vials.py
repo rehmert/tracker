@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime
+import json
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from .. import services, units as U
 from ..db import get_db
-from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply
+from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply, ChangeAudit
 from .. import manual_supplies
 from ..templating import render
 
@@ -57,7 +58,7 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_db)):
                   bac_supplies=list(db.scalars(select(Supply).where(Supply.kind == "bac_water", Supply.remaining_qty > 0))),
                   all_coas=list(db.scalars(select(Coa).order_by(Coa.id.desc()))),
                   disposable_supplies=manual_supplies.available(db),
-                  prep_events=list(db.scalars(select(PreparationEvent).where(PreparationEvent.vial_id == vid).order_by(PreparationEvent.id.desc()))))
+                  prep_events=list(db.scalars(select(PreparationEvent).where(PreparationEvent.vial_id == vid).order_by(PreparationEvent.id.desc()))), prep_usage={e.id: [(db.get(SupplyUsage, link.usage_id), db.get(Supply, db.get(SupplyUsage, link.usage_id).supply_id)) for link in db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == e.id))] for e in db.scalars(select(PreparationEvent).where(PreparationEvent.vial_id == vid))})
 
 
 @router.post("/vials/{vid}")
@@ -158,3 +159,70 @@ async def record_filtering(vid: int, request: Request, notes: str = Form(""), db
         db.add(PreparationSupply(event_id=event.id, usage_id=usage.id))
     db.commit()
     return services.flash_redirect(f"/vials/{vid}", msg="Filtering supplies recorded.")
+
+
+@router.get("/vials/{vid}/preparations/{eid}/edit")
+def edit_preparation_page(vid: int, eid: int, request: Request, db: Session = Depends(get_db)):
+    event = db.get(PreparationEvent, eid)
+    if not event or event.vial_id != vid: raise HTTPException(404)
+    links = list(db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == eid)))
+    used = {db.get(SupplyUsage, link.usage_id).supply_id:db.get(SupplyUsage, link.usage_id).amount for link in links}
+    return render(request, "preparation_edit.html", event=event, vial=_get(db,vid), supplies=list(db.scalars(select(Supply).order_by(Supply.name))), used=used)
+
+
+@router.post("/vials/{vid}/preparations/{eid}/edit")
+async def edit_preparation(vid: int, eid: int, request: Request, notes: str = Form(""), occurred_at: str = Form(""), db: Session = Depends(get_db)):
+    event = db.get(PreparationEvent, eid)
+    if not event or event.vial_id != vid: raise HTTPException(404)
+    back = f"/vials/{vid}/preparations/{eid}/edit"
+    try:
+        selected = await manual_supplies.selections(request, db, credits={db.get(SupplyUsage,l.usage_id).supply_id:db.get(SupplyUsage,l.usage_id).amount for l in db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == eid))})
+        links = list(db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == eid)))
+        previous = [db.get(SupplyUsage, link.usage_id) for link in links]
+        original = {}
+        for u in previous: original[u.supply_id] = original.get(u.supply_id,0)+u.amount
+        for item, qty in selected:
+            if qty > item.remaining_qty + original.get(item.id,0) + 1e-9:
+                raise ValueError(f"Insufficient {item.name} stock.")
+        when = datetime.fromisoformat(occurred_at) if occurred_at else event.occurred_at
+        before = {"notes":event.notes,"occurred_at":event.occurred_at.isoformat(),"supplies":original}
+        for link, u in zip(links,previous):
+            item = db.get(Supply,u.supply_id)
+            if item: item.remaining_qty += u.amount
+            db.delete(link)
+            db.delete(u)
+        db.flush()
+        for item, qty in selected:
+            item.remaining_qty -= qty
+            u = SupplyUsage(supply_id=item.id, vial_id=vid, amount=qty)
+            db.add(u); db.flush()
+            db.add(PreparationSupply(event_id=eid, usage_id=u.id))
+        event.notes, event.occurred_at = notes.strip(), when
+        db.add(ChangeAudit(entity_type="preparation",entity_id=eid,action="edit",before_json=json.dumps(before),after_json=json.dumps({"notes":event.notes,"occurred_at":when.isoformat(),"supplies":{str(i.id):q for i,q in selected}})))
+        db.commit()
+    except (ValueError,TypeError) as exc:
+        db.rollback()
+        return services.flash_redirect(back,err=str(exc))
+    return services.flash_redirect(f"/vials/{vid}",msg="Preparation corrected.")
+
+
+@router.post("/vials/{vid}/preparations/{eid}/delete")
+def delete_preparation(vid: int, eid: int, db: Session = Depends(get_db)):
+    event = db.get(PreparationEvent,eid)
+    if not event or event.vial_id != vid: raise HTTPException(404)
+    # Reconstitution records affect vial volume and are not safe to erase after doses.
+    if event.kind == "reconstitution":
+        return services.flash_redirect(f"/vials/{vid}",err="Reconstitution records cannot be deleted here; correct the vial's recorded volume instead.")
+    links = list(db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == eid)))
+    old = {}
+    for link in links:
+        u = db.get(SupplyUsage,link.usage_id)
+        if u:
+            item = db.get(Supply,u.supply_id)
+            if item: item.remaining_qty += u.amount
+            old[str(u.supply_id)] = old.get(str(u.supply_id),0)+u.amount
+            db.delete(u)
+        db.delete(link)
+    db.add(ChangeAudit(entity_type="preparation",entity_id=eid,action="delete",before_json=json.dumps({"kind":event.kind,"supplies":old,"notes":event.notes})))
+    db.delete(event); db.commit()
+    return services.flash_redirect(f"/vials/{vid}",msg="Preparation removed; supplies restored.")

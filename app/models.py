@@ -317,3 +317,33 @@ class LabResult(Base):
     ref_high: Mapped[float | None] = mapped_column(Float, nullable=True)
     note: Mapped[str] = mapped_column(String(300), default="")
     report: Mapped[LabReport] = relationship(back_populates="results")
+
+
+class InventoryAdjustment(Base):
+    __tablename__ = "inventory_adjustments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    supply_id: Mapped[int] = mapped_column(ForeignKey("supplies.id"), nullable=False)
+    previous_qty: Mapped[float] = mapped_column(Float, nullable=False)
+    counted_qty: Mapped[float] = mapped_column(Float, nullable=False)
+    reason: Mapped[str] = mapped_column(String(240), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class ChangeAudit(Base):
+    __tablename__ = "change_audit"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    entity_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    entity_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    action: Mapped[str] = mapped_column(String(40), nullable=False)
+    before_json: Mapped[str] = mapped_column(Text, default="{}")
+    after_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class ProtocolRevision(Base):
+    __tablename__ = "protocol_revisions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    protocol_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    snapshot_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

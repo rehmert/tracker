@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ p.name }}{% endblock %}
-{% block content %}
+{% block content %}<p><a href="/protocols/{{ p.id }}/history">View version history</a></p>
 <h1>{{ p.name }}</h1>
 <section><p><strong>Status:</strong> {{ "Active — included in dashboard forecasts" if p.is_active else "What-if — excluded from dashboard forecasts" }}</p>
 <form method="post" action="/protocols/{{ p.id }}/active"><button type="submit">{{ "Mark as what-if" if p.is_active else "Mark as active" }}</button></form>

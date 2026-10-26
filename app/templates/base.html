@@ -22,7 +22,7 @@
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/inventory-intelligence', 'Inventory insights'), ('/doses', 'Dose log'),
                     ('/vitals', 'Vitals'), ('/health-timeline', 'Health timeline'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
-                    ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes'), ('/exports', 'Exports'), ('/backups', 'Backups')] %}
+                    ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes'), ('/exports', 'Exports'), ('/reconciliation', 'Reconcile inventory'), ('/consumption', 'Consumption'), ('/data-integrity', 'Data integrity'), ('/quick-entry', 'Quick entry'), ('/backups', 'Backups')] %}
     <ul class="nav-links">
       {% for href, text in links %}
       <li><a href="{{ href }}" title="{{ text }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a></li>
@@ -46,6 +46,7 @@
           <button type="button" data-theme-choice="system" aria-pressed="false">Auto</button>
         </div>
       </div>
+    <p class="rail-note">Tracker v2.0 · <a href="/release-info">Release information</a></p>
     <p class="rail-note">Personal records only. This app does arithmetic on numbers you enter and never suggests doses.</p>
     </div>
   </nav>

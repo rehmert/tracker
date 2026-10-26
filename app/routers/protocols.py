@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import json
 from html import escape
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from .. import calc, services
 from ..db import get_db
-from ..models import Compound, Protocol, ProtocolItem
+from ..models import Compound, Protocol, ProtocolItem, ProtocolRevision
 from ..templating import render
 
 router = APIRouter()
@@ -127,10 +128,13 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     p.notes = notes.strip()
     p.horizon_weeks = _horizon(horizon_weeks)
     p.items.clear()
+    db.flush()
     for pos, i in enumerate(parsed):
         p.items.append(ProtocolItem(compound_id=i.compound_id, position=pos,
                                     amount_value=i.amount_value, amount_unit=i.amount_unit,
                                     freq_count=i.freq_count, freq_period=i.freq_period))
+    db.flush()
+    _revision(db, p)
     db.commit()
     return HTMLResponse(f"Saved {datetime.now():%H:%M:%S}")
 
@@ -151,6 +155,7 @@ def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = For
     if start and end and end < start:
         raise HTTPException(400, "End date must be on or after start date")
     p.start_date, p.end_date = start, end
+    _revision(db, p)
     db.commit()
     return services.flash_redirect(f"/protocols/{pid}", msg="Protocol dates saved.")
 
@@ -161,6 +166,7 @@ def toggle_active(pid: int, db: Session = Depends(get_db)):
     if p is None:
         raise HTTPException(404, "Protocol not found")
     p.is_active = not p.is_active
+    _revision(db, p)
     db.commit()
     return services.flash_redirect(f"/protocols/{pid}", msg="Protocol status updated.")
 
@@ -187,3 +193,25 @@ def protocol_delete(pid: int, db: Session = Depends(get_db)):
         db.delete(p)
         db.commit()
     return services.flash_redirect("/protocols", msg="Protocol deleted.")
+
+
+def _revision(db: Session, p: Protocol):
+    """Append an immutable snapshot of the saved plan; never overwrite prior versions."""
+    from sqlalchemy import func
+    last = db.scalar(select(func.max(ProtocolRevision.revision)).where(ProtocolRevision.protocol_id == p.id)) or 0
+    snapshot = {"name":p.name,"notes":p.notes,"is_active":p.is_active,
+                "horizon_weeks":p.horizon_weeks,
+                "start_date":p.start_date.isoformat() if p.start_date else None,
+                "end_date":p.end_date.isoformat() if p.end_date else None,
+                "items":[{"compound_id":i.compound_id,"amount_value":i.amount_value,
+                          "amount_unit":i.amount_unit,"freq_count":i.freq_count,
+                          "freq_period":i.freq_period,"position":i.position} for i in p.items]}
+    db.add(ProtocolRevision(protocol_id=p.id,revision=last+1,snapshot_json=json.dumps(snapshot)))
+
+
+@router.get('/protocols/{pid}/history')
+def history(pid:int,request:Request,db:Session=Depends(get_db)):
+    p=db.get(Protocol,pid)
+    if not p: raise HTTPException(404)
+    versions=list(db.scalars(select(ProtocolRevision).where(ProtocolRevision.protocol_id==pid).order_by(ProtocolRevision.revision.desc())))
+    return render(request,'protocol_history.html',p=p,versions=[(v,json.loads(v.snapshot_json)) for v in versions])

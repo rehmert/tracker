@@ -518,3 +518,9 @@ th,td { white-space:nowrap; }
   .sidebar-collapsed .density-options { flex-direction:row; }
   main { padding-top:var(--density-main-top); }
 }
+
+/* Phase 2: phone-friendly quick actions */
+.quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;margin:16px 0}
+.quick-tile{display:flex;align-items:center;justify-content:center;min-height:96px;padding:16px;border:1px solid var(--border,#ddd);border-radius:16px;background:var(--card,#fff);font-weight:650;text-align:center;text-decoration:none}
+.quick-tile:hover{transform:translateY(-1px);box-shadow:0 4px 14px #0001}
+@media(max-width:600px){.quick-actions{grid-template-columns:1fr 1fr}.quick-tile{min-height:88px}}

@@ -9,7 +9,8 @@ def available(db):
     return list(db.scalars(select(Supply).where(Supply.remaining_qty > 0).order_by(Supply.name, Supply.id)))
 
 
-async def selections(request: Request, db):
+async def selections(request: Request, db, credits=None):
+    credits = credits or {}
     form = await request.form()
     chosen = Counter()
     for raw in form.getlist("supply_id_used"):
@@ -24,7 +25,7 @@ async def selections(request: Request, db):
     result = []
     for sid, qty in chosen.items():
         item = db.get(Supply, sid)
-        if item is None or qty > item.remaining_qty + 1e-9:
+        if item is None or qty > item.remaining_qty + credits.get(sid, 0) + 1e-9:
             raise ValueError("Selected supplies exceed available stock.")
         cat = db.query(SupplyCategory).filter_by(key=item.kind).first()
         if cat and cat.unit == "count" and not qty.is_integer():

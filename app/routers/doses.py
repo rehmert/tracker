@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from html import escape
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from .. import services, units as U
 from ..db import get_db
-from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply
+from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit
 from .. import manual_supplies
 from ..templating import render
 
@@ -127,24 +128,43 @@ def delete_dose(did: int, db: Session = Depends(get_db)):
 def edit_page(did: int, request: Request, db: Session = Depends(get_db)):
     d = db.get(DoseLog, did)
     if not d: raise HTTPException(404)
-    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES)
+    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=list(db.scalars(select(Supply).order_by(Supply.name))), used={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))})
 
 @router.post("/doses/{did}/edit")
-def edit_entry(did: int, taken_at: str = Form(""), amount: float = Form(...),
+async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amount: float = Form(...),
                unit: str = Form(...), kind: str = Form("dose"), site: str = Form(""),
                notes: str = Form(""), db: Session = Depends(get_db)):
     d = db.get(DoseLog, did)
     if not d: raise HTTPException(404)
     back = f"/doses/{did}/edit"
     try:
+        selected = await manual_supplies.selections(request, db, credits={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))})
+        old_usage = list(db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did)))
+        old = {str(u.supply_id): u.amount for u in old_usage}
+        new = {str(item.id): qty for item, qty in selected}
         vd = services.vial_views(db, [d.vial])[d.vial_id]
         base = U.amount_to_vial_base(amount, unit, vd.dim, vd.conc_per_ml)
         if base <= 0 or base > vd.remaining_base + d.amount_base + 1e-7:
             raise ValueError("Amount exceeds available vial contents.")
         if site and site not in INJECTION_SITES: raise ValueError("Unknown injection site.")
+        # Validate against stock restored from this event before mutating anything.
+        original = {u.supply_id: u.amount for u in old_usage}
+        for item, qty in selected:
+            if qty > item.remaining_qty + original.get(item.id, 0) + 1e-9:
+                raise ValueError(f"Insufficient {item.name} inventory for this correction.")
+        before = {"amount_base":d.amount_base, "taken_at":d.taken_at.isoformat(), "supplies":old}
+        for u in old_usage:
+            item = db.get(Supply, u.supply_id)
+            if item: item.remaining_qty += u.amount
+            db.delete(u)
+        for item, qty in selected:
+            item.remaining_qty -= qty
+            db.add(SupplyUsage(supply_id=item.id, dose_id=did, amount=qty))
         d.amount_base, d.entered_value, d.entered_unit = base, amount, U.parse_unit(unit).name
         d.taken_at, d.kind, d.site, d.notes = services.parse_datetime(taken_at), ("waste" if kind == "waste" else "dose"), site, notes.strip()
+        db.add(ChangeAudit(entity_type="dose", entity_id=did, action="edit", before_json=json.dumps(before), after_json=json.dumps({"amount_base":base,"taken_at":d.taken_at.isoformat(),"supplies":new})))
         db.commit()
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:
+        db.rollback()
         return services.flash_redirect(back, err=str(exc))
     return services.flash_redirect("/doses", msg="Dose entry updated.")
