@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css?v=release2-premium-20261026">
-  <script src="/static/theme.js?v=release2-premium-20261026"></script>
+  <link rel="stylesheet" href="/static/app.css?v=release3-everyday-20261026">
+  <script src="/static/theme.js?v=release3-everyday-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
-  <script src="/static/layout.js?v=release2-premium-20261026" defer></script>
+  <script src="/static/layout.js?v=release3-everyday-20261026" defer></script>
+  <script src="/static/everyday.js?v=release3-everyday-20261026" defer></script>
 </head>
 <body>
 <div class="shell" id="app-shell">
@@ -15,6 +16,7 @@
   <nav class="rail" id="app-sidebar" aria-label="Main navigation">
     <div class="rail-top"><span class="rail-kicker">YOUR WORKSPACE</span><button type="button" class="sidebar-collapse" id="sidebar-collapse" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="app-sidebar" title="Collapse sidebar">‹</button></div>
     <a class="brand" href="/">Tracker</a>
+    <button type="button" class="command-trigger" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search (Ctrl+K)">⌕ <span class="nav-text">Search <kbd>Ctrl K</kbd></span></button>
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/doses', 'Dose log'),
                     ('/vitals', 'Vitals'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
@@ -43,5 +45,14 @@
     {% block content %}{% endblock %}
   </main>
 </div>
+<div class="command-overlay" id="command-overlay" hidden>
+  <div class="command-panel" role="dialog" aria-modal="true" aria-label="Search Tracker" aria-describedby="command-help">
+    <div class="command-header"><span aria-hidden="true">⌕</span><input id="command-input" type="search" placeholder="Search compounds, vials, protocols, purchases, labs…" autocomplete="off" aria-label="Search Tracker"><button type="button" id="command-close" aria-label="Close search">Esc</button></div>
+    <p class="command-hint" id="command-help">Type at least 2 characters. ↑ ↓ to navigate, Enter to open.</p>
+    <div id="command-results" role="listbox" aria-label="Search results"></div>
+    <div class="command-shortcuts"><a href="/doses">+ Record dose</a><a href="/vitals">+ Record vitals</a><a href="/purchases">+ Add purchase</a></div>
+  </div>
+</div>
+<div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
 </body>
 </html>
