@@ -116,7 +116,7 @@ def _num(x: float, digits: int = 4) -> str:
         return "0"
     mag = math.floor(math.log10(abs(x)))
     decimals = max(0, digits - 1 - mag)
-    s = f"{x:.{decimals}f}"
+    s = f"{x:,.{decimals}f}"
     if "." in s:
         s = s.rstrip("0").rstrip(".")
     return s
@@ -130,8 +130,12 @@ def fmt_amount(base: float | None, dim: str | None, digits: int = 4) -> str:
         a = abs(base)
         if a >= 1_000_000:
             return f"{_num(base / 1_000_000, digits)} g"
-        if a >= 1_000:
-            return f"{_num(base / 1_000, digits)} mg"
+        if a > 100_000:
+            # Preserve sub-mg precision at the threshold (100,001 mcg = 100.001 mg).
+            from decimal import Decimal
+            mg = Decimal(str(base)) / Decimal(1000)
+            value = format(mg, ",f")
+            return f"{value.rstrip('0').rstrip('.') if '.' in value else value} mg"
         return f"{_num(base, digits)} mcg"
     if dim == "iu":
         return f"{_num(base, digits)} IU"

@@ -73,15 +73,15 @@ templates.env.filters["unit_cost"] = unit_cost
 
 
 def n1(x) -> str:
-    return "—" if x is None else f"{x:.1f}"
+    return "—" if x is None else f"{x:,.1f}"
 
 
 def n0(x) -> str:
-    return "—" if x is None else f"{x:.0f}"
+    return "—" if x is None else f"{x:,.0f}"
 
 
 def signed(x) -> str:
-    return "—" if x is None else f"{x:+.1f}"
+    return "—" if x is None else f"{x:+,.1f}"
 
 
 templates.env.filters.update(n1=n1, n0=n0, signed=signed)
@@ -93,3 +93,12 @@ def signed_decimal(x):
     return ("+" if x > 0 else "") + U._num(float(x))
 
 templates.env.filters["signed_decimal"] = signed_decimal
+
+
+def num_input(x, digits=4) -> str:
+    """Unformatted numeric text for HTML number inputs (commas are invalid)."""
+    if x is None:
+        return ""
+    return U._num(float(x), digits).replace(",", "")
+
+templates.env.filters["num_input"] = num_input

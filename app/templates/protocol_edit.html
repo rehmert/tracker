@@ -17,7 +17,7 @@
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
   <div class="grid">
     <label class="field"><span>Name</span><input name="name" value="{{ p.name }}"></label>
-    <label class="field"><span>Look-ahead (weeks)</span><input type="number" name="horizon_weeks" step="any" min="0.1" max="520" value="{{ p.horizon_weeks|num }}"></label>
+    <label class="field"><span>Look-ahead (weeks)</span><input type="number" name="horizon_weeks" step="any" min="0.1" max="520" value="{{ p.horizon_weeks|num_input }}"></label>
     <label class="field wide"><span>Notes</span><input name="notes" value="{{ p.notes }}"></label>
   </div>
 

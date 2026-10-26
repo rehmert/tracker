@@ -48,7 +48,7 @@ def test_mass_dose_against_iu_vial_refused():
 
 def test_formatting():
     assert U.fmt_amount(2_500_000, "mass") == "2.5 g"
-    assert U.fmt_amount(2500, "mass") == "2.5 mg"
+    assert U.fmt_amount(2500, "mass") == "2,500 mcg"
     assert U.fmt_amount(250, "mass") == "250 mcg"
     assert U.fmt_amount(10, "iu") == "10 IU"
     assert U.fmt_conc(200_000, "mass") == "200 mg/mL"

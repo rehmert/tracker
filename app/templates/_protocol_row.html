@@ -2,10 +2,10 @@
   <td><select name="compound_id" aria-label="Compound">
     {% for c in compounds %}<option value="{{ c.id }}" {% if item.compound_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
   </select></td>
-  <td><input type="number" name="amount" step="any" min="0" value="{{ item.amount_value|num if item.amount_value != '' else '' }}" aria-label="Amount per entry" required></td>
+  <td><input type="number" name="amount" step="any" min="0" value="{{ item.amount_value|num_input if item.amount_value != '' else '' }}" aria-label="Amount per entry" required></td>
   <td><select name="unit" aria-label="Unit">{% for u in DOSE_UNITS %}<option {% if u == item.amount_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></td>
   <td class="freq"><div class="freq-controls">
-    <input type="number" name="freq_count" step="any" min="0" value="{{ item.freq_count|num }}" aria-label="Frequency number" required>
+    <input type="number" name="freq_count" step="any" min="0" value="{{ item.freq_count|num_input }}" aria-label="Frequency number" required>
     <select name="freq_period" aria-label="Frequency period">
       {% for key, text in PERIOD_LABELS.items() %}<option value="{{ key }}" {% if key == item.freq_period %}selected{% endif %}>{{ text }}</option>{% endfor %}
     </select>
