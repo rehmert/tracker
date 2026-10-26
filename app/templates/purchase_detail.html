@@ -69,9 +69,9 @@
     <tbody>
     {% for s in supplies %}
     <tr><td>{{ s.name }}</td><td>{{ category_map[s.kind].label if s.kind in category_map else s.kind }}</td>
-      <td>{{ s.purchased_qty|num }}</td><td>{{ s.remaining_qty|num }}</td>
-      <td class="n">{{ s.unit_price_cents|money }}</td>
-      <td class="n">{{ (s.unit_price_cents * s.purchased_qty)|money }}</td>
+      <td>{{ s.purchased_qty|num }}{% if s.bulk_pack_count %}<small> ({{ s.bulk_pack_count }} × {{ s.bulk_units_per_pack|num }})</small>{% endif %}</td><td>{{ s.remaining_qty|num }}</td>
+      <td class="n">{{ (s.bulk_total_cents / s.purchased_qty)|money if s.bulk_total_cents is not none else s.unit_price_cents|money }}</td>
+      <td class="n">{{ supply_line_cents(s)|money }}</td>
       <td class="n">{{ supply_landed[-s.id]|money }}</td>
       <td><details class="purchase-edit"><summary>Edit</summary>
         <form method="post" action="/purchases/{{ p.id }}/supplies/{{ s.id }}/edit" class="grid">
@@ -83,7 +83,10 @@
             {% for c in compounds %}<option value="{{ c.id }}" {% if c.id == s.compound_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
           </select></label>
           <label class="field"><span>Purchased quantity</span><input type="number" name="quantity" min="0.0001" step="any" value="{{ s.purchased_qty }}" required></label>
-          <label class="field"><span>Unit price</span><input type="number" name="unit_price" min="0" step="0.01" value="{{ '%.2f'|format(s.unit_price_cents / 100) }}"></label>
+          <label class="field"><span>Unit price (individual items only)</span><input type="number" name="unit_price" min="0" step="0.01" value="{{ '%.2f'|format(s.unit_price_cents / 100) }}"></label>
+          <label class="field"><span>Bulk pack count (optional)</span><input type="number" name="pack_count" min="1" step="1" value="{{ s.bulk_pack_count or '' }}"></label>
+          <label class="field"><span>Units per pack</span><input type="number" name="units_per_pack" min="0.0001" step="any" value="{{ s.bulk_units_per_pack or '' }}"></label>
+          <label class="field"><span>Total bulk purchase price</span><input type="number" name="package_price" min="0" step="0.01" value="{{ '%.2f'|format(s.bulk_total_cents / 100) if s.bulk_total_cents is not none else '' }}"></label>
           <label class="field"><span>Notes</span><input name="notes" value="{{ s.notes }}"></label>
           <div><button class="primary" type="submit">Save item</button></div>
         </form>
@@ -101,8 +104,12 @@
     <label class="field"><span>Type</span><select name="kind">{% for c in categories %}<option value="{{ c.key }}">{{ c.label }} ({{ c.unit }})</option>{% endfor %}</select></label>
     <label class="field"><span>Product name</span><input name="name" required></label>
     <label class="field"><span>Compound (optional)</span><select name="compound_id"><option value="">None</option>{% for c in compounds %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
-    <label class="field"><span>Purchased quantity (mL or count)</span><input name="quantity" type="number" min="0.0001" step="any" required></label>
-    <label class="field"><span>Price per unit ({{ currency }})</span><input name="unit_price" type="number" min="0" step="0.01" value="0"></label>
+    <label class="field"><span>Purchased quantity (mL or count)</span><input name="quantity" type="number" min="0.0001" step="any" value="1" required></label>
+    <label class="field"><span>Price per unit (individual items only, {{ currency }})</span><input name="unit_price" type="number" min="0" step="0.01" value="0"></label>
+    <label class="field"><span>Bulk pack count (optional)</span><input name="pack_count" type="number" min="1" step="1" placeholder="e.g. 2"></label>
+    <label class="field"><span>Units per pack</span><input name="units_per_pack" type="number" min="0.0001" step="any" placeholder="e.g. 100"></label>
+    <label class="field"><span>Total bulk price ({{ currency }})</span><input name="package_price" type="number" min="0" step="0.01" placeholder="e.g. 18.99"></label>
+    <p class="note">For bulk purchases, fill in all three bulk fields. Inventory is tracked as individual units; the entered total price is retained exactly. The purchased quantity field is ignored for bulk entries.</p>
     <label class="field wide"><span>Notes</span><input name="notes"></label>
     <div><button class="primary">Add supplies / pills</button></div>
   </form>

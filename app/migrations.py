@@ -35,6 +35,16 @@ def migrate(engine):
                 if name not in cols:
                     conn.exec_driver_sql(f"ALTER TABLE coas ADD COLUMN {name} {sql}")
 
+        if "supplies" in tables:
+            scols = {c["name"] for c in inspect(conn).get_columns("supplies")}
+            for name, sql in {
+                "bulk_pack_count": "INTEGER",
+                "bulk_units_per_pack": "FLOAT",
+                "bulk_total_cents": "INTEGER",
+            }.items():
+                if name not in scols:
+                    conn.exec_driver_sql(f"ALTER TABLE supplies ADD COLUMN {name} {sql}")
+
         if "vials" not in tables or "coas" not in tables:
             return
 

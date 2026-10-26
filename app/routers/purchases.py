@@ -49,13 +49,13 @@ def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
         raise HTTPException(404, "Purchase not found")
     views = services.vial_views(db, list(p.vials))
     subtotal = sum(v.unit_price_cents for v in p.vials) + sum(
-        round(s.unit_price_cents * s.purchased_qty) for s in p.supplies)
+        services.supply_line_cents(s) for s in p.supplies)
     compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
     supplies = list(db.scalars(select(Supply).where(Supply.purchase_id == pid)))
     landed = services.purchase_landed(p)
     categories = ensure_categories(db)
     return render(request, "purchase_detail.html", categories=categories, category_map={c.key: c for c in categories}, p=p, views=views, supplies=supplies, subtotal=subtotal,
-                  total=sum(landed.values()), supply_landed=landed, compounds=compounds)
+                  total=sum(landed.values()), supply_landed=landed, compounds=compounds, supply_line_cents=services.supply_line_cents)
 
 
 @router.post("/purchases/{pid}")
@@ -158,17 +158,43 @@ def delete_purchase(pid: int, db: Session = Depends(get_db)):
     return services.flash_redirect("/purchases", msg="Purchase deleted.")
 
 
+def parse_bulk(db, kind, quantity, pack_count, units_per_pack, package_price):
+    """Optional bulk pack purchase. Quantity remains in consumable units."""
+    values = [str(v).strip() if isinstance(v, (str, int, float)) else ""
+              for v in (pack_count, units_per_pack, package_price)]
+    if not any(values):
+        validate_supply(db, kind, quantity)
+        return quantity, None, None, None
+    if not all(values):
+        raise ValueError("For bulk purchases, enter packs, units per pack, and total package price.")
+    try:
+        count = int(values[0])
+        per_pack = float(values[1])
+        price = services.to_cents(values[2])
+    except (ValueError, OverflowError) as exc:
+        raise ValueError("Invalid bulk package details.") from exc
+    if count < 1 or count > 100000 or not math.isfinite(per_pack) or per_pack <= 0 or price < 0:
+        raise ValueError("Bulk pack quantities and prices must be valid positive values.")
+    total = count * per_pack
+    if not math.isfinite(total) or total > 1000000:
+        raise ValueError("Bulk purchase exceeds maximum supported inventory quantity.")
+    validate_supply(db, kind, total)
+    return total, count, per_pack, price
+
+
 @router.post("/purchases/{pid}/supplies")
 def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
                         quantity: float = Form(...), unit_price: str = Form("0"),
                         compound_id: str = Form(""), notes: str = Form(""),
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), pack_count: str = Form(""),
+                        units_per_pack: str = Form(""), package_price: str = Form("")):
     back = f"/purchases/{pid}"
     if db.get(Purchase, pid) is None:
         raise HTTPException(404, "Purchase not found")
     ensure_categories(db)
     try:
-        validate_supply(db, kind, quantity)
+        quantity, bulk_count, bulk_size, bulk_cents = parse_bulk(
+            db, kind, quantity, pack_count, units_per_pack, package_price)
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
     if not name.strip():
@@ -182,7 +208,8 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
         return services.flash_redirect(back, err=str(exc))
     db.add(Supply(purchase_id=pid, name=name.strip(), kind=kind, compound_id=cid,
                   purchased_qty=quantity, remaining_qty=quantity,
-                  unit_price_cents=price, notes=notes.strip()))
+                  unit_price_cents=price, bulk_pack_count=bulk_count,
+                  bulk_units_per_pack=bulk_size, bulk_total_cents=bulk_cents, notes=notes.strip()))
     db.commit()
     return services.flash_redirect(back, msg="Supply or pills added to purchase.")
 
@@ -191,7 +218,9 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
 def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
                          kind: str = Form(...), quantity: float = Form(...),
                          unit_price: str = Form("0"), compound_id: str = Form(""),
-                         notes: str = Form(""), db: Session = Depends(get_db)):
+                         notes: str = Form(""), db: Session = Depends(get_db),
+                         pack_count: str = Form(""), units_per_pack: str = Form(""),
+                         package_price: str = Form("")):
     """Edit a purchased supply/pill without resetting its usage history."""
     back = f"/purchases/{pid}"
     s = db.get(Supply, sid)
@@ -199,7 +228,8 @@ def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
         raise HTTPException(404, "Purchase item not found")
     try:
         ensure_categories(db)
-        validate_supply(db, kind, quantity)
+        quantity, bulk_count, bulk_size, bulk_cents = parse_bulk(
+            db, kind, quantity, pack_count, units_per_pack, package_price)
         if not name.strip():
             raise ValueError("Choose a valid type and product name.")
         if not math.isfinite(quantity) or not 0 < quantity <= 1000000:
@@ -227,6 +257,9 @@ def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
         s.purchased_qty = quantity
         s.remaining_qty = max(0.0, new_remaining)
         s.unit_price_cents = price
+        s.bulk_pack_count = bulk_count
+        s.bulk_units_per_pack = bulk_size
+        s.bulk_total_cents = bulk_cents
         s.notes = notes.strip()
     except (ValueError, TypeError) as exc:
         db.rollback()

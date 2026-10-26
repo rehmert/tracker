@@ -61,6 +61,11 @@ def effective_content(vial: Vial) -> tuple[float, str]:
     return U.to_base(value, unit)
 
 
+def supply_line_cents(s):
+    """Exact bulk line price, otherwise legacy unit price × quantity."""
+    return s.bulk_total_cents if s.bulk_total_cents is not None else round(s.unit_price_cents * s.purchased_qty)
+
+
 def purchase_landed(p):
     """Allocate order costs across vials and supply/pill line items together.
 
@@ -68,7 +73,7 @@ def purchase_landed(p):
     Supply prices are per unit and are multiplied by purchased quantity.
     """
     prices = {v.id: v.unit_price_cents for v in p.vials}
-    prices.update({-s.id: round(s.unit_price_cents * s.purchased_qty)
+    prices.update({-s.id: supply_line_cents(s)
                    for s in p.supplies})
     return calc.allocate_landed(prices, p.shipping_cents, p.tax_cents, p.discount_cents)
 

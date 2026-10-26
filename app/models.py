@@ -112,6 +112,9 @@ class Supply(Base):
     purchased_qty: Mapped[float] = mapped_column(Float)
     remaining_qty: Mapped[float] = mapped_column(Float)
     unit_price_cents: Mapped[int] = mapped_column(Integer, default=0)
+    bulk_pack_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    bulk_units_per_pack: Mapped[float | None] = mapped_column(Float, nullable=True)
+    bulk_total_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="")
 
 
