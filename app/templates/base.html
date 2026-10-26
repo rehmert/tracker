@@ -6,11 +6,12 @@
   <meta name="theme-color" content="#f5f7fa">
   <link rel="manifest" href="/static/manifest.webmanifest">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css?v=ui-density-20261026">
+  <link rel="stylesheet" href="/static/app.css?v=v23-clean-nav-20261026">
   <script src="/static/density.js?v=ui-density-20261026"></script>
   <script src="/static/theme.js?v=release6-personalization-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
   <script src="/static/nav_sort.js?v=v23-alerts-nav" defer></script>
+  <script src="/static/workspace_toolbar.js?v=v23-clean-nav" defer></script>
   <script src="/static/layout.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/everyday.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/personalize.js?v=dashboard-order-fix-20261026" defer></script>
@@ -21,7 +22,6 @@
   <nav class="rail" id="app-sidebar" aria-label="Main navigation">
     <div class="rail-top"><span class="rail-kicker">YOUR WORKSPACE</span><button type="button" class="sidebar-collapse" id="sidebar-collapse" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="app-sidebar" title="Collapse sidebar">‹</button></div>
     <a class="brand" href="/">Tracker</a>
-    <button type="button" class="command-trigger" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search (Ctrl+K)">⌕ <span class="nav-text">Search <kbd>Ctrl K</kbd></span></button>
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/inventory-intelligence', 'Inventory insights'), ('/inventory-alerts', 'Inventory alerts'), ('/doses', 'Dose log'),
                     ('/vitals', 'Vitals'), ('/health-timeline', 'Health timeline'), ('/health-insights', 'Health insights'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
@@ -33,30 +33,28 @@
       <li data-nav-key="{{ href }}"><a href="{{ href }}" title="{{ text }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a><span class="nav-move" hidden><button type="button" class="nav-up" aria-label="Move {{ text }} up">↑</button><button type="button" class="nav-down" aria-label="Move {{ text }} down">↓</button></span></li>
       {% endfor %}
     </ul>
-    <div class="rail-footer">
-      <div class="shortcut-tip" title="Keyboard shortcuts">Shortcuts: <kbd>Alt</kbd>+<kbd>1</kbd> Overview · <kbd>Alt</kbd>+<kbd>2</kbd> Doses · <kbd>Alt</kbd>+<kbd>3</kbd> Vitals</div>
-      <div class="density-picker" role="group" aria-label="Display density">
-        <span class="density-label">Display density</span>
-        <div class="density-options">
-          <button type="button" data-density-choice="comfortable" aria-pressed="false">Comfortable</button>
-          <button type="button" data-density-choice="balanced" aria-pressed="true">Balanced</button>
-          <button type="button" data-density-choice="compact" aria-pressed="false">Compact</button>
-        </div>
-      </div>
-      <div class="theme-picker" role="group" aria-label="Appearance">
-        <span class="theme-label">Appearance</span>
-        <div class="theme-options">
-          <button type="button" data-theme-choice="light" aria-pressed="true">Light</button>
-          <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
-          <button type="button" data-theme-choice="system" aria-pressed="false">Auto</button>
-        </div>
-      </div>
-    <p class="rail-note">Tracker v2.1 · <a href="/release-info">Release information</a></p>
-    <p class="rail-note">Personal records only. This app does arithmetic on numbers you enter and never suggests doses.</p>
-    </div>
   </nav>
   <main id="main-content">
     <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker</span><a href="/" aria-label="Overview">Overview</a></div>
+    <div class="workspace-toolbar" aria-label="Workspace tools">
+      <button type="button" class="workspace-search" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search Tracker (Ctrl+K)">⌕ <span>Search Tracker</span> <kbd>Ctrl K</kbd></button>
+      <div class="workspace-settings" id="workspace-settings">
+        <button type="button" id="workspace-settings-toggle" aria-expanded="false" aria-controls="workspace-settings-panel" aria-haspopup="true">⚙ Preferences</button>
+        <section id="workspace-settings-panel" class="workspace-settings-panel" aria-label="Workspace preferences" hidden>
+          <div class="workspace-settings-head"><strong>Workspace preferences</strong><button type="button" id="workspace-settings-close" aria-label="Close preferences">✕</button></div>
+          <div class="density-picker" role="group" aria-label="Display density">
+            <span class="density-label">Display density</span>
+            <div class="density-options"><button type="button" data-density-choice="comfortable" aria-pressed="false">Comfortable</button><button type="button" data-density-choice="balanced" aria-pressed="true">Balanced</button><button type="button" data-density-choice="compact" aria-pressed="false">Compact</button></div>
+          </div>
+          <div class="theme-picker" role="group" aria-label="Appearance">
+            <span class="theme-label">Appearance</span>
+            <div class="theme-options"><button type="button" data-theme-choice="light" aria-pressed="true">Light</button><button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button><button type="button" data-theme-choice="system" aria-pressed="false">Auto</button></div>
+          </div>
+          <div class="workspace-shortcuts"><strong>Keyboard shortcuts</strong><p><kbd>Ctrl</kbd>+<kbd>K</kbd> Search</p><p><kbd>Alt</kbd>+<kbd>1</kbd> Overview · <kbd>Alt</kbd>+<kbd>2</kbd> Doses · <kbd>Alt</kbd>+<kbd>3</kbd> Vitals</p></div>
+          <p class="workspace-settings-note"><a href="/release-info">Release information</a> · Personal records only; no dosing recommendations.</p>
+        </section>
+      </div>
+    </div>
     {% if msg %}<p class="flash ok" role="status">{{ msg }}</p>{% endif %}
     {% if err %}<p class="flash error" role="alert">{{ err }}</p>{% endif %}
     {% block content %}{% endblock %}
