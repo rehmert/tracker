@@ -162,3 +162,21 @@ Current limitations: pill consumption is tracked as supply usage, not as an entr
 the injectable dose log; COA bulk selection supports individual vial IDs rather than
 one-click kit selection; and reconstitution editing does not automatically reverse
 previous BAC-water deductions. The vial calculator requires mass in mg, not IU.
+
+## PK Simulator (exploratory)
+
+The `/pk` page plots modeled mg-equivalent exposure from **actual dose logs** for supported
+GLP-1 drugs and testosterone esters. It also supports saved, independently editable
+hypothetical future dosing scenarios. Scenario entries do **not** change dose logs,
+inventory, or protocols. Supported names: tirzepatide, semaglutide, retatrutide,
+testosterone cypionate, and testosterone enanthate (case-insensitive exact match).
+
+The model is one-compartment first-order absorption and elimination. Half-lives are
+editable *illustrative defaults*, not patient-specific measurements. It does not
+estimate serum ng/dL, measured plasma mg/L, hormone response, or clinical effect.
+Testosterone ester release is more complex than this approximation; retatrutide is
+investigational. Only logged administrations of mass-based vials are modeled.
+
+Existing databases gain `pk_scenarios` and `pk_planned_doses` via SQLAlchemy
+`create_all` at startup. No destructive migrations are required. Back up your
+SQLite database and `data/` directory before deployment.

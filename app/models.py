@@ -158,6 +158,29 @@ class ProtocolItem(Base):
     compound: Mapped[Compound] = relationship()
 
 
+class PkScenario(Base):
+    """Hypothetical schedule; never alters dose logs or inventory."""
+    __tablename__ = "pk_scenarios"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    compound_id: Mapped[int] = mapped_column(ForeignKey("compounds.id"))
+    name: Mapped[str] = mapped_column(String(160))
+    half_life_hours: Mapped[float] = mapped_column(Float)
+    absorption_half_life_hours: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    compound: Mapped[Compound] = relationship()
+    doses: Mapped[list["PkPlannedDose"]] = relationship(
+        back_populates="scenario", cascade="all, delete-orphan")
+
+
+class PkPlannedDose(Base):
+    __tablename__ = "pk_planned_doses"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    scenario_id: Mapped[int] = mapped_column(ForeignKey("pk_scenarios.id", ondelete="CASCADE"))
+    planned_at: Mapped[datetime] = mapped_column(DateTime)
+    amount_mg: Mapped[float] = mapped_column(Float)
+    scenario: Mapped[PkScenario] = relationship(back_populates="doses")
+
+
 class VitalReading(Base):
     """One sitting: any mix of weight (stored in kg), blood pressure and pulse."""
     __tablename__ = "vital_readings"

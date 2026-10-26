@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}PK Simulator{% endblock %}
+{% block content %}
+<h1>PK Simulator</h1>
+<p>Exploratory modeled exposure only — not measured blood concentration, effectiveness, or a dosing recommendation. Testosterone depot and GLP-1 absorption parameters are approximations. Future plans never change your dose log or inventory.</p>
+<div class="card">
+  <label>Compound <select id="compound"><option value="">Select compound</option>{% for c in compounds %}<option value="{{ c.id }}" data-half="{{ profile(c.name)[0] }}" data-abs="{{ profile(c.name)[1] }}">{{ c.name }}</option>{% endfor %}</select></label>
+  <label>Add testosterone profile <select id="newPkCompound"><option value="Testosterone Cypionate">Testosterone Cypionate</option><option value="Testosterone Enanthate">Testosterone Enanthate</option><option value="Testosterone">Testosterone (generic)</option></select></label>
+  <button id="addPkCompound" type="button">Add compound to Tracker</button>
+  <label>Elimination half-life (hours) <input id="half" type="number" min="0.1" step="0.1"></label>
+  <label>Absorption half-life (hours) <input id="abs" type="number" min="0.1" step="0.1"></label>
+  <label>Days before today <input id="back" type="number" min="1" max="365" value="60"></label>
+  <label>Days after today <input id="forward" type="number" min="1" max="365" value="45"></label>
+  <button id="refresh" type="button">Update chart</button>
+</div>
+<div class="card"><h2>Modeled exposure</h2><canvas id="plot" width="1000" height="380" style="width:100%;max-width:1000px;background:#fff;border:1px solid #ccc" role="img" aria-label="Exposure graph"></canvas><p id="summary"></p><p>Blue: historical doses and decay without future dosing. Orange: historical doses plus planned doses. Dashed vertical line: now.</p></div>
+<div class="card">
+<h2>Saved scenarios</h2>
+<label>Scenario <select id="scenario"><option value="">Unsaved / no future doses</option></select></label>
+<label>Name <input id="scenarioName" value="My scenario" maxlength="160"></label>
+<button id="save" type="button">Save new scenario</button>
+<button id="update" type="button">Update name and half-lives</button>
+<button id="remove" type="button">Delete scenario</button>
+<h3>Future planned doses</h3>
+<p>Choose a saved scenario to add, edit or remove future hypothetical doses.</p>
+<label>Date/time <input id="plannedAt" type="datetime-local"></label>
+<label>Dose (mg) <input id="amount" type="number" min="0.001" step="any"></label>
+<button id="add" type="button">Add planned dose</button>
+<table><thead><tr><th>Date/time</th><th>mg</th><th>Actions</th></tr></thead><tbody id="plannedRows"></tbody></table>
+</div>
+<p id="pkError" role="alert" style="color:#a22"></p>
+<script src="/static/pk.js" defer></script>
+{% endblock %}
