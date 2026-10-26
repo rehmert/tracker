@@ -95,37 +95,11 @@ def verify_backup(path: Path) -> dict:
     return manifest
 
 
-<<<<<<< HEAD
-def prune_backups(backup_dir: Path | None = None, daily: int = 7, weekly: int = 4, monthly: int = 3) -> list[Path]:
-    """Retain most recent backup in each UTC day/week/month bucket."""
-    root = Path(backup_dir or BACKUP_DIR)
-    archives = sorted(root.glob('tracker-*.zip'), reverse=True) if root.exists() else []
-    keep: set[Path] = set()
-    for limit, bucket in ((daily, lambda d: d.strftime('%Y-%m-%d')),
-                          (weekly, lambda d: f'{d.isocalendar().year}-W{d.isocalendar().week:02}'),
-                          (monthly, lambda d: d.strftime('%Y-%m'))):
-        seen: set[str] = set()
-        for archive in archives:
-            try:
-                dt = datetime.strptime(archive.name[8:23], '%Y%m%dT%H%M%S')
-            except ValueError:
-                continue
-            key = bucket(dt)
-            if key not in seen and len(seen) < limit:
-                seen.add(key)
-                keep.add(archive)
-    removed = []
-    for archive in archives:
-        if archive not in keep:
-            archive.unlink()
-            removed.append(archive)
-=======
 def prune_backups(
     backup_dir: Path | None = None,
     keep: int | None = None
 ) -> list[Path]:
-    """Retain the newest N verified backup archives."""
-
+    """Retain the newest N backup archives."""
     root = Path(backup_dir or BACKUP_DIR)
 
     if keep is None:
@@ -149,7 +123,6 @@ def prune_backups(
         archive.unlink()
         removed.append(archive)
 
->>>>>>> 32af315 (Formal Migrations)
     return removed
 
 
