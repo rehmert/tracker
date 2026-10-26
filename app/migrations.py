@@ -10,6 +10,10 @@ def migrate(engine):
     with engine.begin() as conn:
         inspector = inspect(conn)
         tables = set(inspector.get_table_names())
+        if "protocols" in tables:
+            pcols = {c["name"] for c in inspect(conn).get_columns("protocols")}
+            if "is_active" not in pcols:
+                conn.exec_driver_sql("ALTER TABLE protocols ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 0")
         if "vials" in tables:
             cols = {c["name"] for c in inspect(conn).get_columns("vials")}
             for name, sql in {

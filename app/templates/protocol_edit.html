@@ -2,6 +2,9 @@
 {% block title %}{{ p.name }}{% endblock %}
 {% block content %}
 <h1>{{ p.name }}</h1>
+<section><p><strong>Status:</strong> {{ "Active — included in dashboard forecasts" if p.is_active else "What-if — excluded from dashboard forecasts" }}</p>
+<form method="post" action="/protocols/{{ p.id }}/active"><button type="submit">{{ "Mark as what-if" if p.is_active else "Mark as active" }}</button></form>
+<p class="note">Mark active only for a protocol you are currently following. Forecasts are estimates, not dose recommendations.</p></section>
 <p class="note">Change any amount, unit or frequency and the results update as you type. Nothing is stored until you press Save.</p>
 
 <form id="protoform" onsubmit="return false"

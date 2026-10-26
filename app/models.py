@@ -135,6 +135,7 @@ class Protocol(Base):
     __tablename__ = "protocols"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(160))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     notes: Mapped[str] = mapped_column(Text, default="")
     horizon_weeks: Mapped[float] = mapped_column(Float, default=12)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

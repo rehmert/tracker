@@ -13,11 +13,12 @@
 
 <section>
   <h2>Current Protocols</h2>
+  <p class="note">Only active protocols contribute to inventory forecasts. Saved what-if plans do not.</p>
 
   {% if protocol_summaries %}
     {% for protocol in protocol_summaries %}
 
-    <h3><a href="/protocols">{{ protocol.name }}</a></h3>
+    <h3><a href="/protocols/{{ protocol.id }}">{{ protocol.name }}</a> <span class="tag">{{ "Active" if protocol.is_active else "What-if" }}</span></h3>
 
     <div class="scroll">
       <table>
@@ -58,6 +59,36 @@
       <a href="/protocols">Create a protocol</a>.
     </p>
   {% endif %}
+</section>
+
+<section>
+  <h2>Inventory forecast</h2>
+  <p class="note">Based on combined weekly usage in active protocols; excludes expired and discarded vials. Assumes unchanged schedules and no future purchases or losses. Low stock means under 21 days of supply.</p>
+  {% if forecasts %}
+  <div class="scroll"><table><thead><tr><th>Compound</th><th>Usable stock</th><th>Days of supply</th><th>Estimated depletion</th><th>Status</th></tr></thead><tbody>
+  {% for row in forecasts %}<tr><td>{{ row.compound }}</td><td>{{ row.remaining|round(2) }} {{ row.unit }}</td><td>{{ row.days_left|round(1) }}</td><td>{{ row.depletion }}</td><td>{% if row.low %}<span class="tag">Low stock</span>{% else %}On hand{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="empty">Mark a saved protocol as active to enable supply forecasting.</p>{% endif %}
+</section>
+<section>
+  <h2>Vitals trends</h2>
+  <p class="note">7-day and 30-day averages use individual recorded measurements. Change is last minus first reading within 30 days.</p>
+  <div class="scroll"><table><thead><tr><th>Metric</th><th>7-day avg.</th><th>30-day avg.</th><th>30-day change</th></tr></thead><tbody>
+  {% for label, key, unit in [('Weight', 'weight', vitals.unit), ('Systolic BP', 'systolic', 'mmHg'), ('Diastolic BP', 'diastolic', 'mmHg'), ('Pulse', 'pulse', 'bpm')] %}
+  {% set trend = vital_trends[key] %}
+  <tr><td>{{ label }}</td><td>{{ (trend.avg7|round(1)) if trend.avg7 is not none else '—' }} {{ unit if trend.avg7 is not none else '' }}</td><td>{{ (trend.avg30|round(1)) if trend.avg30 is not none else '—' }} {{ unit if trend.avg30 is not none else '' }}</td><td>{{ (trend.change30|round(1)) if trend.change30 is not none else '—' }} {{ unit if trend.change30 is not none else '' }}</td></tr>
+  {% endfor %}
+  </tbody></table></div>
+  <label class="field"><span>Chart range</span><select id="overview-range" onchange="document.querySelectorAll('.overview-chart-range').forEach(el => el.hidden = el.dataset.days !== this.value)">
+    <option value="30">30 days</option><option value="90" selected>90 days</option><option value="365">1 year</option>
+  </select></label>
+  {% for days, group in charts_by_range.items() %}
+  <div class="overview-chart-range" data-days="{{ days }}" {% if days != 90 %}hidden{% endif %}>
+    <h3>Weight</h3>{{ group.weight|safe }}
+    <h3>Blood pressure</h3>{{ group.bp|safe }}
+    <h3>Pulse</h3>{{ group.pulse|safe }}
+  </div>
+  {% endfor %}
 </section>
 
 {% if vitals.weight is not none or vitals.bp or vitals.pulse is not none %}

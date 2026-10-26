@@ -1,14 +1,16 @@
 from collections import defaultdict
+from datetime import datetime, timedelta
+from math import isfinite
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import config, metrics, services
+from .. import config, metrics, services, charts
 from ..db import get_db
 from ..models import DoseLog, Vial, VitalReading, Protocol
 from ..templating import render
-from ..units import to_base
+from ..units import to_base, parse_unit, UnitError
 
 router = APIRouter()
 
@@ -27,35 +29,91 @@ def home(request: Request, db: Session = Depends(get_db)):
     for vial, data in active:
         inventory_by_compound[vial.compound_id] += data.remaining_base
 
-    protocol_summaries = []
+    # Each compound has its own unit dimension. Never mix mass, IU and volume.
+    inventory_dims = defaultdict(lambda: defaultdict(float))
+    for vial, data in active:
+        if vial.expires_on and vial.expires_on < datetime.now().date():
+            continue  # expired stock is excluded from usable supply forecasts
+        inventory_dims[vial.compound_id][data.dim] += max(0.0, data.remaining_base)
 
+    protocol_summaries = []
+    weekly_use = defaultdict(float)
+    now = datetime.now()
     for protocol in protocols:
         items = []
         for item in protocol.items:
-
+            remaining = doses_remaining = None
+            weekly = None
             try:
-                unit_factor, unit_dim = to_base(1, item.amount_unit)
-                inventory_base = inventory_by_compound.get(item.compound_id, 0.0)
+                u = parse_unit(item.amount_unit)
+                inventory_base = inventory_dims[item.compound_id].get(u.dim, 0.0)
+                remaining = inventory_base / u.factor
+                if item.amount_value > 0 and isfinite(item.amount_value):
+                    doses_remaining = remaining / item.amount_value
+                    if item.freq_count > 0 and isfinite(item.freq_count):
+                        if item.freq_period == "interval":
+                            weekly = item.amount_value * 7 / item.freq_count
+                            frequency = f"Every {item.freq_count:g} days"
+                        elif item.freq_period in ("day", "week", "month"):
+                            period_days = {"day": 1, "week": 7, "month": 365.2425 / 12}[item.freq_period]
+                            weekly = item.amount_value * item.freq_count * 7 / period_days
+                            frequency = f"{item.freq_count:g}× per {item.freq_period}"
+                        else:
+                            frequency = "Unknown frequency"
+                        if weekly is not None and protocol.is_active:
+                            weekly_use[(item.compound_id, u.dim)] += weekly * u.factor
+                    else:
+                        frequency = "Invalid frequency"
+                else:
+                    frequency = "Invalid amount"
+            except (UnitError, ValueError, TypeError, ZeroDivisionError):
+                frequency = "Unknown frequency"
+            items.append({"compound": item.compound.name, "compound_id": item.compound_id,
+                          "amount": item.amount_value, "unit": item.amount_unit,
+                          "frequency": frequency, "remaining": remaining,
+                          "doses_remaining": doses_remaining, "weekly": weekly})
+        protocol_summaries.append({"id": protocol.id, "name": protocol.name,
+                                   "is_active": protocol.is_active, "compounds": items})
 
-                remaining = (inventory_base / unit_factor if unit_factor else 0)
-                doses_remaining = (remaining / item.amount_value if remaining is not None and item.amount_value > 0 else None)
-            except (ValueError, TypeError):
-                remaining = None
+    # Multiple active protocols can consume the same compound; combine their usage.
+    forecasts = []
+    for cid, dims in inventory_dims.items():
+        for dim, amount in dims.items():
+            rate = weekly_use.get((cid, dim), 0)
+            if rate <= 0:
+                continue
+            days_left = 7 * amount / rate
+            forecasts.append({"compound": next((v.compound.name for v in vials if v.compound_id == cid), str(cid)),
+                              "remaining": amount, "unit": {"mass": "mcg", "iu": "IU", "volume": "mL"}.get(dim, dim),
+                              "days_left": days_left,
+                              "depletion": (now + timedelta(days=min(days_left, 365000))).date() if days_left >= 0 else None,
+                              "low": days_left < 21})
+    forecasts.sort(key=lambda x: x["days_left"])
 
-            items.append({
-                "compound": item.compound.name,
-                "amount": item.amount_value,
-                "unit": item.amount_unit,
-                "frequency": (
-                    f"Every {item.freq_count:g} days"
-                    if item.freq_period == "interval"
-                    else f"{item.freq_count:g}x per {item.freq_period}"
-                ),
-                "remaining": remaining,
-                "doses_remaining": doses_remaining,
-        })
-
-        protocol_summaries.append({"id": protocol.id, "name": protocol.name, "compounds": items, "doses_remaining": doses_remaining})
+    # Summary and charts are based only on recorded readings, not forecasts.
+    vital_rows = list(db.scalars(select(VitalReading).where(
+        VitalReading.measured_at >= now - timedelta(days=365)).order_by(VitalReading.measured_at)))
+    def points(attr, transform=lambda x: x):
+        return [(r.measured_at, transform(getattr(r, attr))) for r in vital_rows
+                if getattr(r, attr) is not None]
+    weight_points = points("weight_kg", lambda v: metrics.weight_from_kg(v, config.WEIGHT_UNIT))
+    sys_points = points("systolic")
+    dia_points = points("diastolic")
+    pulse_points = points("pulse_bpm")
+    vital_trends = {"weight": metrics.summarize(weight_points, now),
+                    "systolic": metrics.summarize(sys_points, now),
+                    "diastolic": metrics.summarize(dia_points, now),
+                    "pulse": metrics.summarize(pulse_points, now)}
+    def within(pts, days):
+        return [(t, v) for t, v in pts if t >= now - timedelta(days=days)]
+    charts_by_range = {}
+    for days in (30, 90, 365):
+        charts_by_range[days] = {
+            "weight": charts.line_chart([charts.Series("Weight", within(weight_points, days))], unit=f" {config.WEIGHT_UNIT}"),
+            "bp": charts.line_chart([charts.Series("Systolic", within(sys_points, days)),
+                                      charts.Series("Diastolic", within(dia_points, days), "s2")], unit=" mmHg"),
+            "pulse": charts.line_chart([charts.Series("Pulse", within(pulse_points, days))], unit=" bpm"),
+        }
 
     for v in vials:
         cents = views[v.id].landed_cents
@@ -86,5 +144,6 @@ def home(request: Request, db: Session = Depends(get_db)):
         by_compound=sorted(by_compound.items(), key=lambda kv: -kv[1]),
         by_month=sorted(by_month.items(), reverse=True)[:6],
         no_coa=sum(1 for v in vials if v.status != "discarded" and v.coa_id is None),
-        protocol_summaries=protocol_summaries,
+        protocol_summaries=protocol_summaries, forecasts=forecasts,
+        vital_trends=vital_trends, charts_by_range=charts_by_range,
     )

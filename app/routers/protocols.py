@@ -135,12 +135,22 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     return HTMLResponse(f"Saved {datetime.now():%H:%M:%S}")
 
 
+@router.post("/protocols/{pid}/active")
+def toggle_active(pid: int, db: Session = Depends(get_db)):
+    p = db.get(Protocol, pid)
+    if p is None:
+        raise HTTPException(404, "Protocol not found")
+    p.is_active = not p.is_active
+    db.commit()
+    return services.flash_redirect(f"/protocols/{pid}", msg="Protocol status updated.")
+
+
 @router.post("/protocols/{pid}/duplicate")
 def protocol_duplicate(pid: int, db: Session = Depends(get_db)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
-    copy = Protocol(name=f"{p.name} (copy)", notes=p.notes, horizon_weeks=p.horizon_weeks)
+    copy = Protocol(name=f"{p.name} (copy)", is_active=False, notes=p.notes, horizon_weeks=p.horizon_weeks)
     for i in p.items:
         copy.items.append(ProtocolItem(compound_id=i.compound_id, position=i.position,
                                        amount_value=i.amount_value, amount_unit=i.amount_unit,
