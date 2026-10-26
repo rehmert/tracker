@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ p.vendor }}{% endblock %}
+{% block title %}{{ p.vendor }}<script src="/static/bulk_purchase_ux.js" defer></script>
+{% endblock %}
 {% block content %}
 <h1>{{ p.vendor }} <small class="sub">{{ p.purchased_on|dt }}</small></h1>
 
@@ -74,20 +75,23 @@
       <td class="n">{{ supply_line_cents(s)|money }}</td>
       <td class="n">{{ supply_landed[-s.id]|money }}</td>
       <td><details class="purchase-edit"><summary>Edit</summary>
-        <form method="post" action="/purchases/{{ p.id }}/supplies/{{ s.id }}/edit" class="grid">
-          <label class="field"><span>Name</span><input name="name" value="{{ s.name }}" required></label>
-          <label class="field"><span>Type</span><select name="kind">
-            {% for c in categories %}<option value="{{ c.key }}" {% if s.kind == c.key %}selected{% endif %}>{{ c.label }} ({{ c.unit }})</option>{% endfor %}
-          </select></label>
-          <label class="field"><span>Compound</span><select name="compound_id"><option value="">None</option>
-            {% for c in compounds %}<option value="{{ c.id }}" {% if c.id == s.compound_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
-          </select></label>
-          <label class="field"><span>Purchased quantity</span><input type="number" name="quantity" min="0.0001" step="any" value="{{ s.purchased_qty }}" required></label>
-          <label class="field"><span>Unit price (individual items only)</span><input type="number" name="unit_price" min="0" step="0.01" value="{{ '%.2f'|format(s.unit_price_cents / 100) }}"></label>
-          <label class="field"><span>Bulk pack count (optional)</span><input type="number" name="pack_count" min="1" step="1" value="{{ s.bulk_pack_count or '' }}"></label>
-          <label class="field"><span>Units per pack</span><input type="number" name="units_per_pack" min="0.0001" step="any" value="{{ s.bulk_units_per_pack or '' }}"></label>
-          <label class="field"><span>Total bulk purchase price</span><input type="number" name="package_price" min="0" step="0.01" value="{{ '%.2f'|format(s.bulk_total_cents / 100) if s.bulk_total_cents is not none else '' }}"></label>
-          <label class="field"><span>Notes</span><input name="notes" value="{{ s.notes }}"></label>
+        <form method="post" action="/purchases/{{ p.id }}/supplies/{{ s.id }}/edit" class="grid bulk-ux-form" data-bulk-ux>
+          <label class="field"><span>Product name</span><input name="name" value="{{ s.name }}" required></label>
+          <label class="field"><span>Category</span><select name="kind">{% for c in categories %}<option value="{{ c.key }}" {% if s.kind == c.key %}selected{% endif %}>{{ c.label }} ({{ c.unit }})</option>{% endfor %}</select></label>
+          <label class="field"><span>Compound (optional)</span><select name="compound_id"><option value="">None</option>{% for c in compounds %}<option value="{{ c.id }}" {% if c.id == s.compound_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+          <label class="field"><span>Purchase format</span><select data-mode><option value="bulk" {% if s.bulk_pack_count %}selected{% endif %}>Packages</option><option value="individual" {% if not s.bulk_pack_count %}selected{% endif %}>Individual units</option></select></label>
+          <div class="bulk-ux-package-fields" data-pack-fields>
+            <label class="field"><span>Number of packages</span><input name="pack_count" type="number" min="1" step="1" value="{{ s.bulk_pack_count or '' }}"></label>
+            <label class="field"><span>Items per package</span><input name="units_per_pack" type="number" min="0.0001" step="any" value="{{ s.bulk_units_per_pack or '' }}"></label>
+            <label class="field"><span>Total line price ({{ currency }})</span><input name="package_price" type="number" min="0" step="0.01" value="{{ '%.2f'|format(s.bulk_total_cents / 100) if s.bulk_total_cents is not none else '' }}"></label>
+          </div>
+          <div data-individual-fields>
+            <label class="field"><span>Purchased units</span><input name="quantity" type="number" min="0.0001" step="any" value="{{ s.purchased_qty }}"></label>
+            <label class="field"><span>Price per individual unit</span><input name="unit_price" type="number" min="0" step="0.01" value="{{ '%.2f'|format(s.unit_price_cents / 100) }}"></label>
+          </div>
+          <p class="note wide" data-summary aria-live="polite"></p>
+          <p class="note wide">Already consumed: {{ (s.purchased_qty - s.remaining_qty)|num }} units. Editing quantities preserves recorded usage and inventory adjustments.</p>
+          <label class="field wide"><span>Notes</span><input name="notes" value="{{ s.notes }}"></label>
           <div><button class="primary" type="submit">Save item</button></div>
         </form>
       </details>
@@ -100,19 +104,31 @@
 </section>
 <section>
   <h2>Add supplies or disposables to this purchase</h2>
-  <form method="post" action="/purchases/{{ p.id }}/supplies" class="grid">
-    <label class="field"><span>Type</span><select name="kind">{% for c in categories %}<option value="{{ c.key }}">{{ c.label }} ({{ c.unit }})</option>{% endfor %}</select></label>
-    <label class="field"><span>Product name</span><input name="name" required></label>
+  <form method="post" action="/purchases/{{ p.id }}/supplies" class="grid bulk-ux-form" data-bulk-ux>
+    <label class="field wide"><span>Choose a previously purchased product (optional)</span>
+      <select data-product-picker><option value="">New product / enter manually</option>
+      {% for product in products %}<option value="{{ loop.index0 }}">{{ product.name }} — {{ category_map[product.kind].label if product.kind in category_map else product.kind }}</option>{% endfor %}
+      </select></label>
+    <label class="field"><span>Product name</span><input name="name" required placeholder="e.g. 29G × ½-inch needles"></label>
+    <label class="field"><span>Category</span><select name="kind">{% for c in categories %}<option value="{{ c.key }}">{{ c.label }} ({{ c.unit }})</option>{% endfor %}</select></label>
     <label class="field"><span>Compound (optional)</span><select name="compound_id"><option value="">None</option>{% for c in compounds %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
-    <label class="field"><span>Purchased quantity (mL or count)</span><input name="quantity" type="number" min="0.0001" step="any" value="1" required></label>
-    <label class="field"><span>Price per unit (individual items only, {{ currency }})</span><input name="unit_price" type="number" min="0" step="0.01" value="0"></label>
-    <label class="field"><span>Bulk pack count (optional)</span><input name="pack_count" type="number" min="1" step="1" placeholder="e.g. 2"></label>
-    <label class="field"><span>Units per pack</span><input name="units_per_pack" type="number" min="0.0001" step="any" placeholder="e.g. 100"></label>
-    <label class="field"><span>Total bulk price ({{ currency }})</span><input name="package_price" type="number" min="0" step="0.01" placeholder="e.g. 18.99"></label>
-    <p class="note">For bulk purchases, fill in all three bulk fields. Inventory is tracked as individual units; the entered total price is retained exactly. The purchased quantity field is ignored for bulk entries.</p>
+    <label class="field"><span>Purchase format</span><select data-mode><option value="bulk" selected>Packages (boxes, packs, etc.)</option><option value="individual">Individual units</option></select></label>
+    <div class="bulk-ux-package-fields" data-pack-fields>
+      <label class="field"><span>Package type</span><select name="package_type"><option value="box">Box</option><option value="pack">Pack</option><option value="bag">Bag</option><option value="case">Case</option><option value="individual">Individual</option><option value="other">Other</option></select></label>
+      <label class="field"><span>Number of packages</span><input name="pack_count" type="number" min="1" step="1" value="1"></label>
+      <label class="field"><span>Items per package</span><input name="units_per_pack" type="number" min="0.0001" step="any" value="100"></label>
+      <label class="field"><span>Total line price ({{ currency }})</span><input name="package_price" type="number" min="0" step="0.01" value="0.00"></label>
+    </div>
+    <div data-individual-fields>
+      <label class="field"><span>Purchased units</span><input name="quantity" type="number" min="0.0001" step="any" value="1"></label>
+      <label class="field"><span>Price per individual unit</span><input name="unit_price" type="number" min="0" step="0.01" value="0"></label>
+    </div>
+    <p class="note wide" data-summary aria-live="polite"></p>
     <label class="field wide"><span>Notes</span><input name="notes"></label>
-    <div><button class="primary">Add supplies / pills</button></div>
+    <div><button class="primary">Add purchased item</button></div>
   </form>
+  <script type="application/json" id="supply-product-defaults">{{ products|map(attribute='name')|list|tojson }}</script>
+  <script type="application/json" id="supply-product-details">[{% for product in products %}{"name":{{ product.name|tojson }},"kind":{{ product.kind|tojson }},"units":{{ (product.units_per_pack if product.units_per_pack is defined else product.bulk_units_per_pack or 1)|tojson }},"price":{{ (product.last_line_price_cents if product.last_line_price_cents is defined else product.bulk_total_cents or 0)|tojson }},"package_type":{{ (product.package_type if product.package_type is defined else 'box')|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]</script>
   <p class="note">Items added here also appear on the Supplies page for inventory tracking.</p>
 </section>
 

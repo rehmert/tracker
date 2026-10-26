@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from .. import calc, services, units as U
 from ..db import get_db
-from ..models import Compound, Purchase, Vial, Supply, SupplyUsage, SupplyCategory
+from ..models import Compound, Purchase, Vial, Supply, SupplyUsage, SupplyCategory, SupplyProduct
 from ..supply_categories import ensure_categories, validate_supply
 from ..templating import render
 
@@ -54,7 +54,15 @@ def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
     supplies = list(db.scalars(select(Supply).where(Supply.purchase_id == pid)))
     landed = services.purchase_landed(p)
     categories = ensure_categories(db)
-    return render(request, "purchase_detail.html", categories=categories, category_map={c.key: c for c in categories}, p=p, views=views, supplies=supplies, subtotal=subtotal,
+    products = list(db.scalars(select(SupplyProduct).order_by(SupplyProduct.name)))
+    # Existing purchases remain reusable even if they predate the product catalog.
+    known = {(x.name.casefold(), x.kind) for x in products}
+    for old in db.scalars(select(Supply).order_by(Supply.id.desc())):
+        key = (old.name.casefold(), old.kind)
+        if key not in known:
+            products.append(old)
+            known.add(key)
+    return render(request, "purchase_detail.html", products=products, categories=categories, category_map={c.key: c for c in categories}, p=p, views=views, supplies=supplies, subtotal=subtotal,
                   total=sum(landed.values()), supply_landed=landed, compounds=compounds, supply_line_cents=services.supply_line_cents)
 
 
@@ -184,10 +192,11 @@ def parse_bulk(db, kind, quantity, pack_count, units_per_pack, package_price):
 
 @router.post("/purchases/{pid}/supplies")
 def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
-                        quantity: float = Form(...), unit_price: str = Form("0"),
+                        quantity: float = Form(1), unit_price: str = Form("0"),
                         compound_id: str = Form(""), notes: str = Form(""),
                         db: Session = Depends(get_db), pack_count: str = Form(""),
-                        units_per_pack: str = Form(""), package_price: str = Form("")):
+                        units_per_pack: str = Form(""), package_price: str = Form(""),
+                        package_type: str = Form("box")):
     back = f"/purchases/{pid}"
     if db.get(Purchase, pid) is None:
         raise HTTPException(404, "Purchase not found")
@@ -210,6 +219,15 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
                   purchased_qty=quantity, remaining_qty=quantity,
                   unit_price_cents=price, bulk_pack_count=bulk_count,
                   bulk_units_per_pack=bulk_size, bulk_total_cents=bulk_cents, notes=notes.strip()))
+    if bulk_count is not None:
+        product = db.scalar(select(SupplyProduct).where(SupplyProduct.name == name.strip(), SupplyProduct.kind == kind))
+        if product is None:
+            product = SupplyProduct(name=name.strip(), kind=kind)
+            db.add(product)
+        product.package_type = package_type if package_type in ("box", "pack", "bag", "case", "individual", "other") else "box"
+        product.units_per_pack = bulk_size
+        product.last_line_price_cents = bulk_cents
+        product.preferred_vendor = db.get(Purchase, pid).vendor
     db.commit()
     return services.flash_redirect(back, msg="Supply or pills added to purchase.")
 
@@ -261,6 +279,14 @@ def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
         s.bulk_units_per_pack = bulk_size
         s.bulk_total_cents = bulk_cents
         s.notes = notes.strip()
+        if bulk_count is not None:
+            product = db.scalar(select(SupplyProduct).where(SupplyProduct.name == name.strip(), SupplyProduct.kind == kind))
+            if product is None:
+                product = SupplyProduct(name=name.strip(), kind=kind)
+                db.add(product)
+            product.units_per_pack = bulk_size
+            product.last_line_price_cents = bulk_cents
+            product.preferred_vendor = db.get(Purchase, pid).vendor
     except (ValueError, TypeError) as exc:
         db.rollback()
         return services.flash_redirect(back, err=str(exc))

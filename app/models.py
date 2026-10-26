@@ -102,6 +102,18 @@ class SupplyCategory(Base):
     unit: Mapped[str] = mapped_column(String(24), default="count")
 
 
+class SupplyProduct(Base):
+    """Reusable defaults for purchasing consumables; inventory remains on Supply."""
+    __tablename__ = "supply_products"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    package_type: Mapped[str] = mapped_column(String(30), default="box")
+    units_per_pack: Mapped[float] = mapped_column(Float, default=1)
+    last_line_price_cents: Mapped[int] = mapped_column(Integer, default=0)
+    preferred_vendor: Mapped[str] = mapped_column(String(160), default="")
+
+
 class Supply(Base):
     __tablename__ = "supplies"
     id: Mapped[int] = mapped_column(primary_key=True)

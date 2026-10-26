@@ -426,3 +426,7 @@ tbody tr:hover td { background:color-mix(in srgb,var(--teal) 4%,var(--surface));
 .export-card{border:1px solid var(--border,#dce3eb);border-radius:16px;padding:1.2rem;background:var(--card,#fff)}
 .export-card h2{margin-top:0}
 [data-dashboard-panel][hidden]{display:none!important}
+/* Purchase line editor: hide the unused pricing mode and keep previews legible. */
+.bulk-ux-form [hidden] { display: none !important; }
+.bulk-ux-package-fields { display: contents; }
+.bulk-ux-form [data-summary] { padding: .75rem 1rem; border-radius: 12px; background: var(--surface-2, rgba(13,148,136,.07)); }
