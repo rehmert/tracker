@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Inventory Insights{% endblock %}
+{% block content %}
+<div class="inventory-heading"><div><h1>Inventory intelligence</h1><p class="muted">Expiration, consumption and landed-cost insights based on your recorded inventory.</p></div><a class="button" href="/vials">Manage vials →</a></div>
+<div class="inventory-kpis">
+  <div class="inventory-kpi"><small>Active vials</small><strong>{{ totals.active_vials }}</strong></div>
+  <div class="inventory-kpi"><small>Expiring within 30 days</small><strong>{{ totals.expiring_30 }}</strong></div>
+  <div class="inventory-kpi"><small>Already expired</small><strong>{{ totals.expired }}</strong></div>
+  <div class="inventory-kpi"><small>Low stock (&lt;20%)</small><strong>{{ totals.low_stock }}</strong></div>
+  <div class="inventory-kpi"><small>Recorded administration cost</small><strong>{{ totals.used_cents|money }}</strong></div>
+  <div class="inventory-kpi"><small>Recorded waste cost</small><strong>{{ totals.wasted_cents|money }}</strong></div>
+</div>
+<section class="inventory-card"><div class="inventory-heading"><div><h2>Vial-level insights</h2><p class="muted">Select a row to inspect usage and cost details. Costs are estimates allocated from landed purchase costs.</p></div><input type="search" id="inventory-filter" placeholder="Filter compound, lot, status…" aria-label="Filter inventory"></div>
+<div class="scroll"><table class="inventory-table"><thead><tr><th>Details</th><th>Compound</th><th>Vial</th><th>Status</th><th>Expires</th><th class="n">Remaining</th><th class="n">Landed cost</th></tr></thead><tbody>
+{% for r in rows %}{% set v=r.vial %}{% set d=r.view %}
+<tr class="inventory-main-row" data-search="{{ (v.compound.name ~ ' ' ~ (v.label or '') ~ ' ' ~ (v.lot or '') ~ ' ' ~ r.status_label)|lower }}"><td><button type="button" class="inventory-expand" aria-expanded="false" aria-controls="inventory-details-{{ v.id }}" aria-label="Show details for vial {{ v.id }}">＋</button></td><td>{{ v.compound.name }}</td><td><a href="/vials/{{ v.id }}">{{ v.label or ('#' ~ v.id) }}</a>{% if v.lot %}<small> · Lot {{ v.lot }}</small>{% endif %}</td><td><span class="inventory-status {% if r.expired %}inventory-danger{% elif r.expiring or r.low %}inventory-warning{% else %}inventory-ok{% endif %}">{{ r.status_label }}</span></td><td>{{ v.expires_on or 'Not recorded' }}{% if r.days is not none %}<small> ({{ r.days }} days)</small>{% endif %}</td><td class="n">{{ d.remaining_base|amt(d.dim) }}</td><td class="n">{{ d.landed_cents|money }}</td></tr>
+<tr id="inventory-details-{{ v.id }}" class="inventory-detail-row" hidden><td colspan="7"><div class="inventory-detail-grid"><div><small>Administered</small><strong>{{ r.used|amt(d.dim) }}</strong><span>{{ r.dose_count }} recorded dose(s)</span></div><div><small>Administration cost</small><strong>{{ r.used_cost|money }}</strong></div><div><small>Cost per recorded administration</small><strong>{{ (r.used_cost / r.dose_count)|money if r.dose_count else "—" }}</strong></div><div><small>Recorded waste</small><strong>{{ r.wasted|amt(d.dim) }}</strong></div><div><small>Waste cost</small><strong>{{ r.wasted_cost|money }}</strong></div><div><small>Purchase</small><strong>{% if v.purchase_id %}<a href="/purchases/{{ v.purchase_id }}">Order #{{ v.purchase_id }}</a>{% else %}Unlinked{% endif %}</strong></div><div><small>COA</small><strong>{{ 'Attached' if v.coa else 'Not attached' }}</strong></div></div><p><a href="/vials/{{ v.id }}">View vial and log waste →</a></p></td></tr>
+{% else %}<tr><td colspan="7">No inventory records yet.</td></tr>{% endfor %}
+</tbody></table></div><p id="inventory-empty" class="muted" hidden>No vials match your search.</p></section>
+<p class="muted">Expiration warnings use the recorded vial expiration date. Missing dates cannot be assessed. Waste is counted only when explicitly logged; discarded vial status alone does not imply a measured waste amount. Cost figures are historical estimates, not replacement costs.</p>
+<script src="/static/inventory_intelligence.js" defer></script>
+{% endblock %}
