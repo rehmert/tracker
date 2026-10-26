@@ -33,6 +33,7 @@ class Purchase(Base):
     discount_cents: Mapped[int] = mapped_column(Integer, default=0)
     notes: Mapped[str] = mapped_column(Text, default="")
     vials: Mapped[list[Vial]] = relationship(back_populates="purchase", order_by="Vial.id")
+    supplies: Mapped[list[Supply]] = relationship("Supply", order_by="Supply.id")
 
 
 class Vial(Base):
@@ -136,6 +137,8 @@ class Protocol(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(160))
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="")
     horizon_weeks: Mapped[float] = mapped_column(Float, default=12)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

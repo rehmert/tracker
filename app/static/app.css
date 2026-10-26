@@ -187,3 +187,41 @@ fieldset legend { color: var(--muted); padding: 0 .3rem; }
 .calendar-event {font-size:.78rem;margin:.25rem 0;padding:.25rem .35rem;border-left:3px solid var(--teal);background:var(--wash)}
 .calendar-event.projected {border-left-color:var(--amber)}
 @media(max-width:760px){.calendar-grid{grid-template-columns:repeat(7,minmax(0,1fr));font-size:.7rem}.calendar-day{padding:.15rem;min-height:80px}.calendar-event{font-size:.65rem;padding:.1rem}}
+
+.calendar-unrecorded { border-left: 3px solid #d9a441; background: color-mix(in srgb, #d9a441 12%, transparent); }
+
+/* Protocol editor: reserve a separate, non-shrinking action column.
+   Table scrolls horizontally on narrow screens rather than overlapping controls. */
+.items { min-width: 760px; table-layout: auto; }
+.items th:last-child, .items td:last-child { min-width: 6.25rem; width: 6.25rem; text-align: center; white-space: nowrap; }
+.items td:last-child .remove-protocol-item { display: inline-block; padding: .35rem .45rem; min-height: 2rem; }
+.items .freq { min-width: 15rem; white-space: normal; }
+.items .freq-controls { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.items .freq-controls input { flex: 0 0 5rem; width: 5rem; min-width: 0; }
+.items .freq-controls select { flex: 1 1 8.5rem; min-width: 8.5rem; width: auto; }
+.items td:first-child { min-width: 10rem; }
+.items td:nth-child(2) { min-width: 7rem; }
+.items td:nth-child(3) { min-width: 6rem; }
+.today-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1rem; }
+.today-card { min-width: 0; border: 1px solid var(--rule); border-radius: 5px; background: var(--surface); padding: .85rem 1rem; }
+.today-card h3 { margin: 0 0 .65rem; font-size: 1rem; }
+.today-card ul { margin: 0; padding-left: 1.15rem; }
+.today-card li { margin: .4rem 0; overflow-wrap: anywhere; }
+.today-card .tag { margin-left: .35rem; }
+
+/* Global tables: keep each cell on one line; scroll horizontally rather than wrapping. */
+.scroll { max-width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+table { width: max-content; min-width: 100%; max-width: none; }
+table th, table td { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+/* Preserve full-size controls in editable tables. */
+table input, table select, table button { flex-shrink: 0; }
+/* Tables without an explicit .scroll container can extend the page horizontally. */
+main { min-width: 0; }
+
+/* Purchase line item editing: preserve nowrap tables without crowding controls */
+.purchase-actions { display: flex; align-items: center; gap: 1rem; white-space: nowrap; }
+.purchase-actions form, td > form { display: inline-block; margin: 0; }
+.purchase-edit { display: inline-block; vertical-align: middle; margin-right: .75rem; }
+.purchase-edit[open] { display: block; min-width: min(680px, 80vw); white-space: normal; }
+.purchase-edit summary { cursor: pointer; }
+.purchase-edit .grid { padding: .75rem 0; }

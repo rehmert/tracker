@@ -2,20 +2,26 @@
 {% block title %}Protocol calendar{% endblock %}
 {% block content %}
 <h1>Protocol calendar</h1>
-<p class="note">Planned entries are projections from active protocols, anchored to the date you choose. They are not dose recommendations or confirmed administrations. Recorded entries come from the dose log. No inventory is changed.</p>
+<p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
+{% if missing_start %}<section><h2>Start dates needed</h2><p class="note">These active protocols have no start date, so no doses are projected for them:</p>
+{% for p in missing_start %}<p><a href="/protocols/{{ p.id }}">{{ p.name }}</a> — set a start date</p>{% endfor %}</section>{% endif %}
 <form method="get" action="/calendar" class="inline">
 <label class="field"><span>Month</span><input type="month" name="month" value="{{ shown.strftime('%Y-%m') }}"></label>
-<label class="field"><span>Projection anchor date</span><input type="date" name="anchor" value="{{ anchor.isoformat() }}"></label>
 <button type="submit">Show calendar</button>
 </form>
-<p class="row"><a href="/calendar?month={{ previous }}&anchor={{ anchor.isoformat() }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a href="/calendar?month={{ next_month }}&anchor={{ anchor.isoformat() }}">Next →</a></p>
+<p class="row"><a href="/calendar?month={{ previous }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a href="/calendar?month={{ next_month }}">Next →</a></p>
 <div class="calendar-grid">
 {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<div class="calendar-head">{{ day }}</div>{% endfor %}
 {% for d in days %}<div class="calendar-day {% if not d.in_month %}outside{% endif %}">
 <strong>{{ d.date.day }}</strong>
-{% for x in d.actual %}<div class="calendar-event recorded" title="Recorded administration">✓ {{ x.name }} · {{ x.dose }}</div>{% endfor %}
-{% for x in d.planned %}<div class="calendar-event projected" title="Projected from {{ x.protocol }}">○ {{ x.name }} · {{ x.dose }} <small>({{ x.protocol }})</small></div>{% endfor %}
+{% for x in d.events %}
+  {% if x.status == 'recorded' %}<div class="calendar-event recorded" title="Same-day recorded dose matched to this projected entry">✓ {{ x.name }} · {{ x.actual_dose }} <small>({{ x.protocol }})</small></div>
+  {% elif x.status == 'extra' %}<div class="calendar-event recorded" title="Recorded dose without a matching planned entry">✓ {{ x.name }} · {{ x.dose }} <small>(unmatched log)</small></div>
+  {% elif x.status == 'unrecorded' %}<div class="calendar-event calendar-unrecorded" title="Past projected entry with no matching dose log">! {{ x.name }} · {{ x.dose }} <small>(not recorded)</small></div>
+  {% elif x.status == 'due' %}<div class="calendar-event projected" title="Projected for today">◉ {{ x.name }} · {{ x.dose }} <small>(today)</small></div>
+  {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }} <small>({{ x.protocol }})</small></div>{% endif %}
+{% endfor %}
 </div>{% endfor %}
 </div>
-<p class="note">✓ Recorded · ○ Projected. Monthly and fractional-day frequencies use an approximate cadence. Change the anchor to match your actual protocol schedule.</p>
+<p class="note">✓ Recorded · ! Past projection without a matching log · ◉ Projected today · ○ Upcoming. A missing log does not prove a dose was missed. Monthly and fractional-day frequencies use an approximate cadence.</p>
 {% endblock %}

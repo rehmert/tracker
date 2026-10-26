@@ -4,18 +4,18 @@
 <h1>{{ p.vendor }} <small class="sub">{{ p.purchased_on|dt }}</small></h1>
 
 <dl class="stats">
-  <div><dt>Vials subtotal</dt><dd>{{ subtotal|money }}</dd></div>
+  <div><dt>Items subtotal</dt><dd>{{ subtotal|money }}</dd></div>
   <div><dt>Shipping</dt><dd>{{ p.shipping_cents|money }}</dd></div>
   <div><dt>Tax</dt><dd>{{ p.tax_cents|money }}</dd></div>
   <div><dt>Discount</dt><dd>{{ p.discount_cents|money }}</dd></div>
   <div><dt>Total</dt><dd>{{ total|money }}</dd></div>
 </dl>
-<p class="note">Shipping, tax and discount are spread across the vials in proportion to their prices to give each vial's landed cost.</p>
+<p class="note">Shipping, tax and discount are allocated proportionally across vials, supplies and pills.</p>
 
 <section>
   <h2>Vials in this purchase</h2>
   <div class="scroll"><table>
-    <thead><tr><th>Vial</th><th>Compound</th><th>Contents</th><th class="n">Price</th><th class="n">Landed</th><th>Status</th><th>COA</th></tr></thead>
+    <thead><tr><th>Vial</th><th>Compound</th><th>Contents</th><th class="n">Price</th><th class="n">Landed</th><th>Status</th><th>COA</th><th>Actions</th></tr></thead>
     <tbody>
     {% for v in p.vials %}{% set d = views[v.id] %}
     <tr>
@@ -26,8 +26,13 @@
       <td class="n">{{ d.landed_cents|money }}</td>
       <td>{{ v.status|replace('_', ' ') }}</td>
       <td>{{ 'yes' if v.coa else 'none' }}</td>
+      <td><div class="purchase-actions"><a href="/vials/{{ v.id }}">Edit</a>
+        <form method="post" action="/purchases/{{ p.id }}/vials/{{ v.id }}/delete"
+              onsubmit="return confirm('Delete this vial from the purchase? This cannot be undone.')">
+          <button class="link danger" type="submit">Delete</button>
+        </form></div></td>
     </tr>
-    {% else %}<tr><td colspan="7" class="empty">No vials yet. Add them below.</td></tr>{% endfor %}
+    {% else %}<tr><td colspan="8" class="empty">No vials yet. Add them below.</td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>
@@ -55,6 +60,54 @@
     <label class="field wide"><span>Notes</span><input name="notes"></label>
     <div><button class="primary">Add vial(s)</button></div>
   </form>
+</section>
+
+<section>
+  <h2>Supplies and pills in this purchase</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Item</th><th>Type</th><th>Purchased</th><th>Remaining</th><th class="n">Unit price</th><th class="n">Line subtotal</th><th class="n">Landed total</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for s in supplies %}
+    <tr><td>{{ s.name }}</td><td>{{ 'BAC water (mL)' if s.kind == 'bac_water' else 'Pills / capsules' }}</td>
+      <td>{{ s.purchased_qty|num }}</td><td>{{ s.remaining_qty|num }}</td>
+      <td class="n">{{ s.unit_price_cents|money }}</td>
+      <td class="n">{{ (s.unit_price_cents * s.purchased_qty)|money }}</td>
+      <td class="n">{{ supply_landed[-s.id]|money }}</td>
+      <td><details class="purchase-edit"><summary>Edit</summary>
+        <form method="post" action="/purchases/{{ p.id }}/supplies/{{ s.id }}/edit" class="grid">
+          <label class="field"><span>Name</span><input name="name" value="{{ s.name }}" required></label>
+          <label class="field"><span>Type</span><select name="kind">
+            <option value="bac_water" {% if s.kind == 'bac_water' %}selected{% endif %}>BAC water (mL)</option>
+            <option value="pill" {% if s.kind == 'pill' %}selected{% endif %}>Pills / capsules</option>
+          </select></label>
+          <label class="field"><span>Compound</span><select name="compound_id"><option value="">None</option>
+            {% for c in compounds %}<option value="{{ c.id }}" {% if c.id == s.compound_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+          </select></label>
+          <label class="field"><span>Purchased quantity</span><input type="number" name="quantity" min="0.0001" step="any" value="{{ s.purchased_qty }}" required></label>
+          <label class="field"><span>Unit price</span><input type="number" name="unit_price" min="0" step="0.01" value="{{ '%.2f'|format(s.unit_price_cents / 100) }}"></label>
+          <label class="field"><span>Notes</span><input name="notes" value="{{ s.notes }}"></label>
+          <div><button class="primary" type="submit">Save item</button></div>
+        </form>
+      </details>
+      <form method="post" action="/purchases/{{ p.id }}/supplies/{{ s.id }}/delete"
+            onsubmit="return confirm('Delete this purchased item? This cannot be undone.')">
+        <button class="link danger" type="submit">Delete</button>
+      </form></td></tr>
+    {% else %}<tr><td colspan="8" class="empty">No supplies or pills in this purchase.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+<section>
+  <h2>Add supplies or pills to this purchase</h2>
+  <form method="post" action="/purchases/{{ p.id }}/supplies" class="grid">
+    <label class="field"><span>Type</span><select name="kind"><option value="bac_water">BAC water (mL)</option><option value="pill">Pills / capsules (count)</option></select></label>
+    <label class="field"><span>Product name</span><input name="name" required></label>
+    <label class="field"><span>Compound (optional)</span><select name="compound_id"><option value="">None</option>{% for c in compounds %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+    <label class="field"><span>Purchased quantity (mL or count)</span><input name="quantity" type="number" min="0.0001" step="any" required></label>
+    <label class="field"><span>Price per mL or pill ({{ currency }})</span><input name="unit_price" type="number" min="0" step="0.01" value="0"></label>
+    <label class="field wide"><span>Notes</span><input name="notes"></label>
+    <div><button class="primary">Add supplies / pills</button></div>
+  </form>
+  <p class="note">Items added here also appear on the Supplies page for inventory tracking.</p>
 </section>
 
 <section>

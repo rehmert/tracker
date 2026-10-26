@@ -1,4 +1,5 @@
 from datetime import date
+import math
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from .. import calc, services, units as U
 from ..db import get_db
-from ..models import Compound, Purchase, Vial, Supply
+from ..models import Compound, Purchase, Vial, Supply, SupplyUsage
 from ..templating import render
 
 router = APIRouter()
@@ -16,9 +17,9 @@ router = APIRouter()
 def purchases_page(request: Request, db: Session = Depends(get_db)):
     rows = []
     for p in db.scalars(select(Purchase).order_by(Purchase.purchased_on.desc(), Purchase.id.desc())):
-        landed = calc.allocate_landed({v.id: v.unit_price_cents for v in p.vials},
-                                      p.shipping_cents, p.tax_cents, p.discount_cents)
-        rows.append({"p": p, "n": len(p.vials), "total": sum(landed.values())})
+        landed = services.purchase_landed(p)
+        rows.append({"p": p, "n": len(p.vials), "supply_count": len(p.supplies),
+                     "total": sum(landed.values())})
     return render(request, "purchases.html", rows=rows, today=date.today().isoformat())
 
 
@@ -37,7 +38,7 @@ def create_purchase(vendor: str = Form(...), purchased_on: str = Form(""),
         return services.flash_redirect("/purchases", err=str(exc))
     db.add(p)
     db.commit()
-    return services.flash_redirect(f"/purchases/{p.id}", msg="Purchase saved. Add its vials below.")
+    return services.flash_redirect(f"/purchases/{p.id}", msg="Purchase saved. Add vials, supplies or pills below.")
 
 
 @router.get("/purchases/{pid}")
@@ -46,11 +47,13 @@ def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
     if p is None:
         raise HTTPException(404, "Purchase not found")
     views = services.vial_views(db, list(p.vials))
-    subtotal = sum(v.unit_price_cents for v in p.vials)
+    subtotal = sum(v.unit_price_cents for v in p.vials) + sum(
+        round(s.unit_price_cents * s.purchased_qty) for s in p.supplies)
     compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
     supplies = list(db.scalars(select(Supply).where(Supply.purchase_id == pid)))
+    landed = services.purchase_landed(p)
     return render(request, "purchase_detail.html", p=p, views=views, supplies=supplies, subtotal=subtotal,
-                  total=sum(d.landed_cents for d in views.values()), compounds=compounds)
+                  total=sum(landed.values()), supply_landed=landed, compounds=compounds)
 
 
 @router.post("/purchases/{pid}")
@@ -145,9 +148,113 @@ def delete_purchase(pid: int, db: Session = Depends(get_db)):
     p = db.get(Purchase, pid)
     if p is None:
         return services.flash_redirect("/purchases", err="Purchase not found.")
-    if p.vials:
+    if p.vials or p.supplies:
         return services.flash_redirect(
-            f"/purchases/{pid}", err="Delete or move this purchase's vials first.")
+            f"/purchases/{pid}", err="Delete or move this purchase's vials, supplies and pills first.")
     db.delete(p)
     db.commit()
     return services.flash_redirect("/purchases", msg="Purchase deleted.")
+
+
+@router.post("/purchases/{pid}/supplies")
+def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
+                        quantity: float = Form(...), unit_price: str = Form("0"),
+                        compound_id: str = Form(""), notes: str = Form(""),
+                        db: Session = Depends(get_db)):
+    back = f"/purchases/{pid}"
+    if db.get(Purchase, pid) is None:
+        raise HTTPException(404, "Purchase not found")
+    if kind not in ("bac_water", "pill") or not name.strip() or not 0 < quantity <= 1000000:
+        return services.flash_redirect(back, err="Enter a valid supply type, name and quantity.")
+    if kind == "pill" and not quantity.is_integer():
+        return services.flash_redirect(back, err="Pill quantity must be a whole number.")
+    try:
+        price = services.to_cents(unit_price)
+        cid = int(compound_id) if compound_id else None
+        if cid is not None and db.get(Compound, cid) is None:
+            raise ValueError("Unknown compound.")
+    except (ValueError, TypeError) as exc:
+        return services.flash_redirect(back, err=str(exc))
+    db.add(Supply(purchase_id=pid, name=name.strip(), kind=kind, compound_id=cid,
+                  purchased_qty=quantity, remaining_qty=quantity,
+                  unit_price_cents=price, notes=notes.strip()))
+    db.commit()
+    return services.flash_redirect(back, msg="Supply or pills added to purchase.")
+
+
+@router.post("/purchases/{pid}/supplies/{sid}/edit")
+def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
+                         kind: str = Form(...), quantity: float = Form(...),
+                         unit_price: str = Form("0"), compound_id: str = Form(""),
+                         notes: str = Form(""), db: Session = Depends(get_db)):
+    """Edit a purchased supply/pill without resetting its usage history."""
+    back = f"/purchases/{pid}"
+    s = db.get(Supply, sid)
+    if s is None or s.purchase_id != pid:
+        raise HTTPException(404, "Purchase item not found")
+    try:
+        if kind not in ("bac_water", "pill") or not name.strip():
+            raise ValueError("Choose a valid type and product name.")
+        if not math.isfinite(quantity) or not 0 < quantity <= 1000000:
+            raise ValueError("Purchased quantity must be positive and finite.")
+        if kind == "pill" and not quantity.is_integer():
+            raise ValueError("Pill quantity must be a whole number.")
+        usage = list(db.scalars(select(SupplyUsage).where(SupplyUsage.supply_id == sid)))
+        if usage and kind != s.kind:
+            raise ValueError("Cannot change item type after usage is recorded.")
+        used = sum(u.amount for u in usage)
+        # Preserve current remaining inventory, including manual adjustments, by
+        # applying only the change in purchased quantity.
+        new_remaining = s.remaining_qty + (quantity - s.purchased_qty)
+        if quantity + 1e-8 < used or new_remaining < -1e-8:
+            raise ValueError("New purchased quantity cannot be below the amount already used.")
+        if kind == "pill" and abs(new_remaining - round(new_remaining)) > 1e-8:
+            raise ValueError("Pill inventory must remain a whole number.")
+        cid = int(compound_id) if compound_id.strip() else None
+        if cid is not None and db.get(Compound, cid) is None:
+            raise ValueError("Unknown compound.")
+        price = services.to_cents(unit_price)
+        if price < 0:
+            raise ValueError("Unit price cannot be negative.")
+        s.name = name.strip()
+        s.kind = kind
+        s.compound_id = cid
+        s.purchased_qty = quantity
+        s.remaining_qty = max(0.0, new_remaining)
+        s.unit_price_cents = price
+        s.notes = notes.strip()
+    except (ValueError, TypeError) as exc:
+        db.rollback()
+        return services.flash_redirect(back, err=str(exc))
+    db.commit()
+    return services.flash_redirect(back, msg="Purchased item updated.")
+
+
+@router.post("/purchases/{pid}/supplies/{sid}/delete")
+def delete_purchase_supply(pid: int, sid: int, db: Session = Depends(get_db)):
+    back = f"/purchases/{pid}"
+    s = db.get(Supply, sid)
+    if s is None or s.purchase_id != pid:
+        raise HTTPException(404, "Purchase item not found")
+    if db.scalar(select(SupplyUsage.id).where(SupplyUsage.supply_id == sid).limit(1)) is not None:
+        return services.flash_redirect(back, err="Cannot delete an item with recorded usage. Edit it instead.")
+    if abs(s.remaining_qty - s.purchased_qty) > 1e-8:
+        return services.flash_redirect(back, err="Cannot delete an item with adjusted inventory. Reconcile it first.")
+    db.delete(s)
+    db.commit()
+    return services.flash_redirect(back, msg="Purchased item deleted.")
+
+
+@router.post("/purchases/{pid}/vials/{vid}/delete")
+def delete_purchase_vial(pid: int, vid: int, db: Session = Depends(get_db)):
+    back = f"/purchases/{pid}"
+    v = db.get(Vial, vid)
+    if v is None or v.purchase_id != pid:
+        raise HTTPException(404, "Purchase item not found")
+    if v.doses:
+        return services.flash_redirect(back, err="Cannot delete a vial with logged doses or waste.")
+    if db.scalar(select(SupplyUsage.id).where(SupplyUsage.vial_id == vid).limit(1)) is not None:
+        return services.flash_redirect(back, err="Cannot delete a vial with recorded supply usage (e.g. reconstitution).")
+    db.delete(v)
+    db.commit()
+    return services.flash_redirect(back, msg="Vial deleted from purchase.")

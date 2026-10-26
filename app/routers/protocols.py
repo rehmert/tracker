@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from html import escape
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -135,6 +135,26 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     return HTMLResponse(f"Saved {datetime.now():%H:%M:%S}")
 
 
+@router.post("/protocols/{pid}/dates")
+def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = Form(""),
+                       db: Session = Depends(get_db)):
+    p = db.get(Protocol, pid)
+    if p is None:
+        raise HTTPException(404, "Protocol not found")
+    try:
+        start = date.fromisoformat(start_date) if start_date else None
+        end = date.fromisoformat(end_date) if end_date else None
+    except ValueError:
+        raise HTTPException(400, "Enter valid ISO dates")
+    if end and not start:
+        raise HTTPException(400, "Set a start date before setting an end date")
+    if start and end and end < start:
+        raise HTTPException(400, "End date must be on or after start date")
+    p.start_date, p.end_date = start, end
+    db.commit()
+    return services.flash_redirect(f"/protocols/{pid}", msg="Protocol dates saved.")
+
+
 @router.post("/protocols/{pid}/active")
 def toggle_active(pid: int, db: Session = Depends(get_db)):
     p = db.get(Protocol, pid)
@@ -150,7 +170,7 @@ def protocol_duplicate(pid: int, db: Session = Depends(get_db)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
-    copy = Protocol(name=f"{p.name} (copy)", is_active=False, notes=p.notes, horizon_weeks=p.horizon_weeks)
+    copy = Protocol(name=f"{p.name} (copy)", is_active=False, notes=p.notes, horizon_weeks=p.horizon_weeks, start_date=None, end_date=None)
     for i in p.items:
         copy.items.append(ProtocolItem(compound_id=i.compound_id, position=i.position,
                                        amount_value=i.amount_value, amount_unit=i.amount_unit,

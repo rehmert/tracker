@@ -61,6 +61,18 @@ def effective_content(vial: Vial) -> tuple[float, str]:
     return U.to_base(value, unit)
 
 
+def purchase_landed(p):
+    """Allocate order costs across vials and supply/pill line items together.
+
+    Positive keys identify vials; negative keys identify supply line items.
+    Supply prices are per unit and are multiplied by purchased quantity.
+    """
+    prices = {v.id: v.unit_price_cents for v in p.vials}
+    prices.update({-s.id: round(s.unit_price_cents * s.purchased_qty)
+                   for s in p.supplies})
+    return calc.allocate_landed(prices, p.shipping_cents, p.tax_cents, p.discount_cents)
+
+
 def vial_views(db: Session, vials: list[Vial] | None = None) -> dict[int, calc.VialData]:
     if vials is None:
         vials = list(db.scalars(select(Vial).order_by(Vial.id.desc())))
@@ -74,9 +86,7 @@ def vial_views(db: Session, vials: list[Vial] | None = None) -> dict[int, calc.V
         else:
             p = v.purchase
             if p.id not in landed_cache:
-                landed_cache[p.id] = calc.allocate_landed(
-                    {x.id: x.unit_price_cents for x in p.vials},
-                    p.shipping_cents, p.tax_cents, p.discount_cents)
+                landed_cache[p.id] = purchase_landed(p)
             landed = landed_cache[p.id][v.id]
         base, dim = effective_content(v)
         out[v.id] = calc.VialData(v.id, v.compound_id, dim, base, v.volume_ml, v.status,

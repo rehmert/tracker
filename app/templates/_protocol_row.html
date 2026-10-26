@@ -4,11 +4,11 @@
   </select></td>
   <td><input type="number" name="amount" step="any" min="0" value="{{ item.amount_value|num if item.amount_value != '' else '' }}" aria-label="Amount per entry" required></td>
   <td><select name="unit" aria-label="Unit">{% for u in DOSE_UNITS %}<option {% if u == item.amount_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></td>
-  <td class="freq">
+  <td class="freq"><div class="freq-controls">
     <input type="number" name="freq_count" step="any" min="0" value="{{ item.freq_count|num }}" aria-label="Frequency number" required>
     <select name="freq_period" aria-label="Frequency period">
       {% for key, text in PERIOD_LABELS.items() %}<option value="{{ key }}" {% if key == item.freq_period %}selected{% endif %}>{{ text }}</option>{% endfor %}
     </select>
-  </td>
-  <td><button type="button" class="link danger" hx-on:click="this.closest('tr').remove(); htmx.trigger('#protoform','change')">Remove</button></td>
+  </div></td>
+  <td><button type="button" class="link danger remove-protocol-item" hx-on:click="this.closest('tr').remove(); htmx.trigger('#protoform','change')">Remove</button></td>
 </tr>

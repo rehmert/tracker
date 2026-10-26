@@ -14,6 +14,9 @@ def migrate(engine):
             pcols = {c["name"] for c in inspect(conn).get_columns("protocols")}
             if "is_active" not in pcols:
                 conn.exec_driver_sql("ALTER TABLE protocols ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 0")
+            for name in ("start_date", "end_date"):
+                if name not in pcols:
+                    conn.exec_driver_sql(f"ALTER TABLE protocols ADD COLUMN {name} DATE")
         if "vials" in tables:
             cols = {c["name"] for c in inspect(conn).get_columns("vials")}
             for name, sql in {

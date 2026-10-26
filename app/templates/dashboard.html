@@ -11,6 +11,53 @@
   <div><dt>Vials with no COA</dt><dd>{{ no_coa }}</dd></div>
 </dl>
 
+<section aria-labelledby="today-heading">
+  <h2 id="today-heading">Today <span class="sub">{{ now_date }}</span></h2>
+  <p class="note">Scheduled entries are projections from active protocols. A matching recorded administration is identified by compound and date, not by dose amount. Nothing here changes inventory or dose logs.</p>
+  <div class="today-cards">
+    <div class="today-card">
+      <h3>Today's administrations</h3>
+      {% if today_summary.today %}
+      <ul>{% for e in today_summary.today %}
+        <li>{{ e.name }} — {{ e.dose }}
+          <span class="tag">{{ 'Recorded' if e.status == 'recorded' else ('Recorded (unscheduled)' if e.status == 'extra' else 'Due') }}</span>
+          {% if e.protocol %}<small>{{ e.protocol }}</small>{% endif %}
+        </li>
+      {% endfor %}</ul>
+      {% else %}<p class="empty">No administrations scheduled or recorded today.</p>{% endif %}
+    </div>
+    <div class="today-card">
+      <h3>Upcoming · next 7 days</h3>
+      {% if today_summary.upcoming %}
+      <ul>{% for day, e in today_summary.upcoming %}
+        <li><strong>{{ day.strftime('%b %d') }}</strong> — {{ e.name }} {{ e.dose }} <small>{{ e.protocol }}</small></li>
+      {% endfor %}</ul>
+      {% else %}<p class="empty">No projected administrations in the next 7 days.</p>{% endif %}
+    </div>
+    <div class="today-card">
+      <h3>Recently recorded</h3>
+      {% if recent_administrations %}
+      <ul>{% for dose in recent_administrations %}
+        <li><strong>{{ dose.taken_at|dt }}</strong> — {{ dose.vial.compound.name }} {{ dose.entered_value|n1 }} {{ dose.entered_unit }}</li>
+      {% endfor %}</ul>
+      {% else %}<p class="empty">No administrations recorded in the past week.</p>{% endif %}
+    </div>
+    <div class="today-card">
+      <h3>Inventory watch</h3>
+      {% if forecasts %}
+      <ul>{% for row in forecasts[:5] %}
+        <li>{{ row.compound }} — {{ row.days_left|round(1) }} days estimated <span class="tag">{{ 'Low stock' if row.low else 'Forecast' }}</span></li>
+      {% endfor %}</ul>
+      {% else %}<p class="empty">No active-protocol supply forecasts.</p>{% endif %}
+      <p><a href="#inventory-forecast">Full inventory forecast</a></p>
+    </div>
+  </div>
+  {% if today_summary.missing_start %}
+  <p class="note">Set a start date to project: {% for p in today_summary.missing_start %}<a href="/protocols/{{ p.id }}">{{ p.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}.</p>
+  {% endif %}
+  <p><a href="/calendar">Open calendar</a> · <a href="/doses">Record an administration</a></p>
+</section>
+
 <section>
   <h2>Current Protocols</h2>
   <p class="note">Only active protocols contribute to inventory forecasts. Saved what-if plans do not.</p>
@@ -62,7 +109,7 @@
 </section>
 
 <section>
-  <h2>Inventory forecast</h2>
+  <h2 id="inventory-forecast">Inventory forecast</h2>
   <p class="note">Based on combined weekly usage in active protocols; excludes expired and discarded vials. Assumes unchanged schedules and no future purchases or losses. Low stock means under 21 days of supply.</p>
   {% if forecasts %}
   <div class="scroll"><table><thead><tr><th>Compound</th><th>Usable stock</th><th>Days of supply</th><th>Estimated depletion</th><th>Status</th></tr></thead><tbody>

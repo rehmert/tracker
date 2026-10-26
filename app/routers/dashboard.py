@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import config, metrics, services, charts
+from ..today import schedule_summary
 from ..db import get_db
 from ..models import DoseLog, Vial, VitalReading, Protocol
 from ..templating import render
@@ -121,6 +122,18 @@ def home(request: Request, db: Session = Depends(get_db)):
         when = v.purchase.purchased_on if v.purchase else v.created_at.date()
         by_month[when.strftime("%Y-%m")] += cents
 
+    # The Today card reads recorded administrations and active protocol schedules.
+    # This query includes today's records for same-day reconciliation and the
+    # preceding week for a compact recent-history view.
+    today_date = now.date()
+    recent_week = list(db.scalars(select(DoseLog).where(
+        DoseLog.kind == 'dose',
+        DoseLog.taken_at >= datetime.combine(today_date - timedelta(days=7), datetime.min.time()),
+        DoseLog.taken_at < datetime.combine(today_date + timedelta(days=1), datetime.min.time())
+    ).order_by(DoseLog.taken_at.desc())))
+    today_summary = schedule_summary(protocols, recent_week, today_date)
+    recent_administrations = recent_week[:5]
+
     recent = []
     for dose in db.scalars(select(DoseLog).order_by(DoseLog.taken_at.desc()).limit(8)):
         vd = views[dose.vial_id]
@@ -146,4 +159,6 @@ def home(request: Request, db: Session = Depends(get_db)):
         no_coa=sum(1 for v in vials if v.status != "discarded" and v.coa_id is None),
         protocol_summaries=protocol_summaries, forecasts=forecasts,
         vital_trends=vital_trends, charts_by_range=charts_by_range,
+        today_summary=today_summary, recent_administrations=recent_administrations,
+        now_date=today_date,
     )
