@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Health insights{% endblock %}
+{% block content %}
+<h1>Health insights</h1>
+<p class="note">Compare recorded weight, blood pressure, pulse and laboratory trends over the same time period. Dose markers indicate timing only; they do not establish cause and effect.</p>
+<section>
+<form method="get" action="/health-insights" class="grid">
+  <label class="field"><span>Time range</span><select name="days" onchange="this.form.requestSubmit()">{% for value,label in ranges.items() %}<option value="{{ value }}" {% if value == days %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Lab analyte</span><select name="analyte" onchange="this.form.requestSubmit()"><option value="">{% if choices %}Select analyte{% else %}No lab results{% endif %}</option>{% for key,label in choices %}<option value="{{ key }}" {% if key == selected %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Administration and vial markers</span><select name="events" onchange="this.form.requestSubmit()"><option value="1" {% if events_on %}selected{% endif %}>Show</option><option value="0" {% if not events_on %}selected{% endif %}>Hide</option></select></label>
+  <div><button type="submit">Update charts</button></div>
+</form>
+</section>
+<section><h2>Weight <small>({{ weight_count }} readings)</small></h2><div class="chartbox">{{ weight_chart|safe }}</div><p><a href="/vitals?days={{ days }}">View recorded vitals →</a></p></section>
+<section><h2>Blood pressure <small>({{ bp_count }} readings)</small></h2><div class="chartbox">{{ bp_chart|safe }}</div></section>
+<section><h2>Pulse <small>({{ pulse_count }} readings)</small></h2><div class="chartbox">{{ pulse_chart|safe }}</div></section>
+<section><h2>Laboratory trend</h2>{% if lab_info %}<p class="note">{{ lab_info.name }} · {{ lab_info.count }} comparable results · {{ lab_info.unit }}{% if lab_info.skipped %} · {{ lab_info.skipped }} omitted due to incompatible units{% endif %}</p><div class="chartbox">{{ lab_chart|safe }}</div>{% else %}<p class="empty">No lab measurements for this analyte and period.</p>{% endif %}<p><a href="/labs">Explore lab results →</a></p></section>
+{% endblock %}

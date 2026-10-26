@@ -1,7 +1,25 @@
-{% extends "base.html" %}{% block title %}Edit dose{% endblock %}{% block content %}<h1>Edit dose #{{ dose.id }}</h1><p>{{ dose.vial.compound.name }} · vial #{{ dose.vial_id }}</p>
+{% extends "base.html" %}{% block title %}Edit dose<section class="card wide" aria-label="Change history">
+<h2>Change history</h2>
+<p>Previous edits are recorded with before and after values. Deleted records remain in the audit log.</p>
+{% if history %}
+<div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Previous amount</th><th>Updated amount</th><th>Previous type</th><th>Updated type</th></tr></thead><tbody>
+{% for event in history %}{% set before = event.before_json | from_json %}{% set after = event.after_json | from_json %}
+<tr><td>{{ event.created_at | dt }}</td><td>{{ event.action }}</td><td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td><td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td><td>{{ before.get('kind', '—') }}</td><td>{{ after.get('kind', '—') }}</td></tr>
+{% endfor %}</tbody></table></div>
+{% else %}<p>No corrections recorded.</p>{% endif %}
+</section>{% endblock %}{% block content %}<h1>Edit dose #{{ dose.id }}</h1><p>{{ dose.vial.compound.name }} · vial #{{ dose.vial_id }}</p>
 <form method="post" action="/doses/{{ dose.id }}/edit" class="grid"><label class="field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ dose.taken_at.strftime('%Y-%m-%dT%H:%M') }}"></label>
 <label class="field"><span>Amount</span><input name="amount" type="number" step="any" min="0" value="{{ dose.entered_value }}" required></label>
 <label class="field"><span>Unit</span><select name="unit">{% for u in DOSE_UNITS %}<option value="{{ u }}" {% if u == dose.entered_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
 <label class="field"><span>Type</span><select name="kind"><option value="dose" {% if dose.kind == 'dose' %}selected{% endif %}>Dose</option><option value="waste" {% if dose.kind == 'waste' %}selected{% endif %}>Waste</option></select></label>
 <label class="field"><span>Site</span><select name="site"><option value="">Not recorded</option>{% for site in sites %}<option value="{{ site }}" {% if site == dose.site %}selected{% endif %}>{{ site }}</option>{% endfor %}</select></label>
-<label class="field wide"><span>Notes</span><input name="notes" value="{{ dose.notes }}"></label><details class="wide"><summary>Correct disposables used</summary><p>Selections below replace the original disposable usage for this dose.</p><div class="scroll"><table><thead><tr><th>Use</th><th>Supply</th><th>Available (plus original usage)</th><th>Quantity</th></tr></thead><tbody>{% for s in supplies %}<tr><td><input type="checkbox" name="supply_id_used" value="{{ s.id }}" {% if s.id in used %}checked{% endif %}></td><td>{{ s.name }}</td><td>{{ s.remaining_qty|num }}{% if s.id in used %} + {{ used[s.id]|num }}{% endif %}</td><td><input type="number" name="supply_qty_{{ s.id }}" min="0.001" step="any" value="{{ used.get(s.id,1) }}"></td></tr>{% endfor %}</tbody></table></div></details><button class="primary">Save entry</button><a href="/doses">Cancel</a></form>{% endblock %}
+<label class="field wide"><span>Notes</span><input name="notes" value="{{ dose.notes }}"></label><details class="wide"><summary>Correct disposables used</summary><p>Selections below replace the original disposable usage for this dose.</p><div class="scroll"><table><thead><tr><th>Use</th><th>Supply</th><th>Available (plus original usage)</th><th>Quantity</th></tr></thead><tbody>{% for s in supplies %}<tr><td><input type="checkbox" name="supply_id_used" value="{{ s.id }}" {% if s.id in used %}checked{% endif %}></td><td>{{ s.name }}</td><td>{{ s.remaining_qty|num }}{% if s.id in used %} + {{ used[s.id]|num }}{% endif %}</td><td><input type="number" name="supply_qty_{{ s.id }}" min="0.001" step="any" value="{{ used.get(s.id,1) }}"></td></tr>{% endfor %}</tbody></table></div></details><button class="primary">Save entry</button><a href="/doses">Cancel</a></form><section class="card wide" aria-label="Change history">
+<h2>Change history</h2>
+<p>Previous edits are recorded with before and after values. Deleted records remain in the audit log.</p>
+{% if history %}
+<div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Previous amount</th><th>Updated amount</th><th>Previous type</th><th>Updated type</th></tr></thead><tbody>
+{% for event in history %}{% set before = event.before_json | from_json %}{% set after = event.after_json | from_json %}
+<tr><td>{{ event.created_at | dt }}</td><td>{{ event.action }}</td><td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td><td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td><td>{{ before.get('kind', '—') }}</td><td>{{ after.get('kind', '—') }}</td></tr>
+{% endfor %}</tbody></table></div>
+{% else %}<p>No corrections recorded.</p>{% endif %}
+</section>{% endblock %}

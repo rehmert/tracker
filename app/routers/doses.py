@@ -30,6 +30,21 @@ def _rows(db: Session, compound_id: int | None = None, limit: int = 60) -> list[
              "cost": views[d.vial_id].cost_per_base * d.amount_base} for d in doses]
 
 
+def _dose_snapshot(d: DoseLog, usages: list[SupplyUsage]) -> dict:
+    """Capture the complete record and supply consumption for an audit event."""
+    return {
+        "vial_id": d.vial_id,
+        "taken_at": d.taken_at.isoformat(),
+        "entered_value": d.entered_value,
+        "entered_unit": d.entered_unit,
+        "amount_base": d.amount_base,
+        "kind": d.kind,
+        "site": d.site,
+        "notes": d.notes,
+        "supplies": {str(u.supply_id): u.amount for u in usages},
+    }
+
+
 def _error(msg: str) -> HTMLResponse:
     return HTMLResponse(f'<p class="error" role="alert">{escape(msg)}</p>',
                         headers={"HX-Retarget": "#form-msg", "HX-Reswap": "innerHTML"})
@@ -118,6 +133,9 @@ def delete_dose(did: int, db: Session = Depends(get_db)):
     d = db.get(DoseLog, did)
     if d is None:
         raise HTTPException(404, "Entry not found")
+    used = list(db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did)))
+    db.add(ChangeAudit(entity_type="dose", entity_id=did, action="delete",
+                       before_json=json.dumps(_dose_snapshot(d, used)), after_json="{}"))
     manual_supplies.restore_dose(db, did)
     db.delete(d)
     db.commit()
@@ -128,7 +146,8 @@ def delete_dose(did: int, db: Session = Depends(get_db)):
 def edit_page(did: int, request: Request, db: Session = Depends(get_db)):
     d = db.get(DoseLog, did)
     if not d: raise HTTPException(404)
-    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=list(db.scalars(select(Supply).order_by(Supply.name))), used={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))})
+    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=list(db.scalars(select(Supply).order_by(Supply.name))), used={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))},
+                  history=list(db.scalars(select(ChangeAudit).where(ChangeAudit.entity_type == "dose", ChangeAudit.entity_id == did).order_by(ChangeAudit.id.desc()))))
 
 @router.post("/doses/{did}/edit")
 async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amount: float = Form(...),
@@ -140,8 +159,6 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
     try:
         selected = await manual_supplies.selections(request, db, credits={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))})
         old_usage = list(db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did)))
-        old = {str(u.supply_id): u.amount for u in old_usage}
-        new = {str(item.id): qty for item, qty in selected}
         vd = services.vial_views(db, [d.vial])[d.vial_id]
         base = U.amount_to_vial_base(amount, unit, vd.dim, vd.conc_per_ml)
         if base <= 0 or base > vd.remaining_base + d.amount_base + 1e-7:
@@ -152,7 +169,8 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
         for item, qty in selected:
             if qty > item.remaining_qty + original.get(item.id, 0) + 1e-9:
                 raise ValueError(f"Insufficient {item.name} inventory for this correction.")
-        before = {"amount_base":d.amount_base, "taken_at":d.taken_at.isoformat(), "supplies":old}
+        when = services.parse_datetime(taken_at)
+        before = _dose_snapshot(d, old_usage)
         for u in old_usage:
             item = db.get(Supply, u.supply_id)
             if item: item.remaining_qty += u.amount
@@ -161,8 +179,10 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
             item.remaining_qty -= qty
             db.add(SupplyUsage(supply_id=item.id, dose_id=did, amount=qty))
         d.amount_base, d.entered_value, d.entered_unit = base, amount, U.parse_unit(unit).name
-        d.taken_at, d.kind, d.site, d.notes = services.parse_datetime(taken_at), ("waste" if kind == "waste" else "dose"), site, notes.strip()
-        db.add(ChangeAudit(entity_type="dose", entity_id=did, action="edit", before_json=json.dumps(before), after_json=json.dumps({"amount_base":base,"taken_at":d.taken_at.isoformat(),"supplies":new})))
+        d.taken_at, d.kind, d.site, d.notes = when, ("waste" if kind == "waste" else "dose"), site, notes.strip()
+        after = _dose_snapshot(d, [SupplyUsage(supply_id=item.id, amount=qty) for item, qty in selected])
+        db.add(ChangeAudit(entity_type="dose", entity_id=did, action="edit",
+                           before_json=json.dumps(before), after_json=json.dumps(after)))
         db.commit()
     except (ValueError, TypeError) as exc:
         db.rollback()

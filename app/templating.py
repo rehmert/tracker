@@ -1,3 +1,4 @@
+import json
 from datetime import date, datetime
 
 from fastapi.templating import Jinja2Templates
@@ -46,7 +47,7 @@ def label_unit(unit: str) -> str:
 
 
 templates.env.filters.update(money=money, money_precise=money_precise, amt=amt, conc=conc,
-                             num=num, dt=dt)
+                             num=num, dt=dt, from_json=json.loads)
 templates.env.globals.update(
     DOSE_UNITS=U.DOSE_UNITS, CONTENT_UNITS=U.CONTENT_UNITS,
     PERIOD_LABELS=calc.PERIOD_LABELS, currency=config.CURRENCY)

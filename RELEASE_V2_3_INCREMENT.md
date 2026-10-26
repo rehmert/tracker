@@ -5,6 +5,6 @@ The CSV contains the identical timestamp grid and baseline/scenario values produ
 
 No database migration is required for this increment.
 
-**Deployment caution:** This package is derived from the prior v2.2 release archive, not a live checkout of GitHub main. Compare with your current repository before applying; do not overwrite newer changes. Keep `.env`, `data/`, `backups/`, and `/tracker-backups/` intact.
+**Deployment caution:** This package is rebased onto the user-supplied tracker-main(2).zip source. It preserves that source’s existing backup retention implementation and updates its outdated backup-retention test. Compare against your deployed repository before applying; this package is not deployed to the server. Keep `.env`, `data/`, `backups/`, and `/tracker-backups/` intact.
 
-Run `pytest -q tests/test_pk_csv.py` and the full test suite before deploying.
+Run `PYTHONPATH=. python -m pytest -q` before deploying.

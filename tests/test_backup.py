@@ -37,5 +37,5 @@ def test_tampering_is_detected(tmp_path):
 def test_prune_retains_recent(tmp_path):
     for day in ('20261021', '20261022', '20261023'):
         (tmp_path / f'tracker-{day}T010000000000Z.zip').write_bytes(b'x')
-    prune_backups(tmp_path, daily=1, weekly=0, monthly=0)
+    prune_backups(tmp_path, keep=1)
     assert len(list(tmp_path.glob('*.zip'))) == 1
