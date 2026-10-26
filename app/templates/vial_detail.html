@@ -91,6 +91,17 @@
     <label class="field"><span>Unit</span><select name="content_unit">{% for u in CONTENT_UNITS %}<option {% if u == v.content_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
     <label class="field"><span>Liquid volume (mL)</span><input type="number" name="volume_ml" step="any" min="0" value="{{ v.volume_ml if v.volume_ml else '' }}"></label>
     <label class="field"><span>Reconstituted on</span><input type="date" name="reconstituted_on" value="{{ v.reconstituted_on or '' }}"></label>
+    <fieldset class="wide lifecycle-fields"><legend>Vial lifecycle (optional)</legend>
+      <p class="note">Enter observed dates only. Beyond-use dates are not calculated automatically.</p>
+      <div class="grid">
+        <label class="field"><span>Received</span><input type="date" name="received_on" value="{{ v.received_on or '' }}"></label>
+        <label class="field"><span>First punctured</span><input type="date" name="first_punctured_on" value="{{ v.first_punctured_on or '' }}"></label>
+        <label class="field"><span>First administered</span><input type="date" name="first_dosed_on" value="{{ v.first_dosed_on or '' }}"></label>
+        <label class="field"><span>Beyond-use date (documented)</span><input type="date" name="beyond_use_on" value="{{ v.beyond_use_on or '' }}"></label>
+        <label class="field"><span>Finished / discarded on</span><input type="date" name="closed_on" value="{{ v.closed_on or '' }}"></label>
+        <label class="field wide"><span>Storage notes</span><input name="storage_notes" value="{{ v.storage_notes or '' }}" placeholder="Storage conditions or source for beyond-use date"></label>
+      </div>
+    </fieldset>
     <label class="field"><span>Expires</span><input type="date" name="expires_on" value="{{ v.expires_on or '' }}"></label>
     <label class="field"><span>Price paid ({{ currency }})</span><input type="number" name="unit_price" step="0.01" min="0" value="{{ '%.2f'|format(v.unit_price_cents / 100) }}"></label>
     <label class="check wide"><input type="checkbox" name="use_coa_content" {% if v.use_coa_content %}checked{% endif %}> Use the newest COA's reported content instead of the label for inventory and cost</label>

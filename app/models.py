@@ -55,6 +55,12 @@ class Vial(Base):
     content_unit: Mapped[str] = mapped_column(String(8))          # mcg | mg | g | IU
     volume_ml: Mapped[float | None] = mapped_column(Float, nullable=True)  # liquid / recon volume
     reconstituted_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    received_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    first_punctured_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    first_dosed_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    beyond_use_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    closed_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    storage_notes: Mapped[str] = mapped_column(Text, default="")
     expires_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(12), default="sealed")
     use_coa_content: Mapped[bool] = mapped_column(Boolean, default=False)

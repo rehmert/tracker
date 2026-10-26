@@ -66,9 +66,14 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
                 content_value: float = Form(...), content_unit: str = Form(...),
                 volume_ml: str = Form(""), reconstituted_on: str = Form(""),
                 expires_on: str = Form(""), unit_price: str = Form("0"),
+                received_on: str = Form(""), first_punctured_on: str = Form(""),
+                first_dosed_on: str = Form(""), beyond_use_on: str = Form(""),
+                closed_on: str = Form(""), storage_notes: str = Form(""),
                 use_coa_content: str = Form(""), notes: str = Form(""), cap_color: str = Form(""),
                 db: Session = Depends(get_db)):
     v = _get(db, vid)
+    tracked = ("status", "received_on", "first_punctured_on", "first_dosed_on", "beyond_use_on", "closed_on", "storage_notes")
+    previous = {key: str(getattr(v, key) or "") for key in tracked}
     back = f"/vials/{vid}"
     try:
         old_dim = U.parse_unit(v.content_unit).dim
@@ -87,6 +92,15 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
         v.content_value, v.content_unit, v.volume_ml = content_value, unit.name, vol
         v.reconstituted_on = services.parse_date(reconstituted_on)
         v.expires_on = services.parse_date(expires_on)
+        for field, raw in (("received_on", received_on), ("first_punctured_on", first_punctured_on),
+                           ("first_dosed_on", first_dosed_on), ("beyond_use_on", beyond_use_on),
+                           ("closed_on", closed_on)):
+            setattr(v, field, services.parse_date(raw))
+        if v.first_punctured_on and v.received_on and v.first_punctured_on < v.received_on:
+            raise ValueError("First puncture cannot precede receipt.")
+        if v.first_dosed_on and v.first_punctured_on and v.first_dosed_on < v.first_punctured_on:
+            raise ValueError("First dose cannot precede first puncture.")
+        v.storage_notes = storage_notes.strip()
         v.unit_price_cents = services.to_cents(unit_price)
         v.use_coa_content = bool(use_coa_content)
         v.notes = notes.strip()
@@ -94,6 +108,10 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
     except ValueError as exc:
         db.rollback()
         return services.flash_redirect(back, err=str(exc))
+    current = {key: str(getattr(v, key) or "") for key in tracked}
+    if current != previous:
+        db.add(ChangeAudit(entity_type="vial", entity_id=vid, action="lifecycle_update",
+                           before_json=json.dumps(previous), after_json=json.dumps(current)))
     db.commit()
     return services.flash_redirect(back, msg="Vial updated.")
 

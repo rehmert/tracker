@@ -22,6 +22,12 @@ def migrate(engine):
             for name, sql in {
                 "cap_color": "VARCHAR(60) NOT NULL DEFAULT ''",
                 "kit_ref": "VARCHAR(120) NOT NULL DEFAULT ''",
+                "received_on": "DATE",
+                "first_punctured_on": "DATE",
+                "first_dosed_on": "DATE",
+                "beyond_use_on": "DATE",
+                "closed_on": "DATE",
+                "storage_notes": "TEXT NOT NULL DEFAULT ''",
             }.items():
                 if name not in cols:
                     conn.exec_driver_sql(f"ALTER TABLE vials ADD COLUMN {name} {sql}")

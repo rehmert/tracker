@@ -47,6 +47,14 @@ def integrity(request:Request,db:Session=Depends(get_db)):
             issues.append(('Warning',f'Vial #{v.id} has expired but is still active.',f'/vials/{v.id}'))
         if v.reconstituted_on and v.reconstituted_on > date.today():
             issues.append(('Warning',f'Vial #{v.id} has a future reconstitution date.',f'/vials/{v.id}'))
+        if v.first_punctured_on and v.received_on and v.first_punctured_on < v.received_on:
+            issues.append(('Error',f'Vial #{v.id} first puncture precedes receipt.',f'/vials/{v.id}'))
+        if v.first_dosed_on and v.first_punctured_on and v.first_dosed_on < v.first_punctured_on:
+            issues.append(('Error',f'Vial #{v.id} first administration precedes first puncture.',f'/vials/{v.id}'))
+        if v.beyond_use_on and v.beyond_use_on < date.today() and v.status in ('sealed','in_use'):
+            issues.append(('Warning',f'Vial #{v.id} has passed its documented beyond-use date.',f'/vials/{v.id}'))
+        if v.closed_on and v.status in ('sealed','in_use'):
+            issues.append(('Warning',f'Vial #{v.id} has a closure date but is marked active.',f'/vials/{v.id}'))
     for d in db.scalars(select(DoseLog)):
         if d.amount_base <= 0: issues.append(('Error',f'Dose #{d.id} has nonpositive quantity.','/doses'))
     return render(request,'data_integrity.html',issues=issues)
@@ -71,4 +79,4 @@ def quick_entry(request:Request):
 @router.get('/release-info')
 def release_info(request:Request,db:Session=Depends(get_db)):
     from sqlalchemy import inspect
-    return render(request,'release_info.html',version='2.0.0',tables=len(inspect(db.bind).get_table_names()))
+    return render(request,'release_info.html',version='2.1.0',tables=len(inspect(db.bind).get_table_names()))
