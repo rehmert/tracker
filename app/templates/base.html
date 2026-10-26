@@ -18,7 +18,7 @@
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/doses', 'Dose log'),
                     ('/vitals', 'Vitals'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
-                    ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes')] %}
+                    ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes'), ('/backups', 'Backups')] %}
     <ul class="nav-links">
       {% for href, text in links %}
       <li><a href="{{ href }}" title="{{ text }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a></li>

@@ -1,0 +1,11 @@
+[Unit]
+Description=Tracker verified backup
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=tracker
+Group=tracker
+WorkingDirectory=/opt/tracker
+ExecStart=/opt/tracker/.venv/bin/python -m scripts.tracker_backup create
+UMask=0077
