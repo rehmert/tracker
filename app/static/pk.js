@@ -13,20 +13,27 @@
     const c=$('plot'), ctx=c.getContext('2d'), w=c.width,h=c.height;
     ctx.clearRect(0,0,w,h);
     const rows=data.rows, max=Math.max(0.001,...rows.map(r=>Math.max(r.actual,r.planned)));
+    const css=getComputedStyle(document.documentElement);
+    const token=(name, fallback)=>css.getPropertyValue(name).trim()||fallback;
+    const chartText=token('--chart-text','#394a42'), chartGrid=token('--chart-grid','#c9d0c8');
+    const chartNow=token('--chart-now','#53675e');
     const left=58,right=20,top=20,bottom=45;
     const x=i=>left+(w-left-right)*i/Math.max(1,rows.length-1), y=v=>h-bottom-(h-top-bottom)*v/max;
-    ctx.strokeStyle='#888';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
-    ctx.fillStyle='#222';ctx.font='14px sans-serif';ctx.fillText(max.toFixed(2)+' mg-eq',5,top+8);ctx.fillText('0',35,h-bottom);
-    for (const [key,color] of [['actual','#2563eb'],['planned','#e87921']]) {
+    ctx.strokeStyle=chartGrid;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
+    ctx.fillStyle=chartText;ctx.font='14px sans-serif';ctx.fillText(max.toFixed(2)+' mg-eq',5,top+8);ctx.fillText('0',35,h-bottom);
+    for (const [key,color] of [['actual',token('--chart-actual','#2563eb')],['planned',token('--chart-planned','#b45309')]]) {
       ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;
       rows.forEach((r,i)=>i?ctx.lineTo(x(i),y(r[key])):ctx.moveTo(x(i),y(r[key])));ctx.stroke();
     }
     const now=new Date(data.now).getTime(), t0=new Date(rows[0].at).getTime(),t1=new Date(rows[rows.length-1].at).getTime();
     const nx=left+(w-left-right)*(now-t0)/(t1-t0);
-    ctx.setLineDash([5,5]);ctx.strokeStyle='#333';ctx.beginPath();ctx.moveTo(nx,top);ctx.lineTo(nx,h-bottom);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='#222';ctx.fillText(rows[0].at.slice(0,10),left,h-13);ctx.fillText(rows[rows.length-1].at.slice(0,10),w-115,h-13);
+    ctx.setLineDash([5,5]);ctx.strokeStyle=chartNow;ctx.beginPath();ctx.moveTo(nx,top);ctx.lineTo(nx,h-bottom);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=chartText;ctx.fillText(rows[0].at.slice(0,10),left,h-13);ctx.fillText(rows[rows.length-1].at.slice(0,10),w-115,h-13);
     $('summary').textContent=`${data.actual_doses} historical administrations, ${data.planned_doses} planned administrations. Units: ${data.units}.`;
   }
+  // Redraw when Chrome's system color scheme changes without reloading.
+  const scheme=window.matchMedia('(prefers-color-scheme: dark)');
+  if (scheme.addEventListener) scheme.addEventListener('change', () => {refresh().catch(error); compare().catch(error);});
   async function refresh() {
     if (!cid()) return;
     const q=new URLSearchParams({compound_id:cid(),half_life_hours:$('half').value,absorption_half_life_hours:$('abs').value,days_back:$('back').value,days_forward:$('forward').value});
@@ -53,12 +60,45 @@
     const selected=current?.id;
     scenarios=await request('/pk/scenarios?compound_id='+cid());
     $('scenario').replaceChildren(new Option('Unsaved / no future doses',''));
+    const previousSelected = [...$('compareScenarios').selectedOptions].map(o=>o.value);
+    $('compareScenarios').replaceChildren();
+    scenarios.forEach(s => {const opt=new Option(s.name,String(s.id));opt.selected=previousSelected.includes(String(s.id));$('compareScenarios').add(opt);});
     scenarios.forEach(s=>$('scenario').add(new Option(s.name,String(s.id))));
     current=scenarios.find(s=>s.id===selected)||null;
     $('scenario').value=current?.id||'';renderRows();await refresh();
   }
   $('compound').onchange=async()=>{const o=$('compound').selectedOptions[0];$('half').value=o.dataset.half||120;$('abs').value=o.dataset.abs||24;current=null;try{await load();}catch(e){error(e);}};
   $('scenario').onchange=async()=>{current=scenarios.find(s=>s.id===Number($('scenario').value))||null;if(current){$('scenarioName').value=current.name;$('half').value=current.half_life_hours;$('abs').value=current.absorption_half_life_hours;}renderRows();try{await refresh();}catch(e){error(e);}};
+  async function compare() {
+    if(!cid()) return;
+    const selected=[...$('compareScenarios').selectedOptions].map(o=>o.value);
+    if(selected.length>4) throw new Error('Select at most four scenarios.');
+    const q=new URLSearchParams({compound_id:cid(),scenario_ids:selected.join(','),
+      days_back:$('back').value,days_forward:$('forward').value});
+    const result=await request('/pk/compare?'+q);
+    const canvas=$('comparePlot'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+    const css=getComputedStyle(document.documentElement);
+    const token=(name,fallback)=>css.getPropertyValue(name).trim()||fallback;
+    const text=token('--chart-text','#394a42'),grid=token('--chart-grid','#c9d0c8');
+    const colors=[token('--chart-actual','#2563eb'),token('--chart-planned','#b45309'),
+      '#16a34a','#a855f7','#ef4444'];
+    const left=70,right=20,top=22,bottom=50;
+    const max=Math.max(.001,...result.series.flatMap(s=>s.values));
+    const x=i=>left+(w-left-right)*i/Math.max(1,result.at.length-1);
+    const y=v=>h-bottom-(h-top-bottom)*v/max;
+    ctx.strokeStyle=grid;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
+    ctx.fillStyle=text;ctx.font='14px sans-serif';ctx.fillText(max.toFixed(2)+' mg-eq',4,top+7);
+    result.series.forEach((line,j)=>{ctx.strokeStyle=colors[j];ctx.lineWidth=2.5;ctx.beginPath();
+      line.values.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();});
+    ctx.fillStyle=text;
+    if(result.at.length){ctx.fillText(result.at[0].slice(0,10),left,h-12);
+      ctx.fillText(result.at[result.at.length-1].slice(0,10),w-120,h-12);}
+    $('compareLegend').replaceChildren();
+    result.series.forEach((line,j)=>{const span=document.createElement('span');
+      span.textContent='● '+line.name+'  ';span.style.color=colors[j];$('compareLegend').append(span);});
+  }
+  $('compareBtn').onclick=()=>compare().catch(error);
   $('refresh').onclick=()=>refresh().catch(error);
   $('save').onclick=async()=>{try{const r=await request('/pk/scenarios','POST',params());current={id:r.id};await load();}catch(e){error(e);}};
   $('update').onclick=async()=>{if(!current)return;try{await request('/pk/scenarios/'+current.id,'PUT',params());await load();}catch(e){error(e);}};

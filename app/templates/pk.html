@@ -13,7 +13,15 @@
   <label>Days after today <input id="forward" type="number" min="1" max="365" value="45"></label>
   <button id="refresh" type="button">Update chart</button>
 </div>
-<div class="card"><h2>Modeled exposure</h2><canvas id="plot" width="1000" height="380" style="width:100%;max-width:1000px;background:#fff;border:1px solid #ccc" role="img" aria-label="Exposure graph"></canvas><p id="summary"></p><p>Blue: historical doses and decay without future dosing. Orange: historical doses plus planned doses. Dashed vertical line: now.</p></div>
+<div class="card"><h2>Modeled exposure</h2><canvas id="plot" width="1000" height="380" class="pk-chart" role="img" aria-label="Exposure graph"></canvas><p id="summary"></p><p>Blue: historical doses and decay without future dosing. Orange: historical doses plus planned doses. Dashed vertical line: now.</p></div>
+<div class="card">
+<h2>Compare saved scenarios</h2>
+<p class="note">Select up to four scenarios for the chosen compound. The baseline shows recorded administrations and decay without future doses. Scenarios can have different half-lives.</p>
+<label class="field"><span>Scenarios (Ctrl/Command-click for multiple)</span><select id="compareScenarios" multiple size="4" aria-label="Select scenarios to compare"></select></label>
+<button type="button" id="compareBtn">Compare scenarios</button>
+<canvas id="comparePlot" width="1000" height="380" class="pk-chart" role="img" aria-label="PK scenario comparison chart"></canvas>
+<p id="compareLegend" class="note"></p>
+</div>
 <div class="card">
 <h2>Saved scenarios</h2>
 <label>Scenario <select id="scenario"><option value="">Unsaved / no future doses</option></select></label>
@@ -29,5 +37,5 @@
 <table><thead><tr><th>Date/time</th><th>mg</th><th>Actions</th></tr></thead><tbody id="plannedRows"></tbody></table>
 </div>
 <p id="pkError" role="alert" style="color:#a22"></p>
-<script src="/static/pk.js" defer></script>
+<script src="/static/pk.js?v=release3" defer></script>
 {% endblock %}

@@ -132,3 +132,41 @@ def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
     return {"rows": rows, "now": now.isoformat(), "actual_doses": len(actual),
             "planned_doses": len(planned), "units": "modeled mg-equivalent exposure",
             "disclaimer": "Exploratory model, not measured blood concentration or clinical effectiveness."}
+
+
+@router.get('/compare')
+def compare_scenarios(compound_id: int, scenario_ids: str = '', days_back: int = 30,
+                      days_forward: int = 60, db: Session = Depends(get_db)):
+    """Return a common timeline for baseline and up to four hypothetical scenarios."""
+    c = db.get(Compound, compound_id)
+    defaults = pk.profile(c.name) if c else None
+    if defaults is None: raise HTTPException(400, 'Unsupported compound')
+    if not (1 <= days_back <= 365 and 1 <= days_forward <= 365):
+        raise HTTPException(400, 'Invalid range')
+    try:
+        ids = list(dict.fromkeys(int(v) for v in scenario_ids.split(',') if v.strip()))
+    except ValueError:
+        raise HTTPException(400, 'Invalid scenario IDs')
+    if len(ids) > 4: raise HTTPException(400, 'Compare at most four scenarios')
+    now = datetime.now()
+    start, end = now-timedelta(days=days_back), now+timedelta(days=days_forward)
+    # Fetch enough history for slow-clearing compounds; same baseline for all scenarios.
+    history_start = start-timedelta(days=365)
+    q = select(DoseLog).join(Vial).where(Vial.compound_id == compound_id,
+        DoseLog.kind == 'dose', DoseLog.taken_at >= history_start, DoseLog.taken_at <= now)
+    actual = [(d.taken_at, d.amount_base/1000) for d in db.scalars(q)
+              if d.vial.content_unit in ('mg','mcg','g')]
+    base = pk.series(start, end, actual, [], *defaults)
+    results = [{'name':'Recorded + decay only', 'id':None,
+                'values':[r['actual'] for r in base]}]
+    for sid in ids:
+        scenario = db.get(PkScenario, sid)
+        if scenario is None or scenario.compound_id != compound_id:
+            raise HTTPException(400, 'Scenario does not belong to compound')
+        planned = [(d.planned_at, d.amount_mg) for d in scenario.doses if d.planned_at >= now]
+        series = pk.series(start, end, actual, planned, scenario.half_life_hours,
+                           scenario.absorption_half_life_hours)
+        results.append({'name':scenario.name, 'id':sid, 'values':[r['planned'] for r in series]})
+    return {'at':[r['at'] for r in base], 'series':results,
+            'units':'modeled mg-equivalent exposure',
+            'disclaimer':'Hypothetical modeled exposure, not measured blood levels or a dosing recommendation.'}

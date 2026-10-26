@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/app.css?v=release3">
   <script src="/static/vendor/htmx.min.js" defer></script>
 </head>
 <body>
@@ -14,7 +14,7 @@
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/doses', 'Dose log'),
                     ('/vitals', 'Vitals'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
-                    ('/pk', 'PK Simulator'), ('/pages', 'Notes')] %}
+                    ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes')] %}
     <ul>
       {% for href, text in links %}
       <li><a href="{{ href }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}>{{ text }}</a></li>

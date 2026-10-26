@@ -58,6 +58,27 @@ def _form(request: Request, db: Session, rows=None, values=None, error=None):
                   names=_name_options(db), err=error or request.query_params.get("err"))
 
 
+@router.get('/labs/compare')
+def compare_reports(request: Request, first_id: int | None = None, second_id: int | None = None,
+                    db: Session = Depends(get_db)):
+    reports = list(db.scalars(select(LabReport).order_by(LabReport.drawn_on.desc(), LabReport.id.desc())))
+    left = db.get(LabReport, first_id) if first_id else None
+    right = db.get(LabReport, second_id) if second_id else None
+    if left is None and reports: left = reports[0]
+    if right is None and len(reports) > 1: right = reports[1]
+    def indexed(report):
+        return {labs.analyte_key(r.analyte): r for r in report.results} if report else {}
+    a, b = indexed(left), indexed(right)
+    rows = []
+    for key in sorted(set(a) | set(b)):
+        newer, older = a.get(key), b.get(key)
+        converted = labs.convert(key, older.value, older.unit, newer.unit) if newer and older else None
+        delta = newer.value - converted if newer and converted is not None else None
+        rows.append({'name': (newer or older).analyte, 'newer': newer, 'older': older,
+                     'converted': converted, 'delta': delta, 'comparable': delta is not None})
+    return render(request, 'lab_compare.html', reports=reports, left=left, right=right, rows=rows)
+
+
 @router.get("/labs/new")
 def new_report(request: Request, db: Session = Depends(get_db)):
     return _form(request, db)

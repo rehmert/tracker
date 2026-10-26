@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Protocol calendar{% endblock %}
+{% block content %}
+<h1>Protocol calendar</h1>
+<p class="note">Planned entries are projections from active protocols, anchored to the date you choose. They are not dose recommendations or confirmed administrations. Recorded entries come from the dose log. No inventory is changed.</p>
+<form method="get" action="/calendar" class="inline">
+<label class="field"><span>Month</span><input type="month" name="month" value="{{ shown.strftime('%Y-%m') }}"></label>
+<label class="field"><span>Projection anchor date</span><input type="date" name="anchor" value="{{ anchor.isoformat() }}"></label>
+<button type="submit">Show calendar</button>
+</form>
+<p class="row"><a href="/calendar?month={{ previous }}&anchor={{ anchor.isoformat() }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a href="/calendar?month={{ next_month }}&anchor={{ anchor.isoformat() }}">Next →</a></p>
+<div class="calendar-grid">
+{% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<div class="calendar-head">{{ day }}</div>{% endfor %}
+{% for d in days %}<div class="calendar-day {% if not d.in_month %}outside{% endif %}">
+<strong>{{ d.date.day }}</strong>
+{% for x in d.actual %}<div class="calendar-event recorded" title="Recorded administration">✓ {{ x.name }} · {{ x.dose }}</div>{% endfor %}
+{% for x in d.planned %}<div class="calendar-event projected" title="Projected from {{ x.protocol }}">○ {{ x.name }} · {{ x.dose }} <small>({{ x.protocol }})</small></div>{% endfor %}
+</div>{% endfor %}
+</div>
+<p class="note">✓ Recorded · ○ Projected. Monthly and fractional-day frequencies use an approximate cadence. Change the anchor to match your actual protocol schedule.</p>
+{% endblock %}

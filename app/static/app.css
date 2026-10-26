@@ -164,3 +164,26 @@ fieldset legend { color: var(--muted); padding: 0 .3rem; }
 .labcard h3 { margin: 0 0 .2rem; font-family: var(--serif); }
 .labcard .latest { margin: 0 0 .4rem; }
 .labcard .meta { margin: .3rem 0 0; }
+
+/* Dark-mode-safe charts and native controls */
+:root { color-scheme: light dark; --chart-grid: #c9d0c8; --chart-text: #394a42; --chart-now: #53675e; --chart-actual: #2563eb; --chart-planned: #b45309; }
+@media (prefers-color-scheme: dark) {
+  :root { --chart-grid: #46594e; --chart-text: #d5e0d9; --chart-now: #b4c4b9; --chart-actual: #79b8ff; --chart-planned: #ffc078; }
+}
+.chartbox, .overview-chart-range { color: var(--ink); }
+.chart .axis { fill: var(--chart-text); }
+.chart .gl { stroke: var(--chart-grid); }
+.chart .line { stroke-width: 2.5; }
+.chart .dot { stroke-width: 1; }
+.chart .evline { stroke: var(--chart-now); }
+.overview-chart-range[hidden] { display: none !important; }
+.pk-chart { width: 100%; max-width: 1000px; height: auto; display: block; background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; }
+
+/* Release 3 calendar: color-scheme aware */
+.calendar-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-left:1px solid var(--rule);border-top:1px solid var(--rule)}
+.calendar-head {background:var(--wash);font-weight:600;text-align:center;padding:.4rem;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.calendar-day {min-height:110px;padding:.4rem;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);background:var(--surface);overflow-wrap:anywhere}
+.calendar-day.outside {opacity:.45}
+.calendar-event {font-size:.78rem;margin:.25rem 0;padding:.25rem .35rem;border-left:3px solid var(--teal);background:var(--wash)}
+.calendar-event.projected {border-left-color:var(--amber)}
+@media(max-width:760px){.calendar-grid{grid-template-columns:repeat(7,minmax(0,1fr));font-size:.7rem}.calendar-day{padding:.15rem;min-height:80px}.calendar-event{font-size:.65rem;padding:.1rem}}
