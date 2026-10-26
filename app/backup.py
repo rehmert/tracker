@@ -95,6 +95,7 @@ def verify_backup(path: Path) -> dict:
     return manifest
 
 
+<<<<<<< HEAD
 def prune_backups(backup_dir: Path | None = None, daily: int = 7, weekly: int = 4, monthly: int = 3) -> list[Path]:
     """Retain most recent backup in each UTC day/week/month bucket."""
     root = Path(backup_dir or BACKUP_DIR)
@@ -118,6 +119,37 @@ def prune_backups(backup_dir: Path | None = None, daily: int = 7, weekly: int = 
         if archive not in keep:
             archive.unlink()
             removed.append(archive)
+=======
+def prune_backups(
+    backup_dir: Path | None = None,
+    keep: int | None = None
+) -> list[Path]:
+    """Retain the newest N verified backup archives."""
+
+    root = Path(backup_dir or BACKUP_DIR)
+
+    if keep is None:
+        keep = int(os.getenv("TRACKER_BACKUP_KEEP", "90"))
+
+    if keep < 1:
+        raise ValueError("TRACKER_BACKUP_KEEP must be at least 1")
+
+    if not root.exists():
+        return []
+
+    archives = sorted(
+        root.glob("tracker-*.zip"),
+        key=lambda p: p.name,
+        reverse=True
+    )
+
+    removed = []
+
+    for archive in archives[keep:]:
+        archive.unlink()
+        removed.append(archive)
+
+>>>>>>> 32af315 (Formal Migrations)
     return removed
 
 

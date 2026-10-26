@@ -1,6 +1,127 @@
+# ==========================================
+# Tracker - Git Ignore
+# ==========================================
+
+# Python virtual environments
 .venv/
+venv/
+env/
+ENV/
+
+# Python bytecode and caches
 __pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+pip-wheel-metadata/
+
+# ==========================================
+# Application Data
+# ==========================================
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Persistent application data
 data/*
 !data/.gitkeep
+
+# Database backups
+backups/
+backup/
+*.db.bak
+*.sqlite.bak
+
+# Temporary backup files
+.tracker-backup-*/
+
+# ==========================================
+# Configuration and Secrets
+# ==========================================
+
+# Local environment configuration
 .env
+.env.*
+!.env.example
+
+# Local configuration files
+*.local
+config.local.*
+secrets.json
+credentials.json
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ==========================================
+# Frontend
+# ==========================================
+
+# Downloaded third-party assets
 app/static/vendor/
+
+# Node dependencies (if added later)
+node_modules/
+
+# ==========================================
+# IDE and Editor Files
+# ==========================================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Logs and Temporary Files
+# ==========================================
+
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.pid
+
+# ==========================================
+# Local Deployment Artifacts
+# ==========================================
+
+*.zip
+*.tar.gz
+*.tgz
+
+# ==========================================
+# Testing
+# ==========================================
+
+.pytest_cache/
+coverage.xml
+test-results/
