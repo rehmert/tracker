@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css?v=release3-everyday-20261026">
-  <script src="/static/theme.js?v=release3-everyday-20261026"></script>
+  <link rel="stylesheet" href="/static/app.css?v=release5-health-20261026">
+  <script src="/static/theme.js?v=release5-health-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
-  <script src="/static/layout.js?v=release3-everyday-20261026" defer></script>
-  <script src="/static/everyday.js?v=release3-everyday-20261026" defer></script>
+  <script src="/static/layout.js?v=release5-health-20261026" defer></script>
+  <script src="/static/everyday.js?v=release5-health-20261026" defer></script>
 </head>
 <body>
 <div class="shell" id="app-shell">
@@ -18,7 +18,7 @@
     <a class="brand" href="/">Tracker</a>
     <button type="button" class="command-trigger" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search (Ctrl+K)">⌕ <span class="nav-text">Search <kbd>Ctrl K</kbd></span></button>
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/inventory-intelligence', 'Inventory insights'), ('/doses', 'Dose log'),
-                    ('/vitals', 'Vitals'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
+                    ('/vitals', 'Vitals'), ('/health-timeline', 'Health timeline'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
                     ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes'), ('/backups', 'Backups')] %}
     <ul class="nav-links">

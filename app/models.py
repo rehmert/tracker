@@ -93,6 +93,15 @@ class Coa(Base):
     vials: Mapped[list["Vial"]] = relationship("Vial", back_populates="coa")
 
 
+class SupplyCategory(Base):
+    """User-defined supply categories. Built-ins are seeded on first use."""
+    __tablename__ = "supply_categories"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    label: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    unit: Mapped[str] = mapped_column(String(24), default="count")
+
+
 class Supply(Base):
     __tablename__ = "supplies"
     id: Mapped[int] = mapped_column(primary_key=True)

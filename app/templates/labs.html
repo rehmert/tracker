@@ -11,7 +11,7 @@
   <div class="labgrid">
     {% for c in cards %}
     <article class="labcard">
-      <h3><a href="/labs/analyte?name={{ c.key|urlencode }}">{{ c.name }}</a></h3>
+      <h3><a href="/labs/trends/{{ c.key|urlencode }}">{{ c.name }}</a></h3>
       <p class="latest"><strong>{{ c.res.value|num }} {{ c.res.unit }}</strong>
         <small>{{ c.rep.drawn_on|dt }}{% if c.res.ref_low is not none %} · printed range {{ c.res.ref_low|num }} to {{ c.res.ref_high|num }}{% if c.status %} · {{ c.status }} that range{% endif %}{% endif %}</small></p>
       <div class="chartbox">{{ c.svg|safe }}</div>

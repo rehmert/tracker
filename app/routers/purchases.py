@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from .. import calc, services, units as U
 from ..db import get_db
-from ..models import Compound, Purchase, Vial, Supply, SupplyUsage
+from ..models import Compound, Purchase, Vial, Supply, SupplyUsage, SupplyCategory
+from ..supply_categories import ensure_categories, validate_supply
 from ..templating import render
 
 router = APIRouter()
@@ -52,7 +53,8 @@ def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
     compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
     supplies = list(db.scalars(select(Supply).where(Supply.purchase_id == pid)))
     landed = services.purchase_landed(p)
-    return render(request, "purchase_detail.html", p=p, views=views, supplies=supplies, subtotal=subtotal,
+    categories = ensure_categories(db)
+    return render(request, "purchase_detail.html", categories=categories, category_map={c.key: c for c in categories}, p=p, views=views, supplies=supplies, subtotal=subtotal,
                   total=sum(landed.values()), supply_landed=landed, compounds=compounds)
 
 
@@ -164,10 +166,13 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
     back = f"/purchases/{pid}"
     if db.get(Purchase, pid) is None:
         raise HTTPException(404, "Purchase not found")
-    if kind not in ("bac_water", "pill") or not name.strip() or not 0 < quantity <= 1000000:
+    ensure_categories(db)
+    try:
+        validate_supply(db, kind, quantity)
+    except ValueError as exc:
+        return services.flash_redirect(back, err=str(exc))
+    if not name.strip():
         return services.flash_redirect(back, err="Enter a valid supply type, name and quantity.")
-    if kind == "pill" and not quantity.is_integer():
-        return services.flash_redirect(back, err="Pill quantity must be a whole number.")
     try:
         price = services.to_cents(unit_price)
         cid = int(compound_id) if compound_id else None
@@ -193,12 +198,12 @@ def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
     if s is None or s.purchase_id != pid:
         raise HTTPException(404, "Purchase item not found")
     try:
-        if kind not in ("bac_water", "pill") or not name.strip():
+        ensure_categories(db)
+        validate_supply(db, kind, quantity)
+        if not name.strip():
             raise ValueError("Choose a valid type and product name.")
         if not math.isfinite(quantity) or not 0 < quantity <= 1000000:
             raise ValueError("Purchased quantity must be positive and finite.")
-        if kind == "pill" and not quantity.is_integer():
-            raise ValueError("Pill quantity must be a whole number.")
         usage = list(db.scalars(select(SupplyUsage).where(SupplyUsage.supply_id == sid)))
         if usage and kind != s.kind:
             raise ValueError("Cannot change item type after usage is recorded.")
@@ -208,8 +213,8 @@ def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
         new_remaining = s.remaining_qty + (quantity - s.purchased_qty)
         if quantity + 1e-8 < used or new_remaining < -1e-8:
             raise ValueError("New purchased quantity cannot be below the amount already used.")
-        if kind == "pill" and abs(new_remaining - round(new_remaining)) > 1e-8:
-            raise ValueError("Pill inventory must remain a whole number.")
+        if db.query(SupplyCategory).filter_by(key=kind).first().unit == "count" and abs(new_remaining - round(new_remaining)) > 1e-8:
+            raise ValueError("Count-unit inventory must remain a whole number.")
         cid = int(compound_id) if compound_id.strip() else None
         if cid is not None and db.get(Compound, cid) is None:
             raise ValueError("Unknown compound.")

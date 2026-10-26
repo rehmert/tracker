@@ -239,3 +239,19 @@ def delete_report(rid: int, db: Session = Depends(get_db)):
     db.delete(rep)
     db.commit()
     return services.flash_redirect("/labs", msg="Report deleted.")
+
+@router.get("/labs/trends/{analyte_key}")
+def analyte_trend(analyte_key: str, request: Request, db: Session = Depends(get_db)):
+    from urllib.parse import unquote
+    key = unquote(analyte_key)
+    items = _groups(db).get(key)
+    if not items:
+        raise HTTPException(404, "Analyte not found")
+    latest, _ = max(items, key=lambda item: (item[1].drawn_on, item[0].id))
+    series = labs.build_series(latest.analyte, _points(items))
+    chart = charts.line_chart([charts.Series(latest.analyte, series.points)], width=850,
+                              unit=f" {series.unit}", band=series.band,
+                              band_label="Range printed on latest report")
+    rows = sorted(items, key=lambda x: x[1].drawn_on, reverse=True)
+    return render(request, "lab_trend.html", title=latest.analyte, chart=chart,
+                  rows=rows, unit=series.unit, skipped=series.skipped)
