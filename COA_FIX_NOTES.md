@@ -1,23 +1,24 @@
-# COA relationship repair
+# COA startup migration repair (2026-10-26)
 
-This update uses `vials.coa_id -> coas.id` exclusively. One COA can be assigned to many vials; each vial has at most one COA.
+This release fixes a startup failure caused by `ALTER TABLE coas DROP COLUMN vial_id` on existing SQLite databases.
 
-## Deploy
+## Deployment
 
-1. **Back up your SQLite database and uploads first** (use `scripts/backup.sh` or a filesystem snapshot).
-2. Stop the Tracker service and copy this application over your existing application code, preserving your `data/` directory and `.env` settings.
-3. Ensure SQLite is version 3.35+ (`python -c "import sqlite3; print(sqlite3.sqlite_version)"`); the migration uses `ALTER TABLE ... DROP COLUMN`.
-4. Start Tracker. The lifespan migration automatically adds `vials.coa_id`, transfers legacy `coas.vial_id` and `coa_vials` associations, then removes those legacy schema elements.
-5. Verify `/vials`, `/coas`, and a vial detail page. Run `python -m pytest -q` in a test environment.
+1. Stop Tracker and make a **backup of the live SQLite database** (and the `data/uploads` directory). If the database is in WAL mode, stop the application before copying it, or use SQLite's `.backup` command.
+2. Replace the application code with this ZIP; **preserve your `data/` directory and `.env`**.
+3. Restart the Tracker service and check `journalctl -u tracker.service -n 100 --no-pager`.
+4. Verify `/vials`, `/coas`, a vial detail page, and COA bulk assignment.
 
-**Important:** If a vial has conflicting or multiple legacy COAs, the migration stops with a clear error rather than silently discarding assignments. Resolve the conflicting associations on a copy of your database first. Do not drop old tables manually before migration.
+## Behavior
 
-## Changes
+- The authoritative COA assignment is `vials.coa_id`.
+- On first startup, legacy assignments from `coa_vials` and `coas.vial_id` are copied into `vials.coa_id` if they do not conflict.
+- The old `coas.vial_id` column and `coa_vials` table are intentionally **not dropped**; they remain unused historical database objects. Removing them requires a separately planned SQLite table-rebuild migration.
+- A `tracker_schema_migrations` marker prevents re-importing legacy associations after an assignment is edited or cleared.
+- Conflicting legacy COAs raise an explanatory error rather than discarding associations.
 
-- Fixed routes, services, templates and dashboard still using removed `.coas`, `.linked_coas`, `.linked_vials`, `.vial_id` relationships.
-- COA upload now sets `vial.coa_id` and bulk assignment sets the same FK.
-- COA deletion clears linked vial foreign keys via `ON DELETE SET NULL` and only removes uploaded files after database commit.
-- Existing COA references are migrated on startup, including the old `coa_vials` association table.
-- Fixed an existing vitals test assumption: configured display units default to pounds, not kilograms.
+## Validation
 
-Do not use the `schema.sql` script to recreate your production database. SQLAlchemy and the additive migration handle existing databases.
+`python -m pytest -q` (40 passing tests, including legacy-schema migration regression tests).
+
+Tests cannot guarantee compatibility with your specific production database. If startup still fails, provide the complete traceback and a redacted `.schema coas` / `.schema vials` output.

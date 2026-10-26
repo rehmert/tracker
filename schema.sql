@@ -49,13 +49,16 @@ CREATE INDEX ix_vials_purchase ON vials(purchase_id);
 CREATE TABLE coas (
   id                      INTEGER PRIMARY KEY,
   original_name           VARCHAR(255) NOT NULL,
-  stored_name             VARCHAR(80)  NOT NULL UNIQUE,   -- random name under data/uploads/coa/
+  stored_name             VARCHAR(80)  UNIQUE,   -- random name under data/uploads/coa/
   content_type            VARCHAR(80)  NOT NULL,
   size_bytes              INTEGER NOT NULL,
   sha256                  VARCHAR(64)  NOT NULL,
   lab_name                VARCHAR(160) NOT NULL DEFAULT '',
   tested_on               DATE,
   purity_pct              FLOAT,
+  endotoxin_pct           FLOAT,
+  job_id                  VARCHAR(120) NOT NULL DEFAULT '',
+  verify_code             VARCHAR(120) NOT NULL DEFAULT '',
   reported_content_value  FLOAT,
   reported_content_unit   VARCHAR(8),
   notes                   TEXT NOT NULL DEFAULT '',

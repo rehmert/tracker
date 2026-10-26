@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import MetaData, Table, inspect, insert
 
 from .. import config, services, units as U
 from ..templating import render
@@ -53,13 +54,24 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
                           content_type="", size_bytes=0, sha256="")
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
-    coa = Coa(lab_name=lab_name.strip(), tested_on=tested, purity_pct=purity,
-              reported_content_value=reported, reported_content_unit=unit,
-              notes=notes.strip(), endotoxin_pct=endotoxin, job_id=job_id.strip(),
-              verify_code=verify_code.strip(), **stored)
-    db.add(coa)
-    db.flush()
-    v.coa_id = coa.id
+    fields = dict(lab_name=lab_name.strip(), tested_on=tested, purity_pct=purity,
+                  reported_content_value=reported, reported_content_unit=unit,
+                  notes=notes.strip(), endotoxin_pct=endotoxin, job_id=job_id.strip(),
+                  verify_code=verify_code.strip(), **stored)
+    # Legacy databases may still have coas.vial_id (sometimes NOT NULL).
+    # The ORM intentionally no longer maps that column, so an ORM INSERT
+    # fails on those databases. Supply the legacy owner ID only on INSERT;
+    # vials.coa_id remains the authoritative relationship.
+    if "vial_id" in {c["name"] for c in inspect(db.connection()).get_columns("coas")}:
+        legacy_table = Table("coas", MetaData(), autoload_with=db.connection())
+        result = db.execute(insert(legacy_table).values(**fields, vial_id=vid))
+        coa_id = result.inserted_primary_key[0]
+    else:
+        coa = Coa(**fields)
+        db.add(coa)
+        db.flush()
+        coa_id = coa.id
+    v.coa_id = coa_id
     db.commit()
     return services.flash_redirect(back, msg="COA uploaded.")
 
