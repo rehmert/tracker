@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Data exports{% endblock %}
+{% block content %}<header class="dashboard-hero"><div><p class="eyebrow">YOUR DATA</p><h1>Data exports</h1><p class="hero-subtitle">Download your Tracker records as CSV files.</p></div></header>
+<p class="note">Exports contain your recorded data and may include sensitive health information. Keep downloaded files private. CSV exports are for analysis and archiving; they are not a full database backup or an automated import.</p>
+<div class="export-grid">{% for key, value in datasets.items() %}<article class="export-card"><h2>{{ key|title }}</h2><p>{{ value[1]|length }} fields · CSV format</p><a class="dashboard-action secondary" href="/exports/{{ key }}.csv">Download {{ key }}</a></article>{% endfor %}</div>
+{% endblock %}

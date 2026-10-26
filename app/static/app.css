@@ -412,3 +412,17 @@ tbody tr:hover td { background:color-mix(in srgb,var(--teal) 4%,var(--surface));
 .r5-event:before{content:"";position:absolute;left:-6px;top:4px;width:10px;height:10px;background:var(--accent,#0d9488);border-radius:50%}
 .r5-event:last-child{padding-bottom:0}.r5-event-meta{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;color:var(--muted,#64748b);font-size:.86rem}
 .r5-event-body{padding:.45rem 0}.r5-event-body .note{margin:.3rem 0 0}.r5-badge{border-radius:999px;padding:.2rem .65rem;background:rgba(13,148,136,.12);color:var(--accent,#0d9488);font-weight:600}
+
+/* Release 6 — personalization */
+.dashboard-personalize{display:flex;justify-content:flex-end;position:relative;margin-bottom:.65rem}
+.customize-panel{position:absolute;z-index:15;right:0;top:calc(100% + .5rem);width:min(380px,92vw);padding:1rem;border:1px solid var(--border,#dce3eb);border-radius:16px;background:var(--card,#fff);box-shadow:0 16px 38px #0002}
+.customize-panel[hidden]{display:none}
+.customize-row{display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px solid var(--border,#dce3eb)}
+.customize-row label{flex:1;display:flex;align-items:center;gap:.5rem;margin:0}
+.customize-row button{min-width:2rem;border-radius:8px;cursor:pointer}
+.shortcut-tip{font-size:.72rem;line-height:1.5;color:var(--muted,#718096);margin-bottom:.75rem}
+.shortcut-tip kbd{font:inherit;padding:.05rem .25rem;border:1px solid currentColor;border-radius:4px}
+.export-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem}
+.export-card{border:1px solid var(--border,#dce3eb);border-radius:16px;padding:1.2rem;background:var(--card,#fff)}
+.export-card h2{margin-top:0}
+[data-dashboard-panel][hidden]{display:none!important}

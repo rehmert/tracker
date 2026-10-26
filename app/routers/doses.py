@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from .. import services, units as U
 from ..db import get_db
-from ..models import Compound, DoseLog, Vial
+from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply
+from .. import manual_supplies
 from ..templating import render
 
 router = APIRouter()
@@ -41,7 +42,7 @@ def doses_page(request: Request, compound_id: int | None = None, db: Session = D
     return render(request, "doses.html", rows=_rows(db, compound_id), vials=vials, views=views,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
-                  now=datetime.now().strftime("%Y-%m-%dT%H:%M"))
+                  now=datetime.now().strftime("%Y-%m-%dT%H:%M"), supplies=manual_supplies.available(db))
 
 
 @router.post("/doses/preview")
@@ -68,7 +69,7 @@ def preview(request: Request, vial_id: str = Form(""), amount: str = Form(""),
 
 
 @router.post("/doses")
-def create_dose(request: Request, vial_id: int = Form(...), taken_at: str = Form(""),
+async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str = Form(""),
                 amount: float = Form(...), unit: str = Form(...), kind: str = Form("dose"),
                 site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""),
                 db: Session = Depends(get_db)):
@@ -94,10 +95,17 @@ def create_dose(request: Request, vial_id: int = Form(...), taken_at: str = Form
         when = services.parse_datetime(taken_at)
     except ValueError as exc:  # includes UnitError
         return _error(str(exc))
-    db.add(DoseLog(vial_id=vial.id, taken_at=when, entered_value=amount,
+    try:
+        selected = await manual_supplies.selections(request, db)
+    except ValueError as exc:
+        return _error(str(exc))
+    dose = DoseLog(vial_id=vial.id, taken_at=when, entered_value=amount,
                    entered_unit=U.parse_unit(unit).name, amount_base=base,
                    kind="waste" if kind == "waste" else "dose", site=site.strip(),
-                   notes=notes.strip()))
+                   notes=notes.strip())
+    db.add(dose)
+    db.flush()
+    manual_supplies.deduct(db, selected, dose_id=dose.id)
     if vial.status == "sealed":
         vial.status = "in_use"
     db.commit()
@@ -109,6 +117,7 @@ def delete_dose(did: int, db: Session = Depends(get_db)):
     d = db.get(DoseLog, did)
     if d is None:
         raise HTTPException(404, "Entry not found")
+    manual_supplies.restore_dose(db, did)
     db.delete(d)
     db.commit()
     return HTMLResponse("")

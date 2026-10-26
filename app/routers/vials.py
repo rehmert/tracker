@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from .. import services, units as U
 from ..db import get_db
-from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa
+from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply
+from .. import manual_supplies
 from ..templating import render
 
 router = APIRouter()
@@ -54,7 +55,9 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_db)):
                   coa_variance=coa_variance, rows=rows, statuses=VIAL_STATUSES,
                   extras=vd.landed_cents - v.unit_price_cents, today=date.today().isoformat(),
                   bac_supplies=list(db.scalars(select(Supply).where(Supply.kind == "bac_water", Supply.remaining_qty > 0))),
-                  all_coas=list(db.scalars(select(Coa).order_by(Coa.id.desc()))))
+                  all_coas=list(db.scalars(select(Coa).order_by(Coa.id.desc()))),
+                  disposable_supplies=manual_supplies.available(db),
+                  prep_events=list(db.scalars(select(PreparationEvent).where(PreparationEvent.vial_id == vid).order_by(PreparationEvent.id.desc()))))
 
 
 @router.post("/vials/{vid}")
@@ -95,18 +98,30 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
 
 
 @router.post("/vials/{vid}/reconstitute")
-def reconstitute(vid: int, volume_ml: float = Form(...), supply_id: str = Form(""), db: Session = Depends(get_db)):
+async def reconstitute(vid: int, request: Request, volume_ml: float = Form(...), supply_id: str = Form(""), db: Session = Depends(get_db)):
     v = _get(db, vid)
     if volume_ml <= 0:
         return services.flash_redirect(f"/vials/{vid}", err="Volume must be more than 0.")
     if v.volume_ml is not None:
         return services.flash_redirect(f"/vials/{vid}", err="Already has a recorded volume. Edit vial details instead.")
+    try:
+        selected = await manual_supplies.selections(request, db)
+    except ValueError as exc:
+        return services.flash_redirect(f"/vials/{vid}", err=str(exc))
     if supply_id:
         s = db.get(Supply, int(supply_id))
         if not s or s.kind != "bac_water" or s.remaining_qty + 1e-9 < volume_ml:
             return services.flash_redirect(f"/vials/{vid}", err="Insufficient BAC water inventory.")
+        if any(item.id == s.id and qty + volume_ml > s.remaining_qty + 1e-9 for item, qty in selected):
+            return services.flash_redirect(f"/vials/{vid}", err="Combined BAC water and disposable usage exceeds available stock.")
         s.remaining_qty -= volume_ml
         db.add(SupplyUsage(supply_id=s.id, vial_id=vid, amount=volume_ml))
+    event = PreparationEvent(vial_id=vid, kind="reconstitution", notes=f"Added {volume_ml:g} mL")
+    db.add(event)
+    db.flush()
+    for usage in manual_supplies.deduct(db, selected, vial_id=vid):
+        db.flush()
+        db.add(PreparationSupply(event_id=event.id, usage_id=usage.id))
     v.volume_ml, v.reconstituted_on = volume_ml, date.today()
     if v.status == "sealed":
         v.status = "in_use"
@@ -124,3 +139,22 @@ def delete_vial(vid: int, db: Session = Depends(get_db)):
     db.delete(v)
     db.commit()
     return services.flash_redirect(f"/purchases/{pid}" if pid else "/vials", msg="Vial deleted.")
+
+
+@router.post("/vials/{vid}/filter")
+async def record_filtering(vid: int, request: Request, notes: str = Form(""), db: Session = Depends(get_db)):
+    _get(db, vid)
+    try:
+        selected = await manual_supplies.selections(request, db)
+    except ValueError as exc:
+        return services.flash_redirect(f"/vials/{vid}", err=str(exc))
+    if not selected:
+        return services.flash_redirect(f"/vials/{vid}", err="Select at least one supply used for filtering.")
+    event = PreparationEvent(vial_id=vid, kind="filtering", notes=notes.strip())
+    db.add(event)
+    db.flush()
+    for usage in manual_supplies.deduct(db, selected, vial_id=vid):
+        db.flush()
+        db.add(PreparationSupply(event_id=event.id, usage_id=usage.id))
+    db.commit()
+    return services.flash_redirect(f"/vials/{vid}", msg="Filtering supplies recorded.")

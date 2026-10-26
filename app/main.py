@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from . import config, models  # noqa: F401  (models import registers tables)
 from .db import Base, engine
 from .routers import (coas, compounds, dashboard, doses, labs, pages, protocols, purchases, supplies,
-                      vials, vitals, pk, calendar, backups, search, inventory_intelligence, health_timeline)
+                      vials, vitals, pk, calendar, backups, search, inventory_intelligence, health_timeline, exports)
 from .security import require_auth
 
 
@@ -22,7 +22,7 @@ app = FastAPI(title="Tracker", dependencies=[Depends(require_auth)],
               lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=config.BASE_DIR / "static"), name="static")
 
-for module in (dashboard, compounds, purchases, vials, coas, doses, supplies, vitals, labs, protocols, pages, pk, calendar, backups, search, inventory_intelligence, health_timeline):
+for module in (dashboard, compounds, purchases, vials, coas, doses, supplies, vitals, labs, protocols, pages, pk, calendar, backups, search, inventory_intelligence, health_timeline, exports):
     app.include_router(module.router)
 
 

@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css?v=release5-health-20261026">
-  <script src="/static/theme.js?v=release5-health-20261026"></script>
+  <link rel="stylesheet" href="/static/app.css?v=release6-personalization-20261026">
+  <script src="/static/theme.js?v=release6-personalization-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
-  <script src="/static/layout.js?v=release5-health-20261026" defer></script>
-  <script src="/static/everyday.js?v=release5-health-20261026" defer></script>
+  <script src="/static/layout.js?v=release6-personalization-20261026" defer></script>
+  <script src="/static/everyday.js?v=release6-personalization-20261026" defer></script>
+  <script src="/static/personalize.js?v=release6-personalization-20261026" defer></script>
 </head>
 <body>
 <div class="shell" id="app-shell">
@@ -20,13 +21,14 @@
     {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/inventory-intelligence', 'Inventory insights'), ('/doses', 'Dose log'),
                     ('/vitals', 'Vitals'), ('/health-timeline', 'Health timeline'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
-                    ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes'), ('/backups', 'Backups')] %}
+                    ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes'), ('/exports', 'Exports'), ('/backups', 'Backups')] %}
     <ul class="nav-links">
       {% for href, text in links %}
       <li><a href="{{ href }}" title="{{ text }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a></li>
       {% endfor %}
     </ul>
     <div class="rail-footer">
+      <div class="shortcut-tip" title="Keyboard shortcuts">Shortcuts: <kbd>Alt</kbd>+<kbd>1</kbd> Overview · <kbd>Alt</kbd>+<kbd>2</kbd> Doses · <kbd>Alt</kbd>+<kbd>3</kbd> Vitals</div>
       <div class="theme-picker" role="group" aria-label="Appearance">
         <span class="theme-label">Appearance</span>
         <div class="theme-options">

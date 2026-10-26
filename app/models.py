@@ -125,6 +125,23 @@ class SupplyUsage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class PreparationEvent(Base):
+    """A user-recorded preparation/filtering event, independent of dosing."""
+    __tablename__ = "preparation_events"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vial_id: Mapped[int] = mapped_column(ForeignKey("vials.id"))
+    kind: Mapped[str] = mapped_column(String(20))  # reconstitution | filtering
+    occurred_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    notes: Mapped[str] = mapped_column(Text, default="")
+
+
+class PreparationSupply(Base):
+    __tablename__ = "preparation_supplies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("preparation_events.id"))
+    usage_id: Mapped[int] = mapped_column(ForeignKey("supply_usages.id"))
+
+
 class DoseLog(Base):
     """A logged administration (kind='dose') or discarded amount (kind='waste')."""
     __tablename__ = "dose_logs"
