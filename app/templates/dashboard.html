@@ -4,12 +4,32 @@
 {% block content %}
 <header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div><div class="hero-actions"><a class="dashboard-action" href="/doses">+ Record dose</a><a class="dashboard-action secondary" href="/vitals">+ Add vitals</a></div></header>
 
-<dl class="stats dashboard-metrics">
-  <div><dt>Stock value on hand</dt><dd>{{ inventory_value|money }}</dd></div>
-  <div><dt>Total spent (landed)</dt><dd>{{ total_spend|money }}</dd></div>
-  <div><dt>Vials in stock</dt><dd>{{ active|length }}</dd></div>
-  <div><dt>Vials with no COA</dt><dd>{{ no_coa }}</dd></div>
-</dl>
+<section class="metric-section" aria-label="At a glance">
+  <div class="section-intro"><h2>At a glance</h2><span>Recorded measurements and inventory</span></div>
+  <div class="insight-grid">
+    <a class="insight-card insight-card-featured" href="/vitals" aria-label="View weight history">
+      <div class="insight-top"><span class="insight-icon" aria-hidden="true">{% include 'icons/weight.svg' %}</span><span class="insight-kicker">Latest weight</span></div>
+      <div class="insight-value">{% if vitals.weight is not none %}{{ vitals.weight|n1 }} <small>{{ vitals.unit }}</small>{% else %}—{% endif %}</div>
+      <div class="insight-foot"><span>{% if vital_trends.weight.change30 is not none %}{{ '%+.1f'|format(vital_trends.weight.change30) }} {{ vitals.unit }} · 30 days{% else %}Add readings to see a trend{% endif %}</span>{{ metric_sparklines.weight|safe }}</div>
+    </a>
+    <a class="insight-card" href="/vitals" aria-label="View blood pressure history">
+      <div class="insight-top"><span class="insight-icon" aria-hidden="true">{% include 'icons/heart.svg' %}</span><span class="insight-kicker">Latest blood pressure</span></div>
+      <div class="insight-value">{% if vitals.bp %}{{ vitals.bp.systolic }}/{{ vitals.bp.diastolic }} <small>mmHg</small>{% else %}—{% endif %}</div>
+      <div class="insight-foot"><span>{% if vital_trends.systolic.avg30 is not none %}{{ vital_trends.systolic.avg30|round(0)|int }} mmHg · 30-day systolic avg.{% else %}No recent trend{% endif %}</span>{{ metric_sparklines.bp|safe }}</div>
+    </a>
+    <a class="insight-card" href="/vitals" aria-label="View pulse history">
+      <div class="insight-top"><span class="insight-icon" aria-hidden="true">{% include 'icons/activity.svg' %}</span><span class="insight-kicker">Latest pulse</span></div>
+      <div class="insight-value">{% if vitals.pulse is not none %}{{ vitals.pulse }} <small>bpm</small>{% else %}—{% endif %}</div>
+      <div class="insight-foot"><span>{% if vital_trends.pulse.avg30 is not none %}{{ vital_trends.pulse.avg30|round(0)|int }} bpm · 30-day avg.{% else %}No recent trend{% endif %}</span>{{ metric_sparklines.pulse|safe }}</div>
+    </a>
+  </div>
+  <dl class="stats dashboard-metrics">
+    <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/box.svg' %}</span>Stock value on hand</dt><dd>{{ inventory_value|money }}</dd></div>
+    <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/wallet.svg' %}</span>Total spent (landed)</dt><dd>{{ total_spend|money }}</dd></div>
+    <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/layers.svg' %}</span>Vials in stock</dt><dd>{{ active|length }}</dd></div>
+    <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/file.svg' %}</span>Vials with no COA</dt><dd>{{ no_coa }}</dd></div>
+  </dl>
+</section>
 
 <section class="dashboard-panel" aria-labelledby="today-heading">
   <h2 id="today-heading">Today <span class="sub">{{ now_date }}</span></h2>

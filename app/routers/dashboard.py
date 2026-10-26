@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import config, metrics, services, charts
+from ..sparklines import sparkline
 from ..today import schedule_summary
 from ..db import get_db
 from ..models import DoseLog, Vial, VitalReading, Protocol
@@ -105,6 +106,9 @@ def home(request: Request, db: Session = Depends(get_db)):
                     "systolic": metrics.summarize(sys_points, now),
                     "diastolic": metrics.summarize(dia_points, now),
                     "pulse": metrics.summarize(pulse_points, now)}
+    metric_sparklines = {"weight": sparkline(weight_points, "Weight", now=now),
+                         "bp": sparkline(sys_points, "Systolic blood pressure", now=now),
+                         "pulse": sparkline(pulse_points, "Pulse", now=now)}
     def within(pts, days):
         return [(t, v) for t, v in pts if t >= now - timedelta(days=days)]
     charts_by_range = {}
@@ -159,6 +163,7 @@ def home(request: Request, db: Session = Depends(get_db)):
         no_coa=sum(1 for v in vials if v.status != "discarded" and v.coa_id is None),
         protocol_summaries=protocol_summaries, forecasts=forecasts,
         vital_trends=vital_trends, charts_by_range=charts_by_range,
+        metric_sparklines=metric_sparklines,
         today_summary=today_summary, recent_administrations=recent_administrations,
         now_date=today_date,
     )
