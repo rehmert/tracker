@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css?v=release3">
+  <link rel="stylesheet" href="/static/app.css?v=stage1-20261026">
+  <script src="/static/theme.js?v=stage1-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
 </head>
 <body>
@@ -20,7 +21,17 @@
       <li><a href="{{ href }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}>{{ text }}</a></li>
       {% endfor %}
     </ul>
+    <div class="rail-footer">
+      <div class="theme-picker" role="group" aria-label="Appearance">
+        <span class="theme-label">Appearance</span>
+        <div class="theme-options">
+          <button type="button" data-theme-choice="light" aria-pressed="true">Light</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+          <button type="button" data-theme-choice="system" aria-pressed="false">Auto</button>
+        </div>
+      </div>
     <p class="rail-note">Personal records only. This app does arithmetic on numbers you enter and never suggests doses.</p>
+    </div>
   </nav>
   <main>
     {% if msg %}<p class="flash ok" role="status">{{ msg }}</p>{% endif %}

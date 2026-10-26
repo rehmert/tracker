@@ -32,6 +32,7 @@
     $('summary').textContent=`${data.actual_doses} historical administrations, ${data.planned_doses} planned administrations. Units: ${data.units}.`;
   }
   // Redraw when Chrome's system color scheme changes without reloading.
+  window.addEventListener('tracker:themechange', () => {refresh().catch(error); compare().catch(error);});
   const scheme=window.matchMedia('(prefers-color-scheme: dark)');
   if (scheme.addEventListener) scheme.addEventListener('change', () => {refresh().catch(error); compare().catch(error);});
   async function refresh() {

@@ -225,3 +225,75 @@ main { min-width: 0; }
 .purchase-edit[open] { display: block; min-width: min(680px, 80vw); white-space: normal; }
 .purchase-edit summary { cursor: pointer; }
 .purchase-edit .grid { padding: .75rem 0; }
+
+/* Stage 1: Soft Modern design system. Light is the default; explicit theme wins
+   over browser/OS preference. All text uses sans-serif stacks. */
+:root, :root[data-theme="light"] {
+  color-scheme: light;
+  --paper:#f5f8fb; --surface:#ffffff; --ink:#1e293b; --muted:#64748b;
+  --rule:#e2e8f0; --teal:#0f766e; --teal-ink:#ffffff; --amber:#a75a06;
+  --brick:#b42335; --wash:#f0f5f7;
+  --chart-grid:#d6e0e9; --chart-text:#536578; --chart-now:#64748b;
+  --chart-actual:#2563eb; --chart-planned:#b45309;
+  --sans: Inter, "Plus Jakarta Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --serif: var(--sans);
+  --radius: 16px; --radius-sm: 11px;
+  --shadow: 0 4px 20px rgba(30,41,59,.045);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper:#111827; --surface:#1f2937; --ink:#f1f5f9; --muted:#a4b3c5;
+  --rule:#384659; --teal:#5eead4; --teal-ink:#102422; --amber:#fbbf74;
+  --brick:#fda4af; --wash:#293648;
+  --chart-grid:#48586a; --chart-text:#d4deea; --chart-now:#a4b3c5;
+  --chart-actual:#93c5fd; --chart-planned:#fbbf74;
+  --shadow: 0 5px 25px rgba(0,0,0,.13);
+}
+html { font-family:var(--sans); font-size:15px; }
+body, button, input, select, textarea { font-family:var(--sans); }
+h1,h2,h3,h4,h5,h6,.brand,.card-title,.stats dd,.labcard h3 { font-family:var(--sans); letter-spacing:-.018em; }
+h1 { font-size:clamp(1.65rem,2.6vw,2.05rem); font-weight:750; }
+h2 { font-weight:700; }
+.rail { background:var(--surface); padding:1.4rem .85rem; }
+.brand { font-size:1.5rem; font-weight:800; letter-spacing:-.045em; padding:0 .6rem; }
+.rail li a { border-radius:var(--radius-sm); padding:.55rem .75rem; transition:background-color .18s ease,color .18s ease; }
+.rail li a[aria-current] { font-weight:650; }
+.rail-footer { margin-top:auto; }
+.rail-note { margin: .9rem .6rem 0; font-size:.74rem; }
+.theme-picker { margin-top:1rem; border-top:1px solid var(--rule); padding:.9rem .35rem 0; }
+.theme-label { display:block; color:var(--muted); font-size:.75rem; font-weight:650; margin:0 .25rem .5rem; }
+.theme-options { display:flex; padding:3px; background:var(--wash); border-radius:12px; gap:2px; }
+.theme-options button { flex:1; padding:.38rem .15rem; min-width:0; border:0; background:transparent; color:var(--muted); font-size:.77rem; border-radius:9px; }
+.theme-options button[aria-pressed="true"] { background:var(--surface); color:var(--ink); box-shadow:0 1px 5px rgba(0,0,0,.12); font-weight:700; }
+main { max-width:90rem; padding-top:2rem; }
+.stats { border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); gap:0; }
+.stats dd { font-weight:750; }
+.scroll,.chartbox,.box,.today-card,.cards li,.pk-chart,fieldset.field { border-radius:var(--radius); box-shadow:var(--shadow); }
+.scroll { overflow-x:auto; overflow-y:hidden; }
+.chartbox { padding:.9rem; }
+.today-card { padding:1.1rem 1.2rem; }
+.cards li { padding:1.1rem 1.25rem; }
+button,.btn,.filters a,input:not([type=checkbox]),select,textarea { border-radius:var(--radius-sm); }
+button,.btn { transition:background-color .18s ease,box-shadow .18s ease,transform .18s ease; }
+button:hover,.btn:hover { box-shadow:0 2px 9px rgba(0,0,0,.08); }
+button:active,.btn:active { transform:translateY(1px); }
+input:not([type=checkbox]),select,textarea { min-height:2.5rem; }
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible { outline:2px solid var(--teal); outline-offset:3px; }
+th { font-weight:700; }
+tbody tr:hover td { background:color-mix(in srgb,var(--teal) 4%,var(--surface)); }
+.tag { border-radius:999px; padding:.12rem .5rem; }
+.gauge { border-radius:999px; }
+.gauge-fill { border-radius:999px; }
+.flash { border-radius:var(--radius-sm); box-shadow:var(--shadow); }
+.calendar-day,.calendar-head { font-family:var(--sans); }
+.calendar-event { border-radius:8px; }
+@media (max-width:760px) {
+  .rail { position:static; height:auto; }
+  .rail-footer { display:flex; align-items:center; justify-content:space-between; gap:.7rem; flex-wrap:wrap; }
+  .theme-picker { margin-top:.5rem; border-top:0; padding:0; width:min(100%,18rem); }
+  .rail-note { display:none; }
+  main { padding-top:1.3rem; }
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { transition-duration:.01ms !important; animation-duration:.01ms !important; scroll-behavior:auto !important; }
+}
