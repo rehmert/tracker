@@ -197,3 +197,55 @@ def export_scenario_comparison_csv(compound_id: int, scenario_ids: str = '',
     return Response(content=output.getvalue(), media_type='text/csv; charset=utf-8',
                     headers={'Content-Disposition': 'attachment; filename="tracker-pk-comparison.csv"',
                              'Cache-Control': 'no-store'})
+
+
+@router.get('/overlay')
+def multi_compound_overlay(compound_ids: str, days_back: int = 30,
+                           days_forward: int = 60, db: Session = Depends(get_db)):
+    """Compare distinct compounds as percent of each compound's displayed peak.
+
+    Values across different compounds are *not* comparable concentrations.
+    Actual administrations only; no future dose recommendations or persistence.
+    """
+    try:
+        ids = list(dict.fromkeys(int(item.strip()) for item in compound_ids.split(',') if item.strip()))
+    except ValueError:
+        raise HTTPException(400, 'Invalid compound IDs')
+    if not 1 <= len(ids) <= 4 or any(i <= 0 for i in ids):
+        raise HTTPException(400, 'Select between one and four compounds')
+    if not (1 <= days_back <= 365 and 1 <= days_forward <= 365):
+        raise HTTPException(400, 'Invalid range')
+    now = datetime.now()
+    start, end = now-timedelta(days=days_back), now+timedelta(days=days_forward)
+    output = []
+    timeline = None
+    for compound_id in ids:
+        c = db.get(Compound, compound_id)
+        defaults = pk.profile(c.name) if c else None
+        if defaults is None:
+            raise HTTPException(400, 'Unsupported compound')
+        hl, ahl = defaults
+        history_start = start - timedelta(hours=min(hl*12, 365*24))
+        doses = db.scalars(select(DoseLog).join(Vial).where(
+            Vial.compound_id == compound_id, DoseLog.kind == 'dose',
+            DoseLog.taken_at >= history_start, DoseLog.taken_at <= now
+        ).order_by(DoseLog.taken_at)).all()
+        actual = [(d.taken_at, d.amount_base / 1000) for d in doses
+                  if d.vial.content_unit in ('mg', 'mcg', 'g')]
+        rows = pk.series(start, end, actual, [], hl, ahl)
+        if timeline is None:
+            timeline = [row['at'] for row in rows]
+        values = [row['actual'] for row in rows]
+        peak = max(values, default=0)
+        output.append({
+            'compound_id': c.id, 'name': c.name,
+            'values_percent': [round(value * 100 / peak, 3) if peak else 0 for value in values],
+            'display_peak_mg_equivalent': peak,
+            'administrations': [{'at': d.isoformat(), 'amount_mg': amount}
+                                for d, amount in actual if start <= d <= now],
+        })
+    return {
+        'at': timeline, 'now': now.isoformat(), 'series': output,
+        'units': 'percent of each compound’s own peak in the displayed window',
+        'disclaimer': 'Normalized shapes only; percentages are NOT cross-compound potency, blood levels, or dosing advice.'
+    }

@@ -99,6 +99,38 @@
     result.series.forEach((line,j)=>{const span=document.createElement('span');
       span.textContent='● '+line.name+'  ';span.style.color=colors[j];$('compareLegend').append(span);});
   }
+  async function overlay() {
+    const selected=[...$('overlayCompounds').selectedOptions].map(o=>o.value);
+    if(!selected.length || selected.length>4) throw new Error('Select one to four compounds.');
+    const q=new URLSearchParams({compound_ids:selected.join(','),days_back:$('back').value,
+      days_forward:$('forward').value});
+    const data=await request('/pk/overlay?'+q);
+    const canvas=$('overlayPlot'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+    const css=getComputedStyle(document.documentElement);
+    const token=(key,fallback)=>css.getPropertyValue(key).trim()||fallback;
+    const ink=token('--chart-text','#394a42'),grid=token('--chart-grid','#c9d0c8');
+    const colors=[token('--chart-actual','#2563eb'),token('--chart-planned','#b45309'),'#16a34a','#a855f7'];
+    const left=58,right=20,top=25,bottom=50;
+    const x=i=>left+(w-left-right)*i/Math.max(1,data.at.length-1);
+    const y=v=>h-bottom-(h-top-bottom)*v/100;
+    ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
+    ctx.fillStyle=ink;ctx.font='14px sans-serif';ctx.fillText('100%',5,top+5);ctx.fillText('0%',18,h-bottom);
+    data.series.forEach((line,j)=>{ctx.strokeStyle=colors[j];ctx.lineWidth=2.5;ctx.beginPath();
+      line.values_percent.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();});
+    if(data.at.length){ctx.fillStyle=ink;ctx.fillText(data.at[0].slice(0,10),left,h-12);
+      ctx.fillText(data.at[data.at.length-1].slice(0,10),w-120,h-12);
+      const start=new Date(data.at[0]).getTime(),end=new Date(data.at[data.at.length-1]).getTime();
+      const nx=left+(w-left-right)*(new Date(data.now).getTime()-start)/(end-start);
+      ctx.setLineDash([5,5]);ctx.strokeStyle=ink;ctx.beginPath();ctx.moveTo(nx,top);ctx.lineTo(nx,h-bottom);ctx.stroke();ctx.setLineDash([]);
+    }
+    $('overlayLegend').replaceChildren();
+    data.series.forEach((line,j)=>{const span=document.createElement('span');
+      span.textContent='● '+line.name+' ('+line.display_peak_mg_equivalent.toFixed(3)+' modeled mg-eq peak)  ';
+      span.style.color=colors[j];$('overlayLegend').append(span);});
+    $('overlayEvents').textContent=data.series.map(line=>line.name+': '+line.administrations.length+' recorded administrations in window').join(' · ');
+  }
+  $('overlayBtn').onclick=()=>overlay().catch(error);
   $('compareBtn').onclick=()=>compare().catch(error);
   $('exportCompareCsv').onclick=()=>{
     if(!cid()){error(new Error('Select a compound first.'));return;}

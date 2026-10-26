@@ -24,6 +24,16 @@
 <p id="compareLegend" class="note"></p>
 </div>
 <div class="card">
+<h2>Multi-compound exposure overlay</h2>
+<p class="note">Compare recorded exposure shapes for up to four compounds. Each curve is independently scaled to its own peak (100%) in the selected window; heights do not compare potency, concentration, or clinical effects.</p>
+<label class="field"><span>Compounds (Ctrl/Command-click to select multiple)</span>
+<select id="overlayCompounds" multiple size="5" aria-label="Compounds for normalized overlay">{% for c in compounds %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+<button id="overlayBtn" type="button">Show multi-compound overlay</button>
+<canvas id="overlayPlot" width="1000" height="380" class="pk-chart" role="img" aria-label="Normalized exposure curves for selected compounds"></canvas>
+<p id="overlayLegend" class="note"></p>
+<p id="overlayEvents" class="note"></p>
+</div>
+<div class="card">
 <h2>Saved scenarios</h2>
 <label>Scenario <select id="scenario"><option value="">Unsaved / no future doses</option></select></label>
 <label>Name <input id="scenarioName" value="My scenario" maxlength="160"></label>
@@ -38,5 +48,5 @@
 <table><thead><tr><th>Date/time</th><th>mg</th><th>Actions</th></tr></thead><tbody id="plannedRows"></tbody></table>
 </div>
 <p id="pkError" role="alert" style="color:#a22"></p>
-<script src="/static/pk.js?v=release3" defer></script>
+<script src="/static/pk.js?v=v23-overlay" defer></script>
 {% endblock %}
