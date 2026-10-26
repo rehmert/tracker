@@ -64,14 +64,27 @@
 </section>
 
 <section>
+  <h2>Add BAC water vials</h2>
+  <p class="note">BAC water contains no tracked active ingredient. Enter the number of vials and their volume in mL. Inventory is tracked in total mL and is available for reconstitution.</p>
+  <form method="post" action="/purchases/{{ p.id }}/bac-water" class="grid">
+    <label class="field"><span>Number of vials</span><input name="vial_count" type="number" min="1" max="100000" step="1" value="1" required></label>
+    <label class="field"><span>Volume per vial (mL)</span><input name="ml_per_vial" type="number" min="0.001" max="1000" step="any" value="10" required></label>
+    <label class="field"><span>Product name (optional)</span><input name="name" placeholder="BAC water"></label>
+    <label class="field"><span>Price per vial ({{ currency }})</span><input name="price_per_vial" type="number" min="0" step="0.01" value="0"></label>
+    <label class="field wide"><span>Notes</span><input name="notes" placeholder="Lot, expiry, or other details"></label>
+    <div><button class="primary" type="submit">Add BAC water inventory</button></div>
+  </form>
+</section>
+
+<section>
   <h2>Supplies and disposables in this purchase</h2>
   <div class="scroll"><table>
     <thead><tr><th>Item</th><th>Type</th><th>Purchased</th><th>Remaining</th><th class="n">Unit price</th><th class="n">Line subtotal</th><th class="n">Landed total</th><th>Actions</th></tr></thead>
     <tbody>
     {% for s in supplies %}
     <tr><td>{{ s.name }}</td><td>{{ category_map[s.kind].label if s.kind in category_map else s.kind }}</td>
-      <td>{{ s.purchased_qty|num }}{% if s.bulk_pack_count %}<small> ({{ s.bulk_pack_count }} × {{ s.bulk_units_per_pack|num }})</small>{% endif %}</td><td>{{ s.remaining_qty|num }}</td>
-      <td class="n">{{ (s.bulk_total_cents / s.purchased_qty)|money if s.bulk_total_cents is not none else s.unit_price_cents|money }}</td>
+      <td>{{ s.purchased_qty|num }} {{ category_map[s.kind].unit if s.kind in category_map else "units" }}{% if s.bulk_pack_count %}<small> ({{ s.bulk_pack_count }} × {{ s.bulk_units_per_pack|num }})</small>{% endif %}</td><td>{{ s.remaining_qty|num }} {{ category_map[s.kind].unit if s.kind in category_map else "units" }}</td>
+      <td class="n">{% if s.kind == "bac_water" and s.bulk_pack_count and s.bulk_total_cents is not none %}{{ (s.bulk_total_cents / s.bulk_pack_count)|money }} / vial{% else %}{{ (s.bulk_total_cents / s.purchased_qty)|money if s.bulk_total_cents is not none else s.unit_price_cents|money }}{% endif %}</td>
       <td class="n">{{ supply_line_cents(s)|money }}</td>
       <td class="n">{{ supply_landed[-s.id]|money }}</td>
       <td><details class="purchase-edit"><summary>Edit</summary>
@@ -83,7 +96,7 @@
           <div class="bulk-ux-package-fields" data-pack-fields>
             <label class="field"><span>Number of packages</span><input name="pack_count" type="number" min="1" step="1" value="{{ s.bulk_pack_count or '' }}"></label>
             <label class="field"><span>Items per package</span><input name="units_per_pack" type="number" min="0.0001" step="any" value="{{ s.bulk_units_per_pack or '' }}"></label>
-            <label class="field"><span>Total line price ({{ currency }})</span><input name="package_price" type="number" min="0" step="0.01" value="{{ '%.2f'|format(s.bulk_total_cents / 100) if s.bulk_total_cents is not none else '' }}"></label>
+            <label class="field"><span>Total line price ({{ currency }}){% if s.kind == "bac_water" %} — all vials{% endif %}</span><input name="package_price" type="number" min="0" step="0.01" value="{{ '%.2f'|format(s.bulk_total_cents / 100) if s.bulk_total_cents is not none else '' }}"></label>
           </div>
           <div data-individual-fields>
             <label class="field"><span>Purchased units</span><input name="quantity" type="number" min="0.0001" step="any" value="{{ s.purchased_qty }}"></label>
