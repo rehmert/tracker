@@ -537,3 +537,6 @@ th,td { white-space:nowrap; }
   .scroll{max-width:calc(100vw - 32px);overflow-x:auto}
   .lifecycle-fields .grid{grid-template-columns:minmax(0,1fr)!important}
 }
+
+/* v2.3 navigation sorting and inventory alerts */
+.nav-sort-controls{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap;padding:.4rem .6rem}.nav-sort-controls label{font-size:.72rem}.nav-sort-controls select{min-width:5rem;max-width:8rem;padding:.25rem}.nav-sort-controls button,.nav-move button{font-size:.75rem;padding:.2rem .4rem;cursor:pointer}.nav-sort-help{font-size:.72rem;padding:0 .6rem}.nav-links li{display:flex;align-items:center}.nav-links li>a{flex:1;min-width:0}.nav-move{display:inline-flex;gap:.15rem}.nav-move[hidden],.nav-sort-help[hidden]{display:none!important}.alert-summary{display:flex;gap:.8rem;flex-wrap:wrap}.alert-summary>div{padding:.75rem 1rem;border:1px solid var(--border,#ddd);border-radius:.6rem}.alert-table td{vertical-align:top}.alert-critical{font-weight:700}.alert-warning{font-weight:600}

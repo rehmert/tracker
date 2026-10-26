@@ -10,6 +10,7 @@
   <script src="/static/density.js?v=ui-density-20261026"></script>
   <script src="/static/theme.js?v=release6-personalization-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/nav_sort.js?v=v23-alerts-nav" defer></script>
   <script src="/static/layout.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/everyday.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/personalize.js?v=dashboard-order-fix-20261026" defer></script>
@@ -21,13 +22,15 @@
     <div class="rail-top"><span class="rail-kicker">YOUR WORKSPACE</span><button type="button" class="sidebar-collapse" id="sidebar-collapse" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="app-sidebar" title="Collapse sidebar">‹</button></div>
     <a class="brand" href="/">Tracker</a>
     <button type="button" class="command-trigger" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search (Ctrl+K)">⌕ <span class="nav-text">Search <kbd>Ctrl K</kbd></span></button>
-    {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/inventory-intelligence', 'Inventory insights'), ('/doses', 'Dose log'),
+    {% set links = [('/', 'Overview'), ('/vials', 'Vials'), ('/inventory-intelligence', 'Inventory insights'), ('/inventory-alerts', 'Inventory alerts'), ('/doses', 'Dose log'),
                     ('/vitals', 'Vitals'), ('/health-timeline', 'Health timeline'), ('/health-insights', 'Health insights'), ('/labs', 'Lab results'), ('/purchases', 'Purchases'),
                     ('/compounds', 'Compounds'), ('/coas', 'COAs'), ('/supplies', 'Supplies'), ('/protocols', 'Protocols'),
                     ('/pk', 'PK Simulator'), ('/calendar', 'Calendar'), ('/pages', 'Notes'), ('/exports', 'Exports'), ('/reconciliation', 'Reconcile inventory'), ('/consumption', 'Consumption'), ('/data-integrity', 'Data integrity'), ('/quick-entry', 'Quick entry'), ('/backups', 'Backups')] %}
-    <ul class="nav-links">
+    <div class="nav-sort-controls"><label for="nav-sort-mode">Menu order</label><select id="nav-sort-mode" aria-label="Navigation order"><option value="default">Default</option><option value="alpha">A–Z</option><option value="custom">Custom</option></select><button type="button" id="nav-edit-toggle" aria-pressed="false" title="Reorder navigation">Reorder</button><button type="button" id="nav-reset" title="Restore default navigation order">Reset</button></div>
+    <p class="nav-sort-help" id="nav-sort-help" hidden>Use ↑ and ↓ to move menu items. Changes save in this browser.</p>
+    <ul class="nav-links" id="nav-sortable">
       {% for href, text in links %}
-      <li><a href="{{ href }}" title="{{ text }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a></li>
+      <li data-nav-key="{{ href }}"><a href="{{ href }}" title="{{ text }}" {% if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a><span class="nav-move" hidden><button type="button" class="nav-up" aria-label="Move {{ text }} up">↑</button><button type="button" class="nav-down" aria-label="Move {{ text }} down">↓</button></span></li>
       {% endfor %}
     </ul>
     <div class="rail-footer">

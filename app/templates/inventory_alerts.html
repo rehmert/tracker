@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Inventory Alerts{% endblock %}
+{% block content %}
+<h1>Inventory alerts</h1>
+<p class="muted">Read-only warnings based on recorded expiration dates, beyond-use dates, and historical consumption. Estimates are not purchasing or dosing recommendations.</p>
+<form method="get" action="/inventory-alerts" class="inventory-card">
+  <label>Usage history <select name="days"><option value="30" {% if forecast_days==30 %}selected{% endif %}>30 days</option><option value="90" {% if forecast_days==90 %}selected{% endif %}>90 days</option><option value="180" {% if forecast_days==180 %}selected{% endif %}>180 days</option></select></label>
+  <label>Alert horizon <select name="horizon">{% for n in [7,14,21,30,60,90] %}<option value="{{ n }}" {% if horizon==n %}selected{% endif %}>{{ n }} days</option>{% endfor %}</select></label>
+  <button type="submit">Apply</button>
+</form>
+<p role="status">{{ alerts|length }} alert{{ '' if alerts|length==1 else 's' }} within the selected horizon.</p>
+<div class="scroll"><table class="alert-table"><thead><tr><th>Priority</th><th>Category</th><th>Item</th><th>Reason</th><th>Relevant date</th></tr></thead><tbody>
+{% for alert in alerts %}<tr><td><span class="alert-{{ alert.level }}">{{ alert.level|title }}</span></td><td>{{ alert.category }}</td><td><a href="{{ alert.href }}">{{ alert.name }}</a></td><td>{{ alert.reason }}</td><td>{{ alert.due or '—' }}</td></tr>
+{% else %}<tr><td colspan="5">No alerts for the selected horizon. Items without usage history may not have depletion estimates.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="muted">Alerts are calculated when this page is opened. They are not notifications. Inventory forecasting excludes expired and past-beyond-use vials; a vial can still appear here as an expiration alert.</p>
+{% endblock %}
