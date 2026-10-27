@@ -188,11 +188,38 @@ def _report(db: Session, rid: int) -> LabReport:
     return r
 
 
+REPORT_SORT_COLUMNS = ("analyte", "value", "unit", "range", "status", "note")
+
+
+def _sort_report_rows(rows, sort: str, direction: str):
+    """Sort report rows without changing persisted result order."""
+    sort = sort if sort in REPORT_SORT_COLUMNS else "analyte"
+    direction = direction if direction in ("asc", "desc") else "asc"
+    def key(row):
+        res = row["res"]
+        status = row["status"]
+        values = {
+            "analyte": res.analyte.casefold(),
+            "value": res.value,
+            "unit": res.unit.casefold(),
+            "range": (res.ref_low if res.ref_low is not None else float("inf"),
+                      res.ref_high if res.ref_high is not None else float("inf")),
+            "status": {"below": 0, "within": 1, "above": 2, None: 3}[status],
+            "note": (res.note or "").casefold(),
+        }
+        return (values[sort], res.id)
+    return sorted(rows, key=key, reverse=(direction == "desc"))
+
+
 @router.get("/labs/{rid}")
-def report_page(rid: int, request: Request, db: Session = Depends(get_db)):
+def report_page(rid: int, request: Request, sort: str = "analyte", direction: str = "asc",
+                db: Session = Depends(get_db)):
     rep = _report(db, rid)
     rows = [{"res": r, "status": labs.range_status(r.value, r.ref_low, r.ref_high)} for r in rep.results]
-    return render(request, "lab_report.html", rep=rep, rows=rows, names=_name_options(db))
+    sort = sort if sort in REPORT_SORT_COLUMNS else "analyte"
+    direction = direction if direction in ("asc", "desc") else "asc"
+    return render(request, "lab_report.html", rep=rep, rows=_sort_report_rows(rows, sort, direction),
+                  names=_name_options(db), sort=sort, direction=direction)
 
 
 @router.get("/labs/{rid}/file")

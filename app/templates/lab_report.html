@@ -5,23 +5,9 @@
 {% if rep.stored_name %}<p>Report file: <a href="/labs/{{ rep.id }}/file" target="_blank" rel="noopener">{{ rep.original_name }}</a> <small>({{ (rep.size_bytes / 1024)|round|int }} KB · sha256 {{ rep.sha256[:10] }}…)</small></p>{% endif %}
 {% if rep.notes %}<p class="note">{{ rep.notes }}</p>{% endif %}
 
-<div class="scroll"><table>
-  <thead><tr><th>Analyte</th><th class="n">Value</th><th>Unit</th><th class="n">Printed range</th><th>Compared with printed range</th><th>Note</th><th></th></tr></thead>
-  <tbody>
-  {% for r in rows %}
-  <tr>
-    <td><a href="/labs/analyte?name={{ r.res.analyte|urlencode }}">{{ r.res.analyte }}</a></td>
-    <td class="n">{{ r.res.value|num }}</td><td>{{ r.res.unit }}</td>
-    <td class="n">{% if r.res.ref_low is not none %}{{ r.res.ref_low|num }} to {{ r.res.ref_high|num }}{% else %}—{% endif %}</td>
-    <td>{{ r.status or '—' }}</td><td>{{ r.res.note or '—' }}</td>
-    <td><form method="post" action="/lab-results/{{ r.res.id }}/delete" onsubmit="return confirm('Remove this result?')"><button class="link danger">Remove</button></form></td>
-  </tr>
-  {% else %}<tr><td colspan="7" class="empty">No results in this report.</td></tr>{% endfor %}
-  </tbody>
-</table></div>
 
 <section>
-  <h2>Add a result to this report</h2>
+  <h2>Add analyte</h2>
   <form method="post" action="/labs/{{ rep.id }}/results" class="grid">
     <label class="field"><span>Analyte</span><input name="analyte" list="analyte-names" maxlength="120" required></label>
     <label class="field"><span>Value</span><input name="value" type="number" step="any" required></label>
@@ -32,6 +18,41 @@
     <div><button class="primary">Add result</button></div>
   </form>
   <datalist id="analyte-names">{% for n in names %}<option value="{{ n }}">{% endfor %}</datalist>
-  <form method="post" action="/labs/{{ rep.id }}/delete" onsubmit="return confirm('Delete this report, its results and its file?')"><button class="link danger">Delete report</button></form>
+
 </section>
+
+<style>
+.lab-status {display:inline-block; padding:.22rem .65rem; border-radius:999px; font-weight:650; border:1px solid transparent;}
+.lab-status-below {color:#2563eb; background:#dbeafe; border-color:#93c5fd;}
+.lab-status-within {color:#166534; background:#dcfce7; border-color:#86efac;}
+.lab-status-above {color:#9a3412; background:#ffedd5; border-color:#fdba74;}
+.lab-sort {color:inherit; text-decoration:none; white-space:nowrap;}
+.lab-sort:hover {text-decoration:underline;}
+@media (prefers-color-scheme:dark) {
+ .lab-status-below {color:#bfdbfe; background:#1e3a8a; border-color:#3b82f6;}
+ .lab-status-within {color:#bbf7d0; background:#14532d; border-color:#22c55e;}
+ .lab-status-above {color:#fed7aa; background:#7c2d12; border-color:#f97316;}
+}
+</style>
+<p class="note">Range indicators: <span class="lab-status lab-status-below">Below</span> <span class="lab-status lab-status-within">Within</span> <span class="lab-status lab-status-above">Above</span>. No indicator is shown when a complete reference range is unavailable.</p>
+<div class="scroll"><table>
+  <thead><tr>
+  {% for column, heading, numeric in [('analyte','Analyte',false), ('value','Value',true), ('unit','Unit',false), ('range','Printed range',true), ('status','Range status',false), ('note','Note',false)] %}
+  <th{% if numeric %} class="n"{% endif %}><a class="lab-sort" href="?sort={{ column }}&amp;direction={{ 'desc' if sort == column and direction == 'asc' else 'asc' }}" aria-label="Sort by {{ heading }}">{{ heading }}{% if sort == column %} {{ '▲' if direction == 'asc' else '▼' }}{% else %} ↕{% endif %}</a></th>
+  {% endfor %}
+  <th>Actions</th>
+</tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td><a href="/labs/analyte?name={{ r.res.analyte|urlencode }}">{{ r.res.analyte }}</a></td>
+    <td class="n">{{ r.res.value|num }}</td><td>{{ r.res.unit }}</td>
+    <td class="n">{% if r.res.ref_low is not none %}{{ r.res.ref_low|num }} to {{ r.res.ref_high|num }}{% else %}—{% endif %}</td>
+    <td>{% if r.status %}<span class="lab-status lab-status-{{ r.status }}" aria-label="{{ r.status|capitalize }} reference range">{{ r.status|capitalize }}</span>{% else %}—{% endif %}</td><td>{{ r.res.note or '—' }}</td>
+    <td><form method="post" action="/lab-results/{{ r.res.id }}/delete" onsubmit="return confirm('Remove this result?')"><button class="link danger">Remove</button></form></td>
+  </tr>
+  {% else %}<tr><td colspan="7" class="empty">No results in this report.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<section><form method="post" action="/labs/{{ rep.id }}/delete" onsubmit="return confirm('Delete this report, its results and its file?')"><button class="link danger">Delete report</button></form></section>
 {% endblock %}

@@ -1,0 +1,1 @@
+Tracker lab table update: overwrite app/routers/labs.py and app/templates/lab_report.html under /opt/tracker; restart tracker.service. Back up originals first. No database migration.
