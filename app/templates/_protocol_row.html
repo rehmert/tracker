@@ -4,6 +4,8 @@
   </select></td>
   <td><input type="number" name="amount" step="any" min="0" value="{{ item.amount_value|num_input if item.amount_value != '' else '' }}" aria-label="Amount per entry" required></td>
   <td><select name="unit" aria-label="Unit">{% for u in DOSE_UNITS %}<option {% if u == item.amount_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></td>
+  <td><input type="number" name="start_week" min="1" step="1" value="{{ item.start_week|default(1, true) }}" aria-label="Start week" required></td>
+  <td><input type="number" name="end_week" min="1" step="1" value="{{ item.end_week if item.end_week is not none else '' }}" placeholder="Ongoing" aria-label="End week"></td>
   <td class="freq"><div class="freq-controls">
     <input type="number" name="freq_count" step="any" min="0" value="{{ item.freq_count|num_input }}" aria-label="Frequency number" required>
     <select name="freq_period" aria-label="Frequency period">

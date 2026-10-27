@@ -28,6 +28,12 @@ def migrate(engine):
             for name in ("start_date", "end_date"):
                 if name not in pcols:
                     conn.exec_driver_sql(f"ALTER TABLE protocols ADD COLUMN {name} DATE")
+        if "protocol_items" in tables:
+            icols = {c["name"] for c in inspect(conn).get_columns("protocol_items")}
+            if "start_week" not in icols:
+                conn.exec_driver_sql("ALTER TABLE protocol_items ADD COLUMN start_week INTEGER NOT NULL DEFAULT 1")
+            if "end_week" not in icols:
+                conn.exec_driver_sql("ALTER TABLE protocol_items ADD COLUMN end_week INTEGER")
         if "vials" in tables:
             cols = {c["name"] for c in inspect(conn).get_columns("vials")}
             for name, sql in {

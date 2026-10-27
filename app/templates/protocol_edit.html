@@ -6,7 +6,7 @@
 <form method="post" action="/protocols/{{ p.id }}/active"><button type="submit">{{ "Mark as what-if" if p.is_active else "Mark as active" }}</button></form>
 <p class="note">Mark active only for a protocol you are currently following. Forecasts are estimates, not dose recommendations.</p>
 <p class="note">Calendar projections begin on the start date, stop at the optional end date, and never change inventory. A start date is required for projections.</p></section>
-<p class="note">Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows and dates; Save &amp; add another stores them and opens a new row.</p>
+<p class="note">To escalate a compound, add multiple rows for the same compound with consecutive week ranges (e.g., weeks 1–4 and 5–8). An empty End week means ongoing. Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows and dates; Save &amp; add another stores them and opens a new row.</p>
 
 <form id="protoform" method="post" action="/protocols/{{ p.id }}/save" novalidate
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
@@ -19,7 +19,7 @@
   </div>
 
   <div class="scroll"><table class="items">
-    <thead><tr><th>Compound</th><th>Amount per entry</th><th>Unit</th><th>How often</th><th></th></tr></thead>
+    <thead><tr><th>Compound</th><th>Amount per entry</th><th>Unit</th><th>Start week</th><th>End week</th><th>How often</th><th></th></tr></thead>
     <tbody id="items">
       {% for item in p.items %}{% include "_protocol_row.html" %}{% endfor %}
       {% if (not p.items or request.query_params.get("add") == "1") and compounds %}{% set item = blank_item %}{% include "_protocol_row.html" %}{% endif %}

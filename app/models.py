@@ -219,6 +219,8 @@ class ProtocolItem(Base):
     amount_unit: Mapped[str] = mapped_column(String(8))
     freq_count: Mapped[float] = mapped_column(Float)
     freq_period: Mapped[str] = mapped_column(String(10))  # day | week | month | interval
+    start_week: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    end_week: Mapped[int | None] = mapped_column(Integer, nullable=True)
     protocol: Mapped[Protocol] = relationship(back_populates="items")
     compound: Mapped[Compound] = relationship()
 

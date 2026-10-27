@@ -13,7 +13,7 @@ from ..models import Compound, Protocol, ProtocolItem, ProtocolRevision
 from ..templating import render
 
 router = APIRouter()
-BLANK = {"amount_value": "", "amount_unit": "mg", "freq_count": 1, "freq_period": "week"}
+BLANK = {"amount_value": "", "amount_unit": "mg", "freq_count": 1, "freq_period": "week", "start_week": 1, "end_week": None}
 
 
 def _saved_inputs(p: Protocol) -> list[calc.ItemInput]:
@@ -21,8 +21,48 @@ def _saved_inputs(p: Protocol) -> list[calc.ItemInput]:
                            i.freq_period) for i in p.items]
 
 
-def _evaluate(inputs: list[calc.ItemInput], refs: dict, weeks: float) -> list[calc.ItemResult]:
-    return [calc.project_item(i, refs[i.compound_id], weeks * 7) for i in inputs]
+def _evaluate(inputs: list[calc.ItemInput], refs: dict, weeks: float, stages=None) -> list[calc.ItemResult]:
+    stages = stages or [(1, None)] * len(inputs)
+    results = []
+    for i, (start, end) in zip(inputs, stages):
+        active_weeks = max(0.0, min(weeks, end if end is not None else weeks) - (start - 1))
+        result = calc.project_item(i, refs[i.compound_id], active_weeks * 7)
+        # Weekly/monthly figures represent the dose during this stage, not an average.
+        results.append(result)
+    return results
+
+
+def _stages(p):
+    return [(i.start_week, i.end_week) for i in p.items]
+
+
+def _validate_stages(parsed, starts, ends):
+    if not starts and not ends:
+        starts = ["1"] * len(parsed)
+        ends = [""] * len(parsed)
+    if len(starts) != len(parsed) or len(ends) != len(parsed):
+        raise HTTPException(400, "Incomplete escalation stage fields")
+    stages = []
+    for idx, (a, b) in enumerate(zip(starts, ends), 1):
+        try:
+            first = int(a)
+            last = int(b) if b.strip() else None
+        except (ValueError, AttributeError):
+            raise HTTPException(400, f"Stage {idx}: enter whole-number weeks")
+        if first < 1 or (last is not None and last < first):
+            raise HTTPException(400, f"Stage {idx}: end week must be at least start week")
+        stages.append((first, last))
+    for idx, row in enumerate(parsed):
+        if not isinstance(row, calc.ItemInput):
+            continue
+        a, b = stages[idx]
+        for j in range(idx):
+            other = parsed[j]
+            if isinstance(other, calc.ItemInput) and other.compound_id == row.compound_id:
+                c, d = stages[j]
+                if a <= (d if d is not None else float('inf')) and c <= (b if b is not None else float('inf')):
+                    raise HTTPException(400, f"Overlapping stages for compound {row.compound_id}: rows {j+1} and {idx+1}")
+    return stages
 
 
 def _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period):
@@ -60,7 +100,7 @@ def protocols_page(request: Request, db: Session = Depends(get_db)):
     refs = services.compound_refs(db)
     rows = []
     for p in db.scalars(select(Protocol).order_by(Protocol.updated_at.desc())):
-        t = calc.totals(_evaluate(_saved_inputs(p), refs, p.horizon_weeks))
+        t = calc.totals(_evaluate(_saved_inputs(p), refs, p.horizon_weeks, _stages(p)))
         rows.append({"p": p, "t": t})
     return render(request, "protocols.html", rows=rows)
 
@@ -94,7 +134,9 @@ def protocol_editor(pid: int, request: Request, db: Session = Depends(get_db)):
 def protocol_calc(pid: int, request: Request, horizon_weeks: str = Form("12"),
                   compound_id: list[str] = Form(default=[]), amount: list[str] = Form(default=[]),
                   unit: list[str] = Form(default=[]), freq_count: list[str] = Form(default=[]),
-                  freq_period: list[str] = Form(default=[]), db: Session = Depends(get_db)):
+                  freq_period: list[str] = Form(default=[]),
+                  start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
+                  db: Session = Depends(get_db)):
     """Stateless what-if: recalculates from the form as it currently stands."""
     p = db.get(Protocol, pid)
     if p is None:
@@ -102,12 +144,14 @@ def protocol_calc(pid: int, request: Request, horizon_weeks: str = Form("12"),
     refs = services.compound_refs(db)
     weeks = _horizon(horizon_weeks)
     results = []
-    for entry in _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period):
+    parsed = _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period)
+    stages = _validate_stages(parsed, start_week, end_week)
+    for entry, (first, last) in zip(parsed, stages):
         if isinstance(entry, calc.ItemResult):
             results.append(entry)
         else:
-            results.append(calc.project_item(entry, refs[entry.compound_id], weeks * 7))
-    saved = calc.totals(_evaluate(_saved_inputs(p), refs, p.horizon_weeks)) if p.items else None
+            results.append(calc.project_item(entry, refs[entry.compound_id], max(0, min(weeks, last if last is not None else weeks) - first + 1) * 7))
+    saved = calc.totals(_evaluate(_saved_inputs(p), refs, p.horizon_weeks, _stages(p))) if p.items else None
     return render(request, "_protocol_results.html", results=results, t=calc.totals(results),
                   saved=saved, weeks=weeks, changed_horizon=weeks != p.horizon_weeks)
 
@@ -118,7 +162,9 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
                   horizon_weeks: str = Form("12"), compound_id: list[str] = Form(default=[]),
                   amount: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
                   freq_count: list[str] = Form(default=[]),
-                  freq_period: list[str] = Form(default=[]), db: Session = Depends(get_db)):
+                  freq_period: list[str] = Form(default=[]),
+                  start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
+                  db: Session = Depends(get_db)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
@@ -127,16 +173,18 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     parsed = _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period)
     if any(isinstance(e, calc.ItemResult) for e in parsed):
         return HTMLResponse('<span class="error">Fix the highlighted rows before saving.</span>')
+    stages = _validate_stages(parsed, start_week, end_week)
     p.name = name.strip() or p.name
     p.notes = notes.strip()
     p.horizon_weeks = _horizon(horizon_weeks)
     p.start_date, p.end_date = start, end
     p.items.clear()
     db.flush()
-    for pos, i in enumerate(parsed):
+    for pos, (i, (first, last)) in enumerate(zip(parsed, stages)):
         p.items.append(ProtocolItem(compound_id=i.compound_id, position=pos,
                                     amount_value=i.amount_value, amount_unit=i.amount_unit,
-                                    freq_count=i.freq_count, freq_period=i.freq_period))
+                                    freq_count=i.freq_count, freq_period=i.freq_period,
+                                    start_week=first, end_week=last))
     db.flush()
     _revision(db, p)
     db.commit()
@@ -149,7 +197,9 @@ def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
                       horizon_weeks: str = Form("12"), compound_id: list[str] = Form(default=[]),
                       amount: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
                       freq_count: list[str] = Form(default=[]),
-                      freq_period: list[str] = Form(default=[]), db: Session = Depends(get_db)):
+                      freq_period: list[str] = Form(default=[]),
+                      start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
+                      db: Session = Depends(get_db)):
     """Persist the completed rows, then open a new editable row.
 
     Uses an ordinary HTML form submission; works even if HTMX or JS fails.
@@ -157,7 +207,8 @@ def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
     result = protocol_save(pid=pid, name=name, notes=notes, start_date=start_date,
                            end_date=end_date, horizon_weeks=horizon_weeks,
                            compound_id=compound_id, amount=amount, unit=unit,
-                           freq_count=freq_count, freq_period=freq_period, db=db)
+                           freq_count=freq_count, freq_period=freq_period,
+                           start_week=start_week, end_week=end_week, db=db)
     if isinstance(result, HTMLResponse):
         return result
     return RedirectResponse(f"/protocols/{pid}?add=1&msg=Item+saved.+Enter+the+next+compound.", status_code=303)
@@ -209,7 +260,8 @@ def protocol_duplicate(pid: int, db: Session = Depends(get_db)):
     for i in p.items:
         copy.items.append(ProtocolItem(compound_id=i.compound_id, position=i.position,
                                        amount_value=i.amount_value, amount_unit=i.amount_unit,
-                                       freq_count=i.freq_count, freq_period=i.freq_period))
+                                       freq_count=i.freq_count, freq_period=i.freq_period,
+                                       start_week=i.start_week, end_week=i.end_week))
     db.add(copy)
     db.commit()
     return services.flash_redirect(f"/protocols/{copy.id}", msg="Duplicated. Edit freely.")
@@ -234,7 +286,8 @@ def _revision(db: Session, p: Protocol):
                 "end_date":p.end_date.isoformat() if p.end_date else None,
                 "items":[{"compound_id":i.compound_id,"amount_value":i.amount_value,
                           "amount_unit":i.amount_unit,"freq_count":i.freq_count,
-                          "freq_period":i.freq_period,"position":i.position} for i in p.items]}
+                          "freq_period":i.freq_period,"position":i.position,
+                          "start_week":i.start_week,"end_week":i.end_week} for i in p.items]}
     db.add(ProtocolRevision(protocol_id=p.id,revision=last+1,snapshot_json=json.dumps(snapshot)))
 
 

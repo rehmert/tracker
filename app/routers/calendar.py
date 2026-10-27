@@ -62,7 +62,9 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
         days_to_project = (end - protocol.start_date).days
         for item in protocol.items:
             for when in cal.occurrences(item, protocol.start_date, days_to_project):
-                if first <= when < end and (protocol.end_date is None or when <= protocol.end_date):
+                if (first <= when < end and (protocol.end_date is None or when <= protocol.end_date)
+                        and when >= protocol.start_date + timedelta(days=7 * (item.start_week - 1))
+                        and (item.end_week is None or when < protocol.start_date + timedelta(days=7 * item.end_week))):
                     planned.setdefault(when, []).append({
                         'compound_id': item.compound_id,
                         'name': item.compound.name, 'protocol': protocol.name,

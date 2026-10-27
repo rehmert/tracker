@@ -62,7 +62,11 @@ def home(request: Request, db: Session = Depends(get_db)):
                             frequency = f"{item.freq_count:g}× per {item.freq_period}"
                         else:
                             frequency = "Unknown frequency"
-                        if weekly is not None and protocol.is_active:
+                        stage_day = (now.date() - protocol.start_date).days if protocol.start_date else None
+                        stage_active = (stage_day is not None and stage_day >= 7 * (item.start_week - 1)
+                                        and (item.end_week is None or stage_day < 7 * item.end_week)
+                                        and (protocol.end_date is None or now.date() <= protocol.end_date))
+                        if weekly is not None and protocol.is_active and stage_active:
                             weekly_use[(item.compound_id, u.dim)] += weekly * u.factor
                     else:
                         frequency = "Invalid frequency"
