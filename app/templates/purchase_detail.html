@@ -42,7 +42,7 @@
   <h2>Add vials to this purchase</h2>
   <form method="post" action="/purchases/{{ p.id }}/vials" class="grid">
     <label class="field"><span>Compound</span>
-      <select name="compound_id" required>{% for c in compounds %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+      <select name="compound_id" id="purchase-vial-compound" required>{% for c in compounds %}<option value="{{ c.id }}" data-unit="{{ c.primary_unit }}">{{ c.name }}</option>{% endfor %}</select></label>
     <label class="field"><span>Form</span>
       <select name="form"><option value="lyophilized">Lyophilized Powder</option><option value="solution">Ready-Made Solution</option></select></label>
     <label class="field"><span>Package size</span><select name="kit_size"><option value="1">Individual vials</option><option value="5">Half kit (5)</option><option value="10">Full kit (10)</option></select></label>
@@ -51,7 +51,8 @@
     <label class="field"><span>Number of identical vials</span><input type="number" name="quantity" min="1" max="200" value="1"></label>
     <label class="field"><span>Contents per vial</span><input type="number" name="content_value" step="any" min="0"></label>
     <label class="field"><span>Contents unit</span>
-      <select name="content_unit">{% for u in CONTENT_UNITS %}<option {% if u == 'mg' %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+      <select name="content_unit" id="purchase-vial-unit">{% for u in CONTENT_UNITS %}<option {% if u == 'mg' %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+    <script>(()=>{const c=document.getElementById('purchase-vial-compound'),u=document.getElementById('purchase-vial-unit');if(!c||!u)return;function update(){const selected=c.selectedOptions[0];if(selected&&selected.dataset.unit)u.value=selected.dataset.unit;}c.addEventListener('change',update);update();})();</script>
     <label class="field"><span>Liquid volume (mL)</span><input type="number" name="volume_ml" step="any" min="0"><small>Solutions: the volume in the vial. Powders: leave blank until reconstituted.</small></label>
     <label class="field"><span>Or concentration per mL</span><input type="number" name="concentration" step="any" min="0"><small>Solutions only, in the contents unit. Used if "Contents" is blank.</small></label>
     <label class="field"><span>Price per vial ({{ currency }})</span><input type="number" name="unit_price" step="0.01" min="0" value="0"></label>

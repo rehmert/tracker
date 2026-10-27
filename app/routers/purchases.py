@@ -102,7 +102,8 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
         raise HTTPException(404, "Purchase not found")
     back = f"/purchases/{pid}"
     try:
-        if db.get(Compound, compound_id) is None:
+        compound = db.get(Compound, compound_id)
+        if compound is None:
             raise ValueError("Choose a compound first (add one on the Compounds page).")
         if kit_size not in (1, 5, 10) or not 1 <= kit_count <= 100:
             raise ValueError("Kit size must be 1, 5 or 10 and count must be 1-100.")
@@ -116,6 +117,10 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
                 raise ValueError(f"Enter {what} as a number.")
 
         unit = U.parse_unit(content_unit)
+        if compound.primary_unit == "IU" and unit.dim != "iu":
+            raise ValueError("This compound is tracked in IU; enter vial contents in IU.")
+        if compound.primary_unit != "IU" and unit.dim == "iu":
+            raise ValueError("This compound is tracked by mass; IU requires an IU-based compound.")
         if unit.dim == "volume":
             raise ValueError("A vial's contents are measured in mass or IU, not volume.")
         vol = number(volume_ml, "the liquid volume") if volume_ml.strip() else None

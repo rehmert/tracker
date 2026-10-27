@@ -19,6 +19,7 @@ class Compound(Base):
     name: Mapped[str] = mapped_column(String(120), unique=True)
     category: Mapped[str] = mapped_column(String(30), default="peptide")
     notes: Mapped[str] = mapped_column(Text, default="")
+    primary_unit: Mapped[str] = mapped_column(String(8), default="mg", server_default="mg")
     vials: Mapped[list[Vial]] = relationship(back_populates="compound")
 
 

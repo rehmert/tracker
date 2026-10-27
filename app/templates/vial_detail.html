@@ -53,12 +53,12 @@
 <section>
   <h2>Vial details</h2>
   <details><summary>Reconstitution calculator (arithmetic only)</summary><div class="grid">
-  <label class="field"><span>Vial content (mg)</span><input id="rc-content" type="number" step="any" value="{{ v.content_value if v.content_unit == 'mg' else (v.content_value / 1000 if v.content_unit == 'mcg' else (v.content_value * 1000 if v.content_unit == 'g' else '')) }}"></label>
+  <label class="field"><span>Vial content ({{ "IU" if v.content_unit == "IU" else "mg" }})</span><input id="rc-content" type="number" step="any" value="{{ v.content_value if v.content_unit in ('mg', 'IU') else (v.content_value / 1000 if v.content_unit == 'mcg' else v.content_value * 1000) }}"></label>
   <label class="field"><span>BAC water added (mL)</span><input id="rc-water" type="number" step="any" min="0"></label>
-  <label class="field"><span>Target concentration (mg/mL)</span><input id="rc-conc" type="number" step="any" min="0"></label>
-  <label class="field"><span>Desired dose (mg)</span><input id="rc-dose" type="number" step="any" min="0"></label>
+  <label class="field"><span>Target concentration ({{ "IU" if v.content_unit == "IU" else "mg" }}/mL)</span><input id="rc-conc" type="number" step="any" min="0"></label>
+  <label class="field"><span>Desired dose ({{ "IU" if v.content_unit == "IU" else "mg" }})</span><input id="rc-dose" type="number" step="any" min="0"></label>
   <div class="wide" id="rc-result" aria-live="polite"></div></div>
-  <script> (()=>{let $=id=>document.getElementById(id), fields=['rc-content','rc-water','rc-conc','rc-dose'];let last='rc-water';fields.forEach(id=>$(id).addEventListener('input',()=>{last=id;update()}));function update(){let c=+$('rc-content').value,w=+$('rc-water').value,k=+$('rc-conc').value,d=+$('rc-dose').value;if(c<=0)return;if(last==='rc-conc'&&k>0){w=c/k;$('rc-water').value=+w.toPrecision(6)}else if(w>0){k=c/w;$('rc-conc').value=+k.toPrecision(6)}let vol=k>0&&d>0?d/k:null;$('rc-result').textContent=k>0?'Concentration: '+k.toPrecision(5)+' mg/mL'+(vol!==null?' · Draw: '+vol.toPrecision(5)+' mL ('+(vol*100).toPrecision(5)+' U-100 units)':''):''}update()})();</script></details>
+  <script> (()=>{let $=id=>document.getElementById(id), fields=['rc-content','rc-water','rc-conc','rc-dose'];let last='rc-water';fields.forEach(id=>$(id).addEventListener('input',()=>{last=id;update()}));function update(){let c=+$('rc-content').value,w=+$('rc-water').value,k=+$('rc-conc').value,d=+$('rc-dose').value;if(c<=0)return;if(last==='rc-conc'&&k>0){w=c/k;$('rc-water').value=+w.toPrecision(6)}else if(w>0){k=c/w;$('rc-conc').value=+k.toPrecision(6)}let vol=k>0&&d>0?d/k:null;$('rc-result').textContent=k>0?'Concentration: '+k.toPrecision(5)+' {{ 'IU' if v.content_unit == 'IU' else 'mg' }}/mL'+(vol!==null?' · Draw: '+vol.toPrecision(5)+' mL ('+(vol*100).toPrecision(5)+' U-100 units)':''):''}update()})();</script></details>
   {% if v.form == 'lyophilized' and not v.volume_ml %}
   <form method="post" action="/vials/{{ v.id }}/reconstitute" class="inline">
     <label class="field"><span>Record reconstitution: liquid added (mL)</span><input type="number" name="volume_ml" step="any" min="0" required></label>

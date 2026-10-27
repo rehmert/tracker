@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .. import services
+from .. import services, units as U
 from ..db import get_db
 from ..models import CATEGORIES, Compound, ProtocolItem, Vial, page_compounds
 from ..templating import render
@@ -21,7 +21,7 @@ def compounds_page(request: Request, db: Session = Depends(get_db)):
 
 @router.post("/compounds")
 def create_compound(name: str = Form(...), category: str = Form("peptide"),
-                    notes: str = Form(""), db: Session = Depends(get_db)):
+                    notes: str = Form(""), primary_unit: str = Form("mg"), db: Session = Depends(get_db)):
     name = name.strip()
     if not name:
         return services.flash_redirect("/compounds", err="Give the compound a name.")
@@ -29,7 +29,11 @@ def create_compound(name: str = Form(...), category: str = Form("peptide"),
         category = "other"
     if db.scalar(select(Compound).where(func.lower(Compound.name) == name.lower())):
         return services.flash_redirect("/compounds", err=f"'{name}' already exists.")
-    db.add(Compound(name=name, category=category, notes=notes.strip()))
+    if primary_unit not in U.CONTENT_UNITS:
+        return services.flash_redirect("/compounds", err="Choose a valid content unit.")
+    if name.casefold() in ("somatropin", "somatropin (hgh)", "hgh (somatropin)"):
+        primary_unit = "IU"
+    db.add(Compound(name=name, category=category, notes=notes.strip(), primary_unit=primary_unit))
     db.commit()
     return services.flash_redirect("/compounds", msg=f"Added {name}.")
 

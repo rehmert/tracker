@@ -78,6 +78,8 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
     try:
         old_dim = U.parse_unit(v.content_unit).dim
         unit = U.parse_unit(content_unit)
+        if v.compound.primary_unit == "IU" and unit.dim != "iu":
+            raise ValueError("This compound is tracked in IU.")
         if unit.dim != old_dim:
             raise ValueError("Mass vs IU can't be changed on an existing vial. "
                              "Delete it and add a new one.")

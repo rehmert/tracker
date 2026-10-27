@@ -10,6 +10,17 @@ def migrate(engine):
     with engine.begin() as conn:
         inspector = inspect(conn)
         tables = set(inspector.get_table_names())
+        if "compounds" in tables:
+            cols = {c["name"] for c in inspect(conn).get_columns("compounds")}
+            if "primary_unit" not in cols:
+                conn.exec_driver_sql("ALTER TABLE compounds ADD COLUMN primary_unit VARCHAR(8) NOT NULL DEFAULT 'mg'")
+            # Existing Somatropin entries are only updated when they have no vials;
+            # never change a compound's established storage dimension implicitly.
+            conn.exec_driver_sql("""UPDATE compounds SET primary_unit='IU'
+                WHERE lower(trim(name)) IN ('somatropin', 'somatropin (hgh)', 'hgh (somatropin)')
+                AND (NOT EXISTS (SELECT 1 FROM vials WHERE vials.compound_id=compounds.id)
+                     OR EXISTS (SELECT 1 FROM vials WHERE vials.compound_id=compounds.id
+                                AND upper(vials.content_unit)='IU'))""") if "vials" in tables else None
         if "protocols" in tables:
             pcols = {c["name"] for c in inspect(conn).get_columns("protocols")}
             if "is_active" not in pcols:
