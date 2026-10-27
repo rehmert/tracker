@@ -114,6 +114,7 @@ def protocol_calc(pid: int, request: Request, horizon_weeks: str = Form("12"),
 
 @router.post("/protocols/{pid}/save")
 def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
+                  start_date: str = Form(""), end_date: str = Form(""),
                   horizon_weeks: str = Form("12"), compound_id: list[str] = Form(default=[]),
                   amount: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
                   freq_count: list[str] = Form(default=[]),
@@ -121,6 +122,7 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
+    start, end = _parse_protocol_dates(start_date, end_date)
     refs = services.compound_refs(db)
     parsed = _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period)
     if any(isinstance(e, calc.ItemResult) for e in parsed):
@@ -128,6 +130,7 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     p.name = name.strip() or p.name
     p.notes = notes.strip()
     p.horizon_weeks = _horizon(horizon_weeks)
+    p.start_date, p.end_date = start, end
     p.items.clear()
     db.flush()
     for pos, i in enumerate(parsed):
@@ -142,6 +145,7 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
 
 @router.post("/protocols/{pid}/add-item")
 def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
+                      start_date: str = Form(""), end_date: str = Form(""),
                       horizon_weeks: str = Form("12"), compound_id: list[str] = Form(default=[]),
                       amount: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
                       freq_count: list[str] = Form(default=[]),
@@ -150,19 +154,16 @@ def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
 
     Uses an ordinary HTML form submission; works even if HTMX or JS fails.
     """
-    result = protocol_save(pid, name, notes, horizon_weeks, compound_id, amount,
-                           unit, freq_count, freq_period, db)
+    result = protocol_save(pid=pid, name=name, notes=notes, start_date=start_date,
+                           end_date=end_date, horizon_weeks=horizon_weeks,
+                           compound_id=compound_id, amount=amount, unit=unit,
+                           freq_count=freq_count, freq_period=freq_period, db=db)
     if isinstance(result, HTMLResponse):
         return result
     return RedirectResponse(f"/protocols/{pid}?add=1&msg=Item+saved.+Enter+the+next+compound.", status_code=303)
 
 
-@router.post("/protocols/{pid}/dates")
-def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = Form(""),
-                       db: Session = Depends(get_db)):
-    p = db.get(Protocol, pid)
-    if p is None:
-        raise HTTPException(404, "Protocol not found")
+def _parse_protocol_dates(start_date: str, end_date: str):
     try:
         start = date.fromisoformat(start_date) if start_date else None
         end = date.fromisoformat(end_date) if end_date else None
@@ -172,6 +173,16 @@ def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = For
         raise HTTPException(400, "Set a start date before setting an end date")
     if start and end and end < start:
         raise HTTPException(400, "End date must be on or after start date")
+    return start, end
+
+
+@router.post("/protocols/{pid}/dates")
+def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = Form(""),
+                       db: Session = Depends(get_db)):
+    p = db.get(Protocol, pid)
+    if p is None:
+        raise HTTPException(404, "Protocol not found")
+    start, end = _parse_protocol_dates(start_date, end_date)
     p.start_date, p.end_date = start, end
     _revision(db, p)
     db.commit()

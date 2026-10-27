@@ -5,17 +5,14 @@
 <section><p><strong>Status:</strong> {{ "Active — included in dashboard forecasts" if p.is_active else "What-if — excluded from dashboard forecasts" }}</p>
 <form method="post" action="/protocols/{{ p.id }}/active"><button type="submit">{{ "Mark as what-if" if p.is_active else "Mark as active" }}</button></form>
 <p class="note">Mark active only for a protocol you are currently following. Forecasts are estimates, not dose recommendations.</p>
-<form method="post" action="/protocols/{{ p.id }}/dates" class="inline">
-  <label class="field"><span>Protocol start date</span><input type="date" name="start_date" value="{{ p.start_date.isoformat() if p.start_date else '' }}"></label>
-  <label class="field"><span>End date (optional)</span><input type="date" name="end_date" value="{{ p.end_date.isoformat() if p.end_date else '' }}"></label>
-  <button type="submit">Save dates</button>
-</form>
 <p class="note">Calendar projections begin on the start date, stop at the optional end date, and never change inventory. A start date is required for projections.</p></section>
-<p class="note">Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows; Save &amp; add another stores them and opens a new row.</p>
+<p class="note">Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows and dates; Save &amp; add another stores them and opens a new row.</p>
 
 <form id="protoform" method="post" action="/protocols/{{ p.id }}/save" novalidate
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
   <div class="grid">
+    <label class="field"><span>Protocol start date</span><input type="date" name="start_date" value="{{ p.start_date.isoformat() if p.start_date else '' }}"></label>
+    <label class="field"><span>End date (optional)</span><input type="date" name="end_date" value="{{ p.end_date.isoformat() if p.end_date else '' }}"></label>
     <label class="field"><span>Name</span><input name="name" value="{{ p.name }}"></label>
     <label class="field"><span>Look-ahead (weeks)</span><input type="number" name="horizon_weeks" step="any" min="0.1" max="520" value="{{ p.horizon_weeks|num_input }}"></label>
     <label class="field wide"><span>Notes</span><input name="notes" value="{{ p.notes }}"></label>
