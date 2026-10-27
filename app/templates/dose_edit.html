@@ -4,7 +4,7 @@
 {% if history %}
 <div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Previous amount</th><th>Updated amount</th><th>Previous type</th><th>Updated type</th></tr></thead><tbody>
 {% for event in history %}{% set before = event.before_json | from_json %}{% set after = event.after_json | from_json %}
-<tr><td>{{ event.created_at | dt }}</td><td>{{ event.action }}</td><td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td><td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td><td>{{ before.get('kind', '—') }}</td><td>{{ after.get('kind', '—') }}</td></tr>
+<tr><td>{{ event.created_at | utc_dt }}</td><td>{{ event.action }}</td><td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td><td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td><td>{{ before.get('kind', '—') }}</td><td>{{ after.get('kind', '—') }}</td></tr>
 {% endfor %}</tbody></table></div>
 {% else %}<p>No corrections recorded.</p>{% endif %}
 </section>{% endblock %}{% block content %}<h1>Edit dose #{{ dose.id }}</h1><p>{{ dose.vial.compound.name }} · vial #{{ dose.vial_id }}</p>
@@ -19,7 +19,7 @@
 {% if history %}
 <div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Previous amount</th><th>Updated amount</th><th>Previous type</th><th>Updated type</th></tr></thead><tbody>
 {% for event in history %}{% set before = event.before_json | from_json %}{% set after = event.after_json | from_json %}
-<tr><td>{{ event.created_at | dt }}</td><td>{{ event.action }}</td><td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td><td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td><td>{{ before.get('kind', '—') }}</td><td>{{ after.get('kind', '—') }}</td></tr>
+<tr><td>{{ event.created_at | utc_dt }}</td><td>{{ event.action }}</td><td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td><td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td><td>{{ before.get('kind', '—') }}</td><td>{{ after.get('kind', '—') }}</td></tr>
 {% endfor %}</tbody></table></div>
 {% else %}<p>No corrections recorded.</p>{% endif %}
 </section>{% endblock %}

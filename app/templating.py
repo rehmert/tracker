@@ -1,5 +1,6 @@
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 
 from fastapi.templating import Jinja2Templates
 
@@ -34,9 +35,30 @@ def num(x, digits=4) -> str:
     return "—" if x is None else U._num(float(x), digits)
 
 
+EASTERN = ZoneInfo("America/New_York")
+
+
+def eastern_dt(x, source="local") -> str:
+    """Format a timestamp for Eastern display without modifying stored values.
+
+    source='utc': SQLite CURRENT_TIMESTAMP / explicit UTC audit values.
+    source='local': naive user-entered Eastern wall time, or aware timestamps.
+    """
+    if not isinstance(x, datetime):
+        return dt(x)
+    if x.tzinfo is None:
+        x = x.replace(tzinfo=timezone.utc if source == "utc" else EASTERN)
+    return x.astimezone(EASTERN).strftime("%Y-%m-%d %I:%M %p %Z")
+
+
+def utc_dt(x) -> str:
+    return eastern_dt(x, "utc")
+
+
 def dt(x) -> str:
     if isinstance(x, datetime):
-        return x.strftime("%Y-%m-%d %H:%M")
+        return eastern_dt(x)
+
     if isinstance(x, date):
         return x.isoformat()
     return "—" if x is None else str(x)
@@ -47,7 +69,7 @@ def label_unit(unit: str) -> str:
 
 
 templates.env.filters.update(money=money, money_precise=money_precise, amt=amt, conc=conc,
-                             num=num, dt=dt, from_json=json.loads)
+                             num=num, dt=dt, utc_dt=utc_dt, eastern_dt=eastern_dt, from_json=json.loads)
 templates.env.globals.update(
     DOSE_UNITS=U.DOSE_UNITS, CONTENT_UNITS=U.CONTENT_UNITS,
     PERIOD_LABELS=calc.PERIOD_LABELS, currency=config.CURRENCY)

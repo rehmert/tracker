@@ -23,7 +23,7 @@
     <p class="meta">
       {% for t in p.tag_list %}<a class="tag" href="/pages?tag={{ t|urlencode }}">{{ t }}</a> {% endfor %}
       {% for c in p.compounds %}<a class="tag" href="/pages?compound_id={{ c.id }}">{{ c.name }}</a> {% endfor %}
-      <small>{{ p.sources|length }} source{{ '' if p.sources|length == 1 else 's' }} · updated {{ p.updated_at|dt }}</small>
+      <small>{{ p.sources|length }} source{{ '' if p.sources|length == 1 else 's' }} · updated {{ p.updated_at|utc_dt }}</small>
     </p>
   </li>
   {% endfor %}

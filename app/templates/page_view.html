@@ -5,7 +5,7 @@
 <p class="meta">
   {% for t in p.tag_list %}<a class="tag" href="/pages?tag={{ t|urlencode }}">{{ t }}</a> {% endfor %}
   {% for c in p.compounds %}<a class="tag" href="/pages?compound_id={{ c.id }}">{{ c.name }}</a> {% endfor %}
-  <small>updated {{ p.updated_at|dt }} · <a href="/pages/{{ p.id }}/edit">Edit</a></small>
+  <small>updated {{ p.updated_at|utc_dt }} · <a href="/pages/{{ p.id }}/edit">Edit</a></small>
 </p>
 
 <article class="prose">{{ html|safe }}</article>

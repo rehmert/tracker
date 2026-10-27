@@ -1,3 +1,17 @@
+"""Tracker ASGI application entry point.
+
+Use America/New_York for naive local calendar and clock operations throughout
+Tracker. Existing user-entered SQLite datetimes remain unchanged; explicit UTC
+audit/backup timestamps continue to use UTC.
+"""
+import os
+import time
+
+# Must run before importing routers or services that compute local timestamps.
+os.environ["TZ"] = "America/New_York"
+if hasattr(time, "tzset"):
+    time.tzset()
+
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI

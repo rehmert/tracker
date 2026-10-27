@@ -4,7 +4,7 @@
 <section class="card"><h1>Data protection</h1><p>Create a verified snapshot of your SQLite database and uploaded files. Backups are stored outside the application data directory.</p>
 <form action="/backups/create" method="post"><button type="submit">Create verified backup</button></form>
 <p class="muted">For automated daily backups, install the included systemd timer. Store an additional copy off this server.</p></section>
-<section class="card"><h2>Backup history</h2><div class="scroll"><table><thead><tr><th>Created (UTC)</th><th>Archive</th><th>Size</th></tr></thead><tbody>
-{% for b in backups %}<tr><td>{{ b.modified.strftime('%Y-%m-%d %H:%M') }}</td><td>{{ b.name }}</td><td>{{ '%.1f'|format(b.size / 1048576) }} MB</td></tr>{% else %}<tr><td colspan="3">No backups yet.</td></tr>{% endfor %}
+<section class="card"><h2>Backup history</h2><div class="scroll"><table><thead><tr><th>Created (Eastern)</th><th>Archive</th><th>Size</th></tr></thead><tbody>
+{% for b in backups %}<tr><td>{{ b.modified|dt }}</td><td>{{ b.name }}</td><td>{{ '%.1f'|format(b.size / 1048576) }} MB</td></tr>{% else %}<tr><td colspan="3">No backups yet.</td></tr>{% endfor %}
 </tbody></table></div><p class="muted">To verify an archive or restore it, use the documented server-side procedure.</p></section>
 {% endblock %}
