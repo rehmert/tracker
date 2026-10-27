@@ -1,6 +1,6 @@
 """Read-only dashboard schedule summary; does not create administrations."""
 from datetime import date, datetime, timedelta
-from .calendar import occurrences
+from .calendar import staged_occurrences
 from .routers.calendar import reconcile
 
 
@@ -23,13 +23,15 @@ def schedule_summary(protocols, dose_logs, today: date, days_ahead: int = 7):
             continue
         horizon = (end - protocol.start_date).days + 1
         for item in protocol.items:
-            for day in occurrences(item, protocol.start_date, horizon):
+            for day in staged_occurrences(item, protocol.start_date, horizon):
                 if today <= day <= end and (protocol.end_date is None or day <= protocol.end_date):
                     planned.setdefault(day, []).append({
                         'compound_id': item.compound_id,
                         'name': item.compound.name,
                         'protocol': protocol.name,
                         'dose': f'{item.amount_value:g} {item.amount_unit}',
+                        'dose_time': getattr(item, 'dose_time', None) or '',
+                        'fasting_hours': getattr(item, 'fasting_hours', None),
                     })
     actual = {}
     for dose in dose_logs:
