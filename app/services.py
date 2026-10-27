@@ -54,10 +54,14 @@ def effective_content(vial: Vial) -> tuple[float, str]:
     content when the vial is set to trust it, otherwise the label claim."""
     value, unit = vial.content_value, vial.content_unit
     if vial.use_coa_content:
-        for coa in ([vial.coa] if vial.coa else []):
-            if coa.reported_content_value and coa.reported_content_unit:
-                value, unit = coa.reported_content_value, coa.reported_content_unit
-                break
+        measurements = []
+        for coa in vial.all_coas:
+            if coa.reported_content_value is not None and coa.reported_content_unit:
+                base, dim = U.to_base(coa.reported_content_value, coa.reported_content_unit)
+                if dim == U.parse_unit(vial.content_unit).dim and base > 0:
+                    measurements.append(base)
+        if measurements:
+            return sum(measurements) / len(measurements), U.parse_unit(vial.content_unit).dim
     return U.to_base(value, unit)
 
 

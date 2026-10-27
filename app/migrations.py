@@ -144,3 +144,14 @@ def migrate(engine):
         conn.exec_driver_sql(
             "INSERT INTO tracker_schema_migrations(name) VALUES (?)", (marker,)
         )
+
+
+def migrate_coa_links(engine):
+    """Preserve existing vial/COA links; allow additional independent certificates."""
+    with engine.begin() as conn:
+        conn.exec_driver_sql("""CREATE TABLE IF NOT EXISTS coa_vial_links (
+            coa_id INTEGER NOT NULL REFERENCES coas(id) ON DELETE CASCADE,
+            vial_id INTEGER NOT NULL REFERENCES vials(id) ON DELETE CASCADE,
+            PRIMARY KEY (coa_id, vial_id))""")
+        conn.exec_driver_sql("""INSERT OR IGNORE INTO coa_vial_links (coa_id, vial_id)
+            SELECT coa_id, id FROM vials WHERE coa_id IS NOT NULL""")

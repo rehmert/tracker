@@ -8,6 +8,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
 
+coa_vial_links = Table(
+    "coa_vial_links", Base.metadata,
+    Column("coa_id", ForeignKey("coas.id", ondelete="CASCADE"), primary_key=True),
+    Column("vial_id", ForeignKey("vials.id", ondelete="CASCADE"), primary_key=True),
+)
+
 VIAL_FORMS = ("lyophilized", "solution")
 VIAL_STATUSES = ("sealed", "in_use", "finished", "discarded")
 CATEGORIES = ("peptide", "testosterone", "other")
@@ -76,6 +82,16 @@ class Vial(Base):
 
     coa_id: Mapped[int | None] = mapped_column(ForeignKey("coas.id", ondelete="SET NULL"), nullable=True, index=True)
     coa: Mapped["Coa | None"] = relationship("Coa", back_populates="vials")
+    linked_coas: Mapped[list["Coa"]] = relationship("Coa", secondary="coa_vial_links", back_populates="linked_vials")
+
+    @property
+    def all_coas(self):
+        return sorted({c.id: c for c in ([self.coa] if self.coa else []) + list(self.linked_coas)}.values(), key=lambda c: (c.tested_on or date.min, c.id), reverse=True)
+    linked_coas: Mapped[list["Coa"]] = relationship("Coa", secondary="coa_vial_links", back_populates="linked_vials")
+
+    @property
+    def all_coas(self):
+        return sorted({c.id: c for c in ([self.coa] if self.coa else []) + list(self.linked_coas)}.values(), key=lambda c: (c.tested_on or date.min, c.id), reverse=True)
 
 
 class Coa(Base):
@@ -101,6 +117,16 @@ class Coa(Base):
     verification_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
     verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     vials: Mapped[list["Vial"]] = relationship("Vial", back_populates="coa")
+    linked_vials: Mapped[list["Vial"]] = relationship("Vial", secondary="coa_vial_links", back_populates="linked_coas")
+
+    @property
+    def all_vials(self):
+        return sorted({v.id: v for v in list(self.vials) + list(self.linked_vials)}.values(), key=lambda v: v.id)
+    linked_vials: Mapped[list["Vial"]] = relationship("Vial", secondary="coa_vial_links", back_populates="linked_coas")
+
+    @property
+    def all_vials(self):
+        return sorted({v.id: v for v in list(self.vials) + list(self.linked_vials)}.values(), key=lambda v: v.id)
 
 
 class CoaRevision(Base):

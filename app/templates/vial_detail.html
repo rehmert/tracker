@@ -6,7 +6,7 @@
 
 <dl class="stats">
   <div><dt>Remaining</dt><dd>{{ vd.remaining_base|amt(vd.dim) }}</dd><dd class="sm">{{ gauge(vd.pct_remaining, v.status) }}</dd></div>
-  <div><dt>Counted contents</dt><dd>{{ vd.content_base|amt(vd.dim) }}</dd><dd class="sm">{{ 'from COA' if v.use_coa_content and coa_variance else 'from label' }}</dd></div>
+  <div><dt>Counted contents</dt><dd>{{ vd.content_base|amt(vd.dim) }}</dd><dd class="sm">{{ 'from COA average' if v.use_coa_content and coa_variance else 'from label' }}</dd></div>
   <div><dt>Concentration</dt><dd>{{ vd.conc_per_ml|conc(vd.dim) }}</dd></div>
   <div><dt>Landed cost</dt><dd>{{ vd.landed_cents|money }}</dd><dd class="sm">{{ v.unit_price_cents|money }} price + {{ extras|money }} shipping/tax share</dd></div>
   <div><dt>Unit cost</dt><dd>{{ vd|unit_cost }}</dd></div>
@@ -18,23 +18,32 @@
 <section>
   <h2>Certificates of analysis</h2>
   {% if coa_variance %}
-  <p class="note">Newest COA reports {{ coa_variance.coa.reported_content_value|num }} {{ coa_variance.coa.reported_content_unit }}, {{ '%+.1f'|format(coa_variance.pct) }}% versus the label ({{ v.content_value|num }} {{ v.content_unit }}).
-  {% if v.use_coa_content %}Calculations use the COA figure.{% else %}Calculations use the label figure; switch below to use the COA figure.{% endif %}</p>
+  <p class="note"><strong>Average reported content:</strong> {{ coa_variance.average|num }} {{ coa_variance.unit }}
+  across {{ coa_variance.count }} COA(s), {{ '%+.1f'|format(coa_variance.pct) }}% versus the label
+  ({{ v.content_value|num }} {{ v.content_unit }}).
+  {% if v.use_coa_content %}Inventory and concentration calculations use this average.{% else %}Calculations use the label figure; enable COA content in vial details to use the average.{% endif %}</p>
   {% endif %}
-  {% if v.coa %}
+  {% if v.all_coas %}
   <div class="scroll"><table>
-    <thead><tr><th>File</th><th>Lab</th><th>Tested</th><th class="n">Purity</th><th class="n">Reported content</th><th></th></tr></thead>
-    <tbody>{% for c in [v.coa] %}
-      <tr>
-        <td>{% if c.original_name %}<a href="/coas/{{ c.id }}/file" target="_blank" rel="noopener">{{ c.original_name }}</a>{% else %}Manual entry{% endif %}<br><small>{{ c.job_id }} · {{ c.verify_code }}</small></td>
-        <td>{{ c.lab_name or '—' }}</td><td>{{ c.tested_on|dt }}</td>
-        <td class="n">{{ (c.purity_pct|num ~ '%') if c.purity_pct is not none else '—' }}</td>
-        <td class="n">{% if c.reported_content_value %}{{ c.reported_content_value|num }} {{ c.reported_content_unit }}{% else %}—{% endif %}</td>
-        <td><a href="/coas/{{ c.id }}">View / edit</a> {% if v.coa_id == c.id %}<form method="post" action="/coas/{{ c.id }}/delete" onsubmit="return confirm('Delete this COA for all linked vials?')"><button class="link danger">Delete</button></form>{% endif %}</td>
-      </tr>{% endfor %}</tbody>
+    <thead><tr><th>File</th><th>Lab</th><th>Tested</th><th class="n">Purity</th><th class="n">Reported content</th><th>Action</th></tr></thead>
+    <tbody>{% for c in v.all_coas %}<tr>
+      <td>{% if c.original_name %}<a href="/coas/{{ c.id }}/file" target="_blank" rel="noopener">{{ c.original_name }}</a>{% else %}Manual entry #{{ c.id }}{% endif %}</td>
+      <td>{{ c.lab_name or '—' }}</td><td>{{ c.tested_on|dt }}</td>
+      <td class="n">{{ (c.purity_pct|num ~ '%') if c.purity_pct is not none else '—' }}</td>
+      <td class="n">{% if c.reported_content_value is not none %}{{ c.reported_content_value|num }} {{ c.reported_content_unit }}{% else %}—{% endif %}</td>
+      <td><a href="/coas/{{ c.id }}">View</a>
+      <form method="post" action="/coas/{{ c.id }}/unlink/{{ v.id }}" onsubmit="return confirm('Unlink this COA from this vial?')"><button class="link">Unlink</button></form></td>
+    </tr>{% endfor %}</tbody>
   </table></div>
-  {% else %}<p class="empty">No COA uploaded for this vial.</p>{% endif %}
-
+  {% else %}<p class="empty">No COA linked to this vial.</p>{% endif %}
+  <form method="post" action="/vials/{{ v.id }}/coas/assign-group" class="grid">
+    <label class="field"><span>Link an existing COA</span><select name="coa_id" required>
+      {% for c in all_coas if c.id not in (v.all_coas|map(attribute='id')|list) %}
+      <option value="{{ c.id }}">#{{ c.id }} · {{ c.lab_name or 'Unknown lab' }} · {{ c.reported_content_value if c.reported_content_value is not none else 'No content' }} {{ c.reported_content_unit or '' }}</option>
+      {% endfor %}</select></label>
+    <label class="field"><span>Apply to</span><select name="scope"><option value="vial">This vial only</option><option value="half">This half-kit (containing this vial)</option><option value="kit">Entire kit</option></select></label>
+    <div><button>Link COA</button></div>
+  </form>
   <form method="post" action="/vials/{{ v.id }}/coas" enctype="multipart/form-data" class="grid">
     <label class="field wide"><span>COA file (PDF, PNG, JPG, WEBP, up to 15 MB)</span><input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
     <label class="field"><span>Lab</span><input name="lab_name"></label>

@@ -29,6 +29,8 @@ async def lifespan(_app: FastAPI):
     from .migrations import migrate
     migrate(engine)
     Base.metadata.create_all(engine)
+    from .migrations import migrate_coa_links
+    migrate_coa_links(engine)
     # A stable schema marker for future migration tooling and support checks.
     with engine.begin() as conn:
         conn.exec_driver_sql("""CREATE TABLE IF NOT EXISTS tracker_schema_migrations

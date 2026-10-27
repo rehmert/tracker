@@ -90,7 +90,10 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
         db.add(coa)
         db.flush()
         coa_id = coa.id
-    v.coa_id = coa_id
+    new_coa = db.get(Coa, coa_id)
+    v.linked_coas.append(new_coa)
+    if v.coa_id is None:
+        v.coa_id = coa_id
     db.commit()
     return services.flash_redirect(back, msg="COA uploaded.")
 
@@ -111,11 +114,16 @@ def delete_coa(cid: int, db: Session = Depends(get_db)):
     c = db.get(Coa, cid)
     if c is None:
         raise HTTPException(404, "COA not found")
-    vid = c.vials[0].id if c.vials else None
+    vid = c.all_vials[0].id if c.all_vials else None
     stored_name = c.stored_name if c.original_name else None
-    for linked in list(c.vials):
-        linked.coa_id = None
-        linked.use_coa_content = False
+    for linked in list(c.all_vials):
+        if c in linked.linked_coas:
+            linked.linked_coas.remove(c)
+        if linked.coa_id == cid:
+            remaining = [x for x in linked.all_coas if x.id != cid]
+            linked.coa_id = remaining[0].id if remaining else None
+        if not [x for x in linked.all_coas if x.id != cid]:
+            linked.use_coa_content = False
     db.flush()
     db.delete(c)
     db.commit()
@@ -132,7 +140,7 @@ def assign_coa(cid: int, vial_ids: list[int] = Form([]), db: Session = Depends(g
         return services.flash_redirect(f"/coas/{cid}", err="Select at least one vial.")
     # A COA may be shared, but all assigned vials must contain the same compound.
     # Preserve the compound of already-linked vials, if any.
-    existing = coa.vials
+    existing = coa.all_vials
     selected = [db.get(Vial, vid) for vid in set(vial_ids)]
     if any(v is None for v in selected):
         return services.flash_redirect("/coas", err="Unknown vial selected.")
@@ -141,7 +149,10 @@ def assign_coa(cid: int, vial_ids: list[int] = Form([]), db: Session = Depends(g
     if len(compound_ids) > 1 or len(dimensions) > 1:
         return services.flash_redirect("/coas", err="A COA must refer to one compound and unit dimension.")
     for vial in selected:
-        vial.coa_id = coa.id
+        if coa not in vial.linked_coas:
+            vial.linked_coas.append(coa)
+        if vial.coa_id is None:
+            vial.coa_id = coa.id
     db.commit()
     return services.flash_redirect(f"/coas/{cid}", msg="COA assigned to selected vials.")
 
@@ -156,7 +167,7 @@ def coa_index(request: Request, compound_id: str | None = None, db: Session = De
     coas = list(db.scalars(select(Coa).order_by(Coa.id.desc())))
     if compound_id is not None:
         vials = [v for v in vials if v.compound_id == compound_id]
-        coas = [c for c in coas if any(v.compound_id == compound_id for v in c.vials)]
+        coas = [c for c in coas if any(v.compound_id == compound_id for v in c.all_vials)]
     return render(request, "coas.html", coas=coas, vials=vials, compound_id=compound_id,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
 
@@ -176,12 +187,12 @@ def coa_detail(cid: int, request: Request, db: Session = Depends(get_db)):
     history = list(db.scalars(select(CoaRevision).where(CoaRevision.coa_id == cid)
                               .order_by(CoaRevision.id.desc())))
     # Same-compound / same-lot comparisons include independent certificates.
-    lot_keys = {(v.compound_id, v.lot.strip().casefold()) for v in coa.vials if v.lot.strip()}
+    lot_keys = {(v.compound_id, v.lot.strip().casefold()) for v in coa.all_vials if v.lot.strip()}
     candidates = list(db.scalars(select(Coa).where(Coa.id != cid)))
     comparisons = [c for c in candidates if
                    (coa.job_id and c.job_id and coa.job_id.strip().casefold() == c.job_id.strip().casefold())
                    or any((v.compound_id, v.lot.strip().casefold()) in lot_keys
-                          for v in c.vials if v.lot.strip())]
+                          for v in c.all_vials if v.lot.strip())]
     comparisons.sort(key=lambda c: (c.tested_on is not None, c.tested_on, c.id), reverse=True)
     return render(request, "coa_edit.html", coa=coa, vials=vials, selected_vial=None,
                   history=history, comparisons=comparisons, statuses=COA_STATUSES)
@@ -202,8 +213,8 @@ async def coa_create(vial_id: int = Form(...), file: UploadFile | None = File(No
     if "err=" not in response.headers.get("location", ""):
         db.expire_all()
         vial = db.get(Vial, vial_id)
-        if vial and vial.coa_id:
-            return services.flash_redirect(f"/coas/{vial.coa_id}", msg="COA created.")
+        if vial and vial.all_coas:
+            return services.flash_redirect(f"/coas/{vial.all_coas[0].id}", msg="COA created.")
     return response
 
 
@@ -230,7 +241,7 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
         if content is not None and content <= 0:
             raise ValueError("Reported content must be positive.")
         unit = U.parse_unit(reported_unit).name if content is not None else None
-        if content is not None and any(U.parse_unit(v.content_unit).dim != U.parse_unit(unit).dim for v in coa.vials):
+        if content is not None and any(U.parse_unit(v.content_unit).dim != U.parse_unit(unit).dim for v in coa.all_vials):
             raise ValueError("Reported content unit must match linked vials.")
         tested = services.parse_date(tested_on)
         if file and file.filename:
@@ -266,10 +277,16 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
 @router.post("/coas/{cid}/unlink/{vid}")
 def coa_unlink(cid: int, vid: int, db: Session = Depends(get_db)):
     vial = db.get(Vial, vid)
-    if vial is None or vial.coa_id != cid:
+    if vial is None or cid not in [c.id for c in vial.all_coas]:
         raise HTTPException(404, "COA assignment not found")
-    vial.coa_id = None
-    vial.use_coa_content = False
+    coa = db.get(Coa, cid)
+    if coa in vial.linked_coas:
+        vial.linked_coas.remove(coa)
+    if vial.coa_id == cid:
+        remaining = [c for c in vial.all_coas if c.id != cid]
+        vial.coa_id = remaining[0].id if remaining else None
+    if not [c for c in vial.all_coas if c.id != cid]:
+        vial.use_coa_content = False
     db.commit()
     return services.flash_redirect(f"/coas/{cid}", msg="Vial unlinked from COA.")
 
@@ -290,3 +307,37 @@ def coa_verify(cid: int, status: str = Form(...), verification_notes: str = Form
     coa.verified_at = datetime.now(timezone.utc).replace(tzinfo=None) if status == "verified" else None
     db.commit()
     return services.flash_redirect(f"/coas/{cid}", msg="Verification status saved.")
+
+
+@router.post("/vials/{vid}/coas/assign-group")
+def assign_group_coa(vid: int, coa_id: int = Form(...), scope: str = Form("vial"),
+                     db: Session = Depends(get_db)):
+    vial = db.get(Vial, vid)
+    coa = db.get(Coa, coa_id)
+    if not vial or not coa:
+        raise HTTPException(404, "Vial or COA not found")
+    if scope not in ("vial", "half", "kit"):
+        raise HTTPException(400, "Invalid scope")
+    group = [vial]
+    if scope != "vial":
+        if not vial.kit_ref or vial.purchase_id is None:
+            return services.flash_redirect(f"/vials/{vid}", err="This vial has no identifiable kit group.")
+        group = list(db.scalars(select(Vial).where(
+            Vial.purchase_id == vial.purchase_id, Vial.kit_ref == vial.kit_ref,
+            Vial.compound_id == vial.compound_id).order_by(Vial.id)))
+        if scope == "half":
+            split = (len(group) + 1) // 2
+            position = next(i for i, v in enumerate(group) if v.id == vid)
+            group = group[:split] if position < split else group[split:]
+    existing = coa.all_vials
+    if any(v.compound_id != vial.compound_id or
+           U.parse_unit(v.content_unit).dim != U.parse_unit(vial.content_unit).dim
+           for v in existing + group):
+        return services.flash_redirect(f"/vials/{vid}", err="COA compound or unit does not match selected vials.")
+    for target in group:
+        if coa not in target.linked_coas:
+            target.linked_coas.append(coa)
+        if target.coa_id is None:
+            target.coa_id = coa.id
+    db.commit()
+    return services.flash_redirect(f"/vials/{vid}", msg=f"COA linked to {len(group)} vial(s).")
