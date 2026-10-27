@@ -1,5 +1,48 @@
 {% extends "base.html" %}
-{% block title %}{{ p.name }}{% endblock %}
+{% block title %}{{ p.name }}<script>
+(function () {
+  const form = document.getElementById('protoform');
+  if (!form) return;
+  const rows = () => Array.from(form.querySelectorAll('#items > tr'));
+  function syncDays(row) {
+    const hidden = row.querySelector('input[name="dose_days"]');
+    if (hidden) hidden.value = Array.from(row.querySelectorAll('.dose-day-check:checked')).map(x => x.value).join(',');
+  }
+  function copySchedule(source, target) {
+    if (!source || !target) return;
+    const selected = new Set(Array.from(source.querySelectorAll('.dose-day-check:checked')).map(x => x.value));
+    target.querySelectorAll('.dose-day-check').forEach(x => { x.checked = selected.has(x.value); });
+    ['dose_time', 'fasting_hours'].forEach(name => {
+      const from = source.querySelector('[name="' + name + '"]');
+      const to = target.querySelector('[name="' + name + '"]');
+      if (from && to) to.value = from.value;
+    });
+    syncDays(target);
+  }
+  form.addEventListener('change', e => {
+    if (e.target.matches('.dose-day-check')) syncDays(e.target.closest('tr'));
+  });
+  form.addEventListener('click', e => {
+    const button = e.target.closest('.copy-schedule');
+    if (!button) return;
+    const row = button.closest('tr');
+    const all = rows();
+    const index = all.indexOf(row);
+    if (index > 0) {
+      copySchedule(all[index - 1], row);
+      form.dispatchEvent(new Event('change', {bubbles: true}));
+    }
+  });
+  document.getElementById('apply-first-schedule')?.addEventListener('click', () => {
+    const all = rows();
+    all.slice(1).forEach(row => copySchedule(all[0], row));
+    form.dispatchEvent(new Event('change', {bubbles: true}));
+  });
+  form.addEventListener('submit', () => rows().forEach(syncDays));
+  rows().forEach(syncDays);
+})();
+</script>
+{% endblock %}
 {% block content %}<p><a href="/protocols/{{ p.id }}/history">View version history</a></p>
 <h1>{{ p.name }}</h1>
 <section><p><strong>Status:</strong> {{ "Active — included in dashboard forecasts" if p.is_active else "What-if — excluded from dashboard forecasts" }}</p>
@@ -8,7 +51,7 @@
 <p class="note">Calendar projections begin on the start date, stop at the optional end date, and never change inventory. A start date is required for projections.</p></section>
 <p class="note">To escalate a compound, add multiple rows for the same compound with consecutive week ranges (e.g., weeks 1–4 and 5–8). An empty End week means ongoing. Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows and dates; Save &amp; add another stores them and opens a new row.</p>
 
-<p class="note">Optional schedule: enter weekdays as comma-separated numbers (0=Mon through 6=Sun), e.g. 0,2,4. Set frequency to weekly and its count to the number of days. Time is local 24-hour time. Fasting hours are informational and are not medical instructions. Leave days blank to use the existing frequency-based projection.</p>
+<p class="note">Optional schedule: select weekdays using checkboxes. Set frequency to weekly and the count to the number of selected days. Use ↑ Copy to inherit days, time and fasting from the previous row, or Apply first schedule to all rows. Time is local. Fasting hours are informational, not medical instructions. Leave days unselected for frequency-based projections.</p>
 <form id="protoform" method="post" action="/protocols/{{ p.id }}/save" novalidate
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
   <div class="grid">
@@ -19,8 +62,9 @@
     <label class="field wide"><span>Notes</span><input name="notes" value="{{ p.notes }}"></label>
   </div>
 
-  <div class="scroll"><table class="items">
-    <thead><tr><th>Compound</th><th>Amount per entry</th><th>Unit</th><th>Start week</th><th>End week</th><th>How often</th><th>Days (0=Mon…6=Sun)</th><th>Time</th><th>Fast before (hours)</th><th></th></tr></thead>
+  <div class="row protocol-schedule-toolbar"><button type="button" id="apply-first-schedule">Apply first schedule to all rows</button><span class="note">Copy days, time and fasting without changing doses.</span></div>
+  <div class="scroll protocol-table-wrap"><table class="items protocol-table">
+    <thead><tr><th>Compound</th><th>Dose</th><th>Unit</th><th>Start week</th><th>End week</th><th>How often</th><th>Days</th><th>Time</th><th>Fast (h)</th><th></th></tr></thead>
     <tbody id="items">
       {% for item in p.items %}{% include "_protocol_row.html" %}{% endfor %}
       {% if (not p.items or request.query_params.get("add") == "1") and compounds %}{% set item = blank_item %}{% include "_protocol_row.html" %}{% endif %}
@@ -46,4 +90,47 @@
   <form method="post" action="/protocols/{{ p.id }}/delete" onsubmit="return confirm('Delete this protocol?')"><button class="link danger">Delete protocol</button></form>
 </section>
 
+<script>
+(function () {
+  const form = document.getElementById('protoform');
+  if (!form) return;
+  const rows = () => Array.from(form.querySelectorAll('#items > tr'));
+  function syncDays(row) {
+    const hidden = row.querySelector('input[name="dose_days"]');
+    if (hidden) hidden.value = Array.from(row.querySelectorAll('.dose-day-check:checked')).map(x => x.value).join(',');
+  }
+  function copySchedule(source, target) {
+    if (!source || !target) return;
+    const selected = new Set(Array.from(source.querySelectorAll('.dose-day-check:checked')).map(x => x.value));
+    target.querySelectorAll('.dose-day-check').forEach(x => { x.checked = selected.has(x.value); });
+    ['dose_time', 'fasting_hours'].forEach(name => {
+      const from = source.querySelector('[name="' + name + '"]');
+      const to = target.querySelector('[name="' + name + '"]');
+      if (from && to) to.value = from.value;
+    });
+    syncDays(target);
+  }
+  form.addEventListener('change', e => {
+    if (e.target.matches('.dose-day-check')) syncDays(e.target.closest('tr'));
+  });
+  form.addEventListener('click', e => {
+    const button = e.target.closest('.copy-schedule');
+    if (!button) return;
+    const row = button.closest('tr');
+    const all = rows();
+    const index = all.indexOf(row);
+    if (index > 0) {
+      copySchedule(all[index - 1], row);
+      form.dispatchEvent(new Event('change', {bubbles: true}));
+    }
+  });
+  document.getElementById('apply-first-schedule')?.addEventListener('click', () => {
+    const all = rows();
+    all.slice(1).forEach(row => copySchedule(all[0], row));
+    form.dispatchEvent(new Event('change', {bubbles: true}));
+  });
+  form.addEventListener('submit', () => rows().forEach(syncDays));
+  rows().forEach(syncDays);
+})();
+</script>
 {% endblock %}

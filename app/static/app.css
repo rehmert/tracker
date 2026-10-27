@@ -565,3 +565,28 @@ th,td { white-space:nowrap; }
 .workspace-settings-panel .nav-sort-controls label{font-size:.78rem}
 .workspace-settings-panel .nav-sort-controls select{flex:1;min-width:6rem;max-width:none}
 .workspace-settings-panel .nav-sort-help{padding:0;margin:.45rem 0 0}
+
+/* Protocol editor: dense, responsive, stage-aware scheduling */
+.protocol-table { width:100%; min-width:0; table-layout:auto; font-size:.82rem; }
+.protocol-table th,.protocol-table td { padding:.28rem .22rem; min-width:0 !important; width:auto; }
+.protocol-table td:first-child { width:clamp(8rem,13vw,12rem); }
+.protocol-table td:nth-child(2) { width:5rem; }
+.protocol-table td:nth-child(3) { width:4.3rem; }
+.protocol-table td:nth-child(4),.protocol-table td:nth-child(5) { width:4rem; }
+.protocol-table td:nth-child(6) { width:8.2rem; }
+.protocol-table td:nth-child(7) { width:12rem; }
+.protocol-table td:nth-child(8) { width:7.5rem; }
+.protocol-table td:nth-child(9) { width:4.6rem; }
+.protocol-table td:last-child { width:6rem; }
+.protocol-table input,.protocol-table select { width:100%; min-width:0 !important; max-width:100%; box-sizing:border-box; padding:.32rem .22rem; font-size:inherit; }
+.protocol-table .freq { min-width:0; }
+.protocol-table .freq-controls { display:flex; gap:.2rem; min-width:0; }
+.protocol-table .freq-controls input { flex:0 0 2.7rem; width:2.7rem; min-width:0; }
+.protocol-table .freq-controls select { flex:1 1 4.8rem; width:4.8rem; min-width:0; }
+.protocol-table .weekday-checks { display:flex; gap:1px; justify-content:center; }
+.protocol-table .weekday-checks label { display:flex; flex-direction:column; align-items:center; gap:1px; min-width:1.35rem; font-size:.7rem; cursor:pointer; }
+.protocol-table .weekday-checks input { width:13px; height:13px; margin:0; padding:0; }
+.protocol-table .protocol-actions { white-space:normal; }
+.protocol-table .protocol-actions button { padding:.2rem .28rem; font-size:.72rem; min-height:0; }
+.protocol-table .protocol-actions .remove-protocol-item { min-height:0; }
+@media(max-width:1000px) { .protocol-table { min-width:900px; } }

@@ -2,7 +2,7 @@
   <td><select name="compound_id" aria-label="Compound">
     {% for c in compounds %}<option value="{{ c.id }}" {% if item.compound_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
   </select></td>
-  <td><input type="number" name="amount" step="any" min="0" value="{{ item.amount_value|num_input if item.amount_value != '' else '' }}" aria-label="Amount per entry" required></td>
+  <td><input type="number" name="amount" step="any" min="0" value="{{ item.amount_value|num_input if item.amount_value != '' else '' }}" aria-label="Dose" required></td>
   <td><select name="unit" aria-label="Unit">{% for u in DOSE_UNITS %}<option {% if u == item.amount_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></td>
   <td><input type="number" name="start_week" min="1" step="1" value="{{ item.start_week|default(1, true) }}" aria-label="Start week" required></td>
   <td><input type="number" name="end_week" min="1" step="1" value="{{ item.end_week if item.end_week is not none else '' }}" placeholder="Ongoing" aria-label="End week"></td>
@@ -12,8 +12,13 @@
       {% for key, text in PERIOD_LABELS.items() %}<option value="{{ key }}" {% if key == item.freq_period %}selected{% endif %}>{{ text }}</option>{% endfor %}
     </select>
   </div></td>
-  <td><input name="dose_days" value="{{ item.dose_days or '' }}" placeholder="0,2,4" pattern="[0-6](,[0-6])*|" title="0=Monday, 1=Tuesday, … 6=Sunday; comma-separated" aria-label="Dose weekdays (0=Monday through 6=Sunday)" style="min-width:90px;max-width:110px"></td>
+  <td class="dose-weekdays"><input type="hidden" name="dose_days" value="{{ item.dose_days or '' }}">
+    <div class="weekday-checks" role="group" aria-label="Dose days">
+    {% for d, short in [(0,'M'),(1,'T'),(2,'W'),(3,'T'),(4,'F'),(5,'S'),(6,'S')] %}
+    <label title="{{ ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][d] }}"><input type="checkbox" class="dose-day-check" value="{{ d }}" {% if (d|string) in (item.dose_days or '').split(',') %}checked{% endif %}><span>{{ short }}</span></label>
+    {% endfor %}
+    </div></td>
   <td><input type="time" name="dose_time" value="{{ item.dose_time or '' }}" aria-label="Dose time"></td>
-  <td><input type="number" name="fasting_hours" min="0" max="168" step="0.25" value="{{ item.fasting_hours if item.fasting_hours is not none else '' }}" placeholder="Optional" aria-label="Fasting hours before dose" style="min-width:80px;max-width:100px"></td>
-  <td><button type="button" class="link danger remove-protocol-item" onclick="this.closest('tr').remove(); if (window.htmx) htmx.trigger('#protoform','change')">Remove</button></td>
+  <td><input type="number" name="fasting_hours" min="0" max="168" step="0.25" value="{{ item.fasting_hours if item.fasting_hours is not none else '' }}" placeholder="Optional" aria-label="Fasting hours before dose" ></td>
+  <td class="protocol-actions"><button type="button" class="copy-schedule" title="Copy weekdays, time and fasting from preceding row">↑ Copy</button><button type="button" class="link danger remove-protocol-item" onclick="this.closest('tr').remove(); if (window.htmx) htmx.trigger('#protoform','change')">Remove</button></td>
 </tr>
