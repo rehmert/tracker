@@ -197,7 +197,7 @@ def parse_bulk(db, kind, quantity, pack_count, units_per_pack, package_price):
 
 @router.post("/purchases/{pid}/bac-water")
 def add_bac_water_vials(pid: int, vial_count: int = Form(...), ml_per_vial: float = Form(...),
-                        name: str = Form(""), price_per_vial: str = Form("0"), notes: str = Form(""),
+                        name: str = Form(""), price_per_vial: str = Form(""), total_line_cost: str = Form(""), notes: str = Form(""),
                         db: Session = Depends(get_db)):
     """Add ingredient-free BAC water vials, tracked in total mL."""
     from ..bac_water import make_bac_water_supply
@@ -205,12 +205,14 @@ def add_bac_water_vials(pid: int, vial_count: int = Form(...), ml_per_vial: floa
     if db.get(Purchase, pid) is None:
         raise HTTPException(404, "Purchase not found")
     try:
-        cents = services.to_cents(price_per_vial)
-        if cents < 0:
-            raise ValueError("Price per vial must not be negative.")
+        if price_per_vial.strip() and total_line_cost.strip():
+            raise ValueError("Enter either price per vial or total line cost, not both.")
+        vial_cents = services.to_cents(price_per_vial) if price_per_vial.strip() else None
+        line_cents = services.to_cents(total_line_cost) if total_line_cost.strip() else None
         supply = make_bac_water_supply(purchase_id=pid, vial_count=vial_count,
                                       ml_per_vial=ml_per_vial, name=name,
-                                      price_per_vial_cents=cents, notes=notes)
+                                      price_per_vial_cents=vial_cents, total_line_cents=line_cents,
+                                      notes=notes)
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
     db.add(supply)

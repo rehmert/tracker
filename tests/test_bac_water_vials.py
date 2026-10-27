@@ -32,3 +32,20 @@ def test_price_per_vial_preserves_exact_purchase_total():
 def test_invalid_price_per_vial():
     with pytest.raises(ValueError):
         make_bac_water_supply(purchase_id=1, vial_count=2, ml_per_vial=10, price_per_vial_cents=-1)
+
+
+def test_bulk_total_line_cost_preserves_exact_cents():
+    from app.services import supply_line_cents
+    s = make_bac_water_supply(purchase_id=1, vial_count=12, ml_per_vial=10, total_line_cents=2999)
+    assert s.bulk_total_cents == 2999
+    assert s.purchased_qty == s.remaining_qty == 120
+    assert s.compound_id is None
+    assert supply_line_cents(s) == 2999
+
+
+def test_bulk_total_cost_conflict_and_negative_rejected():
+    with pytest.raises(ValueError, match='either'):
+        make_bac_water_supply(purchase_id=1, vial_count=2, ml_per_vial=10,
+                              price_per_vial_cents=100, total_line_cents=200)
+    with pytest.raises(ValueError, match='Total line cost'):
+        make_bac_water_supply(purchase_id=1, vial_count=2, ml_per_vial=10, total_line_cents=-1)

@@ -71,7 +71,9 @@
     <label class="field"><span>Number of vials</span><input name="vial_count" type="number" min="1" max="100000" step="1" value="1" required></label>
     <label class="field"><span>Volume per vial (mL)</span><input name="ml_per_vial" type="number" min="0.001" max="1000" step="any" value="10" required></label>
     <label class="field"><span>Product name (optional)</span><input name="name" placeholder="BAC water"></label>
-    <label class="field"><span>Price per vial ({{ currency }})</span><input name="price_per_vial" type="number" min="0" step="0.01" value="0"></label>
+    <label class="field"><span>Price per vial ({{ currency }}) — optional</span><input name="price_per_vial" type="number" min="0" step="0.01" placeholder="e.g. 2.49"></label>
+    <label class="field"><span>Total line cost ({{ currency }}) — optional</span><input name="total_line_cost" type="number" min="0" step="0.01" placeholder="e.g. 24.90"></label>
+    <p class="note wide">Enter either the price per vial or the total cost for all vials, not both. The total is preserved exactly, even when it does not divide evenly across vials.</p>
     <label class="field wide"><span>Notes</span><input name="notes" placeholder="Lot, expiry, or other details"></label>
     <div><button class="primary" type="submit">Add BAC water inventory</button></div>
   </form>
