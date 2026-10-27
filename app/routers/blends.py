@@ -88,9 +88,7 @@ def calculate_blend(form, db: Session):
         if vial.volume_ml:
             transferred_ml = base / vd.conc_per_ml
         else:
-            if abs(base - vd.remaining_base) > max(1e-6, vd.remaining_base * 1e-8):
-                raise ValueError(f'Vial #{vial.id}: unreconstituted powder must be transferred in full.')
-            transferred_ml = 0.0
+            raise ValueError(f'Vial #{vial.id}: reconstitute the source vial before recording a blend transfer. Use the reconstitution what-if planner first.')
         volume += transferred_ml
         transfers.append((vial, base, transferred_ml, target_base, U.parse_unit(target_unit).name))
     if volume <= 0:
@@ -157,13 +155,15 @@ def calculate_reconstitution_plan(form, db: Session):
             source_ml = base / vd.conc_per_ml
             bac = 0.0
         else:
-            if abs(base - vd.remaining_base) > max(1e-6, vd.remaining_base * 1e-8):
-                raise ValueError(f'{vial.compound.name}: dry source requires full remaining content.')
             bac = _positive(bac_raw, f'BAC for {vial.compound.name}')
-            source_ml = bac
+            # First reconstitute the *entire* dry source. Only the fraction
+            # containing the requested peptide amount is transferred.
+            source_ml = bac * (base / vd.remaining_base)
         total_fixed += source_ml
         rows.append(dict(vial=vial, base=base, target_base=target_base,
                          target_unit=target_unit, bac=bac, source_ml=source_ml,
+                         source_total_ml=(vial.volume_ml if vial.volume_ml else bac),
+                         source_left_ml=((vial.volume_ml if vial.volume_ml else bac) - source_ml),
                          base_unit=U.BASE_UNIT[vd.dim]))
     # Fixed composition: every peptide must require the same final volume for a
     # chosen draw. BAC changes dilution but cannot correct unequal ratios.
@@ -202,16 +202,17 @@ async def preview_reconstitution(request: Request, db: Session = Depends(get_db)
                  f'Draw: <strong>{plan["draw"]:.4g} mL</strong> '
                  f'({plan["draw"]*100:.4g} U-100 units)</p>',
                  '<div class="scroll"><table><thead><tr><th>Peptide</th><th>Source BAC (mL)</th>'
-                 '<th>Source liquid transferred (mL)</th><th>Final concentration</th>'
+                 '<th>Withdraw from source (mL)</th><th>Liquid left in source (mL)</th><th>Final concentration</th>'
                  '<th>Per draw</th></tr></thead><tbody>']
         for r in plan['rows']:
             cells = (r['vial'].compound.name, f'{r["bac"]:.4g}',
-                     f'{r["source_ml"]:.4g}',
+                     f'{r["source_ml"]:.4g}', f'{r["source_left_ml"]:.4g}',
                      f'{r["concentration"]:.4g} {r["base_unit"]}/mL',
                      f'{U.from_base(r["actual_per_draw"],r["target_unit"]):.4g} {r["target_unit"]}')
             lines.append('<tr>' + ''.join(f'<td>{escape(str(v))}</td>' for v in cells) + '</tr>')
         lines.append('</tbody></table></div>'
                      f'<p>Additional BAC in destination vial: <strong>{plan["destination_bac"]:.4g} mL</strong>. '
+                     'Each dry source is reconstituted first; only the calculated withdrawal is transferred. '
                      'Source BAC values are user-entered assumptions, not recommended reconstitution volumes.</p>'
                      '<p><strong>Preview only:</strong> To record a blend, first record source reconstitutions '
                      'in the normal vial workflow, then use the existing blend form with the measured volumes.</p>')
