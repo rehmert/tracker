@@ -94,6 +94,47 @@ class Vial(Base):
         return sorted({c.id: c for c in ([self.coa] if self.coa else []) + list(self.linked_coas)}.values(), key=lambda c: (c.tested_on or date.min, c.id), reverse=True)
 
 
+class Blend(Base):
+    """One physical mixed vial; separate from single-compound Vial records."""
+    __tablename__ = "blends"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    label: Mapped[str] = mapped_column(String(160), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    final_volume_ml: Mapped[float] = mapped_column(Float, nullable=False)
+    diluent_ml: Mapped[float] = mapped_column(Float, default=0)
+    capacity_ml: Mapped[float | None] = mapped_column(Float, nullable=True)
+    status: Mapped[str] = mapped_column(String(12), default="in_use")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    components: Mapped[list["BlendComponent"]] = relationship(back_populates="blend", cascade="all, delete-orphan")
+    doses: Mapped[list["BlendDose"]] = relationship(back_populates="blend", cascade="all, delete-orphan")
+
+
+class BlendComponent(Base):
+    __tablename__ = "blend_components"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    blend_id: Mapped[int] = mapped_column(ForeignKey("blends.id"), nullable=False, index=True)
+    source_vial_id: Mapped[int] = mapped_column(ForeignKey("vials.id"), nullable=False, index=True)
+    compound_id: Mapped[int] = mapped_column(ForeignKey("compounds.id"), nullable=False)
+    transferred_base: Mapped[float] = mapped_column(Float, nullable=False)
+    transferred_ml: Mapped[float] = mapped_column(Float, nullable=False)
+    target_dose_base: Mapped[float] = mapped_column(Float, nullable=False)
+    target_unit: Mapped[str] = mapped_column(String(8), nullable=False)
+    blend: Mapped[Blend] = relationship(back_populates="components")
+    source_vial: Mapped[Vial] = relationship()
+    compound: Mapped[Compound] = relationship()
+
+
+class BlendDose(Base):
+    __tablename__ = "blend_doses"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    blend_id: Mapped[int] = mapped_column(ForeignKey("blends.id"), nullable=False, index=True)
+    taken_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    volume_ml: Mapped[float] = mapped_column(Float, nullable=False)
+    kind: Mapped[str] = mapped_column(String(8), default="dose")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    blend: Mapped[Blend] = relationship(back_populates="doses")
+
+
 class Coa(Base):
     """Certificate of analysis file plus the numbers transcribed from it."""
     __tablename__ = "coas"

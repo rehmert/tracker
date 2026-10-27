@@ -87,6 +87,10 @@ def vial_views(db: Session, vials: list[Vial] | None = None) -> dict[int, calc.V
         vials = list(db.scalars(select(Vial).order_by(Vial.id.desc())))
     consumed = dict(db.execute(
         select(DoseLog.vial_id, func.sum(DoseLog.amount_base)).group_by(DoseLog.vial_id)).all())
+    from .models import BlendComponent
+    transferred = dict(db.execute(
+        select(BlendComponent.source_vial_id, func.sum(BlendComponent.transferred_base))
+        .group_by(BlendComponent.source_vial_id)).all())
     landed_cache: dict[int, dict[int, float]] = {}
     out: dict[int, calc.VialData] = {}
     for v in vials:
@@ -99,7 +103,7 @@ def vial_views(db: Session, vials: list[Vial] | None = None) -> dict[int, calc.V
             landed = landed_cache[p.id][v.id]
         base, dim = effective_content(v)
         out[v.id] = calc.VialData(v.id, v.compound_id, dim, base, v.volume_ml, v.status,
-                                  landed, float(consumed.get(v.id) or 0.0))
+                                  landed, float(consumed.get(v.id) or 0.0) + float(transferred.get(v.id) or 0.0))
     return out
 
 
