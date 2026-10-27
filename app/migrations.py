@@ -34,6 +34,13 @@ def migrate(engine):
                 conn.exec_driver_sql("ALTER TABLE protocol_items ADD COLUMN start_week INTEGER NOT NULL DEFAULT 1")
             if "end_week" not in icols:
                 conn.exec_driver_sql("ALTER TABLE protocol_items ADD COLUMN end_week INTEGER")
+            for column, sql in {
+                "dose_days": "VARCHAR(30) NOT NULL DEFAULT ''",
+                "dose_time": "VARCHAR(5) NOT NULL DEFAULT ''",
+                "fasting_hours": "FLOAT",
+            }.items():
+                if column not in icols:
+                    conn.exec_driver_sql(f"ALTER TABLE protocol_items ADD COLUMN {column} {sql}")
         if "vials" in tables:
             cols = {c["name"] for c in inspect(conn).get_columns("vials")}
             for name, sql in {

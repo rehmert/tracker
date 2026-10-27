@@ -16,10 +16,10 @@
 <strong>{{ d.date.day }}</strong>
 {% for x in d.events %}
   {% if x.status == 'recorded' %}<div class="calendar-event recorded" title="Same-day recorded dose matched to this projected entry">✓ {{ x.name }} · {{ x.actual_dose }} <small>({{ x.protocol }})</small></div>
-  {% elif x.status == 'extra' %}<div class="calendar-event recorded" title="Recorded dose without a matching planned entry">✓ {{ x.name }} · {{ x.dose }} <small>(unmatched log)</small></div>
-  {% elif x.status == 'unrecorded' %}<div class="calendar-event calendar-unrecorded" title="Past projected entry with no matching dose log">! {{ x.name }} · {{ x.dose }} <small>(not recorded)</small></div>
-  {% elif x.status == 'due' %}<div class="calendar-event projected" title="Projected for today">◉ {{ x.name }} · {{ x.dose }} <small>(today)</small></div>
-  {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }} <small>({{ x.protocol }})</small></div>{% endif %}
+  {% elif x.status == 'extra' %}<div class="calendar-event recorded" title="Recorded dose without a matching planned entry">✓ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(unmatched log)</small></div>
+  {% elif x.status == 'unrecorded' %}<div class="calendar-event calendar-unrecorded" title="Past projected entry with no matching dose log">! {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(not recorded)</small></div>
+  {% elif x.status == 'due' %}<div class="calendar-event projected" title="Projected for today">◉ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(today)</small></div>
+  {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>({{ x.protocol }})</small></div>{% endif %}
 {% endfor %}
 </div>{% endfor %}
 </div>

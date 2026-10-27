@@ -8,6 +8,7 @@
 <p class="note">Calendar projections begin on the start date, stop at the optional end date, and never change inventory. A start date is required for projections.</p></section>
 <p class="note">To escalate a compound, add multiple rows for the same compound with consecutive week ranges (e.g., weeks 1–4 and 5–8). An empty End week means ongoing. Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows and dates; Save &amp; add another stores them and opens a new row.</p>
 
+<p class="note">Optional schedule: enter weekdays as comma-separated numbers (0=Mon through 6=Sun), e.g. 0,2,4. Set frequency to weekly and its count to the number of days. Time is local 24-hour time. Fasting hours are informational and are not medical instructions. Leave days blank to use the existing frequency-based projection.</p>
 <form id="protoform" method="post" action="/protocols/{{ p.id }}/save" novalidate
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
   <div class="grid">
@@ -19,7 +20,7 @@
   </div>
 
   <div class="scroll"><table class="items">
-    <thead><tr><th>Compound</th><th>Amount per entry</th><th>Unit</th><th>Start week</th><th>End week</th><th>How often</th><th></th></tr></thead>
+    <thead><tr><th>Compound</th><th>Amount per entry</th><th>Unit</th><th>Start week</th><th>End week</th><th>How often</th><th>Days (0=Mon…6=Sun)</th><th>Time</th><th>Fast before (hours)</th><th></th></tr></thead>
     <tbody id="items">
       {% for item in p.items %}{% include "_protocol_row.html" %}{% endfor %}
       {% if (not p.items or request.query_params.get("add") == "1") and compounds %}{% set item = blank_item %}{% include "_protocol_row.html" %}{% endif %}

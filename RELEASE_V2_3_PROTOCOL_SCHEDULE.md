@@ -1,0 +1,1 @@
+Protocol schedules: optional comma-separated weekdays 0=Monday to 6=Sunday, 24-hour local time, and fasting hours per escalation stage. Existing rows retain cadence behavior when days blank. Calendar projections display time and fasting metadata. No automatic dose logging. Non-destructive migration adds three columns. Back up SQLite before deployment.

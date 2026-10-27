@@ -61,14 +61,21 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
             continue
         days_to_project = (end - protocol.start_date).days
         for item in protocol.items:
-            for when in cal.occurrences(item, protocol.start_date, days_to_project):
+            if item.dose_days:
+                weekdays = {int(x) for x in item.dose_days.split(",") if x}
+                dates = (protocol.start_date + timedelta(days=offset) for offset in range(max(days_to_project, 0)))
+                occurrences = (d for d in dates if d.weekday() in weekdays)
+            else:
+                occurrences = cal.occurrences(item, protocol.start_date, days_to_project)
+            for when in occurrences:
                 if (first <= when < end and (protocol.end_date is None or when <= protocol.end_date)
                         and when >= protocol.start_date + timedelta(days=7 * (item.start_week - 1))
                         and (item.end_week is None or when < protocol.start_date + timedelta(days=7 * item.end_week))):
                     planned.setdefault(when, []).append({
                         'compound_id': item.compound_id,
                         'name': item.compound.name, 'protocol': protocol.name,
-                        'dose': f'{item.amount_value:g} {item.amount_unit}'})
+                        'dose': f'{item.amount_value:g} {item.amount_unit}',
+                        'dose_time': item.dose_time or '', 'fasting_hours': item.fasting_hours})
     actual = {}
     logs = db.scalars(select(DoseLog).join(Vial).where(
         DoseLog.kind == 'dose',

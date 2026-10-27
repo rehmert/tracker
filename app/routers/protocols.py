@@ -13,7 +13,7 @@ from ..models import Compound, Protocol, ProtocolItem, ProtocolRevision
 from ..templating import render
 
 router = APIRouter()
-BLANK = {"amount_value": "", "amount_unit": "mg", "freq_count": 1, "freq_period": "week", "start_week": 1, "end_week": None}
+BLANK = {"amount_value": "", "amount_unit": "mg", "freq_count": 1, "freq_period": "week", "start_week": 1, "end_week": None, "dose_days": "", "dose_time": "", "fasting_hours": None}
 
 
 def _saved_inputs(p: Protocol) -> list[calc.ItemInput]:
@@ -63,6 +63,36 @@ def _validate_stages(parsed, starts, ends):
                 if a <= (d if d is not None else float('inf')) and c <= (b if b is not None else float('inf')):
                     raise HTTPException(400, f"Overlapping stages for compound {row.compound_id}: rows {j+1} and {idx+1}")
     return stages
+
+
+def _validate_timing(parsed, days, times, fasting):
+    n = len(parsed)
+    if not days and not times and not fasting:
+        return [("", "", None)] * n
+    if any(len(x) != n for x in (days, times, fasting)):
+        raise HTTPException(400, "Incomplete scheduling fields")
+    rows = []
+    for idx, (d, tm, fh) in enumerate(zip(days, times, fasting), 1):
+        selected = [x.strip() for x in d.split(",") if x.strip()]
+        if any(x not in {"0", "1", "2", "3", "4", "5", "6"} for x in selected) or len(selected) != len(set(selected)):
+            raise HTTPException(400, f"Row {idx}: weekdays must be 0–6, comma-separated")
+        if tm:
+            try:
+                datetime.strptime(tm, "%H:%M")
+            except ValueError:
+                raise HTTPException(400, f"Row {idx}: time must be HH:MM")
+        try:
+            hours = float(fh) if fh.strip() else None
+        except ValueError:
+            raise HTTPException(400, f"Row {idx}: fasting hours must be numeric")
+        if hours is not None and not (0 <= hours <= 168):
+            raise HTTPException(400, f"Row {idx}: fasting hours must be 0–168")
+        if selected and parsed[idx - 1].freq_period == "week" and parsed[idx - 1].freq_count != len(selected):
+            raise HTTPException(400, f"Row {idx}: weekly frequency must match number of selected days")
+        if selected and parsed[idx - 1].freq_period != "week":
+            raise HTTPException(400, f"Row {idx}: specific weekdays require weekly frequency")
+        rows.append((",".join(sorted(selected)), tm, hours))
+    return rows
 
 
 def _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period):
@@ -136,6 +166,8 @@ def protocol_calc(pid: int, request: Request, horizon_weeks: str = Form("12"),
                   unit: list[str] = Form(default=[]), freq_count: list[str] = Form(default=[]),
                   freq_period: list[str] = Form(default=[]),
                   start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
+                  dose_days: list[str] = Form(default=[]), dose_time: list[str] = Form(default=[]),
+                  fasting_hours: list[str] = Form(default=[]),
                   db: Session = Depends(get_db)):
     """Stateless what-if: recalculates from the form as it currently stands."""
     p = db.get(Protocol, pid)
@@ -146,6 +178,7 @@ def protocol_calc(pid: int, request: Request, horizon_weeks: str = Form("12"),
     results = []
     parsed = _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period)
     stages = _validate_stages(parsed, start_week, end_week)
+    timing = _validate_timing(parsed, dose_days, dose_time, fasting_hours)
     for entry, (first, last) in zip(parsed, stages):
         if isinstance(entry, calc.ItemResult):
             results.append(entry)
@@ -164,6 +197,8 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
                   freq_count: list[str] = Form(default=[]),
                   freq_period: list[str] = Form(default=[]),
                   start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
+                  dose_days: list[str] = Form(default=[]), dose_time: list[str] = Form(default=[]),
+                  fasting_hours: list[str] = Form(default=[]),
                   db: Session = Depends(get_db)):
     p = db.get(Protocol, pid)
     if p is None:
@@ -174,17 +209,19 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     if any(isinstance(e, calc.ItemResult) for e in parsed):
         return HTMLResponse('<span class="error">Fix the highlighted rows before saving.</span>')
     stages = _validate_stages(parsed, start_week, end_week)
+    timing = _validate_timing(parsed, dose_days, dose_time, fasting_hours)
     p.name = name.strip() or p.name
     p.notes = notes.strip()
     p.horizon_weeks = _horizon(horizon_weeks)
     p.start_date, p.end_date = start, end
     p.items.clear()
     db.flush()
-    for pos, (i, (first, last)) in enumerate(zip(parsed, stages)):
+    for pos, (i, (first, last), (days, tm, hours)) in enumerate(zip(parsed, stages, timing)):
         p.items.append(ProtocolItem(compound_id=i.compound_id, position=pos,
                                     amount_value=i.amount_value, amount_unit=i.amount_unit,
                                     freq_count=i.freq_count, freq_period=i.freq_period,
-                                    start_week=first, end_week=last))
+                                    start_week=first, end_week=last,
+                                    dose_days=days, dose_time=tm, fasting_hours=hours))
     db.flush()
     _revision(db, p)
     db.commit()
@@ -199,6 +236,8 @@ def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
                       freq_count: list[str] = Form(default=[]),
                       freq_period: list[str] = Form(default=[]),
                       start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
+                  dose_days: list[str] = Form(default=[]), dose_time: list[str] = Form(default=[]),
+                  fasting_hours: list[str] = Form(default=[]),
                       db: Session = Depends(get_db)):
     """Persist the completed rows, then open a new editable row.
 
@@ -208,7 +247,8 @@ def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
                            end_date=end_date, horizon_weeks=horizon_weeks,
                            compound_id=compound_id, amount=amount, unit=unit,
                            freq_count=freq_count, freq_period=freq_period,
-                           start_week=start_week, end_week=end_week, db=db)
+                           start_week=start_week, end_week=end_week,
+                           dose_days=dose_days, dose_time=dose_time, fasting_hours=fasting_hours, db=db)
     if isinstance(result, HTMLResponse):
         return result
     return RedirectResponse(f"/protocols/{pid}?add=1&msg=Item+saved.+Enter+the+next+compound.", status_code=303)
@@ -261,7 +301,8 @@ def protocol_duplicate(pid: int, db: Session = Depends(get_db)):
         copy.items.append(ProtocolItem(compound_id=i.compound_id, position=i.position,
                                        amount_value=i.amount_value, amount_unit=i.amount_unit,
                                        freq_count=i.freq_count, freq_period=i.freq_period,
-                                       start_week=i.start_week, end_week=i.end_week))
+                                       start_week=i.start_week, end_week=i.end_week,
+                                       dose_days=i.dose_days, dose_time=i.dose_time, fasting_hours=i.fasting_hours))
     db.add(copy)
     db.commit()
     return services.flash_redirect(f"/protocols/{copy.id}", msg="Duplicated. Edit freely.")
@@ -287,7 +328,8 @@ def _revision(db: Session, p: Protocol):
                 "items":[{"compound_id":i.compound_id,"amount_value":i.amount_value,
                           "amount_unit":i.amount_unit,"freq_count":i.freq_count,
                           "freq_period":i.freq_period,"position":i.position,
-                          "start_week":i.start_week,"end_week":i.end_week} for i in p.items]}
+                          "start_week":i.start_week,"end_week":i.end_week,
+                          "dose_days":i.dose_days,"dose_time":i.dose_time,"fasting_hours":i.fasting_hours} for i in p.items]}
     db.add(ProtocolRevision(protocol_id=p.id,revision=last+1,snapshot_json=json.dumps(snapshot)))
 
 

@@ -221,6 +221,9 @@ class ProtocolItem(Base):
     freq_period: Mapped[str] = mapped_column(String(10))  # day | week | month | interval
     start_week: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     end_week: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dose_days: Mapped[str] = mapped_column(String(30), default="", server_default="")
+    dose_time: Mapped[str] = mapped_column(String(5), default="", server_default="")
+    fasting_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
     protocol: Mapped[Protocol] = relationship(back_populates="items")
     compound: Mapped[Compound] = relationship()
 

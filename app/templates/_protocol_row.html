@@ -12,5 +12,8 @@
       {% for key, text in PERIOD_LABELS.items() %}<option value="{{ key }}" {% if key == item.freq_period %}selected{% endif %}>{{ text }}</option>{% endfor %}
     </select>
   </div></td>
+  <td><input name="dose_days" value="{{ item.dose_days or '' }}" placeholder="0,2,4" pattern="[0-6](,[0-6])*|" title="0=Monday, 1=Tuesday, … 6=Sunday; comma-separated" aria-label="Dose weekdays (0=Monday through 6=Sunday)" style="min-width:90px;max-width:110px"></td>
+  <td><input type="time" name="dose_time" value="{{ item.dose_time or '' }}" aria-label="Dose time"></td>
+  <td><input type="number" name="fasting_hours" min="0" max="168" step="0.25" value="{{ item.fasting_hours if item.fasting_hours is not none else '' }}" placeholder="Optional" aria-label="Fasting hours before dose" style="min-width:80px;max-width:100px"></td>
   <td><button type="button" class="link danger remove-protocol-item" onclick="this.closest('tr').remove(); if (window.htmx) htmx.trigger('#protoform','change')">Remove</button></td>
 </tr>
