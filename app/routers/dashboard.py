@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from .. import config, metrics, services, charts
 from ..sparklines import sparkline
 from ..today import schedule_summary
+from ..projection_exclusions import exclusions_for
 from ..db import get_db
 from ..models import DoseLog, Vial, VitalReading, Protocol
 from ..templating import render
@@ -139,7 +140,8 @@ def home(request: Request, db: Session = Depends(get_db)):
         DoseLog.taken_at >= datetime.combine(today_date - timedelta(days=7), datetime.min.time()),
         DoseLog.taken_at < datetime.combine(today_date + timedelta(days=1), datetime.min.time())
     ).order_by(DoseLog.taken_at.desc())))
-    today_summary = schedule_summary(protocols, recent_week, today_date)
+    today_summary = schedule_summary(protocols, recent_week, today_date,
+                                     exclusions=exclusions_for(db, [item.id for p in protocols for item in p.items]))
     recent_administrations = recent_week[:5]
 
     recent = []

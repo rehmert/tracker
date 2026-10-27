@@ -1,0 +1,3 @@
+# Projected dose exclusions
+
+Calendar: choose **This projection only** or **This and all later projections in this schedule** and click **Hide projection**. Manage hidden projections at the bottom of Calendar to restore. This only affects projections on Calendar and Overview; actual administration records, inventory and PK hypothetical calculations are untouched. An individual exclusion belongs to one protocol item and date, not the compound generally. The `projection_exclusions` table is created automatically at application startup through SQLAlchemy `create_all` (no existing table is altered). Back up your SQLite database before installing.

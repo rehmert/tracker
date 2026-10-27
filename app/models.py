@@ -228,6 +228,19 @@ class ProtocolItem(Base):
     compound: Mapped[Compound] = relationship()
 
 
+class ProjectionExclusion(Base):
+    """Suppress a projected protocol-item occurrence, never an actual DoseLog."""
+    __tablename__ = "projection_exclusions"
+    __table_args__ = (Index("ix_projection_exclusions_item_date", "protocol_item_id", "scheduled_on"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    protocol_item_id: Mapped[int] = mapped_column(ForeignKey("protocol_items.id", ondelete="CASCADE"), index=True)
+    scheduled_on: Mapped[date] = mapped_column(Date)
+    scope: Mapped[str] = mapped_column(String(12))  # once | onward
+    reason: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    item: Mapped[ProtocolItem] = relationship()
+
+
 class PkScenario(Base):
     """Hypothetical schedule; never alters dose logs or inventory."""
     __tablename__ = "pk_scenarios"

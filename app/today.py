@@ -2,14 +2,16 @@
 from datetime import date, datetime, timedelta
 from .calendar import staged_occurrences
 from .routers.calendar import reconcile
+from .projection_exclusions import excluded
 
 
-def schedule_summary(protocols, dose_logs, today: date, days_ahead: int = 7):
+def schedule_summary(protocols, dose_logs, today: date, days_ahead: int = 7, exclusions=None):
     """Today + next days; reconcile same-day compound records, one-to-one.
 
     Dose history is passed in separately to keep this function easy to test.
     Historical events are not inferred from an empty schedule.
     """
+    exclusions = exclusions or {}
     end = today + timedelta(days=days_ahead)
     planned = {}
     missing_start = []
@@ -24,7 +26,7 @@ def schedule_summary(protocols, dose_logs, today: date, days_ahead: int = 7):
         horizon = (end - protocol.start_date).days + 1
         for item in protocol.items:
             for day in staged_occurrences(item, protocol.start_date, horizon):
-                if today <= day <= end and (protocol.end_date is None or day <= protocol.end_date):
+                if today <= day <= end and (protocol.end_date is None or day <= protocol.end_date) and not excluded(exclusions, getattr(item, "id", None), day):
                     planned.setdefault(day, []).append({
                         'compound_id': item.compound_id, 'amount_value': item.amount_value, 'amount_unit': item.amount_unit,
                         'name': item.compound.name,

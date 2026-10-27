@@ -1,5 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Protocol calendar{% endblock %}
+{% block title %}Protocol calendar<details><summary>Manage hidden projections ({{ exclusions|length }})</summary>
+<p class="note">Restoring a projection does not create or change administration records. If a protocol item was deleted, its exclusions are removed with it.</p>
+{% for rule in exclusions %}
+<div class="row">
+  <span>{{ rule.item.protocol.name }} · {{ rule.item.compound.name }} · {{ rule.scheduled_on }} · {{ 'This date onward' if rule.scope == 'onward' else 'One date' }}</span>
+  <form method="post" action="/calendar/exclusions/{{ rule.id }}/restore"><button type="submit">Restore</button></form>
+</div>
+{% else %}<p>No hidden projections.</p>{% endfor %}
+</details>
+{% endblock %}
 {% block content %}
 <h1>Protocol calendar</h1>
 <p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
@@ -22,9 +31,27 @@
   {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>({{ x.protocol }})</small></div>{% endif %}
 {% if x.status in ('due', 'upcoming', 'unrecorded') %}
   <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;planned_date={{ d.date.isoformat() }}&amp;planned_time={{ x.dose_time or '' }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit }}">Log this dose</a>
+  <form method="post" action="/calendar/exclude" class="inline" onsubmit="return confirm('Hide this projected dose? Actual administration records will not be changed.');">
+    <input type="hidden" name="protocol_item_id" value="{{ x.protocol_item_id }}">
+    <input type="hidden" name="scheduled_on" value="{{ d.date.isoformat() }}">
+    <select name="scope" aria-label="Exclusion scope">
+      <option value="once">This projection only</option>
+      <option value="onward">This and all later projections in this schedule</option>
+    </select>
+    <button type="submit" class="tag">Hide projection</button>
+  </form>
   {% endif %}
 {% endfor %}
 </div>{% endfor %}
 </div>
 <p class="note">✓ Recorded · ! Past projection without a matching log · ◉ Projected today · ○ Upcoming. A missing log does not prove a dose was missed. Monthly and fractional-day frequencies use an approximate cadence.</p>
+<details><summary>Manage hidden projections ({{ exclusions|length }})</summary>
+<p class="note">Restoring a projection does not create or change administration records. If a protocol item was deleted, its exclusions are removed with it.</p>
+{% for rule in exclusions %}
+<div class="row">
+  <span>{{ rule.item.protocol.name }} · {{ rule.item.compound.name }} · {{ rule.scheduled_on }} · {{ 'This date onward' if rule.scope == 'onward' else 'One date' }}</span>
+  <form method="post" action="/calendar/exclusions/{{ rule.id }}/restore"><button type="submit">Restore</button></form>
+</div>
+{% else %}<p>No hidden projections.</p>{% endfor %}
+</details>
 {% endblock %}
