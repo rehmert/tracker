@@ -3,7 +3,7 @@ import json
 from html import escape
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -137,7 +137,24 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     db.flush()
     _revision(db, p)
     db.commit()
-    return HTMLResponse(f"Saved {datetime.now():%H:%M:%S}")
+    return services.flash_redirect(f"/protocols/{pid}", msg="Saved protocol.")
+
+
+@router.post("/protocols/{pid}/add-item")
+def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
+                      horizon_weeks: str = Form("12"), compound_id: list[str] = Form(default=[]),
+                      amount: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
+                      freq_count: list[str] = Form(default=[]),
+                      freq_period: list[str] = Form(default=[]), db: Session = Depends(get_db)):
+    """Persist the completed rows, then open a new editable row.
+
+    Uses an ordinary HTML form submission; works even if HTMX or JS fails.
+    """
+    result = protocol_save(pid, name, notes, horizon_weeks, compound_id, amount,
+                           unit, freq_count, freq_period, db)
+    if isinstance(result, HTMLResponse):
+        return result
+    return RedirectResponse(f"/protocols/{pid}?add=1&msg=Item+saved.+Enter+the+next+compound.", status_code=303)
 
 
 @router.post("/protocols/{pid}/dates")

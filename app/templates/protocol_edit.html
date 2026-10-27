@@ -11,9 +11,9 @@
   <button type="submit">Save dates</button>
 </form>
 <p class="note">Calendar projections begin on the start date, stop at the optional end date, and never change inventory. A start date is required for projections.</p></section>
-<p class="note">Change any amount, unit or frequency and the results update as you type. Nothing is stored until you press Save.</p>
+<p class="note">Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows; Save &amp; add another stores them and opens a new row.</p>
 
-<form id="protoform" onsubmit="return false" novalidate
+<form id="protoform" method="post" action="/protocols/{{ p.id }}/save" novalidate
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
   <div class="grid">
     <label class="field"><span>Name</span><input name="name" value="{{ p.name }}"></label>
@@ -25,16 +25,15 @@
     <thead><tr><th>Compound</th><th>Amount per entry</th><th>Unit</th><th>How often</th><th></th></tr></thead>
     <tbody id="items">
       {% for item in p.items %}{% include "_protocol_row.html" %}{% endfor %}
-      {% if not p.items and compounds %}{% set item = blank_item %}{% include "_protocol_row.html" %}{% endif %}
+      {% if (not p.items or request.query_params.get("add") == "1") and compounds %}{% set item = blank_item %}{% include "_protocol_row.html" %}{% endif %}
     </tbody>
   </table></div>
 
   <p class="row">
     {% if compounds %}
-    <button type="button" id="add-protocol-item" hx-get="/protocols/row" hx-target="#items" hx-swap="beforeend">Add item</button>
+    <button type="submit" id="add-protocol-item" formaction="/protocols/{{ p.id }}/add-item" formmethod="post">Save &amp; add another</button>
     {% else %}<span class="empty">Add a compound first.</span>{% endif %}
-    <button type="button" class="primary" hx-post="/protocols/{{ p.id }}/save" hx-include="#protoform"
-            hx-target="#save-msg" hx-swap="innerHTML">Save protocol</button>
+    <button type="submit" class="primary">Save protocol</button>
     <span id="save-msg" role="status"></span>
   </p>
 </form>
