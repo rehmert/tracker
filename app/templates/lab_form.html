@@ -2,6 +2,20 @@
 {% block title %}Add lab report{% endblock %}
 {% block content %}
 <h1>Add a lab report</h1>
+<section>
+  <h2>Import analytes from CSV</h2>
+  <p class="note">Create a report with all analytes in one upload. Required CSV columns: <code>analyte,value,unit</code>. Optional: <code>ref_low,ref_high,note</code>. <a href="/labs/csv-template">Download CSV template</a>.</p>
+  <form method="post" action="/labs/import-csv" enctype="multipart/form-data">
+    <div class="grid">
+      <label class="field"><span>Date drawn</span><input type="date" name="drawn_on" value="{{ v.drawn_on }}" required></label>
+      <label class="field"><span>Lab</span><input name="lab_name" value="{{ v.lab_name }}" maxlength="160"></label>
+      <label class="field"><span>CSV file</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label>
+      <label class="field wide"><span>Notes</span><input name="notes" value="{{ v.notes }}"></label>
+    </div>
+    <p><button class="primary">Import CSV and create report</button></p>
+  </form>
+</section>
+<h2>Or enter results manually</h2>
 <form method="post" action="/labs" enctype="multipart/form-data">
   <div class="grid">
     <label class="field"><span>Date drawn</span><input type="date" name="drawn_on" value="{{ v.drawn_on }}" required></label>

@@ -1,3 +1,7 @@
+import csv
+import io
+import math
+
 from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -123,6 +127,116 @@ def _parse_rows(analyte, value, unit, ref_low, ref_high):
     if not results:
         return [], echo, "Add at least one result."
     return results, echo, None
+
+
+CSV_MAX_BYTES = 2 * 1024 * 1024
+CSV_MAX_ROWS = 2000
+CSV_HEADERS = {
+    "analyte": {"analyte", "test", "test name", "analyte name", "name"},
+    "value": {"value", "result", "result value"},
+    "unit": {"unit", "units"},
+    "ref_low": {"ref low", "ref_low", "reference low", "range low", "low"},
+    "ref_high": {"ref high", "ref_high", "reference high", "range high", "high"},
+    "note": {"note", "notes", "comment", "comments"},
+}
+
+
+def _parse_csv_data(data: bytes):
+    """Parse a complete CSV before writing anything to the database."""
+    if not data or len(data) > CSV_MAX_BYTES:
+        raise ValueError("CSV must be nonempty and no larger than 2 MB.")
+    try:
+        content = data.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError("CSV must be UTF-8 encoded.") from exc
+    try:
+        reader = csv.DictReader(io.StringIO(content, newline=""), strict=True)
+        if not reader.fieldnames:
+            raise ValueError("CSV needs a header row.")
+        normalized = [h.strip().lower().replace("-", " ") for h in reader.fieldnames]
+        mapping = {}
+        for canonical, aliases in CSV_HEADERS.items():
+            matches = [reader.fieldnames[i] for i, h in enumerate(normalized) if h in aliases]
+            if len(matches) > 1:
+                raise ValueError(f"CSV has duplicate {canonical} columns.")
+            if matches:
+                mapping[canonical] = matches[0]
+        if any(k not in mapping for k in ("analyte", "value", "unit")):
+            raise ValueError("CSV requires analyte, value, and unit columns.")
+        rows = []
+        for line, record in enumerate(reader, start=2):
+            if len(rows) >= CSV_MAX_ROWS:
+                raise ValueError("CSV exceeds the 2,000-result limit.")
+            if None in record:
+                raise ValueError(f"CSV row {line} has more columns than its header.")
+            row = {key: (record.get(header) or "").strip() for key, header in mapping.items()}
+            if not any(row.values()):
+                continue
+            parsed, _, error = _parse_rows([row.get("analyte", "")], [row.get("value", "")],
+                                            [row.get("unit", "")], [row.get("ref_low", "")],
+                                            [row.get("ref_high", "")])
+            if error:
+                raise ValueError(f"CSV row {line}: {error}")
+            if not math.isfinite(parsed[0].value) or any(
+                x is not None and not math.isfinite(x) for x in (parsed[0].ref_low, parsed[0].ref_high)
+            ):
+                raise ValueError(f"CSV row {line}: values must be finite numbers.")
+            if len(row.get("analyte", "")) > 120 or len(row.get("unit", "")) > 30 or len(row.get("note", "")) > 300:
+                raise ValueError(f"CSV row {line}: a text field exceeds its maximum length.")
+            parsed[0].note = row.get("note", "")
+            rows.extend(parsed)
+    except csv.Error as exc:
+        raise ValueError(f"Malformed CSV: {exc}") from exc
+    if not rows:
+        raise ValueError("CSV contains no analyte results.")
+    return rows
+
+
+async def _read_csv_upload(file: UploadFile):
+    if not (file.filename or "").lower().endswith(".csv"):
+        raise ValueError("Select a .csv file.")
+    data = await file.read(CSV_MAX_BYTES + 1)
+    return _parse_csv_data(data)
+
+
+@router.get("/labs/csv-template")
+def csv_template():
+    from fastapi.responses import Response
+    sample = "analyte,value,unit,ref_low,ref_high,note\nTSH,1.25,mIU/L,0.45,4.5,\nIGF-1,180,ng/mL,80,250,\n"
+    return Response(sample, media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="lab-analytes-template.csv"'})
+
+
+@router.post("/labs/import-csv")
+async def import_new_csv(request: Request, csv_file: UploadFile = File(...),
+                         drawn_on: str = Form(""), lab_name: str = Form(""),
+                         notes: str = Form(""), db: Session = Depends(get_db)):
+    values = {"drawn_on": drawn_on, "lab_name": lab_name, "notes": notes}
+    try:
+        when = services.parse_date(drawn_on)
+        if when is None:
+            raise ValueError("Select a draw date.")
+        results = await _read_csv_upload(csv_file)
+    except ValueError as exc:
+        return _form(request, db, values=values, error=str(exc))
+    report = LabReport(drawn_on=when, lab_name=lab_name.strip()[:160], notes=notes.strip())
+    report.results = results
+    db.add(report)
+    db.commit()
+    return services.flash_redirect(f"/labs/{report.id}", msg=f"Imported {len(results)} results from CSV.")
+
+
+@router.post("/labs/{rid}/import-csv")
+async def import_existing_csv(rid: int, csv_file: UploadFile = File(...),
+                              db: Session = Depends(get_db)):
+    rep = _report(db, rid)
+    try:
+        results = await _read_csv_upload(csv_file)
+    except ValueError as exc:
+        return services.flash_redirect(f"/labs/{rid}", err=str(exc))
+    rep.results.extend(results)
+    db.commit()
+    return services.flash_redirect(f"/labs/{rid}", msg=f"Imported {len(results)} results from CSV.")
 
 
 @router.post("/labs")

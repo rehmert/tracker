@@ -21,6 +21,16 @@
 
 </section>
 
+<section>
+  <h2>Bulk add analytes from CSV</h2>
+  <form method="post" action="/labs/{{ rep.id }}/import-csv" enctype="multipart/form-data" class="row">
+    <label class="field"><span>CSV file</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label>
+    <button class="primary">Import analytes</button>
+    <a href="/labs/csv-template">Download template</a>
+  </form>
+  <p class="note">Adds all valid CSV rows to this report. Invalid uploads add nothing.</p>
+</section>
+
 <style>
 .lab-status {display:inline-block; padding:.22rem .65rem; border-radius:999px; font-weight:650; border:1px solid transparent;}
 .lab-status-below {color:#2563eb; background:#dbeafe; border-color:#93c5fd;}
