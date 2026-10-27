@@ -4,6 +4,8 @@
 <h1>PK Simulator</h1>
 <p>Exploratory modeled exposure only — not measured blood concentration, effectiveness, or a dosing recommendation. Testosterone depot and GLP-1 absorption parameters are approximations. Future plans never change your dose log or inventory.</p>
 <div class="card">
+  <label>Protocol <select id="protocol"><option value="">None (manual scenarios)</option>{% for p in protocols %}{% if p.is_active and p.start_date %}<option value="{{ p.id }}" data-compounds="{{ p.items|map(attribute='compound_id')|unique|join(',') }}">{{ p.name }}</option>{% endif %}{% endfor %}</select></label>
+  <p class="note">Select an active protocol to model its scheduled doses, including escalation stages. Choose a compound within that protocol below. This is a read-only projection; it does not create a scenario or log doses. Non-mass units such as IU are excluded.</p>
   <label>Compound <select id="compound"><option value="">Select compound</option>{% for c in compounds %}<option value="{{ c.id }}" data-half="{{ profile(c.name)[0] }}" data-abs="{{ profile(c.name)[1] }}">{{ c.name }}</option>{% endfor %}</select></label>
   <label>Add testosterone profile <select id="newPkCompound"><option value="Testosterone Cypionate">Testosterone Cypionate</option><option value="Testosterone Enanthate">Testosterone Enanthate</option><option value="Testosterone">Testosterone (generic)</option></select></label>
   <button id="addPkCompound" type="button">Add compound to Tracker</button>
@@ -48,5 +50,5 @@
 <table><thead><tr><th>Date/time</th><th>mg</th><th>Actions</th></tr></thead><tbody id="plannedRows"></tbody></table>
 </div>
 <p id="pkError" role="alert" style="color:#a22"></p>
-<script src="/static/pk.js?v=v23-overlay" defer></script>
+<script src="/static/pk.js?v=v23-protocol-selection" defer></script>
 {% endblock %}

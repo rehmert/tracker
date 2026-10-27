@@ -20,6 +20,9 @@
   {% elif x.status == 'unrecorded' %}<div class="calendar-event calendar-unrecorded" title="Past projected entry with no matching dose log">! {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(not recorded)</small></div>
   {% elif x.status == 'due' %}<div class="calendar-event projected" title="Projected for today">◉ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(today)</small></div>
   {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>({{ x.protocol }})</small></div>{% endif %}
+{% if x.status in ('due', 'upcoming', 'unrecorded') %}
+  <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;planned_date={{ d.date.isoformat() }}&amp;planned_time={{ x.dose_time or '' }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit }}">Log this dose</a>
+  {% endif %}
 {% endfor %}
 </div>{% endfor %}
 </div>

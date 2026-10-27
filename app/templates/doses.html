@@ -5,6 +5,7 @@
 
 <section>
   <h2>Add an entry</h2>
+{% if planned_amount is not none %}<p class="note">Pre-filled from a planned protocol dose. Confirm the vial, amount, time and actual administration before saving. Opening this page does not log a dose.</p>{% endif %}
   {% if vials %}
   <form class="grid" hx-post="/doses" hx-target="#dose-body" hx-swap="innerHTML"
         hx-on::after-request="if(event.target===this&&!event.detail.xhr.getResponseHeader('HX-Retarget')){this.reset();document.getElementById('form-msg').innerHTML='';document.getElementById('dose-preview').innerHTML='';}">
@@ -12,12 +13,12 @@
       <label class="field"><span>Vial</span>
         <select name="vial_id" required>
           {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
-          <option value="{{ v.id }}">{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
+          <option value="{{ v.id }}" {% if selected_compound_id and v.compound_id == selected_compound_id %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
           {% endfor %}
         </select></label>
-      <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="0"></label>
+      <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}"></label>
       <label class="field"><span>Unit</span>
-        <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == 'mg' %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+        <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == (planned_unit if planned_unit in DOSE_UNITS else 'mg') %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
     </div>
     <div id="dose-preview" class="wide preview" aria-live="polite"></div>
     <label class="field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ now }}"></label>

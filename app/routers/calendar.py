@@ -64,7 +64,7 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
             for when in cal.staged_occurrences(item, protocol.start_date, days_to_project):
                 if first <= when < end and (protocol.end_date is None or when <= protocol.end_date):
                     planned.setdefault(when, []).append({
-                        'compound_id': item.compound_id,
+                        'compound_id': item.compound_id, 'amount_value': item.amount_value, 'amount_unit': item.amount_unit,
                         'name': item.compound.name, 'protocol': protocol.name,
                         'dose': f'{item.amount_value:g} {item.amount_unit}',
                         'dose_time': item.dose_time or '', 'fasting_hours': item.fasting_hours})

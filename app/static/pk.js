@@ -38,7 +38,8 @@
   async function refresh() {
     if (!cid()) return;
     const q=new URLSearchParams({compound_id:cid(),half_life_hours:$('half').value,absorption_half_life_hours:$('abs').value,days_back:$('back').value,days_forward:$('forward').value});
-    if(current) q.set('scenario_id',current.id);
+    if($('protocol').value) q.set('protocol_id',$('protocol').value);
+    else if(current) q.set('scenario_id',current.id);
     draw(await request('/pk/data?'+q));
   }
   function renderRows() {
@@ -68,8 +69,19 @@
     current=scenarios.find(s=>s.id===selected)||null;
     $('scenario').value=current?.id||'';renderRows();await refresh();
   }
+  $('protocol').onchange=async()=>{
+    current=null;
+    const ids=($('protocol').selectedOptions[0]?.dataset.compounds||'').split(',').filter(Boolean);
+    if(ids.length && !ids.includes(String(cid()))) {
+      const available=ids.find(id=>[...$('compound').options].some(o=>o.value===id));
+      if(available) $('compound').value=available;
+    }
+    const o=$('compound').selectedOptions[0];
+    $('half').value=o?.dataset.half||120; $('abs').value=o?.dataset.abs||24;
+    try{await load();}catch(e){error(e);}
+  };
   $('compound').onchange=async()=>{const o=$('compound').selectedOptions[0];$('half').value=o.dataset.half||120;$('abs').value=o.dataset.abs||24;current=null;try{await load();}catch(e){error(e);}};
-  $('scenario').onchange=async()=>{current=scenarios.find(s=>s.id===Number($('scenario').value))||null;if(current){$('scenarioName').value=current.name;$('half').value=current.half_life_hours;$('abs').value=current.absorption_half_life_hours;}renderRows();try{await refresh();}catch(e){error(e);}};
+  $('scenario').onchange=async()=>{if($('scenario').value) $('protocol').value='';current=scenarios.find(s=>s.id===Number($('scenario').value))||null;if(current){$('scenarioName').value=current.name;$('half').value=current.half_life_hours;$('abs').value=current.absorption_half_life_hours;}renderRows();try{await refresh();}catch(e){error(e);}};
   async function compare() {
     if(!cid()) return;
     const selected=[...$('compareScenarios').selectedOptions].map(o=>o.value);

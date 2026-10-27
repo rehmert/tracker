@@ -42,7 +42,7 @@
       <ul>{% for e in today_summary.today %}
         <li>{{ e.name }} — {{ e.dose }}
           <span class="tag">{{ 'Recorded' if e.status == 'recorded' else ('Recorded (unscheduled)' if e.status == 'extra' else 'Due') }}</span>
-          {% if e.protocol %}<small>{{ e.protocol }}</small>{% endif %}
+          {% if e.protocol %}<small>{{ e.protocol }}</small>{% endif %} {% if e.status == 'due' %}<a href="/doses?compound_id={{ e.compound_id }}&amp;planned_date={{ now_date }}&amp;planned_time={{ e.dose_time or '' }}&amp;planned_amount={{ e.amount_value }}&amp;planned_unit={{ e.amount_unit }}">Log dose</a>{% endif %}
         </li>
       {% endfor %}</ul>
       {% else %}<p class="empty">No administrations scheduled or recorded today.</p>{% endif %}
@@ -51,7 +51,7 @@
       <h3>Upcoming · next 7 days</h3>
       {% if today_summary.upcoming %}
       <ul>{% for day, e in today_summary.upcoming %}
-        <li><strong>{{ day.strftime('%b %d') }}</strong> — {{ e.name }} {{ e.dose }} <small>{{ e.protocol }}</small></li>
+        <li><strong>{{ day.strftime('%b %d') }}</strong> — {{ e.name }} {{ e.dose }} <small>{{ e.protocol }}</small> <a href="/doses?compound_id={{ e.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ e.dose_time or '' }}&amp;planned_amount={{ e.amount_value }}&amp;planned_unit={{ e.amount_unit }}">Log dose</a></li>
       {% endfor %}</ul>
       {% else %}<p class="empty">No projected administrations in the next 7 days.</p>{% endif %}
     </div>

@@ -51,14 +51,24 @@ def _error(msg: str) -> HTMLResponse:
 
 
 @router.get("/doses")
-def doses_page(request: Request, compound_id: int | None = None, db: Session = Depends(get_db)):
+def doses_page(request: Request, compound_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", db: Session = Depends(get_db)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
+    if planned_date:
+        try:
+            scheduled = datetime.strptime(planned_date, "%Y-%m-%d")
+            if planned_time:
+                scheduled = datetime.strptime(planned_date + "T" + planned_time, "%Y-%m-%dT%H:%M")
+            prefill_at = scheduled.strftime("%Y-%m-%dT%H:%M")
+        except ValueError:
+            prefill_at = datetime.now().strftime("%Y-%m-%dT%H:%M")
+    else:
+        prefill_at = datetime.now().strftime("%Y-%m-%dT%H:%M")
     return render(request, "doses.html", rows=_rows(db, compound_id), vials=vials, views=views,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
-                  now=datetime.now().strftime("%Y-%m-%dT%H:%M"), supplies=manual_supplies.available(db))
+                  now=prefill_at, planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else None, planned_unit=planned_unit, selected_compound_id=compound_id, supplies=manual_supplies.available(db))
 
 
 @router.post("/doses/preview")

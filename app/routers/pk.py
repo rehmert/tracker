@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..db import get_db
-from ..models import Compound, DoseLog, Vial, PkScenario, PkPlannedDose
+from ..models import Compound, DoseLog, Vial, PkScenario, PkPlannedDose, Protocol
+from ..calendar import staged_occurrences
 from ..templating import render
 from .. import pk
 
@@ -30,7 +31,7 @@ def supported(db):
 
 @router.get("")
 def page(request: Request, db: Session = Depends(get_db)):
-    return render(request, "pk.html", compounds=supported(db), profile=pk.profile)
+    return render(request, "pk.html", compounds=supported(db), protocols=list(db.scalars(select(Protocol).order_by(Protocol.name))), profile=pk.profile)
 
 @router.post("/compounds", status_code=201)
 def add_supported_compound(data: dict, db: Session = Depends(get_db)):
@@ -102,10 +103,47 @@ def delete_dose(sid: int, did: int, db: Session = Depends(get_db)):
     if d is None or d.scenario_id != sid: raise HTTPException(404)
     db.delete(d); db.commit(); return {"ok": True}
 
+def protocol_planned_doses(db: Session, protocol_id: int, compound_id: int, start: datetime, end: datetime):
+    """Read-only scheduled mg doses from a saved protocol, with escalation stages."""
+    protocol = db.get(Protocol, protocol_id)
+    if protocol is None or protocol.start_date is None:
+        raise HTTPException(400, "Protocol not found or has no start date")
+    if not protocol.is_active:
+        raise HTTPException(400, "Select an active protocol")
+    days = max(0, (end.date() - protocol.start_date).days + 2)
+    if days > 5000:
+        raise HTTPException(400, "Protocol projection exceeds supported horizon")
+    planned = []
+    for item in protocol.items:
+        if item.compound_id != compound_id:
+            continue
+        if item.amount_unit != "mg":
+            if item.amount_unit == "mcg":
+                factor = 0.001
+            elif item.amount_unit == "g":
+                factor = 1000.0
+            else:
+                continue  # IU and other non-mass units cannot be converted to mg
+        else:
+            factor = 1.0
+        for day in staged_occurrences(item, protocol.start_date, days):
+            if protocol.end_date and day > protocol.end_date:
+                continue
+            at = datetime.combine(day, datetime.min.time())
+            if item.dose_time:
+                try:
+                    at = datetime.strptime(day.isoformat() + "T" + item.dose_time, "%Y-%m-%dT%H:%M")
+                except ValueError:
+                    pass
+            if start <= at <= end:
+                planned.append((at, item.amount_value * factor))
+    return sorted(planned)
+
+
 @router.get("/data")
 def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
                half_life_hours: float | None = None, absorption_half_life_hours: float | None = None,
-               scenario_id: int | None = None, db: Session = Depends(get_db)):
+               scenario_id: int | None = None, protocol_id: int | None = None, db: Session = Depends(get_db)):
     c = db.get(Compound, compound_id)
     defaults = pk.profile(c.name) if c else None
     if defaults is None: raise HTTPException(400, "Unsupported compound")
@@ -131,6 +169,10 @@ def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
         s = db.get(PkScenario, scenario_id)
         if s is None or s.compound_id != compound_id: raise HTTPException(400, "Invalid scenario")
         planned = [(d.planned_at, d.amount_mg) for d in s.doses if d.planned_at >= now]
+    if protocol_id is not None:
+        if scenario_id is not None:
+            raise HTTPException(400, "Select either a protocol or a saved scenario")
+        planned = protocol_planned_doses(db, protocol_id, compound_id, now, end)
     rows = pk.series(start, end, actual, planned, hl, ahl)
     return {"rows": rows, "now": now.isoformat(), "actual_doses": len(actual),
             "planned_doses": len(planned), "units": "modeled mg-equivalent exposure",

@@ -26,7 +26,7 @@ def schedule_summary(protocols, dose_logs, today: date, days_ahead: int = 7):
             for day in staged_occurrences(item, protocol.start_date, horizon):
                 if today <= day <= end and (protocol.end_date is None or day <= protocol.end_date):
                     planned.setdefault(day, []).append({
-                        'compound_id': item.compound_id,
+                        'compound_id': item.compound_id, 'amount_value': item.amount_value, 'amount_unit': item.amount_unit,
                         'name': item.compound.name,
                         'protocol': protocol.name,
                         'dose': f'{item.amount_value:g} {item.amount_unit}',
