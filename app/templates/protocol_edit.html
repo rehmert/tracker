@@ -1,31 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ p.name }}<script>
-// Adding rows must work even when an existing protocol row is incomplete.
-// A standalone GET avoids form validation and HTMX's inherited form parameters.
-(function () {
-  const add = document.getElementById('add-protocol-item');
-  if (!add) return;
-  add.addEventListener('click', async function () {
-    add.disabled = true;
-    try {
-      const response = await fetch(add.dataset.rowUrl, {credentials: 'same-origin'});
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      const html = await response.text();
-      const tbody = document.getElementById('items');
-      tbody.insertAdjacentHTML('beforeend', html);
-      if (window.htmx) htmx.process(tbody.lastElementChild);
-      const input = tbody.lastElementChild?.querySelector('input[name="amount"]');
-      if (input) input.focus();
-      if (window.htmx) htmx.trigger('#protoform', 'change');
-    } catch (error) {
-      document.getElementById('save-msg').textContent = 'Unable to add compound: ' + error.message;
-    } finally {
-      add.disabled = false;
-    }
-  });
-})();
-</script>
-{% endblock %}
+{% block title %}{{ p.name }}{% endblock %}
 {% block content %}<p><a href="/protocols/{{ p.id }}/history">View version history</a></p>
 <h1>{{ p.name }}</h1>
 <section><p><strong>Status:</strong> {{ "Active — included in dashboard forecasts" if p.is_active else "What-if — excluded from dashboard forecasts" }}</p>
@@ -51,12 +25,13 @@
     <thead><tr><th>Compound</th><th>Amount per entry</th><th>Unit</th><th>How often</th><th></th></tr></thead>
     <tbody id="items">
       {% for item in p.items %}{% include "_protocol_row.html" %}{% endfor %}
+      {% if not p.items and compounds %}{% set item = blank_item %}{% include "_protocol_row.html" %}{% endif %}
     </tbody>
   </table></div>
 
   <p class="row">
     {% if compounds %}
-    <button type="button" id="add-protocol-item" data-row-url="/protocols/row">Add item</button>
+    <button type="button" id="add-protocol-item" hx-get="/protocols/row" hx-target="#items" hx-swap="beforeend">Add item</button>
     {% else %}<span class="empty">Add a compound first.</span>{% endif %}
     <button type="button" class="primary" hx-post="/protocols/{{ p.id }}/save" hx-include="#protoform"
             hx-target="#save-msg" hx-swap="innerHTML">Save protocol</button>
@@ -73,30 +48,5 @@
   <form method="post" action="/protocols/{{ p.id }}/duplicate"><button>Duplicate as a new what-if</button></form>
   <form method="post" action="/protocols/{{ p.id }}/delete" onsubmit="return confirm('Delete this protocol?')"><button class="link danger">Delete protocol</button></form>
 </section>
-<script>
-// Adding rows must work even when an existing protocol row is incomplete.
-// A standalone GET avoids form validation and HTMX's inherited form parameters.
-(function () {
-  const add = document.getElementById('add-protocol-item');
-  if (!add) return;
-  add.addEventListener('click', async function () {
-    add.disabled = true;
-    try {
-      const response = await fetch(add.dataset.rowUrl, {credentials: 'same-origin'});
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      const html = await response.text();
-      const tbody = document.getElementById('items');
-      tbody.insertAdjacentHTML('beforeend', html);
-      if (window.htmx) htmx.process(tbody.lastElementChild);
-      const input = tbody.lastElementChild?.querySelector('input[name="amount"]');
-      if (input) input.focus();
-      if (window.htmx) htmx.trigger('#protoform', 'change');
-    } catch (error) {
-      document.getElementById('save-msg').textContent = 'Unable to add compound: ' + error.message;
-    } finally {
-      add.disabled = false;
-    }
-  });
-})();
-</script>
+
 {% endblock %}

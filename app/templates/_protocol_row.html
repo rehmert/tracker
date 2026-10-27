@@ -10,5 +10,5 @@
       {% for key, text in PERIOD_LABELS.items() %}<option value="{{ key }}" {% if key == item.freq_period %}selected{% endif %}>{{ text }}</option>{% endfor %}
     </select>
   </div></td>
-  <td><button type="button" class="link danger remove-protocol-item" hx-on:click="this.closest('tr').remove(); htmx.trigger('#protoform','change')">Remove</button></td>
+  <td><button type="button" class="link danger remove-protocol-item" onclick="this.closest('tr').remove(); if (window.htmx) htmx.trigger('#protoform','change')">Remove</button></td>
 </tr>

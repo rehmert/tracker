@@ -24,3 +24,20 @@ def test_protocol_add_row_and_save():
         assert saved.status_code == 200
         assert 'Saved' in saved.text
         assert 'Protocol Add Row Regression Compound' in client.get(str(created.url)).text
+
+
+def test_new_protocol_shows_editable_compound_fields_without_clicking():
+    with TestClient(app, follow_redirects=True) as client:
+        client.post('/compounds', data={'name': 'Visible Protocol Compound', 'category': 'peptide'})
+        created = client.post('/protocols', data={'name': 'Visible fields test'})
+        html = client.get(str(created.url)).text
+        assert '<title>Visible fields test · Tracker</title>' in html
+        assert 'name="compound_id"' in html
+        assert 'name="amount"' in html
+        assert 'name="unit"' in html
+        assert 'name="freq_count"' in html
+        assert 'name="freq_period"' in html
+        assert 'hx-get="/protocols/row"' in html
+        assert 'hx-swap="beforeend"' in html
+        assert 'Visible Protocol Compound' in html
+        assert 'data-row-url=' not in html

@@ -86,7 +86,8 @@ def protocol_editor(pid: int, request: Request, db: Session = Depends(get_db)):
     if p is None:
         raise HTTPException(404, "Protocol not found")
     compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
-    return render(request, "protocol_edit.html", p=p, compounds=compounds)
+    return render(request, "protocol_edit.html", p=p, compounds=compounds,
+                  blank_item=dict(BLANK, compound_id=None))
 
 
 @router.post("/protocols/{pid}/calc")
