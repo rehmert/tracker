@@ -320,6 +320,16 @@ def update_offer(
     db.commit()
     return services.flash_redirect('/vendor-prices', msg='Vendor offer updated.')
 
+@router.post('/vendor-prices/entries/{entry_id}/delete')
+def delete_offer(entry_id: int, db: Session = Depends(get_db)):
+    """Delete exactly one vendor price entry, leaving its sheet and other offers intact."""
+    entry = db.get(VendorPriceEntry, entry_id)
+    if entry is None:
+        return services.flash_redirect('/vendor-prices', err='Vendor offer not found.')
+    db.delete(entry)
+    db.commit()
+    return services.flash_redirect('/vendor-prices', msg='Vendor offer deleted.')
+
 @router.post('/vendor-prices/{sheet_id}/delete')
 def delete(sheet_id: int, db: Session = Depends(get_db)):
     sheet = db.get(VendorPriceSheet, sheet_id)
