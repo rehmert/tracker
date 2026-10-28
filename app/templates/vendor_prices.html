@@ -3,12 +3,6 @@
 {% block content %}
 <h1>Vendor price comparison</h1>
 <p>Add offers manually or import price sheets, then compare cost per vial. Prices are informational; matching product names do not establish equivalent quality or safety.</p>
-<section class="card"><h2>Fetch product details from URL</h2>
-<p>Extract public product metadata, then review and edit the offer before saving. Some vendors block automated access or load prices with JavaScript; those fields will need manual entry.</p>
-<form method="post" action="/vendor-prices/fetch-url"><div class="form-grid"><label class="field"><span>Product page URL</span><input type="url" name="product_url" maxlength="2048" required placeholder="https://vendor.example/product"></label></div><button type="submit">Fetch product</button></form>
-{% if fetched is defined %}<p><strong>Fetched:</strong> {{ fetched.name or 'Product name not found' }}{% if fetched.currency %} · Currency: {{ fetched.currency }}{% endif %}. Review the prefilled form below before saving.</p>
-{% if fetched.variants|length > 1 %}<details><summary>Detected product offers ({{ fetched.variants|length }})</summary><div class="table-wrap"><table><thead><tr><th>Name</th><th>Price</th><th>Currency</th></tr></thead><tbody>{% for variant in fetched.variants %}<tr><td>{{ variant.name }}</td><td>{{ variant.price or '—' }}</td><td>{{ variant.currency or '—' }}</td></tr>{% endfor %}</tbody></table></div><p>Choose the matching variation and adjust the form manually. No variation is selected automatically.</p></details>{% endif %}
-{% endif %}</section>
 <section class="card"><h2>Add vendor offer manually</h2>
 <p>Enter the contents of <strong>one vial</strong> and the price of the selected package. A half-kit is 5 vials; a kit is 10 vials. Package prices are converted to a comparable price per vial.</p>
 <form method="post" action="/vendor-prices/manual">
