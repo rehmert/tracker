@@ -197,3 +197,41 @@ def test_multiple_destinations_preview_and_recording():
             assert all(len(b.components)==2 for b in rows)
             assert all(abs(b.components[0].transferred_base-5000)<1e-8 for b in rows)
             assert all(vial_views(db,[db.get(Vial,i)])[i].remaining_base==0 for i in ids)
+
+
+def test_multiple_sources_same_peptide_planner_and_recording():
+    with TestClient(app) as client:
+        with SessionLocal() as db:
+            a = Compound(name='Multi-source A', primary_unit='mg')
+            b = Compound(name='Multi-source B', primary_unit='mg')
+            db.add_all([a, b]); db.flush()
+            va1 = Vial(compound_id=a.id, content_value=5, content_unit='mg', status='sealed', volume_ml=0.5)
+            va2 = Vial(compound_id=a.id, content_value=5, content_unit='mg', status='sealed', volume_ml=0.5)
+            vb = Vial(compound_id=b.id, content_value=20, content_unit='mg', status='sealed', volume_ml=1)
+            db.add_all([va1, va2, vb]); db.commit()
+            ids = [va1.id, va2.id, vb.id]
+            before = db.query(Blend).count()
+        planner = {'source_id':list(map(str, ids)), 'target_amount':['1','1','2'],
+                   'target_unit':['mg']*3, 'source_bac_ml':['0']*3,
+                   'planner_draw_ml':'0.2', 'planner_capacity_ml':'3',
+                   'planner_max_destinations':'1', 'planner_allocation':'equal'}
+        response = client.post('/blends/reconstitution-preview', data=planner)
+        assert response.status_code == 200, response.text
+        assert '10 complete draws' in response.text
+        with SessionLocal() as db:
+            assert db.query(Blend).count() == before
+            assert all(vial_views(db,[db.get(Vial,i)])[i].remaining_base > 0 for i in ids)
+        data = dict(planner, label='Multi-source recorded', diluent_ml='0',
+                    capacity_ml='3', transfer_amount=['5','5','20'],
+                    transfer_unit=['mg']*3)
+        response = client.post('/blends/preview', data=data)
+        assert response.status_code == 200, response.text
+        response = client.post('/blends', data=data, follow_redirects=False)
+        assert response.status_code == 303 and 'err=' not in response.headers['location']
+        with SessionLocal() as db:
+            blend = db.query(Blend).filter_by(label='Multi-source recorded').one()
+            assert len(blend.components) == 3
+            a_components = [c for c in blend.components if c.compound_id == a.id]
+            assert len(a_components) == 2
+            assert abs(sum(c.target_dose_base for c in a_components) - 1000) < 1e-8
+            assert all(vial_views(db,[db.get(Vial,i)])[i].remaining_base < 1e-8 for i in ids)
