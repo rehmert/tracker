@@ -2,7 +2,7 @@
 import csv
 import io
 import re
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -101,6 +101,54 @@ def save(request: Request, vendor: str = Form(...), sheet_name: str = Form(''), 
         db.add(VendorPriceEntry(sheet_id=sheet.id, item_name=item, strength=strength, package=package, vial_count=qty, total_price_cents=int((price * 100).quantize(Decimal('1')))))
     db.commit()
     return services.flash_redirect('/vendor-prices', msg=f'Saved {len(rows)} offers for {vendor}.')
+
+@router.post('/vendor-prices/manual')
+def manual_add(
+    request: Request,
+    vendor: str = Form(''),
+    item_name: str = Form(''),
+    content_amount: str = Form(''),
+    content_unit: str = Form('mg'),
+    package_type: str = Form('vial'),
+    package_price: str = Form(''),
+    db: Session = Depends(get_db),
+):
+    """Save one vendor offer, normalizing package price to a vial count."""
+    vendor = vendor.strip()[:160]
+    item_name = item_name.strip()[:200]
+    amount = number(content_amount)
+    price = number(package_price)
+    if not vendor or not item_name:
+        return page(request, db, err='Vendor and compound are required.')
+    if amount is None or amount <= 0 or amount > Decimal('100000000'):
+        return page(request, db, err='Vial contents must be a positive number.')
+    if price is None or price > Decimal('100000000'):
+        return page(request, db, err='Enter a valid nonnegative package price.')
+    if content_unit not in ('mg', 'IU'):
+        return page(request, db, err='Vial contents must be in mg or IU.')
+    package_counts = {'vial': 1, 'half-kit': 5, 'kit': 10}
+    if package_type not in package_counts:
+        return page(request, db, err='Choose vial, half-kit or kit.')
+    count = package_counts[package_type]
+    amount_label = format(amount.normalize(), 'f')
+    strength = f'{amount_label} {content_unit}/vial'
+    cents = int((price * 100).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+    # Reuse a manual sheet per vendor so manual entries remain editable as a group
+    # via the existing sheet deletion interface; do not affect imported sheets.
+    sheet = db.scalars(select(VendorPriceSheet).where(
+        VendorPriceSheet.vendor == vendor,
+        VendorPriceSheet.name == 'Manual entries',
+    ).order_by(VendorPriceSheet.id.desc())).first()
+    if sheet is None:
+        sheet = VendorPriceSheet(vendor=vendor, name='Manual entries')
+        db.add(sheet)
+        db.flush()
+    db.add(VendorPriceEntry(
+        sheet_id=sheet.id, item_name=item_name, strength=strength,
+        package=package_type, vial_count=count, total_price_cents=cents,
+    ))
+    db.commit()
+    return services.flash_redirect('/vendor-prices', msg=f'Added {item_name} ({strength}) for {vendor}.')
 
 @router.post('/vendor-prices/{sheet_id}/delete')
 def delete(sheet_id: int, db: Session = Depends(get_db)):
