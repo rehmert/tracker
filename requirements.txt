@@ -7,3 +7,5 @@ alembic>=1.13,<2
 
 openpyxl>=3.1  # XLSX price sheet import
 # Optional image OCR: Pillow + pytesseract + system tesseract binary
+
+httpx>=0.27  # Public vendor product metadata preview
