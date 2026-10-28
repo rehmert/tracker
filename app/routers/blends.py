@@ -119,6 +119,9 @@ def calculate_reconstitution_plan(form, db: Session):
     targets = form.getlist('target_amount')
     target_units = form.getlist('target_unit')
     bac_inputs = form.getlist('source_bac_ml')
+    allocation = str(form.get('planner_allocation', 'manual')).strip()
+    if allocation not in ('manual', 'equal'):
+        raise ValueError('Unknown source dilution allocation mode.')
     if not (2 <= len(ids) <= 8) or any(len(x) != len(ids) for x in (amounts, units, targets, target_units, bac_inputs)):
         raise ValueError('Complete 2–8 source rows, including BAC water fields.')
     if len(set(ids)) != len(ids):
@@ -150,15 +153,17 @@ def calculate_reconstitution_plan(form, db: Session):
         if base > vd.remaining_base + 1e-6:
             raise ValueError(f'{vial.compound.name}: transfer exceeds remaining inventory.')
         if vial.volume_ml:
-            if str(bac_raw).strip() and _positive(bac_raw, 'Source BAC', allow_zero=True) > 0:
+            if allocation == 'manual' and str(bac_raw).strip() and _positive(bac_raw, 'Source BAC', allow_zero=True) > 0:
                 raise ValueError(f'{vial.compound.name}: already liquid; source BAC must be zero.')
             source_ml = base / vd.conc_per_ml
             bac = 0.0
-        else:
+        elif allocation == 'manual':
             bac = _positive(bac_raw, f'BAC for {vial.compound.name}')
-            # First reconstitute the *entire* dry source. Only the fraction
-            # containing the requested peptide amount is transferred.
+            # Reconstitute the entire dry source; transfer only the requested fraction.
             source_ml = bac * (base / vd.remaining_base)
+        else:
+            bac = 0.0  # Calculated after final volume is known.
+            source_ml = 0.0
         total_fixed += source_ml
         rows.append(dict(vial=vial, base=base, target_base=target_base,
                          target_unit=target_unit, bac=bac, source_ml=source_ml,
@@ -174,6 +179,22 @@ def calculate_reconstitution_plan(form, db: Session):
         raise ValueError('Targets have incompatible peptide ratios; BAC water alone cannot fix this. Required final volumes: ' + details)
     if final_volume > capacity + 1e-8:
         raise ValueError(f'Required {final_volume:.4g} mL exceeds {capacity:.4g} mL capacity. Reduce transfer quantities or adjust the desired draw/targets.')
+    if allocation == 'equal':
+        dry = [r for r in rows if not r['vial'].volume_ml]
+        if dry:
+            available = final_volume - total_fixed
+            if available <= 1e-8:
+                raise ValueError('Already-liquid source transfers leave no volume for reconstituting the dry sources.')
+            # Explicit planning convention, not a unique physical solution:
+            # allocate remaining destination liquid volume equally among dry-source withdrawals.
+            per_dry_withdrawal = available / len(dry)
+            for r in dry:
+                remaining_base = views[r['vial'].id].remaining_base
+                r['source_ml'] = per_dry_withdrawal
+                r['bac'] = per_dry_withdrawal * remaining_base / r['base']
+                r['source_total_ml'] = r['bac']
+                r['source_left_ml'] = r['bac'] - per_dry_withdrawal
+                total_fixed += per_dry_withdrawal
     if total_fixed > final_volume + 1e-8:
         raise ValueError(f'Source liquid totals {total_fixed:.4g} mL, exceeding required {final_volume:.4g} mL. Reduce source BAC allocations or transfer amounts.')
     destination_bac = max(0.0, final_volume - total_fixed)
@@ -182,7 +203,7 @@ def calculate_reconstitution_plan(form, db: Session):
         r['concentration'] = r['base'] / final_volume
     return dict(rows=rows, capacity=capacity, draw=draw, volume=final_volume,
                 source_liquid=total_fixed, destination_bac=destination_bac,
-                free_capacity=capacity-final_volume)
+                free_capacity=capacity-final_volume, allocation=allocation)
 
 
 @router.post('/blends/reconstitution-preview')
@@ -201,6 +222,7 @@ async def preview_reconstitution(request: Request, db: Session = Depends(get_db)
                  f'{plan["free_capacity"]:.4g} mL · '
                  f'Draw: <strong>{plan["draw"]:.4g} mL</strong> '
                  f'({plan["draw"]*100:.4g} U-100 units)</p>',
+                 '<p><strong>Allocation:</strong> ' + ('Equal liquid withdrawal from each dry source (illustrative assumption)' if plan['allocation']=='equal' else 'Manually specified source BAC') + '</p>',
                  '<div class="scroll"><table><thead><tr><th>Peptide</th><th>Source BAC (mL)</th>'
                  '<th>Withdraw from source (mL)</th><th>Liquid left in source (mL)</th><th>Final concentration</th>'
                  '<th>Per draw</th></tr></thead><tbody>']
@@ -213,7 +235,7 @@ async def preview_reconstitution(request: Request, db: Session = Depends(get_db)
         lines.append('</tbody></table></div>'
                      f'<p>Additional BAC in destination vial: <strong>{plan["destination_bac"]:.4g} mL</strong>. '
                      'Each dry source is reconstituted first; only the calculated withdrawal is transferred. '
-                     'Source BAC values are user-entered assumptions, not recommended reconstitution volumes.</p>'
+                     'Source BAC values are calculated using an equal-withdrawal assumption or supplied manually; neither establishes a suitable preparation volume.</p>'
                      '<p><strong>Preview only:</strong> To record a blend, first record source reconstitutions '
                      'in the normal vial workflow, then use the existing blend form with the measured volumes.</p>')
         return HTMLResponse(''.join(lines))

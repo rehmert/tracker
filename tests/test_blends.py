@@ -118,3 +118,32 @@ def test_reconstitution_preview_partial_source_withdrawals():
         assert 'Liquid left in source' in r.text
         with SessionLocal() as db:
             assert all(db.get(Vial,i).volume_ml is None for i in ids)
+
+
+def test_auto_reconstitution_calculates_source_bac_and_draws():
+    with TestClient(app) as client:
+        with SessionLocal() as db:
+            a = Compound(name='Auto BAC A', primary_unit='mg')
+            b = Compound(name='Auto BAC B', primary_unit='mg')
+            db.add_all([a, b]); db.flush()
+            va = Vial(compound_id=a.id, content_value=10, content_unit='mg', status='sealed')
+            vb = Vial(compound_id=b.id, content_value=20, content_unit='mg', status='sealed')
+            db.add_all([va, vb]); db.commit()
+            ids = [va.id, vb.id]
+            count_before = db.query(Blend).count()
+        data = {'source_id': [str(i) for i in ids], 'transfer_amount': ['5', '10'],
+                'transfer_unit': ['mg', 'mg'], 'target_amount': ['1', '2'],
+                'target_unit': ['mg', 'mg'], 'source_bac_ml': ['0.5', '0.5'],
+                'planner_draw_ml': '0.2', 'planner_capacity_ml': '3',
+                'planner_allocation': 'equal'}
+        r = client.post('/blends/reconstitution-preview', data=data)
+        assert r.status_code == 200, r.text
+        # Required final volume = 5 * 0.2 / 1 = 1 mL.
+        # Two dry-source withdrawals = 0.5 mL each; each entire source
+        # is diluted to 1 mL because half of each vial is transferred.
+        assert 'Target final volume: <strong>1 mL</strong>' in r.text
+        assert r.text.count('<td>1</td><td>0.5</td><td>0.5</td>') == 2
+        assert 'Additional BAC in destination vial: <strong>0 mL</strong>' in r.text
+        with SessionLocal() as db:
+            assert db.query(Blend).count() == count_before
+            assert all(db.get(Vial, i).volume_ml is None for i in ids)
