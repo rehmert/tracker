@@ -1,6 +1,6 @@
 """Record physical vial transfers into a blend; no dosing recommendations."""
 from datetime import datetime
-from math import isfinite
+from math import isfinite, floor
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
@@ -53,6 +53,9 @@ def calculate_blend(form, db: Session):
     if not label:
         raise ValueError('Enter a label for the destination vial.')
     diluent = _positive(form.get('diluent_ml', '0'), 'Added diluent', allow_zero=True)
+    destinations = int(_positive(form.get('destination_count', '1'), 'Destination vial count'))
+    if destinations > 100 or str(form.get('destination_count', '1')).strip() != str(destinations):
+        raise ValueError('Destination count must be a whole number between 1 and 100.')
     capacity_raw = str(form.get('capacity_ml', '')).strip()
     capacity = _positive(capacity_raw, 'Destination capacity') if capacity_raw else None
     ids = form.getlist('source_id')
@@ -93,8 +96,8 @@ def calculate_blend(form, db: Session):
         transfers.append((vial, base, transferred_ml, target_base, U.parse_unit(target_unit).name))
     if volume <= 0:
         raise ValueError('Final liquid volume must exceed zero; enter the diluent volume.')
-    if capacity is not None and volume > capacity + 1e-8:
-        raise ValueError(f'Calculated volume {volume:g} mL exceeds destination capacity {capacity:g} mL.')
+    if capacity is not None and volume / destinations > capacity + 1e-8:
+        raise ValueError(f'Calculated per-vial volume {volume / destinations:g} mL exceeds destination capacity {capacity:g} mL.')
     draw_volumes = [t[3] * volume / t[1] for t in transfers]
     if any(draw > volume + 1e-8 for draw in draw_volumes):
         raise ValueError('One or more target doses exceed the blend contents.')
@@ -102,28 +105,27 @@ def calculate_blend(form, db: Session):
     if max(draw_volumes) - min(draw_volumes) > max(1e-5, max(draw_volumes) * 0.001):
         details = ', '.join(f'{v.compound.name}: {draw:.4g} mL' for (v, *_), draw in zip(transfers, draw_volumes))
         raise ValueError('Per-peptide dose targets require different draw volumes. Adjust transfers or targets. ' + details)
-    return dict(label=label, diluent=diluent, capacity=capacity, volume=volume,
+    return dict(label=label, diluent=diluent, capacity=capacity, volume=volume, destinations=destinations,
                 transfers=transfers, views=views, draw_ml=sum(draw_volumes)/len(draw_volumes),
                 notes=str(form.get('notes', '')).strip())
 
 
 def calculate_reconstitution_plan(form, db: Session):
-    """What-if BAC allocations; does not update source vials or blend inventory.
+    """Read-only maximum-complete-draw planner; never changes inventory.
 
-    Assumes nominal volume additivity and ignores powder displacement. No physical
-    compatibility, solubility, sterility or cartridge headspace is inferred.
+    Transfer amounts are derived from the limiting available source and cartridge
+    capacity. Source dilution is underdetermined: equal withdrawal is an
+    illustrative allocation, not a physical preparation recommendation.
     """
     ids = form.getlist('source_id')
-    amounts = form.getlist('transfer_amount')
-    units = form.getlist('transfer_unit')
     targets = form.getlist('target_amount')
     target_units = form.getlist('target_unit')
     bac_inputs = form.getlist('source_bac_ml')
-    allocation = str(form.get('planner_allocation', 'manual')).strip()
+    allocation = str(form.get('planner_allocation', 'equal')).strip()
     if allocation not in ('manual', 'equal'):
         raise ValueError('Unknown source dilution allocation mode.')
-    if not (2 <= len(ids) <= 8) or any(len(x) != len(ids) for x in (amounts, units, targets, target_units, bac_inputs)):
-        raise ValueError('Complete 2–8 source rows, including BAC water fields.')
+    if not (2 <= len(ids) <= 8) or any(len(x) != len(ids) for x in (targets, target_units, bac_inputs)):
+        raise ValueError('Select 2–8 sources and enter a target dose for each peptide.')
     if len(set(ids)) != len(ids):
         raise ValueError('Select each source vial only once.')
     capacity = _positive(form.get('planner_capacity_ml', '3'), 'Cartridge capacity')
@@ -143,67 +145,67 @@ def calculate_reconstitution_plan(form, db: Session):
         raise ValueError('Select one vial per compound.')
     views = services.vial_views(db, vials)
     rows = []
-    total_fixed = 0.0
-    for vial, amount, unit, target, target_unit, bac_raw in zip(vials, amounts, units, targets, target_units, bac_inputs):
+    max_destinations = int(_positive(form.get('planner_max_destinations', '1'), 'Maximum destination vials'))
+    if max_destinations > 100 or str(form.get('planner_max_destinations', '1')).strip() != str(max_destinations):
+        raise ValueError('Maximum destinations must be a whole number between 1 and 100.')
+    draws_per_destination = floor((capacity + 1e-10) / draw)
+    limits = [draws_per_destination * max_destinations]
+    for vial, target, target_unit, bac_raw in zip(vials, targets, target_units, bac_inputs):
         vd = views[vial.id]
-        base, dim = U.to_base(_positive(amount, 'Transfer amount'), unit)
-        target_base, tdim = U.to_base(_positive(target, 'Target per draw'), target_unit)
-        if dim != vd.dim or tdim != vd.dim:
-            raise ValueError(f'{vial.compound.name}: incompatible units.')
-        if base > vd.remaining_base + 1e-6:
-            raise ValueError(f'{vial.compound.name}: transfer exceeds remaining inventory.')
+        target_base, dim = U.to_base(_positive(target, f'Target for {vial.compound.name}'), target_unit)
+        if dim != vd.dim:
+            raise ValueError(f'{vial.compound.name}: target unit is incompatible with its content.')
+        limits.append(floor((vd.remaining_base + 1e-8) / target_base))
+        rows.append(dict(vial=vial, target_base=target_base, target_unit=target_unit,
+                         base_unit=U.BASE_UNIT[vd.dim], bac_input=bac_raw))
+    count = min(limits)
+    if count < 1:
+        raise ValueError('Not enough source content or cartridge capacity for one complete draw.')
+    final_volume = count * draw
+    destination_count = (count + draws_per_destination - 1) // draws_per_destination
+    destination_draws = [min(draws_per_destination, count - i * draws_per_destination) for i in range(destination_count)]
+    total_fixed = 0.0
+    for r in rows:
+        vial = r['vial']
+        base = count * r['target_base']
+        r['base'] = base
         if vial.volume_ml:
-            if allocation == 'manual' and str(bac_raw).strip() and _positive(bac_raw, 'Source BAC', allow_zero=True) > 0:
+            if allocation == 'manual' and str(r['bac_input']).strip() and _positive(r['bac_input'], 'Source BAC', allow_zero=True) > 0:
                 raise ValueError(f'{vial.compound.name}: already liquid; source BAC must be zero.')
-            source_ml = base / vd.conc_per_ml
+            source_ml = base / views[vial.id].conc_per_ml
             bac = 0.0
+            total_fixed += source_ml
         elif allocation == 'manual':
-            bac = _positive(bac_raw, f'BAC for {vial.compound.name}')
-            # Reconstitute the entire dry source; transfer only the requested fraction.
-            source_ml = bac * (base / vd.remaining_base)
+            bac = _positive(r['bac_input'], f'BAC for {vial.compound.name}')
+            source_ml = bac * (base / views[vial.id].remaining_base)
+            total_fixed += source_ml
         else:
-            bac = 0.0  # Calculated after final volume is known.
-            source_ml = 0.0
-        total_fixed += source_ml
-        rows.append(dict(vial=vial, base=base, target_base=target_base,
-                         target_unit=target_unit, bac=bac, source_ml=source_ml,
-                         source_total_ml=(vial.volume_ml if vial.volume_ml else bac),
-                         source_left_ml=((vial.volume_ml if vial.volume_ml else bac) - source_ml),
-                         base_unit=U.BASE_UNIT[vd.dim]))
-    # Fixed composition: every peptide must require the same final volume for a
-    # chosen draw. BAC changes dilution but cannot correct unequal ratios.
-    volumes = [r['base'] * draw / r['target_base'] for r in rows]
-    final_volume = sum(volumes) / len(volumes)
-    if max(volumes) - min(volumes) > max(1e-5, max(volumes) * 0.001):
-        details = ', '.join(f"{r['vial'].compound.name}: {v:.4g} mL" for r, v in zip(rows, volumes))
-        raise ValueError('Targets have incompatible peptide ratios; BAC water alone cannot fix this. Required final volumes: ' + details)
-    if final_volume > capacity + 1e-8:
-        raise ValueError(f'Required {final_volume:.4g} mL exceeds {capacity:.4g} mL capacity. Reduce transfer quantities or adjust the desired draw/targets.')
+            bac, source_ml = 0.0, 0.0
+        r.update(bac=bac, source_ml=source_ml)
+    if total_fixed > final_volume + 1e-8:
+        raise ValueError('Source liquid exceeds final blend volume; use a different dilution allocation or fewer draws.')
     if allocation == 'equal':
         dry = [r for r in rows if not r['vial'].volume_ml]
         if dry:
             available = final_volume - total_fixed
             if available <= 1e-8:
-                raise ValueError('Already-liquid source transfers leave no volume for reconstituting the dry sources.')
-            # Explicit planning convention, not a unique physical solution:
-            # allocate remaining destination liquid volume equally among dry-source withdrawals.
-            per_dry_withdrawal = available / len(dry)
+                raise ValueError('Already-liquid source transfers leave no room for dry-source reconstitution.')
+            per_dry = available / len(dry)
             for r in dry:
-                remaining_base = views[r['vial'].id].remaining_base
-                r['source_ml'] = per_dry_withdrawal
-                r['bac'] = per_dry_withdrawal * remaining_base / r['base']
-                r['source_total_ml'] = r['bac']
-                r['source_left_ml'] = r['bac'] - per_dry_withdrawal
-                total_fixed += per_dry_withdrawal
-    if total_fixed > final_volume + 1e-8:
-        raise ValueError(f'Source liquid totals {total_fixed:.4g} mL, exceeding required {final_volume:.4g} mL. Reduce source BAC allocations or transfer amounts.')
-    destination_bac = max(0.0, final_volume - total_fixed)
+                r['source_ml'] = per_dry
+                r['bac'] = per_dry * views[r['vial'].id].remaining_base / r['base']
+                total_fixed += per_dry
     for r in rows:
-        r['actual_per_draw'] = r['base'] * draw / final_volume
+        vial = r['vial']
+        r['source_total_ml'] = vial.volume_ml if vial.volume_ml else r['bac']
+        r['source_left_ml'] = max(0.0, r['source_total_ml'] - r['source_ml'])
+        r['actual_per_draw'] = r['target_base']
         r['concentration'] = r['base'] / final_volume
     return dict(rows=rows, capacity=capacity, draw=draw, volume=final_volume,
-                source_liquid=total_fixed, destination_bac=destination_bac,
-                free_capacity=capacity-final_volume, allocation=allocation)
+                destination_count=destination_count, destination_draws=destination_draws,
+                destination_volumes=[n * draw for n in destination_draws],
+                source_liquid=total_fixed, destination_bac=max(0.0, final_volume-total_fixed),
+                free_capacity=destination_count * capacity-final_volume, allocation=allocation, draws=count)
 
 
 @router.post('/blends/reconstitution-preview')
@@ -218,23 +220,24 @@ async def preview_reconstitution(request: Request, db: Session = Depends(get_db)
                  'Calculated liquid volumes assume additive volumes and ignore powder displacement, '
                  'solubility, compatibility, sterility and cartridge headspace.</p>',
                  f'<p>Target final volume: <strong>{plan["volume"]:.4g} mL</strong> / '
-                 f'{plan["capacity"]:.4g} mL capacity · Remaining nominal space: '
+                 f'{plan["capacity"]:.4g} mL per vial · Remaining nominal space across destinations: '
                  f'{plan["free_capacity"]:.4g} mL · '
-                 f'Draw: <strong>{plan["draw"]:.4g} mL</strong> '
+                 f'<strong>{plan["draws"]} complete draws across {plan["destination_count"]} destination vials</strong> · Draw: <strong>{plan["draw"]:.4g} mL</strong> '
                  f'({plan["draw"]*100:.4g} U-100 units)</p>',
                  '<p><strong>Allocation:</strong> ' + ('Equal liquid withdrawal from each dry source (illustrative assumption)' if plan['allocation']=='equal' else 'Manually specified source BAC') + '</p>',
                  '<div class="scroll"><table><thead><tr><th>Peptide</th><th>Source BAC (mL)</th>'
-                 '<th>Withdraw from source (mL)</th><th>Liquid left in source (mL)</th><th>Final concentration</th>'
+                 '<th>Transfer content</th><th>Withdraw from source (mL)</th><th>Liquid left in source (mL)</th><th>Final concentration</th>'
                  '<th>Per draw</th></tr></thead><tbody>']
         for r in plan['rows']:
-            cells = (r['vial'].compound.name, f'{r["bac"]:.4g}',
+            cells = (r['vial'].compound.name, f'{r["bac"]:.4g}', f'{U.from_base(r["base"], r["vial"].content_unit):.4g} {r["vial"].content_unit}',
                      f'{r["source_ml"]:.4g}', f'{r["source_left_ml"]:.4g}',
                      f'{r["concentration"]:.4g} {r["base_unit"]}/mL',
                      f'{U.from_base(r["actual_per_draw"],r["target_unit"]):.4g} {r["target_unit"]}')
             lines.append('<tr>' + ''.join(f'<td>{escape(str(v))}</td>' for v in cells) + '</tr>')
-        lines.append('</tbody></table></div>'
+        lines.append('</tbody></table></div><p><strong>Destination fill plan:</strong> ' +
+                     ', '.join(f'Vial {i}: {v:.4g} mL ({n} draws)' for i, (v, n) in enumerate(zip(plan['destination_volumes'], plan['destination_draws']), 1)) + '</p>'
                      f'<p>Additional BAC in destination vial: <strong>{plan["destination_bac"]:.4g} mL</strong>. '
-                     'Each dry source is reconstituted first; only the calculated withdrawal is transferred. '
+                     'Transfer quantities are calculated to maximize complete draws within the nominal capacity. Each dry source is reconstituted before its calculated withdrawal. '
                      'Source BAC values are calculated using an equal-withdrawal assumption or supplied manually; neither establishes a suitable preparation volume.</p>'
                      '<p><strong>Preview only:</strong> To record a blend, first record source reconstitutions '
                      'in the normal vial workflow, then use the existing blend form with the measured volumes.</p>')
@@ -258,7 +261,9 @@ async def preview_blend(request: Request, db: Session = Depends(get_db)):
                  f'<p>Final volume: <strong>{volume:.4g} mL</strong> · '
                  f'Common draw: <strong>{draw:.4g} mL</strong> '
                  f'({draw * 100:.4g} U-100 units) · '
-                 f'Estimated full draws: <strong>{int((volume + 1e-9) / draw)}</strong></p>',
+                 f'Estimated full draws: <strong>{int((volume + 1e-9) / draw)}</strong> · '
+                 f'Destination vials: <strong>{plan["destinations"]}</strong> · '
+                 f'Volume per vial: <strong>{volume / plan["destinations"]:.4g} mL</strong></p>',
                  '<div class="scroll"><table><thead><tr><th>Compound</th><th>Source</th><th>Transfer</th>'
                  '<th>Source liquid</th><th>Concentration</th><th>Per draw</th><th>Remaining in source after save</th>'
                  '</tr></thead><tbody>']
@@ -285,18 +290,24 @@ async def create_blend(request: Request, db: Session = Depends(get_db)):
         plan = calculate_blend(form, db)
         label, diluent, capacity, volume = (plan[k] for k in ('label', 'diluent', 'capacity', 'volume'))
         transfers, views = plan['transfers'], plan['views']
-        blend = Blend(label=label, final_volume_ml=volume, diluent_ml=diluent,
-                      capacity_ml=capacity, notes=str(form.get('notes', '')).strip())
-        db.add(blend)
-        db.flush()
-        for vial, base, transferred_ml, target_base, target_unit in transfers:
-            db.add(BlendComponent(blend_id=blend.id, source_vial_id=vial.id,
-                                  compound_id=vial.compound_id, transferred_base=base,
-                                  transferred_ml=transferred_ml, target_dose_base=target_base,
-                                  target_unit=target_unit))
+        destinations = plan['destinations']
+        blends = []
+        for index in range(destinations):
+            blend = Blend(label=f'{label} ({index + 1}/{destinations})' if destinations > 1 else label,
+                          final_volume_ml=volume / destinations, diluent_ml=diluent / destinations,
+                          capacity_ml=capacity, notes=plan['notes'])
+            db.add(blend)
+            db.flush()
+            blends.append(blend)
+            for vial, base, transferred_ml, target_base, target_unit in transfers:
+                db.add(BlendComponent(blend_id=blend.id, source_vial_id=vial.id,
+                                      compound_id=vial.compound_id, transferred_base=base / destinations,
+                                      transferred_ml=transferred_ml / destinations,
+                                      target_dose_base=target_base, target_unit=target_unit))
+        for vial, base, *_ in transfers:
             vial.status = 'in_use' if base < views[vial.id].remaining_base - 1e-6 else 'finished'
         db.commit()
-        return services.flash_redirect(f'/blends/{blend.id}', msg='Blend recorded; source inventory transferred.')
+        return services.flash_redirect(f'/blends/{blends[0].id}', msg=f'{destinations} destination vial(s) recorded; source inventory transferred.')
     except (ValueError, TypeError, U.UnitError) as exc:
         db.rollback()
         return services.flash_redirect('/blends', err=str(exc))
