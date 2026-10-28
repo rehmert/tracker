@@ -452,3 +452,26 @@ class ProtocolRevision(Base):
     revision: Mapped[int] = mapped_column(Integer, nullable=False)
     snapshot_json: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class VendorPriceSheet(Base):
+    __tablename__ = "vendor_price_sheets"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vendor: Mapped[str] = mapped_column(String(160))
+    name: Mapped[str] = mapped_column(String(160), default="")
+    imported_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    entries: Mapped[list["VendorPriceEntry"]] = relationship(back_populates="sheet", cascade="all, delete-orphan")
+
+class VendorPriceEntry(Base):
+    __tablename__ = "vendor_price_entries"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    sheet_id: Mapped[int] = mapped_column(ForeignKey("vendor_price_sheets.id", ondelete="CASCADE"))
+    item_name: Mapped[str] = mapped_column(String(200))
+    strength: Mapped[str] = mapped_column(String(80), default="")
+    package: Mapped[str] = mapped_column(String(80), default="")
+    vial_count: Mapped[int] = mapped_column(Integer, default=1)
+    total_price_cents: Mapped[int] = mapped_column(Integer)
+    sheet: Mapped["VendorPriceSheet"] = relationship(back_populates="entries")
+    @property
+    def per_vial_cents(self):
+        return self.total_price_cents / self.vial_count

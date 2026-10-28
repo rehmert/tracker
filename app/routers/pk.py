@@ -4,7 +4,7 @@ import io
 from fastapi.responses import Response
 from math import isfinite
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..db import get_db
@@ -25,6 +25,86 @@ class PlannedInput(BaseModel):
     planned_at: datetime
     amount_mg: float = Field(gt=0, le=10000)
 
+
+
+class WhatIfStage(BaseModel):
+    week: int = Field(ge=1, le=52)
+    amount_mg: float = Field(gt=0, le=10000)
+
+class WhatIfProtocol(BaseModel):
+    compound_id: int
+    name: str = Field(min_length=1, max_length=160)
+    start_at: datetime
+    interval_days: int = Field(ge=1, le=90)
+    duration_days: int = Field(ge=1, le=365)
+    stages: list[WhatIfStage] = Field(min_length=1, max_length=52)
+    half_life_hours: float = Field(gt=0, le=10000)
+    absorption_half_life_hours: float = Field(gt=0, le=10000)
+
+    @model_validator(mode="after")
+    def validate_stages(self):
+        if not all(isfinite(x.amount_mg) for x in self.stages):
+            raise ValueError("Invalid stage amount")
+        weeks = [x.week for x in self.stages]
+        if weeks[0] != 1 or weeks != sorted(set(weeks)):
+            raise ValueError("Stages must start at week 1 and have unique ascending weeks")
+        return self
+
+
+def what_if_doses(data: WhatIfProtocol):
+    stages = data.stages
+    doses = []
+    for offset in range(0, data.duration_days, data.interval_days):
+        week = offset // 7 + 1
+        amount = next(stage.amount_mg for stage in reversed(stages) if stage.week <= week)
+        doses.append((data.start_at + timedelta(days=offset), amount))
+    return doses
+
+
+def verify_what_if_compound(db: Session, compound_id: int):
+    c = db.get(Compound, compound_id)
+    if c is None or pk.profile(c.name) is None:
+        raise HTTPException(400, "Unsupported compound")
+
+
+@router.post("/what-if/preview")
+def preview_what_if(data: WhatIfProtocol, db: Session = Depends(get_db)):
+    """Preview hypothetical recurring doses without writing anything to the database."""
+    verify_what_if_compound(db, data.compound_id)
+    now = datetime.now()
+    start = now - timedelta(days=60)
+    end = max(now + timedelta(days=45), data.start_at + timedelta(days=data.duration_days))
+    if end - start > timedelta(days=730):
+        raise HTTPException(400, "What-if timeline exceeds 730 days")
+    history_start = start - timedelta(hours=min(data.half_life_hours * 12, 365 * 24))
+    q = select(DoseLog).join(Vial).where(Vial.compound_id == data.compound_id,
+        DoseLog.kind == "dose", DoseLog.taken_at >= history_start, DoseLog.taken_at <= now)
+    actual = [(d.taken_at, d.amount_base / 1000) for d in db.scalars(q)
+              if d.vial.content_unit in ("mg", "mcg", "g")]
+    schedule = what_if_doses(data)
+    planned = [(at, amount) for at, amount in schedule if at >= now]
+    rows = pk.series(start, end, actual, planned, data.half_life_hours, data.absorption_half_life_hours)
+    return {"rows": rows, "now": now.isoformat(), "actual_doses": len(actual),
+            "planned_doses": len(planned), "units": "modeled mg-equivalent exposure",
+            "schedule": [{"planned_at": at.isoformat(), "amount_mg": amount} for at, amount in schedule],
+            "disclaimer": "Hypothetical exposure only; no protocol, inventory, or dose records changed."}
+
+
+@router.post("/what-if/save", status_code=201)
+def save_what_if(data: WhatIfProtocol, db: Session = Depends(get_db)):
+    """Save recurring what-if doses as an existing PK scenario, not an actual protocol."""
+    verify_what_if_compound(db, data.compound_id)
+    doses = [(at, amount) for at, amount in what_if_doses(data) if at >= datetime.now()]
+    if not doses:
+        raise HTTPException(400, "No future doses to save")
+    scenario = PkScenario(compound_id=data.compound_id, name=data.name,
+        half_life_hours=data.half_life_hours, absorption_half_life_hours=data.absorption_half_life_hours)
+    db.add(scenario)
+    db.flush()
+    for at, amount in doses:
+        db.add(PkPlannedDose(scenario_id=scenario.id, planned_at=at, amount_mg=amount))
+    db.commit()
+    return {"id": scenario.id, "planned_doses": len(doses)}
 
 def supported(db):
     return [c for c in db.scalars(select(Compound).order_by(Compound.name)) if pk.profile(c.name)]

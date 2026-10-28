@@ -142,6 +142,46 @@
       span.style.color=colors[j];$('overlayLegend').append(span);});
     $('overlayEvents').textContent=data.series.map(line=>line.name+': '+line.administrations.length+' recorded administrations in window').join(' · ');
   }
+  // Recurring what-if protocols: independent from real protocols and dose logs.
+  const addStage=(week='',amount='')=>{
+    const tr=document.createElement('tr');
+    const weekTd=document.createElement('td'), doseTd=document.createElement('td'), actionTd=document.createElement('td');
+    const w=document.createElement('input');w.type='number';w.min='1';w.max='52';w.step='1';w.value=week;w.className='wiWeek';
+    const a=document.createElement('input');a.type='number';a.min='0.001';a.step='any';a.value=amount;a.className='wiAmount';
+    const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.onclick=()=>tr.remove();
+    weekTd.append(w);doseTd.append(a);actionTd.append(remove);tr.append(weekTd,doseTd,actionTd);$('wiStages').append(tr);
+  };
+  addStage('1','');
+  $('wiAddStage').onclick=()=>addStage();
+  const localDateTime=(date)=>{const d=new Date(date.getTime()-date.getTimezoneOffset()*60000);return d.toISOString().slice(0,16);};
+  $('wiStart').value=localDateTime(new Date());
+  const wiParams=()=>{
+    if(!cid())throw new Error('Select a compound.');
+    const stages=[...$('wiStages').querySelectorAll('tr')].map(tr=>({
+      week:Number(tr.querySelector('.wiWeek').value),amount_mg:Number(tr.querySelector('.wiAmount').value)}));
+    if(!stages.length || stages.some(s=>!Number.isInteger(s.week)||s.week<1||!(s.amount_mg>0)))
+      throw new Error('Enter a valid week and positive dose for each stage.');
+    stages.sort((a,b)=>a.week-b.week);
+    return {compound_id:cid(),name:$('wiName').value,start_at:$('wiStart').value,
+      interval_days:Number($('wiInterval').value),duration_days:Number($('wiDuration').value),
+      half_life_hours:Number($('half').value),absorption_half_life_hours:Number($('abs').value),stages};
+  };
+  $('wiPreview').onclick=async()=>{try{
+    $('pkError').textContent='';
+    const result=await request('/pk/what-if/preview','POST',wiParams());
+    $('wiSchedule').replaceChildren();
+    result.schedule.forEach(d=>{const tr=document.createElement('tr');
+      [d.planned_at.replace('T',' ').slice(0,16),String(d.amount_mg)].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});
+      $('wiSchedule').append(tr);});
+    $('wiSummary').textContent=`${result.schedule.length} scheduled doses (${result.planned_doses} future). Preview only; no records changed.`;
+    draw(result);
+  }catch(e){error(e);}};
+  $('wiSave').onclick=async()=>{try{
+    $('pkError').textContent='';
+    const result=await request('/pk/what-if/save','POST',wiParams());
+    $('protocol').value='';current={id:result.id};await load();
+    $('wiSummary').textContent=`Saved ${result.planned_doses} future doses as a PK scenario. No actual protocol or inventory changed.`;
+  }catch(e){error(e);}};
   $('overlayBtn').onclick=()=>overlay().catch(error);
   $('compareBtn').onclick=()=>compare().catch(error);
   $('exportCompareCsv').onclick=()=>{

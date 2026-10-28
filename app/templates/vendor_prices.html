@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Vendor price comparison{% endblock %}
+{% block content %}
+<h1>Vendor price comparison</h1>
+<p>Import price sheets, review extracted prices, and compare cost per vial. Prices are informational; matching product names do not establish equivalent quality or safety.</p>
+<section class="card"><h2>Upload vendor price sheet</h2>
+<form method="post" action="/vendor-prices/preview" enctype="multipart/form-data">
+<div class="form-grid"><label class="field"><span>Vendor</span><input name="vendor" required value="{{ vendor or '' }}"></label>
+<label class="field"><span>Sheet name (optional)</span><input name="sheet_name" value="{{ sheet_name or '' }}"></label>
+<label class="field"><span>Spreadsheet or image</span><input name="upload" type="file" accept=".csv,.tsv,.txt,.xlsx,.png,.jpg,.jpeg,.webp" required></label></div>
+<button type="submit">Preview import</button></form>
+<p class="muted">CSV, TSV and XLSX supported. Images (PNG/JPG/WebP) require OCR dependencies on the server. Maximum 8 MB. Review every OCR result before saving.</p></section>
+{% if review_text is defined %}<section class="card"><h2>Review extracted offers{% if preview_count is defined %} ({{ preview_count }}){% endif %}</h2>
+<p>Edit the tab-separated rows below. Columns: Item, Strength, Package, Vials, Total USD. Remove bad OCR rows; add missing rows. Saving is the only step that writes to the database.</p>
+<form method="post" action="/vendor-prices/save">
+<input type="hidden" name="vendor" value="{{ vendor }}"><input type="hidden" name="sheet_name" value="{{ sheet_name }}">
+<textarea name="review_text" rows="12" style="width:100%;font-family:monospace;white-space:pre;overflow:auto" required>{{ review_text }}</textarea>
+<button type="submit">Save reviewed price sheet</button></form>
+{% if raw_text %}<details><summary>Raw extracted text (for OCR troubleshooting)</summary><pre style="white-space:pre-wrap">{{ raw_text }}</pre></details>{% endif %}
+</section>{% endif %}
+<section class="card"><h2>Saved price sheets</h2>
+<div class="table-wrap"><table><thead><tr><th>Vendor</th><th>Sheet</th><th>Imported (Eastern)</th><th></th></tr></thead><tbody>
+{% for s in sheets %}<tr><td>{{ s.vendor }}</td><td>{{ s.name }}</td><td>{{ s.imported_at|utc_dt }}</td><td><form method="post" action="/vendor-prices/{{ s.id }}/delete" onsubmit="return confirm('Delete this price sheet and its offers?')"><button type="submit">Delete</button></form></td></tr>{% else %}<tr><td colspan="4">No sheets imported yet.</td></tr>{% endfor %}
+</tbody></table></div></section>
+<section class="card"><h2>Compare offers</h2><p>Prices are normalized by vial count; comparisons are grouped by exact normalized item name and strength. Review package details before comparing.</p>
+<div class="table-wrap"><table><thead><tr><th>Item</th><th>Strength</th><th>Vendor</th><th>Package</th><th>Vials</th><th>Total</th><th>Per vial</th></tr></thead><tbody>
+{% for group in comparisons %}{% for e in group|sort(attribute='per_vial_cents') %}<tr><td>{{ e.item_name }}</td><td>{{ e.strength or '—' }}</td><td>{{ e.sheet.vendor }}</td><td>{{ e.package or '—' }}</td><td class="n">{{ e.vial_count }}</td><td class="n">{{ e.total_price_cents|money }}</td><td class="n">{{ '%.2f'|format(e.per_vial_cents / 100) }} USD{% if loop.first and group|length > 1 %} ★{% endif %}</td></tr>{% endfor %}{% else %}<tr><td colspan="7">No offers imported yet.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

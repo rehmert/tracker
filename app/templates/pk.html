@@ -15,6 +15,21 @@
   <label>Days after today <input id="forward" type="number" min="1" max="365" value="45"></label>
   <button id="refresh" type="button">Update chart</button>
 </div>
+<div class="card" id="whatIfCard">
+<h2>What-if protocol builder</h2>
+<p class="note">Create a hypothetical recurring schedule for the selected compound. Preview does not save anything; saving creates a PK scenario, not a real protocol or administration.</p>
+<label>Name <input id="wiName" value="What-if protocol" maxlength="160"></label>
+<label>First dose (Eastern) <input id="wiStart" type="datetime-local"></label>
+<label>Interval between doses (days) <input id="wiInterval" type="number" min="1" max="90" value="7"></label>
+<label>Duration (days) <input id="wiDuration" type="number" min="1" max="365" value="84"></label>
+<p class="note">Stages apply from their starting week onward. Week 1 is required. Enter dose amounts in mg; this is an exposure model, not a dose recommendation.</p>
+<table><thead><tr><th>Starting week</th><th>Dose (mg)</th><th></th></tr></thead><tbody id="wiStages"></tbody></table>
+<button id="wiAddStage" type="button">Add stage</button>
+<button id="wiPreview" type="button">Preview what-if</button>
+<button id="wiSave" type="button">Save as PK scenario</button>
+<p id="wiSummary" class="note" aria-live="polite"></p>
+<div style="overflow-x:auto;max-height:260px;overflow-y:auto"><table><thead><tr><th>Scheduled date/time</th><th>Dose (mg)</th></tr></thead><tbody id="wiSchedule"></tbody></table></div>
+</div>
 <div class="card"><h2>Modeled exposure</h2><canvas id="plot" width="1000" height="380" class="pk-chart" role="img" aria-label="Exposure graph"></canvas><p id="summary"></p><p>Blue: historical doses and decay without future dosing. Orange: historical doses plus planned doses. Dashed vertical line: now.</p></div>
 <div class="card">
 <h2>Compare saved scenarios</h2>
@@ -50,5 +65,5 @@
 <table><thead><tr><th>Date/time</th><th>mg</th><th>Actions</th></tr></thead><tbody id="plannedRows"></tbody></table>
 </div>
 <p id="pkError" role="alert" style="color:#a22"></p>
-<script src="/static/pk.js?v=v23-protocol-selection" defer></script>
+<script src="/static/pk.js?v=v23-what-if-protocol" defer></script>
 {% endblock %}
