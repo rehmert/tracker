@@ -1,48 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ p.name }}<script>
-(function () {
-  const form = document.getElementById('protoform');
-  if (!form) return;
-  const rows = () => Array.from(form.querySelectorAll('#items > tr'));
-  function syncDays(row) {
-    const hidden = row.querySelector('input[name="dose_days"]');
-    if (hidden) hidden.value = Array.from(row.querySelectorAll('.dose-day-check:checked')).map(x => x.value).join(',');
-  }
-  function copySchedule(source, target) {
-    if (!source || !target) return;
-    const selected = new Set(Array.from(source.querySelectorAll('.dose-day-check:checked')).map(x => x.value));
-    target.querySelectorAll('.dose-day-check').forEach(x => { x.checked = selected.has(x.value); });
-    ['dose_time', 'fasting_hours'].forEach(name => {
-      const from = source.querySelector('[name="' + name + '"]');
-      const to = target.querySelector('[name="' + name + '"]');
-      if (from && to) to.value = from.value;
-    });
-    syncDays(target);
-  }
-  form.addEventListener('change', e => {
-    if (e.target.matches('.dose-day-check')) syncDays(e.target.closest('tr'));
-  });
-  form.addEventListener('click', e => {
-    const button = e.target.closest('.copy-schedule');
-    if (!button) return;
-    const row = button.closest('tr');
-    const all = rows();
-    const index = all.indexOf(row);
-    if (index > 0) {
-      copySchedule(all[index - 1], row);
-      form.dispatchEvent(new Event('change', {bubbles: true}));
-    }
-  });
-  document.getElementById('apply-first-schedule')?.addEventListener('click', () => {
-    const all = rows();
-    all.slice(1).forEach(row => copySchedule(all[0], row));
-    form.dispatchEvent(new Event('change', {bubbles: true}));
-  });
-  form.addEventListener('submit', () => rows().forEach(syncDays));
-  rows().forEach(syncDays);
-})();
-</script>
-{% endblock %}
+{% block title %}{{ p.name }}{% endblock %}
 {% block content %}<p><a href="/protocols/{{ p.id }}/history">View version history</a></p>
 <h1>{{ p.name }}</h1>
 <section><p><strong>Status:</strong> {{ "Active — included in dashboard forecasts" if p.is_active else "What-if — excluded from dashboard forecasts" }}</p>
