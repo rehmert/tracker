@@ -68,6 +68,11 @@ def migrate(engine):
                 if name not in cols:
                     conn.exec_driver_sql(f"ALTER TABLE coas ADD COLUMN {name} {sql}")
 
+        if "vendor_price_entries" in tables:
+            cols = {c["name"] for c in inspect(conn).get_columns("vendor_price_entries")}
+            if "product_url" not in cols:
+                conn.exec_driver_sql("ALTER TABLE vendor_price_entries ADD COLUMN product_url VARCHAR(2048) NOT NULL DEFAULT ''")
+
         if "supplies" in tables:
             scols = {c["name"] for c in inspect(conn).get_columns("supplies")}
             for name, sql in {

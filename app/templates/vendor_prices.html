@@ -13,6 +13,7 @@
 <label class="field"><span>Contents unit</span><select name="content_unit"><option value="mg">mg</option><option value="IU">IU</option></select></label>
 <label class="field"><span>Package</span><select name="package_type"><option value="vial">Single vial (1)</option><option value="half-kit">Half-kit (5)</option><option value="kit">Kit (10)</option></select></label>
 <label class="field"><span>Price for selected package (USD)</span><input type="number" name="package_price" min="0" step="0.01" required placeholder="75.00"></label>
+<label class="field"><span>Product link (optional)</span><input type="url" name="product_url" maxlength="2048" placeholder="https://vendor.example/product" autocomplete="url"></label>
 </div><button type="submit">Add offer</button></form></section>
 <section class="card"><h2>Upload vendor price sheet</h2>
 <form method="post" action="/vendor-prices/preview" enctype="multipart/form-data">
@@ -34,7 +35,7 @@
 {% for s in sheets %}<tr><td>{{ s.vendor }}</td><td>{{ s.name }}</td><td>{{ s.imported_at|utc_dt }}</td><td><form method="post" action="/vendor-prices/{{ s.id }}/delete" onsubmit="return confirm('Delete this price sheet and its offers?')"><button type="submit">Delete</button></form></td></tr>{% else %}<tr><td colspan="4">No sheets imported yet.</td></tr>{% endfor %}
 </tbody></table></div></section>
 <section class="card"><h2>Compare offers</h2><p>Prices are normalized by vial count; comparisons are grouped by exact normalized item name and strength. Review package details before comparing.</p>
-<div class="table-wrap"><table><thead><tr><th>Item</th><th>Strength</th><th>Vendor</th><th>Package</th><th>Vials</th><th>Total</th><th>Per vial</th></tr></thead><tbody>
-{% for group in comparisons %}{% for e in group|sort(attribute='per_vial_cents') %}<tr><td>{{ e.item_name }}</td><td>{{ e.strength or '—' }}</td><td>{{ e.sheet.vendor }}</td><td>{{ e.package or '—' }}</td><td class="n">{{ e.vial_count }}</td><td class="n">{{ e.total_price_cents|money }}</td><td class="n">{{ '%.2f'|format(e.per_vial_cents / 100) }} USD{% if loop.first and group|length > 1 %} ★{% endif %}</td></tr>{% endfor %}{% else %}<tr><td colspan="7">No offers imported yet.</td></tr>{% endfor %}
+<div class="table-wrap"><table><thead><tr><th>Item</th><th>Strength</th><th>Vendor</th><th>Package</th><th>Vials</th><th>Total</th><th>Per vial</th><th>Product link</th></tr></thead><tbody>
+{% for group in comparisons %}{% for e in group|sort(attribute='per_vial_cents') %}<tr><td>{{ e.item_name }}</td><td>{{ e.strength or '—' }}</td><td>{{ e.sheet.vendor }}</td><td>{{ e.package or '—' }}</td><td class="n">{{ e.vial_count }}</td><td class="n">{{ e.total_price_cents|money }}</td><td class="n">{{ '%.2f'|format(e.per_vial_cents / 100) }} USD{% if loop.first and group|length > 1 %} ★{% endif %}</td><td>{% if e.product_url %}<a href="{{ e.product_url }}" target="_blank" rel="noopener noreferrer">View product ↗</a>{% else %}—{% endif %}</td></tr>{% endfor %}{% else %}<tr><td colspan="8">No offers imported yet.</td></tr>{% endfor %}
 </tbody></table></div></section>
 {% endblock %}

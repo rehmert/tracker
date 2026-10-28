@@ -471,6 +471,7 @@ class VendorPriceEntry(Base):
     package: Mapped[str] = mapped_column(String(80), default="")
     vial_count: Mapped[int] = mapped_column(Integer, default=1)
     total_price_cents: Mapped[int] = mapped_column(Integer)
+    product_url: Mapped[str] = mapped_column(String(2048), default="")
     sheet: Mapped["VendorPriceSheet"] = relationship(back_populates="entries")
     @property
     def per_vial_cents(self):

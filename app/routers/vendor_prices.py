@@ -2,6 +2,7 @@
 import csv
 import io
 import re
+from urllib.parse import urlsplit
 from decimal import Decimal, ROUND_HALF_UP
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from sqlalchemy import select
@@ -39,6 +40,25 @@ def parse_review(text):
         result.append((item[:200], strength[:80], package[:80], count, value))
     if len(result) > 500: raise ValueError('Maximum 500 items per sheet.')
     return result
+
+def validate_product_url(value: str) -> str:
+    """Only accept absolute HTTP(S) product links; empty links are optional."""
+    value = value.strip()
+    if not value:
+        return ''
+    if len(value) > 2048 or any(ch.isspace() or ord(ch) < 32 for ch in value):
+        raise ValueError('Product link must be an HTTP or HTTPS URL (maximum 2048 characters).')
+    try:
+        parsed = urlsplit(value)
+        valid = parsed.scheme.lower() in ('http', 'https') and bool(parsed.hostname)
+        if parsed.username is not None or parsed.password is not None:
+            valid = False
+        _ = parsed.port
+    except ValueError:
+        valid = False
+    if not valid:
+        raise ValueError('Product link must be a valid HTTP or HTTPS URL.')
+    return value
 
 def page(request, db, **kwargs):
     sheets = list(db.scalars(select(VendorPriceSheet).order_by(VendorPriceSheet.id.desc())))
@@ -111,10 +131,15 @@ def manual_add(
     content_unit: str = Form('mg'),
     package_type: str = Form('vial'),
     package_price: str = Form(''),
+    product_url: str = Form(''),
     db: Session = Depends(get_db),
 ):
     """Save one vendor offer, normalizing package price to a vial count."""
     vendor = vendor.strip()[:160]
+    try:
+        product_url = validate_product_url(product_url)
+    except ValueError as exc:
+        return page(request, db, err=str(exc))
     item_name = item_name.strip()[:200]
     amount = number(content_amount)
     price = number(package_price)
@@ -146,6 +171,7 @@ def manual_add(
     db.add(VendorPriceEntry(
         sheet_id=sheet.id, item_name=item_name, strength=strength,
         package=package_type, vial_count=count, total_price_cents=cents,
+        product_url=product_url,
     ))
     db.commit()
     return services.flash_redirect('/vendor-prices', msg=f'Added {item_name} ({strength}) for {vendor}.')
