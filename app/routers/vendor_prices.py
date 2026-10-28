@@ -122,6 +122,21 @@ def save(request: Request, vendor: str = Form(...), sheet_name: str = Form(''), 
     db.commit()
     return services.flash_redirect('/vendor-prices', msg=f'Saved {len(rows)} offers for {vendor}.')
 
+@router.post('/vendor-prices/fetch-url')
+def fetch_url(request: Request, product_url: str = Form(''), db: Session = Depends(get_db)):
+    """Fetch public product metadata for human review; never persist automatically."""
+    from ..vendor_url_extract import fetch_public_page, extract_product
+    try:
+        url = validate_product_url(product_url)
+        if not url: raise ValueError('Product URL is required.')
+        final_url, html = fetch_public_page(url)
+        extracted = extract_product(html, final_url)
+        if extracted['currency'] and extracted['currency'].upper() != 'USD':
+            extracted['price'] = ''  # Never silently treat non-USD as USD.
+        return page(request, db, fetched=extracted)
+    except Exception as exc:
+        return page(request, db, err=f'Could not fetch product: {str(exc)[:220]}')
+
 @router.post('/vendor-prices/manual')
 def manual_add(
     request: Request,
@@ -175,6 +190,63 @@ def manual_add(
     ))
     db.commit()
     return services.flash_redirect('/vendor-prices', msg=f'Added {item_name} ({strength}) for {vendor}.')
+
+@router.get('/vendor-prices/entries/{entry_id}/edit')
+def edit_offer(request: Request, entry_id: int, db: Session = Depends(get_db)):
+    entry = db.get(VendorPriceEntry, entry_id)
+    if entry is None:
+        return services.flash_redirect('/vendor-prices', err='Vendor offer not found.')
+    return page(request, db, editing=entry)
+
+@router.post('/vendor-prices/entries/{entry_id}/edit')
+def update_offer(
+    request: Request, entry_id: int, vendor: str = Form(''),
+    item_name: str = Form(''), strength: str = Form(''),
+    package: str = Form(''), vial_count: str = Form(''),
+    total_price: str = Form(''), product_url: str = Form(''),
+    db: Session = Depends(get_db),
+):
+    entry = db.get(VendorPriceEntry, entry_id)
+    if entry is None:
+        return services.flash_redirect('/vendor-prices', err='Vendor offer not found.')
+    vendor = vendor.strip()[:160]
+    item_name = item_name.strip()[:200]
+    strength = strength.strip()[:80]
+    package = package.strip()[:80]
+    try:
+        product_url = validate_product_url(product_url)
+        count = int(vial_count)
+        price = number(total_price)
+        if not vendor or not item_name:
+            raise ValueError('Vendor and compound are required.')
+        if not package:
+            raise ValueError('Package description is required.')
+        if not 1 <= count <= 100000:
+            raise ValueError('Vial count must be between 1 and 100,000.')
+        if price is None or price < 0 or price > Decimal('100000000'):
+            raise ValueError('Enter a valid nonnegative package price.')
+    except (ValueError, TypeError) as exc:
+        return page(request, db, editing=entry, err=str(exc))
+    if vendor != entry.sheet.vendor:
+        # A sheet may contain many offers: moving this entry avoids renaming
+        # the vendor on unrelated offers from the same imported sheet.
+        destination = db.scalars(select(VendorPriceSheet).where(
+            VendorPriceSheet.vendor == vendor,
+            VendorPriceSheet.name == 'Manual entries',
+        ).order_by(VendorPriceSheet.id.desc())).first()
+        if destination is None:
+            destination = VendorPriceSheet(vendor=vendor, name='Manual entries')
+            db.add(destination)
+            db.flush()
+        entry.sheet_id = destination.id
+    entry.item_name = item_name
+    entry.strength = strength
+    entry.package = package
+    entry.vial_count = count
+    entry.total_price_cents = int((price * 100).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+    entry.product_url = product_url
+    db.commit()
+    return services.flash_redirect('/vendor-prices', msg='Vendor offer updated.')
 
 @router.post('/vendor-prices/{sheet_id}/delete')
 def delete(sheet_id: int, db: Session = Depends(get_db)):
