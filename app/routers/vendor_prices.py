@@ -74,6 +74,92 @@ def page(request, db, **kwargs):
 def index(request: Request, db: Session = Depends(get_db)):
     return page(request, db)
 
+# Structured CSV importer: each row can have its own vendor and product link.
+CSV_COLUMNS = ('vendor','item_name','content_amount','content_unit','package_type','package_price','product_url')
+CSV_ALIASES = {
+    'vendor': {'vendor','supplier'},
+    'item_name': {'item_name','compound','item','product','name'},
+    'content_amount': {'content_amount','contents_per_vial','strength','amount','mg_per_vial'},
+    'content_unit': {'content_unit','unit','units'},
+    'package_type': {'package_type','package','pack'},
+    'package_price': {'package_price','price','total_price','price_usd'},
+    'product_url': {'product_url','url','product_link','link'},
+}
+
+def parse_vendor_items_csv(data: bytes):
+    text = data.decode('utf-8-sig')
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames: raise ValueError('CSV must contain a header row.')
+    columns = {re.sub(r'[^a-z0-9]+','_',str(h).strip().lower()).strip('_'): h for h in reader.fieldnames if h}
+    mapping = {key: next((columns[a] for a in aliases if a in columns), None) for key,aliases in CSV_ALIASES.items()}
+    required = ('vendor','item_name','content_amount','package_type','package_price')
+    missing = [k for k in required if not mapping[k]]
+    if missing: raise ValueError('Missing required CSV columns: '+', '.join(missing))
+    result=[]
+    for line,row in enumerate(reader,2):
+        if not any((v or '').strip() for v in row.values() if isinstance(v,str)):continue
+        if None in row: raise ValueError(f'Line {line}: too many columns.')
+        item={key: (row.get(col) or '').strip() if col else '' for key,col in mapping.items()}
+        if not item['content_unit']:item['content_unit']='mg'
+        validate_vendor_csv_row(item,line)
+        result.append(item)
+        if len(result)>500:raise ValueError('Maximum 500 CSV items per import.')
+    if not result:raise ValueError('CSV has no data rows.')
+    return result
+
+def validate_vendor_csv_row(item, line):
+    if not item['vendor'] or not item['item_name']:raise ValueError(f'Line {line}: vendor and compound are required.')
+    if len(item['vendor'])>160 or len(item['item_name'])>200:raise ValueError(f'Line {line}: vendor or compound name too long.')
+    amount=number(item['content_amount']);price=number(item['package_price'])
+    if amount is None or amount<=0 or amount>Decimal('100000000'):raise ValueError(f'Line {line}: invalid vial contents.')
+    if price is None or price<0 or price>Decimal('100000000'):raise ValueError(f'Line {line}: invalid price.')
+    if item['content_unit'] not in ('mg','IU'):raise ValueError(f'Line {line}: unit must be mg or IU.')
+    if item['package_type'] not in ('vial','half-kit','kit'):raise ValueError(f'Line {line}: package must be vial, half-kit, or kit.')
+    validate_product_url(item['product_url'])
+
+def csv_review_text(items):
+    buf=io.StringIO();writer=csv.writer(buf,delimiter='\t',lineterminator='\n')
+    writer.writerow(CSV_COLUMNS)
+    for item in items:writer.writerow([item[k] for k in CSV_COLUMNS])
+    return buf.getvalue()
+
+@router.post('/vendor-prices/items-csv/preview')
+async def preview_items_csv(request: Request, upload: UploadFile=File(...), db: Session=Depends(get_db)):
+    if not (upload.filename or '').lower().endswith('.csv'):
+        return page(request,db,err='Select a CSV file.')
+    data=await upload.read(MAX_UPLOAD+1)
+    if len(data)>MAX_UPLOAD:return page(request,db,err='Maximum upload size is 8 MB.')
+    try:items=parse_vendor_items_csv(data)
+    except (ValueError,UnicodeError,csv.Error) as exc:return page(request,db,err=f'CSV import error: {str(exc)[:220]}')
+    return page(request,db,csv_review=csv_review_text(items),csv_count=len(items))
+
+@router.post('/vendor-prices/items-csv/save')
+def save_items_csv(request: Request, review_text: str=Form(...), db: Session=Depends(get_db)):
+    try:
+        rows=list(csv.reader(io.StringIO(review_text),delimiter='\t'))
+        if not rows or tuple(rows[0])!=CSV_COLUMNS:raise ValueError('Keep the seven-column header unchanged.')
+        if len(rows)-1>500:raise ValueError('Maximum 500 CSV items per import.')
+        items=[]
+        for idx,row in enumerate(rows[1:],2):
+            if not row or not any(x.strip() for x in row):continue
+            if len(row)!=7:raise ValueError(f'Line {idx}: expected seven tab-separated columns.')
+            item=dict(zip(CSV_COLUMNS,[x.strip() for x in row]));validate_vendor_csv_row(item,idx);items.append(item)
+        if not items:raise ValueError('No items to import.')
+    except (ValueError,csv.Error) as exc:return page(request,db,err=str(exc),csv_review=review_text)
+    sheets={}
+    for item in items:
+        vendor=item['vendor']
+        if vendor not in sheets:
+            sheet=VendorPriceSheet(vendor=vendor,name='CSV items import')
+            db.add(sheet);db.flush();sheets[vendor]=sheet
+        amount=number(item['content_amount']);price=number(item['package_price'])
+        strength=f"{format(amount.normalize(),'f')} {item['content_unit']}/vial"
+        package=item['package_type'];count={'vial':1,'half-kit':5,'kit':10}[package]
+        db.add(VendorPriceEntry(sheet_id=sheets[vendor].id,item_name=item['item_name'],strength=strength,
+            package=package,vial_count=count,total_price_cents=int((price*100).quantize(Decimal('1'),rounding=ROUND_HALF_UP)),product_url=item['product_url']))
+    db.commit()
+    return services.flash_redirect('/vendor-prices',msg=f'Imported {len(items)} vendor offers from CSV.')
+
 @router.post('/vendor-prices/preview')
 async def preview(request: Request, vendor: str = Form(''), sheet_name: str = Form(''), upload: UploadFile = File(...), db: Session = Depends(get_db)):
     vendor = vendor.strip()[:160]

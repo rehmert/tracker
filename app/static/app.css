@@ -603,3 +603,14 @@ th,td { white-space:nowrap; }
 .blend-source-table td:nth-child(3), .blend-source-table td:nth-child(5) { width: 5.25rem; min-width: 5.25rem; }
 .blend-source-table td:last-child { width: 5rem; }
 .blend-source-table .remove-source { padding: .3rem .5rem; white-space: nowrap; }
+
+/* Grouped sidebar and navigation personalization */
+.nav-find{margin:.45rem 0 .7rem}.nav-find input{width:100%;padding:.55rem .65rem;border:1px solid var(--rule);border-radius:.55rem;background:var(--wash);color:var(--ink)}
+.nav-section{margin:.2rem 0}.nav-section-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:.6rem .55rem;border:0;background:transparent;color:var(--ink);font-weight:700;text-align:left;cursor:pointer;font-size:.8rem;letter-spacing:.02em}.nav-chevron{transition:transform .15s}.nav-expanded .nav-chevron,.nav-search-open .nav-chevron{transform:rotate(180deg)}
+.nav-section .nav-group{display:none;margin:0 0 .35rem;padding:0}.nav-section.nav-expanded .nav-group,.nav-section.nav-search-open .nav-group{display:block}
+.nav-section .nav-links li,.nav-pinned li{display:flex;align-items:center;min-width:0}.nav-section .nav-links li>a,.nav-pinned li>a{flex:1;min-width:0}.nav-star{flex:none;border:0;background:transparent;color:var(--ink);padding:.15rem .3rem;font-size:1.1rem;cursor:pointer}.nav-section .nav-move{display:flex;gap:.1rem}.nav-section .nav-move[hidden]{display:none}.nav-move button{padding:.1rem .2rem}.nav-filter-hidden{display:none!important}.nav-favorites .nav-section-title{font-size:.75rem;font-weight:700;margin:.7rem .5rem .2rem}.nav-favorites .nav-links{margin:0;padding:0}
+.nav-pref-row{display:flex;align-items:center;gap:.4rem;margin:.25rem 0}.nav-pref-row span{flex:1}.nav-pref-row button{padding:.2rem .5rem}.nav-pref-check{display:inline-flex;align-items:center;gap:.2rem;margin:.2rem .5rem .2rem 0;font-size:.8rem}
+.sidebar-collapsed .nav-section-toggle,.sidebar-collapsed .nav-find,.sidebar-collapsed .nav-star,.sidebar-collapsed .nav-favorites .nav-section-title{display:none}
+@media(max-width:800px){.sidebar-collapsed .nav-section-toggle,.sidebar-collapsed .nav-find,.sidebar-collapsed .nav-star,.sidebar-collapsed .nav-favorites .nav-section-title{display:flex}}
+
+.nav-section .nav-links li[hidden],.nav-pinned li[hidden]{display:none!important}

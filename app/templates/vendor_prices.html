@@ -15,6 +15,11 @@
 <label class="field"><span>Price for selected package (USD)</span><input type="number" name="package_price" min="0" step="0.01" required placeholder="75.00"></label>
 <label class="field"><span>Product link (optional)</span><input type="url" name="product_url" maxlength="2048" placeholder="https://vendor.example/product" autocomplete="url"></label>
 </div><button type="submit">Add offer</button></form></section>
+<section class="card"><h2>Import vendor items CSV</h2>
+<p>Upload a CSV with columns <code>vendor,item_name,content_amount,content_unit,package_type,package_price,product_url</code>. The last two optional columns are <code>content_unit</code> (defaults to mg) and <code>product_url</code>. Package types: vial, half-kit, kit. Each row can name a different vendor. Existing offers are not overwritten.</p>
+<form method="post" action="/vendor-prices/items-csv/preview" enctype="multipart/form-data"><label class="field"><span>Vendor items CSV</span><input type="file" name="upload" accept=".csv,text/csv" required></label><button type="submit">Preview CSV items</button></form>
+{% if csv_review is defined %}<h3>Review CSV items{% if csv_count is defined %} ({{ csv_count }}){% endif %}</h3><p>Review or edit the tab-separated values before saving. Keep the header and seven columns.</p><form method="post" action="/vendor-prices/items-csv/save"><textarea name="review_text" rows="12" style="width:100%;font-family:monospace;white-space:pre;overflow:auto" required>{{ csv_review }}</textarea><button type="submit">Save CSV items</button></form>{% endif %}
+</section>
 <section class="card"><h2>Upload vendor price sheet</h2>
 <form method="post" action="/vendor-prices/preview" enctype="multipart/form-data">
 <div class="form-grid"><label class="field"><span>Vendor</span><input name="vendor" required value="{{ vendor or '' }}"></label>
