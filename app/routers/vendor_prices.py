@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..db import get_db
-from ..models import VendorPriceSheet, VendorPriceEntry
+from ..models import VendorPriceSheet, VendorPriceEntry, VendorShippingRule
 from ..templating import render
 from .. import services
 from ..vendor_prices import parse_lines, number, normalize_item
@@ -60,6 +60,23 @@ def validate_product_url(value: str) -> str:
         raise ValueError('Product link must be a valid HTTP or HTTPS URL.')
     return value
 
+def shipping_for_order(rule, subtotal_cents: int) -> int:
+    """Free shipping starts at the threshold (inclusive)."""
+    if rule is None:
+        return 0
+    return 0 if subtotal_cents >= rule.free_shipping_threshold_cents else rule.flat_shipping_cents
+
+
+def shipping_details(entry, rules):
+    rule = rules.get(entry.sheet.vendor.strip().casefold())
+    if rule is None:
+        return {'configured': False, 'shipping_cents': 0, 'landed_cents': None, 'landed_per_vial_cents': None}
+    shipping = shipping_for_order(rule, entry.total_price_cents)
+    total = entry.total_price_cents + shipping
+    return {'configured': True, 'shipping_cents': shipping, 'landed_cents': total,
+            'landed_per_vial_cents': total / entry.vial_count}
+
+
 def page(request, db, **kwargs):
     sheets = list(db.scalars(select(VendorPriceSheet).order_by(VendorPriceSheet.id.desc())))
     entries = list(db.scalars(select(VendorPriceEntry).order_by(VendorPriceEntry.item_name, VendorPriceEntry.id)))
@@ -68,7 +85,48 @@ def page(request, db, **kwargs):
         key = (normalize_item(entry.item_name), normalize_item(entry.strength))
         groups.setdefault(key, []).append(entry)
     comparisons = sorted(groups.values(), key=lambda group: (group[0].item_name.lower(), group[0].strength.lower()))
-    return render(request, 'vendor_prices.html', sheets=sheets, comparisons=comparisons, **kwargs)
+    shipping_rules = list(db.scalars(select(VendorShippingRule).order_by(VendorShippingRule.vendor)))
+    shipping_map = {rule.vendor_key: rule for rule in shipping_rules}
+    shipping_by_entry = {entry.id: shipping_details(entry, shipping_map) for entry in entries}
+    vendors = sorted({s.vendor for s in sheets} | {r.vendor for r in shipping_rules}, key=str.casefold)
+    return render(request, 'vendor_prices.html', sheets=sheets, comparisons=comparisons,
+                  shipping_rules=shipping_rules, shipping_by_entry=shipping_by_entry,
+                  shipping_vendors=vendors, **kwargs)
+
+@router.post('/vendor-prices/shipping/save')
+def save_shipping(request: Request, vendor: str = Form(''), flat_shipping: str = Form(''),
+                  free_shipping_threshold: str = Form(''), db: Session = Depends(get_db)):
+    vendor = vendor.strip()
+    if not vendor or len(vendor) > 160:
+        return page(request, db, err='Enter a vendor name (maximum 160 characters).')
+    flat = number(flat_shipping)
+    threshold = number(free_shipping_threshold)
+    if (flat is None or threshold is None or flat < 0 or threshold <= 0
+            or flat > Decimal('1000000') or threshold > Decimal('100000000')):
+        return page(request, db, err='Enter a nonnegative shipping charge and a positive free-shipping threshold.')
+    if flat.as_tuple().exponent < -2 or threshold.as_tuple().exponent < -2:
+        return page(request, db, err='Dollar amounts must have no more than two decimal places.')
+    key = vendor.casefold()
+    rule = db.scalars(select(VendorShippingRule).where(VendorShippingRule.vendor_key == key)).first()
+    if rule is None:
+        rule = VendorShippingRule(vendor=vendor, vendor_key=key)
+        db.add(rule)
+    rule.vendor = vendor
+    rule.flat_shipping_cents = int(flat * 100)
+    rule.free_shipping_threshold_cents = int(threshold * 100)
+    db.commit()
+    return services.flash_redirect('/vendor-prices', msg=f'Shipping policy saved for {vendor}.')
+
+
+@router.post('/vendor-prices/shipping/{rule_id}/delete')
+def delete_shipping(rule_id: int, db: Session = Depends(get_db)):
+    rule = db.get(VendorShippingRule, rule_id)
+    if rule is None:
+        return services.flash_redirect('/vendor-prices', err='Shipping policy not found.')
+    db.delete(rule)
+    db.commit()
+    return services.flash_redirect('/vendor-prices', msg='Vendor shipping policy deleted.')
+
 
 @router.get('/vendor-prices')
 def index(request: Request, db: Session = Depends(get_db)):

@@ -454,6 +454,16 @@ class ProtocolRevision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class VendorShippingRule(Base):
+    """Shipping charged once per vendor order, not per vial."""
+    __tablename__ = "vendor_shipping_rules"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vendor: Mapped[str] = mapped_column(String(160), nullable=False)
+    vendor_key: Mapped[str] = mapped_column(String(160), unique=True, nullable=False, index=True)
+    flat_shipping_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    free_shipping_threshold_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
 class VendorPriceSheet(Base):
     __tablename__ = "vendor_price_sheets"
     id: Mapped[int] = mapped_column(primary_key=True)
