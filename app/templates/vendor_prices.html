@@ -20,6 +20,19 @@
 <form method="post" action="/vendor-prices/items-csv/preview" enctype="multipart/form-data"><label class="field"><span>Vendor items CSV</span><input type="file" name="upload" accept=".csv,text/csv" required></label><button type="submit">Preview CSV items</button></form>
 {% if csv_review is defined %}<h3>Review CSV items{% if csv_count is defined %} ({{ csv_count }}){% endif %}</h3><p>Review or edit the tab-separated values before saving. Keep the header and seven columns.</p><form method="post" action="/vendor-prices/items-csv/save"><textarea name="review_text" rows="12" style="width:100%;font-family:monospace;white-space:pre;overflow:auto" required>{{ csv_review }}</textarea><button type="submit">Save CSV items</button></form>{% endif %}
 </section>
+<section class="card"><h2>Save vendor price list (no import)</h2>
+<p>Store the original vendor image or spreadsheet for reference only. Tracker will <strong>not</strong> scan, extract, or create vendor price entries from this file.</p>
+<form method="post" action="/vendor-prices/attachments/upload" enctype="multipart/form-data">
+<div class="form-grid">
+<label class="field"><span>Vendor</span><input name="vendor" maxlength="160" required placeholder="Vendor name"></label>
+<label class="field"><span>Description (optional)</span><input name="title" maxlength="160" placeholder="October price list"></label>
+<label class="field"><span>Image or spreadsheet</span><input type="file" name="upload" accept=".png,.jpg,.jpeg,.webp,.csv,.tsv,.xls,.xlsx,.ods" required></label>
+</div><button type="submit">Save price list</button></form>
+<p class="muted">PNG, JPG, WebP, CSV, TSV, XLS, XLSX, ODS. Maximum 8 MB. Files are saved as-is and can be downloaded or deleted later.</p>
+<div class="table-wrap"><table><thead><tr><th>Vendor</th><th>Description</th><th>File</th><th>Uploaded (Eastern)</th><th>Actions</th></tr></thead><tbody>
+{% for attachment in attachments %}<tr><td>{{ attachment.vendor }}</td><td>{{ attachment.title or '—' }}</td><td>{{ attachment.filename }}</td><td>{{ attachment.uploaded_at|utc_dt }}</td><td><a class="button" role="button" href="/vendor-prices/attachments/{{ attachment.id }}/download" style="display:inline-block;padding:.35rem .75rem;border:1px solid currentColor;border-radius:6px;text-decoration:none;margin-right:.35rem">Download</a> <form method="post" action="/vendor-prices/attachments/{{ attachment.id }}/delete" style="display:inline" onsubmit="return confirm('Delete this saved price list?')"><button type="submit">Delete</button></form></td></tr>
+{% else %}<tr><td colspan="5">No reference price lists saved yet.</td></tr>{% endfor %}
+</tbody></table></div></section>
 <section class="card"><h2>Upload vendor price sheet</h2>
 <form method="post" action="/vendor-prices/preview" enctype="multipart/form-data">
 <div class="form-grid"><label class="field"><span>Vendor</span><input name="vendor" required value="{{ vendor or '' }}"></label>

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import (Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey,
+from sqlalchemy import (LargeBinary, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey,
                         Index, Integer, String, Table, Text, func)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -462,6 +462,18 @@ class VendorShippingRule(Base):
     vendor_key: Mapped[str] = mapped_column(String(160), unique=True, nullable=False, index=True)
     flat_shipping_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     free_shipping_threshold_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class VendorPriceAttachment(Base):
+    """Unparsed vendor price list, retained as originally uploaded."""
+    __tablename__ = "vendor_price_attachments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vendor: Mapped[str] = mapped_column(String(160), nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False, default="")
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class VendorPriceSheet(Base):

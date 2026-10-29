@@ -2,13 +2,15 @@
 import csv
 import io
 import re
+from pathlib import Path
+from urllib.parse import quote
 from urllib.parse import urlsplit
 from decimal import Decimal, ROUND_HALF_UP
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..db import get_db
-from ..models import VendorPriceSheet, VendorPriceEntry, VendorShippingRule
+from ..models import VendorPriceSheet, VendorPriceEntry, VendorShippingRule, VendorPriceAttachment
 from ..templating import render
 from .. import services
 from ..vendor_prices import parse_lines, number, normalize_item
@@ -77,6 +79,62 @@ def shipping_details(entry, rules):
             'landed_per_vial_cents': total / entry.vial_count}
 
 
+# Files are archived verbatim. They are never sent to OCR or the product importer.
+ARCHIVE_TYPES = {
+    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp', '.csv': 'text/csv', '.tsv': 'text/tab-separated-values',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
+}
+
+
+@router.post('/vendor-prices/attachments/upload')
+async def upload_attachment(request: Request, vendor: str = Form(''), title: str = Form(''),
+                            upload: UploadFile = File(...), db: Session = Depends(get_db)):
+    vendor = vendor.strip()
+    title = title.strip()
+    filename = Path((upload.filename or '').replace('\\', '/')).name
+    suffix = Path(filename).suffix.lower()
+    if not vendor or len(vendor) > 160 or len(title) > 160:
+        return page(request, db, err='Enter a vendor (max 160 characters) and an optional title (max 160 characters).')
+    if not filename or len(filename) > 255 or suffix not in ARCHIVE_TYPES:
+        return page(request, db, err='Choose a PNG, JPG, WebP, CSV, TSV, XLS, XLSX, or ODS file.')
+    content = await upload.read(MAX_UPLOAD + 1)
+    if not content or len(content) > MAX_UPLOAD:
+        return page(request, db, err='File must be nonempty and no larger than 8 MB.')
+    attachment = VendorPriceAttachment(vendor=vendor, title=title, filename=filename,
+                                       content_type=ARCHIVE_TYPES[suffix], content=content)
+    db.add(attachment)
+    db.commit()
+    return services.flash_redirect('/vendor-prices', msg=f'Saved original price list for {vendor} (no products imported).')
+
+
+@router.get('/vendor-prices/attachments/{attachment_id}/download')
+def download_attachment(attachment_id: int, db: Session = Depends(get_db)):
+    attachment = db.get(VendorPriceAttachment, attachment_id)
+    if attachment is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail='Price list not found.')
+    # Force download; do not render untrusted uploads in the Tracker origin.
+    encoded_name = quote(attachment.filename, safe='')
+    return Response(content=attachment.content, media_type='application/octet-stream', headers={
+        'Content-Disposition': f"attachment; filename*=UTF-8''{encoded_name}",
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'no-store',
+    })
+
+
+@router.post('/vendor-prices/attachments/{attachment_id}/delete')
+def delete_attachment(attachment_id: int, db: Session = Depends(get_db)):
+    attachment = db.get(VendorPriceAttachment, attachment_id)
+    if attachment is None:
+        return services.flash_redirect('/vendor-prices', err='Price list not found.')
+    db.delete(attachment)
+    db.commit()
+    return services.flash_redirect('/vendor-prices', msg='Saved price list deleted.')
+
+
 def page(request, db, **kwargs):
     sheets = list(db.scalars(select(VendorPriceSheet).order_by(VendorPriceSheet.id.desc())))
     entries = list(db.scalars(select(VendorPriceEntry).order_by(VendorPriceEntry.item_name, VendorPriceEntry.id)))
@@ -89,7 +147,8 @@ def page(request, db, **kwargs):
     shipping_map = {rule.vendor_key: rule for rule in shipping_rules}
     shipping_by_entry = {entry.id: shipping_details(entry, shipping_map) for entry in entries}
     vendors = sorted({s.vendor for s in sheets} | {r.vendor for r in shipping_rules}, key=str.casefold)
-    return render(request, 'vendor_prices.html', sheets=sheets, comparisons=comparisons,
+    attachments = list(db.scalars(select(VendorPriceAttachment).order_by(VendorPriceAttachment.id.desc())))
+    return render(request, 'vendor_prices.html', sheets=sheets, attachments=attachments, comparisons=comparisons,
                   shipping_rules=shipping_rules, shipping_by_entry=shipping_by_entry,
                   shipping_vendors=vendors, **kwargs)
 
