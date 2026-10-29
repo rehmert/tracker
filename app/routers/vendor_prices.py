@@ -14,6 +14,7 @@ from ..models import VendorPriceSheet, VendorPriceEntry, VendorShippingRule, Ven
 from ..templating import render
 from .. import services
 from ..vendor_prices import parse_lines, number, normalize_item
+from ..vendor_content import parse_legacy_content, validate_content, label as content_label
 
 router = APIRouter()
 MAX_UPLOAD = 8 * 1024 * 1024
@@ -140,9 +141,9 @@ def page(request, db, **kwargs):
     entries = list(db.scalars(select(VendorPriceEntry).order_by(VendorPriceEntry.item_name, VendorPriceEntry.id)))
     groups = {}
     for entry in entries:
-        key = (normalize_item(entry.item_name), normalize_item(entry.strength))
+        key = (normalize_item(entry.item_name), entry.content_amount, entry.content_unit)
         groups.setdefault(key, []).append(entry)
-    comparisons = sorted(groups.values(), key=lambda group: (group[0].item_name.lower(), group[0].strength.lower()))
+    comparisons = sorted(groups.values(), key=lambda group: (group[0].item_name.lower(), (group[0].content_amount or 0), (group[0].content_unit or "")))
     shipping_rules = list(db.scalars(select(VendorShippingRule).order_by(VendorShippingRule.vendor)))
     shipping_map = {rule.vendor_key: rule for rule in shipping_rules}
     shipping_by_entry = {entry.id: shipping_details(entry, shipping_map) for entry in entries}
@@ -270,15 +271,15 @@ def save_items_csv(request: Request, review_text: str=Form(...), db: Session=Dep
             sheet=VendorPriceSheet(vendor=vendor,name='CSV items import')
             db.add(sheet);db.flush();sheets[vendor]=sheet
         amount=number(item['content_amount']);price=number(item['package_price'])
-        strength=f"{format(amount.normalize(),'f')} {item['content_unit']}/vial"
+        strength=content_label(amount, item['content_unit'])
         package=item['package_type'];count={'vial':1,'half-kit':5,'kit':10}[package]
-        db.add(VendorPriceEntry(sheet_id=sheets[vendor].id,item_name=item['item_name'],strength=strength,
+        db.add(VendorPriceEntry(sheet_id=sheets[vendor].id,item_name=item['item_name'],strength=strength,content_amount=float(amount),content_unit=item['content_unit'],
             package=package,vial_count=count,total_price_cents=int((price*100).quantize(Decimal('1'),rounding=ROUND_HALF_UP)),product_url=item['product_url']))
     db.commit()
     return services.flash_redirect('/vendor-prices',msg=f'Imported {len(items)} vendor offers from CSV.')
 
 # Bulk round-trip CSV: stable entry IDs allow edits without creating duplicates.
-BULK_COLUMNS = ('id', 'vendor', 'item_name', 'strength', 'package', 'vial_count', 'total_price', 'product_url')
+BULK_COLUMNS = ('id', 'vendor', 'item_name', 'content_amount', 'content_unit', 'package', 'vial_count', 'total_price', 'product_url')
 
 
 def bulk_export_csv(db):
@@ -287,7 +288,7 @@ def bulk_export_csv(db):
     writer.writerow(BULK_COLUMNS)
     entries = db.scalars(select(VendorPriceEntry).order_by(VendorPriceEntry.id)).all()
     for entry in entries:
-        writer.writerow((entry.id, entry.sheet.vendor, entry.item_name, entry.strength,
+        writer.writerow((entry.id, entry.sheet.vendor, entry.item_name, entry.content_amount if entry.content_amount is not None else "", entry.content_unit or "",
                          entry.package, entry.vial_count, f'{entry.total_price_cents / 100:.2f}',
                          entry.product_url or ''))
     return output.getvalue()
@@ -327,8 +328,10 @@ def parse_bulk_csv(data: bytes):
                 raise ValueError(f'Line {line}: vendor is required (maximum 160 characters).')
             if not item['item_name'] or len(item['item_name']) > 200:
                 raise ValueError(f'Line {line}: item name is required (maximum 200 characters).')
-            if len(item['strength']) > 80 or not item['package'] or len(item['package']) > 80:
-                raise ValueError(f'Line {line}: invalid strength or package description.')
+            amount, unit = validate_content(item['content_amount'], item['content_unit'])
+            item['_amount'] = float(amount)
+            if not item['package'] or len(item['package']) > 80:
+                raise ValueError(f'Line {line}: invalid package description.')
             try:
                 count = int(item['vial_count'])
             except ValueError:
@@ -408,7 +411,9 @@ def bulk_save(request: Request, review_text: str = Form(...), db: Session = Depe
             if row['_id']:
                 updated += 1
             entry.item_name = row['item_name']
-            entry.strength = row['strength']
+            entry.content_amount = row['_amount']
+            entry.content_unit = row['content_unit']
+            entry.strength = content_label(row['_amount'], row['content_unit'])
             entry.package = row['package']
             entry.vial_count = row['_count']
             entry.total_price_cents = row['_cents']
@@ -464,7 +469,8 @@ def save(request: Request, vendor: str = Form(...), sheet_name: str = Form(''), 
     sheet = VendorPriceSheet(vendor=vendor, name=sheet_name.strip()[:160])
     db.add(sheet); db.flush()
     for item, strength, package, qty, price in rows:
-        db.add(VendorPriceEntry(sheet_id=sheet.id, item_name=item, strength=strength, package=package, vial_count=qty, total_price_cents=int((price * 100).quantize(Decimal('1')))))
+        amount, unit = parse_legacy_content(strength)
+        db.add(VendorPriceEntry(sheet_id=sheet.id, item_name=item, strength=strength, content_amount=float(amount) if amount is not None else None, content_unit=unit, package=package, vial_count=qty, total_price_cents=int((price * 100).quantize(Decimal('1')))))
     db.commit()
     return services.flash_redirect('/vendor-prices', msg=f'Saved {len(rows)} offers for {vendor}.')
 
@@ -516,7 +522,7 @@ def manual_add(
         db.add(sheet)
         db.flush()
     db.add(VendorPriceEntry(
-        sheet_id=sheet.id, item_name=item_name, strength=strength,
+        sheet_id=sheet.id, item_name=item_name, strength=strength, content_amount=float(amount), content_unit=content_unit,
         package=package_type, vial_count=count, total_price_cents=cents,
         product_url=product_url,
     ))
@@ -533,7 +539,7 @@ def edit_offer(request: Request, entry_id: int, db: Session = Depends(get_db)):
 @router.post('/vendor-prices/entries/{entry_id}/edit')
 def update_offer(
     request: Request, entry_id: int, vendor: str = Form(''),
-    item_name: str = Form(''), strength: str = Form(''),
+    item_name: str = Form(''), content_amount: str = Form(''), content_unit: str = Form('mg'),
     package: str = Form(''), vial_count: str = Form(''),
     total_price: str = Form(''), product_url: str = Form(''),
     db: Session = Depends(get_db),
@@ -543,10 +549,10 @@ def update_offer(
         return services.flash_redirect('/vendor-prices', err='Vendor offer not found.')
     vendor = vendor.strip()[:160]
     item_name = item_name.strip()[:200]
-    strength = strength.strip()[:80]
     package = package.strip()[:80]
     try:
         product_url = validate_product_url(product_url)
+        amount, content_unit = validate_content(content_amount, content_unit)
         count = int(vial_count)
         price = number(total_price)
         if not vendor or not item_name:
@@ -572,7 +578,9 @@ def update_offer(
             db.flush()
         entry.sheet_id = destination.id
     entry.item_name = item_name
-    entry.strength = strength
+    entry.content_amount = float(amount)
+    entry.content_unit = content_unit
+    entry.strength = content_label(amount, content_unit)
     entry.package = package
     entry.vial_count = count
     entry.total_price_cents = int((price * 100).quantize(Decimal('1'), rounding=ROUND_HALF_UP))

@@ -10,6 +10,19 @@ def migrate(engine):
     with engine.begin() as conn:
         inspector = inspect(conn)
         tables = set(inspector.get_table_names())
+        if "vendor_price_entries" in tables:
+            columns = {c["name"] for c in inspect(conn).get_columns("vendor_price_entries")}
+            if "content_amount" not in columns:
+                conn.exec_driver_sql("ALTER TABLE vendor_price_entries ADD COLUMN content_amount FLOAT")
+            if "content_unit" not in columns:
+                conn.exec_driver_sql("ALTER TABLE vendor_price_entries ADD COLUMN content_unit VARCHAR(8)")
+            from .vendor_content import parse_legacy_content
+            rows = conn.exec_driver_sql("SELECT id, strength FROM vendor_price_entries WHERE content_amount IS NULL OR content_unit IS NULL").fetchall()
+            for entry_id, strength in rows:
+                amount, unit = parse_legacy_content(strength)
+                if amount is not None:
+                    conn.exec_driver_sql("UPDATE vendor_price_entries SET content_amount=?, content_unit=? WHERE id=?", (float(amount), unit, entry_id))
+            # Unrecognized legacy values stay NULL for explicit manual correction.
         if "compounds" in tables:
             cols = {c["name"] for c in inspect(conn).get_columns("compounds")}
             if "primary_unit" not in cols:
