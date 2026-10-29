@@ -33,6 +33,19 @@
 {% for attachment in attachments %}<tr><td>{{ attachment.vendor }}</td><td>{{ attachment.title or '—' }}</td><td>{{ attachment.filename }}</td><td>{{ attachment.uploaded_at|utc_dt }}</td><td><a class="button" role="button" href="/vendor-prices/attachments/{{ attachment.id }}/download" style="display:inline-block;padding:.35rem .75rem;border:1px solid currentColor;border-radius:6px;text-decoration:none;margin-right:.35rem">Download</a> <form method="post" action="/vendor-prices/attachments/{{ attachment.id }}/delete" style="display:inline" onsubmit="return confirm('Delete this saved price list?')"><button type="submit">Delete</button></form></td></tr>
 {% else %}<tr><td colspan="5">No reference price lists saved yet.</td></tr>{% endfor %}
 </tbody></table></div></section>
+<section class="card"><h2>Bulk export / update vendor prices</h2>
+<p>Download all current offers, edit the CSV in a spreadsheet, and upload it to update existing rows by their stable <code>id</code>. Leave <code>id</code> blank to add a new offer. Changing a vendor moves only that offer. Removing rows from the CSV does <strong>not</strong> delete database records. Prices are in USD per package (not per vial).</p>
+<p><a class="button" href="/vendor-prices/bulk/export" style="display:inline-block;padding:.45rem .8rem;border:1px solid currentColor;border-radius:6px;text-decoration:none">Export all vendor prices (CSV)</a></p>
+<form method="post" action="/vendor-prices/bulk/preview" enctype="multipart/form-data">
+<label class="field"><span>Edited Tracker CSV</span><input type="file" name="upload" accept=".csv,text/csv" required></label>
+<button type="submit">Preview bulk changes</button></form>
+</section>
+{% if bulk_review is defined %}<section class="card"><h2>Review bulk vendor changes</h2>
+{% if bulk_updates is defined %}<p>{{ bulk_updates }} existing offers to update; {{ bulk_additions }} new offers to add.</p>{% endif %}
+<p>Verify the CSV below before saving. Existing IDs must remain unchanged. The operation is validated before any database changes are committed.</p>
+<form method="post" action="/vendor-prices/bulk/save">
+<textarea name="review_text" rows="12" style="width:100%;font-family:monospace;white-space:pre;overflow:auto" required>{{ bulk_review }}</textarea>
+<button type="submit" onclick="return confirm('Apply these vendor price updates?')">Apply bulk changes</button></form></section>{% endif %}
 <section class="card"><h2>Upload vendor price sheet</h2>
 <form method="post" action="/vendor-prices/preview" enctype="multipart/form-data">
 <div class="form-grid"><label class="field"><span>Vendor</span><input name="vendor" required value="{{ vendor or '' }}"></label>

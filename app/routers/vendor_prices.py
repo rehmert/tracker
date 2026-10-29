@@ -277,6 +277,149 @@ def save_items_csv(request: Request, review_text: str=Form(...), db: Session=Dep
     db.commit()
     return services.flash_redirect('/vendor-prices',msg=f'Imported {len(items)} vendor offers from CSV.')
 
+# Bulk round-trip CSV: stable entry IDs allow edits without creating duplicates.
+BULK_COLUMNS = ('id', 'vendor', 'item_name', 'strength', 'package', 'vial_count', 'total_price', 'product_url')
+
+
+def bulk_export_csv(db):
+    output = io.StringIO(newline='')
+    writer = csv.writer(output, lineterminator='\r\n')
+    writer.writerow(BULK_COLUMNS)
+    entries = db.scalars(select(VendorPriceEntry).order_by(VendorPriceEntry.id)).all()
+    for entry in entries:
+        writer.writerow((entry.id, entry.sheet.vendor, entry.item_name, entry.strength,
+                         entry.package, entry.vial_count, f'{entry.total_price_cents / 100:.2f}',
+                         entry.product_url or ''))
+    return output.getvalue()
+
+
+@router.get('/vendor-prices/bulk/export')
+def bulk_export(db: Session = Depends(get_db)):
+    return Response(content='\ufeff' + bulk_export_csv(db), media_type='text/csv; charset=utf-8', headers={
+        'Content-Disposition': 'attachment; filename="tracker-vendor-prices.csv"',
+        'Cache-Control': 'no-store',
+    })
+
+
+def parse_bulk_csv(data: bytes):
+    try:
+        content = data.decode('utf-8-sig')
+        reader = csv.DictReader(io.StringIO(content, newline=''), strict=True)
+        if reader.fieldnames is None or tuple(reader.fieldnames) != BULK_COLUMNS:
+            raise ValueError('CSV header must match the exported file exactly: ' + ', '.join(BULK_COLUMNS))
+        result = []
+        ids = set()
+        for line, row in enumerate(reader, 2):
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError(f'Line {line}: incorrect number of columns.')
+            if not any(value.strip() for value in row.values()):
+                continue
+            item = {key: value.strip() for key, value in row.items()}
+            raw_id = item['id']
+            if raw_id:
+                if not raw_id.isascii() or not raw_id.isdecimal() or int(raw_id) <= 0:
+                    raise ValueError(f'Line {line}: ID must be a positive integer or blank.')
+                entry_id = int(raw_id)
+                if entry_id in ids:
+                    raise ValueError(f'Line {line}: duplicate ID {entry_id}.')
+                ids.add(entry_id)
+            if not item['vendor'] or len(item['vendor']) > 160:
+                raise ValueError(f'Line {line}: vendor is required (maximum 160 characters).')
+            if not item['item_name'] or len(item['item_name']) > 200:
+                raise ValueError(f'Line {line}: item name is required (maximum 200 characters).')
+            if len(item['strength']) > 80 or not item['package'] or len(item['package']) > 80:
+                raise ValueError(f'Line {line}: invalid strength or package description.')
+            try:
+                count = int(item['vial_count'])
+            except ValueError:
+                raise ValueError(f'Line {line}: vial count must be an integer.')
+            if not 1 <= count <= 100000:
+                raise ValueError(f'Line {line}: vial count must be between 1 and 100,000.')
+            price = number(item['total_price'])
+            if price is None or not price.is_finite() or price < 0 or price > Decimal('100000000') or price.as_tuple().exponent < -2:
+                raise ValueError(f'Line {line}: price must be nonnegative USD with at most two decimal places.')
+            validate_product_url(item['product_url'])
+            item['_id'] = int(raw_id) if raw_id else None
+            item['_count'] = count
+            item['_cents'] = int(price * 100)
+            result.append(item)
+            if len(result) > 5000:
+                raise ValueError('Maximum 5,000 rows per bulk update.')
+        if not result:
+            raise ValueError('CSV contains no vendor prices.')
+        return result
+    except (UnicodeError, csv.Error) as exc:
+        raise ValueError(f'Invalid CSV: {exc}') from exc
+
+
+def validate_bulk_ids(db, rows):
+    ids = {row['_id'] for row in rows if row['_id'] is not None}
+    existing = {e.id: e for e in db.scalars(select(VendorPriceEntry).where(VendorPriceEntry.id.in_(ids)))} if ids else {}
+    missing = ids - set(existing)
+    if missing:
+        raise ValueError(f'Unknown vendor price ID(s): {", ".join(str(i) for i in sorted(missing)[:10])}. No changes saved.')
+    return existing
+
+
+@router.post('/vendor-prices/bulk/preview')
+async def bulk_preview(request: Request, upload: UploadFile = File(...), db: Session = Depends(get_db)):
+    if not (upload.filename or '').lower().endswith('.csv'):
+        return page(request, db, err='Choose a CSV file exported from Tracker.')
+    data = await upload.read(MAX_UPLOAD + 1)
+    if len(data) > MAX_UPLOAD:
+        return page(request, db, err='Maximum upload size is 8 MB.')
+    try:
+        rows = parse_bulk_csv(data)
+        validate_bulk_ids(db, rows)
+    except ValueError as exc:
+        return page(request, db, err=f'Bulk update: {exc}')
+    return page(request, db, bulk_review=data.decode('utf-8-sig'),
+                bulk_updates=sum(row['_id'] is not None for row in rows),
+                bulk_additions=sum(row['_id'] is None for row in rows))
+
+
+@router.post('/vendor-prices/bulk/save')
+def bulk_save(request: Request, review_text: str = Form(...), db: Session = Depends(get_db)):
+    try:
+        rows = parse_bulk_csv(review_text.encode('utf-8'))
+        existing = validate_bulk_ids(db, rows)
+        sheets = {}
+        updated = added = 0
+        for row in rows:
+            vendor = row['vendor']
+            entry = existing.get(row['_id']) if row['_id'] else None
+            if entry is None or entry.sheet.vendor != vendor:
+                if vendor not in sheets:
+                    sheet = db.scalars(select(VendorPriceSheet).where(
+                        VendorPriceSheet.vendor == vendor,
+                        VendorPriceSheet.name == 'Manual entries',
+                    ).order_by(VendorPriceSheet.id.desc())).first()
+                    if sheet is None:
+                        sheet = VendorPriceSheet(vendor=vendor, name='Manual entries')
+                        db.add(sheet)
+                        db.flush()
+                    sheets[vendor] = sheet
+                if entry is None:
+                    entry = VendorPriceEntry(sheet_id=sheets[vendor].id)
+                    db.add(entry)
+                    added += 1
+                else:
+                    entry.sheet_id = sheets[vendor].id
+            if row['_id']:
+                updated += 1
+            entry.item_name = row['item_name']
+            entry.strength = row['strength']
+            entry.package = row['package']
+            entry.vial_count = row['_count']
+            entry.total_price_cents = row['_cents']
+            entry.product_url = row['product_url']
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        return page(request, db, err=f'Bulk update: {exc}', bulk_review=review_text)
+    return services.flash_redirect('/vendor-prices', msg=f'Bulk update complete: {updated} updated, {added} added. No offers deleted.')
+
+
 @router.post('/vendor-prices/preview')
 async def preview(request: Request, vendor: str = Form(''), sheet_name: str = Form(''), upload: UploadFile = File(...), db: Session = Depends(get_db)):
     vendor = vendor.strip()[:160]
