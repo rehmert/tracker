@@ -108,7 +108,10 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     except OperationalError:
         db.rollback()
         return _error("Inventory is busy. Please wait a moment and retry.")
-    payload = {"vial_id": vial_id, "taken_at": taken_at, "amount": amount, "unit": unit, "kind": kind, "site": site, "notes": notes, "use_remaining": use_remaining}
+    submitted_form = await request.form()
+    supply_payload = sorted((k, str(v)) for k, v in submitted_form.multi_items()
+                            if k == "supply_id_used" or k.startswith("supply_qty_"))
+    payload = {"supplies": supply_payload, "vial_id": vial_id, "taken_at": taken_at, "amount": amount, "unit": unit, "kind": kind, "site": site, "notes": notes, "use_remaining": use_remaining}
     state, digest = idempotency.check(db, submission_token, "dose_create", payload)
     if submission_token and state == "replay":
         db.rollback()

@@ -363,7 +363,7 @@ def blend_detail(blend_id: int, request: Request, db: Session = Depends(get_db))
                   dose_compounds=list(dose_compounds.values()),
                   remaining=blend_remaining(blend),
                   common_draw=component_rows(blend)[0]['draw_ml'] if blend.components else None,
-                  now=datetime.now().strftime('%Y-%m-%dT%H:%M'))
+                  now=datetime.now().strftime('%Y-%m-%dT%H:%M'), submission_token=idempotency.new_token())
 
 
 @router.post('/blends/{blend_id}/doses')
