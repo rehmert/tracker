@@ -1,0 +1,327 @@
+
+{% extends "base.html" %}
+
+{% block title %}Inventory Planning Priorities{% endblock %}
+
+{% block content %}
+
+<section style="max-width:1500px">
+
+<h1>Inventory planning priorities</h1>
+
+<p class="muted">
+Read-only planning priorities derived from the existing
+FEFO inventory forecast.
+</p>
+
+<p>
+<a href="/planning-hub">Planning Hub</a>
+·
+<a href="/fefo-forecast">Detailed FEFO forecast</a>
+·
+<a href="/expiry-exposure">Expiration exposure</a>
+</p>
+
+<div class="card" style="padding:1rem">
+
+<form method="get" action="/planning-priorities">
+
+<div style="
+    display:flex;
+    flex-wrap:wrap;
+    gap:1rem;
+    align-items:end;
+">
+
+<label>
+<span>Forecast horizon</span><br>
+
+<select name="horizon">
+
+{% for days in horizons %}
+<option value="{{ days }}"
+  {% if days == horizon %}selected{% endif %}>
+  {{ days }} days
+</option>
+{% endfor %}
+
+</select>
+</label>
+
+<label>
+<span>Compound</span><br>
+
+<input
+    type="search"
+    name="compound"
+    value="{{ compound }}"
+    placeholder="Filter by compound"
+>
+</label>
+
+<label>
+<span>Priority</span><br>
+
+<select name="category">
+
+<option value="all"
+  {% if category == "all" %}selected{% endif %}>
+  All
+</option>
+
+<option value="shortage"
+  {% if category == "shortage" %}selected{% endif %}>
+  Shortages
+</option>
+
+<option value="expiration"
+  {% if category == "expiration" %}selected{% endif %}>
+  Expiration exposure
+</option>
+
+<option value="review"
+  {% if category == "review" %}selected{% endif %}>
+  Data review
+</option>
+
+</select>
+</label>
+
+<button type="submit">Apply filters</button>
+
+<a href="/planning-priorities">
+Reset
+</a>
+
+</div>
+
+</form>
+
+<p style="margin-top:1rem">
+
+<a href="/planning-priorities.csv?horizon={{ horizon }}&amp;compound={{ compound|urlencode }}&amp;category={{ category }}">
+Export filtered CSV
+</a>
+
+</p>
+
+</div>
+
+<div class="card"
+     style="padding:1rem; margin-top:1rem">
+
+<h2>Planning summary · {{ horizon }} days</h2>
+
+<p class="muted">
+Summary counts reflect all compounds, regardless of
+the filters applied below.
+</p>
+
+<div style="
+    display:grid;
+    grid-template-columns:
+      repeat(auto-fit,minmax(180px,1fr));
+    gap:1rem;
+">
+
+<div>
+<strong>Projected shortage groups</strong>
+<div style="font-size:1.5rem">
+{{ totals.shortages }}
+</div>
+</div>
+
+<div>
+<strong>Expiration-exposure groups</strong>
+<div style="font-size:1.5rem">
+{{ totals.expirations }}
+</div>
+</div>
+
+<div>
+<strong>Data-review groups</strong>
+<div style="font-size:1.5rem">
+{{ totals.reviews }}
+</div>
+</div>
+
+<div>
+<strong>Earliest projected shortage</strong>
+<div style="font-size:1.5rem">
+{{ totals.first_shortage or "None" }}
+</div>
+</div>
+
+</div>
+
+</div>
+
+{% if warnings %}
+
+<div class="card"
+     style="padding:1rem; margin-top:1rem">
+
+<details>
+<summary>
+Forecast warnings ({{ warnings|length }})
+</summary>
+
+<ul>
+{% for warning in warnings %}
+<li>{{ warning }}</li>
+{% endfor %}
+</ul>
+
+</details>
+
+</div>
+
+{% endif %}
+
+<div class="card"
+     style="padding:1rem; margin-top:1rem">
+
+<h2>Prioritized inventory</h2>
+
+<p class="muted">
+Shortages appear first, ordered by their earliest
+projected date. Expiration exposure follows, then
+records needing review.
+</p>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<thead>
+<tr>
+<th>Compound</th>
+<th>Priority</th>
+<th>Dated stock</th>
+<th>Undated stock</th>
+<th>Demand</th>
+<th>Shortage</th>
+<th>First shortage</th>
+<th>Expired unused</th>
+<th>Remaining</th>
+<th>Coverage*</th>
+<th>Data quality</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+<td>
+{{ row.compound }}
+({{ row.unit }})
+</td>
+
+<td>
+{% if row.status == "Shortage" %}
+<strong>{{ row.status }}</strong>
+{% else %}
+{{ row.status }}
+{% endif %}
+</td>
+
+<td>
+{{ "%.3f"|format(row.dated_stock) }}
+</td>
+
+<td>
+{{ "%.3f"|format(row.unknown_stock) }}
+</td>
+
+<td>
+{{ "%.3f"|format(row.demand) }}
+</td>
+
+<td>
+{% if row.shortage > 0 %}
+<strong>
+{{ "%.3f"|format(row.shortage) }}
+</strong>
+{% else %}
+0
+{% endif %}
+</td>
+
+<td>
+{{ row.first_shortage or "—" }}
+</td>
+
+<td>
+{{ "%.3f"|format(row.expired) }}
+</td>
+
+<td>
+{{ "%.3f"|format(row.remaining) }}
+</td>
+
+<td>
+{% if row.coverage is not none %}
+{{ "%.1f"|format(row.coverage) }} days
+{% else %}
+—
+{% endif %}
+</td>
+
+<td>
+{% if row.incomplete %}
+Incomplete schedule
+{% endif %}
+
+{% if row.unknown_stock > 0 %}
+{% if row.incomplete %}<br>{% endif %}
+Undated inventory
+{% endif %}
+
+{% if not row.incomplete
+      and row.unknown_stock == 0 %}
+—
+{% endif %}
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="11">
+No records match the selected filters.
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+<p class="muted">
+*Coverage is a demand-rate indicator derived from
+allocated plus remaining dated stock divided by
+average daily scheduled demand. It is not a
+date-accurate supply-exhaustion prediction.
+Use the FEFO first-shortage date for chronological
+shortage projections.
+</p>
+
+<p class="muted">
+Undated inventory is excluded from FEFO allocation.
+Expiration losses and shortages are planning
+projections, not actual transactions. No changes
+are made to inventory or protocols.
+</p>
+
+</div>
+
+</section>
+
+{% endblock %}

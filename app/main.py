@@ -116,3 +116,7 @@ app.include_router(expiry_exposure.router)
 # Release 177-184: FEFO forecast
 from .routers import fefo_forecast
 app.include_router(fefo_forecast.router)
+
+# TRACKER_RELEASE_201_208
+from .routers import planning_priorities
+app.include_router(planning_priorities.router)
