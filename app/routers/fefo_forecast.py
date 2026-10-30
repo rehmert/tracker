@@ -143,9 +143,14 @@ def build_fefo(db, today=None):
 
     views = vial_views(db, vials)
 
+    # TRACKER_RELEASE_217_224
     stock = defaultdict(list)
     unknown = defaultdict(float)
     warnings = []
+
+    expired_existing = defaultdict(float)
+    undated_vials = defaultdict(int)
+    expired_vials = defaultdict(int)
 
     for vial in vials:
         if vial.status not in ("sealed", "in_use"):
@@ -181,9 +186,14 @@ def build_fefo(db, today=None):
 
         if expiry is None:
             unknown[key] += remaining / scale
+            undated_vials[key] += 1
             continue
 
         if expiry < today:
+            # Existing expired inventory is not future
+            # projected expiration loss.
+            expired_existing[key] += remaining / scale
+            expired_vials[key] += 1
             continue
 
         stock[key].append({
@@ -215,8 +225,22 @@ def build_fefo(db, today=None):
     for protocol in protocols:
         if protocol.start_date is None:
             warnings.append(
-                f"{protocol.name}: missing start date"
+                f"{protocol.name}: missing start date; "
+                "forecast incomplete"
             )
+
+            # Preserve affected compounds in the forecast
+            # even when no occurrences can be calculated.
+            for item in protocol.items:
+                unit = (
+                    "IU"
+                    if item.amount_unit == "IU"
+                    else "mg"
+                )
+                key = (item.compound_id, unit)
+                active_keys.add(key)
+                invalid.add(key)
+
             continue
 
         if (
@@ -243,7 +267,11 @@ def build_fefo(db, today=None):
                 item.amount_unit,
             )
 
-            if base is None or not isfinite(base):
+            if (
+                base is None
+                or not isfinite(base)
+                or base <= 0
+            ):
                 invalid.add(key)
                 warnings.append(
                     f"{protocol.name}: invalid amount for "
@@ -286,7 +314,10 @@ def build_fefo(db, today=None):
     rows = []
 
     keys = sorted(
-        set(stock) | set(unknown) | active_keys,
+        set(stock)
+        | set(unknown)
+        | set(expired_existing)
+        | active_keys,
         key=lambda key: (
             compounds.get(key[0], "").casefold(),
             key[1],
@@ -320,12 +351,38 @@ def build_fefo(db, today=None):
                 v["remaining"] for v in inventory
             ),
             "unknown_stock": unknown.get(key, 0.0),
+            "expired_existing": expired_existing.get(
+                key, 0.0
+            ),
+            "undated_vials": undated_vials.get(key, 0),
+            "expired_vials": expired_vials.get(key, 0),
             "incomplete": key in invalid,
             "horizons": horizons,
         })
 
-    return rows, warnings
+    for key in keys:
+        compound_id, unit = key
+        name = compounds.get(
+            compound_id,
+            f"Compound #{compound_id}",
+        )
 
+        if undated_vials.get(key, 0):
+            warnings.append(
+                f"{name} ({unit}): "
+                f"{undated_vials[key]} vial(s) without "
+                "expiration or beyond-use date; "
+                "excluded from FEFO allocation"
+            )
+
+        if expired_vials.get(key, 0):
+            warnings.append(
+                f"{name} ({unit}): "
+                f"{expired_vials[key]} already-expired "
+                "vial(s) excluded from FEFO allocation"
+            )
+
+    return rows, warnings
 
 @router.get("/fefo-forecast")
 def fefo_forecast(
