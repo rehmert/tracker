@@ -88,3 +88,7 @@ app.include_router(workflow_hub.router)
 # Release 113-120: read-only protocol inventory coverage
 from .routers import protocol_coverage
 app.include_router(protocol_coverage.router)
+
+# Release 121-128: read-only inventory forecast
+from .routers import inventory_forecast
+app.include_router(inventory_forecast.router)

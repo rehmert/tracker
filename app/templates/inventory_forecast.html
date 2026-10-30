@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Inventory Forecast{% endblock %}
+{% block content %}
+<section style="max-width:1200px">
+<h1>Inventory Forecast</h1>
+<p class="muted">Read-only, approximate comparison of active protocol averages against currently recorded vial quantities. <strong>Not a dosing, purchasing, or suitability recommendation.</strong></p>
+<p><a href="/protocol-coverage">Protocol coverage</a> · <a href="/vials">Vials</a> · <a href="/protocols">Protocols</a> · <a href="/inventory-health">Inventory health</a> · <a href="/inventory-forecast.csv">Export CSV</a></p>
+<div class="card" style="padding:1rem"><h2>28-day planning overview</h2>
+<p class="muted">Assumes the recorded average dose frequency continues for 28 days. Does not apply individual scheduled dates, start/end weeks, escalation, skipped projected occurrences, or future vial expiry. Remaining quantities subtract logged vial consumption and recorded blend transfers. This view does not establish medication quality, sterility, or suitability.</p>
+<div style="overflow-x:auto"><table><thead><tr><th>Protocol</th><th>Compound</th><th>Vials</th><th>Excluded</th><th>Approx. remaining</th><th>Approx. 28-day demand</th><th>Weeks at avg. rate</th><th>Planning flag</th></tr></thead><tbody>
+{% for row in rows %}<tr><td><a href="/protocols">{{ row.protocol }}</a></td><td>{{ row.compound }}</td><td>{{ row.vials }}</td><td>{{ row.excluded }}</td><td>{{ '%.3f'|format(row.available) }} {{ row.unit }}</td><td>{% if row.demand is none %}—{% else %}{{ '%.3f'|format(row.demand) }} {{ row.unit }}{% endif %}</td><td>{% if row.weeks is none %}—{% else %}{{ '%.1f'|format(row.weeks) }}{% endif %}</td><td>{{ row.status }}</td></tr>{% else %}<tr><td colspan="8">No active protocol items to compare.</td></tr>{% endfor %}
+</tbody></table></div></div></section>
+{% endblock %}
