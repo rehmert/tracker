@@ -658,3 +658,58 @@ main .page-header .description {
     max-width: none;
 }
 
+
+
+/* Tracker header navigation search v2 */
+
+.workspace-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .65rem;
+}
+
+.workspace-nav-find {
+    flex: 0 1 19rem;
+    min-width: 12rem;
+}
+
+.workspace-nav-find .nav-find {
+    display: block;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    max-width: none;
+}
+
+.workspace-nav-find #nav-filter {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+    padding: .55rem .8rem;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+}
+
+.workspace-nav-find #nav-filter:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+}
+
+/* Keep Preferences at the right when space allows. */
+.workspace-toolbar > .workspace-settings {
+    margin-left: auto;
+}
+
+@media (max-width: 760px) {
+    .workspace-nav-find {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+}
+

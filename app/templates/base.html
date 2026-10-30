@@ -6,14 +6,14 @@
   <meta name="theme-color" content="#f5f7fa">
   <link rel="manifest" href="/static/manifest.webmanifest">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
-  <link rel="stylesheet" href="/static/app.css?v=grouped-nav-20261028">
+  <link rel="stylesheet" href="/static/app.css?v=nav-layout-20261030-204245">
   <link rel="stylesheet" href="/static/ux_improvements.css?v=20261030">
   <link rel="stylesheet" href="/static/stage4.css?v=1">
   <link rel="stylesheet" href="/static/release36_40.css?v=1">
   <script src="/static/density.js?v=ui-density-20261026"></script>
   <script src="/static/theme.js?v=release6-personalization-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
-  <script src="/static/nav_sort.js?v=grouped-nav-20261028" defer></script>
+  <script src="/static/nav_sort.js?v=syntax-fix-20261030204127" defer></script>
   <script src="/static/workspace_toolbar.js?v=v23-clean-nav" defer></script>
   <script src="/static/layout.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/everyday.js?v=release6-personalization-20261026" defer></script>
@@ -27,7 +27,8 @@
   <nav class="rail" id="app-sidebar" aria-label="Main navigation">
     <div class="rail-top"><span class="rail-kicker">YOUR WORKSPACE</span><button type="button" class="sidebar-collapse" id="sidebar-collapse" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="app-sidebar" title="Collapse sidebar">‹</button></div>
     <a class="brand" href="/">Tracker</a>
-    <div class="nav-find"><input id="nav-filter" type="search" placeholder="Find a page…" aria-label="Filter navigation links"></div>
+
+    <ul class="nav-links nav-pinned"><li data-nav-key="/"><a href="/" title="Overview" {% if path == '/' %}aria-current="page"{% endif %}><span class="nav-dot"></span><span class="nav-text">Dashboard</span></a><button class="nav-star" type="button" data-favorite="/" aria-label="Favorite Dashboard" aria-pressed="false">☆</button></li></ul>
     <div id="nav-favorites" class="nav-favorites" hidden><div class="nav-section-title">★ Favorites</div><ul class="nav-links" id="nav-favorite-links"></ul></div>
     {% set sections = [
       ('Overview & Planning', [('/calendar','Calendar'),('/quick-entry','Quick entry'),('/pages','Notes')]),
@@ -38,7 +39,7 @@
       ('Health & Progress', [('/vitals','Vitals'),('/labs','Lab results'),('/health-timeline','Health timeline'),('/health-insights','Health insights')]),
       ('Tools & Data', [('/exports','Exports'),('/data-integrity','Data integrity'),('/backups','Backups'),('/audit-history','Audit history')])
     ] %}
-    <ul class="nav-links nav-pinned"><li data-nav-key="/"><a href="/" title="Overview" {% if path == '/' %}aria-current="page"{% endif %}><span class="nav-dot"></span><span class="nav-text">Dashboard</span></a><button class="nav-star" type="button" data-favorite="/" aria-label="Favorite Dashboard" aria-pressed="false">☆</button></li></ul>
+
     <div id="nav-sortable">
     {% for section, links in sections %}
       <section class="nav-section" data-section="{{ section }}">
@@ -57,6 +58,7 @@
     <div class="workspace-toolbar" aria-label="Workspace tools">
       <div class="ux-add-menu"><button type="button" id="ux-add-toggle" aria-expanded="false" aria-controls="ux-add-panel" class="ux-add-button">+ Add</button><div id="ux-add-panel" class="ux-add-panel" hidden><a href="/doses">Record dose</a><a href="/vitals">Record vitals</a><a href="/purchases">New purchase</a><a href="/protocols">New protocol</a><a href="/quick-entry">All quick entries</a><a href="/vials">Vials</a><a href="/labs">Lab results</a></div></div>
       <button type="button" class="workspace-search" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search Tracker (Ctrl+K)">⌕ <span>Search Tracker</span> <kbd>Ctrl K</kbd></button>
+      <div class="workspace-nav-find"><div class="nav-find"><input id="nav-filter" type="search" placeholder="Find a page…" aria-label="Filter navigation links"></div></div>
       <div class="workspace-settings" id="workspace-settings">
         <button type="button" id="workspace-settings-toggle" aria-expanded="false" aria-controls="workspace-settings-panel" aria-haspopup="true">⚙ Preferences</button>
         <section id="workspace-settings-panel" class="workspace-settings-panel" aria-label="Workspace preferences" hidden>

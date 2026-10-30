@@ -15,12 +15,51 @@ const boot=()=>{
  const catPrefs=document.getElementById('nav-category-preferences'), visibility=document.getElementById('nav-visibility-preferences');
  let editing=false;
  function apply(){
-  const ranks=new Map((state.categories||[]).map((v,i)=>[v,i]));
-  sections().sort((a,b)=>(ranks.has(a.dataset.section)?ranks.get(a.dataset.section):100+originalSections.indexOf(a.dataset.section))-(ranks.has(b.dataset.section)?ranks.get(b.dataset.section):100+originalSections.indexOf(b.dataset.section))).forEach(x=>root.appendChild(x));
+const alphabetical = state.mode === 'default' || state.mode === 'alpha';
+
+  const compareNames = (a, b) =>
+    a.localeCompare(b, undefined, {
+      sensitivity: 'base',
+      numeric: true
+    });
+
+  const categoryOrder = state.categories || [];
+
+  sections().sort((a, b) => {
+    if (alphabetical) {
+      return compareNames(a.dataset.section, b.dataset.section);
+    }
+
+    const rank = key => {
+      const index = categoryOrder.indexOf(key);
+      return index >= 0
+        ? index
+        : 1000 + originalSections.indexOf(key);
+    };
+
+    return rank(a.dataset.section) - rank(b.dataset.section);
+  }).forEach(section => root.appendChild(section));
+
   sections().forEach(sec=>{
    const key=sec.dataset.section, list=sec.querySelector('.nav-group');
    const defaultOrder=defaults[key], custom=state.order?.[key]||[];
-   [...list.children].sort((a,b)=>state.mode==='alpha'?a.querySelector('a').textContent.localeCompare(b.querySelector('a').textContent):state.mode==='custom'?((custom.indexOf(a.dataset.navKey)<0?100+defaultOrder.indexOf(a.dataset.navKey):custom.indexOf(a.dataset.navKey))-(custom.indexOf(b.dataset.navKey)<0?100+defaultOrder.indexOf(b.dataset.navKey):custom.indexOf(b.dataset.navKey))):defaultOrder.indexOf(a.dataset.navKey)-defaultOrder.indexOf(b.dataset.navKey)).forEach(x=>list.appendChild(x));
+   [...list.children].sort((a,b)=>{
+    if (alphabetical) {
+      return compareNames(
+        a.querySelector('a').textContent.trim(),
+        b.querySelector('a').textContent.trim()
+      );
+    }
+
+    const rank = item => {
+      const index = custom.indexOf(item.dataset.navKey);
+      return index >= 0
+        ? index
+        : 1000 + defaultOrder.indexOf(item.dataset.navKey);
+    };
+
+    return rank(a) - rank(b);
+   }).forEach(x=>list.appendChild(x));
    const active=!!sec.querySelector('[aria-current="page"]');
    const opened=state.open?.[key]??active;
    sec.classList.toggle('nav-expanded',opened);sec.querySelector('.nav-section-toggle').setAttribute('aria-expanded',String(opened));
@@ -31,7 +70,7 @@ const boot=()=>{
   drawPreferences();runFilter();
  }
  function drawPreferences(){
-  if(catPrefs){catPrefs.replaceChildren();sections().forEach((sec,i)=>{const row=document.createElement('div');row.className='nav-pref-row';const name=document.createElement('span');name.textContent=sec.dataset.section;row.append(name);for(const [label,delta] of [['↑',-1],['↓',1]]){const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.disabled=i+delta<0||i+delta>=sections().length;btn.addEventListener('click',()=>{const keys=sections().map(x=>x.dataset.section);[keys[i],keys[i+delta]]=[keys[i+delta],keys[i]];state.categories=keys;save();apply();});row.append(btn);}const chk=document.createElement('input');chk.type='checkbox';chk.checked=state.open?.[sec.dataset.section]??sec.classList.contains('nav-expanded');chk.title='Start expanded';chk.addEventListener('change',()=>{state.open[sec.dataset.section]=chk.checked;save();apply();});row.append(chk);catPrefs.append(row);});}
+  if(catPrefs){catPrefs.replaceChildren();sections().forEach((sec,i)=>{const row=document.createElement('div');row.className='nav-pref-row';const name=document.createElement('span');name.textContent=sec.dataset.section;row.append(name);for(const [label,delta] of [['↑',-1],['↓',1]]){const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.disabled=i+delta<0||i+delta>=sections().length;btn.addEventListener('click',()=>{const keys=sections().map(x=>x.dataset.section);[keys[i],keys[i+delta]]=[keys[i+delta],keys[i]];state.categories=keys;state.mode='custom';save();apply();});row.append(btn);}const chk=document.createElement('input');chk.type='checkbox';chk.checked=state.open?.[sec.dataset.section]??sec.classList.contains('nav-expanded');chk.title='Start expanded';chk.addEventListener('change',()=>{state.open[sec.dataset.section]=chk.checked;save();apply();});row.append(chk);catPrefs.append(row);});}
   if(visibility){visibility.replaceChildren();all().forEach(li=>{const label=document.createElement('label');label.className='nav-pref-check';const input=document.createElement('input');input.type='checkbox';input.checked=!state.hidden.includes(li.dataset.navKey);input.addEventListener('change',()=>{state.hidden=input.checked?state.hidden.filter(x=>x!==li.dataset.navKey):[...new Set([...state.hidden,li.dataset.navKey])];save();apply();});label.append(input,document.createTextNode(' '+li.querySelector('a').textContent.trim()));visibility.append(label);});}
  }
  function runFilter(){const q=(filter?.value||'').trim().toLowerCase();sections().forEach(sec=>{let any=false;sec.querySelectorAll('[data-nav-key]').forEach(li=>{const match=li.querySelector('a').textContent.toLowerCase().includes(q)&&(!state.hidden.includes(li.dataset.navKey)||!!q);li.classList.toggle('nav-filter-hidden',!match);if(match)any=true;});sec.classList.toggle('nav-filter-hidden',!any);sec.classList.toggle('nav-search-open',!!q&&any);});document.querySelectorAll('.nav-pinned [data-nav-key],#nav-favorite-links li').forEach(li=>li.classList.toggle('nav-filter-hidden',!!q&&!li.textContent.toLowerCase().includes(q)));}
