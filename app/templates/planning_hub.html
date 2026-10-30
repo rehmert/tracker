@@ -6,6 +6,308 @@
 
 {% endblock %}
 {% block content %}
+
+
+<!-- TRACKER_RELEASE_209_216 -->
+
+<div class="card"
+     style="padding:1rem; margin:1rem 0">
+
+<h2>Planning priorities · next 28 days</h2>
+
+<p class="muted">
+Priorities are calculated from the existing FEFO
+inventory simulation. Shortages and expiration
+losses are projections, not recorded transactions.
+</p>
+
+{% set priority = namespace(
+    shortages=0,
+    expirations=0,
+    reviews=0,
+    earliest=none
+) %}
+
+{% for row in fefo_rows %}
+
+  {% set forecast = row.horizons.get(28) %}
+
+  {% if forecast %}
+
+    {% if forecast.shortage > 0 %}
+
+      {% set priority.shortages =
+          priority.shortages + 1 %}
+
+      {% if forecast.first_shortage %}
+
+        {% if priority.earliest is none
+              or forecast.first_shortage
+                 < priority.earliest %}
+
+          {% set priority.earliest =
+              forecast.first_shortage %}
+
+        {% endif %}
+
+      {% endif %}
+
+    {% endif %}
+
+    {% if forecast.expired > 0 %}
+
+      {% set priority.expirations =
+          priority.expirations + 1 %}
+
+    {% endif %}
+
+  {% endif %}
+
+  {% if row.incomplete or row.unknown_stock > 0 %}
+
+    {% set priority.reviews =
+        priority.reviews + 1 %}
+
+  {% endif %}
+
+{% endfor %}
+
+<div style="
+    display:grid;
+    grid-template-columns:
+      repeat(auto-fit,minmax(180px,1fr));
+    gap:1rem;
+    margin-top:1rem;
+">
+
+  <div class="card" style="padding:1rem">
+
+    <strong>Projected shortages</strong>
+
+    <div style="font-size:1.7rem">
+      {{ priority.shortages }}
+    </div>
+
+    <small>Compound/unit groups</small>
+
+    <p>
+      <a href="/planning-priorities?horizon=28&amp;category=shortage">
+        Review shortages →
+      </a>
+    </p>
+
+  </div>
+
+  <div class="card" style="padding:1rem">
+
+    <strong>Expiration exposure</strong>
+
+    <div style="font-size:1.7rem">
+      {{ priority.expirations }}
+    </div>
+
+    <small>Groups with projected unused stock expiring</small>
+
+    <p>
+      <a href="/planning-priorities?horizon=28&amp;category=expiration">
+        Review expiration exposure →
+      </a>
+    </p>
+
+  </div>
+
+  <div class="card" style="padding:1rem">
+
+    <strong>Earliest shortage</strong>
+
+    <div style="font-size:1.4rem">
+      {{ priority.earliest or "None projected" }}
+    </div>
+
+    <small>Within the next 28 days</small>
+
+    <p>
+      <a href="/planning-priorities?horizon=28&amp;category=shortage">
+        View shortage timeline →
+      </a>
+    </p>
+
+  </div>
+
+  <div class="card" style="padding:1rem">
+
+    <strong>Data requiring review</strong>
+
+    <div style="font-size:1.7rem">
+      {{ priority.reviews }}
+    </div>
+
+    <small>
+      Groups with incomplete schedules
+      or inventory lacking expiration dates
+    </small>
+
+    <p>
+      <a href="/planning-priorities?horizon=28&amp;category=review">
+        Review data quality →
+      </a>
+    </p>
+
+  </div>
+
+</div>
+
+{% if priority.shortages > 0 %}
+
+<h3>Projected shortages</h3>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<thead>
+<tr>
+  <th>Compound</th>
+  <th>First shortage</th>
+  <th>Projected shortage</th>
+  <th>Details</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in fefo_rows %}
+
+  {% set forecast = row.horizons.get(28) %}
+
+  {% if forecast and forecast.shortage > 0 %}
+
+  <tr>
+
+    <td>
+      {{ row.compound }}
+      ({{ row.unit }})
+    </td>
+
+    <td>
+      {{ forecast.first_shortage or "Unknown" }}
+    </td>
+
+    <td>
+      <strong>
+        {{ "%.3f"|format(forecast.shortage) }}
+        {{ row.unit }}
+      </strong>
+    </td>
+
+    <td>
+      <a href="/planning-priorities?horizon=28&amp;category=shortage&amp;compound={{ row.compound|urlencode }}">
+        Review →
+      </a>
+    </td>
+
+  </tr>
+
+  {% endif %}
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+{% endif %}
+
+{% if priority.expirations > 0 %}
+
+<h3>Projected expiration losses</h3>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<thead>
+<tr>
+  <th>Compound</th>
+  <th>Projected unused stock expiring</th>
+  <th>Details</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in fefo_rows %}
+
+  {% set forecast = row.horizons.get(28) %}
+
+  {% if forecast and forecast.expired > 0 %}
+
+  <tr>
+
+    <td>
+      {{ row.compound }}
+      ({{ row.unit }})
+    </td>
+
+    <td>
+      {{ "%.3f"|format(forecast.expired) }}
+      {{ row.unit }}
+    </td>
+
+    <td>
+      <a href="/planning-priorities?horizon=28&amp;category=expiration&amp;compound={{ row.compound|urlencode }}">
+        Review →
+      </a>
+    </td>
+
+  </tr>
+
+  {% endif %}
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+{% endif %}
+
+<p style="margin-top:1rem">
+
+  <a href="/planning-priorities">
+    Open full Planning Priorities dashboard
+  </a>
+
+  ·
+
+  <a href="/fefo-forecast">
+    Detailed FEFO forecast
+  </a>
+
+  ·
+
+  <a href="/planning-priorities.csv?horizon=28">
+    Export 28-day priorities
+  </a>
+
+</p>
+
+<p class="muted">
+Undated inventory is excluded from FEFO allocation.
+An incomplete schedule can make demand projections
+unreliable. These results are for inventory planning,
+not medication dosing or administration decisions.
+</p>
+
+</div>
+
+<!-- END_TRACKER_RELEASE_209_216 -->
+
+
 <!-- RELEASE_169_176 -->
 <div class="card" style="padding:1rem; margin-top:1rem">
 
