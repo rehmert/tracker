@@ -211,4 +211,32 @@
   if (!source.value.trim()) {
     setMode('visual');
   }
+
+  // Tracker Notes integration API.
+  // Read the visual editor without changing modes.
+  window.trackerNotesEditor = {
+    getBody() {
+      return mode === 'visual' && dirty
+        ? blocks(visual)
+        : source.value;
+    },
+
+    async restore(value) {
+      source.value = value;
+      dirty = false;
+
+      source.dispatchEvent(
+        new Event('input', { bubbles: true })
+      );
+
+      if (mode === 'visual') {
+        await markdownToVisual();
+      }
+    },
+
+    getMode() {
+      return mode;
+    }
+  };
+
 })();

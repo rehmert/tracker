@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Edit ' ~ p.title if p else 'New page' }}{% endblock %}
+{% block title %}{{ 'Edit ' ~ p.title if p else 'New page' }}<script src="/static/notes_draft_recovery.js" defer></script>
+<link rel="stylesheet" href="/static/notes_release_47_50b.css">
+{% endblock %}
 {% block content %}
 <h1>{{ 'Edit page' if p else 'New page' }}</h1>
 <form method="post" action="{{ '/pages/' ~ p.id if p else '/pages' }}">
@@ -76,6 +78,7 @@
 
   <p class="row">
     <button class="primary">Save page</button>
+    <button type="button" id="notes-discard-draft">Discard local draft</button>
     <a href="{{ '/pages/' ~ p.id if p else '/pages' }}">Cancel</a>
   </p>
 </form>

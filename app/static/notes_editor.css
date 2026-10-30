@@ -54,3 +54,47 @@
 .notes-editor [hidden] {
   display: none !important;
 }
+
+
+/* Tracker combined release 47-50A */
+body:has(.notes-editor) main,
+body:has(.notes-editor) .content,
+body:has(.notes-editor) .main-content,
+body:has(#notes-body) main,
+body:has(#notes-body) .content,
+body:has(#notes-body) .main-content {
+    max-width: none !important;
+    width: 100%;
+}
+
+.notes-editor {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+}
+
+.notes-visual,
+#notes-body,
+textarea[name="body"] {
+    width: 100%;
+    max-width: none;
+    min-height: 550px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.notes-visual {
+    line-height: 1.65;
+}
+
+.notes-editor .notes-preview {
+    width: 100%;
+}
+
+@media (min-width: 1100px) {
+    .notes-visual,
+    #notes-body,
+    textarea[name="body"] {
+        min-height: 650px;
+    }
+}

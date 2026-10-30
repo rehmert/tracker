@@ -1,0 +1,83 @@
+
+/* Tracker combined release 47-50B */
+
+.notes-page-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.notes-page-heading h1 {
+    margin: 0;
+}
+
+.notes-edit-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .65rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+/* Apply full-width layout only on Notes edit pages. */
+body:has(#notes-editor) main,
+body:has(#notes-editor) .content,
+body:has(#notes-editor) .main-content {
+    width: 100%;
+    max-width: none !important;
+    box-sizing: border-box;
+}
+
+#notes-editor {
+    display: block;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+}
+
+#notes-editor #notes-body,
+#notes-editor #notes-visual {
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-height: 650px;
+    box-sizing: border-box;
+}
+
+#notes-editor #notes-body {
+    resize: vertical;
+    font-family: ui-monospace, SFMono-Regular,
+                 Consolas, monospace;
+    line-height: 1.65;
+}
+
+#notes-editor #notes-visual {
+    line-height: 1.7;
+    padding: 1.25rem;
+}
+
+#notes-editor .notes-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+#notes-editor [hidden] {
+    display: none !important;
+}
+
+@media (max-width: 700px) {
+    #notes-editor #notes-body,
+    #notes-editor #notes-visual {
+        min-height: 420px;
+    }
+
+    .notes-page-heading {
+        align-items: flex-start;
+    }
+}

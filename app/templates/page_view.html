@@ -1,7 +1,15 @@
 {% extends "base.html" %}
 {% block title %}{{ p.title }}{% endblock %}
 {% block content %}
-<h1>{{ p.title }}</h1>
+
+<div class="notes-page-heading">
+  <h1>{{ p.title }}</h1>
+  <a class="primary notes-edit-action"
+     href="/pages/{{ p.id }}/edit">
+    Edit page
+  </a>
+</div>
+
 <p class="meta">
   {% for t in p.tag_list %}<a class="tag" href="/pages?tag={{ t|urlencode }}">{{ t }}</a> {% endfor %}
   {% for c in p.compounds %}<a class="tag" href="/pages?compound_id={{ c.id }}">{{ c.name }}</a> {% endfor %}
