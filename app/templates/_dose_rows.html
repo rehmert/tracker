@@ -1,4 +1,4 @@
-{% for r in rows %}<tr>
+{% for r in rows %}<tr data-dose-compound="{{ r.vial.compound_id }}" data-dose-kind="{{ r.dose.kind|e }}" data-dose-site="{{ (r.dose.site or "")|e }}">
   <td>{{ r.dose.taken_at|dt }}</td>
   <td><a href="/vials/{{ r.vial.id }}">{{ r.vial.compound.name }}</a>{% if r.dose.kind == 'waste' %} <span class="tag">waste</span>{% endif %}</td>
   <td class="n">{{ r.dose.entered_value|num }} {{ r.dose.entered_unit }}</td>

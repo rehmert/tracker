@@ -16,7 +16,7 @@
       <label class="field"><span>Vial</span>
         <select name="vial_id" required>
           {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
-          <option value="{{ v.id }}" {% if (selected_vial_id is not none and v.id == selected_vial_id) or (selected_vial_id is none and selected_compound_id and v.compound_id == selected_compound_id) %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
+          <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" {% if (selected_vial_id is not none and v.id == selected_vial_id) or (selected_vial_id is none and selected_compound_id and v.compound_id == selected_compound_id) %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
           {% endfor %}
         </select></label>
       <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}"></label>
@@ -24,6 +24,46 @@
         <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == (planned_unit if planned_unit in DOSE_UNITS else 'mg') %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
     </div>
     <div id="dose-preview" class="wide preview" aria-live="polite"></div>
+
+<div id="dose-context"
+     class="wide dose-context-panel"
+     aria-label="Dose recording context">
+
+  <div class="dose-context-heading">
+    <strong>Recording context</strong>
+    <span class="note">For reference only</span>
+  </div>
+
+  <div class="dose-context-grid">
+
+    <div>
+      <strong>Selected compound</strong>
+      <p id="dose-context-compound">—</p>
+    </div>
+
+    <div>
+      <strong>Recent injection sites</strong>
+      <p id="dose-context-sites">
+        No recent site information available.
+      </p>
+    </div>
+
+    <div>
+      <strong>Selected disposables</strong>
+      <p id="dose-context-supplies">
+        None selected
+      </p>
+    </div>
+
+  </div>
+
+  <p class="note">
+    Review the dose preview, selected vial,
+    administration time, and supplies before saving.
+    This panel does not record or modify anything.
+  </p>
+</div>
+
     <label class="field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ now }}"></label>
     <label class="field"><span>Type</span><select name="kind"><option value="dose">Logged dose</option><option value="waste">Wasted or discarded</option></select></label>
     <label class="check"><input type="checkbox" name="use_remaining" value="yes"> Use all remaining vial contents</label>

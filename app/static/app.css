@@ -776,3 +776,51 @@ main .page-header .description {
     color: var(--muted);
 }
 
+
+
+/* Stage 44C: Dose recording context */
+
+.dose-context-panel {
+    padding: 1rem;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+.dose-context-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: .85rem;
+}
+
+.dose-context-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        3, minmax(0, 1fr)
+    );
+    gap: 1rem;
+}
+
+.dose-context-grid > div {
+    min-width: 0;
+}
+
+.dose-context-grid strong {
+    display: block;
+    font-size: .85rem;
+}
+
+.dose-context-grid p {
+    margin: .4rem 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+    .dose-context-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
