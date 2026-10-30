@@ -1,0 +1,139 @@
+
+{% extends "base.html" %}
+
+{% block title %}Daily Activity{% endblock %}
+
+{% block content %}
+
+<section style="max-width:1250px;margin:auto">
+
+<h1>Daily Activity</h1>
+
+<p class="muted">
+  A chronological view of recorded Tracker activity.
+  Dates reflect the timestamps stored with each record.
+</p>
+
+<div class="card" style="padding:1rem;margin-bottom:1rem">
+
+<form method="get" action="/activity"
+      style="display:flex;flex-wrap:wrap;gap:1rem;align-items:end">
+
+<label>
+  From
+  <input type="date" name="start" value="{{ start }}">
+</label>
+
+<label>
+  To
+  <input type="date" name="end" value="{{ end }}">
+</label>
+
+<label>
+  Activity type
+  <select name="category">
+    {% for key,label in [
+      ('all','All activity'),
+      ('dose','Administrations'),
+      ('vitals','Vitals'),
+      ('purchase','Purchases'),
+      ('notes','Notes'),
+      ('protocol','Protocol revisions')
+    ] %}
+      <option value="{{ key }}"
+        {% if category == key %}selected{% endif %}>
+        {{ label }}
+      </option>
+    {% endfor %}
+  </select>
+</label>
+
+<button type="submit">Apply filters</button>
+
+</form>
+
+</div>
+
+<div class="card" style="padding:1rem;margin-bottom:1rem">
+
+<h2>Quick access</h2>
+
+<p>
+  <a href="/inventory-intelligence">Inventory forecasting</a>
+  ·
+  <a href="/inventory-alerts">Inventory alerts</a>
+  ·
+  <a href="/protocols">Protocols</a>
+  ·
+  <a href="/calendar">Calendar</a>
+  ·
+  <a href="/reports">Reports</a>
+</p>
+
+<p class="muted">
+  Use Ctrl+K to open Tracker's existing global search.
+</p>
+
+</div>
+
+<h2>{{ total }} activities</h2>
+
+{% for event in events %}
+
+<article class="card"
+         style="padding:1rem;margin-bottom:.65rem">
+
+<div style="
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:.5rem;
+">
+
+<strong>{{ event.title }}</strong>
+
+<span class="muted">
+  {{ event.when|dt }}
+</span>
+
+</div>
+
+<p style="margin:.5rem 0">
+  {{ event.detail }}
+</p>
+
+<div style="
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+">
+
+<small class="muted">
+  {{ event.kind|capitalize }}
+</small>
+
+<a href="{{ event.href }}">
+  View record →
+</a>
+
+</div>
+
+</article>
+
+{% else %}
+
+<div class="card" style="padding:1.5rem">
+
+<p>No activity found for the selected period.</p>
+
+<p>
+  Try a wider date range or select all activity types.
+</p>
+
+</div>
+
+{% endfor %}
+
+</section>
+
+{% endblock %}

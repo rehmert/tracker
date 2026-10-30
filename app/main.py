@@ -63,3 +63,8 @@ def ping():
 @app.get("/healthz", include_in_schema=False)
 def healthz():
     return {"ok": True}
+
+
+# Release 65–68: Unified daily activity
+from .routers import activity
+app.include_router(activity.router)
