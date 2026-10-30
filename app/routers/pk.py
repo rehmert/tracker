@@ -111,7 +111,7 @@ def supported(db):
 
 @router.get("")
 def page(request: Request, db: Session = Depends(get_db)):
-    return render(request, "pk.html", compounds=supported(db), protocols=list(db.scalars(select(Protocol).order_by(Protocol.name))), profile=pk.profile)
+    return render(request, "pk.html", compounds=supported(db), protocols=list(db.scalars(select(Protocol).order_by(Protocol.name))), profile=pk.profile, model_info=pk.model_info)
 
 @router.post("/compounds", status_code=201)
 def add_supported_compound(data: dict, db: Session = Depends(get_db)):
@@ -227,6 +227,8 @@ def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
     c = db.get(Compound, compound_id)
     defaults = pk.profile(c.name) if c else None
     if defaults is None: raise HTTPException(400, "Unsupported compound")
+    if pk.model_info(c.name)["needs_assumptions"] and (half_life_hours is None or absorption_half_life_hours is None):
+        raise HTTPException(400, "Enter both hypothetical half-lives for BPC-157")
     hl = half_life_hours if half_life_hours is not None else defaults[0]
     ahl = absorption_half_life_hours if absorption_half_life_hours is not None else defaults[1]
     if not all(isfinite(x) and 0 < x <= 10000 for x in (hl, ahl)):
@@ -253,8 +255,20 @@ def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
         if scenario_id is not None:
             raise HTTPException(400, "Select either a protocol or a saved scenario")
         planned = protocol_planned_doses(db, protocol_id, compound_id, now, end)
-    rows = pk.series(start, end, actual, planned, hl, ahl)
-    return {"rows": rows, "now": now.isoformat(), "actual_doses": len(actual),
+    # Short-lived compounds require sub-hour sampling. Limit sample count by
+    # using a compact recent window instead of falsely smooth multi-month curves.
+    short = pk.model_info(c.name)["level"] in ("formulation-specific", "experimental", "illustrative")
+    if short:
+        start = max(start, now - timedelta(hours=24))
+        end = min(end, now + timedelta(hours=48))
+        step = 0.05 if hl < 0.5 else 0.25
+        # Include all planned events in the displayed window.
+        if protocol_id is not None:
+            planned = protocol_planned_doses(db, protocol_id, compound_id, now, end)
+    else:
+        step = 12
+    rows = pk.series(start, end, actual, planned, hl, ahl, step_hours=step)
+    return {"model": pk.model_info(c.name), "rows": rows, "now": now.isoformat(), "actual_doses": len(actual),
             "planned_doses": len(planned), "units": "modeled mg-equivalent exposure",
             "disclaimer": "Exploratory model, not measured blood concentration or clinical effectiveness."}
 
@@ -266,6 +280,8 @@ def compare_scenarios(compound_id: int, scenario_ids: str = '', days_back: int =
     c = db.get(Compound, compound_id)
     defaults = pk.profile(c.name) if c else None
     if defaults is None: raise HTTPException(400, 'Unsupported compound')
+    if pk.model_info(c.name)['needs_assumptions']:
+        raise HTTPException(400, 'BPC-157 comparisons require explicit model assumptions; use the main graph')
     if not (1 <= days_back <= 365 and 1 <= days_forward <= 365):
         raise HTTPException(400, 'Invalid range')
     try:
@@ -346,6 +362,8 @@ def multi_compound_overlay(compound_ids: str, days_back: int = 30,
         defaults = pk.profile(c.name) if c else None
         if defaults is None:
             raise HTTPException(400, 'Unsupported compound')
+        if pk.model_info(c.name)['needs_assumptions']:
+            raise HTTPException(400, 'BPC-157 overlay requires explicit model assumptions')
         hl, ahl = defaults
         history_start = start - timedelta(hours=min(hl*12, 365*24))
         doses = db.scalars(select(DoseLog).join(Vial).where(

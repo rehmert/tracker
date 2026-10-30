@@ -12,6 +12,10 @@ PROFILES = {
     "testosterone cypionate": (192.0, 24.0),
     "testosterone enanthate": (120.0, 24.0),
     "testosterone": (192.0, 24.0),
+    "tesamorelin": (11.0 / 60.0, 0.05),  # WR elimination estimate; absorption illustrative
+    "ipamorelin": (2.0, 0.5),  # IV elimination reference; SC absorption illustrative
+    "bpc-157": (1.0, 1.0),  # UI placeholders ONLY: no human PK defaults
+
 }
 
 def profile(name: str):
@@ -22,6 +26,12 @@ def profile(name: str):
         if "enanthate" in label:
             return PROFILES["testosterone enanthate"]
         return PROFILES["testosterone cypionate"]
+    if "tesamorelin" in label or "tesamoralin" in label or label == "tesa":
+        return PROFILES["tesamorelin"]
+    if "ipamorelin" in label or "ipalmorelin" in label or label == "ipa":
+        return PROFILES["ipamorelin"]
+    if re.search(r"\bbpc\s*157\b", label):
+        return PROFILES["bpc-157"]
     for key in ("tirzepatide", "semaglutide", "retatrutide"):
         if re.search(r"\b" + key + r"\b", label):
             return PROFILES[key]
@@ -53,9 +63,11 @@ def exposure_at(at: datetime, doses: list[tuple[datetime, float]], half_life_hou
 
 def series(start: datetime, end: datetime, actual: list[tuple[datetime, float]],
            planned: list[tuple[datetime, float]], half_life_hours: float,
-           absorption_half_life_hours: float, step_hours: int = 12):
+           absorption_half_life_hours: float, step_hours: float = 12):
     if end <= start or (end-start).days > 730:
         raise ValueError("Choose a date range of at most 730 days")
+    if not (isfinite(step_hours) and 0.01 <= step_hours <= 168):
+        raise ValueError("Invalid graph resolution")
     rows = []
     t = start
     while t <= end:
@@ -64,3 +76,19 @@ def series(start: datetime, end: datetime, actual: list[tuple[datetime, float]],
                      "planned": round(baseline + exposure_at(t, planned, half_life_hours, absorption_half_life_hours), 5)})
         t += timedelta(hours=step_hours)
     return rows
+
+
+def model_info(name: str) -> dict:
+    """Evidence label and limitations, not a clinical PK assertion."""
+    label = re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
+    if re.search(r"\bbpc\s*157\b", label):
+        return {"level": "illustrative", "needs_assumptions": True,
+                "description": "No validated human subcutaneous PK. Enter both hypothetical half-lives; output is illustrative only."}
+    if "ipamorelin" in label or "ipalmorelin" in label or label == "ipa":
+        return {"level": "experimental", "needs_assumptions": False,
+                "description": "Elimination estimate from human IV research (~2 h); subcutaneous absorption is assumed, not validated."}
+    if "tesamorelin" in label or "tesamoralin" in label or label == "tesa":
+        return {"level": "formulation-specific", "needs_assumptions": False,
+                "description": "11-minute elimination reference for EGRIFTA WR; other formulations differ. Absorption half-life is illustrative."}
+    return {"level": "approximate", "needs_assumptions": False,
+            "description": "Exploratory one-compartment exposure model; not measured serum concentration."}

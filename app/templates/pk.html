@@ -6,14 +6,17 @@
 <div class="card">
   <label>Protocol <select id="protocol"><option value="">None (manual scenarios)</option>{% for p in protocols %}{% if p.is_active and p.start_date %}<option value="{{ p.id }}" data-compounds="{{ p.items|map(attribute='compound_id')|unique|join(',') }}">{{ p.name }}</option>{% endif %}{% endfor %}</select></label>
   <p class="note">Select an active protocol to model its scheduled doses, including escalation stages. Choose a compound within that protocol below. This is a read-only projection; it does not create a scenario or log doses. Non-mass units such as IU are excluded.</p>
-  <label>Compound <select id="compound"><option value="">Select compound</option>{% for c in compounds %}<option value="{{ c.id }}" data-half="{{ profile(c.name)[0] }}" data-abs="{{ profile(c.name)[1] }}">{{ c.name }}</option>{% endfor %}</select></label>
+  <label>Compound <select id="compound"><option value="">Select compound</option>{% for c in compounds %}<option value="{{ c.id }}" data-half="{{ profile(c.name)[0] }}" data-abs="{{ profile(c.name)[1] }}" data-model="{{ model_info(c.name).level }}" data-needs-assumptions="{{ 1 if model_info(c.name).needs_assumptions else 0 }}" data-model-note="{{ model_info(c.name).description }}">{{ c.name }}</option>{% endfor %}</select></label>
   <label>Add testosterone profile <select id="newPkCompound"><option value="Testosterone Cypionate">Testosterone Cypionate</option><option value="Testosterone Enanthate">Testosterone Enanthate</option><option value="Testosterone">Testosterone (generic)</option></select></label>
   <button id="addPkCompound" type="button">Add compound to Tracker</button>
-  <label>Elimination half-life (hours) <input id="half" type="number" min="0.1" step="0.1"></label>
-  <label>Absorption half-life (hours) <input id="abs" type="number" min="0.1" step="0.1"></label>
+  <p id="modelEvidence" class="note" role="status"></p>
+  <label>Elimination half-life (hours) <input id="half" type="number" min="0.01" step="any"></label>
+  <label>Absorption half-life (hours) <input id="abs" type="number" min="0.01" step="any"></label>
   <label>Days before today <input id="back" type="number" min="1" max="365" value="60"></label>
   <label>Days after today <input id="forward" type="number" min="1" max="365" value="45"></label>
   <button id="refresh" type="button">Update chart</button>
+  <button id="graphProtocol" type="button">Graph selected protocol</button>
+  <p id="protocolGraphStatus" class="note" role="status" aria-live="polite"></p>
 </div>
 <div class="card" id="whatIfCard">
 <h2>What-if protocol builder</h2>
@@ -65,5 +68,5 @@
 <table><thead><tr><th>Date/time</th><th>mg</th><th>Actions</th></tr></thead><tbody id="plannedRows"></tbody></table>
 </div>
 <p id="pkError" role="alert" style="color:#a22"></p>
-<script src="/static/pk.js?v=v23-what-if-protocol" defer></script>
+<script src="/static/pk.js?v=pk-peptides-20261030" defer></script>
 {% endblock %}

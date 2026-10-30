@@ -8,6 +8,13 @@
     return r.json();
   };
   const cid = () => Number($('compound').value);
+  function showModelInfo() {
+    const o=$('compound').selectedOptions[0];
+    $('modelEvidence').textContent=o?.dataset.modelNote || '';
+    if(o?.dataset.needsAssumptions==='1') {
+      $('modelEvidence').textContent += ' These values are NOT established human PK parameters.';
+    }
+  }
   const params = () => ({compound_id:cid(), name:$('scenarioName').value, half_life_hours:Number($('half').value), absorption_half_life_hours:Number($('abs').value)});
   function draw(data) {
     const c=$('plot'), ctx=c.getContext('2d'), w=c.width,h=c.height;
@@ -29,7 +36,7 @@
     const nx=left+(w-left-right)*(now-t0)/(t1-t0);
     ctx.setLineDash([5,5]);ctx.strokeStyle=chartNow;ctx.beginPath();ctx.moveTo(nx,top);ctx.lineTo(nx,h-bottom);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=chartText;ctx.fillText(rows[0].at.slice(0,10),left,h-13);ctx.fillText(rows[rows.length-1].at.slice(0,10),w-115,h-13);
-    $('summary').textContent=`${data.actual_doses} historical administrations, ${data.planned_doses} planned administrations. Units: ${data.units}.`;
+    $('summary').textContent=`${data.model?.level||'approximate'} model. ${data.actual_doses} historical administrations, ${data.planned_doses} planned administrations. Units: ${data.units}.`;
   }
   // Redraw when Chrome's system color scheme changes without reloading.
   window.addEventListener('tracker:themechange', () => {refresh().catch(error); compare().catch(error);});
@@ -37,6 +44,7 @@
   if (scheme.addEventListener) scheme.addEventListener('change', () => {refresh().catch(error); compare().catch(error);});
   async function refresh() {
     if (!cid()) return;
+    if(!($('half').value && $('abs').value)) throw new Error('Enter both hypothetical half-lives before graphing this compound.');
     const q=new URLSearchParams({compound_id:cid(),half_life_hours:$('half').value,absorption_half_life_hours:$('abs').value,days_back:$('back').value,days_forward:$('forward').value});
     if($('protocol').value) q.set('protocol_id',$('protocol').value);
     else if(current) q.set('scenario_id',current.id);
@@ -77,10 +85,10 @@
       if(available) $('compound').value=available;
     }
     const o=$('compound').selectedOptions[0];
-    $('half').value=o?.dataset.half||120; $('abs').value=o?.dataset.abs||24;
+    $('half').value=o?.dataset.needsAssumptions==='1'?'':(o?.dataset.half||120); $('abs').value=o?.dataset.needsAssumptions==='1'?'':(o?.dataset.abs||24);showModelInfo();
     try{await load();}catch(e){error(e);}
   };
-  $('compound').onchange=async()=>{const o=$('compound').selectedOptions[0];$('half').value=o.dataset.half||120;$('abs').value=o.dataset.abs||24;current=null;try{await load();}catch(e){error(e);}};
+  $('compound').onchange=async()=>{const o=$('compound').selectedOptions[0];$('half').value=o.dataset.needsAssumptions==='1'?'':(o.dataset.half||120);$('abs').value=o.dataset.needsAssumptions==='1'?'':(o.dataset.abs||24);showModelInfo();current=null;try{await load();}catch(e){error(e);}};
   $('scenario').onchange=async()=>{if($('scenario').value) $('protocol').value='';current=scenarios.find(s=>s.id===Number($('scenario').value))||null;if(current){$('scenarioName').value=current.name;$('half').value=current.half_life_hours;$('abs').value=current.absorption_half_life_hours;}renderRows();try{await refresh();}catch(e){error(e);}};
   async function compare() {
     if(!cid()) return;
@@ -191,6 +199,24 @@
     const q=new URLSearchParams({compound_id:cid(),scenario_ids:selected.join(','),
       days_back:$('back').value,days_forward:$('forward').value});
     window.location.assign('/pk/compare.csv?'+q);
+  };
+  $('graphProtocol').onclick=async()=>{
+    try {
+      const protocol=$('protocol');
+      if(!protocol.value) throw new Error('Select an active protocol first.');
+      const ids=(protocol.selectedOptions[0]?.dataset.compounds||'').split(',').filter(Boolean);
+      const valid=ids.filter(id=>[...$('compound').options].some(o=>o.value===id));
+      if(!valid.length) throw new Error('This protocol has no PK-supported compounds.');
+      if(!valid.includes(String(cid()))) $('compound').value=valid[0];
+      const o=$('compound').selectedOptions[0];
+      $('half').value=o.dataset.needsAssumptions==='1'?'':(o.dataset.half||120);
+      $('abs').value=o.dataset.needsAssumptions==='1'?'':(o.dataset.abs||24);showModelInfo();
+      current=null;
+      await load();
+      $('protocolGraphStatus').textContent=`Showing ${protocol.selectedOptions[0].text} — ${o.text}. Choose another compound to graph it separately.`;
+      $('plot').scrollIntoView({behavior:'smooth',block:'center'});
+      $('pkError').textContent='';
+    }catch(e){error(e);}
   };
   $('refresh').onclick=()=>refresh().catch(error);
   $('save').onclick=async()=>{try{const r=await request('/pk/scenarios','POST',params());current={id:r.id};await load();}catch(e){error(e);}};
