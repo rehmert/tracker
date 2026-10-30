@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from .. import services, units as U
 from ..audit_helpers import record
+from ..inventory_lock import reserve_inventory_write
 from ..db import get_db
 from ..models import Blend, BlendComponent, BlendDose, Vial
 from ..templating import render
@@ -273,6 +274,8 @@ async def preview_blend(request: Request, db: Session = Depends(get_db)):
     from fastapi.responses import HTMLResponse
     from html import escape
     form = await request.form()
+    if not reserve_inventory_write(db):
+        return services.flash_redirect('/blends', err='Inventory is busy. Please wait and retry.')
     try:
         plan = calculate_blend(form, db)
         volume = plan['volume']
@@ -307,6 +310,8 @@ async def preview_blend(request: Request, db: Session = Depends(get_db)):
 @router.post('/blends')
 async def create_blend(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
+    if not reserve_inventory_write(db):
+        return services.flash_redirect('/blends', err='Inventory is busy. Please wait and retry.')
     try:
         plan = calculate_blend(form, db)
         label, diluent, capacity, volume = (plan[k] for k in ('label', 'diluent', 'capacity', 'volume'))
@@ -356,10 +361,13 @@ def blend_detail(blend_id: int, request: Request, db: Session = Depends(get_db))
 
 @router.post('/blends/{blend_id}/doses')
 async def record_blend_dose(blend_id: int, request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f'/blends/{blend_id}', err='Inventory is busy. Please wait and retry.')
     blend = db.get(Blend, blend_id)
     if blend is None:
+        db.rollback()
         return services.flash_redirect('/blends', err='Blend not found.')
-    form = await request.form()
     try:
         if blend.status != 'in_use':
             raise ValueError('This blend is not active.')
@@ -372,12 +380,13 @@ async def record_blend_dose(blend_id: int, request: Request, db: Session = Depen
         kind = str(form.get('kind', 'dose'))
         if kind not in ('dose', 'waste'):
             raise ValueError('Invalid record type.')
+        previous_remaining = blend_remaining(blend)
         draw = BlendDose(blend_id=blend.id, taken_at=when, volume_ml=volume,
                          kind=kind, notes=str(form.get('notes', '')).strip())
         db.add(draw)
         db.flush()
         record(db, "blend", blend.id, "draw", after={"draw_id": draw.id, "kind": kind, "volume_ml": volume, "taken_at": when.isoformat()})
-        if volume >= blend_remaining(blend) - 1e-8:
+        if volume >= previous_remaining - 1e-8:
             blend.status = 'finished'
         db.commit()
         return services.flash_redirect(f'/blends/{blend.id}', msg='Blend draw recorded.')

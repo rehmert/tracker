@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Form, Request, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from ..db import get_db
+from ..inventory_lock import reserve_inventory_write
 from ..models import Supply, SupplyUsage, InventoryAdjustment, ChangeAudit, Vial, DoseLog, Purchase
 from .. import services
 from ..templating import render
@@ -21,6 +22,8 @@ def reconciliation(request: Request, db: Session = Depends(get_db)):
 
 @router.post("/reconciliation/{sid}")
 def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:float=Form(...), confirmed:str=Form(""), db:Session=Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect('/reconciliation',err='Inventory is busy. Please wait and retry.')
     s=db.get(Supply,sid)
     if not s: raise HTTPException(404)
     if not math.isfinite(counted) or not math.isfinite(expected) or counted < 0 or not reason.strip():
