@@ -328,8 +328,13 @@ def parse_bulk_csv(data: bytes):
                 raise ValueError(f'Line {line}: vendor is required (maximum 160 characters).')
             if not item['item_name'] or len(item['item_name']) > 200:
                 raise ValueError(f'Line {line}: item name is required (maximum 200 characters).')
-            amount, unit = validate_content(item['content_amount'], item['content_unit'])
-            item['_amount'] = float(amount)
+            # Legacy rows may have no safely inferable per-vial content.
+            # Only existing records may retain an unknown value.
+            if not item['content_amount'] and not item['content_unit'] and raw_id:
+                item['_amount'] = None
+            else:
+                amount, unit = validate_content(item['content_amount'], item['content_unit'])
+                item['_amount'] = float(amount)
             if not item['package'] or len(item['package']) > 80:
                 raise ValueError(f'Line {line}: invalid package description.')
             try:
@@ -361,6 +366,11 @@ def validate_bulk_ids(db, rows):
     missing = ids - set(existing)
     if missing:
         raise ValueError(f'Unknown vendor price ID(s): {", ".join(str(i) for i in sorted(missing)[:10])}. No changes saved.')
+    for row in rows:
+        if row['_amount'] is None:
+            entry = existing.get(row['_id'])
+            if entry is None or entry.content_amount is not None or entry.content_unit:
+                raise ValueError('Blank content is allowed only for existing legacy offers with unknown content; correct the content amount and unit before saving.')
     return existing
 
 
@@ -413,7 +423,9 @@ def bulk_save(request: Request, review_text: str = Form(...), db: Session = Depe
             entry.item_name = row['item_name']
             entry.content_amount = row['_amount']
             entry.content_unit = row['content_unit']
-            entry.strength = content_label(row['_amount'], row['content_unit'])
+            # Preserve original legacy strength when its content cannot be parsed.
+            if row['_amount'] is not None:
+                entry.strength = content_label(row['_amount'], row['content_unit'])
             entry.package = row['package']
             entry.vial_count = row['_count']
             entry.total_price_cents = row['_cents']
