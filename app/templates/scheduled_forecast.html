@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Scheduled Forecast{% endblock %}
+{% block content %}
+<section style="max-width:1500px"><h1>Schedule-aware inventory forecast</h1>
+<p class="muted">Read-only planning using Tracker's existing staged calendar occurrences, protocol start/end dates, and projection exclusions. Does not change doses or inventory.</p>
+<p><a href="/calendar">Calendar</a> · <a href="/inventory-forecast">Average forecast</a> · <a href="/forecast-audit">Shared-stock audit</a> · <a href="/scheduled-forecast.csv">Export CSV</a></p>
+{% if warnings %}<div class="card" style="padding:1rem"><h2>Projection warnings</h2><ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="card" style="padding:1rem"><h2>Upcoming 7, 14, 28 and 56 days</h2>
+<p class="muted">Demand is based on planned occurrences, not recorded administrations. Current eligible inventory is estimated from existing vial accounting; future expiration and actual dose reconciliation are not applied. Cross-unit stock comparisons may be unavailable. Flags are planning indicators, not dosing advice.</p>
+<div style="overflow-x:auto"><table><thead><tr><th>Compound</th><th>Protocols / items</th><th>Current stock</th>{% for h in horizons %}<th>{{ h }} days</th>{% endfor %}</tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.compound }} ({{ r.unit }})</td><td>{{ r.protocols }} / {{ r.items }}</td><td>{{ '%.3f'|format(r.available) if r.available is not none else 'Review' }}</td>
+{% for h in horizons %}<td>{{ r.counts.get(h,0) }} planned<br>{% if r.demands[h] is not none %}{{ '%.3f'|format(r.demands[h]) }} {{ r.unit }}{% else %}Not estimable{% endif %}<br><strong>{{ r.flags[h] }}</strong></td>{% endfor %}</tr>
+{% else %}<tr><td colspan="7">No eligible active protocol items.</td></tr>{% endfor %}</tbody></table></div></div></section>
+{% endblock %}

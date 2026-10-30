@@ -100,3 +100,7 @@ app.include_router(forecast_horizons.router)
 # Release 137-144: shared-stock forecast audit
 from .routers import forecast_audit
 app.include_router(forecast_audit.router)
+
+# Release 145-152: scheduled inventory forecast
+from .routers import scheduled_forecast
+app.include_router(scheduled_forecast.router)
