@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Inventory Planning Hub
 
+
+
+
+{% endblock %}
+{% block content %}
 <!-- RELEASE_169_176 -->
 <div class="card" style="padding:1rem; margin-top:1rem">
 
@@ -161,14 +166,196 @@
 </div>
 <!-- END_RELEASE_169_176 -->
 
-
-{% endblock %}
-{% block content %}
 <section style="max-width:1500px">
 <h1>Inventory planning hub</h1>
 <p class="muted">Read-only comparison of schedule-aware demand and average-frequency estimates. No inventory changes or dosing recommendations.</p>
 <p><a href="/protocol-coverage">Coverage</a> · <a href="/inventory-forecast">Average forecast</a> · <a href="/forecast-horizons">Horizons</a> · <a href="/forecast-audit">Shared-stock audit</a> · <a href="/scheduled-forecast">Scheduled forecast</a> · <a href="/planning-hub.csv">Export CSV</a></p>
 {% if warnings %}<div class="card" style="padding:1rem"><h2>Schedule warnings</h2><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></div>{% endif %}
+
+
+<!-- TRACKER_RELEASE_193_200 -->
+
+<div class="card"
+     style="padding:1rem; margin-bottom:1rem">
+
+  <h2>Inventory planning priorities</h2>
+
+  <p class="muted">
+    Summary of the existing FEFO simulation.
+    Shortages and expiration losses are projections,
+    not confirmed inventory transactions.
+  </p>
+
+  {% set ns = namespace(
+      shortage_count=0,
+      expiration_count=0,
+      first_shortage=none,
+      incomplete_count=0,
+      undated_count=0
+  ) %}
+
+  {% for row in fefo_rows %}
+
+    {% if row.incomplete %}
+      {% set ns.incomplete_count =
+          ns.incomplete_count + 1 %}
+    {% endif %}
+
+    {% if row.unknown_stock > 0 %}
+      {% set ns.undated_count =
+          ns.undated_count + 1 %}
+    {% endif %}
+
+    {% set forecast = row.horizons.get(28) %}
+
+    {% if forecast %}
+
+      {% if forecast.shortage > 0 %}
+
+        {% set ns.shortage_count =
+            ns.shortage_count + 1 %}
+
+        {% if forecast.first_shortage %}
+
+          {% if ns.first_shortage is none
+                or forecast.first_shortage
+                   < ns.first_shortage %}
+
+            {% set ns.first_shortage =
+                forecast.first_shortage %}
+
+          {% endif %}
+
+        {% endif %}
+
+      {% endif %}
+
+      {% if forecast.expired > 0 %}
+
+        {% set ns.expiration_count =
+            ns.expiration_count + 1 %}
+
+      {% endif %}
+
+    {% endif %}
+
+  {% endfor %}
+
+  <div style="
+      display:grid;
+      grid-template-columns:
+          repeat(auto-fit,minmax(180px,1fr));
+      gap:1rem;
+      margin-top:1rem;
+  ">
+
+    <div>
+      <strong>Projected shortages</strong>
+      <div style="font-size:1.5rem">
+        {{ ns.shortage_count }}
+      </div>
+      <small>Compound/unit groups · 28 days</small>
+    </div>
+
+    <div>
+      <strong>Expiration exposure</strong>
+      <div style="font-size:1.5rem">
+        {{ ns.expiration_count }}
+      </div>
+      <small>Groups with projected unused stock expiring</small>
+    </div>
+
+    <div>
+      <strong>Earliest shortage</strong>
+      <div style="font-size:1.5rem">
+        {{ ns.first_shortage or "None" }}
+      </div>
+      <small>Within 28-day forecast</small>
+    </div>
+
+    <div>
+      <strong>Data requiring review</strong>
+      <div style="font-size:1.5rem">
+        {{ ns.incomplete_count + ns.undated_count }}
+      </div>
+      <small>
+        Incomplete schedules + undated stock groups;
+        a group may appear in both counts
+      </small>
+    </div>
+
+  </div>
+
+  {% if ns.shortage_count > 0 %}
+
+  <h3>Projected shortages</h3>
+
+  <div style="overflow-x:auto">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Compound</th>
+          <th>First shortage</th>
+          <th>28-day shortage</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        {% for row in fefo_rows %}
+
+          {% set forecast = row.horizons.get(28) %}
+
+          {% if forecast
+                and forecast.shortage > 0 %}
+
+          <tr>
+            <td>
+              {{ row.compound }}
+              ({{ row.unit }})
+            </td>
+
+            <td>
+              {{ forecast.first_shortage or "Unknown" }}
+            </td>
+
+            <td>
+              {{ "%.3f"|format(forecast.shortage) }}
+              {{ row.unit }}
+            </td>
+          </tr>
+
+          {% endif %}
+
+        {% endfor %}
+
+      </tbody>
+    </table>
+
+  </div>
+
+  {% endif %}
+
+  <p style="margin-top:1rem">
+
+    <a href="/fefo-forecast">
+      View detailed FEFO forecast
+    </a>
+
+    ·
+
+    <a href="/fefo-forecast.csv">
+      Export forecast
+    </a>
+
+  </p>
+
+</div>
+
+<!-- END_TRACKER_RELEASE_193_200 -->
+
+
 <div class="card" style="padding:1rem">
 <h2>Combined planning overview</h2>
 <p class="muted">Stock estimates reflect current records, not future usable inventory. Average and scheduled demand use different methods. Average values are shown only when compound and unit match exactly. Future expiration and actual administration reconciliation are not modeled.</p>
