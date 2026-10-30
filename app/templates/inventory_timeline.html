@@ -99,7 +99,41 @@
   {% if events %}
 
   <div class="scroll">
-    <table>
+    
+<div id="timeline-filters"
+     style="display:flex;flex-wrap:wrap;gap:.75rem;
+            align-items:end;margin:1rem 0">
+
+  <label class="field">
+    <span>Event type</span>
+    <select id="timeline-category">
+      <option value="">All event types</option>
+    </select>
+  </label>
+
+  <label class="field">
+    <span>Search activity</span>
+    <input id="timeline-search"
+           type="search"
+           placeholder="Search activity"
+           autocomplete="off">
+  </label>
+
+  <button id="timeline-clear" type="button">
+    Clear filters
+  </button>
+
+  <span id="timeline-count"
+        class="note"
+        role="status"
+        aria-live="polite"></span>
+</div>
+
+<p class="note">
+  Filters apply to the selected vial's displayed history.
+</p>
+
+<table>
       <thead>
         <tr>
           <th>Date / Time</th>
@@ -112,7 +146,7 @@
 
       <tbody>
         {% for event in events %}
-        <tr>
+        <tr class="timeline-event">
           <td>
             {{ event.when|dt }}
           </td>
@@ -136,6 +170,8 @@
         {% endfor %}
       </tbody>
     </table>
+<script src="/static/inventory_timeline_filters.js" defer></script>
+
   </div>
 
   {% else %}
