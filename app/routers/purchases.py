@@ -158,11 +158,17 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
 
+    created_vials = []
     for i in range(quantity):
-        db.add(Vial(cap_color=cap_color.strip(), kit_ref=(f"purchase-{pid}-kit-{i // kit_size + 1}" if kit_size > 1 else ""),compound_id=compound_id, purchase_id=pid, label=label.strip(),
+        vial = Vial(cap_color=cap_color.strip(), kit_ref=(f"purchase-{pid}-kit-{i // kit_size + 1}" if kit_size > 1 else ""),compound_id=compound_id, purchase_id=pid, label=label.strip(),
                     lot=lot.strip(), form=form, content_value=content,
                     content_unit=unit.name, volume_ml=vol, expires_on=expiry,
-                    unit_price_cents=price, notes=notes.strip()))
+                    unit_price_cents=price, notes=notes.strip())
+        db.add(vial)
+        created_vials.append(vial)
+    db.flush()
+    for vial in created_vials:
+        record(db, "vial", vial.id, "purchase_create", after={"purchase_id": pid, "compound_id": compound_id, "content_value": content, "content_unit": unit.name, "quantity_in_order": quantity})
     db.commit()
     return services.flash_redirect(back, msg=f"Added {quantity} vial(s).")
 
@@ -226,6 +232,8 @@ def add_bac_water_vials(pid: int, vial_count: int = Form(...), ml_per_vial: floa
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
     db.add(supply)
+    db.flush()
+    record(db, "supply", supply.id, "purchase_create", after=snapshot(supply, ("purchase_id", "name", "kind", "purchased_qty", "remaining_qty")))
     db.commit()
     return services.flash_redirect(back, msg=f"Added {vial_count} BAC water vial(s) ({supply.purchased_qty:g} mL total).")
 
@@ -255,10 +263,11 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
             raise ValueError("Unknown compound.")
     except (ValueError, TypeError) as exc:
         return services.flash_redirect(back, err=str(exc))
-    db.add(Supply(purchase_id=pid, name=name.strip(), kind=kind, compound_id=cid,
+    supply = Supply(purchase_id=pid, name=name.strip(), kind=kind, compound_id=cid,
                   purchased_qty=quantity, remaining_qty=quantity,
                   unit_price_cents=price, bulk_pack_count=bulk_count,
-                  bulk_units_per_pack=bulk_size, bulk_total_cents=bulk_cents, notes=notes.strip()))
+                  bulk_units_per_pack=bulk_size, bulk_total_cents=bulk_cents, notes=notes.strip())
+    db.add(supply)
     if bulk_count is not None:
         product = db.scalar(select(SupplyProduct).where(SupplyProduct.name == name.strip(), SupplyProduct.kind == kind))
         if product is None:
@@ -268,6 +277,8 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
         product.units_per_pack = bulk_size
         product.last_line_price_cents = bulk_cents
         product.preferred_vendor = db.get(Purchase, pid).vendor
+    db.flush()
+    record(db, "supply", supply.id, "purchase_create", after=snapshot(supply, ("purchase_id", "name", "kind", "purchased_qty", "remaining_qty")))
     db.commit()
     return services.flash_redirect(back, msg="Supply or pills added to purchase.")
 
@@ -284,6 +295,7 @@ def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
     s = db.get(Supply, sid)
     if s is None or s.purchase_id != pid:
         raise HTTPException(404, "Purchase item not found")
+    before = snapshot(s, ("purchase_id", "name", "kind", "compound_id", "purchased_qty", "remaining_qty", "unit_price_cents", "notes"))
     try:
         ensure_categories(db)
         quantity, bulk_count, bulk_size, bulk_cents = parse_bulk(
@@ -330,6 +342,9 @@ def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
     except (ValueError, TypeError) as exc:
         db.rollback()
         return services.flash_redirect(back, err=str(exc))
+    after = snapshot(s, tuple(before))
+    if before != after:
+        record(db, "supply", sid, "purchase_update", before=before, after=after)
     db.commit()
     return services.flash_redirect(back, msg="Purchased item updated.")
 
@@ -344,6 +359,7 @@ def delete_purchase_supply(pid: int, sid: int, db: Session = Depends(get_db)):
         return services.flash_redirect(back, err="Cannot delete an item with recorded usage. Edit it instead.")
     if abs(s.remaining_qty - s.purchased_qty) > 1e-8:
         return services.flash_redirect(back, err="Cannot delete an item with adjusted inventory. Reconcile it first.")
+    record(db, "supply", sid, "purchase_delete", before=snapshot(s, ("purchase_id", "name", "kind", "purchased_qty", "remaining_qty")))
     db.delete(s)
     db.commit()
     return services.flash_redirect(back, msg="Purchased item deleted.")
@@ -359,6 +375,7 @@ def delete_purchase_vial(pid: int, vid: int, db: Session = Depends(get_db)):
         return services.flash_redirect(back, err="Cannot delete a vial with logged doses or waste.")
     if db.scalar(select(SupplyUsage.id).where(SupplyUsage.vial_id == vid).limit(1)) is not None:
         return services.flash_redirect(back, err="Cannot delete a vial with recorded supply usage (e.g. reconstitution).")
+    record(db, "vial", vid, "purchase_delete", before=snapshot(v, ("purchase_id", "compound_id", "content_value", "content_unit", "status")))
     db.delete(v)
     db.commit()
     return services.flash_redirect(back, msg="Vial deleted from purchase.")

@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import services, units as U
+from ..audit_helpers import record
 from ..db import get_db
 from ..models import Blend, BlendComponent, BlendDose, Vial
 from ..templating import render
@@ -324,7 +325,10 @@ async def create_blend(request: Request, db: Session = Depends(get_db)):
                                       compound_id=vial.compound_id, transferred_base=base / destinations,
                                       transferred_ml=transferred_ml / destinations,
                                       target_dose_base=target_base, target_unit=target_unit))
+        for blend in blends:
+            record(db, "blend", blend.id, "create", after={"label": blend.label, "final_volume_ml": blend.final_volume_ml, "source_vial_ids": [v.id for v, *_ in transfers], "source_transfer_base": {str(v.id): base / destinations for v, base, *_ in transfers}})
         for vial, base, *_ in transfers:
+            record(db, "vial", vial.id, "blend_transfer", before={"status": vial.status, "remaining_base": views[vial.id].remaining_base}, after={"transferred_base": base, "destination_blend_ids": [b.id for b in blends]})
             vial.status = 'in_use' if base < views[vial.id].remaining_base - 1e-6 else 'finished'
         db.commit()
         return services.flash_redirect(f'/blends/{blends[0].id}', msg=f'{destinations} destination vial(s) recorded; source inventory transferred.')
@@ -368,8 +372,11 @@ async def record_blend_dose(blend_id: int, request: Request, db: Session = Depen
         kind = str(form.get('kind', 'dose'))
         if kind not in ('dose', 'waste'):
             raise ValueError('Invalid record type.')
-        db.add(BlendDose(blend_id=blend.id, taken_at=when, volume_ml=volume,
-                         kind=kind, notes=str(form.get('notes', '')).strip()))
+        draw = BlendDose(blend_id=blend.id, taken_at=when, volume_ml=volume,
+                         kind=kind, notes=str(form.get('notes', '')).strip())
+        db.add(draw)
+        db.flush()
+        record(db, "blend", blend.id, "draw", after={"draw_id": draw.id, "kind": kind, "volume_ml": volume, "taken_at": when.isoformat()})
         if volume >= blend_remaining(blend) - 1e-8:
             blend.status = 'finished'
         db.commit()
