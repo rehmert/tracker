@@ -2,17 +2,7 @@
 {% block title %}Inventory health{% endblock %}
 {% block content %}
 <h1>Inventory health</h1>
-<p class="note">Read-only diagnostics based on available transaction history. No stock is changed.</p>
-<section>
-  <h2>Findings: {{ findings|length }}</h2>
-  <p>Supplies: {{ counts.supply }} · Vials: {{ counts.vial }}</p>
-  {% if findings %}
-  <div class="scroll"><table><thead><tr><th>Type</th><th>Record</th><th>Check</th><th>Details</th><th>Observed</th><th>Calculated</th><th>Review</th></tr></thead><tbody>
-  {% for f in findings %}
-  <tr><td>{{ f.category }}</td><td>#{{ f.record_id }}</td><td>{{ f.code }}</td><td>{{ f.message }}</td><td>{{ f.observed if f.observed is not none else '—' }}</td><td>{{ f.expected if f.expected is not none else '—' }}</td><td><a href="{{ '/supplies' if f.category == 'supply' else '/vials/' ~ f.record_id }}">Review</a></td></tr>
-  {% endfor %}
-  </tbody></table></div>
-  {% else %}<p class="flash ok">No discrepancies detected by the available checks.</p>{% endif %}
-  <p class="note">Historical edits, imports, deleted events, and incomplete transaction history can produce false positives. Vial balances are not reconstructed from potency-adjusted measurements.</p>
-</section>
+<p class="note">Read-only diagnostics. No inventory values are modified. Findings are based on existing data-integrity rules; this is not a complete stock-ledger reconciliation.</p>
+<section><h2>Health summary</h2><p><strong>{{ errors }}</strong> errors &nbsp; · &nbsp; <strong>{{ warnings }}</strong> warnings &nbsp; · &nbsp; <strong>{{ issues|length }}</strong> total findings</p><p><a href="/reconciliation">Reconcile supplies</a> · <a href="/data-integrity">Data integrity details</a> · <a href="/inventory-intelligence">Inventory insights</a></p></section>
+<section><h2>Findings</h2>{% if issues %}<div class="scroll"><table><thead><tr><th>Severity</th><th>Finding</th><th>Review</th></tr></thead><tbody>{% for level,message,href in issues %}<tr><td><span class="tag">{{ level }}</span></td><td>{{ message }}</td><td><a href="{{ href }}">Review</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="flash ok">No findings from the current checks.</p>{% endif %}</section>
 {% endblock %}

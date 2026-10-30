@@ -50,19 +50,7 @@ def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:f
     db.commit()
     return services.flash_redirect('/reconciliation',msg='Physical count recorded with audit history.')
 
-@router.get('/inventory-health')
-def inventory_health(request: Request, db: Session = Depends(get_db)):
-    """Read-only inventory health report. No corrections are performed."""
-    from ..inventory_consistency import inspect_inventory
-    findings = inspect_inventory(db)
-    counts = {'supply': 0, 'vial': 0}
-    for finding in findings:
-        counts[finding.category] = counts.get(finding.category, 0) + 1
-    return render(request, 'inventory_health.html', findings=findings, counts=counts)
-
-
-@router.get('/data-integrity')
-def integrity(request:Request,db:Session=Depends(get_db)):
+def collect_integrity_issues(db:Session):
     issues=[]
     for s in db.scalars(select(Supply)):
         if s.remaining_qty < -1e-7: issues.append(('Error',f'Supply #{s.id} {s.name} has negative remaining stock.',f'/supplies'))
@@ -83,6 +71,18 @@ def integrity(request:Request,db:Session=Depends(get_db)):
             issues.append(('Warning',f'Vial #{v.id} has a closure date but is marked active.',f'/vials/{v.id}'))
     for d in db.scalars(select(DoseLog)):
         if d.amount_base <= 0: issues.append(('Error',f'Dose #{d.id} has nonpositive quantity.','/doses'))
+    return issues
+
+@router.get('/inventory-health')
+def inventory_health(request:Request, db:Session=Depends(get_db)):
+    issues=collect_integrity_issues(db)
+    errors=sum(level=='Error' for level,_,_ in issues)
+    warnings=sum(level=='Warning' for level,_,_ in issues)
+    return render(request,'inventory_health.html',issues=issues,errors=errors,warnings=warnings)
+
+@router.get('/data-integrity')
+def integrity(request:Request,db:Session=Depends(get_db)):
+    issues=collect_integrity_issues(db)
     return render(request,'data_integrity.html',issues=issues)
 
 @router.get('/consumption')
