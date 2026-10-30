@@ -5,6 +5,7 @@ from html import escape
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from .. import services, units as U
@@ -99,6 +100,14 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
                 amount: float = Form(...), unit: str = Form(...), kind: str = Form("dose"),
                 site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""),
                 db: Session = Depends(get_db)):
+    # SQLite has one writer at a time. Acquire the write reservation before
+    # reading remaining inventory so competing dose requests cannot both
+    # validate against the same stale quantity.
+    try:
+        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+    except OperationalError:
+        db.rollback()
+        return _error("Inventory is busy. Please wait a moment and retry.")
     vial = db.get(Vial, vial_id)
     if vial is None:
         return _error("Choose a vial.")

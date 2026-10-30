@@ -8,7 +8,9 @@
 {% if planned_amount is not none %}<p class="note">Pre-filled from a planned protocol dose. Confirm the vial, amount, time and actual administration before saving. Opening this page does not log a dose.</p>{% endif %}
   {% if vials %}
   <form class="grid" hx-post="/doses" hx-target="#dose-body" hx-swap="innerHTML"
-        hx-on::after-request="if(event.target===this&&!event.detail.xhr.getResponseHeader('HX-Retarget')){this.reset();document.getElementById('form-msg').innerHTML='';document.getElementById('dose-preview').innerHTML='';}">
+        hx-on::before-request="if(this.dataset.saving==='yes'){event.preventDefault();return;}this.dataset.saving='yes';this.querySelector('button[type=submit]').disabled=true;"
+        hx-on::after-request="this.dataset.saving='';this.querySelector('button[type=submit]').disabled=false;if(event.detail.successful&&!event.detail.xhr.getResponseHeader('HX-Retarget')){this.reset();document.getElementById('form-msg').innerHTML='';document.getElementById('dose-preview').innerHTML='';}"
+        hx-on::response-error="this.dataset.saving='';this.querySelector('button[type=submit]').disabled=false;">
     <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="input delay:200ms, change" hx-target="#dose-preview">
       <label class="field"><span>Vial</span>
         <select name="vial_id" required>
@@ -31,7 +33,7 @@
 </tbody></table></div></details>
     <label class="field wide"><span>Notes</span><input name="notes"></label>
     <div id="form-msg" class="wide"></div>
-    <div><button class="primary">Add to log</button></div>
+    <div><button type="submit" class="primary">Add to log</button></div>
   </form>
   {% else %}
   <p class="empty">No vials in stock to log against. Add one from a <a href="/purchases">purchase</a>.</p>
