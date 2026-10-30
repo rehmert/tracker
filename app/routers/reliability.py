@@ -27,6 +27,8 @@ def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:f
         return services.flash_redirect('/reconciliation',err='Enter a nonnegative count and a reason.')
     if not math.isclose(s.remaining_qty, expected, rel_tol=1e-9, abs_tol=1e-7):
         return services.flash_redirect('/reconciliation',err='Stock changed since this page loaded. Refresh and review the new count before recording.')
+    if math.isclose(s.remaining_qty, counted, rel_tol=1e-9, abs_tol=1e-7):
+        return services.flash_redirect('/reconciliation',err='The physical count matches the recorded stock; no adjustment is needed.')
     if confirmed != 'yes':
         return services.flash_redirect('/reconciliation',err='Please review and confirm the adjustment before submitting.')
     from ..models import SupplyCategory
