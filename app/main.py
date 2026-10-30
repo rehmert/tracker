@@ -72,3 +72,7 @@ app.include_router(activity.router)
 # Release 69-72: read-only workflow tools
 from .routers import workflow_tools
 app.include_router(workflow_tools.router)
+
+# Release 73-76: read-only record explorer
+from .routers import record_explorer
+app.include_router(record_explorer.router)
