@@ -127,7 +127,7 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
     if state != "new":
         db.rollback()
         if state == "replay":
-            return services.flash_redirect(back, msg="These vials were already added.")
+            return services.flash_redirect(f"/purchases/{pid}", msg="These vials were already added.")
         return services.flash_redirect(f"/purchases/{pid}", err="Invalid or reused submission identifier. Refresh the page.")
     p = db.get(Purchase, pid)
     if p is None:
@@ -250,7 +250,7 @@ def add_bac_water_vials(pid: int, vial_count: int = Form(...), ml_per_vial: floa
     if state != "new":
         db.rollback()
         if state == "replay":
-            return services.flash_redirect(back, msg="This BAC water inventory was already added.")
+            return services.flash_redirect(f"/purchases/{pid}", msg="This BAC water inventory was already added.")
         return services.flash_redirect(f"/purchases/{pid}", err="Invalid or reused submission identifier. Refresh the page.")
     back = f"/purchases/{pid}"
     if db.get(Purchase, pid) is None:
@@ -290,7 +290,7 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
     if state != "new":
         db.rollback()
         if state == "replay":
-            return services.flash_redirect(back, msg="This purchased item was already added.")
+            return services.flash_redirect(f"/purchases/{pid}", msg="This purchased item was already added.")
         return services.flash_redirect(f"/purchases/{pid}", err="Invalid or reused submission identifier. Refresh the page.")
     back = f"/purchases/{pid}"
     if db.get(Purchase, pid) is None:
