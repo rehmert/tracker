@@ -59,14 +59,29 @@ def use(sid: int, quantity: float = Form(...), submission_token: str = Form(""),
     return services.flash_redirect("/supplies", msg="Usage recorded.")
 
 @router.post('/supplies/{sid}/dose')
-def log_pill(sid: int, quantity: int = Form(...), taken_at: str = Form(''), notes: str = Form(''), db: Session = Depends(get_db)):
-    from ..models import SupplyUsage
+def log_pill(sid: int, quantity: int = Form(...), taken_at: str = Form(''), notes: str = Form(''),
+             submission_token: str = Form(''), db: Session = Depends(get_db)):
+    # Reserve the SQLite write transaction BEFORE reading remaining stock.
+    if not reserve_inventory_write(db):
+        return services.flash_redirect('/supplies', err='Inventory is busy. Please retry.')
+    state, digest = idempotency.check(db, submission_token, 'pill_use',
+                                      {'sid': sid, 'quantity': quantity, 'taken_at': taken_at, 'notes': notes})
+    if submission_token and state != 'new':
+        db.rollback()
+        return services.flash_redirect('/supplies',
+            msg='This pill usage was already recorded.' if state == 'replay' else '',
+            err='Invalid or reused submission identifier. Refresh the page.' if state != 'replay' else '')
     s = db.get(Supply, sid)
-    if not s: raise HTTPException(404)
+    if not s:
+        db.rollback()
+        raise HTTPException(404)
     if s.kind != 'pill' or quantity <= 0 or quantity > s.remaining_qty:
+        db.rollback()
         return services.flash_redirect('/supplies', err='Invalid pill quantity or insufficient stock.')
     s.remaining_qty -= quantity
     db.add(SupplyUsage(supply_id=s.id, amount=quantity))
+    if submission_token:
+        idempotency.record(db, submission_token, 'pill_use', digest)
     db.commit()
     return services.flash_redirect('/supplies', msg=f'Recorded {quantity} pill(s) used.')
 
