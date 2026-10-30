@@ -4,7 +4,9 @@
 {% block content %}
 <h1>{{ p.vendor }} <small class="sub">{{ p.purchased_on|dt }}</small></h1>
 
-<dl class="stats">
+<div class="ux-callout"><strong>Purchase workflow:</strong> Step 1 · Order saved. Step 2 · Add purchased inventory using the sections below. Step 3 · Review the purchase summary and inventory records. Saving an item updates inventory immediately.</div>
+<nav class="ux-shortcuts" aria-label="Purchase sections"><a href="#purchase-vials">Vials</a><a href="#purchase-bac">BAC water</a><a href="#purchase-supplies">Supplies &amp; pills</a><a href="#purchase-review">Review order</a></nav>
+<dl class="stats" id="purchase-review">
   <div><dt>Items subtotal</dt><dd>{{ subtotal|money }}</dd></div>
   <div><dt>Shipping</dt><dd>{{ p.shipping_cents|money }}</dd></div>
   <div><dt>Tax</dt><dd>{{ p.tax_cents|money }}</dd></div>
@@ -14,7 +16,7 @@
 <p class="note">Shipping, tax and discount are allocated proportionally across vials, supplies and pills.</p>
 
 <section>
-  <h2>Vials in this purchase</h2>
+  <h2 id="purchase-vials">Vials in this purchase</h2>
   <div class="scroll"><table>
     <thead><tr><th>Vial</th><th>Compound</th><th>Contents</th><th class="n">Price</th><th class="n">Landed</th><th>Status</th><th>COA</th><th>Actions</th></tr></thead>
     <tbody>
@@ -65,7 +67,7 @@
 </section>
 
 <section>
-  <h2>Add BAC water vials</h2>
+  <h2 id="purchase-bac">Add BAC water vials</h2>
   <p class="note">BAC water contains no tracked active ingredient. Enter the number of vials and their volume in mL. Inventory is tracked in total mL and is available for reconstitution.</p>
   <form method="post" action="/purchases/{{ p.id }}/bac-water" class="grid">
     <label class="field"><span>Number of vials</span><input name="vial_count" type="number" min="1" max="100000" step="1" value="1" required></label>
@@ -80,7 +82,7 @@
 </section>
 
 <section>
-  <h2>Supplies and disposables in this purchase</h2>
+  <h2 id="purchase-supplies">Supplies and disposables in this purchase</h2>
   <div class="scroll"><table>
     <thead><tr><th>Item</th><th>Type</th><th>Purchased</th><th>Remaining</th><th class="n">Unit price</th><th class="n">Line subtotal</th><th class="n">Landed total</th><th>Actions</th></tr></thead>
     <tbody>

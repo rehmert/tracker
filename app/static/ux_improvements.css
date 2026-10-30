@@ -13,3 +13,6 @@
 .scroll table thead th,.table-wrap table thead th{position:sticky;top:0;z-index:1;background:var(--surface,#fff)}
 :focus-visible{outline:2px solid var(--accent,#4276be);outline-offset:2px}
 @media(max-width:640px){.ux-shortcuts{gap:.35rem}.ux-add-panel{left:auto;right:0}}
+
+/* Stage 3: accessible purchase anchors and inventory review */
+html{scroll-padding-top:1.25rem}#purchase-vials,#purchase-bac,#purchase-supplies,#purchase-review,#new-purchase,#purchase-history{scroll-margin-top:1.5rem}#record-blend:disabled{opacity:.5;cursor:not-allowed}

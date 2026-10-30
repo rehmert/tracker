@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Purchases{% endblock %}
 {% block content %}
-<h1>Purchases</h1><p class="note">Workflow: create the order below, then open it to add purchased vials or supplies. Inventory is not created by the order header alone.</p><nav class="ux-shortcuts"><a href="/vials">View vials</a><a href="/supplies">View supplies</a><a href="/vendor-prices">Compare prices</a></nav>
-<div class="scroll"><table>
+<h1>Purchases</h1><nav class="ux-shortcuts" aria-label="Purchase actions"><a href="#new-purchase">+ Record a purchase</a><a href="#purchase-history">Purchase history</a></nav><p class="note">Workflow: create the order below, then open it to add purchased vials or supplies. Inventory is not created by the order header alone.</p><nav class="ux-shortcuts"><a href="/vials">View vials</a><a href="/supplies">View supplies</a><a href="/vendor-prices">Compare prices</a></nav>
+<div class="scroll" id="purchase-history"><table>
   <thead><tr><th>Date</th><th>Vendor</th><th>Order</th><th class="n">Vials</th><th class="n">Supplies / pills</th><th class="n">Total with shipping and tax</th></tr></thead>
   <tbody>
   {% for r in rows %}
@@ -12,7 +12,7 @@
 </table></div>
 
 <section>
-  <h2>Record a purchase</h2>
+  <h2 id="new-purchase">Step 1 · Record order details</h2><p class="note">After saving, you will be taken to Step 2 to add the actual purchased inventory.</p>
   <form method="post" action="/purchases" class="grid">
     <label class="field"><span>Vendor</span><input name="vendor" required></label>
     <label class="field"><span>Date</span><input type="date" name="purchased_on" value="{{ today }}"></label>
