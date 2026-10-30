@@ -101,6 +101,11 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
                 amount: float = Form(...), unit: str = Form(...), kind: str = Form("dose"),
                 site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""), submission_token: str = Form(""),
                 db: Session = Depends(get_db)):
+    def reject_dose(message: str):
+        """Release the inventory reservation before returning an error."""
+        db.rollback()
+        return _error(message)
+
     # SQLite has one writer at a time. Acquire the write reservation before
     # reading remaining inventory so competing dose requests cannot both
     # validate against the same stale quantity.
@@ -108,7 +113,7 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
         db.connection().exec_driver_sql("BEGIN IMMEDIATE")
     except OperationalError:
         db.rollback()
-        return _error("Inventory is busy. Please wait a moment and retry.")
+        return reject_dose("Inventory is busy. Please wait a moment and retry.")
     submitted_form = await request.form()
     supply_payload = sorted((k, str(v)) for k, v in submitted_form.multi_items()
                             if k == "supply_id_used" or k.startswith("supply_qty_"))
@@ -116,19 +121,19 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     state, digest = idempotency.check(db, submission_token, "dose_create", payload)
     if submission_token and state == "replay":
         db.rollback()
-        return _error("This entry was already recorded. Refresh the page before logging another dose.")
+        return reject_dose("This entry was already recorded. Refresh the page before logging another dose.")
     if submission_token and state != "new":
         db.rollback()
-        return _error("Invalid or reused submission identifier. Refresh the page.")
+        return reject_dose("Invalid or reused submission identifier. Refresh the page.")
     vial = db.get(Vial, vial_id)
     if vial is None:
-        return _error("Choose a vial.")
+        return reject_dose("Choose a vial.")
     if site and site not in INJECTION_SITES:
-        return _error("Unknown injection site.")
+        return reject_dose("Unknown injection site.")
     if vial.status == "discarded":
-        return _error("That vial is marked discarded.")
+        return reject_dose("That vial is marked discarded.")
     if amount <= 0 and not use_remaining:
-        return _error("Amount must be above 0.")
+        return reject_dose("Amount must be above 0.")
     vd = services.vial_views(db, [vial])[vial.id]
     try:
         if use_remaining:
@@ -141,11 +146,11 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
             raise ValueError("Amount exceeds remaining vial contents.")
         when = services.parse_datetime(taken_at)
     except ValueError as exc:  # includes UnitError
-        return _error(str(exc))
+        return reject_dose(str(exc))
     try:
         selected = await manual_supplies.selections(request, db)
     except ValueError as exc:
-        return _error(str(exc))
+        return reject_dose(str(exc))
     dose = DoseLog(vial_id=vial.id, taken_at=when, entered_value=amount,
                    entered_unit=U.parse_unit(unit).name, amount_base=base,
                    kind="waste" if kind == "waste" else "dose", site=site.strip(),
