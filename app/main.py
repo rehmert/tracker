@@ -52,6 +52,9 @@ app.include_router(inventory_timeline.router)
 from .routers import consolidated_reports
 app.include_router(consolidated_reports.router)
 
+from .routers import sqlite_viewer
+app.include_router(sqlite_viewer.router)
+
 
 @app.get("/ping")
 def ping():

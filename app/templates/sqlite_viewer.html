@@ -1,0 +1,205 @@
+
+{% extends "base.html" %}
+{% block title %}SQLite Viewer{% endblock %}
+{% block content %}
+
+<style>
+.sqlite-viewer {
+  width: 100%;
+  max-width: none;
+}
+
+.sqlite-viewer .controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .75rem;
+  margin: 1rem 0;
+}
+
+.sqlite-viewer .table-scroll {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid var(--line, #d8dee6);
+  border-radius: 10px;
+}
+
+.sqlite-viewer table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+.sqlite-viewer th,
+.sqlite-viewer td {
+  padding: .55rem .75rem;
+  border-bottom: 1px solid var(--line, #d8dee6);
+  text-align: left;
+  vertical-align: top;
+  max-width: 450px;
+  overflow-wrap: anywhere;
+}
+
+.sqlite-viewer th {
+  position: sticky;
+  top: 0;
+  background: var(--surface, #fff);
+  z-index: 1;
+}
+
+.sqlite-viewer td {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: .85rem;
+}
+
+.sqlite-viewer .pagination {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.sqlite-viewer .schema {
+  margin-top: 2rem;
+}
+</style>
+
+<section class="sqlite-viewer">
+
+  <h1>SQLite Viewer</h1>
+
+  <p class="meta">
+    Read-only database browser. Changes, deletions,
+    and arbitrary SQL execution are disabled.
+  </p>
+
+  <form method="get"
+        action="/sqlite-viewer"
+        class="controls">
+
+    <label class="field">
+      <span>Table</span>
+      <select name="table">
+        {% for name in tables %}
+        <option value="{{ name }}"
+                {% if name == table %}selected{% endif %}>
+          {{ name }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Search records</span>
+      <input type="search"
+             name="q"
+             value="{{ q }}"
+             maxlength="200"
+             placeholder="Search table...">
+    </label>
+
+    <label class="field">
+      <span>Rows per page</span>
+      <select name="page_size">
+        {% for size in (25, 50, 100) %}
+        <option value="{{ size }}"
+                {% if page_size == size %}selected{% endif %}>
+          {{ size }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <button class="primary">View records</button>
+
+    <a href="/sqlite-viewer">Reset</a>
+
+  </form>
+
+  {% if table %}
+
+  <p class="meta">
+    <strong>{{ table }}</strong> —
+    {{ total }} matching records
+  </p>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          {% for name in names %}
+          <th>{{ name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for record in records %}
+        <tr>
+          {% for value in record %}
+          <td>{{ value }}</td>
+          {% endfor %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="{{ names|length or 1 }}">
+            No matching records.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+
+    {% if page > 1 %}
+    <a href="{{ previous_url }}">← Previous</a>
+    {% endif %}
+
+    <span>
+      Page {{ page }} of {{ total_pages }}
+    </span>
+
+    {% if page < total_pages %}
+    <a href="{{ next_url }}">Next →</a>
+    {% endif %}
+
+  </div>
+
+  <details class="schema">
+    <summary>
+      Table schema — {{ columns|length }} columns
+    </summary>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Type</th>
+            <th>Primary key</th>
+            <th>Nullable</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for column in columns %}
+          <tr>
+            <td>{{ column["name"] }}</td>
+            <td>{{ column["type"] }}</td>
+            <td>{{ 'Yes' if column["pk"] else 'No' }}</td>
+            <td>{{ 'No' if column["notnull"] else 'Yes' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  {% else %}
+  <p>No database tables found.</p>
+  {% endif %}
+
+</section>
+
+{% endblock %}
