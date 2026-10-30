@@ -63,6 +63,36 @@
 
     </div>
 
+    <div class="form-grid">
+
+      <label class="field">
+        <span>From date</span>
+        <input type="date"
+               name="start_date"
+               value="{{ start_date or '' }}">
+      </label>
+
+      <label class="field">
+        <span>Through date</span>
+        <input type="date"
+               name="end_date"
+               value="{{ end_date or '' }}">
+      </label>
+
+      <label class="field">
+        <span>Events per page</span>
+        <select name="page_size">
+          {% for size in [25, 50, 100, 250] %}
+          <option value="{{ size }}"
+            {% if page_size == size %}selected{% endif %}>
+            {{ size }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+
+    </div>
+
     <button type="submit">View timeline</button>
 
     <a href="/inventory-timeline"
@@ -133,7 +163,7 @@
 
   <p>
     <strong>Activity records:</strong>
-    {{ events|length }}
+    {{ total_events }}
   </p>
 
 </section>
@@ -172,6 +202,12 @@
           aria-live="polite"></span>
 
   </div>
+
+  <p class="note">
+    Event type and text filters apply to the current
+    page. Compound, vial, and date filters apply
+    across the full timeline.
+  </p>
 
   <div class="scroll">
 
@@ -227,6 +263,49 @@
     </table>
 
   </div>
+
+{% if total_pages > 1 %}
+
+<nav class="timeline-pagination"
+     aria-label="Inventory timeline pages"
+     style="display:flex;flex-wrap:wrap;gap:1rem;
+            align-items:center;margin:1rem 0">
+
+  {% set query = {
+    'compound_id': compound_id or '',
+    'vial_id': vial_id or '',
+    'start_date': start_date or '',
+    'end_date': end_date or '',
+    'page_size': page_size
+  } %}
+
+  {% if page > 1 %}
+    <a href="{{ request.url.include_query_params(
+      page=page - 1,
+      page_size=page_size
+    ) }}">
+      ← Previous
+    </a>
+  {% endif %}
+
+  <span>
+    Page {{ page }} of {{ total_pages }}
+    · {{ total_events }} matching events
+  </span>
+
+  {% if page < total_pages %}
+    <a href="{{ request.url.include_query_params(
+      page=page + 1,
+      page_size=page_size
+    ) }}">
+      Next →
+    </a>
+  {% endif %}
+
+</nav>
+
+{% endif %}
+
 
   {% else %}
 

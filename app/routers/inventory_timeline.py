@@ -249,8 +249,34 @@ def inventory_timeline(
     request: Request,
     compound_id: int | None = None,
     vial_id: int | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    page: int = 1,
+    page_size: int = 50,
     db: Session = Depends(get_db),
 ):
+    if page < 1:
+        raise HTTPException(
+            400,
+            "Page must be at least 1",
+        )
+
+    if page_size not in (25, 50, 100, 250):
+        raise HTTPException(
+            400,
+            "Unsupported page size",
+        )
+
+    if (
+        start_date is not None
+        and end_date is not None
+        and start_date > end_date
+    ):
+        raise HTTPException(
+            400,
+            "Start date cannot be after end date",
+        )
+
     compounds = list(
         db.scalars(
             select(Compound).order_by(Compound.name)
@@ -327,6 +353,34 @@ def inventory_timeline(
         reverse=True,
     )
 
+    # Apply date filtering before pagination.
+    if start_date is not None:
+        events = [
+            event for event in events
+            if _timestamp(event["when"]).date()
+            >= start_date
+        ]
+
+    if end_date is not None:
+        events = [
+            event for event in events
+            if _timestamp(event["when"]).date()
+            <= end_date
+        ]
+
+    total_events = len(events)
+
+    total_pages = max(
+        1,
+        (total_events + page_size - 1) // page_size,
+    )
+
+    if page > total_pages:
+        page = total_pages
+
+    offset = (page - 1) * page_size
+    events = events[offset:offset + page_size]
+
     return render(
         request,
         "inventory_timeline.html",
@@ -339,4 +393,10 @@ def inventory_timeline(
         events=events,
         scope=scope,
         vial_count=len(target_vials),
+        start_date=start_date,
+        end_date=end_date,
+        page=page,
+        page_size=page_size,
+        total_events=total_events,
+        total_pages=total_pages,
     )
