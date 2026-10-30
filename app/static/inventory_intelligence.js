@@ -11,8 +11,11 @@
     });
   });
   if (!input) return;
-  input.addEventListener('input', () => {
+  const filterKey = 'tracker.inventory.filter.v1';
+  try { input.value = sessionStorage.getItem(filterKey) || ''; } catch (_) {}
+  function applyFilter() {
     const query = input.value.trim().toLocaleLowerCase();
+    try { sessionStorage.setItem(filterKey, input.value); } catch (_) {}
     let visible = 0;
     rows.forEach(row => {
       const match = (row.dataset.search || '').includes(query);
@@ -22,5 +25,7 @@
       if (match) visible++;
     });
     document.getElementById('inventory-empty').hidden = visible !== 0;
-  });
+  }
+  input.addEventListener('input', applyFilter);
+  applyFilter();
 })();

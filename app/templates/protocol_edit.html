@@ -101,7 +101,23 @@
     all.slice(1).forEach(row => copySchedule(all[0], row));
     form.dispatchEvent(new Event('change', {bubbles: true}));
   });
-  form.addEventListener('submit', () => rows().forEach(syncDays));
+  // HTMX recalculations do not count as saving. Warn only when navigating away
+  // with edits, and do not warn for intentional Save or Save & add another.
+  let dirty = false;
+  const initial = new FormData(form);
+  const baseline = [...initial.entries()].map(([k,v]) => `${k}=${v}`).join('&');
+  function isChanged() {
+    rows().forEach(syncDays);
+    return [...new FormData(form).entries()].map(([k,v]) => `${k}=${v}`).join('&') !== baseline;
+  }
+  form.addEventListener('input', () => { dirty = true; });
+  form.addEventListener('change', () => { dirty = true; });
+  window.addEventListener('beforeunload', event => {
+    if (!dirty || !isChanged()) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+  form.addEventListener('submit', () => { rows().forEach(syncDays); dirty = false; });
   rows().forEach(syncDays);
 })();
 </script>

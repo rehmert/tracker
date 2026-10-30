@@ -2,6 +2,13 @@
 {% block title %}Inventory Insights{% endblock %}
 {% block content %}
 <div class="inventory-heading"><div><h1>Inventory intelligence</h1><nav class="ux-shortcuts"><a href="/inventory-alerts">View alerts</a><a href="/reconciliation">Reconcile stock</a><a href="/consumption">Usage history</a><a href="/vials">Vials</a></nav><p class="muted">Expiration, consumption and landed-cost insights based on your recorded inventory.</p></div><a class="button" href="/vials">Manage vials →</a></div>
+<nav class="ux-shortcuts" aria-label="Inventory health sections"><a href="#inventory-attention">Needs attention</a><a href="#inventory-forecast">Forecasts</a><a href="#inventory-vials">Vial details</a><a href="/reconciliation">Adjust stock</a><a href="/consumption">Consumption history</a></nav>
+<section class="inventory-card" id="inventory-attention" aria-labelledby="inventory-attention-title"><div class="inventory-heading"><div><h2 id="inventory-attention-title">Needs attention</h2><p class="muted">Live inventory warnings, calculated from recorded dates and usage. No automatic notifications are sent.</p></div><a href="/inventory-alerts">Configure alert horizon →</a></div>
+<p role="status"><strong>{{ alerts|length }}</strong> alert{{ '' if alerts|length == 1 else 's' }} in the next 21 days.</p>
+<div class="scroll"><table><thead><tr><th>Priority</th><th>Category</th><th>Item</th><th>Reason</th><th>Date</th></tr></thead><tbody>
+{% for alert in alerts %}<tr><td><span class="alert-{{ alert.level }}">{{ alert.level|title }}</span></td><td>{{ alert.category }}</td><td><a href="{{ alert.href }}">{{ alert.name }}</a></td><td>{{ alert.reason }}</td><td>{{ alert.due or '—' }}</td></tr>
+{% else %}<tr><td colspan="5">No alerts within 21 days. Items without usage history may not have depletion estimates.</td></tr>{% endfor %}
+</tbody></table></div></section>
 <div class="inventory-kpis">
   <div class="inventory-kpi"><small>Active vials</small><strong>{{ totals.active_vials }}</strong></div>
   <div class="inventory-kpi"><small>Expiring within 30 days</small><strong>{{ totals.expiring_30 }}</strong></div>
@@ -10,7 +17,7 @@
   <div class="inventory-kpi"><small>Recorded administration cost</small><strong>{{ totals.used_cents|money }}</strong></div>
   <div class="inventory-kpi"><small>Recorded waste cost</small><strong>{{ totals.wasted_cents|money }}</strong></div>
 </div>
-<section class="inventory-card">
+<section class="inventory-card" id="inventory-forecast">
   <div class="inventory-heading"><div><h2>Inventory depletion outlook</h2><p class="muted">Descriptive estimate based on recorded use, not a suggested protocol or purchase quantity. No history means no depletion estimate.</p></div>
   <form method="get" action="/inventory-intelligence"><label>Usage history <select name="days" onchange="this.form.submit()"><option value="30" {% if forecast_days == 30 %}selected{% endif %}>30 days</option><option value="90" {% if forecast_days == 90 %}selected{% endif %}>90 days</option><option value="180" {% if forecast_days == 180 %}selected{% endif %}>180 days</option></select></label><noscript><button type="submit">Apply</button></noscript></form></div>
   <h3>Compounds</h3><div class="scroll"><table><thead><tr><th>Compound</th><th class="n">Usable remaining</th><th class="n">Recorded use</th><th class="n">Estimated days left</th><th>Projected depletion</th></tr></thead><tbody>
@@ -21,7 +28,7 @@
   {% else %}<tr><td colspan="5">No consumables recorded.</td></tr>{% endfor %}</tbody></table></div>
   <p class="muted">Forecasts use historical dose logs or recorded supply usage across the selected calendar window. Expired and past-beyond-use vials are excluded. Future usage, planned protocols, waste and changes in consumption can make actual depletion differ. Supply quantities use each item's recorded unit.</p>
 </section>
-<section class="inventory-card"><div class="inventory-heading"><div><h2>Vial-level insights</h2><p class="muted">Select a row to inspect usage and cost details. Costs are estimates allocated from landed purchase costs.</p></div><input type="search" id="inventory-filter" placeholder="Filter compound, lot, status…" aria-label="Filter inventory"></div>
+<section class="inventory-card" id="inventory-vials"><div class="inventory-heading"><div><h2>Vial-level insights</h2><p class="muted">Select a row to inspect usage and cost details. Costs are estimates allocated from landed purchase costs.</p></div><input type="search" id="inventory-filter" autocomplete="off" placeholder="Filter compound, lot, status…" aria-label="Filter inventory"></div>
 <div class="scroll"><table class="inventory-table"><thead><tr><th>Details</th><th>Compound</th><th>Vial</th><th>Status</th><th>Expires</th><th class="n">Remaining</th><th class="n">Landed cost</th></tr></thead><tbody>
 {% for r in rows %}{% set v=r.vial %}{% set d=r.view %}
 <tr class="inventory-main-row" data-search="{{ (v.compound.name ~ ' ' ~ (v.label or '') ~ ' ' ~ (v.lot or '') ~ ' ' ~ r.status_label)|lower }}"><td><button type="button" class="inventory-expand" aria-expanded="false" aria-controls="inventory-details-{{ v.id }}" aria-label="Show details for vial {{ v.id }}">＋</button></td><td>{{ v.compound.name }}</td><td><a href="/vials/{{ v.id }}">{{ v.label or ('#' ~ v.id) }}</a>{% if v.lot %}<small> · Lot {{ v.lot }}</small>{% endif %}</td><td><span class="inventory-status {% if r.expired %}inventory-danger{% elif r.expiring or r.low %}inventory-warning{% else %}inventory-ok{% endif %}">{{ r.status_label }}</span></td><td>{{ v.expires_on or 'Not recorded' }}{% if r.days is not none %}<small> ({{ r.days }} days)</small>{% endif %}</td><td class="n">{{ d.remaining_base|amt(d.dim) }}</td><td class="n">{{ d.landed_cents|money }}</td></tr>

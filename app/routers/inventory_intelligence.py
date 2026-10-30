@@ -57,7 +57,9 @@ def inventory_intelligence(request: Request, days: int = Query(90, ge=30, le=180
     rows, totals = inventory_summary(db)
     window = days if days in (30, 90, 180) else 90
     forecasts, supply_forecasts = forecast_inventory(db, window_days=window)
-    return render(request, "inventory_intelligence.html", rows=rows, totals=totals, forecasts=forecasts, supply_forecasts=supply_forecasts, forecast_days=window)
+    from ..inventory_alerts import collect_inventory_alerts
+    alerts = collect_inventory_alerts(db, window_days=window, horizon_days=21)
+    return render(request, "inventory_intelligence.html", rows=rows, totals=totals, forecasts=forecasts, supply_forecasts=supply_forecasts, forecast_days=window, alerts=alerts)
 
 
 @router.get("/inventory-alerts")
