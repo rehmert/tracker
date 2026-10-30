@@ -206,6 +206,8 @@ records needing review.
 <th>Remaining</th>
 <th>Coverage*</th>
 <th>Data quality</th>
+<th>Forecast reliability</th>
+<th>Already expired</th>
 </tr>
 </thead>
 
@@ -272,7 +274,7 @@ records needing review.
 
 <td>
 {% if row.incomplete %}
-Incomplete schedule
+Incomplete schedule — estimates provisional
 {% endif %}
 
 {% if row.unknown_stock > 0 %}
@@ -280,9 +282,38 @@ Incomplete schedule
 Undated inventory
 {% endif %}
 
-{% if not row.incomplete
-      and row.unknown_stock == 0 %}
+{% if row.expired_existing > 0 %}
+{% if row.incomplete or row.unknown_stock > 0 %}
+<br>
+{% endif %}
+Already-expired inventory
+{% endif %}
+
+{% if not row.needs_review %}
 —
+{% endif %}
+</td>
+
+<td>
+{% if row.incomplete %}
+<strong>Provisional</strong>
+{% else %}
+Complete schedule
+{% endif %}
+
+{% if row.provisional_shortage %}
+<br>
+<small>Shortage estimate may be understated</small>
+{% endif %}
+</td>
+
+<td>
+{{ "%.3f"|format(row.expired_existing) }}
+{{ row.unit }}
+
+{% if row.expired_vials %}
+<br>
+<small>{{ row.expired_vials }} vial(s)</small>
 {% endif %}
 </td>
 
@@ -291,7 +322,7 @@ Undated inventory
 {% else %}
 
 <tr>
-<td colspan="11">
+<td colspan="13">
 No records match the selected filters.
 </td>
 </tr>
@@ -303,6 +334,24 @@ No records match the selected filters.
 </table>
 
 </div>
+
+<!-- TRACKER_RELEASE_225_232 -->
+<p class="muted">
+<strong>Forecast reliability:</strong>
+A complete scheduled-demand estimate means the FEFO
+engine did not identify missing or invalid schedule
+data for that compound. It does not guarantee that
+future inventory or protocol activity will match
+the projection.
+</p>
+
+<p class="muted">
+An incomplete schedule makes shortage and coverage
+estimates provisional. The displayed shortage can
+understate actual future demand. Already-expired
+stock is excluded from FEFO allocation and is not
+included in projected future expiration losses.
+</p>
 
 <p class="muted">
 *Coverage is a demand-rate indicator derived from

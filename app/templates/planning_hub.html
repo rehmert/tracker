@@ -10,6 +10,59 @@
 
 <!-- TRACKER_RELEASE_209_216 -->
 
+<!-- TRACKER_RELEASE_225_232 -->
+{% set reliability = namespace(
+    incomplete=0,
+    undated=0,
+    expired=0
+) %}
+
+{% for item in fefo_rows %}
+  {% if item.incomplete %}
+    {% set reliability.incomplete =
+        reliability.incomplete + 1 %}
+  {% endif %}
+
+  {% if item.unknown_stock > 0 %}
+    {% set reliability.undated =
+        reliability.undated + 1 %}
+  {% endif %}
+
+  {% if item.expired_existing|default(0) > 0 %}
+    {% set reliability.expired =
+        reliability.expired + 1 %}
+  {% endif %}
+{% endfor %}
+
+{% if reliability.incomplete
+      or reliability.undated
+      or reliability.expired %}
+<div class="card" style="padding:1rem; margin:1rem 0">
+  <h2>Forecast reliability review</h2>
+
+  <p>
+    <strong>{{ reliability.incomplete }}</strong>
+    compound/unit groups have incomplete schedules;
+    their shortage estimates are provisional.
+  </p>
+
+  <p>
+    <strong>{{ reliability.undated }}</strong>
+    groups contain undated inventory excluded from FEFO.
+  </p>
+
+  <p>
+    <strong>{{ reliability.expired }}</strong>
+    groups contain already-expired inventory.
+    This stock is separate from projected future losses.
+  </p>
+
+  <a href="/planning-priorities?horizon=28&amp;category=review">
+    Review affected inventory →
+  </a>
+</div>
+{% endif %}
+
 <div class="card"
      style="padding:1rem; margin:1rem 0">
 
@@ -63,7 +116,9 @@ losses are projections, not recorded transactions.
 
   {% endif %}
 
-  {% if row.incomplete or row.unknown_stock > 0 %}
+  {% if row.incomplete
+          or row.unknown_stock > 0
+          or row.expired_existing|default(0) > 0 %}
 
     {% set priority.reviews =
         priority.reviews + 1 %}
@@ -143,8 +198,8 @@ losses are projections, not recorded transactions.
     </div>
 
     <small>
-      Groups with incomplete schedules
-      or inventory lacking expiration dates
+      Groups with incomplete schedules,
+      undated inventory, or already-expired stock
     </small>
 
     <p>
@@ -198,6 +253,9 @@ losses are projections, not recorded transactions.
         {{ "%.3f"|format(forecast.shortage) }}
         {{ row.unit }}
       </strong>
+      {% if row.incomplete %}
+      <br><small>Provisional estimate</small>
+      {% endif %}
     </td>
 
     <td>

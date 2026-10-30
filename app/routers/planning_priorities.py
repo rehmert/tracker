@@ -76,13 +76,39 @@ def priority_rows(
         incomplete = bool(row.get("incomplete"))
         first_shortage = forecast.get("first_shortage")
 
+        # TRACKER_RELEASE_225_232
+        expired_existing = max(
+            0.0,
+            finite_number(row.get("expired_existing")),
+        )
+        undated_vials = max(
+            0,
+            int(row.get("undated_vials") or 0),
+        )
+        expired_vials = max(
+            0,
+            int(row.get("expired_vials") or 0),
+        )
+
+        reliability = (
+            "Incomplete schedule"
+            if incomplete
+            else "Complete scheduled-demand estimate"
+        )
+        provisional_shortage = incomplete and shortage > 1e-9
+        needs_review = (
+            incomplete
+            or unknown > 1e-9
+            or expired_existing > 1e-9
+        )
+
         if shortage > 1e-9:
             status = "Shortage"
             rank = 0
         elif expired > 1e-9:
             status = "Expiration exposure"
             rank = 1
-        elif incomplete or unknown > 1e-9:
+        elif needs_review:
             status = "Data review"
             rank = 2
         else:
@@ -93,9 +119,7 @@ def priority_rows(
             continue
         if category == "expiration" and expired <= 1e-9:
             continue
-        if category == "review" and not (
-            incomplete or unknown > 1e-9
-        ):
+        if category == "review" and not needs_review:
             continue
 
         # Demand and available stock are already in the
@@ -130,6 +154,12 @@ def priority_rows(
             "remaining": remaining,
             "first_shortage": first_shortage,
             "incomplete": incomplete,
+            "reliability": reliability,
+            "provisional_shortage": provisional_shortage,
+            "needs_review": needs_review,
+            "expired_existing": expired_existing,
+            "undated_vials": undated_vials,
+            "expired_vials": expired_vials,
             "coverage": coverage,
         })
 
@@ -163,8 +193,7 @@ def summary(rows):
             row["expired"] > 1e-9 for row in rows
         ),
         "reviews": sum(
-            row["incomplete"]
-            or row["unknown_stock"] > 1e-9
+            row["needs_review"]
             for row in rows
         ),
         "first_shortage": min(
@@ -263,6 +292,11 @@ def planning_priorities_csv(
         "Remaining dated stock",
         "Demand-rate coverage days",
         "Incomplete schedule",
+        "Forecast reliability",
+        "Provisional shortage",
+        "Existing expired stock",
+        "Undated vial count",
+        "Expired vial count",
     ])
 
     for row in rows:
@@ -293,6 +327,11 @@ def planning_priorities_csv(
                 else ""
             ),
             row["incomplete"],
+            row["reliability"],
+            row["provisional_shortage"],
+            round(row["expired_existing"], 4),
+            row["undated_vials"],
+            row["expired_vials"],
         ])
 
     return Response(
