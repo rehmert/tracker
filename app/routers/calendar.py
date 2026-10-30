@@ -84,8 +84,8 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
             'name': dose.vial.compound.name,
             'dose': f'{dose.entered_value:g} {dose.entered_unit}'})
     events = reconcile(planned, actual, today)
-    grid_start = first - timedelta(days=first.weekday())
-    grid_end = end + timedelta(days=(7-end.weekday()) % 7)
+    grid_start = first - timedelta(days=(first.weekday() + 1) % 7)
+    grid_end = end + timedelta(days=(7 - ((end.weekday() + 1) % 7)) % 7)
     days = []
     cursor = grid_start
     while cursor < grid_end:

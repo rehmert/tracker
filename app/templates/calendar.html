@@ -20,7 +20,7 @@
 </form>
 <p class="row"><a href="/calendar?month={{ previous }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a href="/calendar?month={{ next_month }}">Next →</a></p>
 <div class="calendar-grid">
-{% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<div class="calendar-head">{{ day }}</div>{% endfor %}
+{% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}<div class="calendar-head">{{ day }}</div>{% endfor %}
 {% for d in days %}<div class="calendar-day {% if not d.in_month %}outside{% endif %}">
 <strong>{{ d.date.day }}</strong>
 {% for x in d.events %}
