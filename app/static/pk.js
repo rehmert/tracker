@@ -103,7 +103,18 @@
     current=scenarios.find(s=>s.id===selected)||null;
     $('scenario').value=current?.id||'';renderRows();await refresh();
   }
+  function updateTestosteroneAction(){
+    const protocol=$('protocol');
+    const ids=(protocol.selectedOptions[0]?.dataset.compounds||'').split(',').filter(Boolean);
+    const hasTestosterone=ids.some(id=>{
+      const option=[...$('compound').options].find(o=>o.value===id);
+      return option && /testosterone/i.test(option.textContent);
+    });
+    const cypionateExists=[...$('compound').options].some(o=>o.textContent.trim().toLowerCase().startsWith('testosterone cypionate —'));
+    $('pkAddTestosterone').hidden=!(protocol.value && hasTestosterone && !cypionateExists);
+  }
   $('protocol').onchange=async()=>{
+    updateTestosteroneAction();
     current=null;
     const ids=($('protocol').selectedOptions[0]?.dataset.compounds||'').split(',').filter(Boolean);
     if(ids.length && !ids.includes(String(cid()))) {
@@ -232,7 +243,7 @@
       if(!protocol.value) throw new Error('Select an active protocol first.');
       const ids=(protocol.selectedOptions[0]?.dataset.compounds||'').split(',').filter(Boolean);
       const valid=ids.filter(id=>[...$('compound').options].some(o=>o.value===id));
-      if(!valid.length) throw new Error('This protocol has no PK-supported compounds.');
+      if(!valid.length) throw new Error('This protocol has no compounds with available PK models. Unsupported compounds are intentionally excluded; BPC-157 requires user-defined illustrative parameters.');
       if(!valid.includes(String(cid()))) $('compound').value=valid[0];
       const o=$('compound').selectedOptions[0];
       $('half').value=o.dataset.needsAssumptions==='1'?'':(o.dataset.half||120);
@@ -249,12 +260,13 @@
   $('update').onclick=async()=>{if(!current)return;try{await request('/pk/scenarios/'+current.id,'PUT',params());await load();}catch(e){error(e);}};
   $('remove').onclick=async()=>{if(!current||!confirm('Delete this hypothetical scenario?'))return;try{await request('/pk/scenarios/'+current.id,'DELETE');current=null;await load();}catch(e){error(e);}};
   $('add').onclick=async()=>{if(!current){error(new Error('Save or select a scenario first.'));return;}try{await request(`/pk/scenarios/${current.id}/doses`,'POST',{planned_at:$('plannedAt').value,amount_mg:Number($('amount').value)});await load();}catch(e){error(e);}};
+  updateTestosteroneAction();
   if($('compound').options.length>1){$('compound').selectedIndex=1;$('compound').dispatchEvent(new Event('change'));}
 })();
 
 // Create a compound for planning before any vial or dose has been logged.
 document.getElementById('addPkCompound').addEventListener('click', async () => {
-  const name = document.getElementById('newPkCompound').value;
+  const name = 'Testosterone Cypionate';
   const err = document.getElementById('pkError');
   try {
     const response = await fetch('/pk/compounds', {

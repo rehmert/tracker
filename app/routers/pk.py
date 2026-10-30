@@ -119,7 +119,7 @@ def page(request: Request, db: Session = Depends(get_db)):
 def add_supported_compound(data: dict, db: Session = Depends(get_db)):
     """Explicitly add a PK-capable compound even before any dose/vial exists."""
     name = str(data.get("name", "")).strip()
-    allowed = {"Testosterone Cypionate", "Testosterone Enanthate", "Testosterone"}
+    allowed = {"Testosterone Cypionate"}
     if name not in allowed:
         raise HTTPException(400, "Unsupported starter compound")
     existing = db.scalar(select(Compound).where(Compound.name == name))
