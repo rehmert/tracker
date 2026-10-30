@@ -5,7 +5,7 @@ from datetime import date, datetime, time
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from ..db import get_db
 from ..models import (
@@ -244,6 +244,239 @@ def _vial_events(db: Session, selected: Vial):
     return events
 
 
+
+def _batch_timeline_events(
+    db: Session,
+    target_vials: list[Vial],
+    start_date: date | None = None,
+    end_date: date | None = None,
+):
+    """Build inventory history with batched database retrieval."""
+
+    if not target_vials:
+        return []
+
+    ids = [v.id for v in target_vials]
+    vial_map = {v.id: v for v in target_vials}
+
+    def within_range(value):
+        day = _timestamp(value).date()
+
+        return (
+            (start_date is None or day >= start_date)
+            and
+            (end_date is None or day <= end_date)
+        )
+
+    events = []
+
+    def append(vial, event):
+        if not within_range(event["when"]):
+            return
+
+        event["vial_id"] = vial.id
+        event["vial_label"] = vial.label or f"#{vial.id}"
+        event["compound_name"] = vial.compound.name
+
+        source = event.get("source", "")
+
+        if source.startswith("Dose #"):
+            event["record_url"] = (
+                f"/doses/{source.split('#', 1)[1]}/edit"
+            )
+        elif source.startswith("Purchase #"):
+            event["record_url"] = (
+                f"/purchases/{source.split('#', 1)[1]}"
+            )
+        elif source.startswith("Preparation #"):
+            event["record_url"] = (
+                f"/vials/{vial.id}/preparations/"
+                f"{source.split('#', 1)[1]}/edit"
+            )
+        elif source.startswith("Vial #"):
+            event["record_url"] = f"/vials/{vial.id}"
+        else:
+            event["record_url"] = None
+
+        events.append(event)
+
+    # Static vial events and lifecycle history.
+    for vial in target_vials:
+        append(
+            vial,
+            _event(
+                vial.created_at,
+                "Inventory",
+                "Vial added to Tracker",
+                (
+                    f"Initial content: "
+                    f"{vial.content_value:g} "
+                    f"{vial.content_unit}"
+                ),
+                f"Vial #{vial.id}",
+            ),
+        )
+
+        if vial.purchase is not None:
+            purchase = vial.purchase
+
+            append(
+                vial,
+                _event(
+                    purchase.purchased_on,
+                    "Purchase",
+                    "Purchased",
+                    purchase.vendor,
+                    f"Purchase #{purchase.id}",
+                ),
+            )
+
+        lifecycle = [
+            (vial.received_on, "Received", "Vial received"),
+            (
+                vial.reconstituted_on,
+                "Reconstitution",
+                "Reconstitution date recorded",
+            ),
+            (
+                vial.first_punctured_on,
+                "Preparation",
+                "First puncture recorded",
+            ),
+            (
+                vial.first_dosed_on,
+                "Administration",
+                "First dose date recorded",
+            ),
+            (vial.closed_on, "Closure", "Vial closed"),
+        ]
+
+        for when, category, description in lifecycle:
+            if when is not None:
+                append(
+                    vial,
+                    _event(
+                        when,
+                        category,
+                        description,
+                        source="Vial record",
+                    ),
+                )
+
+    # Retrieve historical records in batches.
+    # Chunk IDs to stay within SQLite parameter limits.
+    CHUNK_SIZE = 400
+
+    def chunks(values):
+        for offset in range(0, len(values), CHUNK_SIZE):
+            yield values[offset:offset + CHUNK_SIZE]
+
+    for chunk in chunks(ids):
+
+        dose_query = select(DoseLog).where(
+            DoseLog.vial_id.in_(chunk)
+        )
+
+        preparation_query = select(PreparationEvent).where(
+            PreparationEvent.vial_id.in_(chunk)
+        )
+
+        audit_query = select(ChangeAudit).where(
+            ChangeAudit.entity_type == "vial",
+            ChangeAudit.entity_id.in_(chunk),
+        )
+
+        if start_date is not None:
+            lower = datetime.combine(start_date, time.min)
+
+            dose_query = dose_query.where(
+                DoseLog.taken_at >= lower
+            )
+
+            preparation_query = preparation_query.where(
+                PreparationEvent.occurred_at >= lower
+            )
+
+            audit_query = audit_query.where(
+                ChangeAudit.created_at >= lower
+            )
+
+        if end_date is not None:
+            # Inclusive end date without overflowing date.max.
+            upper = datetime.combine(end_date, time.max)
+
+            dose_query = dose_query.where(
+                DoseLog.taken_at <= upper
+            )
+
+            preparation_query = preparation_query.where(
+                PreparationEvent.occurred_at <= upper
+            )
+
+            audit_query = audit_query.where(
+                ChangeAudit.created_at <= upper
+            )
+
+        for dose in db.scalars(dose_query):
+            vial = vial_map[dose.vial_id]
+            is_waste = dose.kind == "waste"
+
+            detail = (
+                f"{dose.entered_value:g} "
+                f"{dose.entered_unit}"
+            )
+
+            if dose.site:
+                detail += f" · {dose.site}"
+
+            append(
+                vial,
+                _event(
+                    dose.taken_at,
+                    "Waste" if is_waste else "Administration",
+                    (
+                        "Quantity discarded"
+                        if is_waste else "Dose recorded"
+                    ),
+                    detail,
+                    f"Dose #{dose.id}",
+                ),
+            )
+
+        for preparation in db.scalars(preparation_query):
+            vial = vial_map[preparation.vial_id]
+
+            append(
+                vial,
+                _event(
+                    preparation.occurred_at,
+                    "Preparation",
+                    preparation.kind.replace("_", " ").title(),
+                    preparation.notes or "",
+                    f"Preparation #{preparation.id}",
+                ),
+            )
+
+        for audit in db.scalars(audit_query):
+            vial = vial_map.get(audit.entity_id)
+
+            if vial is None:
+                continue
+
+            append(
+                vial,
+                _event(
+                    audit.created_at,
+                    "Audit",
+                    audit.action.replace("_", " ").title(),
+                    "Recorded inventory change",
+                    f"Audit #{audit.id}",
+                ),
+            )
+
+    return events
+
+
 @router.get("/inventory-timeline")
 def inventory_timeline(
     request: Request,
@@ -285,7 +518,7 @@ def inventory_timeline(
 
     all_vials = list(
         db.scalars(
-            select(Vial).order_by(Vial.id.desc())
+            select(Vial).options(selectinload(Vial.compound),selectinload(Vial.purchase)).order_by(Vial.id.desc())
         )
     )
 
@@ -341,10 +574,12 @@ def inventory_timeline(
 
     events = []
 
-    for vial in target_vials:
-        events.extend(
-            _vial_events(db, vial)
-        )
+    events = _batch_timeline_events(
+        db,
+        target_vials,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
     events.sort(
         key=lambda event: _timestamp(
