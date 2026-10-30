@@ -713,3 +713,66 @@ main .page-header .description {
     }
 }
 
+
+
+/* Stage 41: Header page finder */
+
+#page-finder-container {
+    position: relative;
+}
+
+#page-finder-container .nav-find {
+    position: relative;
+}
+
+.page-finder-results {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    min-width: 240px;
+    max-height: 360px;
+    overflow-y: auto;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.15);
+    z-index: 1000;
+    padding: 5px;
+}
+
+.page-finder-results[hidden] {
+    display: none !important;
+}
+
+.page-finder-result {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--ink);
+}
+
+.page-finder-result:hover,
+.page-finder-result.is-active {
+    background: var(--wash);
+}
+
+.page-finder-result strong {
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.page-finder-result small {
+    color: var(--muted);
+    font-size: .75rem;
+}
+
+.page-finder-empty {
+    padding: 12px;
+    color: var(--muted);
+}
+

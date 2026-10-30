@@ -65,7 +65,7 @@ const alphabetical = state.mode === 'default' || state.mode === 'alpha';
    sec.classList.toggle('nav-expanded',opened);sec.querySelector('.nav-section-toggle').setAttribute('aria-expanded',String(opened));
   });
   all().forEach(li=>{const key=li.dataset.navKey,star=li.querySelector('.nav-star');if(star){const yes=state.favorites.includes(key);star.textContent=yes?'★':'☆';star.setAttribute('aria-pressed',String(yes));}li.hidden=state.hidden.includes(key)&&!li.querySelector('[aria-current="page"]');li.querySelector('.nav-move')?.toggleAttribute('hidden',!editing);});
-  favList.replaceChildren();state.favorites.forEach(key=>{const li=all().find(x=>x.dataset.navKey===key);if(!li||state.hidden.includes(key))return;const clone=document.createElement('li');const a=li.querySelector('a').cloneNode(true);clone.appendChild(a);favList.appendChild(clone);});favBox.hidden=!favList.children.length;
+  favList.replaceChildren();state.favorites.forEach(key=>{if(key==='/')return;const li=all().find(x=>x.dataset.navKey===key);if(!li||state.hidden.includes(key))return;const clone=document.createElement('li');const a=li.querySelector('a').cloneNode(true);clone.appendChild(a);favList.appendChild(clone);});favBox.hidden=!favList.children.length;
   if(mode)mode.value=state.mode;if(edit){edit.textContent=editing?'Done':'Reorder';edit.setAttribute('aria-pressed',String(editing));}const help=document.getElementById('nav-sort-help');if(help)help.hidden=!editing;
   drawPreferences();runFilter();
  }
