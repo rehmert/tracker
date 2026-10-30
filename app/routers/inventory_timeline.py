@@ -40,6 +40,210 @@ def _event(when, category, description, detail="", source=""):
     }
 
 
+
+def _vial_events(db: Session, selected: Vial):
+    """Build the existing read-only history for one vial."""
+    events = []
+
+    # Initial inventory record.
+    events.append(
+        _event(
+            selected.created_at,
+            "Inventory",
+            "Vial added to Tracker",
+            (
+                f"Initial content: "
+                f"{selected.content_value:g} "
+                f"{selected.content_unit}"
+            ),
+            f"Vial #{selected.id}",
+        )
+    )
+
+    # Purchase.
+    if selected.purchase is not None:
+        purchase = selected.purchase
+
+        events.append(
+            _event(
+                purchase.purchased_on,
+                "Purchase",
+                "Purchased",
+                purchase.vendor,
+                f"Purchase #{purchase.id}",
+            )
+        )
+
+    # Lifecycle dates.
+    lifecycle = [
+        (
+            selected.received_on,
+            "Received",
+            "Vial received",
+        ),
+        (
+            selected.reconstituted_on,
+            "Reconstitution",
+            "Reconstitution date recorded",
+        ),
+        (
+            selected.first_punctured_on,
+            "Preparation",
+            "First puncture recorded",
+        ),
+        (
+            selected.first_dosed_on,
+            "Administration",
+            "First dose date recorded",
+        ),
+        (
+            selected.closed_on,
+            "Closure",
+            "Vial closed",
+        ),
+    ]
+
+    for when, category, description in lifecycle:
+        if when is not None:
+            events.append(
+                _event(
+                    when,
+                    category,
+                    description,
+                    source="Vial record",
+                )
+            )
+
+    # Recorded administrations and waste.
+    doses = list(
+        db.scalars(
+            select(DoseLog)
+            .where(DoseLog.vial_id == selected.id)
+            .order_by(
+                DoseLog.taken_at.desc(),
+                DoseLog.id.desc(),
+            )
+        )
+    )
+
+    for dose in doses:
+        category = (
+            "Waste"
+            if dose.kind == "waste"
+            else "Administration"
+        )
+
+        events.append(
+            _event(
+                dose.taken_at,
+                category,
+                (
+                    "Quantity discarded"
+                    if dose.kind == "waste"
+                    else "Dose recorded"
+                ),
+                (
+                    f"{dose.entered_value:g} "
+                    f"{dose.entered_unit}"
+                    + (
+                        f" · {dose.site}"
+                        if dose.site else ""
+                    )
+                ),
+                f"Dose #{dose.id}",
+            )
+        )
+
+    # Preparation events.
+    preparations = list(
+        db.scalars(
+            select(PreparationEvent)
+            .where(
+                PreparationEvent.vial_id == selected.id
+            )
+            .order_by(
+                PreparationEvent.occurred_at.desc()
+            )
+        )
+    )
+
+    for preparation in preparations:
+        events.append(
+            _event(
+                preparation.occurred_at,
+                "Preparation",
+                preparation.kind.replace(
+                    "_", " "
+                ).title(),
+                preparation.notes or "",
+                f"Preparation #{preparation.id}",
+            )
+        )
+
+    # Existing change audit records.
+    audits = list(
+        db.scalars(
+            select(ChangeAudit)
+            .where(
+                ChangeAudit.entity_type == "vial",
+                ChangeAudit.entity_id == selected.id,
+            )
+            .order_by(ChangeAudit.created_at.desc())
+        )
+    )
+
+    for audit in audits:
+        events.append(
+            _event(
+                audit.created_at,
+                "Audit",
+                audit.action.replace("_", " ").title(),
+                "Recorded inventory change",
+                f"Audit #{audit.id}",
+            )
+        )
+
+
+    # Annotate each event for compound-wide views.
+    for event in events:
+        event["vial_id"] = selected.id
+        event["vial_label"] = (
+            selected.label or f"#{selected.id}"
+        )
+        event["compound_name"] = selected.compound.name
+
+        source = event.get("source", "")
+
+        if source.startswith("Dose #"):
+            record_id = source.split("#", 1)[1]
+            event["record_url"] = (
+                f"/doses/{record_id}/edit"
+            )
+
+        elif source.startswith("Purchase #"):
+            record_id = source.split("#", 1)[1]
+            event["record_url"] = (
+                f"/purchases/{record_id}"
+            )
+
+        elif source.startswith("Preparation #"):
+            record_id = source.split("#", 1)[1]
+            event["record_url"] = (
+                f"/vials/{selected.id}/preparations/"
+                f"{record_id}/edit"
+            )
+
+        elif source.startswith("Vial #"):
+            event["record_url"] = (
+                f"/vials/{selected.id}"
+            )
+
+        else:
+            event["record_url"] = None
+
+    return events
+
+
 @router.get("/inventory-timeline")
 def inventory_timeline(
     request: Request,
@@ -53,27 +257,36 @@ def inventory_timeline(
         )
     )
 
-    vials = list(
+    all_vials = list(
         db.scalars(
             select(Vial).order_by(Vial.id.desc())
         )
     )
 
     if compound_id is not None:
-        vials = [
-            vial for vial in vials
-            if vial.compound_id == compound_id
-        ]
+        if db.get(Compound, compound_id) is None:
+            raise HTTPException(
+                404,
+                "Compound not found",
+            )
+
+    vials = [
+        vial for vial in all_vials
+        if compound_id is None
+        or vial.compound_id == compound_id
+    ]
 
     selected = None
-    events = []
     view = None
 
     if vial_id is not None:
         selected = db.get(Vial, vial_id)
 
         if selected is None:
-            raise HTTPException(404, "Vial not found")
+            raise HTTPException(
+                404,
+                "Vial not found",
+            )
 
         if (
             compound_id is not None
@@ -84,170 +297,35 @@ def inventory_timeline(
                 "Vial does not belong to selected compound",
             )
 
-        view = services.vial_views(db, [selected])[selected.id]
+        target_vials = [selected]
+        scope = "vial"
 
-        # Initial inventory record.
-        events.append(
-            _event(
-                selected.created_at,
-                "Inventory",
-                "Vial added to Tracker",
-                (
-                    f"Initial content: "
-                    f"{selected.content_value:g} "
-                    f"{selected.content_unit}"
-                ),
-                f"Vial #{selected.id}",
-            )
+        view = services.vial_views(
+            db,
+            [selected],
+        )[selected.id]
+
+    elif compound_id is not None:
+        target_vials = vials
+        scope = "compound"
+
+    else:
+        target_vials = all_vials
+        scope = "all"
+
+    events = []
+
+    for vial in target_vials:
+        events.extend(
+            _vial_events(db, vial)
         )
 
-        # Purchase.
-        if selected.purchase is not None:
-            purchase = selected.purchase
-
-            events.append(
-                _event(
-                    purchase.purchased_on,
-                    "Purchase",
-                    "Purchased",
-                    purchase.vendor,
-                    f"Purchase #{purchase.id}",
-                )
-            )
-
-        # Lifecycle dates.
-        lifecycle = [
-            (
-                selected.received_on,
-                "Received",
-                "Vial received",
-            ),
-            (
-                selected.reconstituted_on,
-                "Reconstitution",
-                "Reconstitution date recorded",
-            ),
-            (
-                selected.first_punctured_on,
-                "Preparation",
-                "First puncture recorded",
-            ),
-            (
-                selected.first_dosed_on,
-                "Administration",
-                "First dose date recorded",
-            ),
-            (
-                selected.closed_on,
-                "Closure",
-                "Vial closed",
-            ),
-        ]
-
-        for when, category, description in lifecycle:
-            if when is not None:
-                events.append(
-                    _event(
-                        when,
-                        category,
-                        description,
-                        source="Vial record",
-                    )
-                )
-
-        # Recorded administrations and waste.
-        doses = list(
-            db.scalars(
-                select(DoseLog)
-                .where(DoseLog.vial_id == selected.id)
-                .order_by(
-                    DoseLog.taken_at.desc(),
-                    DoseLog.id.desc(),
-                )
-            )
-        )
-
-        for dose in doses:
-            category = (
-                "Waste"
-                if dose.kind == "waste"
-                else "Administration"
-            )
-
-            events.append(
-                _event(
-                    dose.taken_at,
-                    category,
-                    (
-                        "Quantity discarded"
-                        if dose.kind == "waste"
-                        else "Dose recorded"
-                    ),
-                    (
-                        f"{dose.entered_value:g} "
-                        f"{dose.entered_unit}"
-                        + (
-                            f" · {dose.site}"
-                            if dose.site else ""
-                        )
-                    ),
-                    f"Dose #{dose.id}",
-                )
-            )
-
-        # Preparation events.
-        preparations = list(
-            db.scalars(
-                select(PreparationEvent)
-                .where(
-                    PreparationEvent.vial_id == selected.id
-                )
-                .order_by(
-                    PreparationEvent.occurred_at.desc()
-                )
-            )
-        )
-
-        for preparation in preparations:
-            events.append(
-                _event(
-                    preparation.occurred_at,
-                    "Preparation",
-                    preparation.kind.replace(
-                        "_", " "
-                    ).title(),
-                    preparation.notes or "",
-                    f"Preparation #{preparation.id}",
-                )
-            )
-
-        # Existing change audit records.
-        audits = list(
-            db.scalars(
-                select(ChangeAudit)
-                .where(
-                    ChangeAudit.entity_type == "vial",
-                    ChangeAudit.entity_id == selected.id,
-                )
-                .order_by(ChangeAudit.created_at.desc())
-            )
-        )
-
-        for audit in audits:
-            events.append(
-                _event(
-                    audit.created_at,
-                    "Audit",
-                    audit.action.replace("_", " ").title(),
-                    "Recorded inventory change",
-                    f"Audit #{audit.id}",
-                )
-            )
-
-        events.sort(
-            key=lambda event: _timestamp(event["when"]),
-            reverse=True,
-        )
+    events.sort(
+        key=lambda event: _timestamp(
+            event["when"]
+        ),
+        reverse=True,
+    )
 
     return render(
         request,
@@ -259,4 +337,6 @@ def inventory_timeline(
         selected=selected,
         view=view,
         events=events,
+        scope=scope,
+        vial_count=len(target_vials),
     )

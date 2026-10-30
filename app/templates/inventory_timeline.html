@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block title %}Inventory Timeline{% endblock %}
 
@@ -7,8 +6,9 @@
 <h1>Inventory Timeline</h1>
 
 <p class="note">
-  Review the recorded history of an individual vial.
-  This page is read-only and does not change inventory.
+  Review recorded inventory activity across all vials,
+  a selected compound, or an individual vial.
+  This page is read-only.
 </p>
 
 <section>
@@ -22,7 +22,12 @@
         <span>Compound</span>
 
         <select name="compound_id"
-                onchange="this.form.submit()">
+                onchange="
+                  this.form.querySelector(
+                    '[name=vial_id]'
+                  ).value='';
+                  this.form.submit();
+                ">
 
           <option value="">All compounds</option>
 
@@ -42,7 +47,7 @@
         <span>Vial</span>
 
         <select name="vial_id">
-          <option value="">Select a vial</option>
+          <option value="">All vials</option>
 
           {% for vial in vials %}
           <option value="{{ vial.id }}"
@@ -60,37 +65,77 @@
 
     <button type="submit">View timeline</button>
 
+    <a href="/inventory-timeline"
+       style="margin-left:.75rem">
+      Show all inventory
+    </a>
+
   </form>
 </section>
 
-{% if selected %}
-
 <section>
-  <h2>{{ selected.compound.name }}</h2>
+
+  {% if scope == "vial" %}
+
+    <h2>{{ selected.compound.name }}</h2>
+
+    <p>
+      <strong>Vial:</strong>
+      <a href="/vials/{{ selected.id }}">
+        {{ selected.label or ('#' ~ selected.id) }}
+      </a>
+    </p>
+
+    <p>
+      <strong>Status:</strong>
+      {{ selected.status|replace('_', ' ') }}
+    </p>
+
+    <p>
+      <strong>Current remaining:</strong>
+      {{ view.remaining_base|amt(view.dim) }}
+    </p>
+
+    <p class="note">
+      Remaining inventory uses Tracker's existing
+      inventory calculation service.
+    </p>
+
+  {% elif scope == "compound" %}
+
+    <h2>Compound activity</h2>
+
+    <p>
+      <strong>Compound:</strong>
+
+      {% for compound in compounds %}
+        {% if compound.id == compound_id %}
+          {{ compound.name }}
+        {% endif %}
+      {% endfor %}
+    </p>
+
+    <p>
+      <strong>Vials:</strong>
+      {{ vial_count }}
+    </p>
+
+  {% else %}
+
+    <h2>All inventory activity</h2>
+
+    <p>
+      <strong>Vials:</strong>
+      {{ vial_count }}
+    </p>
+
+  {% endif %}
 
   <p>
-    <strong>Vial:</strong>
-    {{ selected.label or ('#' ~ selected.id) }}
+    <strong>Activity records:</strong>
+    {{ events|length }}
   </p>
 
-  <p>
-    <strong>Status:</strong>
-    {{ selected.status|replace('_', ' ') }}
-  </p>
-
-  <p>
-    <strong>Current remaining:</strong>
-    {{ view.remaining_base|amt(view.dim) }}
-  </p>
-
-  <p class="note">
-    Remaining inventory is calculated using Tracker's
-    existing inventory service, not the timeline events.
-  </p>
-
-  <p>
-    <a href="/vials">Open vial inventory →</a>
-  </p>
 </section>
 
 <section>
@@ -98,45 +143,44 @@
 
   {% if events %}
 
+  <div id="timeline-filters"
+       style="display:flex;flex-wrap:wrap;gap:.75rem;
+              align-items:end;margin:1rem 0">
+
+    <label class="field">
+      <span>Event type</span>
+      <select id="timeline-category">
+        <option value="">All event types</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Search activity</span>
+      <input id="timeline-search"
+             type="search"
+             placeholder="Search compound, vial, activity..."
+             autocomplete="off">
+    </label>
+
+    <button id="timeline-clear" type="button">
+      Clear filters
+    </button>
+
+    <span id="timeline-count"
+          class="note"
+          role="status"
+          aria-live="polite"></span>
+
+  </div>
+
   <div class="scroll">
-    
-<div id="timeline-filters"
-     style="display:flex;flex-wrap:wrap;gap:.75rem;
-            align-items:end;margin:1rem 0">
 
-  <label class="field">
-    <span>Event type</span>
-    <select id="timeline-category">
-      <option value="">All event types</option>
-    </select>
-  </label>
-
-  <label class="field">
-    <span>Search activity</span>
-    <input id="timeline-search"
-           type="search"
-           placeholder="Search activity"
-           autocomplete="off">
-  </label>
-
-  <button id="timeline-clear" type="button">
-    Clear filters
-  </button>
-
-  <span id="timeline-count"
-        class="note"
-        role="status"
-        aria-live="polite"></span>
-</div>
-
-<p class="note">
-  Filters apply to the selected vial's displayed history.
-</p>
-
-<table>
+    <table>
       <thead>
         <tr>
           <th>Date / Time</th>
+          <th>Compound</th>
+          <th>Vial</th>
           <th>Category</th>
           <th>Activity</th>
           <th>Details</th>
@@ -146,51 +190,54 @@
 
       <tbody>
         {% for event in events %}
-        <tr class="timeline-event">
+        <tr class="timeline-event"
+            data-category="{{ event.category }}">
+
+          <td>{{ event.when|dt }}</td>
+
           <td>
-            {{ event.when|dt }}
+            {{ event.compound_name }}
           </td>
 
           <td>
-            {{ event.category }}
+            <a href="/inventory-timeline?vial_id={{ event.vial_id }}">
+              {{ event.vial_label }}
+            </a>
           </td>
 
-          <td>
-            {{ event.description }}
-          </td>
+          <td>{{ event.category }}</td>
+
+          <td>{{ event.description }}</td>
+
+          <td>{{ event.detail }}</td>
 
           <td>
-            {{ event.detail }}
+            {% if event.record_url %}
+              <a href="{{ event.record_url }}">
+                {{ event.source }}
+              </a>
+            {% else %}
+              {{ event.source }}
+            {% endif %}
           </td>
 
-          <td>
-            {{ event.source }}
-          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-<script src="/static/inventory_timeline_filters.js" defer></script>
 
   </div>
 
   {% else %}
 
-  <p class="empty">
-    No activity records are available.
-  </p>
+    <p class="empty">
+      No activity records are available.
+    </p>
 
   {% endif %}
 </section>
 
-{% else %}
-
-<section>
-  <p class="empty">
-    Select a vial to display its activity history.
-  </p>
-</section>
-
-{% endif %}
+<script src="/static/inventory_timeline_filters.js"
+        defer></script>
 
 {% endblock %}
