@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import math
 import json
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -125,7 +126,7 @@ async def bulk_update_vials(request: Request, db: Session = Depends(get_db)):
     except (ValueError, TypeError) as exc:
         db.rollback()
         return services.flash_redirect("/vials", err=str(exc))
-    return services.flash_redirect("/vials", msg=f"Bulk update applied to {len(vials)} selected vial(s).")
+    return services.flash_redirect("/vials", msg=f"Bulk update reviewed for {len(vials)} selected vial(s).")
 
 
 @router.get("/vials/{vid}")
@@ -178,13 +179,15 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
         if unit.dim != old_dim:
             raise ValueError("Mass vs IU can't be changed on an existing vial. "
                              "Delete it and add a new one.")
-        if content_value <= 0:
-            raise ValueError("Content must be above 0.")
+        if not math.isfinite(content_value) or content_value <= 0:
+            raise ValueError("Content must be a finite number above 0.")
         if status not in VIAL_STATUSES:
             raise ValueError("Unknown status.")
         vol = float(volume_ml) if volume_ml.strip() else None
-        if vol is not None and vol <= 0:
-            raise ValueError("Volume must be more than 0.")
+        if vol is not None and (not math.isfinite(vol) or vol <= 0):
+            raise ValueError("Volume must be a finite number above 0.")
+        if status == "sealed" and v.doses:
+            raise ValueError("A vial with logged doses cannot be marked sealed.")
         v.label, v.lot, v.status = label.strip(), lot.strip(), status
         v.content_value, v.content_unit, v.volume_ml = content_value, unit.name, vol
         v.reconstituted_on = services.parse_date(reconstituted_on)
