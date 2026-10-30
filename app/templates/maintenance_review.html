@@ -1,0 +1,106 @@
+
+{% extends "base.html" %}
+
+{% block title %}Maintenance Review{% endblock %}
+
+{% block content %}
+
+<section style="max-width:1100px">
+
+<h1>Maintenance &amp; Verification</h1>
+
+<p class="muted">
+Read-only checks of Tracker's database and
+local maintenance environment.
+</p>
+
+<div class="card" style="padding:1rem">
+
+<h2>System checks</h2>
+
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Status</th>
+<th>Details</th>
+</tr>
+</thead>
+
+<tbody>
+{% for check in checks %}
+<tr>
+<td>{{ check.name }}</td>
+
+<td>
+{% if check.ok %}
+<strong>PASS</strong>
+{% else %}
+<strong>ATTENTION</strong>
+{% endif %}
+</td>
+
+<td>{{ check.detail }}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+</div>
+</div>
+
+<div class="card" style="padding:1rem;margin-top:1rem">
+
+<h2>Backup and recovery</h2>
+
+<p>
+<a href="/backups">Backup management</a>
+·
+<a href="/data-integrity">Data integrity</a>
+·
+<a href="/audit-history">Audit history</a>
+</p>
+
+<p class="muted">
+These checks do not prove that a complete
+application restore will succeed.
+</p>
+
+</div>
+
+<div class="card" style="padding:1rem;margin-top:1rem">
+
+<h2>Laboratory and health analytics</h2>
+
+<p>
+<a href="/labs/compare">Compare laboratory reports</a>
+·
+<a href="/labs">Laboratory results</a>
+·
+<a href="/health-insights">Health insights</a>
+·
+<a href="/health-timeline">Health timeline</a>
+</p>
+
+</div>
+
+<div class="card" style="padding:1rem;margin-top:1rem">
+
+<h2>Workflow tools</h2>
+
+<p>
+<a href="/activity">Daily activity</a>
+·
+<a href="/protocol-tools">Protocol tools</a>
+·
+<a href="/purchase-analysis">Purchasing analytics</a>
+·
+<a href="/record-explorer/vials">Record explorer</a>
+</p>
+
+</div>
+
+</section>
+
+{% endblock %}

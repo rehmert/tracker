@@ -76,3 +76,7 @@ app.include_router(workflow_tools.router)
 # Release 73-76: read-only record explorer
 from .routers import record_explorer
 app.include_router(record_explorer.router)
+
+# Release 77-80 maintenance review
+from .routers import maintenance_review
+app.include_router(maintenance_review.router)
