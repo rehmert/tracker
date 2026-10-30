@@ -1,1 +1,18 @@
-{% extends "base.html" %}{% block title %}Inventory reconciliation{% endblock %}{% block content %}<h1>Inventory reconciliation</h1><p class="note">Record a physical count without changing purchase or usage history. Each correction is audited.</p><section><h2>Count supplies</h2><div class="scroll"><table><thead><tr><th>Item</th><th>Expected</th><th>Actual count</th><th>Reason</th><th></th></tr></thead><tbody>{% for s in supplies %}<tr><td>{{ s.name }}</td><td>{{ s.remaining_qty|num }}</td><td colspan="3"><form class="inline" method="post" action="/reconciliation/{{ s.id }}"><input type="number" name="counted" step="any" min="0" value="{{ s.remaining_qty }}" required aria-label="Physical count for {{ s.name }}"><input name="reason" placeholder="Reason for adjustment" required aria-label="Reason for {{ s.name }}"><button>Record count</button></form></td></tr>{% endfor %}</tbody></table></div></section><section><h2>Reconciliation history</h2><div class="scroll"><table><thead><tr><th>When</th><th>Item</th><th>Previous</th><th>Counted</th><th>Change</th><th>Reason</th></tr></thead><tbody>{% for h in history %}<tr><td>{{ h.created_at|utc_dt }}</td><td>{{ supply_names.get(h.supply_id,'#' ~ h.supply_id) }}</td><td>{{ h.previous_qty|num }}</td><td>{{ h.counted_qty|num }}</td><td>{{ (h.counted_qty-h.previous_qty)|num }}</td><td>{{ h.reason }}</td></tr>{% else %}<tr><td colspan="6">No adjustments recorded.</td></tr>{% endfor %}</tbody></table></div></section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Inventory reconciliation{% endblock %}
+{% block content %}
+<h1>Inventory reconciliation</h1>
+<p class="note">Enter the physical count and reason. Review the expected change before recording. Every correction is saved in inventory history and the audit log.</p>
+<section><h2>Count supplies</h2><div class="scroll"><table><thead><tr><th>Item</th><th>Expected</th><th>Actual count</th><th>Reason</th><th>Action</th></tr></thead><tbody>
+{% for s in supplies %}<tr><td>{{ s.name }}</td><td>{{ s.remaining_qty|num }}</td><td colspan="3"><form class="inline reconcile-form" method="post" action="/reconciliation/{{ s.id }}" data-item="{{ s.name }}">
+<input type="hidden" name="expected" value="{{ s.remaining_qty }}"><input type="hidden" name="confirmed" value="no">
+<input type="number" name="counted" step="any" min="0" value="{{ s.remaining_qty }}" required aria-label="Physical count for {{ s.name }}">
+<input name="reason" maxlength="240" placeholder="Reason for adjustment" required aria-label="Reason for {{ s.name }}">
+<button type="button" class="reconcile-review">Review adjustment</button><button type="submit" class="reconcile-submit" hidden>Confirm &amp; record</button><span class="reconcile-preview" role="status" aria-live="polite"></span>
+</form></td></tr>{% else %}<tr><td colspan="5">No supplies available.</td></tr>{% endfor %}
+</tbody></table></div></section>
+<section><h2>Reconciliation history</h2><p><a href="/audit-history?entity_type=supply">View complete supply audit history →</a></p><div class="scroll"><table><thead><tr><th>When</th><th>Item</th><th>Previous</th><th>Counted</th><th>Change</th><th>Reason</th></tr></thead><tbody>
+{% for h in history %}<tr><td>{{ h.created_at|utc_dt }}</td><td>{{ supply_names.get(h.supply_id,'#' ~ h.supply_id) }}</td><td>{{ h.previous_qty|num }}</td><td>{{ h.counted_qty|num }}</td><td>{{ (h.counted_qty-h.previous_qty)|num }}</td><td>{{ h.reason }}</td></tr>{% else %}<tr><td colspan="6">No adjustments recorded.</td></tr>{% endfor %}
+</tbody></table></div></section>
+<script src="/static/reconciliation_review.js?v=stage4" defer></script>
+{% endblock %}

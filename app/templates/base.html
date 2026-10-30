@@ -8,6 +8,7 @@
   <title>{% block title %}Home{% endblock %} · Tracker</title>
   <link rel="stylesheet" href="/static/app.css?v=grouped-nav-20261028">
   <link rel="stylesheet" href="/static/ux_improvements.css?v=20261030">
+  <link rel="stylesheet" href="/static/stage4.css?v=1">
   <script src="/static/density.js?v=ui-density-20261026"></script>
   <script src="/static/theme.js?v=release6-personalization-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
@@ -32,7 +33,7 @@
       ('Inventory', [('/vials','Vials'),('/compounds','Compounds'),('/purchases','Purchases'),('/supplies','Supplies'),('/inventory-intelligence','Inventory insights'),('/inventory-alerts','Inventory alerts'),('/reconciliation','Reconcile inventory'),('/consumption','Consumption'),('/coas','COAs')]),
       ('Vendors & Pricing', [('/vendor-prices','Vendor prices')]),
       ('Health & Progress', [('/vitals','Vitals'),('/labs','Lab results'),('/health-timeline','Health timeline'),('/health-insights','Health insights')]),
-      ('Tools & Data', [('/exports','Exports'),('/data-integrity','Data integrity'),('/backups','Backups')])
+      ('Tools & Data', [('/exports','Exports'),('/data-integrity','Data integrity'),('/backups','Backups'),('/audit-history','Audit history')])
     ] %}
     <ul class="nav-links nav-pinned"><li data-nav-key="/"><a href="/" title="Overview" {% if path == '/' %}aria-current="page"{% endif %}><span class="nav-dot"></span><span class="nav-text">Dashboard</span></a><button class="nav-star" type="button" data-favorite="/" aria-label="Favorite Dashboard" aria-pressed="false">☆</button></li></ul>
     <div id="nav-sortable">
