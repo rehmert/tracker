@@ -1,21 +1,6 @@
 
 {% extends "base.html" %}
-{% block title %}Consolidated Reports
-<section class="report-integrations">
-  <h2>Related analytics and tools</h2>
-  <p>
-    <a href="/inventory-intelligence">Inventory intelligence</a>
-    · <a href="/inventory-alerts">Inventory alerts</a>
-    · <a href="/inventory-timeline">Inventory timeline</a>
-    · <a href="/health-insights">Health insights</a>
-    · <a href="/health-timeline">Health timeline</a>
-    · <a href="/protocols">Protocol history</a>
-    · <a href="/exports">Existing exports</a>
-    · <a href="/sqlite-viewer">SQLite viewer</a>
-  </p>
-</section>
-
-{% endblock %}
+{% block title %}Consolidated Reports{% endblock %}
 {% block content %}
 
 <style>
@@ -123,6 +108,22 @@
     collection date. These exports contain recorded
     data, not medical interpretations.
   </p>
+</section>
+
+
+<section class="report-integrations">
+
+<h2>Related analytics</h2>
+
+<p>
+  <a href="/inventory-intelligence">Inventory intelligence</a>
+  · <a href="/inventory-timeline">Inventory timeline</a>
+  · <a href="/health-insights">Health insights</a>
+  · <a href="/health-timeline">Health timeline</a>
+  · <a href="/exports">Exports</a>
+  · <a href="/sqlite-viewer">SQLite viewer</a>
+</p>
+
 </section>
 
 {% endblock %}

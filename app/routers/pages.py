@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from .. import markup, services
 from ..db import get_db
-from ..models import SOURCE_KINDS, Compound, Page, Source
+from ..models import SOURCE_KINDS, Compound, Page, PageRevision, Source
 from ..templating import render
 
 router = APIRouter()
@@ -129,11 +129,91 @@ def update_page(pid: int, title: str = Form(""), body: str = Form(""), tags: str
     err = _validate(db, title, body, pid)
     if err:
         return services.flash_redirect(f"/pages/{pid}/edit", err=err)
-    p.title, p.body, p.tags = title.strip(), body, _norm_tags(tags)
+    new_tags = _norm_tags(tags)
+
+    if (p.title, p.body, p.tags) != (
+        title.strip(), body, new_tags
+    ):
+        db.add(PageRevision(
+            page_id=pid,
+            title=p.title,
+            body=p.body,
+            tags=p.tags,
+        ))
+
+    p.title, p.body, p.tags = title.strip(), body, new_tags
     p.compounds = list(db.scalars(select(Compound).where(Compound.id.in_(compound_ids)))) \
         if compound_ids else []
     db.commit()
     return services.flash_redirect(f"/pages/{pid}", msg="Page saved.")
+
+
+
+@router.get("/pages/{pid}/history")
+def page_history(
+    pid: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    p = _get(db, pid)
+
+    revisions = list(db.scalars(
+        select(PageRevision)
+        .where(PageRevision.page_id == pid)
+        .order_by(PageRevision.id.desc())
+    ))
+
+    return render(
+        request,
+        "page_history.html",
+        p=p,
+        revisions=revisions,
+    )
+
+
+@router.post("/pages/{pid}/restore/{revision_id}")
+def restore_page(
+    pid: int,
+    revision_id: int,
+    db: Session = Depends(get_db),
+):
+    p = _get(db, pid)
+
+    revision = db.scalar(
+        select(PageRevision).where(
+            PageRevision.id == revision_id,
+            PageRevision.page_id == pid,
+        )
+    )
+
+    if revision is None:
+        raise HTTPException(404, "Revision not found")
+
+    err = _validate(db, revision.title, revision.body, pid)
+
+    if err:
+        return services.flash_redirect(
+            f"/pages/{pid}/history",
+            err=err,
+        )
+
+    db.add(PageRevision(
+        page_id=pid,
+        title=p.title,
+        body=p.body,
+        tags=p.tags,
+    ))
+
+    p.title = revision.title
+    p.body = revision.body
+    p.tags = revision.tags
+
+    db.commit()
+
+    return services.flash_redirect(
+        f"/pages/{pid}",
+        msg="Previous version restored.",
+    )
 
 
 @router.post("/pages/{pid}/delete")

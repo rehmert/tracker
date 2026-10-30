@@ -1,0 +1,60 @@
+
+{% extends "base.html" %}
+{% block title %}Note history{% endblock %}
+{% block content %}
+
+<section style="width:100%;max-width:1100px">
+
+<h1>History: {{ p.title }}</h1>
+
+<p>
+  <a href="/pages/{{ p.id }}">Back to note</a>
+  ·
+  <a href="/pages/{{ p.id }}/edit">Edit current note</a>
+</p>
+
+<p class="meta">
+  Each revision contains the previous saved title,
+  tags, and Markdown content.
+</p>
+
+{% for r in revisions %}
+
+<details class="card" style="margin:1rem 0;padding:1rem">
+
+  <summary>
+    <strong>Revision {{ r.id }}</strong>
+    · {{ r.created_at }}
+    · {{ r.title }}
+  </summary>
+
+  <p>Tags: {{ r.tags or 'None' }}</p>
+
+  <pre style="
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    max-height:400px;
+    overflow:auto;
+  ">{{ r.body }}</pre>
+
+  <form
+    method="post"
+    action="/pages/{{ p.id }}/restore/{{ r.id }}"
+    onsubmit="return confirm('Restore this version? The current version will be preserved.')"
+  >
+    <button class="primary">
+      Restore this version
+    </button>
+  </form>
+
+</details>
+
+{% else %}
+
+<p>No previous versions yet. Edit this note to create one.</p>
+
+{% endfor %}
+
+</section>
+
+{% endblock %}

@@ -16,6 +16,29 @@ router = APIRouter()
 PAGE_SIZES = (25, 50, 100)
 MAX_SEARCH_LENGTH = 200
 
+HIDDEN_TABLES = {"vendor_site_credentials"}
+
+SENSITIVE_TERMS = (
+    "password",
+    "secret",
+    "token",
+    "credential",
+    "api_key",
+    "private_key",
+    "auth_key",
+)
+
+
+def _safe_columns(names):
+    return [
+        name for name in names
+        if not any(
+            term in name.lower()
+            for term in SENSITIVE_TERMS
+        )
+    ]
+
+
 
 def _database_path():
     url = make_url(config.DB_URL)
@@ -84,7 +107,10 @@ def _tables(connection):
         """
     ).fetchall()
 
-    return [row["name"] for row in rows]
+    return [
+        row["name"] for row in rows
+        if row["name"] not in HIDDEN_TABLES
+    ]
 
 
 def _columns(connection, table):
@@ -158,10 +184,10 @@ def sqlite_viewer(
             if table else []
         )
 
-        names = [
+        names = _safe_columns([
             column["name"]
             for column in columns
-        ]
+        ])
 
         records = []
         total = 0
@@ -244,8 +270,16 @@ def sqlite_viewer(
                 if order_by else ""
             )
 
+            projection = (
+                ", ".join(
+                    _quote_identifier(name)
+                    for name in names
+                )
+                or "NULL"
+            )
+
             sql = (
-                f"SELECT * FROM {quoted_table}"
+                f"SELECT {projection} FROM {quoted_table}"
                 + where
                 + order_clause
                 + " LIMIT ? OFFSET ?"
@@ -294,3 +328,95 @@ def sqlite_viewer(
 
     finally:
         connection.close()
+
+
+@router.get("/sqlite-viewer/export.csv")
+def sqlite_viewer_export(table: str, q: str = ""):
+    import csv
+    import io
+
+    from fastapi.responses import Response
+
+    if len(q) > MAX_SEARCH_LENGTH:
+        raise HTTPException(400, "Search text too long")
+
+    with _connection() as db:
+        if table not in _tables(db):
+            raise HTTPException(404, "Unknown table")
+
+        names = _safe_columns([
+            column["name"]
+            for column in _columns(db, table)
+        ])
+
+        if not names:
+            raise HTTPException(
+                400,
+                "No exportable columns",
+            )
+
+        projection = ", ".join(
+            _quote_identifier(name)
+            for name in names
+        )
+
+        quoted_table = _quote_identifier(table)
+
+        conditions = " OR ".join(
+            f"CAST({_quote_identifier(name)} AS TEXT) "
+            "LIKE ? ESCAPE '\\'"
+            for name in names
+        )
+
+        escaped = (
+            q.strip()
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+        )
+
+        where = (
+            " WHERE " + conditions
+            if q.strip() else ""
+        )
+
+        parameters = (
+            [f"%{escaped}%"] * len(names)
+            if where else []
+        )
+
+        rows = db.execute(
+            f"SELECT {projection} "
+            f"FROM {quoted_table}"
+            + where
+            + " LIMIT 10000",
+            parameters,
+        ).fetchall()
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow(names)
+
+        for row in rows:
+            values = []
+
+            for name in names:
+                value = _display_value(row[name])
+
+                # Prevent spreadsheet formula execution.
+                if value and value[0] in "=+-@":
+                    value = "'" + value
+
+                values.append(value)
+
+            writer.writerow(values)
+
+        return Response(
+            output.getvalue(),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition":
+                    f'attachment; filename="tracker_{table}.csv"'
+            },
+        )

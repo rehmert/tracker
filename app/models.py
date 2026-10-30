@@ -377,6 +377,21 @@ class Page(Base):
         return [t for t in self.tags.split(",") if t]
 
 
+
+class PageRevision(Base):
+    """Previous saved state of a Notes page."""
+    __tablename__ = "page_revisions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    page_id: Mapped[int] = mapped_column(index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str] = mapped_column(Text, default="")
+    tags: Mapped[str] = mapped_column(String(400), default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+
+
 class Source(Base):
     """Where a piece of information came from: a link, a book, a paper."""
     __tablename__ = "sources"

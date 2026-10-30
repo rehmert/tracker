@@ -118,6 +118,13 @@
 
   {% if table %}
 
+  <p>
+    <a href="/sqlite-viewer/export.csv?table={{ table|urlencode }}&q={{ q|urlencode }}">
+      Export filtered CSV
+    </a>
+  </p>
+
+
   <p class="meta">
     <strong>{{ table }}</strong> —
     {{ total }} matching records
