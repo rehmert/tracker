@@ -1,0 +1,157 @@
+
+{% extends "base.html" %}
+
+{% block title %}FEFO Inventory Forecast{% endblock %}
+
+{% block content %}
+
+<section style="max-width:1500px">
+
+<h1>FEFO inventory forecast</h1>
+
+<p class="muted">
+Read-only first-expiring-first-out inventory simulation.
+Scheduled protocol events are allocated to eligible
+vials in expiration-date order.
+</p>
+
+<p>
+<a href="/planning-hub">Planning Hub</a>
+·
+<a href="/expiry-exposure">Expiration exposure</a>
+·
+<a href="/scheduled-forecast">Scheduled forecast</a>
+·
+<a href="/fefo-forecast.csv">Export CSV</a>
+</p>
+
+<div class="card" style="padding:1rem">
+
+<h2>Forecast assumptions</h2>
+
+<p class="muted">
+Only stock with a recorded expiration or beyond-use date
+is included in allocation. Undated stock is displayed
+separately. Inventory dated on a scheduled event's day
+is conservatively excluded before that event.
+</p>
+
+<p class="muted">
+Projected expiration loss represents unused inventory
+remaining when its recorded date is reached. This is a
+planning scenario, not a prediction of actual waste.
+No purchases, inventory changes, or dosing changes
+are simulated.
+</p>
+
+</div>
+
+{% if warnings %}
+
+<div class="card" style="padding:1rem; margin-top:1rem">
+
+<h2>Projection warnings</h2>
+
+<ul>
+{% for warning in warnings %}
+<li>{{ warning }}</li>
+{% endfor %}
+</ul>
+
+</div>
+
+{% endif %}
+
+<div class="card" style="padding:1rem; margin-top:1rem">
+
+<h2>Projected inventory by horizon</h2>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<thead>
+<tr>
+<th>Compound</th>
+<th>Horizon</th>
+<th>Dated stock</th>
+<th>Undated stock</th>
+<th>Demand</th>
+<th>Allocated</th>
+<th>Shortage</th>
+<th>Expired unused</th>
+<th>Remaining</th>
+<th>First shortage</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in rows %}
+
+{% for days in horizons %}
+
+{% set result = row.horizons[days] %}
+
+<tr>
+
+<td>
+{{ row.compound }} ({{ row.unit }})
+{% if row.incomplete %}
+<br><small>Incomplete schedule</small>
+{% endif %}
+</td>
+
+<td>{{ days }} days</td>
+
+<td>{{ "%.3f"|format(row.dated_stock) }}</td>
+
+<td>{{ "%.3f"|format(row.unknown_stock) }}</td>
+
+<td>{{ "%.3f"|format(result.demand) }}</td>
+
+<td>{{ "%.3f"|format(result.consumed) }}</td>
+
+<td>
+{% if result.shortage > 0 %}
+<strong>
+{{ "%.3f"|format(result.shortage) }}
+</strong>
+{% else %}
+0
+{% endif %}
+</td>
+
+<td>{{ "%.3f"|format(result.expired) }}</td>
+
+<td>{{ "%.3f"|format(result.remaining) }}</td>
+
+<td>
+{{ result.first_shortage or "—" }}
+</td>
+
+</tr>
+
+{% endfor %}
+
+{% else %}
+
+<tr>
+<td colspan="10">
+No inventory or active protocol records available.
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+{% endblock %}

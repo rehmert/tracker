@@ -112,3 +112,7 @@ app.include_router(planning_hub.router)
 # Release 161-168: read-only future expiration exposure
 from .routers import expiry_exposure
 app.include_router(expiry_exposure.router)
+
+# Release 177-184: FEFO forecast
+from .routers import fefo_forecast
+app.include_router(fefo_forecast.router)
