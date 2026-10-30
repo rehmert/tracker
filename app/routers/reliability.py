@@ -30,18 +30,25 @@ def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:f
         db.rollback()
         return services.flash_redirect('/reconciliation',msg='This adjustment was already recorded.' if state == 'replay' else '',err='Refresh the page: invalid or reused submission identifier.' if state != 'replay' else '')
     s=db.get(Supply,sid)
-    if not s: raise HTTPException(404)
+    if not s:
+        db.rollback()
+        raise HTTPException(404)
     if not math.isfinite(counted) or not math.isfinite(expected) or counted < 0 or not reason.strip():
+        db.rollback()
         return services.flash_redirect('/reconciliation',err='Enter a nonnegative count and a reason.')
     if not math.isclose(s.remaining_qty, expected, rel_tol=1e-9, abs_tol=1e-7):
+        db.rollback()
         return services.flash_redirect('/reconciliation',err='Stock changed since this page loaded. Refresh and review the new count before recording.')
     if math.isclose(s.remaining_qty, counted, rel_tol=1e-9, abs_tol=1e-7):
+        db.rollback()
         return services.flash_redirect('/reconciliation',err='The physical count matches the recorded stock; no adjustment is needed.')
     if confirmed != 'yes':
+        db.rollback()
         return services.flash_redirect('/reconciliation',err='Please review and confirm the adjustment before submitting.')
     from ..models import SupplyCategory
     cat=db.scalars(select(SupplyCategory).where(SupplyCategory.key==s.kind)).first()
     if cat and cat.unit=='count' and not counted.is_integer():
+        db.rollback()
         return services.flash_redirect('/reconciliation',err='Counted supplies require whole quantities.')
     db.add(InventoryAdjustment(supply_id=sid,previous_qty=s.remaining_qty,counted_qty=counted,reason=reason.strip()[:240]))
     db.add(ChangeAudit(entity_type='supply',entity_id=sid,action='reconcile',before_json=json.dumps({'remaining_qty':s.remaining_qty}),after_json=json.dumps({'remaining_qty':counted,'reason':reason.strip()})))

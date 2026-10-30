@@ -61,6 +61,8 @@ async def bulk_update_vials(request: Request, db: Session = Depends(get_db)):
         return services.flash_redirect("/vials", err="Select at least one vial.")
     if len(ids) > 1000:
         return services.flash_redirect("/vials", err="Select at most 1,000 vials per update.")
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/vials", err="Inventory is busy. Please retry.")
     vials = list(db.scalars(select(Vial).where(Vial.id.in_(ids))))
     if len(vials) != len(ids):
         return services.flash_redirect("/vials", err="One or more selected vials no longer exist.")
@@ -168,6 +170,8 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
                 closed_on: str = Form(""), storage_notes: str = Form(""),
                 use_coa_content: str = Form(""), notes: str = Form(""), cap_color: str = Form(""),
                 db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
     tracked = ("status", "received_on", "first_punctured_on", "first_dosed_on", "beyond_use_on", "closed_on", "storage_notes")
     previous = {key: str(getattr(v, key) or "") for key in tracked}
@@ -258,6 +262,8 @@ async def reconstitute(vid: int, request: Request, volume_ml: float = Form(...),
 
 @router.post("/vials/{vid}/delete")
 def delete_vial(vid: int, db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
     if v.doses:
         return services.flash_redirect(
@@ -270,6 +276,8 @@ def delete_vial(vid: int, db: Session = Depends(get_db)):
 
 @router.post("/vials/{vid}/filter")
 async def record_filtering(vid: int, request: Request, notes: str = Form(""), db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     _get(db, vid)
     try:
         selected = await manual_supplies.selections(request, db)
@@ -298,6 +306,8 @@ def edit_preparation_page(vid: int, eid: int, request: Request, db: Session = De
 
 @router.post("/vials/{vid}/preparations/{eid}/edit")
 async def edit_preparation(vid: int, eid: int, request: Request, notes: str = Form(""), occurred_at: str = Form(""), db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     event = db.get(PreparationEvent, eid)
     if not event or event.vial_id != vid: raise HTTPException(404)
     back = f"/vials/{vid}/preparations/{eid}/edit"
@@ -334,6 +344,8 @@ async def edit_preparation(vid: int, eid: int, request: Request, notes: str = Fo
 
 @router.post("/vials/{vid}/preparations/{eid}/delete")
 def delete_preparation(vid: int, eid: int, db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     event = db.get(PreparationEvent,eid)
     if not event or event.vial_id != vid: raise HTTPException(404)
     # Reconstitution records affect vial volume and are not safe to erase after doses.
