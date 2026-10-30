@@ -8,7 +8,7 @@
 <p class="note">Calendar projections begin on the start date, stop at the optional end date, and never change inventory. A start date is required for projections.</p></section>
 <p class="note">To escalate a compound, add multiple rows for the same compound with consecutive week ranges (e.g., weeks 1–4 and 5–8). An empty End week means ongoing. Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows and dates; Save &amp; add another stores them and opens a new row.</p>
 
-<p class="note">Optional schedule: select weekdays using checkboxes. Set frequency to weekly and the count to the number of selected days. Use ↑ Copy to inherit days, time and fasting from the previous row, or Apply first schedule to all rows. Time is local. Fasting hours are informational, not medical instructions. Leave days unselected for frequency-based projections.</p>
+<p class="note">Optional schedule: select weekdays using checkboxes. Set frequency to weekly and the count to the number of selected days. Use ↑ Copy to inherit days, time and fasting from the previous row, or Apply first schedule to all rows. Time is local. Fasting hours are informational, not medical instructions. Leave days unselected for frequency-based projections. The 84-hour preset alternates morning/evening when a dose time is set; weekday checkboxes must be cleared.</p>
 <form id="protoform" method="post" action="/protocols/{{ p.id }}/save" novalidate
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
   <div class="grid">
@@ -69,6 +69,21 @@
   }
   form.addEventListener('change', e => {
     if (e.target.matches('.dose-day-check')) syncDays(e.target.closest('tr'));
+    if (e.target.matches('.frequency-preset')) {
+      const row = e.target.closest('tr');
+      if (e.target.value === '84h') {
+        row.querySelector('[name="freq_count"]').value = '3.5';
+        row.querySelector('[name="freq_period"]').value = 'interval';
+        row.querySelectorAll('.dose-day-check').forEach(box => { box.checked = false; });
+        syncDays(row);
+      }
+      form.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+    if (e.target.matches('[name="freq_count"], [name="freq_period"]')) {
+      const row = e.target.closest('tr');
+      const preset = row.querySelector('.frequency-preset');
+      if (preset) preset.value = row.querySelector('[name="freq_period"]').value === 'interval' && Number(row.querySelector('[name="freq_count"]').value) === 3.5 ? '84h' : '';
+    }
   });
   form.addEventListener('click', e => {
     const button = e.target.closest('.copy-schedule');

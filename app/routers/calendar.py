@@ -2,10 +2,10 @@
 Never writes dose logs or changes inventory. Reconciliation is a same-day,
 same-compound association; it does not claim clinical equivalence of amounts.
 """
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from sqlalchemy import select
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 from ..db import get_db
 from ..models import Protocol, ProtocolItem, ProjectionExclusion, DoseLog, Vial
@@ -43,8 +43,7 @@ def reconcile(planned, actual, today):
     return result
 
 
-@router.get('/calendar')
-def calendar_page(request: Request, month: str = '', db: Session = Depends(get_db)):
+def _parse_month(month: str) -> date:
     today = date.today()
     try:
         shown = date.fromisoformat(month + '-01') if month else today.replace(day=1)
@@ -52,6 +51,11 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
             raise ValueError()
     except ValueError:
         shown = today.replace(day=1)
+    return shown
+
+
+def _month_events(shown: date, db: Session):
+    today = date.today()
     first, end = cal.month_bounds(shown.year, shown.month)
     planned = {}
     protocols = list(db.scalars(select(Protocol).where(Protocol.is_active.is_(True))))
@@ -71,7 +75,7 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
                         'protocol_item_id': item.id, 'compound_id': item.compound_id, 'amount_value': item.amount_value, 'amount_unit': item.amount_unit,
                         'name': item.compound.name, 'protocol': protocol.name,
                         'dose': f'{item.amount_value:g} {item.amount_unit}',
-                        'dose_time': item.dose_time or '', 'fasting_hours': item.fasting_hours})
+                        'dose_time': cal.occurrence_time(item, protocol.start_date, when), 'fasting_hours': item.fasting_hours})
     actual = {}
     logs = db.scalars(select(DoseLog).join(Vial).where(
         DoseLog.kind == 'dose',
@@ -84,6 +88,13 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
             'name': dose.vial.compound.name,
             'dose': f'{dose.entered_value:g} {dose.entered_unit}'})
     events = reconcile(planned, actual, today)
+    return first, end, events, missing_start
+
+
+@router.get('/calendar')
+def calendar_page(request: Request, month: str = '', db: Session = Depends(get_db)):
+    shown = _parse_month(month)
+    first, end, events, missing_start = _month_events(shown, db)
     grid_start = first - timedelta(days=(first.weekday() + 1) % 7)
     grid_end = end + timedelta(days=(7 - ((end.weekday() + 1) % 7)) % 7)
     days = []
@@ -134,3 +145,62 @@ def restore_projection(exclusion_id: int, db: Session = Depends(get_db)):
     db.delete(rule)
     db.commit()
     return RedirectResponse(f'/calendar?month={month}', status_code=303)
+
+
+def _ical_escape(value: object) -> str:
+    return (str(value).replace('\\', '\\\\').replace('\n', '\\n')
+            .replace(',', '\\,').replace(';', '\\;'))
+
+
+def _ical_line(value: str) -> str:
+    """Fold at 75 UTF-8 octets, per RFC 5545."""
+    result = []
+    line = ''
+    for ch in value:
+        if len((line + ch).encode('utf-8')) > 75:
+            result.append(line)
+            line = ' ' + ch
+        else:
+            line += ch
+    result.append(line)
+    return '\r\n'.join(result)
+
+
+@router.get('/calendar/export.ics')
+def export_calendar_ics(month: str = '', db: Session = Depends(get_db)):
+    """Download a snapshot of the displayed month's calendar events; no writes."""
+    shown = _parse_month(month)
+    first, end, events, _ = _month_events(shown, db)
+    stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Tracker//Protocol Calendar//EN',
+             'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+             'X-WR-CALNAME:Tracker Protocol Calendar']
+    for day in sorted(events):
+        for index, event in enumerate(events[day]):
+            name = event.get('name', 'Dose')
+            status = event['status']
+            summary = f"{name} · {event.get('dose', '')} ({status})"
+            description = f"Protocol: {event.get('protocol', 'Unmatched recorded dose')}\nStatus: {status}"
+            if event.get('fasting_hours') is not None:
+                description += f"\nFasting hours: {event['fasting_hours']}"
+            uid = f"tracker-{day:%Y%m%d}-{event.get('protocol_item_id', 'log')}-{index}@local"
+            lines.extend(['BEGIN:VEVENT', f'UID:{uid}', f'DTSTAMP:{stamp}',
+                          f'SUMMARY:{_ical_escape(summary)}',
+                          f'DESCRIPTION:{_ical_escape(description)}'])
+            clock = event.get('dose_time')
+            if clock:
+                try:
+                    t = datetime.strptime(clock, '%H:%M').time()
+                    dt = datetime.combine(day, t)
+                    lines.extend([f'DTSTART;TZID=America/New_York:{dt:%Y%m%dT%H%M%S}',
+                                  f'DTEND;TZID=America/New_York:{(dt + timedelta(minutes=15)):%Y%m%dT%H%M%S}'])
+                except ValueError:
+                    clock = None
+            if not clock:
+                lines.extend([f'DTSTART;VALUE=DATE:{day:%Y%m%d}',
+                              f'DTEND;VALUE=DATE:{(day + timedelta(days=1)):%Y%m%d}'])
+            lines.append('END:VEVENT')
+    lines.append('END:VCALENDAR')
+    payload = '\r\n'.join(_ical_line(line) for line in lines) + '\r\n'
+    return Response(content=payload.encode('utf-8'), media_type='text/calendar',
+                    headers={'Content-Disposition': f'attachment; filename="tracker-calendar-{shown:%Y-%m}.ics"'})

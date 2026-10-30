@@ -17,6 +17,7 @@
 <form method="get" action="/calendar" class="inline">
 <label class="field"><span>Month</span><input type="month" name="month" value="{{ shown.strftime('%Y-%m') }}"></label>
 <button type="submit">Show calendar</button>
+<a class="button" href="/calendar/export.ics?month={{ shown.strftime('%Y-%m') }}">Export month (.ics)</a>
 </form>
 <p class="row"><a href="/calendar?month={{ previous }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a href="/calendar?month={{ next_month }}">Next →</a></p>
 <div class="calendar-grid">

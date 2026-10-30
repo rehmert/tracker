@@ -11,6 +11,10 @@
     <select name="freq_period" aria-label="Frequency period">
       {% for key, text in PERIOD_LABELS.items() %}<option value="{{ key }}" {% if key == item.freq_period %}selected{% endif %}>{{ text }}</option>{% endfor %}
     </select>
+    <select class="frequency-preset" aria-label="Quick frequency preset">
+      <option value="">Custom frequency</option>
+      <option value="84h" {% if item.freq_period == 'interval' and item.freq_count == 3.5 %}selected{% endif %}>Every 3.5 days (84 hours)</option>
+    </select>
   </div></td>
   <td class="dose-weekdays"><input type="hidden" name="dose_days" value="{{ item.dose_days or '' }}">
     <div class="weekday-checks" role="group" aria-label="Dose days">

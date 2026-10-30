@@ -1,7 +1,7 @@
 """Read-only administration calendar. Projection is anchored to a user-selected date,
 not an inferred start date. Never creates DoseLogs or consumes inventory.
 """
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from calendar import monthrange
 from math import isfinite
 
@@ -56,3 +56,26 @@ def staged_occurrences(item, protocol_start: date, days: int = 35):
 def month_bounds(year, month):
     first = date(year, month, 1)
     return first, first + timedelta(days=monthrange(year, month)[1])
+
+
+def occurrence_time(item, protocol_start: date, scheduled_date: date) -> str:
+    """Local wall-clock time for a 3.5-day interval occurrence.
+
+    The first occurrence is anchored to the protocol start date and dose_time.
+    Note: timezone-naive wall-clock math does not adjust elapsed hours at DST.
+    """
+    original = getattr(item, 'dose_time', None) or ''
+    if not (item.freq_period == 'interval' and abs(item.freq_count - 3.5) < 1e-9 and original):
+        return original
+    try:
+        hour, minute = map(int, original.split(':'))
+        anchor = datetime.combine(protocol_start, time(hour, minute))
+    except (ValueError, TypeError):
+        return original
+    # Search the nearest index, verifying the date to avoid rounding errors.
+    approx = (scheduled_date - protocol_start).days / 3.5
+    for n in range(max(0, int(approx) - 2), int(approx) + 4):
+        event = anchor + timedelta(hours=84 * n)
+        if event.date() == scheduled_date:
+            return event.strftime('%H:%M')
+    return original
