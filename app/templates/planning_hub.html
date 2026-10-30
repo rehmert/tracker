@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Inventory Planning Hub{% endblock %}
+{% block content %}
+<section style="max-width:1500px">
+<h1>Inventory planning hub</h1>
+<p class="muted">Read-only comparison of schedule-aware demand and average-frequency estimates. No inventory changes or dosing recommendations.</p>
+<p><a href="/protocol-coverage">Coverage</a> · <a href="/inventory-forecast">Average forecast</a> · <a href="/forecast-horizons">Horizons</a> · <a href="/forecast-audit">Shared-stock audit</a> · <a href="/scheduled-forecast">Scheduled forecast</a> · <a href="/planning-hub.csv">Export CSV</a></p>
+{% if warnings %}<div class="card" style="padding:1rem"><h2>Schedule warnings</h2><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="card" style="padding:1rem">
+<h2>Combined planning overview</h2>
+<p class="muted">Stock estimates reflect current records, not future usable inventory. Average and scheduled demand use different methods. Average values are shown only when compound and unit match exactly. Future expiration and actual administration reconciliation are not modeled.</p>
+<div style="overflow-x:auto"><table><thead><tr><th>Compound</th><th>Protocols / items</th><th>Current stock</th><th>Average 28d</th>
+{% for h in horizons %}<th>Scheduled {{ h }}d</th>{% endfor %}</tr></thead><tbody>
+{% for r in rows %}<tr>
+<td>{{ r.compound }} ({{ r.unit }})</td><td>{{ r.protocols }} / {{ r.items }}</td>
+<td>{{ '%.3f'|format(r.available) if r.available is not none else 'Review stock' }}</td>
+<td>{% if r.average28 is not none %}{{ '%.3f'|format(r.average28) }} {{ r.unit }}{% else %}Not comparable{% endif %}<br><small>{{ r.average_flag }}</small></td>
+{% for h in horizons %}<td>{{ r.occurrences.get(h,0) }} planned<br>{% if r.scheduled.get(h) is not none %}{{ '%.3f'|format(r.scheduled[h]) }} {{ r.unit }}{% else %}Not estimable{% endif %}<br><strong>{{ r.flags.get(h,'Review') }}</strong></td>{% endfor %}
+</tr>{% else %}<tr><td colspan="8">No scheduled protocol items to display.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% if unmatched %}<div class="card" style="padding:1rem"><h2>Average forecast entries without matching scheduled rows</h2>
+<p class="muted">These are not silently discarded or combined across incompatible units.</p>
+<ul>{% for r in unmatched %}<li>{{ r.compound }} ({{ r.unit }}): {{ r.flag }}</li>{% endfor %}</ul></div>{% endif %}
+</section>
+{% endblock %}

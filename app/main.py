@@ -104,3 +104,11 @@ app.include_router(forecast_audit.router)
 # Release 145-152: scheduled inventory forecast
 from .routers import scheduled_forecast
 app.include_router(scheduled_forecast.router)
+
+# Release 153-160: unified read-only planning hub
+from .routers import planning_hub
+app.include_router(planning_hub.router)
+
+# Release 161-168: read-only future expiration exposure
+from .routers import expiry_exposure
+app.include_router(expiry_exposure.router)

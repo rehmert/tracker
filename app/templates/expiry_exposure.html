@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Expiry Exposure{% endblock %}
+{% block content %}
+<section style="max-width:1500px">
+<h1>Future expiration exposure</h1>
+<p class="muted">Read-only estimate of current inventory that has a recorded expiration or beyond-use date within each planning horizon. Dates are planning flags, not clinical judgments of suitability. No consumption order or future purchases are assumed.</p>
+<p><a href="/planning-hub">Planning hub</a> · <a href="/scheduled-forecast">Scheduled forecast</a> · <a href="/vials">Vials</a> · <a href="/expiry-exposure.csv">Export CSV</a></p>
+<div class="card" style="padding:1rem">
+<h2>Inventory at risk by horizon</h2>
+<p class="muted">Stock uses current dose logs and blend transfers. Expiration and beyond-use dates are combined using the earlier recorded date. Missing dates are shown separately; they do not establish eligibility. At-risk quantities are <strong>not</strong> subtracted from scheduled demand because consumption order is unknown.</p>
+<div style="overflow-x:auto"><table><thead><tr><th>Compound</th><th>Eligible vials</th><th>Current estimate</th><th>Missing dates</th>
+{% for d in horizons %}<th>At risk within {{ d }}d</th>{% endfor %}</tr></thead><tbody>
+{% for r in rows %}<tr>
+<td>{{ r.compound }} ({{ r.unit }})</td>
+<td>{{ r.eligible }}</td>
+<td>{{ '%.3f'|format(r.remaining) }}</td>
+<td>{{ r.unknown_dates }}</td>
+{% for d in horizons %}<td>{{ '%.3f'|format(r.expiring.get(d,0)) }} {{ r.unit }}<br><small>{{ r.vials_expiring.get(d,0) }} vials</small></td>{% endfor %}
+</tr>{% else %}<tr><td colspan="8">No currently eligible vial records.</td></tr>{% endfor %}
+</tbody></table></div></div></section>
+{% endblock %}
