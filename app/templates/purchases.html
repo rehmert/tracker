@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Purchases{% endblock %}
 {% block content %}
-<h1>Purchases</h1><nav class="ux-shortcuts" aria-label="Purchase actions"><a href="#new-purchase">+ Record a purchase</a><a href="#purchase-history">Purchase history</a></nav><p class="note">Workflow: create the order below, then open it to add purchased vials or supplies. Inventory is not created by the order header alone.</p><nav class="ux-shortcuts"><a href="/vials">View vials</a><a href="/supplies">View supplies</a><a href="/vendor-prices">Compare prices</a></nav>
-<div class="scroll" id="purchase-history"><table>
+<h1>Purchases</h1><nav class="ux-shortcuts" aria-label="Purchase actions"><a href="#new-purchase">+ Record a purchase</a><a href="#purchase-history">Purchase history</a><a href="/vials">Vials</a><a href="/supplies">Supplies</a><a href="/vendor-prices">Compare prices</a></nav><p class="note">Workflow: create the order below, then open it to add purchased vials or supplies. Inventory is not created by the order header alone.</p>
+<div class="scroll" id="purchase-history" data-enhanced-table><table>
   <thead><tr><th>Date</th><th>Vendor</th><th>Order</th><th class="n">Vials</th><th class="n">Supplies / pills</th><th class="n">Total with shipping and tax</th></tr></thead>
   <tbody>
   {% for r in rows %}

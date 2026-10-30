@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Inventory health</h1>
 <p class="muted">No stock is changed by these diagnostics. Review findings before making inventory adjustments.</p>
-<p class="note">Read-only diagnostics. No inventory values are modified. Includes supply usage and orphan checks. Balance estimates exclude supplies with physical-count adjustments; other stock operations can cause discrepancies. Findings are advisory and never change stock.</p>
+<p class="note">Findings are advisory. Historical imports, edits, and physical counts can explain discrepancies; review records before reconciling.</p>
 <section><h2>Health summary</h2><p><strong>{{ errors }}</strong> errors &nbsp; · &nbsp; <strong>{{ warnings }}</strong> warnings &nbsp; · &nbsp; <strong>{{ issues|length }}</strong> total findings</p><p><a href="/reconciliation">Reconcile supplies</a> · <a href="/data-integrity">Data integrity details</a> · <a href="/inventory-intelligence">Inventory insights</a></p></section>
-<section><h2>Findings</h2>{% if issues %}<div class="scroll"><table><thead><tr><th>Severity</th><th>Finding</th><th>Review</th></tr></thead><tbody>{% for level,message,href in issues %}<tr><td><span class="tag">{{ level }}</span></td><td>{{ message }}</td><td><a href="{{ href }}">Review</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="flash ok">No findings from the current checks.</p>{% endif %}</section>
+<section><h2>Findings</h2>{% if issues %}<div class="scroll" data-enhanced-table><table><thead><tr><th>Severity</th><th>Finding</th><th>Review</th></tr></thead><tbody>{% for level,message,href in issues %}<tr><td><span class="tag">{{ level }}</span></td><td>{{ message }}</td><td><a href="{{ href }}">Review</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="flash ok">No findings from the current checks.</p>{% endif %}</section>
 {% endblock %}

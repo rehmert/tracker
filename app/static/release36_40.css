@@ -1,0 +1,26 @@
+/* Tracker unified UX release: additive and theme-aware. */
+main > .note,main > header .note,main > .dashboard-hero .hero-subtitle,
+main > section > .note,main > .page-header .note{max-width:none;overflow-wrap:break-word}
+main > h1{margin-bottom:.35rem}main > h1 + .note{margin-top:.15rem;margin-bottom:.65rem}
+main > h1 + .ux-shortcuts{margin-top:.5rem}
+main > .ux-shortcuts{margin:.45rem 0 .85rem}
+main > section{scroll-margin-top:1.5rem}
+.ux-breadcrumbs{margin:.1rem 0 .65rem}
+.ux-breadcrumbs [aria-current="page"]{font-weight:650;color:var(--ink)}
+.ux-table-tools{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:space-between;padding:.5rem .65rem;background:var(--surface);border:1px solid var(--rule);border-bottom:0;border-radius:.55rem .55rem 0 0}
+.ux-table-tools label{display:flex;gap:.4rem;align-items:center;font-size:.85rem;flex:1;min-width:12rem;max-width:28rem}
+.ux-table-tools input[type=search]{min-width:0;flex:1;width:100%;padding:.35rem .5rem}
+.ux-table-tools .ux-table-count{color:var(--muted);font-size:.82rem}
+.ux-table-tools button{padding:.3rem .55rem;font-size:.82rem}
+.ux-sort-button{background:transparent;border:0;border-radius:.25rem;font:inherit;font-weight:inherit;color:inherit;padding:0;display:inline-flex;gap:.3rem;align-items:center;text-align:left;white-space:nowrap}
+.ux-sort-button:hover{text-decoration:underline;background:transparent}
+.ux-sort-button:focus-visible{outline:2px solid var(--teal)}
+.ux-table-hidden{display:none!important}
+.ux-form-status{display:inline-block;margin-left:.6rem;font-size:.83rem;color:var(--muted)}
+.ux-form-status[role=alert]{color:var(--brick)}
+.ux-empty-note{padding:1rem;border:1px dashed var(--rule);border-radius:.5rem;color:var(--muted)}
+.ux-confirm-dialog{border:1px solid var(--rule);border-radius:14px;background:var(--surface);color:var(--ink);max-width:min(30rem,calc(100vw - 2rem));padding:1.25rem;box-shadow:0 18px 60px #0003}
+.ux-confirm-dialog::backdrop{background:#0008}
+.ux-confirm-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1rem}
+@media(max-width:700px){.ux-table-tools{align-items:stretch}.ux-table-tools label{max-width:none;flex-basis:100%}.ux-table-tools .ux-table-count{margin-left:auto}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:0s!important}}
