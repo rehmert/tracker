@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import services, units as U
@@ -52,3 +53,45 @@ def delete_compound(cid: int, db: Session = Depends(get_db)):
     db.delete(c)
     db.commit()
     return services.flash_redirect("/compounds", msg=f"Deleted {c.name}.")
+
+
+@router.get("/compounds/{cid}/edit")
+def edit_compound_page(cid: int, request: Request, db: Session = Depends(get_db)):
+    compound = db.get(Compound, cid)
+    if compound is None:
+        return services.flash_redirect("/compounds", err="Compound not found.")
+    has_vials = bool(db.scalar(select(func.count()).select_from(Vial).where(Vial.compound_id == cid)))
+    return render(request, "compound_edit.html", compound=compound,
+                  categories=CATEGORIES, units=sorted(U.CONTENT_UNITS), has_vials=has_vials)
+
+
+@router.post("/compounds/{cid}/edit")
+def update_compound(cid: int, name: str = Form(...), category: str = Form("peptide"),
+                    notes: str = Form(""), primary_unit: str = Form("mg"),
+                    db: Session = Depends(get_db)):
+    compound = db.get(Compound, cid)
+    if compound is None:
+        return services.flash_redirect("/compounds", err="Compound not found.")
+    name = name.strip()
+    if not name or len(name) > 120:
+        return services.flash_redirect(f"/compounds/{cid}/edit", err="Name must be 1–120 characters.")
+    if category not in CATEGORIES or primary_unit not in U.CONTENT_UNITS:
+        return services.flash_redirect(f"/compounds/{cid}/edit", err="Choose a valid category and unit.")
+    if db.scalar(select(Compound.id).where(func.lower(Compound.name) == name.lower(), Compound.id != cid)):
+        return services.flash_redirect(f"/compounds/{cid}/edit", err="A compound with that name already exists.")
+    if name.casefold() in ("somatropin", "somatropin (hgh)", "hgh (somatropin)"):
+        primary_unit = "IU"
+    if primary_unit != compound.primary_unit and db.scalar(
+            select(func.count()).select_from(Vial).where(Vial.compound_id == cid)):
+        return services.flash_redirect(f"/compounds/{cid}/edit",
+                                       err="Default unit cannot change while vials exist. Existing vial quantities must remain consistent.")
+    compound.name = name
+    compound.category = category
+    compound.notes = notes.strip()
+    compound.primary_unit = primary_unit
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return services.flash_redirect(f"/compounds/{cid}/edit", err="That compound name is already in use.")
+    return services.flash_redirect("/compounds", msg=f"Updated {name}.")

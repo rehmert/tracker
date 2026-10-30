@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ compound.name }}{% endblock %}
+{% block content %}
+<h1>Edit compound</h1>
+<section><form method="post" action="/compounds/{{ compound.id }}/edit" class="grid">
+<label class="field"><span>Name</span><input name="name" required maxlength="120" value="{{ compound.name }}"></label>
+<label class="field"><span>Category</span><select name="category">{% for c in categories %}<option value="{{ c }}" {% if c == compound.category %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></label>
+<label class="field"><span>Default vial unit</span><select name="primary_unit" {% if has_vials %}disabled{% endif %}>{% for unit in units %}<option value="{{ unit }}" {% if unit == compound.primary_unit %}selected{% endif %}>{{ unit }}</option>{% endfor %}</select>{% if has_vials %}<input type="hidden" name="primary_unit" value="{{ compound.primary_unit }}"><small>Locked because this compound has vials. Existing quantities are preserved.</small>{% endif %}</label>
+<label class="field wide"><span>Notes</span><textarea name="notes" rows="4">{{ compound.notes }}</textarea></label>
+<div><button class="primary" type="submit">Save changes</button> <a href="/compounds">Cancel</a></div>
+</form></section>
+{% endblock %}

@@ -14,11 +14,25 @@ DEFAULTS = (
 )
 
 def ensure_categories(db):
-    found = {c.key: c for c in db.scalars(select(SupplyCategory)).all()}
-    for key, label, unit in DEFAULTS:
-        if key not in found:
-            db.add(SupplyCategory(key=key, label=label, unit=unit))
-    db.commit()
+    """Seed defaults atomically, even when multiple requests initialize them."""
+    from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+    from sqlalchemy.exc import IntegrityError
+    from .inventory_lock import reserve_inventory_write
+
+    # SQLite writer reservation prevents simultaneous initializers from racing.
+    # Never commit an unrelated pending transaction in this helper.
+    if db.new or db.dirty or db.deleted:
+        raise RuntimeError("Seed supply categories before modifying session objects")
+    if not reserve_inventory_write(db):
+        raise RuntimeError("Supply categories are busy; please retry")
+    try:
+        for key, label, unit in DEFAULTS:
+            db.execute(sqlite_insert(SupplyCategory).values(key=key, label=label, unit=unit)
+                       .on_conflict_do_nothing(index_elements=["key"]))
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return list(db.scalars(select(SupplyCategory).order_by(SupplyCategory.label)))
 
 def validate_supply(db, kind, quantity, previous=None):

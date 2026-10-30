@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import services, units as U
+from ..inventory_lock import reserve_inventory_write
 from ..db import get_db
 from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply, ChangeAudit
 from .. import manual_supplies
@@ -218,8 +219,10 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
 
 @router.post("/vials/{vid}/reconstitute")
 async def reconstitute(vid: int, request: Request, volume_ml: float = Form(...), supply_id: str = Form(""), db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
-    if volume_ml <= 0:
+    if not math.isfinite(volume_ml) or volume_ml <= 0:
         return services.flash_redirect(f"/vials/{vid}", err="Volume must be more than 0.")
     if v.volume_ml is not None:
         return services.flash_redirect(f"/vials/{vid}", err="Already has a recorded volume. Edit vial details instead.")
@@ -228,7 +231,12 @@ async def reconstitute(vid: int, request: Request, volume_ml: float = Form(...),
     except ValueError as exc:
         return services.flash_redirect(f"/vials/{vid}", err=str(exc))
     if supply_id:
-        s = db.get(Supply, int(supply_id))
+        try:
+            sid = int(supply_id)
+        except (ValueError, TypeError):
+            db.rollback()
+            return services.flash_redirect(f"/vials/{vid}", err="Invalid BAC water selection.")
+        s = db.get(Supply, sid)
         if not s or s.kind != "bac_water" or s.remaining_qty + 1e-9 < volume_ml:
             return services.flash_redirect(f"/vials/{vid}", err="Insufficient BAC water inventory.")
         if any(item.id == s.id and qty + volume_ml > s.remaining_qty + 1e-9 for item, qty in selected):

@@ -12,7 +12,7 @@
     <td class="n">{{ ((r.on_hand_base / 1000)|num) ~ ' mg' if r.dim == 'mass' else ((r.on_hand_base|num) ~ ' IU' if r.dim == 'iu' else '—') }}</td>
     <td>{% if r.cost_per_base is not none %}{% if r.dim == 'iu' %}{{ r.cost_per_base|money }} / IU{% else %}{{ (r.cost_per_base * 1000)|money }} / mg{% endif %}{% else %}—{% endif %}</td>
     <td>{% if notes.get(c.id) %}<a href="/pages?compound_id={{ c.id }}">{{ notes[c.id] }} page{{ '' if notes[c.id] == 1 else 's' }}</a>{% else %}—{% endif %}</td>
-    <td><form method="post" action="/compounds/{{ c.id }}/delete" onsubmit="return confirm('Delete {{ c.name|e }}?')"><button class="link danger">Delete</button></form></td>
+    <td><a href="/compounds/{{ c.id }}/edit">Edit</a> &nbsp; <form style="display:inline" method="post" action="/compounds/{{ c.id }}/delete" onsubmit="return confirm('Delete {{ c.name|e }}?')"><button class="link danger">Delete</button></form></td>
   </tr>
   {% else %}<tr><td colspan="7" class="empty">No compounds yet.</td></tr>{% endfor %}
   </tbody>
