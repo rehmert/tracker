@@ -1,0 +1,160 @@
+
+{% extends "base.html" %}
+{% block title %}Inventory Timeline{% endblock %}
+
+{% block content %}
+
+<h1>Inventory Timeline</h1>
+
+<p class="note">
+  Review the recorded history of an individual vial.
+  This page is read-only and does not change inventory.
+</p>
+
+<section>
+  <h2>Select inventory</h2>
+
+  <form method="get" action="/inventory-timeline">
+
+    <div class="form-grid">
+
+      <label class="field">
+        <span>Compound</span>
+
+        <select name="compound_id"
+                onchange="this.form.submit()">
+
+          <option value="">All compounds</option>
+
+          {% for compound in compounds %}
+          <option value="{{ compound.id }}"
+            {% if compound_id == compound.id %}
+              selected
+            {% endif %}>
+            {{ compound.name }}
+          </option>
+          {% endfor %}
+
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Vial</span>
+
+        <select name="vial_id">
+          <option value="">Select a vial</option>
+
+          {% for vial in vials %}
+          <option value="{{ vial.id }}"
+            {% if vial_id == vial.id %}
+              selected
+            {% endif %}>
+            {{ vial.compound.name }} ·
+            {{ vial.label or ('#' ~ vial.id) }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+
+    </div>
+
+    <button type="submit">View timeline</button>
+
+  </form>
+</section>
+
+{% if selected %}
+
+<section>
+  <h2>{{ selected.compound.name }}</h2>
+
+  <p>
+    <strong>Vial:</strong>
+    {{ selected.label or ('#' ~ selected.id) }}
+  </p>
+
+  <p>
+    <strong>Status:</strong>
+    {{ selected.status|replace('_', ' ') }}
+  </p>
+
+  <p>
+    <strong>Current remaining:</strong>
+    {{ view.remaining_base|amt(view.dim) }}
+  </p>
+
+  <p class="note">
+    Remaining inventory is calculated using Tracker's
+    existing inventory service, not the timeline events.
+  </p>
+
+  <p>
+    <a href="/vials">Open vial inventory →</a>
+  </p>
+</section>
+
+<section>
+  <h2>Activity history</h2>
+
+  {% if events %}
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Date / Time</th>
+          <th>Category</th>
+          <th>Activity</th>
+          <th>Details</th>
+          <th>Record</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td>
+            {{ event.when|dt }}
+          </td>
+
+          <td>
+            {{ event.category }}
+          </td>
+
+          <td>
+            {{ event.description }}
+          </td>
+
+          <td>
+            {{ event.detail }}
+          </td>
+
+          <td>
+            {{ event.source }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+
+  <p class="empty">
+    No activity records are available.
+  </p>
+
+  {% endif %}
+</section>
+
+{% else %}
+
+<section>
+  <p class="empty">
+    Select a vial to display its activity history.
+  </p>
+</section>
+
+{% endif %}
+
+{% endblock %}

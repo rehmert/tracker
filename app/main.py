@@ -22,6 +22,7 @@ from .db import Base, engine
 from .routers import (coas, compounds, dashboard, doses, labs, pages, protocols, purchases, supplies,
                       vials, vitals, pk, calendar, backups, search, inventory_intelligence, health_timeline, health_insights, exports, reliability, blends, vendor_prices)
 from .security import require_auth
+from .routers import inventory_timeline
 
 
 @asynccontextmanager
@@ -45,6 +46,8 @@ app.mount("/static", StaticFiles(directory=config.BASE_DIR / "static"), name="st
 
 for module in (dashboard, compounds, purchases, vials, coas, doses, supplies, vitals, labs, protocols, pages, pk, calendar, backups, search, inventory_intelligence, health_timeline, health_insights, exports, reliability, blends, vendor_prices):
     app.include_router(module.router)
+
+app.include_router(inventory_timeline.router)
 
 
 @app.get("/ping")
