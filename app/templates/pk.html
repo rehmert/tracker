@@ -2,28 +2,36 @@
 {% block title %}PK Simulator{% endblock %}
 {% block content %}
 <h1>PK Simulator</h1>
+<p class="note">Choose a workflow, configure the schedule, then review estimated exposure. Simulations never edit real protocols, dose logs, or inventory.</p>
+<div class="pk-tabs" role="tablist" aria-label="Simulation workflow">
+<button type="button" class="pk-tab" data-pk-mode="protocol" aria-selected="true">1 · Protocol</button>
+<button type="button" class="pk-tab" data-pk-mode="custom" aria-selected="false">2 · Custom</button>
+<button type="button" class="pk-tab" data-pk-mode="compare" aria-selected="false">3 · Compare</button>
+</div>
+<details class="card pk-help"><summary>How to use this simulator</summary><p id="pkWorkflowHelp">Choose an active protocol, select its compound, then Run simulation. The saved schedule is read-only.</p><p>Values are modeled exposure (mg-equivalent), not measured serum concentration, biological response, or dosing advice. A different compound's curve cannot be interpreted as equivalent potency.</p></details>
 <p>Exploratory modeled exposure only — not measured blood concentration, effectiveness, or a dosing recommendation. Testosterone depot and GLP-1 absorption parameters are approximations. Future plans never change your dose log or inventory.</p>
-<div class="card">
+<div class="card pk-protocol-setup" id="pkSetup">
+<h2>1. Configure simulation</h2>
   <label>Protocol <select id="protocol"><option value="">None (manual scenarios)</option>{% for p in protocols %}{% if p.is_active and p.start_date %}<option value="{{ p.id }}" data-compounds="{{ p.items|map(attribute='compound_id')|unique|join(',') }}">{{ p.name }}</option>{% endif %}{% endfor %}</select></label>
   <p class="note">Select an active protocol to model its scheduled doses, including escalation stages. Choose a compound within that protocol below. This is a read-only projection; it does not create a scenario or log doses. Non-mass units such as IU are excluded.</p>
   <label>Compound <select id="compound"><option value="">Select compound</option>{% for c in compounds %}<option value="{{ c.id }}" data-half="{{ profile(c.name)[0] }}" data-abs="{{ profile(c.name)[1] }}" data-model="{{ model_info(c.name).level }}" data-needs-assumptions="{{ 1 if model_info(c.name).needs_assumptions else 0 }}" data-model-note="{{ model_info(c.name).description }}">{{ c.name }}</option>{% endfor %}</select></label>
-  <label>Add testosterone profile <select id="newPkCompound"><option value="Testosterone Cypionate">Testosterone Cypionate</option><option value="Testosterone Enanthate">Testosterone Enanthate</option><option value="Testosterone">Testosterone (generic)</option></select></label>
-  <button id="addPkCompound" type="button">Add compound to Tracker</button>
+  <div class="pk-add-compound"><label>Add testosterone profile <select id="newPkCompound"><option value="Testosterone Cypionate">Testosterone Cypionate</option><option value="Testosterone Enanthate">Testosterone Enanthate</option><option value="Testosterone">Testosterone (generic)</option></select></label>
+  <button id="addPkCompound" type="button">Add compound to Tracker</button></div>
   <p id="modelEvidence" class="note" role="status"></p>
-  <label>Elimination half-life (hours) <input id="half" type="number" min="0.01" step="any"></label>
+  <details class="pk-advanced"><summary>Advanced model settings &amp; assumptions</summary><label>Elimination half-life (hours) <input id="half" type="number" min="0.01" step="any"></label>
   <label>Absorption half-life (hours) <input id="abs" type="number" min="0.01" step="any"></label>
-  <label>Days before today <input id="back" type="number" min="1" max="365" value="60"></label>
+  </details><div class="pk-window"><label>Days before today <input id="back" type="number" min="1" max="365" value="60"></label>
   <label>Days after today <input id="forward" type="number" min="1" max="365" value="45"></label>
-  <button id="refresh" type="button">Update chart</button>
-  <button id="graphProtocol" type="button">Graph selected protocol</button>
+  </div><div class="pk-actions"><button id="refresh" type="button">▶ Run simulation</button>
+  <button id="graphProtocol" type="button">Graph selected protocol</button></div>
   <p id="protocolGraphStatus" class="note" role="status" aria-live="polite"></p>
 </div>
-<div class="card" id="whatIfCard">
+<div class="card pk-custom-section" id="whatIfCard">
 <h2>What-if protocol builder</h2>
 <p class="note">Create a hypothetical recurring schedule for the selected compound. Preview does not save anything; saving creates a PK scenario, not a real protocol or administration.</p>
 <label>Name <input id="wiName" value="What-if protocol" maxlength="160"></label>
 <label>First dose (Eastern) <input id="wiStart" type="datetime-local"></label>
-<label>Interval between doses (days) <input id="wiInterval" type="number" min="1" max="90" value="7"></label>
+<label>Interval between doses (days) <input id="wiInterval" type="number" min="0.125" step="0.125" max="90" value="7"></label>
 <label>Duration (days) <input id="wiDuration" type="number" min="1" max="365" value="84"></label>
 <p class="note">Stages apply from their starting week onward. Week 1 is required. Enter dose amounts in mg; this is an exposure model, not a dose recommendation.</p>
 <table><thead><tr><th>Starting week</th><th>Dose (mg)</th><th></th></tr></thead><tbody id="wiStages"></tbody></table>
@@ -33,8 +41,8 @@
 <p id="wiSummary" class="note" aria-live="polite"></p>
 <div style="overflow-x:auto;max-height:260px;overflow-y:auto"><table><thead><tr><th>Scheduled date/time</th><th>Dose (mg)</th></tr></thead><tbody id="wiSchedule"></tbody></table></div>
 </div>
-<div class="card"><h2>Modeled exposure</h2><canvas id="plot" width="1000" height="380" class="pk-chart" role="img" aria-label="Exposure graph"></canvas><p id="summary"></p><p>Blue: historical doses and decay without future dosing. Orange: historical doses plus planned doses. Dashed vertical line: now.</p></div>
-<div class="card">
+<div class="card" id="pkResults"><h2>2. Modeled exposure</h2><div class="pk-quick-window">Window: <button type="button" data-pk-window="1">24h</button> <button type="button" data-pk-window="7">7d</button> <button type="button" data-pk-window="14">14d</button> <button type="button" data-pk-window="30">30d</button> <button type="button" data-pk-window="custom">Custom</button></div><canvas id="plot" width="1000" height="380" class="pk-chart" role="img" aria-label="Exposure graph"></canvas><p id="summary" role="status"></p><div class="pk-metrics" aria-label="Simulation metrics"><div><small>Peak</small><strong id="pkPeak">—</strong></div><div><small>Trough</small><strong id="pkTrough">—</strong></div><div><small>Peak / trough</small><strong id="pkRatio">—</strong></div><div><small>Mean exposure</small><strong id="pkAverage">—</strong></div></div><p class="note" id="pkMetricNote">Metrics cover the visible plotted window and use modeled mg-equivalent exposure, not blood concentration.</p><div class="pk-actions"><button type="button" id="pkExportPng">Export graph PNG</button><button type="button" id="pkExportCsv">Export graph CSV</button></div><p>Blue: historical doses and decay without future dosing. Orange: historical doses plus planned doses. Dashed vertical line: now.</p></div>
+<div class="card pk-compare-section">
 <h2>Compare saved scenarios</h2>
 <p class="note">Select up to four scenarios for the chosen compound. The baseline shows recorded administrations and decay without future doses. Scenarios can have different half-lives.</p>
 <label class="field"><span>Scenarios (Ctrl/Command-click for multiple)</span><select id="compareScenarios" multiple size="4" aria-label="Select scenarios to compare"></select></label>
@@ -43,7 +51,7 @@
 <canvas id="comparePlot" width="1000" height="380" class="pk-chart" role="img" aria-label="PK scenario comparison chart"></canvas>
 <p id="compareLegend" class="note"></p>
 </div>
-<div class="card">
+<div class="card pk-compare-section">
 <h2>Multi-compound exposure overlay</h2>
 <p class="note">Compare recorded exposure shapes for up to four compounds. Each curve is independently scaled to its own peak (100%) in the selected window; heights do not compare potency, concentration, or clinical effects.</p>
 <label class="field"><span>Compounds (Ctrl/Command-click to select multiple)</span>
@@ -53,7 +61,7 @@
 <p id="overlayLegend" class="note"></p>
 <p id="overlayEvents" class="note"></p>
 </div>
-<div class="card">
+<div class="card pk-custom-section">
 <h2>Saved scenarios</h2>
 <label>Scenario <select id="scenario"><option value="">Unsaved / no future doses</option></select></label>
 <label>Name <input id="scenarioName" value="My scenario" maxlength="160"></label>
@@ -68,5 +76,8 @@
 <table><thead><tr><th>Date/time</th><th>mg</th><th>Actions</th></tr></thead><tbody id="plannedRows"></tbody></table>
 </div>
 <p id="pkError" role="alert" style="color:#a22"></p>
-<script src="/static/pk.js?v=pk-peptides-20261030" defer></script>
+<style>
+.pk-tabs{display:flex;gap:.65rem;flex-wrap:wrap;margin:1rem 0}.pk-tab{padding:.7rem 1rem;border-radius:12px;border:1px solid var(--border,#d4ded8);background:var(--card,#fff);cursor:pointer}.pk-tab[aria-selected="true"]{outline:2px solid var(--accent,#387c69);font-weight:700}.pk-actions,.pk-quick-window,.pk-window{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.8rem 0}.pk-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin:1rem 0}.pk-metrics>div{border:1px solid var(--border,#d4ded8);border-radius:12px;padding:.85rem}.pk-metrics small{display:block;opacity:.8}.pk-metrics strong{font-size:1.4rem}.pk-chart{max-width:100%;height:auto}.pk-advanced,.pk-help{margin:.8rem 0}.pk-advanced summary,.pk-help summary{cursor:pointer;font-weight:600}.pk-add-compound{margin-top:1rem}.pk-mode-protocol .pk-custom-section,.pk-mode-protocol .pk-compare-section{display:none}.pk-mode-custom .pk-compare-section,.pk-mode-custom .pk-protocol-only{display:none}.pk-mode-compare .pk-custom-section{display:none}.pk-mode-compare #pkSetup{display:none}
+</style>
+<script src="/static/pk.js?v=pk-redesign-20261030" defer></script>
 {% endblock %}

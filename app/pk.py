@@ -8,6 +8,8 @@ LN2 = log(2)
 PROFILES = {
     "tirzepatide": (120.0, 12.0),
     "semaglutide": (168.0, 24.0),
+    "liraglutide": (13.0, 3.0),  # human SC elimination; absorption approximate
+    "exenatide": (2.4, 0.65),  # immediate-release SC; absorption approximate
     "retatrutide": (144.0, 24.0),
     "testosterone cypionate": (192.0, 24.0),
     "testosterone enanthate": (120.0, 24.0),
@@ -20,7 +22,7 @@ PROFILES = {
 
 def profile(name: str):
     label = re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
-    if any(x in label for x in ("propionate", "undecanoate", "gel", "cream", "oral", "pellet")):
+    if any(x in label for x in ("propionate", "undecanoate", "gel", "cream", "oral", "pellet", "extended release", "bydureon")):
         return None
     if "testosterone" in label or label == "trt":
         if "enanthate" in label:
@@ -32,7 +34,7 @@ def profile(name: str):
         return PROFILES["ipamorelin"]
     if re.search(r"\bbpc\s*157\b", label):
         return PROFILES["bpc-157"]
-    for key in ("tirzepatide", "semaglutide", "retatrutide"):
+    for key in ("tirzepatide", "semaglutide", "liraglutide", "exenatide", "retatrutide"):
         if re.search(r"\b" + key + r"\b", label):
             return PROFILES[key]
     return None
@@ -90,5 +92,14 @@ def model_info(name: str) -> dict:
     if "tesamorelin" in label or "tesamoralin" in label or label == "tesa":
         return {"level": "formulation-specific", "needs_assumptions": False,
                 "description": "11-minute elimination reference for EGRIFTA WR; other formulations differ. Absorption half-life is illustrative."}
+    if "liraglutide" in label:
+        return {"level": "human elimination", "needs_assumptions": False,
+                "description": "Human SC elimination half-life approximately 13 h (FDA label); absorption shape is an approximation. Injection formulation only."}
+    if "exenatide" in label:
+        return {"level": "human elimination", "needs_assumptions": False,
+                "description": "Immediate-release SC exenatide elimination half-life approximately 2.4 h (FDA label). NOT extended-release exenatide; absorption shape approximate."}
+    if "semaglutide" in label:
+        return {"level": "human elimination", "needs_assumptions": False,
+                "description": "Injectable semaglutide elimination half-life approximately 1 week (FDA label); absorption is approximate, not oral semaglutide."}
     return {"level": "approximate", "needs_assumptions": False,
             "description": "Exploratory one-compartment exposure model; not measured serum concentration."}

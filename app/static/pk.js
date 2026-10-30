@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  let scenarios = [], current = null;
+  let scenarios = [], current = null, lastGraph = null;
   const error = e => { $('pkError').textContent = e.message || String(e); };
   const request = async (url, method='GET', body) => {
     const r = await fetch(url, {method, headers: body ? {'Content-Type':'application/json'} : {}, body: body ? JSON.stringify(body) : undefined});
@@ -19,6 +19,7 @@
   function draw(data) {
     const c=$('plot'), ctx=c.getContext('2d'), w=c.width,h=c.height;
     ctx.clearRect(0,0,w,h);
+    lastGraph=data;
     const rows=data.rows, max=Math.max(0.001,...rows.map(r=>Math.max(r.actual,r.planned)));
     const css=getComputedStyle(document.documentElement);
     const token=(name, fallback)=>css.getPropertyValue(name).trim()||fallback;
@@ -36,8 +37,32 @@
     const nx=left+(w-left-right)*(now-t0)/(t1-t0);
     ctx.setLineDash([5,5]);ctx.strokeStyle=chartNow;ctx.beginPath();ctx.moveTo(nx,top);ctx.lineTo(nx,h-bottom);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=chartText;ctx.fillText(rows[0].at.slice(0,10),left,h-13);ctx.fillText(rows[rows.length-1].at.slice(0,10),w-115,h-13);
+    const vals=rows.map(r=>r.planned).filter(Number.isFinite);
+    const peak=Math.max(...vals), trough=Math.min(...vals), avg=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
+    const fmt=v=>Number.isFinite(v)?v.toPrecision(4)+' mg-eq':'—';
+    $('pkPeak').textContent=fmt(peak);$('pkTrough').textContent=fmt(trough);
+    $('pkRatio').textContent=trough>0?(peak/trough).toFixed(2)+'×':'N/A';$('pkAverage').textContent=fmt(avg);
     $('summary').textContent=`${data.model?.level||'approximate'} model. ${data.actual_doses} historical administrations, ${data.planned_doses} planned administrations. Units: ${data.units}.`;
   }
+  const help={protocol:'Select a protocol and its compound, then Run simulation. The saved schedule is read-only.',custom:'Select a compound, enter an initial date, dose and interval (3.5 days is supported), then Preview what-if. Nothing is saved unless you choose Save.',compare:'Select a compound and up to four saved scenarios, then Compare scenarios. Overlay curves from different compounds are independently normalized.'};
+  function setMode(mode){
+    if(!help[mode]) mode='protocol';
+    document.body.classList.remove('pk-mode-protocol','pk-mode-custom','pk-mode-compare');document.body.classList.add('pk-mode-'+mode);
+    document.querySelectorAll('[data-pk-mode]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.pkMode===mode)));
+    $('pkWorkflowHelp').textContent=help[mode];
+    try{localStorage.setItem('tracker-pk-mode',mode);}catch(_e){}
+  }
+  document.querySelectorAll('[data-pk-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.pkMode)));
+  setMode(localStorage.getItem('tracker-pk-mode')||'protocol');
+  document.querySelectorAll('[data-pk-window]').forEach(b=>b.addEventListener('click',()=>{
+    if(b.dataset.pkWindow==='custom'){document.querySelector('.pk-window').scrollIntoView({behavior:'smooth'});return;}
+    const days=Number(b.dataset.pkWindow);$('back').value=days;$('forward').value=days;
+    refresh().catch(error);
+  }));
+  $('pkExportPng').onclick=()=>{const a=document.createElement('a');a.download='tracker-pk-exposure.png';a.href=$('plot').toDataURL('image/png');a.click();};
+  $('pkExportCsv').onclick=()=>{if(!lastGraph?.rows?.length){error(new Error('Run a simulation first.'));return;}
+    const rows=['time,recorded_only_mg_equivalent,with_planned_mg_equivalent',...lastGraph.rows.map(r=>[r.at,r.actual,r.planned].join(','))];
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\r\n')],{type:'text/csv'}));a.download='tracker-pk-exposure.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
   // Redraw when Chrome's system color scheme changes without reloading.
   window.addEventListener('tracker:themechange', () => {refresh().catch(error); compare().catch(error);});
   const scheme=window.matchMedia('(prefers-color-scheme: dark)');
@@ -45,6 +70,7 @@
   async function refresh() {
     if (!cid()) return;
     if(!($('half').value && $('abs').value)) throw new Error('Enter both hypothetical half-lives before graphing this compound.');
+    $('pkError').textContent='';
     const q=new URLSearchParams({compound_id:cid(),half_life_hours:$('half').value,absorption_half_life_hours:$('abs').value,days_back:$('back').value,days_forward:$('forward').value});
     if($('protocol').value) q.set('protocol_id',$('protocol').value);
     else if(current) q.set('scenario_id',current.id);
@@ -214,7 +240,7 @@
       current=null;
       await load();
       $('protocolGraphStatus').textContent=`Showing ${protocol.selectedOptions[0].text} — ${o.text}. Choose another compound to graph it separately.`;
-      $('plot').scrollIntoView({behavior:'smooth',block:'center'});
+      $('pkResults').scrollIntoView({behavior:'smooth',block:'start'});
       $('pkError').textContent='';
     }catch(e){error(e);}
   };

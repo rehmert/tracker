@@ -35,7 +35,7 @@ class WhatIfProtocol(BaseModel):
     compound_id: int
     name: str = Field(min_length=1, max_length=160)
     start_at: datetime
-    interval_days: int = Field(ge=1, le=90)
+    interval_days: float = Field(ge=0.125, le=90)
     duration_days: int = Field(ge=1, le=365)
     stages: list[WhatIfStage] = Field(min_length=1, max_length=52)
     half_life_hours: float = Field(gt=0, le=10000)
@@ -54,8 +54,10 @@ class WhatIfProtocol(BaseModel):
 def what_if_doses(data: WhatIfProtocol):
     stages = data.stages
     doses = []
-    for offset in range(0, data.duration_days, data.interval_days):
-        week = offset // 7 + 1
+    for index in range(int(data.duration_days / data.interval_days) + 1):
+        offset = index * data.interval_days
+        if offset >= data.duration_days: break
+        week = int(offset // 7) + 1
         amount = next(stage.amount_mg for stage in reversed(stages) if stage.week <= week)
         doses.append((data.start_at + timedelta(days=offset), amount))
     return doses
@@ -257,11 +259,11 @@ def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
         planned = protocol_planned_doses(db, protocol_id, compound_id, now, end)
     # Short-lived compounds require sub-hour sampling. Limit sample count by
     # using a compact recent window instead of falsely smooth multi-month curves.
-    short = pk.model_info(c.name)["level"] in ("formulation-specific", "experimental", "illustrative")
+    short = hl <= 24 or pk.model_info(c.name)["level"] in ("formulation-specific", "experimental", "illustrative")
     if short:
         start = max(start, now - timedelta(hours=24))
         end = min(end, now + timedelta(hours=48))
-        step = 0.05 if hl < 0.5 else 0.25
+        step = 0.05 if hl < 0.5 else (0.25 if hl < 4 else 1.0)
         # Include all planned events in the displayed window.
         if protocol_id is not None:
             planned = protocol_planned_doses(db, protocol_id, compound_id, now, end)
