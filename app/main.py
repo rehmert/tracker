@@ -96,3 +96,7 @@ app.include_router(inventory_forecast.router)
 # Release 129-136: read-only forecast horizons
 from .routers import forecast_horizons
 app.include_router(forecast_horizons.router)
+
+# Release 137-144: shared-stock forecast audit
+from .routers import forecast_audit
+app.include_router(forecast_audit.router)

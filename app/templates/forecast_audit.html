@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Forecast Audit{% endblock %}
+{% block content %}
+<section style="max-width:1400px">
+<h1>Shared-stock forecast audit</h1>
+<p class="muted">Read-only, approximate 28-day demand grouped by compound and unit. Unlike per-protocol forecasts, the same inventory pool is counted only once while demand from multiple active protocol items is combined.</p>
+<p><a href="/inventory-forecast">Inventory forecast</a> · <a href="/forecast-horizons">Forecast horizons</a> · <a href="/protocol-coverage">Protocol coverage</a> · <a href="/forecast-audit.csv">Export CSV</a></p>
+<div class="card" style="padding:1rem">
+<h2>Potential shortages and data-quality flags</h2>
+<p class="muted">Uses existing average-frequency calculations; not exact calendar scheduling. Escalation, future expiry, skipped doses, and dose suitability are not modeled. Shared-stock consistency failures and missing demand estimates are flagged rather than silently assumed.</p>
+<div style="overflow-x:auto"><table>
+<thead><tr><th>Compound</th><th>Protocols / items</th><th>Eligible vials</th><th>Shared stock</th><th>Combined 28d demand</th><th>Planning flag</th></tr></thead>
+<tbody>
+{% for row in rows %}
+<tr>
+<td>{{ row.compound }} ({{ row.unit }})</td>
+<td>{{ row.protocols }} / {{ row.items }}</td>
+<td>{{ row.vials if row.vials is not none else 'Review' }}</td>
+<td>{{ '%.3f'|format(row.available) if row.available is not none else 'Review' }}</td>
+<td>{{ '%.3f'|format(row.demand) if row.demand is not none else 'Not estimable' }}</td>
+<td><strong>{{ row.flag }}</strong></td>
+</tr>
+{% else %}<tr><td colspan="6">No active protocol items to audit.</td></tr>{% endfor %}
+</tbody></table></div></div></section>
+{% endblock %}
