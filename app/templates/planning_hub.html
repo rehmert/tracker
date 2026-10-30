@@ -1,5 +1,168 @@
 {% extends "base.html" %}
-{% block title %}Inventory Planning Hub{% endblock %}
+{% block title %}Inventory Planning Hub
+
+<!-- RELEASE_169_176 -->
+<div class="card" style="padding:1rem; margin-top:1rem">
+
+  <h2>Expiration-aware inventory planning</h2>
+
+  <p class="muted">
+    This section compares scheduled demand with inventory
+    approaching its recorded expiration or beyond-use date.
+    The conservative scenario excludes all inventory with
+    a recorded date within the selected horizon.
+    It does not predict actual waste or assume a
+    consumption order.
+  </p>
+
+  <p>
+    <a href="/expiry-exposure">
+      Detailed expiration exposure
+    </a>
+    ·
+    <a href="/scheduled-forecast">
+      Scheduled demand
+    </a>
+  </p>
+
+  <div style="overflow-x:auto">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Compound</th>
+          <th>Horizon</th>
+          <th>Scheduled demand</th>
+          <th>At-risk stock</th>
+          <th>Conservative stock</th>
+          <th>Conservative balance</th>
+          <th>Missing dates</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+      {% for item in expiry_comparisons %}
+
+        {% for h in item.horizons %}
+
+        <tr>
+
+          <td>
+            {{ item.compound }}
+            ({{ item.unit }})
+          </td>
+
+          <td>
+            {{ h.days }} days
+          </td>
+
+          <td>
+            {% if h.demand is not none %}
+              {{ "%.3f"|format(h.demand) }}
+            {% else %}
+              Not estimable
+            {% endif %}
+          </td>
+
+          <td>
+            {% if h.at_risk is not none %}
+              {{ "%.3f"|format(h.at_risk) }}
+            {% else %}
+              Not comparable
+            {% endif %}
+          </td>
+
+          <td>
+            {% if h.conservative_stock is not none %}
+              {{ "%.3f"|format(h.conservative_stock) }}
+            {% else %}
+              Not estimable
+            {% endif %}
+          </td>
+
+          <td>
+
+            {% if h.conservative_gap is none %}
+
+              Not estimable
+
+            {% elif h.conservative_gap < 0 %}
+
+              <strong>
+                Potential shortfall:
+                {{ "%.3f"|format(-h.conservative_gap) }}
+                {{ item.unit }}
+              </strong>
+
+            {% else %}
+
+              {{ "%.3f"|format(h.conservative_gap) }}
+              {{ item.unit }} remaining
+
+            {% endif %}
+
+          </td>
+
+          <td>
+            {% if h.missing_dates is not none %}
+              {{ h.missing_dates }}
+            {% else %}
+              Unknown
+            {% endif %}
+          </td>
+
+        </tr>
+
+        {% endfor %}
+
+      {% else %}
+
+        <tr>
+          <td colspan="7">
+            No scheduled inventory records available.
+          </td>
+        </tr>
+
+      {% endfor %}
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+  {% if unmatched_expiry %}
+
+  <h3>Expiration records without matching scheduled demand</h3>
+
+  <p class="muted">
+    These records are displayed separately rather than
+    combining inventory across incompatible units.
+  </p>
+
+  <ul>
+
+    {% for row in unmatched_expiry %}
+
+      <li>
+        {{ row.compound }}
+        ({{ row.unit }})
+        — {{ row.eligible }} eligible vial records
+      </li>
+
+    {% endfor %}
+
+  </ul>
+
+  {% endif %}
+
+</div>
+<!-- END_RELEASE_169_176 -->
+
+
+{% endblock %}
 {% block content %}
 <section style="max-width:1500px">
 <h1>Inventory planning hub</h1>
