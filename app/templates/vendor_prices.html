@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Vendor price comparison{% endblock %}
 {% block content %}
-<h1>Vendor price comparison</h1>
+<h1>Vendor price comparison</h1><nav class="ux-shortcuts" aria-label="Vendor pricing sections"><a href="#compare-offers">Compare</a><a href="/purchases">Purchases</a><a href="/compounds">Compounds</a></nav>
 <p>Add offers manually or import price sheets, then compare cost per vial. Prices are informational; matching product names do not establish equivalent quality or safety.</p>
-<section class="card"><h2>Compare offers</h2><p>Prices are normalized by vial count; offers initially appear grouped by compound and content; click a column heading to sort all offers. The lowest known delivered total is highlighted for offers with the same compound, content, and vial quantity (ties are highlighted). Offers without a shipping policy are excluded from that comparison. Shipping estimates assume a separate order containing only the listed package. Combined orders may qualify for free shipping and should not be charged shipping per line item.</p>
+<section class="card" id="compare-offers"><h2>Compare offers</h2><p>Prices are normalized by vial count; offers initially appear grouped by compound and content; click a column heading to sort all offers. The lowest known delivered total is highlighted for offers with the same compound, content, and vial quantity (ties are highlighted). Offers without a shipping policy are excluded from that comparison. Shipping estimates assume a separate order containing only the listed package. Combined orders may qualify for free shipping and should not be charged shipping per line item.</p>
 <div style="margin: .75rem 0 1rem; max-width: 360px;">
 <label class="field" for="vendor-compound-filter"><span>Filter by compound</span>
 <select id="vendor-compound-filter"><option value="">All compounds</option></select></label>

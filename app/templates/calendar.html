@@ -1,14 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Protocol calendar<details><summary>Manage hidden projections ({{ exclusions|length }})</summary>
-<p class="note">Restoring a projection does not create or change administration records. If a protocol item was deleted, its exclusions are removed with it.</p>
-{% for rule in exclusions %}
-<div class="row">
-  <span>{{ rule.item.protocol.name }} · {{ rule.item.compound.name }} · {{ rule.scheduled_on }} · {{ 'This date onward' if rule.scope == 'onward' else 'One date' }}</span>
-  <form method="post" action="/calendar/exclusions/{{ rule.id }}/restore"><button type="submit">Restore</button></form>
-</div>
-{% else %}<p>No hidden projections.</p>{% endfor %}
-</details>
-{% endblock %}
+{% block title %}Protocol calendar{% endblock %}
 {% block content %}
 <h1>Protocol calendar</h1>
 <p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
@@ -20,12 +11,13 @@
 <a class="button" href="/calendar/export.ics?month={{ shown.strftime('%Y-%m') }}">Export month (.ics)</a>
 </form>
 <p class="row"><a href="/calendar?month={{ previous }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a href="/calendar?month={{ next_month }}">Next →</a></p>
+<p class="ux-legend" aria-label="Calendar legend"><span>✓ Recorded on date (not verified)</span><span>! No matching log</span><span>◉ Due today</span><span>○ Upcoming</span></p>
 <div class="calendar-grid">
 {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}<div class="calendar-head">{{ day }}</div>{% endfor %}
 {% for d in days %}<div class="calendar-day {% if not d.in_month %}outside{% endif %}">
 <strong>{{ d.date.day }}</strong>
 {% for x in d.events %}
-  {% if x.status == 'recorded' %}<div class="calendar-event recorded" title="Same-day recorded dose matched to this projected entry">✓ {{ x.name }} · {{ x.actual_dose }} <small>({{ x.protocol }})</small></div>
+  {% if x.status == 'recorded' %}<div class="calendar-event recorded" title="A dose was recorded on this date for this compound; amount and timing have not been verified">✓ {{ x.name }} · {{ x.actual_dose }} <small>({{ x.protocol }})</small></div>
   {% elif x.status == 'extra' %}<div class="calendar-event recorded" title="Recorded dose without a matching planned entry">✓ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(unmatched log)</small></div>
   {% elif x.status == 'unrecorded' %}<div class="calendar-event calendar-unrecorded" title="Past projected entry with no matching dose log">! {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(not recorded)</small></div>
   {% elif x.status == 'due' %}<div class="calendar-event projected" title="Projected for today">◉ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(today)</small></div>

@@ -2,13 +2,14 @@
 {% block title %}Protocols{% endblock %}
 {% block content %}
 <h1>Protocols</h1>
-<p class="note">A protocol is a what-if plan: amounts and frequencies you choose, run against your current inventory and prices. Saving one never changes stock or the log.</p>
+<p class="note">Protocols can be active schedules or hypothetical what-if plans. Saving a protocol does not record an administration or consume inventory.</p>
+<nav class="ux-shortcuts" aria-label="Protocol workflow"><a href="/calendar">View schedule</a><a href="/doses">Record a dose</a><a href="/pk">Simulate exposure</a></nav>
 <div class="scroll"><table>
   <thead><tr><th>Name</th><th>Status</th><th class="n">Items</th><th class="n">Est. cost / month</th><th>Updated</th></tr></thead>
   <tbody>
   {% for r in rows %}
   <tr><td><a href="/protocols/{{ r.p.id }}">{{ r.p.name }}</a></td><td>{{ "Active" if r.p.is_active else "What-if" }}</td><td class="n">{{ r.p.items|length }}</td><td class="n">{{ r.t.month|money }}</td><td>{{ r.p.updated_at|utc_dt }}</td></tr>
-  {% else %}<tr><td colspan="5" class="empty">No protocols yet.</td></tr>{% endfor %}
+  {% else %}<tr><td colspan="5" class="empty">No protocols yet. Create one below to start planning.</td></tr>{% endfor %}
   </tbody>
 </table></div>
 <section>

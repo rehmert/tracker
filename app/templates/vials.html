@@ -2,7 +2,7 @@
 {% from "_macros.html" import gauge %}
 {% block title %}Vials{% endblock %}
 {% block content %}
-<h1>Vials</h1>
+<h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
 <form method="get" class="inline">
   <input type="hidden" name="status" value="{{ status }}">
   <label class="field"><span>Compound</span>

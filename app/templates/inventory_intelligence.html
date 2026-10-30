@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Inventory Insights{% endblock %}
 {% block content %}
-<div class="inventory-heading"><div><h1>Inventory intelligence</h1><p class="muted">Expiration, consumption and landed-cost insights based on your recorded inventory.</p></div><a class="button" href="/vials">Manage vials →</a></div>
+<div class="inventory-heading"><div><h1>Inventory intelligence</h1><nav class="ux-shortcuts"><a href="/inventory-alerts">View alerts</a><a href="/reconciliation">Reconcile stock</a><a href="/consumption">Usage history</a><a href="/vials">Vials</a></nav><p class="muted">Expiration, consumption and landed-cost insights based on your recorded inventory.</p></div><a class="button" href="/vials">Manage vials →</a></div>
 <div class="inventory-kpis">
   <div class="inventory-kpi"><small>Active vials</small><strong>{{ totals.active_vials }}</strong></div>
   <div class="inventory-kpi"><small>Expiring within 30 days</small><strong>{{ totals.expiring_30 }}</strong></div>

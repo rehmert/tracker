@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Inventory Alerts{% endblock %}
 {% block content %}
-<h1>Inventory alerts</h1>
+<h1>Inventory alerts</h1><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health &amp; forecasts</a><a href="/vials">Vials</a><a href="/supplies">Supplies</a></nav>
 <p class="muted">Read-only warnings based on recorded expiration dates, beyond-use dates, and historical consumption. Estimates are not purchasing or dosing recommendations.</p>
 <form method="get" action="/inventory-alerts" class="inventory-card">
   <label>Usage history <select name="days"><option value="30" {% if forecast_days==30 %}selected{% endif %}>30 days</option><option value="90" {% if forecast_days==90 %}selected{% endif %}>90 days</option><option value="180" {% if forecast_days==180 %}selected{% endif %}>180 days</option></select></label>

@@ -7,6 +7,7 @@
   <link rel="manifest" href="/static/manifest.webmanifest">
   <title>{% block title %}Home{% endblock %} · Tracker</title>
   <link rel="stylesheet" href="/static/app.css?v=grouped-nav-20261028">
+  <link rel="stylesheet" href="/static/ux_improvements.css?v=20261030">
   <script src="/static/density.js?v=ui-density-20261026"></script>
   <script src="/static/theme.js?v=release6-personalization-20261026"></script>
   <script src="/static/vendor/htmx.min.js" defer></script>
@@ -15,6 +16,7 @@
   <script src="/static/layout.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/everyday.js?v=release6-personalization-20261026" defer></script>
   <script src="/static/personalize.js?v=dashboard-order-fix-20261026" defer></script>
+  <script src="/static/ux_improvements.js?v=20261030" defer></script>
 </head>
 <body>
 <div class="shell" id="app-shell">
@@ -49,6 +51,7 @@
   <main id="main-content">
     <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker</span><a href="/" aria-label="Overview">Overview</a></div>
     <div class="workspace-toolbar" aria-label="Workspace tools">
+      <div class="ux-add-menu"><button type="button" id="ux-add-toggle" aria-expanded="false" aria-controls="ux-add-panel" class="ux-add-button">+ Add</button><div id="ux-add-panel" class="ux-add-panel" hidden><a href="/doses">Record dose</a><a href="/vitals">Record vitals</a><a href="/purchases">New purchase</a><a href="/protocols">New protocol</a><a href="/quick-entry">All quick entries</a></div></div>
       <button type="button" class="workspace-search" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search Tracker (Ctrl+K)">⌕ <span>Search Tracker</span> <kbd>Ctrl K</kbd></button>
       <div class="workspace-settings" id="workspace-settings">
         <button type="button" id="workspace-settings-toggle" aria-expanded="false" aria-controls="workspace-settings-panel" aria-haspopup="true">⚙ Preferences</button>
@@ -74,6 +77,7 @@
         </section>
       </div>
     </div>
+    <nav class="ux-breadcrumbs" id="ux-breadcrumbs" aria-label="Breadcrumb" hidden></nav>
     {% if msg %}<p class="flash ok" role="status">{{ msg }}</p>{% endif %}
     {% if err %}<p class="flash error" role="alert">{{ err }}</p>{% endif %}
     {% block content %}{% endblock %}
