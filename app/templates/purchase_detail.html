@@ -43,6 +43,7 @@
 <section>
   <h2>Add vials to this purchase</h2>
   <form method="post" action="/purchases/{{ p.id }}/vials" class="grid">
+    <input type="hidden" name="submission_token" value="{{ vial_submission_token }}">
     <label class="field"><span>Compound</span>
       <select name="compound_id" id="purchase-vial-compound" required>{% for c in compounds %}<option value="{{ c.id }}" data-unit="{{ c.primary_unit }}">{{ c.name }}</option>{% endfor %}</select></label>
     <label class="field"><span>Form</span>
@@ -70,6 +71,7 @@
   <h2 id="purchase-bac">Add BAC water vials</h2>
   <p class="note">BAC water contains no tracked active ingredient. Enter the number of vials and their volume in mL. Inventory is tracked in total mL and is available for reconstitution.</p>
   <form method="post" action="/purchases/{{ p.id }}/bac-water" class="grid">
+    <input type="hidden" name="submission_token" value="{{ bac_submission_token }}">
     <label class="field"><span>Number of vials</span><input name="vial_count" type="number" min="1" max="100000" step="1" value="1" required></label>
     <label class="field"><span>Volume per vial (mL)</span><input name="ml_per_vial" type="number" min="0.001" max="1000" step="any" value="10" required></label>
     <label class="field"><span>Product name (optional)</span><input name="name" placeholder="BAC water"></label>
@@ -123,6 +125,7 @@
 <section>
   <h2>Add supplies or disposables to this purchase</h2>
   <form method="post" action="/purchases/{{ p.id }}/supplies" class="grid bulk-ux-form" data-bulk-ux>
+    <input type="hidden" name="submission_token" value="{{ supply_submission_token }}">
     <label class="field wide"><span>Choose a previously purchased product (optional)</span>
       <select data-product-picker><option value="">New product / enter manually</option>
       {% for product in products %}<option value="{{ loop.index0 }}">{{ product.name }} — {{ category_map[product.kind].label if product.kind in category_map else product.kind }}</option>{% endfor %}

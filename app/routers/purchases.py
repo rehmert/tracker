@@ -79,7 +79,9 @@ def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
             products.append(old)
             known.add(key)
     return render(request, "purchase_detail.html", products=products, categories=categories, category_map={c.key: c for c in categories}, p=p, views=views, supplies=supplies, subtotal=subtotal,
-                  total=sum(landed.values()), supply_landed=landed, compounds=compounds, supply_line_cents=services.supply_line_cents)
+                  total=sum(landed.values()), supply_landed=landed, compounds=compounds, supply_line_cents=services.supply_line_cents,
+                  vial_submission_token=idempotency.new_token(), bac_submission_token=idempotency.new_token(),
+                  supply_submission_token=idempotency.new_token())
 
 
 @router.post("/purchases/{pid}")
@@ -116,7 +118,17 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
               unit_price: str = Form("0"), label: str = Form(""), lot: str = Form(""),
               expires_on: str = Form(""), notes: str = Form(""),
               kit_size: int = Form(1), kit_count: int = Form(1), cap_color: str = Form(""),
-              db: Session = Depends(get_db)):
+              submission_token: str = Form(""), db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/purchases/{pid}", err="Inventory is busy. Please retry.")
+    submission_token = submission_token if isinstance(submission_token, str) else ""
+    payload = dict(pid=pid, compound_id=compound_id, form=form, quantity=quantity, content_value=content_value, content_unit=content_unit, volume_ml=volume_ml, concentration=concentration, unit_price=unit_price, label=label, lot=lot, expires_on=expires_on, notes=notes, kit_size=kit_size, kit_count=kit_count, cap_color=cap_color)
+    state, digest = idempotency.check(db, submission_token, "purchase_vials_create", payload) if submission_token else ("new", "")
+    if state != "new":
+        db.rollback()
+        if state == "replay":
+            return services.flash_redirect(back, msg="These vials were already added.")
+        return services.flash_redirect(f"/purchases/{pid}", err="Invalid or reused submission identifier. Refresh the page.")
     p = db.get(Purchase, pid)
     if p is None:
         raise HTTPException(404, "Purchase not found")
@@ -180,6 +192,8 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
     db.flush()
     for vial in created_vials:
         record(db, "vial", vial.id, "purchase_create", after={"purchase_id": pid, "compound_id": compound_id, "content_value": content, "content_unit": unit.name, "quantity_in_order": quantity})
+    if submission_token:
+        idempotency.record(db, submission_token, "purchase_vials_create", digest)
     db.commit()
     return services.flash_redirect(back, msg=f"Added {quantity} vial(s).")
 
@@ -225,9 +239,19 @@ def parse_bulk(db, kind, quantity, pack_count, units_per_pack, package_price):
 @router.post("/purchases/{pid}/bac-water")
 def add_bac_water_vials(pid: int, vial_count: int = Form(...), ml_per_vial: float = Form(...),
                         name: str = Form(""), price_per_vial: str = Form(""), total_line_cost: str = Form(""), notes: str = Form(""),
-                        db: Session = Depends(get_db)):
+                        submission_token: str = Form(""), db: Session = Depends(get_db)):
     """Add ingredient-free BAC water vials, tracked in total mL."""
     from ..bac_water import make_bac_water_supply
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/purchases/{pid}", err="Inventory is busy. Please retry.")
+    submission_token = submission_token if isinstance(submission_token, str) else ""
+    payload = dict(pid=pid, vial_count=vial_count, ml_per_vial=ml_per_vial, name=name, price_per_vial=price_per_vial, total_line_cost=total_line_cost, notes=notes)
+    state, digest = idempotency.check(db, submission_token, "purchase_bac_create", payload) if submission_token else ("new", "")
+    if state != "new":
+        db.rollback()
+        if state == "replay":
+            return services.flash_redirect(back, msg="This BAC water inventory was already added.")
+        return services.flash_redirect(f"/purchases/{pid}", err="Invalid or reused submission identifier. Refresh the page.")
     back = f"/purchases/{pid}"
     if db.get(Purchase, pid) is None:
         raise HTTPException(404, "Purchase not found")
@@ -245,6 +269,8 @@ def add_bac_water_vials(pid: int, vial_count: int = Form(...), ml_per_vial: floa
     db.add(supply)
     db.flush()
     record(db, "supply", supply.id, "purchase_create", after=snapshot(supply, ("purchase_id", "name", "kind", "purchased_qty", "remaining_qty")))
+    if submission_token:
+        idempotency.record(db, submission_token, "purchase_bac_create", digest)
     db.commit()
     return services.flash_redirect(back, msg=f"Added {vial_count} BAC water vial(s) ({supply.purchased_qty:g} mL total).")
 
@@ -255,7 +281,17 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
                         compound_id: str = Form(""), notes: str = Form(""),
                         db: Session = Depends(get_db), pack_count: str = Form(""),
                         units_per_pack: str = Form(""), package_price: str = Form(""),
-                        package_type: str = Form("box")):
+                        package_type: str = Form("box"), submission_token: str = Form("")):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(f"/purchases/{pid}", err="Inventory is busy. Please retry.")
+    submission_token = submission_token if isinstance(submission_token, str) else ""
+    payload = dict(pid=pid, name=name, kind=kind, quantity=quantity, unit_price=unit_price, compound_id=compound_id, notes=notes, pack_count=pack_count, units_per_pack=units_per_pack, package_price=package_price, package_type=package_type)
+    state, digest = idempotency.check(db, submission_token, "purchase_supply_create", payload) if submission_token else ("new", "")
+    if state != "new":
+        db.rollback()
+        if state == "replay":
+            return services.flash_redirect(back, msg="This purchased item was already added.")
+        return services.flash_redirect(f"/purchases/{pid}", err="Invalid or reused submission identifier. Refresh the page.")
     back = f"/purchases/{pid}"
     if db.get(Purchase, pid) is None:
         raise HTTPException(404, "Purchase not found")
@@ -290,6 +326,8 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
         product.preferred_vendor = db.get(Purchase, pid).vendor
     db.flush()
     record(db, "supply", supply.id, "purchase_create", after=snapshot(supply, ("purchase_id", "name", "kind", "purchased_qty", "remaining_qty")))
+    if submission_token:
+        idempotency.record(db, submission_token, "purchase_supply_create", digest)
     db.commit()
     return services.flash_redirect(back, msg="Supply or pills added to purchase.")
 
