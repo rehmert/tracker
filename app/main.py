@@ -68,3 +68,7 @@ def healthz():
 # Release 65–68: Unified daily activity
 from .routers import activity
 app.include_router(activity.router)
+
+# Release 69-72: read-only workflow tools
+from .routers import workflow_tools
+app.include_router(workflow_tools.router)
