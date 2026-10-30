@@ -8,6 +8,7 @@ from ..db import get_db
 from ..inventory_lock import reserve_inventory_write
 from ..models import Supply, SupplyUsage, InventoryAdjustment, ChangeAudit, Vial, DoseLog, Purchase
 from .. import services, idempotency
+from ..inventory_health_checks import collect_inventory_health
 from ..templating import render
 import json
 
@@ -75,7 +76,7 @@ def collect_integrity_issues(db:Session):
 
 @router.get('/inventory-health')
 def inventory_health(request:Request, db:Session=Depends(get_db)):
-    issues=collect_integrity_issues(db)
+    issues=collect_integrity_issues(db) + collect_inventory_health(db)
     errors=sum(level=='Error' for level,_,_ in issues)
     warnings=sum(level=='Warning' for level,_,_ in issues)
     return render(request,'inventory_health.html',issues=issues,errors=errors,warnings=warnings)
