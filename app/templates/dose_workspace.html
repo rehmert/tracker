@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Dose Workspace{% endblock %}
+
+{% block content %}
+
+<h1>Dose Workspace</h1>
+
+<p class="note">
+  Review available inventory and recent administrations
+  before recording a dose. This workspace does not
+  change inventory or create dose records.
+</p>
+
+<nav class="ux-shortcuts" aria-label="Dose workspace actions">
+  <a href="/calendar">Calendar</a>
+  <a href="/protocols">Protocols</a>
+  <a href="/doses{% if compound_id %}?compound_id={{ compound_id }}{% endif %}">
+    Record a dose
+  </a>
+  <a href="/pk">PK Simulator</a>
+</nav>
+
+<section>
+  <h2>Select compound</h2>
+
+  <form method="get" action="/dose-workspace">
+    <label class="field">
+      <span>Compound</span>
+      <select name="compound_id" onchange="this.form.submit()">
+        <option value="">All compounds</option>
+        {% for compound in compounds %}
+        <option
+          value="{{ compound.id }}"
+          {% if compound_id == compound.id %}selected{% endif %}
+        >
+          {{ compound.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <noscript>
+      <button type="submit">Apply filter</button>
+    </noscript>
+  </form>
+</section>
+
+<section>
+  <h2>Available vials</h2>
+
+  <p class="note">
+    Quantities reflect Tracker's existing inventory calculations.
+    Confirm the actual vial before recording an administration.
+  </p>
+
+  {% if vials %}
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Compound</th>
+          <th>Vial</th>
+          <th>Status</th>
+          <th>Concentration</th>
+          <th>Remaining</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for vial in vials %}
+        {% set view = views[vial.id] %}
+        <tr>
+          <td>{{ vial.compound.name }}</td>
+
+          <td>
+            {{ vial.label or ('#' ~ vial.id) }}
+          </td>
+
+          <td>{{ vial.status|replace('_', ' ') }}</td>
+
+          <td>
+            {% if view.conc_per_ml %}
+              {{ view.conc_per_ml|conc(view.dim) }}
+            {% else %}
+              Not reconstituted
+            {% endif %}
+          </td>
+
+          <td>
+            {{ view.remaining_base|amt(view.dim) }}
+          </td>
+
+          <td>
+            <a href="/doses?compound_id={{ vial.compound_id }}">
+              Record dose
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">
+      No available vials match this selection.
+    </p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Recent administrations</h2>
+
+  {% if history %}
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Compound</th>
+          <th>Amount</th>
+          <th>Injection site</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for dose in history %}
+        <tr>
+          <td>{{ dose.taken_at|dt }}</td>
+
+          <td>{{ dose.vial.compound.name }}</td>
+
+          <td>
+            {{ dose.entered_value|num }}
+            {{ dose.entered_unit }}
+          </td>
+
+          <td>
+            {{ dose.site or 'Not recorded' }}
+          </td>
+
+          <td>
+            <a href="/doses/{{ dose.id }}/edit">
+              View / edit
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">
+      No administrations match this selection.
+    </p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Recording a planned dose</h2>
+
+  <p>
+    Open the calendar, select a scheduled protocol
+    occurrence, and choose <strong>Log this dose</strong>.
+    Tracker will open its existing recording form with
+    the planned information prefilled.
+  </p>
+
+  <p>
+    <a href="/calendar">Open calendar →</a>
+  </p>
+</section>
+
+{% endblock %}

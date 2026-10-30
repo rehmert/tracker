@@ -230,3 +230,74 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
         db.rollback()
         return services.flash_redirect(back, err=str(exc))
     return services.flash_redirect("/doses", msg="Dose entry updated.")
+
+
+@router.get("/dose-workspace")
+def dose_workspace(
+    request: Request,
+    compound_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    """Read-only overview; recording uses the existing /doses route."""
+
+    compounds = list(
+        db.scalars(
+            select(Compound).order_by(Compound.name)
+        )
+    )
+
+    active_vials = list(
+        db.scalars(
+            select(Vial)
+            .where(Vial.status.in_(("sealed", "in_use")))
+            .order_by(Vial.id.desc())
+        )
+    )
+
+    if compound_id is not None:
+        active_vials = [
+            vial for vial in active_vials
+            if vial.compound_id == compound_id
+        ]
+
+    views = services.vial_views(db, active_vials)
+
+    available_vials = [
+        vial for vial in active_vials
+        if views[vial.id].remaining_base > 0
+    ]
+
+    available_vials.sort(
+        key=lambda vial: (
+            vial.compound.name.casefold(),
+            vial.id,
+        )
+    )
+
+    history_query = (
+        select(DoseLog)
+        .join(Vial)
+        .where(DoseLog.kind == "dose")
+        .order_by(
+            DoseLog.taken_at.desc(),
+            DoseLog.id.desc(),
+        )
+        .limit(15)
+    )
+
+    if compound_id is not None:
+        history_query = history_query.where(
+            Vial.compound_id == compound_id
+        )
+
+    history = list(db.scalars(history_query))
+
+    return render(
+        request,
+        "dose_workspace.html",
+        compounds=compounds,
+        compound_id=compound_id,
+        vials=available_vials,
+        views=views,
+        history=history,
+    )
