@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Forecast Horizons{% endblock %}
+{% block content %}
+<section style="max-width:1400px">
+<h1>Inventory Forecast Horizons</h1>
+<p class="muted">Read-only average-frequency planning comparisons. <strong>Not exact scheduled doses, treatment advice, or purchasing guidance.</strong></p>
+<p><a href="/inventory-forecast">28-day forecast</a> · <a href="/protocol-coverage">Protocol coverage</a> · <a href="/vials">Vials</a> · <a href="/forecast-horizons.csv">Export CSV</a></p>
+<div class="card" style="padding:1rem"><h2>7 / 14 / 28 / 56-day comparisons</h2>
+<p class="muted">Inventory is measured as of today. The calculation does not account for exact scheduled occurrences, escalation weeks, skipped projections, or future vial expiry. Duplicate compound entries within one protocol are flagged for individual review, not silently combined. A matching vial does not establish suitability.</p>
+<div style="overflow-x:auto"><table><thead><tr><th>Protocol</th><th>Compound</th><th>Approx remaining</th>{% for d in horizons %}<th>{{ d }}d demand / flag</th>{% endfor %}</tr></thead>
+<tbody>{% for row in rows %}<tr><td>{{ row.protocol }}</td><td>{{ row.compound }}{% if row.duplicates %}<br><strong>Multiple entries: inspect protocol</strong>{% endif %}</td>
+<td>{{ '%.3f'|format(row.available) }} {{ row.unit }} ({{ row.vials }} vials)</td>
+{% for d in horizons %}{% set cell = row.horizons.get(d) %}<td>{% if row.duplicates or cell is none %}Review individual entries{% elif cell.demand is none %}Not estimable{% else %}{{ '%.3f'|format(cell.demand) }} {{ row.unit }}<br>{{ cell.status }}{% endif %}</td>{% endfor %}
+</tr>{% else %}<tr><td colspan="7">No active protocol items to compare.</td></tr>{% endfor %}</tbody></table></div></div></section>
+{% endblock %}

@@ -92,3 +92,7 @@ app.include_router(protocol_coverage.router)
 # Release 121-128: read-only inventory forecast
 from .routers import inventory_forecast
 app.include_router(inventory_forecast.router)
+
+# Release 129-136: read-only forecast horizons
+from .routers import forecast_horizons
+app.include_router(forecast_horizons.router)
