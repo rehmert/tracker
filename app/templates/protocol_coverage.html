@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Protocol coverage{% endblock %}
+{% block content %}
+<section class="tool-page" style="max-width:1200px;margin:auto">
+ <h1>Protocol inventory coverage</h1>
+ <p class="muted">Read-only visibility into vial records for active protocol items. Counts are not dose estimates or confirmation of usability. Verify remaining content, concentration, storage, and suitability separately.</p>
+ <p><a href="/protocols">Protocols</a> · <a href="/vials">Vials</a> · <a href="/inventory-health">Inventory health</a> · <a href="/protocol-coverage.csv">Export CSV</a></p>
+ <div class="card" style="padding:1rem"><strong>{{ protocol_count }}</strong> active protocols with items · <strong>{{ rows|length }}</strong> protocol items · <strong>{{ rows|selectattr('available','equalto',0)|list|length }}</strong> items without eligible vial records</div>
+ {% if rows %}
+ <div style="overflow-x:auto"><table><thead><tr><th>Protocol</th><th>Compound</th><th>Planned dose</th><th>Frequency</th><th>Vials</th><th>Expired</th><th>Closed</th><th>Next expiry/BUD</th><th>Review</th></tr></thead><tbody>
+ {% for r in rows %}<tr><td><a href="/protocols">{{ r.protocol }}</a></td><td><a href="/vials">{{ r.compound }}</a></td><td>{{ r.planned }}</td><td>{{ r.frequency }}</td><td>{{ r.available }}</td><td>{{ r.excluded_expired }}</td><td>{{ r.excluded_closed }}</td><td>{{ r.next_date or '—' }}</td><td>{{ r.flag }}</td></tr>{% endfor %}
+ </tbody></table></div>
+ {% else %}<p class="muted">No active protocol items found. Activate a protocol with items to see its inventory coverage.</p>{% endif %}
+ <p class="muted">Expired means an expiry or beyond-use date is earlier than today; undated vials are not assumed safe. Closed statuses and closed dates are excluded. Vials with other statuses are counted as records only. Blends are not included. No inventory is changed.</p>
+</section>
+{% endblock %}
