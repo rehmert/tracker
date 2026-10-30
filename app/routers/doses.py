@@ -53,10 +53,17 @@ def _error(msg: str) -> HTMLResponse:
 
 
 @router.get("/doses")
-def doses_page(request: Request, compound_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", db: Session = Depends(get_db)):
+def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", db: Session = Depends(get_db)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
+    selected_vial_id = (
+        vial_id
+        if vial_id is not None
+        and any(v.id == vial_id for v in vials)
+        else None
+    )
+
     if planned_date:
         try:
             scheduled = datetime.strptime(planned_date, "%Y-%m-%d")
@@ -70,7 +77,7 @@ def doses_page(request: Request, compound_id: int | None = None, planned_date: s
     return render(request, "doses.html", rows=_rows(db, compound_id), vials=vials, views=views,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
-                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else None, planned_unit=planned_unit, selected_compound_id=compound_id, supplies=manual_supplies.available(db))
+                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else None, planned_unit=planned_unit, selected_compound_id=compound_id, selected_vial_id=selected_vial_id, supplies=manual_supplies.available(db))
 
 
 @router.post("/doses/preview")

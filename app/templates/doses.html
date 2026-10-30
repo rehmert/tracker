@@ -12,11 +12,11 @@
         hx-on::after-request="this.dataset.saving='';this.querySelector('button[type=submit]').disabled=false;if(event.detail.successful&&!event.detail.xhr.getResponseHeader('HX-Retarget')){this.reset();document.getElementById('form-msg').innerHTML='';document.getElementById('dose-preview').innerHTML='';}"
         hx-on::response-error="this.dataset.saving='';this.querySelector('button[type=submit]').disabled=false;">
     <input type="hidden" name="submission_token" value="{{ submission_token }}">
-    <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="input delay:200ms, change" hx-target="#dose-preview">
+    <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="load, input delay:200ms, change" hx-target="#dose-preview">
       <label class="field"><span>Vial</span>
         <select name="vial_id" required>
           {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
-          <option value="{{ v.id }}" {% if selected_compound_id and v.compound_id == selected_compound_id %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
+          <option value="{{ v.id }}" {% if (selected_vial_id is not none and v.id == selected_vial_id) or (selected_vial_id is none and selected_compound_id and v.compound_id == selected_compound_id) %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
           {% endfor %}
         </select></label>
       <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}"></label>
