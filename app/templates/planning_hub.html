@@ -185,4 +185,147 @@
 <p class="muted">These are not silently discarded or combined across incompatible units.</p>
 <ul>{% for r in unmatched %}<li>{{ r.compound }} ({{ r.unit }}): {{ r.flag }}</li>{% endfor %}</ul></div>{% endif %}
 </section>
+
+
+<!-- TRACKER_RELEASE_185_192 -->
+
+<div class="card" style="padding:1rem; margin-top:1rem">
+
+  <h2>FEFO inventory forecast</h2>
+
+  <p class="muted">
+    This forecast allocates scheduled protocol demand to
+    dated inventory using first-expiring-first-out order.
+    It accounts for projected expiration and shows
+    potential shortages.
+  </p>
+
+  <p class="muted">
+    Undated inventory is excluded from FEFO allocation.
+    Forecasts are planning scenarios, not dosing
+    recommendations or automatic inventory adjustments.
+  </p>
+
+  <p>
+    <a href="/fefo-forecast">Detailed FEFO forecast</a>
+    ·
+    <a href="/fefo-forecast.csv">Export FEFO CSV</a>
+  </p>
+
+  {% if fefo_warnings %}
+
+  <details>
+    <summary>
+      Forecast warnings ({{ fefo_warnings|length }})
+    </summary>
+
+    <ul>
+      {% for warning in fefo_warnings %}
+      <li>{{ warning }}</li>
+      {% endfor %}
+    </ul>
+  </details>
+
+  {% endif %}
+
+  <div style="overflow-x:auto">
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Compound</th>
+          <th>Horizon</th>
+          <th>Dated stock</th>
+          <th>Undated stock</th>
+          <th>Demand</th>
+          <th>Allocated</th>
+          <th>Shortage</th>
+          <th>Expired unused</th>
+          <th>Remaining</th>
+          <th>First shortage</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+      {% for row in fefo_rows %}
+
+        {% for days in horizons %}
+
+        {% set result = row.horizons[days] %}
+
+        <tr>
+
+          <td>
+            {{ row.compound }} ({{ row.unit }})
+            {% if row.incomplete %}
+            <br><small>Incomplete schedule</small>
+            {% endif %}
+          </td>
+
+          <td>{{ days }} days</td>
+
+          <td>
+            {{ "%.3f"|format(row.dated_stock) }}
+          </td>
+
+          <td>
+            {{ "%.3f"|format(row.unknown_stock) }}
+          </td>
+
+          <td>
+            {{ "%.3f"|format(result.demand) }}
+          </td>
+
+          <td>
+            {{ "%.3f"|format(result.consumed) }}
+          </td>
+
+          <td>
+            {% if result.shortage > 0 %}
+            <strong>
+              {{ "%.3f"|format(result.shortage) }}
+            </strong>
+            {% else %}
+            0
+            {% endif %}
+          </td>
+
+          <td>
+            {{ "%.3f"|format(result.expired) }}
+          </td>
+
+          <td>
+            {{ "%.3f"|format(result.remaining) }}
+          </td>
+
+          <td>
+            {{ result.first_shortage or "—" }}
+          </td>
+
+        </tr>
+
+        {% endfor %}
+
+      {% else %}
+
+        <tr>
+          <td colspan="10">
+            No FEFO forecast records available.
+          </td>
+        </tr>
+
+      {% endfor %}
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+<!-- END_TRACKER_RELEASE_185_192 -->
+
 {% endblock %}
