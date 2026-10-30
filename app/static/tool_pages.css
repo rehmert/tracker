@@ -63,3 +63,17 @@
     padding: .45rem;
   }
 }
+
+
+/* TRACKER_TOOLS_89_96: shared read-only tool enhancements */
+.tool-page .tool-shortcuts {display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.75rem}
+.tool-page .tool-shortcuts a {display:inline-flex; padding:.35rem .65rem; border:1px solid var(--border,#cbd5e1); border-radius:999px; text-decoration:none; font-size:.88rem}
+.tool-page .tool-shortcuts a[aria-current="page"] {font-weight:700; background:var(--surface,#eef2f7)}
+.tool-page .tool-table-controls {display:flex; flex-wrap:wrap; align-items:center; gap:.65rem; margin:1rem 0 .45rem}
+.tool-page .tool-table-controls label {display:flex; flex-wrap:wrap; align-items:center; gap:.4rem}
+.tool-page .tool-table-controls input {min-width:12rem; max-width:100%; padding:.4rem .6rem}
+.tool-page .tool-table-controls button {padding:.4rem .7rem}
+.tool-page .tool-row-count {font-size:.85rem; opacity:.8}
+.tool-page tbody tr[hidden] {display:none!important}
+.tool-page .tool-empty {padding:.65rem; opacity:.75}
+@media(max-width:650px){.tool-page .tool-table-controls {align-items:stretch; flex-direction:column}.tool-page .tool-table-controls input{width:100%}}
