@@ -11,6 +11,15 @@ from .. import calc, services
 from ..db import get_db
 from ..models import Compound, Protocol, ProtocolItem, ProtocolRevision
 from ..templating import render
+from ..audit_helpers import record, snapshot
+
+PROTOCOL_FIELDS = ("name", "notes", "is_active", "horizon_weeks", "start_date", "end_date")
+
+def protocol_snapshot(p):
+    data = snapshot(p, PROTOCOL_FIELDS)
+    data["items"] = [snapshot(i, ("compound_id", "position", "amount_value", "amount_unit", "freq_count", "freq_period", "start_week", "end_week", "dose_days", "dose_time", "fasting_hours")) for i in p.items]
+    return data
+
 
 router = APIRouter()
 BLANK = {"amount_value": "", "amount_unit": "mg", "freq_count": 1, "freq_period": "week", "start_week": 1, "end_week": None, "dose_days": "", "dose_time": "", "fasting_hours": None}
@@ -139,6 +148,8 @@ def protocols_page(request: Request, db: Session = Depends(get_db)):
 def create_protocol(name: str = Form("New plan"), db: Session = Depends(get_db)):
     p = Protocol(name=name.strip() or "New plan")
     db.add(p)
+    db.flush()
+    record(db, "protocol", p.id, "create", after=protocol_snapshot(p))
     db.commit()
     return services.flash_redirect(f"/protocols/{p.id}")
 
@@ -203,6 +214,7 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
+    before = protocol_snapshot(p)
     start, end = _parse_protocol_dates(start_date, end_date)
     refs = services.compound_refs(db)
     parsed = _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period)
@@ -224,6 +236,9 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
                                     dose_days=days, dose_time=tm, fasting_hours=hours))
     db.flush()
     _revision(db, p)
+    after = protocol_snapshot(p)
+    if before != after:
+        record(db, "protocol", pid, "update", before, after)
     db.commit()
     return services.flash_redirect(f"/protocols/{pid}", msg="Saved protocol.")
 
@@ -273,9 +288,11 @@ def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = For
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
+    before = protocol_snapshot(p)
     start, end = _parse_protocol_dates(start_date, end_date)
     p.start_date, p.end_date = start, end
     _revision(db, p)
+    record(db, "protocol", pid, "update_dates", before, protocol_snapshot(p))
     db.commit()
     return services.flash_redirect(f"/protocols/{pid}", msg="Protocol dates saved.")
 
@@ -285,8 +302,10 @@ def toggle_active(pid: int, db: Session = Depends(get_db)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
+    before = protocol_snapshot(p)
     p.is_active = not p.is_active
     _revision(db, p)
+    record(db, "protocol", pid, "toggle_active", before, protocol_snapshot(p))
     db.commit()
     return services.flash_redirect(f"/protocols/{pid}", msg="Protocol status updated.")
 
@@ -304,6 +323,8 @@ def protocol_duplicate(pid: int, db: Session = Depends(get_db)):
                                        start_week=i.start_week, end_week=i.end_week,
                                        dose_days=i.dose_days, dose_time=i.dose_time, fasting_hours=i.fasting_hours))
     db.add(copy)
+    db.flush()
+    record(db, "protocol", copy.id, "duplicate", after={"source_protocol_id": pid, **protocol_snapshot(copy)})
     db.commit()
     return services.flash_redirect(f"/protocols/{copy.id}", msg="Duplicated. Edit freely.")
 
@@ -312,6 +333,7 @@ def protocol_duplicate(pid: int, db: Session = Depends(get_db)):
 def protocol_delete(pid: int, db: Session = Depends(get_db)):
     p = db.get(Protocol, pid)
     if p is not None:
+        record(db, "protocol", pid, "delete", before=protocol_snapshot(p))
         db.delete(p)
         db.commit()
     return services.flash_redirect("/protocols", msg="Protocol deleted.")

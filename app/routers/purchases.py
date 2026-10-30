@@ -10,6 +10,9 @@ from ..db import get_db
 from ..models import Compound, Purchase, Vial, Supply, SupplyUsage, SupplyCategory, SupplyProduct
 from ..supply_categories import ensure_categories, validate_supply
 from ..templating import render
+from ..audit_helpers import record, snapshot
+
+PURCHASE_FIELDS = ("vendor", "purchased_on", "order_ref", "shipping_cents", "tax_cents", "discount_cents", "notes")
 
 router = APIRouter()
 
@@ -38,6 +41,8 @@ def create_purchase(vendor: str = Form(...), purchased_on: str = Form(""),
     except ValueError as exc:
         return services.flash_redirect("/purchases", err=str(exc))
     db.add(p)
+    db.flush()
+    record(db, "purchase", p.id, "create", after=snapshot(p, PURCHASE_FIELDS))
     db.commit()
     return services.flash_redirect(f"/purchases/{p.id}", msg="Purchase saved. Add vials, supplies or pills below.")
 
@@ -74,6 +79,7 @@ def update_purchase(pid: int, vendor: str = Form(...), purchased_on: str = Form(
     p = db.get(Purchase, pid)
     if p is None:
         raise HTTPException(404, "Purchase not found")
+    before = snapshot(p, PURCHASE_FIELDS)
     try:
         p.vendor = vendor.strip() or p.vendor
         p.purchased_on = services.parse_date(purchased_on) or p.purchased_on
@@ -85,6 +91,9 @@ def update_purchase(pid: int, vendor: str = Form(...), purchased_on: str = Form(
     except ValueError as exc:
         db.rollback()
         return services.flash_redirect(f"/purchases/{pid}", err=str(exc))
+    after = snapshot(p, PURCHASE_FIELDS)
+    if before != after:
+        record(db, "purchase", pid, "update", before, after)
     db.commit()
     return services.flash_redirect(f"/purchases/{pid}", msg="Purchase updated.")
 
@@ -166,6 +175,7 @@ def delete_purchase(pid: int, db: Session = Depends(get_db)):
     if p.vials or p.supplies:
         return services.flash_redirect(
             f"/purchases/{pid}", err="Delete or move this purchase's vials, supplies and pills first.")
+    record(db, "purchase", pid, "delete", before=snapshot(p, PURCHASE_FIELDS))
     db.delete(p)
     db.commit()
     return services.flash_redirect("/purchases", msg="Purchase deleted.")
