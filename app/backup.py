@@ -130,3 +130,15 @@ def list_backups(backup_dir: Path | None = None) -> list[dict]:
     root = Path(backup_dir or BACKUP_DIR)
     return [{'name': p.name, 'size': p.stat().st_size, 'modified': datetime.fromtimestamp(p.stat().st_mtime, timezone.utc)}
             for p in sorted(root.glob('tracker-*.zip'), reverse=True)] if root.exists() else []
+
+
+def verify_named_backup(name: str, backup_dir: Path | None = None) -> dict:
+    """Verify an existing archive selected from the configured backup directory."""
+    root = Path(backup_dir or BACKUP_DIR).resolve()
+    # Do not allow arbitrary filesystem paths or non-Tracker archives.
+    if not name.startswith('tracker-') or not name.endswith('.zip') or Path(name).name != name or '\\' in name:
+        raise ValueError('Invalid backup filename')
+    archive = root / name
+    if archive.is_symlink() or not archive.is_file():
+        raise ValueError('Backup archive not found')
+    return verify_backup(archive)
