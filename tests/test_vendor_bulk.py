@@ -13,7 +13,7 @@ def test_round_trip_and_missing_ids():
     with Session(engine) as db:
         sheet = VendorPriceSheet(vendor='Vendor A', name='Manual entries')
         db.add(sheet); db.flush()
-        entry = VendorPriceEntry(sheet_id=sheet.id, item_name='Compound A', strength='10 mg/vial', package='kit', vial_count=10, total_price_cents=12345, product_url='https://example.org/item')
+        entry = VendorPriceEntry(sheet_id=sheet.id, item_name='Compound A', strength='10 mg/vial', content_amount=10, content_unit='mg', package='kit', vial_count=10, total_price_cents=12345, product_url='https://example.org/item')
         db.add(entry); db.commit()
         rows = parse_bulk_csv(bulk_export_csv(db).encode())
         assert rows[0]['_id'] == entry.id
@@ -25,8 +25,8 @@ def test_round_trip_and_missing_ids():
 
 
 def test_bulk_validation():
-    header = 'id,vendor,item_name,strength,package,vial_count,total_price,product_url\n'
-    good = '1,Vendor A,Compound A,10 mg/vial,kit,10,120.50,https://example.org\n'
+    header = 'id,vendor,item_name,content_amount,content_unit,package,vial_count,total_price,product_url\n'
+    good = '1,Vendor A,Compound A,10,mg,kit,10,120.50,https://example.org\n'
     assert parse_bulk_csv((header + good).encode())[0]['_cents'] == 12050
     with pytest.raises(ValueError, match='duplicate ID'):
         parse_bulk_csv((header + good + good).encode())

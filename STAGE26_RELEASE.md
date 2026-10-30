@@ -1,0 +1,1 @@
+Stage 26: align stale regression tests with existing reconciliation confirmation and vendor CSV schema. No application runtime files or migrations changed. Targeted tests: 9 passed. Legacy vendor entries missing content_amount/content_unit still cannot be round-tripped through bulk CSV; follow-up required.

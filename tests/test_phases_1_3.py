@@ -47,7 +47,7 @@ def test_reconciliation_audit():
             db.add(purchase);db.flush()
             supply=Supply(purchase_id=purchase.id,name='Test syringes',kind='syringe',purchased_qty=10,remaining_qty=10,unit_price_cents=10)
             db.add(supply);db.commit();sid=supply.id
-        r=client.post(f'/reconciliation/{sid}',data={'counted':'8','reason':'Physical count'},follow_redirects=False)
+        r=client.post(f'/reconciliation/{sid}',data={'counted':'8','reason':'Physical count','expected':'10','confirmed':'yes'},follow_redirects=False)
         assert r.status_code in (302,303)
         with SessionLocal() as db:
             assert db.get(Supply,sid).remaining_qty==8
