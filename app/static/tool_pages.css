@@ -1,0 +1,65 @@
+/*
+ * Tracker consolidated tool pages.
+ * Scoped to avoid changing existing application pages.
+ */
+
+.tool-page {
+  max-width: 1250px;
+  margin: 0 auto;
+  padding-bottom: 2rem;
+}
+
+.tool-page-header {
+  margin-bottom: 1.25rem;
+}
+
+.tool-page-header h1 {
+  margin-bottom: .25rem;
+}
+
+.tool-page .card {
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 12px;
+}
+
+.tool-page .scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.tool-page table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tool-page th,
+.tool-page td {
+  text-align: left;
+  padding: .7rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border, #d7dce4);
+}
+
+.tool-page pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+.tool-page input,
+.tool-page select,
+.tool-page button {
+  font: inherit;
+}
+
+.tool-page form {
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  .tool-page th,
+  .tool-page td {
+    padding: .45rem;
+  }
+}

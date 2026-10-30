@@ -81,41 +81,8 @@ def a(path, label):
 
 
 def layout(title, body):
-    navigation = " · ".join([
-        a("/", "Dashboard"),
-        a("/record-explorer/vials", "Vial lifecycle"),
-        a("/record-explorer/notes", "Notes history"),
-        a("/record-explorer/database", "Database"),
-        a("/record-explorer/health", "Health"),
-    ])
-
-    return HTMLResponse(f"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{e(title)} — Tracker</title>
-<style>
-:root {{ color-scheme:light dark; font-family:system-ui,sans-serif }}
-body {{ max-width:1250px;margin:2rem auto;padding:0 1rem }}
-nav {{ margin-bottom:2rem }}
-a {{ color:inherit }}
-table {{ width:100%;border-collapse:collapse }}
-th,td {{ padding:.65rem;text-align:left;border-bottom:1px solid #8885 }}
-th {{ background:#8882 }}
-pre {{ white-space:pre-wrap;overflow-wrap:anywhere }}
-input,select,button {{ font:inherit;padding:.4rem }}
-.scroll {{ overflow-x:auto }}
-.card {{ border:1px solid #8885;border-radius:12px;padding:1rem;margin:1rem 0 }}
-small {{ opacity:.75 }}
-</style>
-</head>
-<body>
-<nav>{navigation}</nav>
-<h1>{e(title)}</h1>
-{body}
-</body>
-</html>""")
+    from ..tool_layout import render_tool_page
+    return HTMLResponse(render_tool_page(title, body))
 
 
 def table_html(rows, headings):

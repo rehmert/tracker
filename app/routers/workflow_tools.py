@@ -33,80 +33,8 @@ def link(path, label):
 
 
 def page(title, body):
-    return HTMLResponse(f"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{esc(title)} — Tracker</title>
-<style>
-:root {{
-  color-scheme:light dark;
-  font-family:system-ui,sans-serif;
-}}
-body {{
-  max-width:1250px;
-  margin:2rem auto;
-  padding:0 1rem;
-  line-height:1.5;
-}}
-nav {{
-  margin-bottom:2rem;
-}}
-a {{
-  color:inherit;
-  text-decoration:underline;
-}}
-table {{
-  width:100%;
-  border-collapse:collapse;
-}}
-th,td {{
-  text-align:left;
-  padding:.7rem;
-  border-bottom:1px solid #8885;
-  vertical-align:top;
-}}
-th {{
-  background:#8882;
-}}
-pre {{
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
-  margin:0;
-}}
-.card {{
-  border:1px solid #8885;
-  border-radius:12px;
-  padding:1rem;
-  margin:1rem 0;
-}}
-small {{
-  opacity:.75;
-}}
-input,select,button {{
-  font:inherit;
-  padding:.4rem;
-}}
-.scroll {{
-  overflow-x:auto;
-}}
-</style>
-</head>
-<body>
-<nav>
-{link("/", "Dashboard")} ·
-{link("/protocols", "Protocols")} ·
-{link("/purchases", "Purchases")} ·
-{link("/protocol-tools", "Protocol tools")} ·
-{link("/purchase-analysis", "Purchasing analytics")}
-</nav>
-<main>
-<h1>{esc(title)}</h1>
-{body}
-</main>
-</body>
-</html>""")
+    from ..tool_layout import render_tool_page
+    return HTMLResponse(render_tool_page(title, body))
 
 
 def revisions_for(db, pid):
