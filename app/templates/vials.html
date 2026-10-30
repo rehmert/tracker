@@ -3,7 +3,7 @@
 {% block title %}Vials{% endblock %}
 {% block content %}
 <h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
-<form method="get" class="inline">
+<form method="get" class="inline" id="vial-filter-form">
   <input type="hidden" name="status" value="{{ status }}">
   <label class="field"><span>Compound</span>
     <select name="compound_id" onchange="this.form.submit()">
@@ -17,9 +17,18 @@
     </select>
   </label>
 </form>
+<div class="card" id="vial-saved-views" aria-label="Saved vial views">
+  <div class="inline" style="align-items:end;gap:.65rem;flex-wrap:wrap">
+    <label class="field"><span>Saved view</span><select id="vial-view-picker" aria-label="Choose saved vial view"><option value="">Choose a saved view…</option></select></label>
+    <button type="button" id="vial-view-save">Save current filters</button>
+    <button type="button" id="vial-view-delete" disabled>Delete selected view</button>
+  </div>
+  <p class="note">Views save the selected status and compound in this browser only. They do not change inventory.</p>
+  <p id="vial-view-message" role="status" class="note" aria-live="polite"></p>
+</div>
 <p class="filters">
   {% for key, text in [('active', 'In stock'), ('sealed', 'Sealed'), ('in_use', 'In use'), ('finished', 'Finished'), ('discarded', 'Discarded'), ('all', 'All')] %}
-  <a href="/vials?status={{ key }}" {% if status == key %}aria-current="true"{% endif %}>{{ text }}</a>
+  <a href="/vials?status={{ key }}{% if compound_id %}&amp;compound_id={{ compound_id }}{% endif %}" {% if status == key %}aria-current="true"{% endif %}>{{ text }}</a>
   {% endfor %}
 </p>
 <form id="bulk-vials" method="post" action="/vials/bulk" onsubmit="return confirm('Apply the selected changes to the checked vials?');">
@@ -67,6 +76,7 @@
   {% else %}<tr><td colspan="9" class="empty">No vials match. Vials are added from a <a href="/purchases">purchase</a>.</td></tr>{% endfor %}
   </tbody>
 </table></div>
+<script src="/static/vial_saved_views.js" defer></script>
 <script>
 (function () {
   const boxes = [...document.querySelectorAll('.bulk-vial-check')];

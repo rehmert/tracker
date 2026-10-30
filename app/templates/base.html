@@ -86,7 +86,7 @@
 </div>
 <div class="command-overlay" id="command-overlay" hidden>
   <div class="command-panel" role="dialog" aria-modal="true" aria-label="Search Tracker" aria-describedby="command-help">
-    <div class="command-header"><span aria-hidden="true">⌕</span><input id="command-input" type="search" placeholder="Search compounds, vials, protocols, purchases, labs…" autocomplete="off" aria-label="Search Tracker"><button type="button" id="command-close" aria-label="Close search">Esc</button></div>
+    <div class="command-header"><span aria-hidden="true">⌕</span><input id="command-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="command-results" aria-expanded="false" placeholder="Search compounds, vials, protocols, purchases, labs…" autocomplete="off" aria-label="Search Tracker"><button type="button" id="command-close" aria-label="Close search">Esc</button></div>
     <p class="command-hint" id="command-help">Type at least 2 characters. ↑ ↓ to navigate, Enter to open.</p>
     <div id="command-results" role="listbox" aria-label="Search results"></div>
     <div class="command-shortcuts"><a href="/doses">+ Record dose</a><a href="/vitals">+ Record vitals</a><a href="/purchases">+ Add purchase</a></div>
