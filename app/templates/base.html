@@ -25,6 +25,8 @@
   <link rel="stylesheet" href="/static/tool_pages.css?v=release82-88">
   <link rel="stylesheet" href="/static/core_workflow_97_104.css?v=1">
   <script src="/static/core_workflow_97_104.js?v=1" defer></script>
+  <link rel="stylesheet" href="/static/workflow_hub.css?v=105112">
+  <script src="/static/workflow_hub.js?v=105112" defer></script>
 </head>
 <body>
 <div class="shell" id="app-shell">
@@ -36,7 +38,7 @@
     <ul class="nav-links nav-pinned"><li data-nav-key="/"><a href="/" title="Overview" {% if path == '/' %}aria-current="page"{% endif %}><span class="nav-dot"></span><span class="nav-text">Dashboard</span></a></li></ul>
     <div id="nav-favorites" class="nav-favorites" hidden><div class="nav-section-title">★ Favorites</div><ul class="nav-links" id="nav-favorite-links"></ul></div>
     {% set sections = [
-      ('Overview & Planning', [('/activity','Daily activity'),('/calendar','Calendar'),('/quick-entry','Quick entry'),('/pages','Notes'),('/record-explorer/notes','Notes history')]),
+      ('Overview & Planning', [('/workflow-hub','Workflow hub'),('/activity','Daily activity'),('/calendar','Calendar'),('/quick-entry','Quick entry'),('/pages','Notes'),('/record-explorer/notes','Notes history')]),
       ('Protocols & Dosing', [('/protocols','Protocols'),('/protocol-tools','Protocol tools'),('/doses','Dose log'),('/dose-workspace','Dose Workspace'),('/pk','PK Simulator'),('/blends','Blends')]),
       ('Inventory', [('/vials','Vials'),('/record-explorer/vials','Record explorer'),('/compounds','Compounds'),('/purchases','Purchases'),('/purchase-analysis','Purchase analytics'),('/supplies','Supplies'),('/consumption','Consumption'),('/coas','COAs')]),
       ('Inventory tools', [('/inventory-intelligence','Inventory insights'),('/inventory-alerts','Inventory alerts'),('/inventory-health','Inventory health'),('/inventory-timeline','Inventory timeline'),('/reconciliation','Reconcile inventory')]),

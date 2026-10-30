@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Workflow hub{% endblock %}
+{% block content %}
+<section class="workflow-hub" aria-labelledby="workflow-hub-title">
+ <header><h1 id="workflow-hub-title">Workflow hub</h1><p class="muted">Find a tool, continue where you left off, or jump to a related workflow.</p></header>
+ <div class="workflow-hub-toolbar"><label for="workflow-hub-search">Find a tool</label><input id="workflow-hub-search" type="search" placeholder="Search tools and categories…" autocomplete="off" aria-controls="workflow-hub-groups"><button id="workflow-hub-clear" type="button">Clear</button><span id="workflow-hub-count" role="status" aria-live="polite"></span></div>
+ <section class="workflow-hub-recent" id="workflow-hub-recent" hidden aria-labelledby="workflow-hub-recent-title"><h2 id="workflow-hub-recent-title">Recently visited</h2><div id="workflow-hub-recent-links" class="workflow-hub-links"></div><button type="button" id="workflow-hub-clear-recent">Clear history on this device</button></section>
+ <div id="workflow-hub-groups">
+ {% for title, links in groups %}
+ {% if links %}<section class="workflow-hub-group" data-workflow-group="{{ title }}"><h2>{{ title }}</h2><div class="workflow-hub-links">{% for label, href in links %}<a href="{{ href }}" data-workflow-link>{{ label }} <span aria-hidden="true">→</span></a>{% endfor %}</div></section>{% endif %}
+ {% endfor %}
+ </div>
+ <p id="workflow-hub-empty" hidden>No matching tools. Try a different search.</p>
+ <p class="muted">Recent history is stored only in this browser and can be cleared at any time.</p>
+</section>
+{% endblock %}

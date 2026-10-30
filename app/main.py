@@ -80,3 +80,7 @@ app.include_router(record_explorer.router)
 # Release 77-80 maintenance review
 from .routers import maintenance_review
 app.include_router(maintenance_review.router)
+
+# Release 105-112: read-only workflow hub
+from .routers import workflow_hub
+app.include_router(workflow_hub.router)
