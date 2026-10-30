@@ -500,3 +500,12 @@ class VendorPriceEntry(Base):
     @property
     def per_vial_cents(self):
         return self.total_price_cents / self.vial_count
+
+
+class InventorySubmission(Base):
+    """Committed inventory request key, stored atomically with its mutation."""
+    __tablename__ = "inventory_submissions"
+    token: Mapped[str] = mapped_column(String(36), primary_key=True)
+    operation: Mapped[str] = mapped_column(String(80), nullable=False)
+    payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

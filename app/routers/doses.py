@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from .. import services, units as U
+from .. import services, units as U, idempotency
 from ..db import get_db
 from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit
 from .. import manual_supplies
@@ -69,7 +69,7 @@ def doses_page(request: Request, compound_id: int | None = None, planned_date: s
     return render(request, "doses.html", rows=_rows(db, compound_id), vials=vials, views=views,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
-                  now=prefill_at, planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else None, planned_unit=planned_unit, selected_compound_id=compound_id, supplies=manual_supplies.available(db))
+                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else None, planned_unit=planned_unit, selected_compound_id=compound_id, supplies=manual_supplies.available(db))
 
 
 @router.post("/doses/preview")
@@ -98,7 +98,7 @@ def preview(request: Request, vial_id: str = Form(""), amount: str = Form(""),
 @router.post("/doses")
 async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str = Form(""),
                 amount: float = Form(...), unit: str = Form(...), kind: str = Form("dose"),
-                site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""),
+                site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""), submission_token: str = Form(""),
                 db: Session = Depends(get_db)):
     # SQLite has one writer at a time. Acquire the write reservation before
     # reading remaining inventory so competing dose requests cannot both
@@ -108,6 +108,14 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     except OperationalError:
         db.rollback()
         return _error("Inventory is busy. Please wait a moment and retry.")
+    payload = {"vial_id": vial_id, "taken_at": taken_at, "amount": amount, "unit": unit, "kind": kind, "site": site, "notes": notes, "use_remaining": use_remaining}
+    state, digest = idempotency.check(db, submission_token, "dose_create", payload)
+    if submission_token and state == "replay":
+        db.rollback()
+        return _error("This entry was already recorded. Refresh the page before logging another dose.")
+    if submission_token and state != "new":
+        db.rollback()
+        return _error("Invalid or reused submission identifier. Refresh the page.")
     vial = db.get(Vial, vial_id)
     if vial is None:
         return _error("Choose a vial.")
@@ -143,6 +151,8 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     manual_supplies.deduct(db, selected, dose_id=dose.id)
     if vial.status == "sealed":
         vial.status = "in_use"
+    if submission_token:
+        idempotency.record(db, submission_token, "dose_create", digest)
     db.commit()
     return render(request, "_dose_rows.html", rows=_rows(db))
 

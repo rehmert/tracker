@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..inventory_lock import reserve_inventory_write
 from ..models import Supply, SupplyUsage, InventoryAdjustment, ChangeAudit, Vial, DoseLog, Purchase
-from .. import services
+from .. import services, idempotency
 from ..templating import render
 import json
 
@@ -18,12 +18,16 @@ def reconciliation(request: Request, db: Session = Depends(get_db)):
     supplies = list(db.scalars(select(Supply).order_by(Supply.name,Supply.id)))
     history = list(db.scalars(select(InventoryAdjustment).order_by(InventoryAdjustment.id.desc()).limit(100)))
     return render(request,"reconciliation.html",supplies=supplies,history=history,
-                  supply_names={s.id:s.name for s in supplies})
+                  supply_names={s.id:s.name for s in supplies}, submission_tokens={s.id:idempotency.new_token() for s in supplies})
 
 @router.post("/reconciliation/{sid}")
-def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:float=Form(...), confirmed:str=Form(""), db:Session=Depends(get_db)):
+def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:float=Form(...), confirmed:str=Form(""), submission_token:str=Form(""), db:Session=Depends(get_db)):
     if not reserve_inventory_write(db):
         return services.flash_redirect('/reconciliation',err='Inventory is busy. Please wait and retry.')
+    state, digest = idempotency.check(db, submission_token, 'reconcile', {'sid':sid,'counted':counted,'reason':reason,'expected':expected,'confirmed':confirmed})
+    if submission_token and state != 'new':
+        db.rollback()
+        return services.flash_redirect('/reconciliation',msg='This adjustment was already recorded.' if state == 'replay' else '',err='Refresh the page: invalid or reused submission identifier.' if state != 'replay' else '')
     s=db.get(Supply,sid)
     if not s: raise HTTPException(404)
     if not math.isfinite(counted) or not math.isfinite(expected) or counted < 0 or not reason.strip():
@@ -41,6 +45,8 @@ def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:f
     db.add(InventoryAdjustment(supply_id=sid,previous_qty=s.remaining_qty,counted_qty=counted,reason=reason.strip()[:240]))
     db.add(ChangeAudit(entity_type='supply',entity_id=sid,action='reconcile',before_json=json.dumps({'remaining_qty':s.remaining_qty}),after_json=json.dumps({'remaining_qty':counted,'reason':reason.strip()})))
     s.remaining_qty=counted
+    if submission_token:
+        idempotency.record(db, submission_token, "reconcile", digest)
     db.commit()
     return services.flash_redirect('/reconciliation',msg='Physical count recorded with audit history.')
 

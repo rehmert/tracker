@@ -2,7 +2,7 @@
 <h1>Peptide blends</h1>
 <p>Record transfers from multiple source vials (including multiple vials of the same peptide) into destination vial(s). This is an inventory and arithmetic record, not a preparation or dosing recommendation. A blended vial is tracked separately from single-compound vials.</p>
 <div class="ux-callout"><strong>Before recording:</strong> The what-if calculators do not change stock. The final Record action creates destination vial records and deducts transferred inventory. Check all actual transfer amounts first.</div><section class="card"><h2>Create a blend</h2><p class="note">Step 1: Enter source transfers. Step 2: Preview and verify the resulting inventory. Step 3: Confirm the transfer.</p>
-<form method="post" action="/blends" class="grid" id="blend-form" data-confirm-inventory="true">
+<form method="post" action="/blends" class="grid" id="blend-form" data-confirm-inventory="true"><input type="hidden" name="submission_token" value="{{ submission_token }}">
 <label class="field"><span>Destination vial label</span><input name="label" required placeholder="Blend #1"></label>
 <label class="field"><span>Number of destination vials</span><input name="destination_count" type="number" min="1" max="100" step="1" value="1" required></label>
 <label class="field"><span>Additional diluent (mL, total across destinations)</span><input name="diluent_ml" type="number" min="0" step="any" value="0" required></label>

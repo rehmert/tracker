@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import services, units as U
+from .. import services, units as U, idempotency
 from ..audit_helpers import record
 from ..inventory_lock import reserve_inventory_write
 from ..db import get_db
@@ -46,7 +46,7 @@ def blends_page(request: Request, db: Session = Depends(get_db)):
     views = services.vial_views(db, vials)
     blends = list(db.scalars(select(Blend).order_by(Blend.id.desc())))
     return render(request, 'blends.html', vials=vials, views=views, blends=blends,
-                  remaining={b.id: blend_remaining(b) for b in blends}, units=U.CONTENT_UNITS)
+                  remaining={b.id: blend_remaining(b) for b in blends}, units=U.CONTENT_UNITS, submission_token=idempotency.new_token())
 
 
 def calculate_blend(form, db: Session):
@@ -312,6 +312,11 @@ async def create_blend(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     if not reserve_inventory_write(db):
         return services.flash_redirect('/blends', err='Inventory is busy. Please wait and retry.')
+    token = str(form.get('submission_token', ''))
+    state, digest = idempotency.check(db, token, 'blend_create', sorted((k, str(v)) for k, v in form.multi_items() if k != 'submission_token'))
+    if token and state != 'new':
+        db.rollback()
+        return services.flash_redirect('/blends', msg='This blend was already recorded.' if state == 'replay' else '', err='Refresh the page: invalid or reused submission identifier.' if state != 'replay' else '')
     try:
         plan = calculate_blend(form, db)
         label, diluent, capacity, volume = (plan[k] for k in ('label', 'diluent', 'capacity', 'volume'))
@@ -335,6 +340,8 @@ async def create_blend(request: Request, db: Session = Depends(get_db)):
         for vial, base, *_ in transfers:
             record(db, "vial", vial.id, "blend_transfer", before={"status": vial.status, "remaining_base": views[vial.id].remaining_base}, after={"transferred_base": base, "destination_blend_ids": [b.id for b in blends]})
             vial.status = 'in_use' if base < views[vial.id].remaining_base - 1e-6 else 'finished'
+        if token:
+            idempotency.record(db, token, 'blend_create', digest)
         db.commit()
         return services.flash_redirect(f'/blends/{blends[0].id}', msg=f'{destinations} destination vial(s) recorded; source inventory transferred.')
     except (ValueError, TypeError, U.UnitError) as exc:
@@ -364,6 +371,11 @@ async def record_blend_dose(blend_id: int, request: Request, db: Session = Depen
     form = await request.form()
     if not reserve_inventory_write(db):
         return services.flash_redirect(f'/blends/{blend_id}', err='Inventory is busy. Please wait and retry.')
+    token = str(form.get('submission_token', ''))
+    state, digest = idempotency.check(db, token, 'blend_draw', {'blend_id': blend_id, 'form': sorted((k, str(v)) for k, v in form.multi_items() if k != 'submission_token')})
+    if token and state != 'new':
+        db.rollback()
+        return services.flash_redirect(f'/blends/{blend_id}', msg='This draw was already recorded.' if state == 'replay' else '', err='Refresh the page: invalid or reused submission identifier.' if state != 'replay' else '')
     blend = db.get(Blend, blend_id)
     if blend is None:
         db.rollback()
@@ -388,6 +400,8 @@ async def record_blend_dose(blend_id: int, request: Request, db: Session = Depen
         record(db, "blend", blend.id, "draw", after={"draw_id": draw.id, "kind": kind, "volume_ml": volume, "taken_at": when.isoformat()})
         if volume >= previous_remaining - 1e-8:
             blend.status = 'finished'
+        if token:
+            idempotency.record(db, token, 'blend_draw', digest)
         db.commit()
         return services.flash_redirect(f'/blends/{blend.id}', msg='Blend draw recorded.')
     except (ValueError, TypeError) as exc:
