@@ -2,6 +2,16 @@
 {% block title %}Compounds{% endblock %}
 {% block content %}
 <h1>Compounds</h1>
+<section aria-label="Find compounds">
+  <form method="get" action="/compounds" class="grid">
+    <label class="field"><span>Search by name</span><input type="search" name="q" value="{{ q }}" placeholder="Search compounds"></label>
+    <label class="field"><span>Category</span><select name="category_filter"><option value="">All categories</option>{% for c in categories %}<option value="{{ c }}" {% if category_filter == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></label>
+    <label class="field"><span>Sort by</span><select name="sort">{% for key, label in [('name','Name'),('category','Category'),('unit','Default unit'),('id','Created order')] %}<option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label class="field"><span>Order</span><select name="direction"><option value="asc" {% if direction == 'asc' %}selected{% endif %}>Ascending</option><option value="desc" {% if direction == 'desc' %}selected{% endif %}>Descending</option></select></label>
+    <div><button type="submit" class="primary">Apply</button> <a href="/compounds">Clear</a></div>
+  </form>
+</section>
+<p class="muted">{{ compounds|length }} compound{{ '' if compounds|length == 1 else 's' }} shown.</p>
 <div class="scroll"><table>
   <thead><tr><th>Name</th><th>Category</th><th>Default unit</th><th class="n">On hand</th><th>Price basis</th><th>Notes</th><th></th></tr></thead>
   <tbody>
@@ -14,7 +24,7 @@
     <td>{% if notes.get(c.id) %}<a href="/pages?compound_id={{ c.id }}">{{ notes[c.id] }} page{{ '' if notes[c.id] == 1 else 's' }}</a>{% else %}—{% endif %}</td>
     <td><a href="/compounds/{{ c.id }}/edit">Edit</a> &nbsp; <form style="display:inline" method="post" action="/compounds/{{ c.id }}/delete" onsubmit="return confirm('Delete {{ c.name|e }}?')"><button class="link danger">Delete</button></form></td>
   </tr>
-  {% else %}<tr><td colspan="7" class="empty">No compounds yet.</td></tr>{% endfor %}
+  {% else %}<tr><td colspan="7" class="empty">No matching compounds. <a href="/compounds">Clear filters</a>.</td></tr>{% endfor %}
   </tbody>
 </table></div>
 

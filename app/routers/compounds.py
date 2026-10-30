@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Request, Query
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -12,12 +12,31 @@ router = APIRouter()
 
 
 @router.get("/compounds")
-def compounds_page(request: Request, db: Session = Depends(get_db)):
-    compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
+def compounds_page(request: Request, q: str = Query("", max_length=120),
+                   category_filter: str = Query(""), sort: str = Query("name"),
+                   direction: str = Query("asc"), db: Session = Depends(get_db)):
+    """Search and sort on the server, with an allowlist for ordering."""
+    q = q.strip()
+    if category_filter not in CATEGORIES:
+        category_filter = ""
+    sort_columns = {"name": Compound.name, "category": Compound.category,
+                    "unit": Compound.primary_unit, "id": Compound.id}
+    if sort not in sort_columns:
+        sort = "name"
+    if direction not in ("asc", "desc"):
+        direction = "asc"
+    order = sort_columns[sort].desc() if direction == "desc" else sort_columns[sort].asc()
+    stmt = select(Compound)
+    if q:
+        stmt = stmt.where(Compound.name.ilike(f"%{q}%"))
+    if category_filter:
+        stmt = stmt.where(Compound.category == category_filter)
+    compounds = list(db.scalars(stmt.order_by(order, Compound.id.asc())))
     notes = dict(db.execute(select(page_compounds.c.compound_id, func.count())
                             .group_by(page_compounds.c.compound_id)).all())
     return render(request, "compounds.html", compounds=compounds, notes=notes,
-                  refs=services.compound_refs(db), categories=CATEGORIES)
+                  refs=services.compound_refs(db), categories=CATEGORIES,
+                  q=q, category_filter=category_filter, sort=sort, direction=direction)
 
 
 @router.post("/compounds")
