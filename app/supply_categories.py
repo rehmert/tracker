@@ -23,15 +23,27 @@ def ensure_categories(db):
     # Never commit an unrelated pending transaction in this helper.
     if db.new or db.dirty or db.deleted:
         raise RuntimeError("Seed supply categories before modifying session objects")
-    if not reserve_inventory_write(db):
+    # A caller may already own a SQLite write transaction.
+    # Do not start another BEGIN IMMEDIATE or commit that transaction.
+    connection = db.connection()
+    sqlite_transaction_active = (
+        connection.connection.driver_connection.in_transaction
+    )
+
+    owns_transaction = not sqlite_transaction_active
+
+    if owns_transaction and not reserve_inventory_write(db):
         raise RuntimeError("Supply categories are busy; please retry")
+
     try:
         for key, label, unit in DEFAULTS:
             db.execute(sqlite_insert(SupplyCategory).values(key=key, label=label, unit=unit)
                        .on_conflict_do_nothing(index_elements=["key"]))
-        db.commit()
+        if owns_transaction:
+            db.commit()
     except Exception:
-        db.rollback()
+        if owns_transaction:
+            db.rollback()
         raise
     return list(db.scalars(select(SupplyCategory).order_by(SupplyCategory.label)))
 

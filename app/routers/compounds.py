@@ -1,3 +1,4 @@
+from ..inventory_lock import reserve_inventory_write
 from fastapi import APIRouter, Depends, Form, Request, Query
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -42,6 +43,8 @@ def compounds_page(request: Request, q: str = Query("", max_length=120),
 @router.post("/compounds")
 def create_compound(name: str = Form(...), category: str = Form("peptide"),
                     notes: str = Form(""), primary_unit: str = Form("mg"), db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/compounds", err="Database is busy. Please retry.")
     name = name.strip()
     if not name:
         return services.flash_redirect("/compounds", err="Give the compound a name.")
@@ -60,6 +63,8 @@ def create_compound(name: str = Form(...), category: str = Form("peptide"),
 
 @router.post("/compounds/{cid}/delete")
 def delete_compound(cid: int, db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/compounds", err="Database is busy. Please retry.")
     c = db.get(Compound, cid)
     if c is None:
         return services.flash_redirect("/compounds", err="Compound not found.")
@@ -88,6 +93,8 @@ def edit_compound_page(cid: int, request: Request, db: Session = Depends(get_db)
 def update_compound(cid: int, name: str = Form(...), category: str = Form("peptide"),
                     notes: str = Form(""), primary_unit: str = Form("mg"),
                     db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/compounds", err="Database is busy. Please retry.")
     compound = db.get(Compound, cid)
     if compound is None:
         return services.flash_redirect("/compounds", err="Compound not found.")

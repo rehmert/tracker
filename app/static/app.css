@@ -614,3 +614,47 @@ th,td { white-space:nowrap; }
 @media(max-width:800px){.sidebar-collapsed .nav-section-toggle,.sidebar-collapsed .nav-find,.sidebar-collapsed .nav-star,.sidebar-collapsed .nav-favorites .nav-section-title{display:flex}}
 
 .nav-section .nav-links li[hidden],.nav-pinned li[hidden]{display:none!important}
+
+/* ==========================================================
+   Tracker UX — Full-width page headings and descriptions
+   ========================================================== */
+
+/* Remove narrow text-column restrictions from page descriptions. */
+main > .note,
+main > header .note,
+main > section > .note,
+main > .dashboard-hero .hero-subtitle,
+main > .page-header .note,
+main > .page-header .description {
+    max-width: none;
+    width: auto;
+}
+
+/* Allow page headers to use the available content width. */
+main > header,
+main > .page-header {
+    max-width: 100%;
+    min-width: 0;
+}
+
+/* Keep header text flexible when action buttons are present. */
+main > header > div:first-child {
+    min-width: 0;
+}
+
+/* Maintain readable wrapping without creating horizontal overflow. */
+main > header p,
+main > .note,
+main > .page-header p {
+    overflow-wrap: break-word;
+}
+
+
+/* Expand shared descriptive text inside page headers. */
+main .dashboard-hero .note,
+main .dashboard-hero .hero-subtitle,
+main .page-header .note,
+main .page-header .description {
+    max-width: none;
+}
+

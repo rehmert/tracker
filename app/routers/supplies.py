@@ -19,6 +19,8 @@ def index(request: Request, db: Session = Depends(get_db)):
 @router.post("/supplies")
 def add(purchase_id: int = Form(...), name: str = Form(...), kind: str = Form(...), quantity: float = Form(...), unit_price: str = Form("0"), pack_count: str = Form(""),
         units_per_pack: str = Form(""), package_price: str = Form(""), compound_id: str = Form(""), db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/supplies", err="Inventory is busy. Please retry.")
     ensure_categories(db)
     try:
         from .purchases import parse_bulk
@@ -87,6 +89,8 @@ def log_pill(sid: int, quantity: int = Form(...), taken_at: str = Form(''), note
 
 @router.post("/supplies/categories")
 def create_category(label: str = Form(...), unit: str = Form("count"), db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/supplies", err="Inventory is busy. Please retry.")
     import re
     ensure_categories(db)
     label = label.strip()[:100]

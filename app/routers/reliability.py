@@ -11,6 +11,7 @@ from .. import services, idempotency
 from ..inventory_health_checks import collect_inventory_health
 from ..templating import render
 import json
+from ..inventory_consistency import inspect_inventory
 
 router = APIRouter()
 
@@ -83,7 +84,43 @@ def collect_integrity_issues(db:Session):
 
 @router.get('/inventory-health')
 def inventory_health(request:Request, db:Session=Depends(get_db)):
-    issues=collect_integrity_issues(db) + collect_inventory_health(db)
+    
+    issues = collect_integrity_issues(db) + collect_inventory_health(db)
+
+    for finding in inspect_inventory(db):
+        severity = (
+            "Error"
+            if finding.code in (
+                "nonfinite",
+                "negative",
+                "invalid_usage",
+                "invalid_adjustment",
+                "nonfinite_consumption",
+                "negative_consumption",
+            )
+            else "Warning"
+        )
+
+        explanation = (
+            f"{finding.category.title()} #{finding.record_id}: "
+            f"{finding.code} — {finding.message}"
+        )
+
+        if finding.observed is not None:
+            explanation += f" (observed: {finding.observed:g}"
+
+            if finding.expected is not None:
+                explanation += f", expected: {finding.expected:g}"
+
+            explanation += ")"
+
+        review_url = (
+            "/supplies"
+            if finding.category == "supply"
+            else "/vials"
+        )
+
+        issues.append((severity, explanation, review_url))
     errors=sum(level=='Error' for level,_,_ in issues)
     warnings=sum(level=='Warning' for level,_,_ in issues)
     return render(request,'inventory_health.html',issues=issues,errors=errors,warnings=warnings)
