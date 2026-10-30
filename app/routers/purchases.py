@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import calc, services, units as U
+from .. import calc, services, units as U, idempotency
 from ..db import get_db
+from ..inventory_lock import reserve_inventory_write
 from ..models import Compound, Purchase, Vial, Supply, SupplyUsage, SupplyCategory, SupplyProduct
 from ..supply_categories import ensure_categories, validate_supply
 from ..templating import render
@@ -24,14 +25,21 @@ def purchases_page(request: Request, db: Session = Depends(get_db)):
         landed = services.purchase_landed(p)
         rows.append({"p": p, "n": len(p.vials), "supply_count": len(p.supplies),
                      "total": sum(landed.values())})
-    return render(request, "purchases.html", rows=rows, today=date.today().isoformat())
+    return render(request, "purchases.html", rows=rows, today=date.today().isoformat(), submission_token=idempotency.new_token())
 
 
 @router.post("/purchases")
 def create_purchase(vendor: str = Form(...), purchased_on: str = Form(""),
                     order_ref: str = Form(""), shipping: str = Form("0"), tax: str = Form("0"),
-                    discount: str = Form("0"), notes: str = Form(""),
+                    discount: str = Form("0"), notes: str = Form(""), submission_token: str = Form(""),
                     db: Session = Depends(get_db)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/purchases", err="Inventory is busy. Please retry.")
+    payload = dict(vendor=vendor, purchased_on=purchased_on, order_ref=order_ref, shipping=shipping, tax=tax, discount=discount, notes=notes)
+    state, digest = idempotency.check(db, submission_token, "purchase_create", payload)
+    if submission_token and state != "new":
+        db.rollback()
+        return services.flash_redirect("/purchases", msg="This purchase was already recorded." if state == "replay" else "", err="Invalid or reused submission identifier. Refresh the page." if state != "replay" else "")
     try:
         p = Purchase(vendor=vendor.strip() or "Unknown vendor",
                      purchased_on=services.parse_date(purchased_on) or date.today(),
@@ -39,10 +47,13 @@ def create_purchase(vendor: str = Form(...), purchased_on: str = Form(""),
                      tax_cents=services.to_cents(tax), discount_cents=services.to_cents(discount),
                      notes=notes.strip())
     except ValueError as exc:
+        db.rollback()
         return services.flash_redirect("/purchases", err=str(exc))
     db.add(p)
     db.flush()
     record(db, "purchase", p.id, "create", after=snapshot(p, PURCHASE_FIELDS))
+    if submission_token:
+        idempotency.record(db, submission_token, "purchase_create", digest)
     db.commit()
     return services.flash_redirect(f"/purchases/{p.id}", msg="Purchase saved. Add vials, supplies or pills below.")
 
@@ -74,7 +85,7 @@ def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
 @router.post("/purchases/{pid}")
 def update_purchase(pid: int, vendor: str = Form(...), purchased_on: str = Form(""),
                     order_ref: str = Form(""), shipping: str = Form("0"), tax: str = Form("0"),
-                    discount: str = Form("0"), notes: str = Form(""),
+                    discount: str = Form("0"), notes: str = Form(""), submission_token: str = Form(""),
                     db: Session = Depends(get_db)):
     p = db.get(Purchase, pid)
     if p is None:

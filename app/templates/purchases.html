@@ -13,7 +13,7 @@
 
 <section>
   <h2 id="new-purchase">Step 1 · Record order details</h2><p class="note">After saving, you will be taken to Step 2 to add the actual purchased inventory.</p>
-  <form method="post" action="/purchases" class="grid">
+  <form method="post" action="/purchases" class="grid"><input type="hidden" name="submission_token" value="{{ submission_token }}">
     <label class="field"><span>Vendor</span><input name="vendor" required></label>
     <label class="field"><span>Date</span><input type="date" name="purchased_on" value="{{ today }}"></label>
     <label class="field"><span>Order reference</span><input name="order_ref"></label>
