@@ -49,6 +49,9 @@ for module in (dashboard, compounds, purchases, vials, coas, doses, supplies, vi
 
 app.include_router(inventory_timeline.router)
 
+from .routers import consolidated_reports
+app.include_router(consolidated_reports.router)
+
 
 @app.get("/ping")
 def ping():

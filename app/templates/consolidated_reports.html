@@ -1,0 +1,113 @@
+
+{% extends "base.html" %}
+{% block title %}Consolidated Reports{% endblock %}
+{% block content %}
+
+<style>
+.report-workspace {
+  width: 100%;
+  max-width: none;
+}
+.report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.report-cards {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+.report-card {
+  border: 1px solid var(--line, #d8dee6);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+.report-count {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: .5rem 0;
+}
+.report-card a {
+  display: inline-block;
+  margin-top: .5rem;
+}
+@media print {
+  nav, aside, .report-filters,
+  .report-card a, button {
+    display: none !important;
+  }
+  .report-card {
+    break-inside: avoid;
+  }
+}
+</style>
+
+<section class="report-workspace">
+  <h1>Consolidated Reports</h1>
+
+  <p class="meta">
+    Review recorded activity and export datasets
+    for your selected reporting period.
+  </p>
+
+  <form method="get"
+        action="/reports"
+        class="report-filters">
+
+    <label class="field">
+      <span>Start date</span>
+      <input type="date"
+             name="start_date"
+             value="{{ start_date or '' }}">
+    </label>
+
+    <label class="field">
+      <span>End date</span>
+      <input type="date"
+             name="end_date"
+             value="{{ end_date or '' }}">
+    </label>
+
+    <button class="primary">Apply filters</button>
+    <a href="/reports">Clear</a>
+    <button type="button"
+            onclick="window.print()">
+      Print summary
+    </button>
+  </form>
+
+  <div class="report-cards">
+
+    {% for name, model in datasets.items() %}
+    <article class="report-card">
+      <h2>{{ name.replace('_', ' ').title() }}</h2>
+
+      <div class="report-count">
+        {{ counts[name] }}
+      </div>
+
+      <p class="meta">
+        Records in the selected reporting period.
+      </p>
+
+      <a href="/reports/{{ name }}.csv?{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}{% endif %}">
+        Export CSV
+      </a>
+    </article>
+    {% endfor %}
+
+  </div>
+
+  <p class="meta" style="margin-top:1.5rem">
+    Inventory and protocol totals use record creation
+    dates. Laboratory results use their report's
+    collection date. These exports contain recorded
+    data, not medical interpretations.
+  </p>
+</section>
+
+{% endblock %}
