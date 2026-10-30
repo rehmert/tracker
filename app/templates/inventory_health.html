@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Inventory health{% endblock %}
+{% block content %}
+<h1>Inventory health</h1>
+<p class="note">Read-only diagnostics based on available transaction history. No stock is changed.</p>
+<section>
+  <h2>Findings: {{ findings|length }}</h2>
+  <p>Supplies: {{ counts.supply }} · Vials: {{ counts.vial }}</p>
+  {% if findings %}
+  <div class="scroll"><table><thead><tr><th>Type</th><th>Record</th><th>Check</th><th>Details</th><th>Observed</th><th>Calculated</th><th>Review</th></tr></thead><tbody>
+  {% for f in findings %}
+  <tr><td>{{ f.category }}</td><td>#{{ f.record_id }}</td><td>{{ f.code }}</td><td>{{ f.message }}</td><td>{{ f.observed if f.observed is not none else '—' }}</td><td>{{ f.expected if f.expected is not none else '—' }}</td><td><a href="{{ '/supplies' if f.category == 'supply' else '/vials/' ~ f.record_id }}">Review</a></td></tr>
+  {% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="flash ok">No discrepancies detected by the available checks.</p>{% endif %}
+  <p class="note">Historical edits, imports, deleted events, and incomplete transaction history can produce false positives. Vial balances are not reconstructed from potency-adjusted measurements.</p>
+</section>
+{% endblock %}

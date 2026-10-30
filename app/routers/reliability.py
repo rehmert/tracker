@@ -50,6 +50,17 @@ def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:f
     db.commit()
     return services.flash_redirect('/reconciliation',msg='Physical count recorded with audit history.')
 
+@router.get('/inventory-health')
+def inventory_health(request: Request, db: Session = Depends(get_db)):
+    """Read-only inventory health report. No corrections are performed."""
+    from ..inventory_consistency import inspect_inventory
+    findings = inspect_inventory(db)
+    counts = {'supply': 0, 'vial': 0}
+    for finding in findings:
+        counts[finding.category] = counts.get(finding.category, 0) + 1
+    return render(request, 'inventory_health.html', findings=findings, counts=counts)
+
+
 @router.get('/data-integrity')
 def integrity(request:Request,db:Session=Depends(get_db)):
     issues=[]
