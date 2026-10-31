@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% from "_macros.html" import gauge %}
-{% block title %}Vials<script defer src="/static/js/tracker-bulk-selection.js"></script>
-<!-- TRACKER_BULK_CONSOLIDATED -->
-{% endblock %}
+{% block title %}Vials{% endblock %}
 {% block content %}
+<script defer src="/static/js/tracker-bulk-selection.js"></script>
+<!-- TRACKER_BULK_CONSOLIDATED -->
 <h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
 <form method="get" class="inline" id="vial-filter-form">
   <input type="hidden" name="status" value="{{ status }}">
@@ -184,8 +184,8 @@
   </p>
 </div>
 
-<div class="scroll"><table>
-  <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all visible vials"></th><th>Compound</th><th>Vial</th><th>Remaining</th><th class="n">Amount left</th><th class="n">Landed cost</th><th>Cost</th><th>COA</th><th>Status</th></tr></thead>
+<div class="scroll"><table id="tracker-vials-sortable">
+  <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all visible vials"></th><th data-vial-sort="compound" aria-sort="none"><button type="button" class="vial-sort-button">Compound</button></th><th data-vial-sort="vial" aria-sort="none"><button type="button" class="vial-sort-button">Vial</button></th><th data-vial-sort="remaining" aria-sort="none"><button type="button" class="vial-sort-button">Remaining</button></th><th class="n" data-vial-sort="amount" aria-sort="none"><button type="button" class="vial-sort-button">Amount left</button></th><th class="n" data-vial-sort="landed" aria-sort="none"><button type="button" class="vial-sort-button">Landed cost</button></th><th data-vial-sort="cost" aria-sort="none"><button type="button" class="vial-sort-button">Cost</button></th><th data-vial-sort="coa" aria-sort="none"><button type="button" class="vial-sort-button">COA</button></th><th data-vial-sort="status" aria-sort="none"><button type="button" class="vial-sort-button">Status</button></th></tr></thead>
   <tbody>
   {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
   <tr>
@@ -203,6 +203,8 @@
   </tbody>
 </table></div>
 <script src="/static/vial_saved_views.js" defer></script>
+<script src="/static/js/tracker-vials-sort.js?v=1" defer></script>
+<link rel="stylesheet" href="/static/tracker-vials-sort.css?v=1">
 
 <script>
 /* TRACKER_BULK_EDITOR_V2_JS */
