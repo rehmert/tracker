@@ -1186,3 +1186,20 @@
 }
 
 /* END TRACKER_STAGE34_245_250 */
+
+/* TRACKER_STAGE34_251_256
+   Ensure mobile sticky-column behavior does not affect print/PDF layout.
+   Presentation only; no inventory or dose workflow changes.
+*/
+
+@media print {
+  .tracker-vial-table th:first-child,
+  .tracker-vial-table td:first-child {
+    position: static !important;
+    left: auto !important;
+    z-index: auto !important;
+    box-shadow: none !important;
+  }
+}
+
+/* END TRACKER_STAGE34_251_256 */
