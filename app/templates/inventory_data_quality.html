@@ -178,8 +178,166 @@ Reset
 
 </div>
 
+<!-- TRACKER_RELEASE_249_256 -->
+
 <div class="card"
      style="padding:1rem;margin-top:1rem">
+
+<h2>Compound-level inventory review</h2>
+
+<p class="muted">
+Affected inventory is grouped by compound and unit.
+This summary covers all affected vials, independent
+of the individual-record filters below.
+</p>
+
+<div style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:1rem;
+margin-bottom:1rem;
+">
+
+<div>
+<strong>Affected compound/unit groups</strong>
+<div style="font-size:1.6rem">
+{{ compound_totals.groups }}
+</div>
+</div>
+
+<div>
+<strong>Affected vials</strong>
+<div style="font-size:1.6rem">
+{{ compound_totals.vials }}
+</div>
+</div>
+
+<div>
+<strong>Undated vials</strong>
+<div style="font-size:1.6rem">
+{{ compound_totals.undated_vials }}
+</div>
+</div>
+
+<div>
+<strong>Expired vials</strong>
+<div style="font-size:1.6rem">
+{{ compound_totals.expired_vials }}
+</div>
+</div>
+
+</div>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<thead>
+<tr>
+<th>Compound</th>
+<th>Unit</th>
+<th>Affected vials</th>
+<th>Undated</th>
+<th>Expired</th>
+<th>Undated quantity</th>
+<th>Expired quantity</th>
+<th>Total affected quantity</th>
+<th>Oldest expiration</th>
+<th>Review</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for group in compound_groups %}
+
+<tr>
+
+<td>
+<strong>{{ group.compound }}</strong>
+</td>
+
+<td>
+{{ group.unit }}
+</td>
+
+<td>
+{{ group.total_vials }}
+</td>
+
+<td>
+{{ group.undated_vials }}
+</td>
+
+<td>
+{{ group.expired_vials }}
+</td>
+
+<td>
+{{ "%.4f"|format(group.undated_quantity) }}
+{{ group.unit }}
+</td>
+
+<td>
+{{ "%.4f"|format(group.expired_quantity) }}
+{{ group.unit }}
+</td>
+
+<td>
+<strong>
+{{ "%.4f"|format(group.total_quantity) }}
+{{ group.unit }}
+</strong>
+</td>
+
+<td>
+{{ group.oldest_expiry or "—" }}
+</td>
+
+<td>
+<a href="/inventory-data-quality?compound={{ group.compound|urlencode }}">
+Review vials →
+</a>
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="10">
+No affected inventory was found.
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+<p class="muted" style="margin-top:1rem">
+Quantities are never combined across mg and IU.
+The oldest expiration date applies only to
+already-expired records. Undated records have no
+date from which to calculate expiration age.
+</p>
+
+<p>
+<a href="/planning-priorities">
+Review compound-level FEFO priorities →
+</a>
+</p>
+
+</div>
+
+
+<div class="card"
+     style="padding:1rem;margin-top:1rem">
+
+
 
 <h2>Affected inventory records</h2>
 

@@ -224,6 +224,94 @@ def issue_summary(rows):
     }
 
 
+
+
+# TRACKER_RELEASE_249_256
+
+def compound_issue_groups(rows):
+    """Summarize affected vials by compound ID and unit.
+
+    Input rows are the existing vial-classification records.
+    Quantities are summed only within matching units.
+    """
+    groups = {}
+
+    for row in rows:
+        key = (
+            row["compound_id"],
+            row["unit"],
+        )
+
+        if key not in groups:
+            groups[key] = {
+                "compound_id": row["compound_id"],
+                "compound": row["compound"],
+                "unit": row["unit"],
+                "total_vials": 0,
+                "undated_vials": 0,
+                "expired_vials": 0,
+                "undated_quantity": 0.0,
+                "expired_quantity": 0.0,
+                "total_quantity": 0.0,
+                "oldest_expiry": None,
+            }
+
+        group = groups[key]
+
+        quantity = float(row["remaining"])
+
+        group["total_vials"] += 1
+        group["total_quantity"] += quantity
+
+        if row["issue"] == "undated":
+            group["undated_vials"] += 1
+            group["undated_quantity"] += quantity
+
+        elif row["issue"] == "expired":
+            group["expired_vials"] += 1
+            group["expired_quantity"] += quantity
+
+            expiry = row.get("effective_expiry")
+
+            if expiry is not None:
+                current = group["oldest_expiry"]
+
+                if current is None or expiry < current:
+                    group["oldest_expiry"] = expiry
+
+    result = list(groups.values())
+
+    result.sort(
+        key=lambda group: (
+            -group["total_vials"],
+            -group["expired_vials"],
+            group["compound"].casefold(),
+            group["unit"],
+        )
+    )
+
+    return result
+
+
+def compound_issue_totals(groups):
+    """Aggregate counts without combining unlike units."""
+    return {
+        "groups": len(groups),
+        "vials": sum(
+            group["total_vials"]
+            for group in groups
+        ),
+        "undated_vials": sum(
+            group["undated_vials"]
+            for group in groups
+        ),
+        "expired_vials": sum(
+            group["expired_vials"]
+            for group in groups
+        ),
+    }
+
+
 @router.get("/inventory-data-quality")
 def inventory_data_quality(
     request: Request,
@@ -257,10 +345,17 @@ def inventory_data_quality(
         sort=sort,
     )
 
+    # Compound summary uses all affected inventory.
+    # Existing vial filters remain independent.
+    compound_groups = compound_issue_groups(all_rows)
+    compound_totals = compound_issue_totals(compound_groups)
+
     return render(
         request,
         "inventory_data_quality.html",
         rows=rows,
+        compound_groups=compound_groups,
+        compound_totals=compound_totals,
         totals=issue_summary(all_rows),
         filtered_count=len(rows),
         compound=compound,
