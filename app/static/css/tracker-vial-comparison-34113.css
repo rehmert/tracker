@@ -617,3 +617,80 @@
 }
 
 /* END TRACKER_STAGE34_185_190 */
+
+/* TRACKER_STAGE34_191_196
+   Standardize comparison search and filter control presentation.
+   Presentation only; no search or filtering behavior changes.
+*/
+
+.tracker-vial-controls {
+  align-items: flex-end;
+  gap: .85rem;
+}
+
+.tracker-vial-search-group {
+  flex: 1 1 240px;
+  gap: .4rem;
+}
+
+.tracker-vial-controls > label {
+  flex: 0 1 220px;
+  min-width: 180px;
+  gap: .4rem;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.tracker-vial-search-group > label,
+.tracker-vial-controls > label > span {
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.tracker-vial-controls input,
+.tracker-vial-controls select {
+  box-sizing: border-box;
+  min-height: 42px;
+  padding: .55rem .7rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 8px;
+  background: var(--surface, Canvas);
+  color: inherit;
+  font: inherit;
+  line-height: 1.35;
+}
+
+.tracker-vial-controls input {
+  min-width: 0;
+}
+
+.tracker-vial-controls input:focus-visible,
+.tracker-vial-controls select:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 2px;
+}
+
+.tracker-vial-controls input::placeholder {
+  color: inherit;
+  opacity: .6;
+}
+
+@media (max-width: 700px) {
+  .tracker-vial-controls {
+    gap: .7rem;
+  }
+
+  .tracker-vial-search-group,
+  .tracker-vial-controls > label {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tracker-vial-controls input,
+  .tracker-vial-controls select {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+/* END TRACKER_STAGE34_191_196 */
