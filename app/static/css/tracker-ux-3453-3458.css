@@ -1,0 +1,68 @@
+/*
+ * Tracker Stages 34.53–34.57
+ */
+
+.tracker-inline-invalid {
+  border-color: #d05a5a !important;
+}
+
+.tracker-inline-error {
+  display: block;
+  margin-top: .3rem;
+  color: #d05a5a;
+  font-size: .75rem;
+  line-height: 1.4;
+}
+
+.tracker-request-status {
+  display: inline-flex;
+  align-items: center;
+  margin: .35rem .5rem;
+  font-size: .78rem;
+  opacity: .8;
+}
+
+.tracker-request-status[hidden] {
+  display: none !important;
+}
+
+.tracker-responsive-form {
+  min-width: 0;
+}
+
+.tracker-responsive-form .field {
+  min-width: 0;
+}
+
+.tracker-responsive-form input,
+.tracker-responsive-form select,
+.tracker-responsive-form textarea {
+  max-width: 100%;
+}
+
+@media (max-width: 680px) {
+  .tracker-responsive-form {
+    max-width: 100%;
+  }
+
+  .tracker-responsive-form .row,
+  .tracker-responsive-form .form-row {
+    flex-wrap: wrap;
+  }
+
+  .tracker-responsive-form .field {
+    flex: 1 1 180px;
+  }
+
+  .tracker-responsive-form textarea {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracker-inline-error,
+  .tracker-request-status {
+    transition: none !important;
+    animation: none !important;
+  }
+}
