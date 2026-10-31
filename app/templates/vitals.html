@@ -91,7 +91,7 @@
       <td class="n">{% if r.systolic %}{{ r.systolic }}/{{ r.diastolic }}{% else %}—{% endif %}</td>
       <td class="n">{{ r.pulse_bpm if r.pulse_bpm else '—' }}</td>
       <td>{{ r.context or '—' }}</td><td>{{ r.notes or '—' }}</td>
-      <td><button class="link danger" hx-delete="/vitals/{{ r.id }}" hx-confirm="Delete this reading?">Delete</button></td>
+      <td><a class="link" href="/vitals/{{ r.id }}/edit?days={{ days }}&amp;events={{ 1 if events_on else 0 }}">Edit</a> <button class="link danger" hx-delete="/vitals/{{ r.id }}" hx-confirm="Delete this reading?">Delete</button></td>
     </tr>
     {% else %}<tr><td colspan="7" class="empty">No readings in this range.</td></tr>{% endfor %}
     </tbody>

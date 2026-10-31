@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Edit Vital Reading{% endblock %}
+{% block content %}
+
+<h1>Edit Vital Reading</h1>
+
+<p class="note">
+  Update the existing reading without creating a duplicate.
+</p>
+
+<section class="card" style="max-width:920px">
+  <form method="post"
+        action="/vitals/{{ reading.id }}/edit"
+        class="grid">
+
+    <input type="hidden" name="days" value="{{ days }}">
+    <input type="hidden" name="events" value="{{ events }}">
+
+    <label class="field">
+      <span>Date and Time</span>
+      <input type="datetime-local"
+             name="measured_at"
+             value="{{ measured_at }}"
+             required>
+    </label>
+
+    <label class="field">
+      <span>Weight</span>
+      <input type="number"
+             name="weight"
+             step="any"
+             min="0"
+             value="{{ weight if weight is not none else '' }}">
+    </label>
+
+    <label class="field">
+      <span>Weight Unit</span>
+      <select name="weight_unit">
+        <option value="lb"
+          {% if unit == 'lb' %}selected{% endif %}>lb</option>
+        <option value="kg"
+          {% if unit == 'kg' %}selected{% endif %}>kg</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Systolic BP</span>
+      <input type="number"
+             name="systolic"
+             step="1"
+             value="{{ reading.systolic if reading.systolic is not none else '' }}">
+    </label>
+
+    <label class="field">
+      <span>Diastolic BP</span>
+      <input type="number"
+             name="diastolic"
+             step="1"
+             value="{{ reading.diastolic if reading.diastolic is not none else '' }}">
+    </label>
+
+    <label class="field">
+      <span>Pulse (BPM)</span>
+      <input type="number"
+             name="pulse"
+             step="1"
+             value="{{ reading.pulse_bpm if reading.pulse_bpm is not none else '' }}">
+    </label>
+
+    <label class="field">
+      <span>Context</span>
+      <input name="context"
+             maxlength="80"
+             value="{{ reading.context or '' }}">
+    </label>
+
+    <label class="field">
+      <span>Notes</span>
+      <textarea name="notes"
+                rows="4">{{ reading.notes or '' }}</textarea>
+    </label>
+
+    <div style="display:flex;gap:12px;align-items:center">
+      <button type="submit" class="primary">
+        Save Changes
+      </button>
+
+      <a class="link"
+         href="/vitals?days={{ days }}&amp;events={{ events }}">
+        Cancel
+      </a>
+    </div>
+
+  </form>
+</section>
+
+{% endblock %}

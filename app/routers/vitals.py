@@ -86,6 +86,114 @@ def add_reading(measured_at: str = Form(""), weight: str = Form(""), weight_unit
     return services.flash_redirect("/vitals", msg="Reading saved.")
 
 
+
+# Stage 34.87: Edit existing vital readings.
+
+@router.get("/vitals/{rid}/edit")
+def edit_reading_page(
+    rid: int,
+    request: Request,
+    days: int = 90,
+    events: int = 1,
+    db: Session = Depends(get_db),
+):
+    reading = db.get(VitalReading, rid)
+    if reading is None:
+        raise HTTPException(404, "Reading not found")
+
+    days = days if days in RANGES else 90
+    unit = config.WEIGHT_UNIT
+
+    weight = metrics.weight_from_kg(
+        reading.weight_kg, unit
+    )
+
+    return render(
+        request,
+        "vitals_edit.html",
+        reading=reading,
+        unit=unit,
+        weight=weight,
+        days=days,
+        events=1 if events else 0,
+        measured_at=reading.measured_at.strftime(
+            "%Y-%m-%dT%H:%M"
+        ),
+    )
+
+
+@router.post("/vitals/{rid}/edit")
+def update_reading(
+    rid: int,
+    measured_at: str = Form(""),
+    weight: str = Form(""),
+    weight_unit: str = Form("kg"),
+    systolic: str = Form(""),
+    diastolic: str = Form(""),
+    pulse: str = Form(""),
+    context: str = Form(""),
+    notes: str = Form(""),
+    days: int = Form(90),
+    events: int = Form(1),
+    db: Session = Depends(get_db),
+):
+    reading = db.get(VitalReading, rid)
+    if reading is None:
+        raise HTTPException(404, "Reading not found")
+
+    days = days if days in RANGES else 90
+    events = 1 if events else 0
+
+    return_url = f"/vitals?days={days}&events={events}"
+    edit_url = (
+        f"/vitals/{rid}/edit?days={days}&events={events}"
+    )
+
+    try:
+        if weight_unit not in ("kg", "lb"):
+            raise ValueError("Invalid weight unit")
+
+        w = _opt(weight, float)
+
+        kg = (
+            metrics.weight_to_kg(w, weight_unit)
+            if w is not None
+            else None
+        )
+
+        sy = _opt(systolic, int)
+        di = _opt(diastolic, int)
+        hr = _opt(pulse, int)
+        when = services.parse_datetime(measured_at)
+
+    except (ValueError, OverflowError) as exc:
+        return services.flash_redirect(
+            edit_url, err=str(exc)
+        )
+
+    errors = metrics.validate(kg, sy, di, hr)
+
+    if errors:
+        return services.flash_redirect(
+            edit_url, err=" ".join(errors)
+        )
+
+    reading.measured_at = when
+    reading.weight_kg = kg
+    reading.systolic = sy
+    reading.diastolic = di
+    reading.pulse_bpm = hr
+    reading.context = context.strip()[:80]
+    reading.notes = notes.strip()
+
+    db.commit()
+
+    return services.flash_redirect(
+        return_url,
+        msg="Reading updated successfully.",
+    )
+
+
 @router.delete("/vitals/{rid}")
 def delete_reading(rid: int, db: Session = Depends(get_db)):
     r = db.get(VitalReading, rid)
