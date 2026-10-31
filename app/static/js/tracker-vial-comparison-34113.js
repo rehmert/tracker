@@ -41,6 +41,10 @@
       'tracker-vial-filter-34113'
     );
 
+    const clearButton = document.getElementById(
+      'tracker-vial-clear-34143'
+    );
+
     const results = document.getElementById(
       'tracker-vial-results-34113'
     );
@@ -184,6 +188,13 @@
           `${count} of ${rows.length} vials shown` +
           ` · Date reference: ${referenceDate}`;
       }
+
+      if (clearButton) {
+        clearButton.hidden = !(
+          Boolean(search?.value) ||
+          (filter?.value || 'all') !== 'all'
+        );
+      }
     }
 
     for (const row of rows) {
@@ -195,6 +206,26 @@
 
     search?.addEventListener('input', updateFilters);
     filter?.addEventListener('change', updateFilters);
+
+    function clearSearchAndFilter() {
+      if (search) search.value = '';
+      if (filter) filter.value = 'all';
+
+      updateFilters();
+      search?.focus();
+    }
+
+    clearButton?.addEventListener(
+      'click',
+      clearSearchAndFilter
+    );
+
+    search?.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && search.value) {
+        event.preventDefault();
+        clearSearchAndFilter();
+      }
+    });
   }
 
   if (document.readyState === 'loading') {
@@ -207,3 +238,5 @@
     initialize();
   }
 })();
+
+/* TRACKER_STAGE34_143_148 */
