@@ -1271,3 +1271,27 @@
 }
 
 /* END TRACKER_STAGE34_263_268 */
+
+/* TRACKER_STAGE34_269_274
+   Keep the sticky identity column compact on very narrow screens.
+   Presentation only; no data or workflow changes.
+*/
+
+@media (max-width: 480px) {
+  .tracker-vial-table th:first-child,
+  .tracker-vial-table td:first-child {
+    width: 190px;
+    min-width: 150px;
+    max-width: 210px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+  }
+
+  .tracker-vial-table td:first-child > strong,
+  .tracker-vial-table td:first-child .tracker-vial-muted {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+}
+
+/* END TRACKER_STAGE34_269_274 */
