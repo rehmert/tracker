@@ -1,0 +1,119 @@
+
+{# TRACKER_RELEASE_289_296 #}
+
+<section class="card"
+         aria-label="FEFO forecast reliability"
+         style="padding:1rem;margin:1rem 0">
+
+<h2>Understanding FEFO reliability</h2>
+
+<p class="muted">
+Forecast results depend on both inventory records
+and scheduled protocol demand. Missing information
+can make a forecast incomplete or provisional.
+</p>
+
+<div style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+gap:1rem;
+margin-top:1rem;
+">
+
+<div style="
+padding:0.85rem;
+border:1px solid var(--border,#d1d5db);
+border-radius:0.7rem;
+">
+
+<strong>Expired inventory</strong>
+
+<p class="muted">
+Inventory whose effective expiration date has
+already passed should not be treated as available
+for future FEFO allocation.
+</p>
+
+<p>
+<a href="/inventory-data-quality?issue=expired">
+Review expired records →
+</a>
+</p>
+
+</div>
+
+<div style="
+padding:0.85rem;
+border:1px solid var(--border,#d1d5db);
+border-radius:0.7rem;
+">
+
+<strong>Missing expiration dates</strong>
+
+<p class="muted">
+Without an expiration or beyond-use date,
+the forecast cannot reliably determine when
+inventory should leave the available pool.
+</p>
+
+<p>
+<a href="/inventory-data-quality?issue=undated">
+Review undated records →
+</a>
+</p>
+
+</div>
+
+<div style="
+padding:0.85rem;
+border:1px solid var(--border,#d1d5db);
+border-radius:0.7rem;
+">
+
+<strong>Incomplete protocol information</strong>
+
+<p class="muted">
+Missing protocol start dates or invalid
+scheduled quantities can prevent demand
+from being projected accurately.
+</p>
+
+<p>
+<a href="/planning-priorities">
+Review planning priorities →
+</a>
+</p>
+
+</div>
+
+</div>
+
+<details style="margin-top:1rem">
+
+<summary>
+<strong>How to interpret provisional shortages</strong>
+</summary>
+
+<p class="muted" style="margin-top:0.75rem">
+A provisional shortage indicates that the
+available information suggests a possible
+inventory shortfall, but the result is not
+fully reliable.
+</p>
+
+<p class="muted">
+Before making purchasing decisions, review
+the affected vial records and confirm that
+protocol dates and quantities are complete.
+</p>
+
+</details>
+
+<p class="muted" style="margin-top:1rem">
+These indicators describe record completeness
+and forecast reliability. They are not
+recommendations to use, discard, purchase,
+or administer any compound.
+</p>
+
+</section>

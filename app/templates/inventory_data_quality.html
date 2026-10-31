@@ -501,4 +501,47 @@ expiration dates, vial status, protocols, or dose logs.
 <!-- TRACKER_RELEASE_281_288 -->
 {% include "_planning_review_navigation.html" %}
 
+
+<!-- TRACKER_RELEASE_289_296 -->
+
+<section class="card"
+         style="padding:1rem;margin:1rem 0">
+
+<h2>How inventory quality affects planning</h2>
+
+<p class="muted">
+The records above identify inventory that
+requires review before its availability can
+be represented reliably in a FEFO forecast.
+</p>
+
+<p>
+<a href="/planning-priorities">
+View forecast reliability and shortages →
+</a>
+</p>
+
+<details>
+
+<summary>
+Why do these records matter?
+</summary>
+
+<p class="muted">
+Expired inventory may no longer be available
+for future allocations. Undated inventory
+cannot be evaluated against future
+expiration deadlines.
+</p>
+
+<p class="muted">
+Correcting inventory information can improve
+forecast completeness, but this page does
+not modify any records automatically.
+</p>
+
+</details>
+
+</section>
+
 {% endblock %}

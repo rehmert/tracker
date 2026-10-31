@@ -593,4 +593,45 @@ No records are modified.
 {% include "_planning_review_navigation.html" %}
 
 
+
+<!-- TRACKER_RELEASE_289_296 -->
+
+<section class="card"
+         style="padding:1rem;margin:1rem 0">
+
+<h2>Forecast impact</h2>
+
+<p class="muted">
+This compound has
+<strong>{{ totals.expired }}</strong>
+expired and
+<strong>{{ totals.undated }}</strong>
+undated vial records requiring review.
+</p>
+
+<p class="muted">
+Expired records and records without
+usable expiration dates can affect
+the completeness of future FEFO
+availability calculations.
+</p>
+
+<div style="
+display:flex;
+flex-wrap:wrap;
+gap:1rem;
+">
+
+<a href="/inventory-data-quality?compound={{ compound.name|urlencode }}">
+View this compound in Inventory Quality →
+</a>
+
+<a href="/planning-priorities">
+Review planning priorities →
+</a>
+
+</div>
+
+</section>
+
 {% endblock %}
