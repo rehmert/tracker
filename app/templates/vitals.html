@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Vitals{% endblock %}
 {% block content %}
+
+<link
+  rel="stylesheet"
+  href="/static/css/tracker-vitals-tools.css"
+>
+<script
+  src="/static/js/tracker-vitals-tools.js"
+  defer
+></script>
+
 <h1>Vitals</h1>
 <p class="note">Weight, blood pressure and pulse as you record them. This page shows your numbers and simple averages; it doesn't interpret them. Take questions about what a reading means to a clinician.</p>
 
@@ -80,8 +90,62 @@
 
 <section>
   <h2>Readings</h2>
+
+<div class="vitals-toolbar" data-vitals-toolbar>
+  <label>
+    <span>Search readings</span>
+    <input
+      type="search"
+      data-vitals-search
+      placeholder="Search readings..."
+      autocomplete="off"
+    >
+  </label>
+
+  <label>
+    <span>Measurement</span>
+    <select data-vitals-type>
+      <option value="all">All readings</option>
+      <option value="weight">Weight recorded</option>
+      <option value="bp">Blood pressure recorded</option>
+      <option value="pulse">Pulse recorded</option>
+    </select>
+  </label>
+
+  <label>
+    <span>Sort by</span>
+    <select data-vitals-sort>
+      <option value="date-desc">Newest first</option>
+      <option value="date-asc">Oldest first</option>
+      <option value="weight-desc">Weight: high to low</option>
+      <option value="weight-asc">Weight: low to high</option>
+      <option value="sys-desc">Systolic: high to low</option>
+      <option value="sys-asc">Systolic: low to high</option>
+      <option value="dia-desc">Diastolic: high to low</option>
+      <option value="dia-asc">Diastolic: low to high</option>
+      <option value="pulse-desc">Pulse: high to low</option>
+      <option value="pulse-asc">Pulse: low to high</option>
+    </select>
+  </label>
+
+  <button type="button" data-vitals-reset>
+    Reset
+  </button>
+
+  <button type="button" data-vitals-export>
+    Export CSV
+  </button>
+
+  <span
+    class="vitals-toolbar-count"
+    data-vitals-count
+    role="status"
+    aria-live="polite"
+  ></span>
+</div>
+
   <p class="note">Averages are per reading, not per day, so several readings on one day weigh more than a single one.</p>
-  <div class="scroll"><table>
+  <div class="scroll"><table data-vitals-table>
     <thead><tr><th>When</th><th class="n">Weight ({{ unit }})</th><th class="n">Blood pressure</th><th class="n">Pulse</th><th>Context</th><th>Notes</th><th></th></tr></thead>
     <tbody>
     {% for r in rows %}
