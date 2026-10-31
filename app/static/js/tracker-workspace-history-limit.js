@@ -193,6 +193,21 @@
     jump.append(jumpLabel, pageNumber, pageGo);
     pagination.append(previous, status, next, jump);
 
+    const firstPage = document.createElement('button');
+    firstPage.type = 'button';
+    firstPage.id = 'tracker-history-page-first';
+    firstPage.textContent = '⇤ First';
+    firstPage.setAttribute('aria-label', 'First history page');
+
+    const lastPage = document.createElement('button');
+    lastPage.type = 'button';
+    lastPage.id = 'tracker-history-page-last';
+    lastPage.textContent = 'Last ⇥';
+    lastPage.setAttribute('aria-label', 'Last history page');
+
+    pagination.insertBefore(firstPage, previous);
+    pagination.insertBefore(lastPage, next.nextSibling);
+
     const scroll = table.closest('.scroll');
 
     if (scroll) {
@@ -280,6 +295,14 @@
       rows.forEach(row => {
         row.hidden = !visible.has(row);
       });
+
+      firstPage.disabled =
+        currentPage === 0 || size === Infinity || total === 0;
+
+      lastPage.disabled =
+        currentPage >= pages - 1 ||
+        size === Infinity ||
+        total === 0;
 
       previous.disabled =
         currentPage === 0 || size === Infinity;
@@ -398,6 +421,29 @@
         Math.min(pages - 1, requested - 1)
       );
 
+      render();
+    });
+
+    firstPage.addEventListener('click', () => {
+      if (currentPage === 0) return;
+
+      currentPage = 0;
+      render();
+    });
+
+    lastPage.addEventListener('click', () => {
+      const size = pageSize();
+
+      if (size === Infinity) return;
+
+      const pages = Math.max(
+        1,
+        Math.ceil(matchingRows.length / size)
+      );
+
+      if (currentPage >= pages - 1) return;
+
+      currentPage = pages - 1;
       render();
     });
 
