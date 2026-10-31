@@ -1,0 +1,217 @@
+
+{# TRACKER_RELEASE_369_376 #}
+
+<script>
+/* TRACKER_RELEASE_369_376_JS */
+(function () {
+    "use strict";
+
+    const VERSION = "369-376";
+
+    function normalize(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function selectedIssue() {
+        const select = document.getElementById(
+            "ir-issue"
+        );
+
+        if (!select) {
+            return "unknown";
+        }
+
+        const option = select.options[
+            select.selectedIndex
+        ];
+
+        if (!option) {
+            return "unknown";
+        }
+
+        const value = normalize(option.value);
+        const label = normalize(option.textContent);
+
+        if (
+            value === "expired" ||
+            label.includes("expired")
+        ) {
+            return "expired";
+        }
+
+        if (
+            value === "undated" ||
+            label.includes("undated")
+        ) {
+            return "undated";
+        }
+
+        return "all";
+    }
+
+    function urlIssue() {
+        const params = new URLSearchParams(
+            window.location.search
+        );
+
+        const value = normalize(
+            params.get("issue")
+        );
+
+        return (
+            value === "expired" ||
+            value === "undated"
+        ) ? value : "all";
+    }
+
+    function isVisible(row) {
+        if (
+            row.hidden ||
+            row.closest("[hidden]")
+        ) {
+            return false;
+        }
+
+        const style = window.getComputedStyle(row);
+
+        return (
+            style.display !== "none" &&
+            style.visibility !== "hidden"
+        );
+    }
+
+    function reviewRows() {
+        return Array.from(
+            document.querySelectorAll(
+                "tr[data-vial-id]"
+            )
+        );
+    }
+
+    function readState() {
+        const search = document.getElementById(
+            "ir-search"
+        );
+
+        const counter = document.getElementById(
+            "ir-ux-count"
+        );
+
+        const indicator = document.getElementById(
+            "ir-nav-active-filter"
+        );
+
+        const rows = reviewRows();
+
+        const visible = rows.filter(isVisible);
+
+        const selected = selectedIssue();
+        const url = urlIssue();
+
+        return {
+            version: VERSION,
+            pathname: window.location.pathname,
+            issue: selected,
+            urlIssue: url,
+            synchronized: (
+                selected !== "unknown" &&
+                selected === url
+            ),
+            search: search ? search.value : "",
+            totalRows: rows.length,
+            visibleRows: visible.length,
+            counterText: counter
+                ? counter.textContent.trim()
+                : null,
+            indicatorText: indicator
+                ? indicator.textContent.trim()
+                : null,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    function stateSignature(state) {
+        return JSON.stringify({
+            issue: state.issue,
+            urlIssue: state.urlIssue,
+            search: state.search,
+            totalRows: state.totalRows,
+            visibleRows: state.visibleRows,
+            counterText: state.counterText,
+            indicatorText: state.indicatorText
+        });
+    }
+
+    let previousSignature = null;
+
+    function publish(force) {
+        const state = readState();
+        const signature = stateSignature(state);
+
+        if (
+            !force &&
+            signature === previousSignature
+        ) {
+            return state;
+        }
+
+        previousSignature = signature;
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "tracker:review-state",
+                {
+                    detail: state
+                }
+            )
+        );
+
+        return state;
+    }
+
+    // Public, read-only API.
+    //
+    // Existing components remain responsible
+    // for modifying the review state.
+
+    window.TrackerReviewState = Object.freeze({
+        version: VERSION,
+        read: readState,
+        publish: publish
+    });
+
+    function initialize() {
+        if (
+            document.documentElement.dataset
+                .trackerReviewState369
+        ) {
+            return;
+        }
+
+        document.documentElement.dataset
+            .trackerReviewState369 = "1";
+
+        // Publish the initial state after the
+        // existing review controls initialize.
+        //
+        // No filter values or URL parameters
+        // are modified by this component.
+
+        window.setTimeout(function () {
+            publish(true);
+        }, 300);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
