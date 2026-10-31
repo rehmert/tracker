@@ -4,7 +4,7 @@
 {% block content %}
 <script src="/static/js/tracker-workspace-selection.js?v=1" defer></script>
 <link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=4">
-<script src="/static/tracker_dose_workspace.js?v=3" defer></script>
+<script src="/static/tracker_dose_workspace.js?v=34.25" defer></script>
 <script src="/static/js/tracker-workspace-history.js?v=1" defer></script>
 <script src="/static/js/tracker-workspace-history-export.js?v=1" defer></script>
 <script src="/static/js/tracker-workspace-history-copy.js?v=1" defer></script>
@@ -117,6 +117,13 @@
     <label for="tracker-vial-search">Find a vial</label>
     <input id="tracker-vial-search" type="search" placeholder="Search compound, vial, status…" autocomplete="off" aria-controls="tracker-available-vials">
     <button type="button" id="tracker-vial-clear" hidden>Clear</button>
+    <label for="tracker-vial-display-limit">Vials per compound / strength</label>
+    <select id="tracker-vial-display-limit">
+      <option value="3">3</option>
+      <option value="5" selected>5</option>
+      <option value="10">10</option>
+      <option value="all">All</option>
+    </select>
     <span id="tracker-vial-count" role="status" aria-live="polite"></span>
   </div>
   <p id="tracker-vial-no-matches" class="empty" hidden>No vials match this search. <button type="button" id="tracker-vial-reset">Clear search</button></p>
@@ -206,6 +213,11 @@
         {% set dates = vial_date_details[vial.id] %}
         <tr data-tracker-vial-row
             data-tracker-id="{{ vial.id }}"
+            data-tracker-compound-id="{{ vial.compound_id }}"
+            data-tracker-strength="{{ vial.content_value }}:{{ vial.content_unit }}"
+            data-tracker-purchase-date="{{ vial.purchase.purchased_on.isoformat() if vial.purchase and vial.purchase.purchased_on else '' }}"
+            data-tracker-received-date="{{ vial.received_on.isoformat() if vial.received_on else '' }}"
+            data-tracker-created-date="{{ vial.created_at.isoformat() if vial.created_at else '' }}"
             data-tracker-recommended="{{ '1' if vial.id == recommended_vial_id else '0' }}"
             data-tracker-compound="{{ vial.compound.name|lower }}"
             data-tracker-vial="{{ (vial.label or ('#' ~ vial.id))|lower }}"

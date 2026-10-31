@@ -33,6 +33,29 @@
     const clear = document.getElementById('tracker-vial-clear');
     const reset = document.getElementById('tracker-vial-reset');
 
+    const limitSelect = document.getElementById(
+      'tracker-vial-display-limit'
+    );
+
+    const preferenceKey = 'tracker.workspace.vialDisplayLimit';
+
+    let displayLimit = 5;
+
+    try {
+      const saved = localStorage.getItem(preferenceKey);
+      if (['3', '5', '10', 'all'].includes(saved)) {
+        displayLimit = saved === 'all' ? Infinity : Number(saved);
+      }
+    } catch (_) {
+      // Private browsing or disabled storage: use the default.
+    }
+
+    if (limitSelect) {
+      limitSelect.value = displayLimit === Infinity
+        ? 'all'
+        : String(displayLimit);
+    }
+
     let sortKey = 'recommended';
     let direction = 'asc';
 
@@ -114,26 +137,112 @@
       });
     }
 
+    function priorityCompare(a, b) {
+      const recommendedA = a.dataset.trackerRecommended === '1';
+      const recommendedB = b.dataset.trackerRecommended === '1';
+
+      if (recommendedA !== recommendedB) {
+        return recommendedA ? -1 : 1;
+      }
+
+      const activeA = a.dataset.trackerStatus === 'in_use';
+      const activeB = b.dataset.trackerStatus === 'in_use';
+
+      if (activeA !== activeB) {
+        return activeA ? -1 : 1;
+      }
+
+      const expiryA = a.dataset.trackerExpires || '';
+      const expiryB = b.dataset.trackerExpires || '';
+
+      if (expiryA !== expiryB) {
+        if (!expiryA) return 1;
+        if (!expiryB) return -1;
+        return expiryA.localeCompare(expiryB);
+      }
+
+      const ageA =
+        a.dataset.trackerPurchaseDate ||
+        a.dataset.trackerReceivedDate ||
+        a.dataset.trackerCreatedDate ||
+        '';
+
+      const ageB =
+        b.dataset.trackerPurchaseDate ||
+        b.dataset.trackerReceivedDate ||
+        b.dataset.trackerCreatedDate ||
+        '';
+
+      if (ageA !== ageB) {
+        if (!ageA) return 1;
+        if (!ageB) return -1;
+        return ageA.localeCompare(ageB);
+      }
+
+      return Number(a.dataset.trackerId) -
+             Number(b.dataset.trackerId);
+    }
+
     function update() {
       const query = input.value.trim().toLocaleLowerCase();
-      let visible = 0;
+
+      // Group by actual compound ID and labeled vial strength.
+      // Searching temporarily reveals all matching inventory.
+      const groups = new Map();
 
       rows.forEach(row => {
-        const match =
+        const key = [
+          row.dataset.trackerCompoundId,
+          row.dataset.trackerStrength
+        ].join('|');
+
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(row);
+      });
+
+      const allowed = new Set();
+
+      groups.forEach(group => {
+        group.sort(priorityCompare);
+
+        const maximum = query || displayLimit === Infinity
+          ? group.length
+          : displayLimit;
+
+        group.slice(0, maximum).forEach(row => allowed.add(row));
+      });
+
+      let visible = 0;
+      let matching = 0;
+
+      rows.forEach(row => {
+        const matchesSearch =
           !query ||
           row.textContent.toLocaleLowerCase().includes(query);
 
-        row.hidden = !match;
+        if (matchesSearch) matching++;
 
-        if (match) visible++;
+        const show = matchesSearch && allowed.has(row);
+
+        row.hidden = !show;
+
+        if (show) visible++;
       });
 
       if (count) {
+        const hiddenCount = rows.length - visible;
+
         count.textContent =
-          `${visible} of ${rows.length} vials shown`;
+          `${visible} of ${rows.length} vials shown` +
+          (hiddenCount && !query
+            ? ` · ${hiddenCount} hidden by display limit`
+            : '');
       }
 
-      if (empty) empty.hidden = visible !== 0;
+      if (empty) {
+        empty.hidden = matching !== 0;
+      }
+
       if (clear) clear.hidden = !query;
     }
 
@@ -163,6 +272,25 @@
         update();
       });
     });
+
+    if (limitSelect) {
+      limitSelect.addEventListener('change', () => {
+        displayLimit = limitSelect.value === 'all'
+          ? Infinity
+          : Number(limitSelect.value);
+
+        try {
+          localStorage.setItem(
+            preferenceKey,
+            limitSelect.value
+          );
+        } catch (_) {
+          // Preference remains active for this page.
+        }
+
+        update();
+      });
+    }
 
     input.addEventListener('input', update);
 
