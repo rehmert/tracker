@@ -1,0 +1,192 @@
+
+{# TRACKER_RELEASE_297_304 #}
+
+<section class="card"
+         aria-labelledby="inventory-priority-heading"
+         style="padding:1rem;margin:1rem 0">
+
+<h2 id="inventory-priority-heading">
+Inventory review priorities
+</h2>
+
+<p class="muted">
+Compounds with the most affected vial records
+appear first. Counts represent individual vials,
+not doses or protocol requirements.
+</p>
+
+{% if compound_groups %}
+
+<div style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+gap:0.75rem;
+margin:1rem 0;
+">
+
+<div style="
+padding:0.8rem;
+border:1px solid var(--border,#d1d5db);
+border-radius:0.6rem">
+
+<strong>Compound/unit groups</strong>
+
+<div style="font-size:1.5rem">
+{{ compound_totals.groups }}
+</div>
+
+</div>
+
+<div style="
+padding:0.8rem;
+border:1px solid var(--border,#d1d5db);
+border-radius:0.6rem">
+
+<strong>Expired vials</strong>
+
+<div style="font-size:1.5rem">
+{{ compound_totals.expired_vials }}
+</div>
+
+</div>
+
+<div style="
+padding:0.8rem;
+border:1px solid var(--border,#d1d5db);
+border-radius:0.6rem">
+
+<strong>Undated vials</strong>
+
+<div style="font-size:1.5rem">
+{{ compound_totals.undated_vials }}
+</div>
+
+</div>
+
+</div>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<caption style="text-align:left;margin-bottom:0.6rem">
+Compound groups ordered by affected vial count
+</caption>
+
+<thead>
+<tr>
+<th scope="col">Compound</th>
+<th scope="col">Affected</th>
+<th scope="col">Expired</th>
+<th scope="col">Undated</th>
+<th scope="col">Affected quantity</th>
+<th scope="col">Oldest expiration</th>
+<th scope="col">Review</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for group in compound_groups %}
+
+<tr>
+
+<td>
+<strong>{{ group.compound }}</strong>
+</td>
+
+<td>
+{{ group.total_vials }}
+</td>
+
+<td>
+{{ group.expired_vials }}
+</td>
+
+<td>
+{{ group.undated_vials }}
+</td>
+
+<td>
+{{ "%.4f"|format(group.total_quantity) }}
+{{ group.unit }}
+</td>
+
+<td>
+{{ group.oldest_expiry or "—" }}
+</td>
+
+<td>
+
+<a href="/inventory-review/{{ group.compound_id }}">
+All issues
+</a>
+
+{% if group.expired_vials %}
+
+<br>
+
+<a href="/inventory-data-quality?compound={{ group.compound|urlencode }}&amp;issue=expired">
+Expired ({{ group.expired_vials }})
+</a>
+
+{% endif %}
+
+{% if group.undated_vials %}
+
+<br>
+
+<a href="/inventory-data-quality?compound={{ group.compound|urlencode }}&amp;issue=undated">
+Undated ({{ group.undated_vials }})
+</a>
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+{% else %}
+
+<p class="muted">
+No active inventory records currently require
+expiration-date review.
+</p>
+
+{% endif %}
+
+<details style="margin-top:1rem">
+
+<summary>
+How are these priorities calculated?
+</summary>
+
+<p class="muted">
+Groups are ordered by affected vial count,
+then expired vial count, compound name,
+and unit. This is a record-review order,
+not a medical urgency or safety ranking.
+</p>
+
+<p class="muted">
+Quantities are grouped by compound and unit.
+Values in mg and IU are not combined.
+</p>
+
+<p class="muted">
+The summary includes all affected records,
+regardless of the filters applied to the
+individual-vial table below.
+</p>
+
+</details>
+
+</section>
