@@ -383,11 +383,70 @@
 </script>
 <!-- END_STAGE34_VIAL_QUICK_FIND -->
 
+
+<!-- TRACKER_STAGE34_ATTENTION -->
+<style>
+#tracker-vial-attention {
+  padding:.8rem 1rem;
+  margin:.75rem 0;
+}
+#tracker-vial-attention .attention-summary {
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem 1rem;
+  align-items:center;
+}
+#tracker-vial-attention .attention-summary strong {
+  margin-right:.5rem;
+}
+.tracker-attention-badge {
+  display:inline-block;
+  padding:.15rem .45rem;
+  margin:.25rem .3rem 0 0;
+  border-radius:.4rem;
+  border:1px solid currentColor;
+  font-size:.75rem;
+  font-weight:600;
+  line-height:1.5;
+}
+.tracker-attention-badge.critical {
+  color:#b42318;
+  background:rgba(180,35,24,.08);
+}
+.tracker-attention-badge.warning {
+  color:#9a6700;
+  background:rgba(154,103,0,.09);
+}
+.tracker-attention-badge.info {
+  color:var(--text,#444);
+  background:var(--surface,#eee);
+}
+</style>
+<div class="card" id="tracker-vial-attention">
+  <div class="attention-summary">
+    <strong>Inventory attention</strong>
+    <span id="tracker-attention-expired">0 past date</span>
+    <span id="tracker-attention-soon">0 approaching date</span>
+    <span id="tracker-attention-low">0 low</span>
+    <span id="tracker-attention-depleted">0 depleted</span>
+  </div>
+  <p class="note">
+    Based on displayed vials. Date warnings are informational;
+    confirm vial suitability before use.
+    Low inventory means 20% or less remaining.
+    Approaching means within 30 days.
+  </p>
+</div>
+<!-- END_TRACKER_STAGE34_ATTENTION -->
 <div class="scroll"><table id="tracker-vials-sortable">
   <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all visible vials"></th><th data-vial-sort="compound" aria-sort="none"><button type="button" class="vial-sort-button">Compound</button></th><th data-vial-sort="vial" aria-sort="none"><button type="button" class="vial-sort-button">Vial</button></th><th data-vial-sort="remaining" aria-sort="none"><button type="button" class="vial-sort-button">Remaining</button></th><th class="n" data-vial-sort="amount" aria-sort="none"><button type="button" class="vial-sort-button">Amount left</button></th><th class="n" data-vial-sort="landed" aria-sort="none"><button type="button" class="vial-sort-button">Landed cost</button></th><th data-vial-sort="cost" aria-sort="none"><button type="button" class="vial-sort-button">Cost</button></th><th data-vial-sort="coa" aria-sort="none"><button type="button" class="vial-sort-button">COA</button></th><th data-vial-sort="status" aria-sort="none"><button type="button" class="vial-sort-button">Status</button></th></tr></thead>
   <tbody>
   {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
-  <tr>
+  <tr data-attention-status="{{ v.status }}"
+      data-attention-remaining="{{ d.remaining_base }}"
+      data-attention-percent="{{ d.pct_remaining if d.pct_remaining is not none else '' }}"
+      data-attention-expires="{{ v.expires_on.isoformat() if v.expires_on else '' }}"
+      data-attention-beyond-use="{{ v.beyond_use_on.isoformat() if v.beyond_use_on else '' }}">
     <td><input type="checkbox" class="bulk-vial-check" name="vial_ids" value="{{ v.id }}" form="bulk-vials" aria-label="Select vial {{ v.label or v.id }}"></td>
     <td>{{ v.compound.name }}</td>
     <td><a href="/vials/{{ v.id }}">{{ v.label or ('#' ~ v.id) }}</a>{% if v.lot %}<br><small>lot {{ v.lot }}</small>{% endif %}</td>
@@ -403,6 +462,7 @@
 </table></div>
 <script src="/static/vial_saved_views.js" defer></script>
 <script src="/static/js/tracker-vials-sort.js?v=1" defer></script>
+<script src="/static/js/tracker-vial-attention.js?v=1" defer></script>
 <link rel="stylesheet" href="/static/tracker-vials-sort.css?v=1">
 
 <script>
