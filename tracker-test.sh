@@ -3,50 +3,81 @@ set -Eeuo pipefail
 
 cd /opt/tracker
 
-PYTHON=".venv/bin/python"
+PYTHON="/opt/tracker/.venv/bin/python"
 MODE="${1:-quick}"
 
-start=$SECONDS
-
-
-# TRACKER_BROWSER_AUTH_V1
-# Load Tracker credentials for authenticated browser tests.
-# Do not print or log these values.
+START=$SECONDS
 
 load_browser_auth() {
-    if [[ -f /opt/tracker/.env ]]; then
-        set -a
-        source /opt/tracker/.env
-        set +a
-    fi
+    # Read credentials using Tracker's Python configuration.
+    # Never evaluate .env as shell code.
 
-    export TRACKER_TEST_USER="${TRACKER_TEST_USER:-${TRACKER_USER:-}}"
-    export TRACKER_TEST_PASSWORD="${TRACKER_TEST_PASSWORD:-${TRACKER_PASS:-}}"
+    local credentials
+    credentials="$(mktemp)"
+    chmod 600 "$credentials"
 
-    if [[ -z "$TRACKER_TEST_USER" || -z "$TRACKER_TEST_PASSWORD" ]]; then
-        echo "ERROR: Browser authentication credentials are unavailable."
-        return 1
-    fi
+    "$PYTHON" - "$credentials" <<'PY'
+import sys
+from pathlib import Path
+
+from app import config
+
+path = Path(sys.argv[1])
+
+username = config.AUTH_USER
+password = config.AUTH_PASS
+
+if not username or not password:
+    raise SystemExit(
+        "Tracker authentication credentials are unavailable."
+    )
+
+with path.open("wb") as output:
+    output.write(username.encode("utf-8"))
+    output.write(b"\0")
+    output.write(password.encode("utf-8"))
+PY
+
+    local username password
+
+    IFS= read -r -d '' username < "$credentials" || true
+
+    password="$(
+        "$PYTHON" - "$credentials" <<'PY'
+import sys
+from pathlib import Path
+
+data = Path(sys.argv[1]).read_bytes()
+print(data.split(b"\0", 1)[1].decode("utf-8"), end="")
+PY
+    )"
+
+    rm -f "$credentials"
+
+    export TRACKER_TEST_USER="$username"
+    export TRACKER_TEST_PASSWORD="$password"
 }
 
-case "$MODE" in
+syntax_check() {
+    "$PYTHON" -m compileall -q app
+}
 
-quick)
+run_quick() {
     echo "=== QUICK TESTS ==="
 
-    "$PYTHON" -m compileall -q app
+    syntax_check
 
     "$PYTHON" -m pytest \
         -q tests \
         -m "quick and not browser" \
         --ignore=tests/browser \
         --tb=short
-    ;;
+}
 
-full)
-    echo "=== FULL BACKEND REGRESSION ==="
+run_full() {
+    echo "=== FULL BACKEND TESTS ==="
 
-    "$PYTHON" -m compileall -q app
+    syntax_check
 
     "$PYTHON" -m pytest \
         -q tests \
@@ -54,49 +85,68 @@ full)
         --ignore=tests/test_bulk_vial_browser.py \
         --durations=10 \
         --tb=short
-    ;;
+}
 
-browser)
+run_browser() {
     echo "=== ISOLATED BROWSER TESTS ==="
 
     "$PYTHON" -m pytest \
         -q tests/test_bulk_vial_browser.py \
         --tb=short
-    ;;
+}
 
-all)
-    echo "=== COMPLETE ISOLATED REGRESSION ==="
+run_all() {
+    echo "=== COMPLETE ISOLATED TESTS ==="
 
-    "$PYTHON" -m compileall -q app
+    syntax_check
 
     "$PYTHON" -m pytest \
         -q tests \
         --ignore=tests/browser \
         --durations=10 \
         --tb=short
-    ;;
+}
 
-live)
+run_live() {
+    echo "=== AUTHENTICATED LIVE BROWSER TESTS ==="
+
     load_browser_auth
-    echo "=== LIVE TRACKER BROWSER TESTS ==="
 
     "$PYTHON" -m pytest \
         -q tests/browser \
         --tb=short
-    ;;
+}
 
-none)
-    echo "=== SYNTAX CHECK ONLY ==="
+case "$MODE" in
+    quick)
+        run_quick
+        ;;
+    full)
+        run_full
+        ;;
+    browser)
+        run_browser
+        ;;
+    all)
+        run_all
+        ;;
+    live)
+        run_live
+        ;;
+    release)
+        echo "=== TRACKER RELEASE VALIDATION ==="
 
-    "$PYTHON" -m compileall -q app
-    ;;
-
-*)
-    echo "Usage: $0 {quick|full|browser|all|live|none}"
-    exit 2
-    ;;
-
+        run_all
+        run_live
+        ;;
+    none)
+        syntax_check
+        ;;
+    *)
+        echo "Usage: $0 {quick|full|browser|all|live|release|none}"
+        exit 2
+        ;;
 esac
 
 echo
-echo "Elapsed: $((SECONDS - start)) seconds"
+echo "Elapsed: $((SECONDS - START)) seconds"
