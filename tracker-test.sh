@@ -8,6 +8,27 @@ MODE="${1:-quick}"
 
 start=$SECONDS
 
+
+# TRACKER_BROWSER_AUTH_V1
+# Load Tracker credentials for authenticated browser tests.
+# Do not print or log these values.
+
+load_browser_auth() {
+    if [[ -f /opt/tracker/.env ]]; then
+        set -a
+        source /opt/tracker/.env
+        set +a
+    fi
+
+    export TRACKER_TEST_USER="${TRACKER_TEST_USER:-${TRACKER_USER:-}}"
+    export TRACKER_TEST_PASSWORD="${TRACKER_TEST_PASSWORD:-${TRACKER_PASS:-}}"
+
+    if [[ -z "$TRACKER_TEST_USER" || -z "$TRACKER_TEST_PASSWORD" ]]; then
+        echo "ERROR: Browser authentication credentials are unavailable."
+        return 1
+    fi
+}
+
 case "$MODE" in
 
 quick)
@@ -56,6 +77,7 @@ all)
     ;;
 
 live)
+    load_browser_auth
     echo "=== LIVE TRACKER BROWSER TESTS ==="
 
     "$PYTHON" -m pytest \
