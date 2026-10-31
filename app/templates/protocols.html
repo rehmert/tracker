@@ -1,10 +1,57 @@
 {% extends "base.html" %}
 {% block title %}Protocols{% endblock %}
 {% block content %}
+
+<link rel="stylesheet"
+      href="/static/css/tracker-protocol-dashboard-3494.css">
+<script src="/static/js/tracker-protocol-dashboard-3494.js"
+        defer></script>
+
 <h1>Protocols</h1>
 <p class="note">Protocols can be active schedules or hypothetical what-if plans. Saving a protocol does not record an administration or consume inventory.</p>
 <nav class="ux-shortcuts" aria-label="Protocol workflow"><a href="/calendar">View schedule</a><a href="/doses">Record a dose</a><a href="/pk">Simulate exposure</a></nav>
-<div class="scroll"><table>
+
+<div class="tracker-protocol-tools"
+     data-tracker-protocol-tools>
+  <label>
+    <span>Find protocol</span>
+    <input type="search"
+           data-protocol-search
+           placeholder="Search protocols..."
+           autocomplete="off">
+  </label>
+
+  <label>
+    <span>Status</span>
+    <select data-protocol-status>
+      <option value="all">All protocols</option>
+      <option value="active">Active</option>
+      <option value="what-if">What-if</option>
+    </select>
+  </label>
+
+  <label>
+    <span>Sort by</span>
+    <select data-protocol-sort>
+      <option value="original">Default order</option>
+      <option value="name-asc">Name A–Z</option>
+      <option value="name-desc">Name Z–A</option>
+      <option value="items-desc">Most items</option>
+      <option value="items-asc">Fewest items</option>
+    </select>
+  </label>
+
+  <button type="button" data-protocol-reset>
+    Reset
+  </button>
+
+  <span class="tracker-workflow-count"
+        data-protocol-count
+        role="status"
+        aria-live="polite"></span>
+</div>
+
+<div class="scroll"><table data-tracker-protocol-table>
   <thead><tr><th>Name</th><th>Status</th><th class="n">Items</th><th class="n">Est. cost / month</th><th>Updated</th></tr></thead>
   <tbody>
   {% for r in rows %}

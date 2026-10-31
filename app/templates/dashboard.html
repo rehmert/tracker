@@ -2,6 +2,12 @@
 {% from "_macros.html" import gauge %}
 {% block title %}Overview{% endblock %}
 {% block content %}
+
+<link rel="stylesheet"
+      href="/static/css/tracker-protocol-dashboard-3494.css">
+<script src="/static/js/tracker-protocol-dashboard-3494.js"
+        defer></script>
+
 <link rel="stylesheet" href="/static/css/tracker-dashboard-attention.css?v=34.33">
 <link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=1">
 <link rel="stylesheet" href="/static/css/tracker-dashboard-status.css?v=34.32">
@@ -335,7 +341,28 @@
 <section data-dashboard-panel="2" data-dashboard-title="Today" class="dashboard-panel" aria-labelledby="today-heading">
   <h2 id="today-heading">Today <span class="sub">{{ now_date }}</span></h2>
   <p class="note">Scheduled entries are projections from active protocols. A matching recorded administration is identified by compound and date, not by dose amount. Nothing here changes inventory or dose logs.</p>
-  <div class="today-cards">
+
+<div class="tracker-schedule-tools"
+     data-tracker-schedule-tools>
+  <label>
+    <span>Find scheduled or recorded activity</span>
+    <input type="search"
+           data-schedule-search
+           placeholder="Search compound or protocol..."
+           autocomplete="off">
+  </label>
+
+  <button type="button" data-schedule-reset>
+    Clear search
+  </button>
+
+  <span class="tracker-workflow-count"
+        data-schedule-count
+        role="status"
+        aria-live="polite"></span>
+</div>
+
+<div class="today-cards">
     <div class="today-card">
       <h3>Today's administrations</h3>
       {% if today_summary.today %}

@@ -1,0 +1,90 @@
+.tracker-protocol-tools,
+.tracker-schedule-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .75rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 12px;
+}
+
+.tracker-protocol-tools label,
+.tracker-schedule-tools label {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  min-width: 145px;
+}
+
+.tracker-protocol-tools label:first-child,
+.tracker-schedule-tools label:first-child {
+  flex: 2 1 230px;
+}
+
+.tracker-protocol-tools input,
+.tracker-protocol-tools select,
+.tracker-schedule-tools input {
+  width: 100%;
+  min-height: 38px;
+}
+
+.tracker-protocol-tools button,
+.tracker-schedule-tools button {
+  min-height: 38px;
+}
+
+.tracker-workflow-count {
+  margin-left: auto;
+  font-size: .9rem;
+  opacity: .85;
+  white-space: nowrap;
+}
+
+[data-tracker-protocol-table] tr[hidden],
+[data-dashboard-panel="2"] li[hidden] {
+  display: none !important;
+}
+
+[data-dashboard-panel="2"] a[href^="/doses?"],
+[data-dashboard-panel="2"] a[data-dashboard-dose-handoff] {
+  display: inline-flex;
+  align-items: center;
+  margin: .2rem .2rem .2rem 0;
+  padding: .3rem .55rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 7px;
+  text-decoration: none;
+  font-size: .85rem;
+  line-height: 1.3;
+}
+
+[data-dashboard-panel="2"] a[href^="/doses?"]:hover,
+[data-dashboard-panel="2"] a[data-dashboard-dose-handoff]:hover {
+  text-decoration: underline;
+}
+
+[data-dashboard-panel="2"] a:focus-visible,
+.tracker-protocol-tools :focus-visible,
+.tracker-schedule-tools :focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (max-width: 650px) {
+  .tracker-protocol-tools,
+  .tracker-schedule-tools {
+    padding: .75rem;
+  }
+
+  .tracker-protocol-tools label,
+  .tracker-schedule-tools label {
+    flex: 1 1 100%;
+  }
+
+  .tracker-workflow-count {
+    width: 100%;
+    margin-left: 0;
+  }
+}
