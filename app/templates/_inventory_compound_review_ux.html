@@ -1,0 +1,424 @@
+
+{# TRACKER_RELEASE_321_328 #}
+
+<style>
+/* Compound review usability enhancements */
+
+#ir-ux-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1rem;
+    margin: 1rem 0;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 0.75rem;
+}
+
+#ir-ux-toolbar .ir-ux-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+#ir-ux-reset {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 0.55rem;
+    background: var(--surface, transparent);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+#ir-ux-reset:hover {
+    background: var(--surface-2, rgba(127,127,127,.08));
+}
+
+#ir-ux-reset:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.ir-ux-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ir-ux-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ir-ux-table th,
+.ir-ux-table td {
+    vertical-align: middle;
+}
+
+.ir-ux-table th {
+    white-space: nowrap;
+}
+
+.ir-ux-table tbody tr:hover {
+    background: var(--surface-2, rgba(127,127,127,.08));
+}
+
+.ir-ux-table tbody tr[data-issue="expired"] {
+    border-left: 3px solid #c47a27;
+}
+
+.ir-ux-table tbody tr[data-issue="undated"] {
+    border-left: 3px solid #6b83ae;
+}
+
+.ir-ux-table tbody tr:focus-within {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+
+.ir-ux-badge {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid currentColor;
+    border-radius: 0.35rem;
+    font-size: 0.78em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    #ir-ux-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #ir-ux-toolbar .ir-ux-actions {
+        justify-content: space-between;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #ir-ux-toolbar *,
+    .ir-ux-table * {
+        scroll-behavior: auto !important;
+        transition: none !important;
+    }
+}
+</style>
+
+<div id="ir-ux-toolbar"
+     aria-label="Compound review controls"
+     hidden>
+
+<div>
+<strong>Review results</strong>
+
+<div id="ir-ux-count"
+     class="muted"
+     role="status"
+     aria-live="polite"
+     aria-atomic="true">
+</div>
+</div>
+
+<div class="ir-ux-actions">
+
+<button id="ir-ux-reset"
+        type="button">
+Reset review filters
+</button>
+
+</div>
+
+</div>
+
+<script>
+/* TRACKER_RELEASE_321_328_JS */
+(function () {
+    "use strict";
+
+    function normalize(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function visible(row) {
+        if (row.hidden) {
+            return false;
+        }
+
+        if (row.closest("[hidden]")) {
+            return false;
+        }
+
+        const style = window.getComputedStyle(row);
+
+        return (
+            style.display !== "none" &&
+            style.visibility !== "hidden"
+        );
+    }
+
+    function initialize() {
+        const search = document.getElementById("ir-search");
+        const issue = document.getElementById("ir-issue");
+        const sort = document.getElementById("ir-sort");
+        const exportButton = document.getElementById("ir-export");
+
+        const toolbar = document.getElementById("ir-ux-toolbar");
+        const count = document.getElementById("ir-ux-count");
+        const reset = document.getElementById("ir-ux-reset");
+
+        if (
+            !search ||
+            !issue ||
+            !sort ||
+            !exportButton ||
+            !toolbar ||
+            !count ||
+            !reset
+        ) {
+            return;
+        }
+
+        if (toolbar.dataset.initialized === "1") {
+            return;
+        }
+
+        const rows = Array.from(
+            document.querySelectorAll(
+                "tr[data-vial-id]"
+            )
+        );
+
+        if (!rows.length) {
+            toolbar.hidden = false;
+            count.textContent = "No vial records to review.";
+            reset.disabled = true;
+            toolbar.dataset.initialized = "1";
+            return;
+        }
+
+        toolbar.hidden = false;
+        toolbar.dataset.initialized = "1";
+
+        const tables = Array.from(
+            new Set(
+                rows.map(function (row) {
+                    return row.closest("table");
+                }).filter(Boolean)
+            )
+        );
+
+        tables.forEach(function (table) {
+            table.classList.add("ir-ux-table");
+
+            const parent = table.parentElement;
+
+            if (
+                parent &&
+                window.getComputedStyle(parent)
+                    .overflowX === "auto"
+            ) {
+                parent.classList.add("ir-ux-scroll");
+            } else {
+                const wrapper = document.createElement("div");
+                wrapper.className = "ir-ux-scroll";
+
+                table.parentNode.insertBefore(
+                    wrapper,
+                    table
+                );
+
+                wrapper.appendChild(table);
+            }
+        });
+
+        // Use existing row metadata when available.
+        // Do not infer issue type from medical or
+        // inventory calculations.
+
+        rows.forEach(function (row) {
+            const issueType = normalize(
+                row.dataset.issue
+            );
+
+            if (
+                issueType !== "expired" &&
+                issueType !== "undated"
+            ) {
+                return;
+            }
+
+            const firstCell = row.querySelector("td");
+
+            if (!firstCell) {
+                return;
+            }
+
+            if (
+                firstCell.querySelector(
+                    ".ir-ux-badge"
+                )
+            ) {
+                return;
+            }
+
+            const badge = document.createElement("span");
+            badge.className = "ir-ux-badge";
+
+            badge.textContent = (
+                issueType === "expired"
+                    ? "Expired"
+                    : "Undated"
+            );
+
+            firstCell.appendChild(badge);
+        });
+
+        function refreshCount() {
+            const displayed = rows.filter(visible).length;
+            const total = rows.length;
+
+            count.textContent = (
+                displayed.toLocaleString() +
+                " of " +
+                total.toLocaleString() +
+                " affected vial records displayed"
+            );
+        }
+
+        let scheduled = false;
+
+        function scheduleRefresh() {
+            if (scheduled) {
+                return;
+            }
+
+            scheduled = true;
+
+            window.requestAnimationFrame(function () {
+                scheduled = false;
+                refreshCount();
+            });
+        }
+
+        function findAllOption(select) {
+            return Array.from(select.options).find(
+                function (option) {
+                    const value = normalize(option.value);
+                    const label = normalize(option.textContent);
+
+                    return (
+                        value === "" ||
+                        value === "all" ||
+                        label.startsWith("all ")
+                    );
+                }
+            );
+        }
+
+        reset.addEventListener(
+            "click",
+            function () {
+                search.value = "";
+
+                search.dispatchEvent(
+                    new Event("input", {
+                        bubbles: true
+                    })
+                );
+
+                const all = findAllOption(issue);
+
+                if (all) {
+                    issue.value = all.value;
+
+                    issue.dispatchEvent(
+                        new Event("change", {
+                            bubbles: true
+                        })
+                    );
+                }
+
+                // Preserve other URL parameters.
+                // Remove only the issue-specific filter.
+
+                const url = new URL(
+                    window.location.href
+                );
+
+                if (url.searchParams.has("issue")) {
+                    url.searchParams.delete("issue");
+
+                    window.history.replaceState(
+                        window.history.state,
+                        "",
+                        url.pathname +
+                        url.search +
+                        url.hash
+                    );
+                }
+
+                scheduleRefresh();
+            }
+        );
+
+        search.addEventListener(
+            "input",
+            scheduleRefresh
+        );
+
+        issue.addEventListener(
+            "change",
+            scheduleRefresh
+        );
+
+        sort.addEventListener(
+            "change",
+            scheduleRefresh
+        );
+
+        window.addEventListener(
+            "popstate",
+            scheduleRefresh
+        );
+
+        // Observe visibility changes made by the
+        // existing review-filter implementation.
+
+        const observer = new MutationObserver(
+            scheduleRefresh
+        );
+
+        tables.forEach(function (table) {
+            observer.observe(table, {
+                subtree: true,
+                attributes: true,
+                attributeFilter: [
+                    "style",
+                    "hidden",
+                    "class"
+                ]
+            });
+        });
+
+        scheduleRefresh();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
