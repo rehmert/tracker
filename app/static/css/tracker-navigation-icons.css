@@ -1,0 +1,35 @@
+/*
+ * Tracker Stage 34.29
+ * Subtle navigation icon styling.
+ */
+
+.tracker-nav-icon {
+  width: 1.05em;
+  height: 1.05em;
+  min-width: 1.05em;
+  display: inline-block;
+  vertical-align: -0.16em;
+  margin-right: 0.48em;
+  color: var(--tracker-brand-blue, #1686df);
+  opacity: 0.76;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+a:hover > .tracker-nav-icon,
+a:focus-visible > .tracker-nav-icon,
+a[aria-current="page"] > .tracker-nav-icon,
+a.active > .tracker-nav-icon {
+  opacity: 1;
+}
+
+a[aria-current="page"] > .tracker-nav-icon,
+a.active > .tracker-nav-icon {
+  color: var(--tracker-brand-deep, #0754a6);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tracker-nav-icon {
+    transition: opacity 140ms ease;
+  }
+}
