@@ -1,9 +1,10 @@
 /*
- * Tracker Stage 34.14
- * Administration History Display Limit
+ * Tracker Stage 34.15
+ * Administration History Pagination
  *
- * Frontend-only.
- * No changes to administration records.
+ * Replaces Stage 34.14 display-limit implementation.
+ *
+ * No backend or database changes.
  */
 
 (() => {
@@ -29,10 +30,6 @@
 
     if (!table || !controls || !search) return;
 
-    if (document.getElementById(
-      'tracker-history-limit'
-    )) return;
-
     const tbody = table.tBodies[0];
 
     if (!tbody) return;
@@ -40,6 +37,13 @@
     const rows = Array.from(tbody.rows);
 
     if (!rows.length) return;
+
+    if (document.getElementById(
+      'tracker-history-limit'
+    )) return;
+
+    let currentPage = 0;
+    let matchingRows = [];
 
     const style = document.createElement('style');
 
@@ -61,7 +65,35 @@
         font:inherit;
       }
 
-      #tracker-history-limit-summary {
+      #tracker-history-pagination {
+        display:flex;
+        align-items:center;
+        flex-wrap:wrap;
+        gap:.5rem;
+        margin:.75rem 0;
+      }
+
+      #tracker-history-pagination button {
+        padding:.35rem .7rem;
+        border:1px solid var(--border,#ccc);
+        border-radius:.4rem;
+        background:transparent;
+        color:inherit;
+        font:inherit;
+        cursor:pointer;
+      }
+
+      #tracker-history-pagination button:disabled {
+        opacity:.4;
+        cursor:default;
+      }
+
+      #tracker-history-pagination button:focus-visible {
+        outline:2px solid var(--accent,#2563eb);
+        outline-offset:2px;
+      }
+
+      #tracker-history-page-status {
         font-size:.85rem;
         opacity:.8;
       }
@@ -89,13 +121,41 @@
     }
 
     wrapper.append(label, select);
+    controls.appendChild(wrapper);
 
-    const summary = document.createElement('span');
-    summary.id = 'tracker-history-limit-summary';
-    summary.setAttribute('role', 'status');
-    summary.setAttribute('aria-live', 'polite');
+    const pagination = document.createElement('div');
+    pagination.id = 'tracker-history-pagination';
 
-    controls.append(wrapper, summary);
+    const previous = document.createElement('button');
+    previous.type = 'button';
+    previous.id = 'tracker-history-page-previous';
+    previous.textContent = '← Previous Page';
+
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.id = 'tracker-history-page-next';
+    next.textContent = 'Next Page →';
+
+    const status = document.createElement('span');
+    status.id = 'tracker-history-page-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+
+    pagination.append(previous, status, next);
+
+    const scroll = table.closest('.scroll');
+
+    if (scroll) {
+      scroll.insertAdjacentElement(
+        'afterend',
+        pagination
+      );
+    } else {
+      table.insertAdjacentElement(
+        'afterend',
+        pagination
+      );
+    }
 
     function loadLimit() {
       try {
@@ -118,77 +178,97 @@
     select.value = loadLimit();
 
     /*
-     * Keep track of which rows match the existing
-     * history search before applying our own limit.
+     * Determine search matches independently of
+     * pagination visibility.
+     *
+     * Stage 34.6 filters administrations using
+     * their displayed text. The original search
+     * handler runs before this listener.
      */
-    const searchMatches = new WeakMap();
-
-    function captureSearchMatches() {
-      rows.forEach(row => {
-        searchMatches.set(
-          row,
+    function captureMatches() {
+      matchingRows = Array.from(tbody.rows).filter(
+        row =>
           !row.hidden &&
           getComputedStyle(row).display !== 'none'
-        );
-      });
+      );
     }
 
-    function applyLimit() {
-      const limit = select.value === 'all'
+    function pageSize() {
+      return select.value === 'all'
         ? Infinity
         : Number(select.value);
+    }
 
-      const orderedRows = Array.from(tbody.rows);
+    function render() {
+      const size = pageSize();
 
-      let matched = 0;
-      let displayed = 0;
+      const total = matchingRows.length;
 
-      orderedRows.forEach(row => {
-        if (!searchMatches.get(row)) {
-          row.hidden = true;
-          return;
-        }
+      const pages = size === Infinity
+        ? 1
+        : Math.max(1, Math.ceil(total / size));
 
-        matched++;
+      currentPage = Math.max(
+        0,
+        Math.min(currentPage, pages - 1)
+      );
 
-        const show = displayed < limit;
+      const start = size === Infinity
+        ? 0
+        : currentPage * size;
 
-        row.hidden = !show;
+      const end = size === Infinity
+        ? total
+        : Math.min(total, start + size);
 
-        if (show) displayed++;
+      const visible = new Set(
+        matchingRows.slice(start, end)
+      );
+
+      rows.forEach(row => {
+        row.hidden = !visible.has(row);
       });
 
-      summary.textContent =
-        `${displayed} displayed of ${matched} matching ` +
-        `administrations (${rows.length} loaded).`;
+      previous.disabled =
+        currentPage === 0 || size === Infinity;
 
-      /*
-       * Notify dependent UI without re-triggering
-       * the history search event.
-       */
+      next.disabled =
+        currentPage >= pages - 1 ||
+        size === Infinity;
+
+      if (total === 0) {
+        status.textContent =
+          `No matching administrations (${rows.length} loaded).`;
+      } else {
+        status.textContent =
+          `Showing ${start + 1}–${end} of ${total} ` +
+          `matching administrations · Page ` +
+          `${currentPage + 1} of ${pages}`;
+      }
+
       table.dispatchEvent(
-        new CustomEvent('tracker:history-limit-changed', {
-          bubbles:true,
-          detail:{
-            displayed,
-            matched,
-            loaded:rows.length
+        new CustomEvent('tracker:history-page-changed', {
+          bubbles: true,
+          detail: {
+            page: currentPage + 1,
+            pages,
+            matching: total,
+            displayed: visible.size,
+            loaded: rows.length
           }
         })
       );
     }
 
-    /*
-     * Search and sorting scripts update visibility
-     * synchronously when the search event fires.
-     *
-     * Capture their result before applying our
-     * display limit.
-     */
     function refresh() {
+      /*
+       * Let Stage 34.6 complete its search
+       * filtering before capturing matches.
+       */
       queueMicrotask(() => {
-        captureSearchMatches();
-        applyLimit();
+        currentPage = 0;
+        captureMatches();
+        render();
       });
     }
 
@@ -203,23 +283,53 @@
     }
 
     select.addEventListener('change', () => {
+      currentPage = 0;
       saveLimit(select.value);
-      applyLimit();
+
+      /*
+       * Restore search-derived visibility before
+       * applying the new page size.
+       */
+      search.dispatchEvent(
+        new Event('input', { bubbles: true })
+      );
+    });
+
+    previous.addEventListener('click', () => {
+      if (currentPage <= 0) return;
+
+      currentPage--;
+      render();
+    });
+
+    next.addEventListener('click', () => {
+      const size = pageSize();
+
+      if (size === Infinity) return;
+
+      const pages = Math.ceil(
+        matchingRows.length / size
+      );
+
+      if (currentPage >= pages - 1) return;
+
+      currentPage++;
+      render();
     });
 
     /*
-     * Sorting refreshes the history search, so
-     * it automatically refreshes the limit.
+     * Initial state follows existing search
+     * preferences restored by Stage 34.13.
      */
-    captureSearchMatches();
-    applyLimit();
+    captureMatches();
+    render();
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener(
       'DOMContentLoaded',
       initialize,
-      { once:true }
+      { once: true }
     );
   } else {
     initialize();
