@@ -1142,3 +1142,47 @@
 }
 
 /* END TRACKER_STAGE34_239_244 */
+
+/* TRACKER_STAGE34_245_250
+   Keep compound and vial identity visible during horizontal
+   scrolling on narrow screens.
+   Presentation only; no inventory or dose workflow changes.
+*/
+
+@media (max-width: 700px) {
+  .tracker-vial-table th:first-child,
+  .tracker-vial-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--surface, Canvas);
+    box-shadow: 2px 0 3px color-mix(
+      in srgb,
+      currentColor 12%,
+      transparent
+    );
+  }
+
+  .tracker-vial-table thead th:first-child {
+    z-index: 3;
+  }
+
+  .tracker-vial-table tbody tr:nth-child(even) td:first-child {
+    background: color-mix(
+      in srgb,
+      var(--surface, Canvas) 94%,
+      currentColor 6%
+    );
+  }
+
+  .tracker-vial-table tbody tr:hover td:first-child,
+  .tracker-vial-table tbody tr:focus-within td:first-child {
+    background: color-mix(
+      in srgb,
+      var(--surface, Canvas) 88%,
+      currentColor 12%
+    );
+  }
+}
+
+/* END TRACKER_STAGE34_245_250 */
