@@ -1,0 +1,94 @@
+/*
+ * Tracker Stage 34.31
+ * Expanded sidebar spacing and favorite-star alignment.
+ */
+
+/* Desktop: provide enough room for icons, labels and stars. */
+@media (min-width: 761px) {
+  #app-shell:not(.sidebar-collapsed) {
+    grid-template-columns: 17rem minmax(0, 1fr);
+  }
+}
+
+/* Navigation rows reserve separate space for their controls. */
+#app-sidebar .nav-section .nav-links li {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: .15rem;
+}
+
+#app-sidebar .nav-section .nav-links li > a {
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  gap: .5rem;
+}
+
+/* Long labels truncate rather than running under the star. */
+#app-sidebar .nav-links .nav-text {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The favorite star always gets its own column. */
+#app-sidebar .nav-section .nav-links .nav-star {
+  position: relative;
+  flex: 0 0 1.9rem;
+  width: 1.9rem;
+  min-width: 1.9rem;
+  height: 2rem;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 1;
+}
+
+/* Preserve space for reordering controls when enabled. */
+#app-sidebar .nav-section .nav-links .nav-move:not([hidden]) {
+  flex: 0 0 auto;
+}
+
+/* Keep decorative icons from compressing labels. */
+#app-sidebar .nav-links .tracker-nav-icon {
+  flex: 0 0 1.05em;
+  margin-right: 0;
+}
+
+/* Prevent older navigation dots from consuming excess space. */
+#app-sidebar .nav-links .nav-dot {
+  flex-shrink: 0;
+}
+
+/* Maintain the existing compact desktop sidebar. */
+@media (min-width: 761px) {
+  #app-shell.sidebar-collapsed {
+    grid-template-columns: 5.2rem minmax(0, 1fr);
+  }
+
+  #app-shell.sidebar-collapsed
+  #app-sidebar .nav-section .nav-star {
+    display: none;
+  }
+}
+
+/* Mobile continues to use Tracker's existing drawer width. */
+@media (max-width: 760px) {
+  #app-shell,
+  #app-shell.sidebar-collapsed {
+    display: block;
+  }
+
+  #app-sidebar {
+    width: min(19rem, 85vw);
+  }
+}
