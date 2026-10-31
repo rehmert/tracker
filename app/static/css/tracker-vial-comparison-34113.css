@@ -1,0 +1,141 @@
+.tracker-vial-comparison {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 12px;
+  background: var(--surface, transparent);
+}
+
+.tracker-vial-comparison-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.tracker-vial-comparison-header h2 {
+  margin: 0 0 .3rem;
+}
+
+.tracker-vial-count,
+.tracker-vial-badge {
+  display: inline-block;
+  padding: .3rem .6rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 999px;
+  font-size: .8rem;
+}
+
+.tracker-vial-badge {
+  margin-top: .4rem;
+}
+
+.tracker-vial-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.tracker-vial-controls label {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.tracker-vial-controls input,
+.tracker-vial-controls select {
+  width: 100%;
+  min-height: 38px;
+}
+
+.tracker-vial-table-scroll {
+  overflow-x: auto;
+}
+
+.tracker-vial-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+.tracker-vial-table th,
+.tracker-vial-table td {
+  padding: .8rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border, #d8dce3);
+}
+
+.tracker-vial-table th {
+  white-space: nowrap;
+}
+
+.tracker-vial-table tr[hidden],
+.tracker-vial-comparison [hidden] {
+  display: none !important;
+}
+
+.tracker-vial-muted {
+  margin-top: .3rem;
+  font-size: .8rem;
+  opacity: .75;
+}
+
+.tracker-vial-date {
+  margin-bottom: .35rem;
+  font-size: .8rem;
+}
+
+.tracker-vial-warning {
+  margin-top: .5rem;
+  padding: .35rem .5rem;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.tracker-vial-needs-review {
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
+}
+
+.tracker-vial-action {
+  display: inline-flex;
+  padding: .45rem .7rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.tracker-vial-action:hover {
+  text-decoration: underline;
+}
+
+.tracker-vial-action:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.tracker-vial-disclaimer {
+  margin: 1rem 0 0;
+  font-size: .8rem;
+  opacity: .8;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .tracker-vial-comparison {
+    padding: .75rem;
+  }
+
+  .tracker-vial-table {
+    min-width: 700px;
+  }
+}

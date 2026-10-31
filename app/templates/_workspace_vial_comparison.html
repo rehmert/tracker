@@ -1,0 +1,157 @@
+<section id="tracker-vial-comparison-34113"
+         class="tracker-vial-comparison"
+         aria-labelledby="tracker-vial-comparison-heading">
+
+  <header class="tracker-vial-comparison-header">
+    <div>
+      <h2 id="tracker-vial-comparison-heading">
+        Compare available vials
+      </h2>
+      <p class="note">
+        Review inventory, vial dates, and the planned amount
+        before opening the Dose Log.
+      </p>
+    </div>
+    <span class="tracker-vial-count">
+      {{ vials|length }} available
+    </span>
+  </header>
+
+  {% if vials %}
+
+  <div class="tracker-vial-controls">
+    <label>
+      <span>Search</span>
+      <input type="search"
+             id="tracker-vial-search-34113"
+             placeholder="Compound, vial, status"
+             autocomplete="off">
+    </label>
+
+    <label>
+      <span>Filter</span>
+      <select id="tracker-vial-filter-34113">
+        <option value="all">All available</option>
+        <option value="sufficient">Sufficient inventory</option>
+        <option value="recommended">Recommended</option>
+        <option value="attention">Needs review</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="tracker-vial-table-scroll">
+    <table class="tracker-vial-table">
+      <thead>
+        <tr>
+          <th scope="col">Compound / vial</th>
+          <th scope="col">Inventory</th>
+          <th scope="col">Remaining</th>
+          <th scope="col">Recorded dates</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for vial in vials %}
+        {% set view = views[vial.id] %}
+        {% set guidance = vial_guidance.get(vial.id, {}) %}
+        {% set recommended = vial.id == recommended_vial_id %}
+
+        <tr data-vial-row
+            data-vial-state="{{ guidance.get('state', 'unknown') }}"
+            data-vial-recommended="{{ '1' if recommended else '0' }}"
+            data-vial-expires="{{ vial.expires_on or '' }}"
+            data-vial-beyond-use="{{ vial.beyond_use_on or '' }}">
+
+          <td>
+            <strong>{{ vial.compound.name }}</strong>
+
+            <div class="tracker-vial-muted">
+              {{ vial.label or ('Vial #' ~ vial.id) }}
+              · #{{ vial.id }}
+            </div>
+
+            {% if recommended %}
+            <span class="tracker-vial-badge">
+              Inventory recommendation
+            </span>
+            {% endif %}
+          </td>
+
+          <td>
+            <strong>
+              {{ guidance.get('label', 'Check units') }}
+            </strong>
+
+            <div class="tracker-vial-muted">
+              {{ vial.status|replace('_', ' ')|title }}
+            </div>
+          </td>
+
+          <td>
+            <strong>
+              {{ view.remaining_base|amt(view.dim) }}
+            </strong>
+          </td>
+
+          <td>
+            <div class="tracker-vial-date">
+              Expires:
+              <strong>{{ vial.expires_on or 'Not recorded' }}</strong>
+            </div>
+
+            <div class="tracker-vial-date">
+              Beyond-use:
+              <strong>{{ vial.beyond_use_on or 'Not recorded' }}</strong>
+            </div>
+
+            <div data-vial-date-warning
+                 class="tracker-vial-warning"
+                 role="status"
+                 hidden></div>
+          </td>
+
+          <td>
+            <a class="tracker-vial-action"
+               data-vial-select
+               href="/doses?vial_id={{ vial.id }}&compound_id={{ vial.compound_id }}">
+              Use this vial →
+            </a>
+
+            <div class="tracker-vial-muted">
+              Review before recording
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p id="tracker-vial-results-34113"
+     class="note"
+     role="status"
+     aria-live="polite"></p>
+
+  <p id="tracker-vial-empty-34113"
+     class="note"
+     hidden>
+    No vials match the current filter.
+  </p>
+
+  {% else %}
+
+  <p class="note">
+    No available vials were found.
+    Review Inventory before attempting to record an administration.
+  </p>
+
+  {% endif %}
+
+  <p class="tracker-vial-disclaimer">
+    Inventory recommendations do not establish sterility,
+    integrity, or clinical suitability. Check expiration
+    and beyond-use dates independently. Selecting a vial
+    does not create a dose record.
+  </p>
+</section>
