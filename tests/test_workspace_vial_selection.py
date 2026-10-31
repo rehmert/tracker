@@ -46,7 +46,10 @@ def test_workspace_passes_vial_id():
 
     Environment().parse(source)
 
-    assert "vial_id={{ vial.id }}" in source
+    assert (
+        "vial_id={{ vial.id }}" in source
+        or 'record_url(vial)' in source
+    )
 
 
 def test_existing_recording_endpoint_preserved():

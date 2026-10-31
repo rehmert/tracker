@@ -16,7 +16,7 @@
 <nav class="ux-shortcuts" aria-label="Dose workspace actions">
   <a href="/calendar">Calendar</a>
   <a href="/protocols">Protocols</a>
-  <a href="/doses{% if compound_id %}?compound_id={{ compound_id }}{% endif %}">
+  <a href="/doses?{% if compound_id %}compound_id={{ compound_id }}{% endif %}{% for key, value in planned_params.items() %}{% if compound_id or not loop.first %}&amp;{% endif %}{{ key }}={{ value|urlencode }}{% endfor %}">
     Record a dose
   </a>
   <a href="/pk">PK Simulator</a>
@@ -26,6 +26,9 @@
   <h2>Select compound</h2>
 
   <form method="get" action="/dose-workspace">
+    {% for key, value in planned_params.items() %}
+    <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
     <label class="field">
       <span>Compound</span>
       <select name="compound_id" onchange="this.form.submit()">
@@ -49,6 +52,29 @@
 
 <section>
   <h2>Available vials</h2>
+
+  {% if planned_params %}
+  <div class="note" role="status">
+    <strong>Scheduled administration</strong><br>
+
+    {{ planned_params.get("planned_date", "") }}
+
+    {% if planned_params.get("planned_time") %}
+      at {{ planned_params["planned_time"] }}
+    {% endif %}
+
+    {% if planned_params.get("planned_amount") %}
+      · {{ planned_params["planned_amount"] }}
+      {{ planned_params.get("planned_unit", "") }}
+    {% endif %}
+
+    <p>
+      Choose a vial below. The recording form will
+      open with the scheduled information prefilled.
+      Review all values before saving.
+    </p>
+  </div>
+  {% endif %}
 
   <p class="note">
     Quantities reflect Tracker's existing inventory calculations.
@@ -101,7 +127,7 @@
           </td>
 
           <td>
-            <a href="/doses?compound_id={{ vial.compound_id }}&amp;vial_id={{ vial.id }}">
+            <a href="/doses?compound_id={{ vial.compound_id }}&amp;vial_id={{ vial.id }}{% for key, value in planned_params.items() %}&amp;{{ key }}={{ value|urlencode }}{% endfor %}">
               Record dose
             </a>
           </td>

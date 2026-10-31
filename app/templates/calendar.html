@@ -24,6 +24,10 @@
   {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>({{ x.protocol }})</small></div>{% endif %}
 {% if x.status in ('due', 'upcoming', 'unrecorded') %}
   <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;planned_date={{ d.date.isoformat() }}&amp;planned_time={{ x.dose_time or '' }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit }}">Log this dose</a>
+  <a class="tag"
+     href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ d.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">
+    Choose vial first
+  </a>
   <form method="post" action="/calendar/exclude" class="inline" onsubmit="return confirm('Hide this projected dose? Actual administration records will not be changed.');">
     <input type="hidden" name="protocol_item_id" value="{{ x.protocol_item_id }}">
     <input type="hidden" name="scheduled_on" value="{{ d.date.isoformat() }}">

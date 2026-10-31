@@ -243,6 +243,10 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
 def dose_workspace(
     request: Request,
     compound_id: int | None = None,
+    planned_date: str = "",
+    planned_time: str = "",
+    planned_amount: float | None = None,
+    planned_unit: str = "",
     db: Session = Depends(get_db),
 ):
     """Read-only overview; recording uses the existing /doses route."""
@@ -299,6 +303,44 @@ def dose_workspace(
 
     history = list(db.scalars(history_query))
 
+    # Preserve validated calendar context for the
+    # existing dose-recording form. No records are
+    # created or modified by this workspace.
+
+    from math import isfinite
+
+    planned_params = {}
+
+    if planned_date:
+        try:
+            datetime.strptime(planned_date, "%Y-%m-%d")
+        except ValueError:
+            pass
+        else:
+            planned_params["planned_date"] = planned_date
+
+            if planned_time:
+                try:
+                    datetime.strptime(planned_time, "%H:%M")
+                except ValueError:
+                    pass
+                else:
+                    planned_params["planned_time"] = planned_time
+
+            if (
+                planned_amount is not None
+                and isfinite(planned_amount)
+                and planned_amount > 0
+            ):
+                planned_params["planned_amount"] = str(
+                    planned_amount
+                )
+
+            if planned_unit in (
+                "mg", "mcg", "g", "mL", "IU", "units"
+            ):
+                planned_params["planned_unit"] = planned_unit
+
     return render(
         request,
         "dose_workspace.html",
@@ -307,4 +349,5 @@ def dose_workspace(
         vials=available_vials,
         views=views,
         history=history,
+        planned_params=planned_params,
     )
