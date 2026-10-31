@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}
+Inventory Data Quality
+{% endblock %}
+
+{% block content %}
+
+<!-- TRACKER_RELEASE_233_240 -->
+
+<section style="max-width:1500px">
+
+<h1>Inventory data quality</h1>
+
+<p class="muted">
+Read-only review of active vials excluded from the
+FEFO forecast because their expiration information
+is missing or their effective expiration date
+has already passed.
+</p>
+
+<p>
+<a href="/planning-hub">Planning Hub</a>
+·
+<a href="/planning-priorities">
+Planning Priorities
+</a>
+·
+<a href="/vials">Inventory</a>
+</p>
+
+<div class="card" style="padding:1rem">
+
+<h2>Review summary</h2>
+
+<div style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:1rem;
+">
+
+<div>
+<strong>Vials requiring review</strong>
+<div style="font-size:1.6rem">
+{{ totals.total }}
+</div>
+</div>
+
+<div>
+<strong>Missing expiration dates</strong>
+<div style="font-size:1.6rem">
+{{ totals.undated }}
+</div>
+</div>
+
+<div>
+<strong>Already expired</strong>
+<div style="font-size:1.6rem">
+{{ totals.expired }}
+</div>
+</div>
+
+</div>
+
+<p class="muted">
+Counts represent individual active vial records
+with remaining contents, not compound groups.
+</p>
+
+</div>
+
+<div class="card"
+     style="padding:1rem;margin-top:1rem">
+
+<h2>Filters</h2>
+
+<form method="get"
+      action="/inventory-data-quality">
+
+<div style="
+display:flex;
+flex-wrap:wrap;
+gap:1rem;
+align-items:end;
+">
+
+<label>
+<span>Compound</span><br>
+<input
+type="search"
+name="compound"
+value="{{ compound }}"
+placeholder="Filter by compound"
+>
+</label>
+
+<label>
+<span>Issue</span><br>
+
+<select name="issue">
+
+<option value="all"
+{% if issue == "all" %}selected{% endif %}>
+All issues
+</option>
+
+<option value="undated"
+{% if issue == "undated" %}selected{% endif %}>
+Missing dates
+</option>
+
+<option value="expired"
+{% if issue == "expired" %}selected{% endif %}>
+Already expired
+</option>
+
+</select>
+</label>
+
+<button type="submit">
+Apply filters
+</button>
+
+<a href="/inventory-data-quality">
+Reset
+</a>
+
+</div>
+
+</form>
+
+</div>
+
+<div class="card"
+     style="padding:1rem;margin-top:1rem">
+
+<h2>Affected inventory records</h2>
+
+<p class="muted">
+Effective expiration is the earlier of the
+recorded expiration and beyond-use dates.
+A vial with neither date is classified as undated.
+</p>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<thead>
+<tr>
+<th>Vial</th>
+<th>Compound</th>
+<th>Lot</th>
+<th>Status</th>
+<th>Issue</th>
+<th>Remaining</th>
+<th>Expiration</th>
+<th>Beyond-use</th>
+<th>Effective date</th>
+<th>Record</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+<td>
+#{{ row.id }}
+<br>
+<small>{{ row.label }}</small>
+</td>
+
+<td>
+{{ row.compound }}
+</td>
+
+<td>
+{{ row.lot or "—" }}
+</td>
+
+<td>
+{{ row.status }}
+</td>
+
+<td>
+<strong>{{ row.issue_label }}</strong>
+</td>
+
+<td>
+{{ "%.4f"|format(row.remaining) }}
+{{ row.unit }}
+</td>
+
+<td>
+{{ row.expires_on or "Not recorded" }}
+</td>
+
+<td>
+{{ row.beyond_use_on or "Not recorded" }}
+</td>
+
+<td>
+{{ row.effective_expiry or "Unknown" }}
+</td>
+
+<td>
+<a href="/vials/{{ row.id }}">
+Review vial →
+</a>
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="10">
+No affected inventory records match these filters.
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="card"
+     style="padding:1rem;margin-top:1rem">
+
+<h2>Interpretation</h2>
+
+<p class="muted">
+Only active, open vials with positive remaining
+contents are included. Finished, discarded, closed,
+and empty vials are excluded.
+</p>
+
+<p class="muted">
+Undated and already-expired inventory is excluded
+from the FEFO allocation simulation. An expiration
+date is not a substitute for determining whether
+a product is safe or appropriate to use.
+</p>
+
+<p class="muted">
+This page does not change inventory quantities,
+expiration dates, vial status, protocols, or dose logs.
+</p>
+
+</div>
+
+</section>
+
+{% endblock %}

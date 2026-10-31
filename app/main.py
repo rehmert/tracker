@@ -120,3 +120,8 @@ app.include_router(fefo_forecast.router)
 # TRACKER_RELEASE_201_208
 from .routers import planning_priorities
 app.include_router(planning_priorities.router)
+
+
+# TRACKER_RELEASE_233_240
+from .routers import inventory_data_quality
+app.include_router(inventory_data_quality.router)
