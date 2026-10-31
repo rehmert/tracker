@@ -2,6 +2,7 @@
 {% from "_macros.html" import gauge %}
 {% block title %}Overview{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-dashboard-attention.css?v=34.33">
 <link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=1">
 <link rel="stylesheet" href="/static/css/tracker-dashboard-status.css?v=34.32">
 
@@ -13,6 +14,167 @@
   <a href="/labs">Review lab results →</a>
 </nav>
 <header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div><div class="hero-actions"><a class="dashboard-action" href="/doses">+ Record dose</a><a class="dashboard-action secondary" href="/vitals">+ Add vitals</a></div></header>
+<section
+  class="tracker-attention dashboard-panel"
+  data-dashboard-panel="8"
+  data-dashboard-title="Needs attention"
+  aria-labelledby="tracker-attention-heading">
+
+  {% set due_items =
+      today_summary.today
+      | selectattr('status', 'equalto', 'due')
+      | list %}
+
+  {% set low_stock_items =
+      forecasts
+      | selectattr('low')
+      | list %}
+
+  {% set missing_coa_count = no_coa | int %}
+
+  {% set missing_start_items =
+      today_summary.missing_start %}
+
+  {% set attention_categories =
+      (1 if due_items else 0)
+      + (1 if low_stock_items else 0)
+      + (1 if missing_coa_count > 0 else 0)
+      + (1 if missing_start_items else 0) %}
+
+  <div class="tracker-attention-header">
+    <h2 id="tracker-attention-heading">
+      Needs attention
+    </h2>
+
+    {% if attention_categories %}
+    <span class="tracker-attention-count"
+          aria-label="{{ attention_categories }} attention categories">
+      {{ attention_categories }}
+    </span>
+    {% endif %}
+  </div>
+
+  {% if attention_categories %}
+
+  <ul class="tracker-attention-list">
+
+    {% if due_items %}
+    <li class="tracker-attention-item">
+      <a class="tracker-attention-link"
+         href="#today-heading">
+
+        <span class="tracker-attention-icon"
+              aria-hidden="true">!</span>
+
+        <span class="tracker-attention-text">
+          <strong>
+            {{ due_items | length }}
+            administration{{ '' if due_items | length == 1 else 's' }}
+            due today
+          </strong>
+          <small>
+            Review scheduled administrations
+          </small>
+        </span>
+
+      </a>
+    </li>
+    {% endif %}
+
+    {% if low_stock_items %}
+    <li class="tracker-attention-item">
+      <a class="tracker-attention-link"
+         href="#inventory-forecast">
+
+        <span class="tracker-attention-icon"
+              aria-hidden="true">↓</span>
+
+        <span class="tracker-attention-text">
+          <strong>
+            {{ low_stock_items | length }}
+            low-stock forecast{{ '' if low_stock_items | length == 1 else 's' }}
+          </strong>
+          <small>
+            Less than 21 days of estimated supply
+          </small>
+        </span>
+
+      </a>
+    </li>
+    {% endif %}
+
+    {% if missing_coa_count > 0 %}
+    <li class="tracker-attention-item">
+      <a class="tracker-attention-link"
+         href="/coas">
+
+        <span class="tracker-attention-icon"
+              aria-hidden="true">?</span>
+
+        <span class="tracker-attention-text">
+          <strong>
+            {{ missing_coa_count }}
+            vial{{ '' if missing_coa_count == 1 else 's' }}
+            without COAs
+          </strong>
+          <small>
+            Review certificates and vial records
+          </small>
+        </span>
+
+      </a>
+    </li>
+    {% endif %}
+
+    {% if missing_start_items %}
+    <li class="tracker-attention-item">
+      <a class="tracker-attention-link"
+         href="/protocols">
+
+        <span class="tracker-attention-icon"
+              aria-hidden="true">◷</span>
+
+        <span class="tracker-attention-text">
+          <strong>
+            {{ missing_start_items | length }}
+            protocol{{ '' if missing_start_items | length == 1 else 's' }}
+            missing start dates
+          </strong>
+          <small>
+            Set start dates to enable scheduling
+          </small>
+        </span>
+
+      </a>
+    </li>
+    {% endif %}
+
+  </ul>
+
+  {% else %}
+
+  <div class="tracker-attention-clear"
+       role="status">
+
+    <span class="tracker-attention-clear-icon"
+          aria-hidden="true">✓</span>
+
+    <p>
+      No outstanding items in the monitored categories.
+    </p>
+
+  </div>
+
+  {% endif %}
+
+  <p class="tracker-attention-note">
+    Based on current Tracker records and active-protocol
+    projections. Review the linked sections for details.
+  </p>
+
+</section>
+
+
 <section
   class="tracker-status-overview dashboard-panel"
   data-dashboard-panel="7"
