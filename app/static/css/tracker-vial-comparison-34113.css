@@ -1328,3 +1328,22 @@
 }
 
 /* END TRACKER_STAGE34_275_280 */
+
+/* TRACKER_STAGE34_281_286
+   Preserve a clear sticky-column boundary in forced-colors mode.
+   Presentation only; no inventory or dose workflow changes.
+*/
+
+@media (forced-colors: active) {
+  .tracker-vial-table th:first-child,
+  .tracker-vial-table td:first-child {
+    border-inline-end: 1px solid CanvasText;
+    box-shadow: none;
+  }
+
+  .tracker-vial-table thead th:first-child {
+    border-inline-end-width: 2px;
+  }
+}
+
+/* END TRACKER_STAGE34_281_286 */
