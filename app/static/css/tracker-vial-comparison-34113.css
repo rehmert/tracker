@@ -1295,3 +1295,36 @@
 }
 
 /* END TRACKER_STAGE34_269_274 */
+
+/* TRACKER_STAGE34_275_280
+   Improve narrow-screen readability of vial dates and status labels.
+   Presentation only; no inventory or dose workflow changes.
+*/
+
+@media (max-width: 480px) {
+  .tracker-vial-table .tracker-vial-date {
+    display: block;
+    margin-bottom: .45rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .tracker-vial-table .tracker-vial-date strong {
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .tracker-vial-table td:nth-child(2) > strong {
+    display: inline-block;
+    max-width: 100%;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .tracker-vial-table td:nth-child(2) .tracker-vial-muted {
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* END TRACKER_STAGE34_275_280 */
