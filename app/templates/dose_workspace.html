@@ -4,6 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=4">
 <script src="/static/tracker_dose_workspace.js?v=3" defer></script>
+<script src="/static/js/tracker-workspace-shortcut.js?v=1" defer></script>
 
 <h1>Dose Workspace</h1>
 
@@ -82,7 +83,24 @@
   </p>
 
   {% if vials %}
-  <div class="tracker-workspace-filter">
+  
+<!-- TRACKER_STAGE34_WORKSPACE_SHORTCUT -->
+<div class="card" id="tracker-workspace-shortcut">
+  <div class="details">
+    <strong>Suggested inventory vial</strong>
+    <span id="tracker-workspace-suggestion"
+          role="status">
+      Locating suggested vial…
+    </span>
+  </div>
+
+  <button type="button"
+          id="tracker-workspace-jump">
+    Jump to suggested vial
+  </button>
+</div>
+<!-- END_TRACKER_STAGE34_WORKSPACE_SHORTCUT -->
+<div class="tracker-workspace-filter">
     <label for="tracker-vial-search">Find a vial</label>
     <input id="tracker-vial-search" type="search" placeholder="Search compound, vial, status…" autocomplete="off" aria-controls="tracker-available-vials">
     <button type="button" id="tracker-vial-clear" hidden>Clear</button>
