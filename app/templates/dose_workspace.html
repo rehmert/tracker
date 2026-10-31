@@ -2,6 +2,8 @@
 {% block title %}Dose Workspace{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=1">
+<script src="/static/tracker_dose_workspace.js?v=1" defer></script>
 
 <h1>Dose Workspace</h1>
 
@@ -54,7 +56,14 @@
   </p>
 
   {% if vials %}
-  <div class="scroll">
+  <div class="tracker-workspace-filter">
+    <label for="tracker-vial-search">Find a vial</label>
+    <input id="tracker-vial-search" type="search" placeholder="Search compound, vial, status…" autocomplete="off" aria-controls="tracker-available-vials">
+    <button type="button" id="tracker-vial-clear" hidden>Clear</button>
+    <span id="tracker-vial-count" role="status" aria-live="polite"></span>
+  </div>
+  <p id="tracker-vial-no-matches" class="empty" hidden>No vials match this search. <button type="button" id="tracker-vial-reset">Clear search</button></p>
+  <div class="scroll" id="tracker-available-vials">
     <table>
       <thead>
         <tr>
@@ -70,7 +79,7 @@
       <tbody>
         {% for vial in vials %}
         {% set view = views[vial.id] %}
-        <tr>
+        <tr data-tracker-vial-row>
           <td>{{ vial.compound.name }}</td>
 
           <td>

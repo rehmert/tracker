@@ -1,0 +1,9 @@
+.tracker-workflow-actions{display:flex;flex-wrap:wrap;gap:.55rem;margin:.75rem 0 1.2rem}
+.tracker-workflow-actions a{display:inline-flex;align-items:center;padding:.55rem .8rem;border:1px solid var(--border,#cbd5e1);border-radius:.65rem;text-decoration:none;max-width:100%}
+.tracker-workflow-actions a:focus-visible,.tracker-workspace-filter button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.tracker-workspace-filter{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin:.75rem 0}
+.tracker-workspace-filter input{flex:1 1 15rem;min-width:0;max-width:30rem}
+.tracker-workspace-filter button{cursor:pointer}
+#tracker-vial-count{font-size:.9rem;opacity:.8}
+#tracker-available-vials [hidden]{display:none!important}
+@media(max-width:650px){.tracker-workflow-actions a{flex:1 1 100%}}

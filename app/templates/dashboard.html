@@ -2,7 +2,14 @@
 {% from "_macros.html" import gauge %}
 {% block title %}Overview{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=1">
 <div class="dashboard-personalize"><button type="button" id="dashboard-customize" class="dashboard-action secondary" aria-expanded="false" aria-controls="dashboard-customize-panel">Customize dashboard</button><div id="dashboard-customize-panel" class="customize-panel" hidden><p>Show or hide sections. Use the arrows to reorder them. Your choices stay in this browser.</p><div id="dashboard-customize-list"></div><button type="button" id="dashboard-reset">Reset layout</button></div></div>
+<nav class="tracker-workflow-actions" aria-label="Everyday workflow shortcuts">
+  <a href="/dose-workspace">Review vials &amp; record dose →</a>
+  <a href="/calendar">View schedule →</a>
+  <a href="/vials">Manage inventory →</a>
+  <a href="/labs">Review lab results →</a>
+</nav>
 <header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div><div class="hero-actions"><a class="dashboard-action" href="/doses">+ Record dose</a><a class="dashboard-action secondary" href="/vitals">+ Add vitals</a></div></header>
 
 <section data-dashboard-panel="1" data-dashboard-title="At a glance" class="metric-section" aria-label="At a glance">
