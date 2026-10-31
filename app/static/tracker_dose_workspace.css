@@ -74,3 +74,47 @@
       transparent
     );
 }
+
+/* Stage 28: sortable vial inventory */
+
+.tracker-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .2rem .1rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tracker-sort-button:hover {
+  text-decoration: underline;
+}
+
+.tracker-sort-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: .2rem;
+}
+
+[data-tracker-sort-key][aria-sort="ascending"]
+  .tracker-sort-button::after {
+  content: "↑";
+}
+
+[data-tracker-sort-key][aria-sort="descending"]
+  .tracker-sort-button::after {
+  content: "↓";
+}
+
+.tracker-recommendation-reason {
+  display: block;
+  margin-top: .25rem;
+  font-size: .75rem;
+  opacity: .8;
+  white-space: normal;
+  max-width: 16rem;
+}

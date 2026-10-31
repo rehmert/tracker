@@ -2,8 +2,8 @@
 {% block title %}Dose Workspace{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=3">
-<script src="/static/tracker_dose_workspace.js?v=1" defer></script>
+<link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=4">
+<script src="/static/tracker_dose_workspace.js?v=2" defer></script>
 
 <h1>Dose Workspace</h1>
 
@@ -90,17 +90,17 @@
   </div>
   <p id="tracker-vial-no-matches" class="empty" hidden>No vials match this search. <button type="button" id="tracker-vial-reset">Clear search</button></p>
   <div class="scroll" id="tracker-available-vials">
-    <table>
+    <table data-tracker-sortable-vials>
       <thead>
         <tr>
-          <th>Compound</th>
-          <th>Vial</th>
-          <th>Status</th>
+          <th data-tracker-sort-key="compound" aria-sort="none"><button type="button" class="tracker-sort-button">Compound</button></th>
+          <th data-tracker-sort-key="vial" aria-sort="none"><button type="button" class="tracker-sort-button">Vial</button></th>
+          <th data-tracker-sort-key="status" aria-sort="none"><button type="button" class="tracker-sort-button">Status</button></th>
           <th>Concentration</th>
-          <th>Remaining</th>
-          <th>First used</th>
-          <th>Beyond-use</th>
-          <th>Expires</th>
+          <th data-tracker-sort-key="remaining" aria-sort="none"><button type="button" class="tracker-sort-button">Remaining</button></th>
+          <th data-tracker-sort-key="first-used" aria-sort="none"><button type="button" class="tracker-sort-button">First used</button></th>
+          <th data-tracker-sort-key="beyond-use" aria-sort="none"><button type="button" class="tracker-sort-button">Beyond-use</button></th>
+          <th data-tracker-sort-key="expires" aria-sort="none"><button type="button" class="tracker-sort-button">Expires</button></th>
           <th>Inventory guidance</th>
           <th>Action</th>
         </tr>
@@ -109,7 +109,17 @@
       <tbody>
         {% for vial in vials %}
         {% set view = views[vial.id] %}
+        {% set dates = vial_date_details[vial.id] %}
         <tr data-tracker-vial-row
+            data-tracker-id="{{ vial.id }}"
+            data-tracker-recommended="{{ '1' if vial.id == recommended_vial_id else '0' }}"
+            data-tracker-compound="{{ vial.compound.name|lower }}"
+            data-tracker-vial="{{ (vial.label or ('#' ~ vial.id))|lower }}"
+            data-tracker-status="{{ vial.status }}"
+            data-tracker-remaining="{{ view.remaining_base }}"
+            data-tracker-first-used="{{ dates.first_used.isoformat() if dates.first_used else '' }}"
+            data-tracker-beyond-use="{{ dates.beyond_use.isoformat() if dates.beyond_use else '' }}"
+            data-tracker-expires="{{ dates.expires.isoformat() if dates.expires else '' }}"
             {% if vial.id == recommended_vial_id %}
               class="tracker-vial-recommended"
             {% endif %}>
@@ -169,6 +179,9 @@
               >
                 Suggested inventory vial
               </span>
+              <small class="tracker-recommendation-reason">
+                {{ recommended_reason }}
+              </small>
             {% endif %}
 
             {% if vial_date_warnings[vial.id] %}

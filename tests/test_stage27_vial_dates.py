@@ -23,9 +23,38 @@ def test_template_parses():
 def test_date_columns_present():
     source = TEMPLATE.read_text()
 
-    assert "<th>First used</th>" in source
-    assert "<th>Beyond-use</th>" in source
-    assert "<th>Expires</th>" in source
+    # Accept plain or accessible sortable table headers.
+    from html.parser import HTMLParser
+
+    class HeaderParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.in_header = False
+            self.headers = []
+            self.current = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "th":
+                self.in_header = True
+                self.current = []
+
+        def handle_data(self, data):
+            if self.in_header:
+                self.current.append(data)
+
+        def handle_endtag(self, tag):
+            if tag == "th" and self.in_header:
+                self.headers.append(
+                    "".join(self.current).strip()
+                )
+                self.in_header = False
+
+    parser = HeaderParser()
+    parser.feed(source)
+
+    assert "First used" in parser.headers
+    assert "Beyond-use" in parser.headers
+    assert "Expires" in parser.headers
 
 
 def test_missing_dates_are_explicit():
