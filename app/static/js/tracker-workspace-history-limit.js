@@ -44,6 +44,8 @@
 
     let currentPage = 0;
     let matchingRows = [];
+    let refreshGeneration = 0;
+    let renderGeneration = 0;
 
     const style = document.createElement('style');
 
@@ -99,6 +101,30 @@
       }
     `;
 
+    style.textContent += `
+      #tracker-history-page-jump {
+        display:inline-flex;
+        align-items:center;
+        gap:.45rem;
+        flex-wrap:wrap;
+        margin-left:.5rem;
+      }
+
+      #tracker-history-page-number {
+        width:4.5rem;
+        padding:.35rem .5rem;
+        border:1px solid var(--border,#ccc);
+        border-radius:.4rem;
+        background:var(--surface,#fff);
+        color:inherit;
+        font:inherit;
+      }
+
+      #tracker-history-page-number:disabled {
+        opacity:.5;
+      }
+    `;
+
     document.head.appendChild(style);
 
     const wrapper = document.createElement('label');
@@ -141,7 +167,31 @@
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
 
-    pagination.append(previous, status, next);
+    const jump = document.createElement('form');
+    jump.id = 'tracker-history-page-jump';
+
+    const jumpLabel = document.createElement('label');
+    jumpLabel.htmlFor = 'tracker-history-page-number';
+    jumpLabel.textContent = 'Page';
+
+    const pageNumber = document.createElement('input');
+    pageNumber.id = 'tracker-history-page-number';
+    pageNumber.type = 'number';
+    pageNumber.min = '1';
+    pageNumber.step = '1';
+    pageNumber.value = '1';
+    pageNumber.setAttribute(
+      'aria-label',
+      'Administration history page number'
+    );
+
+    const pageGo = document.createElement('button');
+    pageGo.type = 'submit';
+    pageGo.id = 'tracker-history-page-go';
+    pageGo.textContent = 'Go';
+
+    jump.append(jumpLabel, pageNumber, pageGo);
+    pagination.append(previous, status, next, jump);
 
     const scroll = table.closest('.scroll');
 
@@ -186,10 +236,11 @@
      * handler runs before this listener.
      */
     function captureMatches() {
-      matchingRows = Array.from(tbody.rows).filter(
-        row =>
-          !row.hidden &&
-          getComputedStyle(row).display !== 'none'
+      const query = search.value.trim().toLocaleLowerCase();
+
+      matchingRows = Array.from(tbody.rows).filter(row =>
+        !query ||
+        row.textContent.toLocaleLowerCase().includes(query)
       );
     }
 
@@ -200,6 +251,7 @@
     }
 
     function render() {
+      renderGeneration += 1;
       const size = pageSize();
 
       const total = matchingRows.length;
@@ -235,6 +287,17 @@
       next.disabled =
         currentPage >= pages - 1 ||
         size === Infinity;
+
+      pageNumber.max = String(pages);
+      pageNumber.value = String(currentPage + 1);
+
+      const canJump =
+        total > 0 &&
+        pages > 1 &&
+        size !== Infinity;
+
+      pageNumber.disabled = !canJump;
+      pageGo.disabled = !canJump;
 
       if (total === 0) {
         status.textContent =
@@ -275,11 +338,11 @@
     }
 
     function refresh() {
-      /*
-       * Let Stage 34.6 complete its search
-       * filtering before capturing matches.
-       */
+      const generation = ++refreshGeneration;
+
       queueMicrotask(() => {
+        if (generation !== refreshGeneration) return;
+
         currentPage = 0;
         captureMatches();
         render();
@@ -309,6 +372,35 @@
       );
     });
 
+    jump.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const size = pageSize();
+      if (size === Infinity) return;
+
+      const pages = Math.max(
+        1,
+        Math.ceil(matchingRows.length / size)
+      );
+
+      const requested = Number(pageNumber.value);
+
+      if (
+        !Number.isFinite(requested) ||
+        !Number.isInteger(requested)
+      ) {
+        pageNumber.value = String(currentPage + 1);
+        return;
+      }
+
+      currentPage = Math.max(
+        0,
+        Math.min(pages - 1, requested - 1)
+      );
+
+      render();
+    });
+
     previous.addEventListener('click', () => {
       if (currentPage <= 0) return;
 
@@ -335,6 +427,38 @@
      * Initial state follows existing search
      * preferences restored by Stage 34.13.
      */
+    window.trackerHistoryDiagnostics = () => {
+      const size = pageSize();
+      const total = matchingRows.length;
+
+      const pages = size === Infinity
+        ? 1
+        : Math.max(1, Math.ceil(total / size));
+
+      const displayed = Array.from(tbody.rows).filter(
+        row =>
+          !row.hidden &&
+          getComputedStyle(row).display !== 'none'
+      ).length;
+
+      return {
+        loaded: rows.length,
+        matching: total,
+        displayed,
+        page: currentPage + 1,
+        pages,
+        pageSize: size === Infinity ? 'all' : size,
+        search: search.value,
+        refreshGeneration,
+        renderGeneration,
+        selected: Boolean(
+          table.querySelector(
+            'tbody tr.tracker-history-selected'
+          )
+        )
+      };
+    };
+
     captureMatches();
     render();
   }
