@@ -1,0 +1,33 @@
+.tracker-workflow-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+}
+
+#dose-preview:focus,
+#dose-context:focus,
+[id^="tracker-recording-details-"]:focus {
+  outline: 2px solid var(--accent, currentColor);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+@media (max-width: 650px) {
+  .ux-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+
+  .tracker-workflow-shortcut {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
