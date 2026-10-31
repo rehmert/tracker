@@ -1372,3 +1372,26 @@
 }
 
 /* END TRACKER_STAGE34_287_292 */
+
+/* TRACKER_STAGE34_293_298
+   Keep vial warning labels distinct in forced-colors mode.
+   Presentation only; warning conditions and inventory logic are unchanged.
+*/
+
+@media (forced-colors: active) {
+  .tracker-vial-table .tracker-vial-warning,
+  .tracker-vial-table .tracker-vial-needs-review {
+    color: CanvasText;
+    background: Canvas;
+    border: 1px solid CanvasText;
+    outline-color: CanvasText;
+    forced-color-adjust: auto;
+  }
+
+  .tracker-vial-table .tracker-vial-warning {
+    padding: .4rem .55rem;
+    font-weight: 700;
+  }
+}
+
+/* END TRACKER_STAGE34_293_298 */
