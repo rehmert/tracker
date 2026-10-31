@@ -94,3 +94,81 @@
     min-width: 780px;
   }
 }
+
+/* Stage 34.39 — Compound-level lifecycle review */
+
+.tracker-lifecycle-compounds {
+  margin: .85rem 0 1rem;
+}
+
+.tracker-lifecycle-compounds h3 {
+  margin: 0 0 .65rem;
+  font-size: .94rem;
+}
+
+.tracker-lifecycle-compound-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(210px, 1fr));
+  gap: .65rem;
+}
+
+.tracker-lifecycle-compound-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .35rem;
+  min-width: 0;
+  padding: .8rem;
+  text-align: left;
+  border: 1px solid var(
+    --border,
+    rgba(120, 140, 160, .25)
+  );
+  border-radius: 10px;
+  background: var(
+    --surface,
+    rgba(120, 140, 160, .06)
+  );
+  color: inherit;
+  cursor: pointer;
+}
+
+.tracker-lifecycle-compound-card:hover {
+  border-color: var(--accent, #1686df);
+}
+
+.tracker-lifecycle-compound-card:focus-visible {
+  outline: 2px solid var(--accent, #1686df);
+  outline-offset: 2px;
+}
+
+.tracker-lifecycle-compound-card strong {
+  font-size: .86rem;
+  overflow-wrap: anywhere;
+}
+
+.tracker-lifecycle-compound-card span {
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.tracker-lifecycle-compound-card small {
+  font-size: .73rem;
+  opacity: .75;
+  line-height: 1.5;
+}
+
+.tracker-lifecycle-controls {
+  align-items: end;
+}
+
+.tracker-lifecycle-controls .field {
+  min-width: 170px;
+}
+
+@media (max-width: 600px) {
+  .tracker-lifecycle-compound-grid {
+    grid-template-columns: 1fr;
+  }
+}

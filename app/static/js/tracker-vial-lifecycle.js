@@ -93,6 +93,25 @@
       'tracker-lifecycle-summary'
     );
 
+    const compoundFilter = document.createElement('select');
+    compoundFilter.id = 'tracker-lifecycle-compound';
+    compoundFilter.setAttribute(
+      'aria-label',
+      'Filter lifecycle review by compound'
+    );
+
+    const compoundLabel = document.createElement('label');
+    compoundLabel.className = 'field';
+    const compoundCaption = document.createElement('span');
+    compoundCaption.textContent = 'Compound';
+    compoundLabel.append(compoundCaption, compoundFilter);
+
+    const controls = panel.querySelector(
+      '.tracker-lifecycle-controls'
+    );
+
+    if (controls) controls.append(compoundLabel);
+
     const results = document.getElementById(
       'tracker-lifecycle-results'
     );
@@ -130,7 +149,12 @@
       const compound = text(cells[1].textContent);
       const label = text(link.textContent);
 
-      const remaining = text(cells[4].textContent);
+      const remaining = text(
+        Array.from(cells[4].childNodes)
+          .filter(child => child.nodeType === Node.TEXT_NODE)
+          .map(child => child.textContent)
+          .join(' ')
+      );
       const coa = text(
         cells[7].textContent
       ).toLowerCase() === 'yes';
@@ -183,6 +207,127 @@
       record => record.issues.length > 0
     ).length;
 
+    const compounds = new Map();
+
+    records.forEach(record => {
+      if (!compounds.has(record.compound)) {
+        compounds.set(record.compound, {
+          name: record.compound,
+          total: 0,
+          sealed: 0,
+          inUse: 0,
+          missingCOA: 0,
+          needsReview: 0,
+          dateWarnings: 0
+        });
+      }
+
+      const entry = compounds.get(record.compound);
+
+      entry.total++;
+
+      if (record.status === 'sealed') entry.sealed++;
+      if (record.status === 'in_use') entry.inUse++;
+      if (!record.coa) entry.missingCOA++;
+
+      if (record.issues.length) {
+        entry.needsReview++;
+      }
+
+      if (record.issues.some(issue =>
+        issue.startsWith('Expiration') ||
+        issue.startsWith('Beyond-use')
+      )) {
+        entry.dateWarnings++;
+      }
+    });
+
+    const compoundOptions = [
+      ...compounds.keys()
+    ].sort((a, b) => a.localeCompare(b));
+
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = 'All compounds';
+    compoundFilter.append(allOption);
+
+    compoundOptions.forEach(name => {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      compoundFilter.append(option);
+    });
+
+    const compoundOverview = document.createElement('div');
+    compoundOverview.id = 'tracker-lifecycle-compounds';
+    compoundOverview.className = 'tracker-lifecycle-compounds';
+
+    const compoundHeading = document.createElement('h3');
+    compoundHeading.textContent = 'Compounds needing review';
+
+    const compoundCards = document.createElement('div');
+    compoundCards.className = 'tracker-lifecycle-compound-grid';
+
+    const flaggedCompounds = [
+      ...compounds.values()
+    ].filter(entry => entry.needsReview > 0)
+      .sort((a, b) =>
+        b.needsReview - a.needsReview ||
+        a.name.localeCompare(b.name)
+      );
+
+    flaggedCompounds.forEach(entry => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'tracker-lifecycle-compound-card';
+
+      const title = document.createElement('strong');
+      title.textContent = entry.name;
+
+      const detail = document.createElement('span');
+      detail.textContent =
+        `${entry.needsReview} of ${entry.total} need review`;
+
+      const meta = document.createElement('small');
+      meta.textContent =
+        `${entry.sealed} sealed · ` +
+        `${entry.inUse} in use · ` +
+        `${entry.missingCOA} missing COA · ` +
+        `${entry.dateWarnings} date warnings`;
+
+      button.append(title, detail, meta);
+
+      button.addEventListener('click', () => {
+        compoundFilter.value = entry.name;
+        filter.value = 'attention';
+        render();
+
+        panel.querySelector(
+          '.tracker-lifecycle-controls'
+        )?.scrollIntoView({
+          block: 'nearest',
+          behavior: 'smooth'
+        });
+      });
+
+      compoundCards.append(button);
+    });
+
+    if (flaggedCompounds.length) {
+      compoundOverview.append(
+        compoundHeading,
+        compoundCards
+      );
+
+      const controls = panel.querySelector(
+        '.tracker-lifecycle-controls'
+      );
+
+      if (controls) {
+        controls.before(compoundOverview);
+      }
+    }
+
     // Do not waste space when there are no issues.
     if (!attentionCount) {
       panel.hidden = true;
@@ -193,6 +338,13 @@
       const choice = filter.value;
 
       const matching = records.filter(record => {
+        if (
+          compoundFilter.value &&
+          record.compound !== compoundFilter.value
+        ) {
+          return false;
+        }
+
         switch (choice) {
           case 'attention':
             return record.issues.length > 0;
@@ -314,6 +466,7 @@
     }
 
     filter.addEventListener('change', render);
+    compoundFilter.addEventListener('change', render);
 
     panel.hidden = false;
     render();
@@ -329,7 +482,8 @@
       missingCOA: records.filter(
         record => !record.coa
       ).length,
-      needsReview: attentionCount
+      needsReview: attentionCount,
+      compounds: [...compounds.values()]
     });
   }
 
