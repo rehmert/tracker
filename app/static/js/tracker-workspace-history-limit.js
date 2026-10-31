@@ -246,6 +246,20 @@
           `${currentPage + 1} of ${pages}`;
       }
 
+      /*
+       * Notify the individual administration navigator
+       * that its visible row set has changed.
+       */
+      table.dispatchEvent(
+        new CustomEvent('tracker:history-navigation-refresh', {
+          bubbles: true,
+          detail: {
+            page: currentPage + 1,
+            displayed: visible.size
+          }
+        })
+      );
+
       table.dispatchEvent(
         new CustomEvent('tracker:history-page-changed', {
           bubbles: true,

@@ -222,7 +222,163 @@
     update();
   }
 
+
+  /*
+   * Stage 34.16
+   * Keep individual administration navigation
+   * synchronized with paginated visibility.
+   */
+  function initializeUnifiedNavigation() {
+    const table = document.getElementById(
+      'tracker-history-table'
+    );
+
+    const previous = document.getElementById(
+      'tracker-history-previous'
+    );
+
+    const next = document.getElementById(
+      'tracker-history-next'
+    );
+
+    const position = document.getElementById(
+      'tracker-history-position'
+    );
+
+    if (!table || !previous || !next) return;
+
+    let selectedIndex = -1;
+
+    function visibleRows() {
+      return Array.from(
+        table.querySelectorAll('tbody tr')
+      ).filter(row =>
+        !row.hidden &&
+        getComputedStyle(row).display !== 'none'
+      );
+    }
+
+    function update() {
+      const rows = visibleRows();
+
+      if (!rows.length) {
+        selectedIndex = -1;
+
+        previous.disabled = true;
+        next.disabled = true;
+
+        if (position) {
+          position.textContent = 'No displayed records';
+        }
+
+        return;
+      }
+
+      if (selectedIndex >= rows.length) {
+        selectedIndex = rows.length - 1;
+      }
+
+      previous.disabled = selectedIndex <= 0;
+      next.disabled =
+        selectedIndex >= rows.length - 1;
+
+      if (position) {
+        position.textContent =
+          selectedIndex < 0
+            ? `${rows.length} displayed`
+            : `${selectedIndex + 1} of ${rows.length} displayed`;
+      }
+    }
+
+    function navigate(direction) {
+      const rows = visibleRows();
+
+      if (!rows.length) return;
+
+      if (selectedIndex < 0) {
+        selectedIndex = direction > 0
+          ? 0
+          : rows.length - 1;
+      } else {
+        selectedIndex = Math.max(
+          0,
+          Math.min(
+            rows.length - 1,
+            selectedIndex + direction
+          )
+        );
+      }
+
+      const row = rows[selectedIndex];
+
+      row.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+
+      row.focus({
+        preventScroll: true
+      });
+
+      update();
+    }
+
+    /*
+     * Capture navigation clicks before the older
+     * history navigator handles them.
+     */
+    previous.addEventListener(
+      'click',
+      event => {
+        event.stopImmediatePropagation();
+        navigate(-1);
+      },
+      true
+    );
+
+    next.addEventListener(
+      'click',
+      event => {
+        event.stopImmediatePropagation();
+        navigate(1);
+      },
+      true
+    );
+
+    table.addEventListener(
+      'tracker:history-navigation-refresh',
+      () => {
+        selectedIndex = -1;
+        update();
+      }
+    );
+
+    const search = document.getElementById(
+      'tracker-history-search'
+    );
+
+    if (search) {
+      search.addEventListener(
+        'input',
+        () => {
+          queueMicrotask(() => {
+            selectedIndex = -1;
+            update();
+          });
+        }
+      );
+    }
+
+    update();
+  }
+
   if (document.readyState === 'loading') {
+    document.addEventListener(
+      'DOMContentLoaded',
+      initializeUnifiedNavigation,
+      { once: true }
+    );
+
     document.addEventListener(
       'DOMContentLoaded',
       initialize,
@@ -230,5 +386,6 @@
     );
   } else {
     initialize();
+    initializeUnifiedNavigation();
   }
 })();

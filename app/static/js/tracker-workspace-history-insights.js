@@ -272,6 +272,15 @@
       });
     }
 
+    /*
+     * Refresh compound counts when pagination
+     * changes which administrations are displayed.
+     */
+    table.addEventListener(
+      'tracker:history-page-changed',
+      update
+    );
+
     update();
   }
 
