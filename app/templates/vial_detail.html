@@ -73,7 +73,7 @@
     <label class="field"><span>Record reconstitution: liquid added (mL)</span><input type="number" name="volume_ml" step="any" min="0" required></label>
 <details class="wide"><summary>Disposables used (optional — select only what you used)</summary>
 <div class="scroll"><table><thead><tr><th>Use</th><th>Supply</th><th>Available</th><th>Quantity used</th></tr></thead><tbody>
-{% for s in disposable_supplies %}<tr><td><input type="checkbox" name="supply_id_used" value="{{ s.id }}"></td><td>{{ s.name }} ({{ s.kind|replace('_',' ') }})</td><td>{{ s.remaining_qty|num }}</td><td><input type="number" name="supply_qty_{{ s.id }}" min="0.001" step="any" value="1" style="width:6rem"></td></tr>{% else %}<tr><td colspan="4">No available supplies.</td></tr>{% endfor %}
+{% for s in disposable_supplies %}<tr><td><input aria-label="Supply used" type="checkbox" name="supply_id_used" value="{{ s.id }}"></td><td>{{ s.name }} ({{ s.kind|replace('_',' ') }})</td><td>{{ s.remaining_qty|num }}</td><td><input aria-label="Quantity of supply used" type="number" name="supply_qty_{{ s.id }}" min="0.001" step="any" value="1" style="width:6rem"></td></tr>{% else %}<tr><td colspan="4">No available supplies.</td></tr>{% endfor %}
 </tbody></table></div></details>
     <label class="field"><span>BAC water stock (optional)</span><select name="supply_id"><option value="">Untracked</option>{% for s in bac_supplies %}<option value="{{ s.id }}">{{ s.name }} · {{ s.remaining_qty|num }} mL left</option>{% endfor %}</select></label><button>Record</button>
   </form>
@@ -83,7 +83,7 @@
     <p class="wide">Select the actual disposables used. Nothing is deducted unless you submit this event.</p>
 <details class="wide"><summary>Disposables used (optional — select only what you used)</summary>
 <div class="scroll"><table><thead><tr><th>Use</th><th>Supply</th><th>Available</th><th>Quantity used</th></tr></thead><tbody>
-{% for s in disposable_supplies %}<tr><td><input type="checkbox" name="supply_id_used" value="{{ s.id }}"></td><td>{{ s.name }} ({{ s.kind|replace('_',' ') }})</td><td>{{ s.remaining_qty|num }}</td><td><input type="number" name="supply_qty_{{ s.id }}" min="0.001" step="any" value="1" style="width:6rem"></td></tr>{% else %}<tr><td colspan="4">No available supplies.</td></tr>{% endfor %}
+{% for s in disposable_supplies %}<tr><td><input aria-label="Supply used" type="checkbox" name="supply_id_used" value="{{ s.id }}"></td><td>{{ s.name }} ({{ s.kind|replace('_',' ') }})</td><td>{{ s.remaining_qty|num }}</td><td><input aria-label="Quantity of supply used" type="number" name="supply_qty_{{ s.id }}" min="0.001" step="any" value="1" style="width:6rem"></td></tr>{% else %}<tr><td colspan="4">No available supplies.</td></tr>{% endfor %}
 </tbody></table></div></details>
     <label class="field wide"><span>Notes</span><input name="notes" placeholder="e.g. filtered into sterile vial"></label>
     <div><button class="primary">Record filtering supplies</button></div>
