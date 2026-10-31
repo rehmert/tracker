@@ -1,0 +1,175 @@
+/*
+ * Tracker Stage 34.36
+ * Inventory Expiration Outlook
+ */
+
+.tracker-expiry-outlook {
+  margin: 1.1rem 0 1.35rem;
+  padding: 1rem;
+  border: 1px solid var(
+    --tracker-brand-border,
+    rgba(22, 134, 223, .2)
+  );
+  border-radius: 14px;
+  background: var(
+    --tracker-brand-soft,
+    rgba(22, 134, 223, .045)
+  );
+}
+
+.tracker-expiry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .75rem;
+  margin-bottom: .85rem;
+}
+
+.tracker-expiry-header h2 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.tracker-expiry-summary {
+  font-size: .78rem;
+  opacity: .75;
+  white-space: nowrap;
+}
+
+.tracker-expiry-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(215px, 1fr));
+  gap: .75rem;
+}
+
+.tracker-expiry-group {
+  min-width: 0;
+  padding: .8rem;
+  border: 1px solid rgba(22, 134, 223, .15);
+  border-radius: 11px;
+  background: var(
+    --card-bg,
+    rgba(255, 255, 255, .55)
+  );
+}
+
+.tracker-expiry-group[data-group="overdue"] {
+  border-color: rgba(200, 85, 75, .45);
+}
+
+.tracker-expiry-group[data-group="week"] {
+  border-color: rgba(210, 145, 48, .45);
+}
+
+.tracker-expiry-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.tracker-expiry-group-header strong {
+  font-size: .85rem;
+}
+
+.tracker-expiry-group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding: .15rem .4rem;
+  border-radius: 999px;
+  background: rgba(22, 134, 223, .1);
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.tracker-expiry-group-description {
+  margin: .3rem 0 .7rem;
+  font-size: .73rem;
+  opacity: .68;
+}
+
+.tracker-expiry-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.tracker-expiry-item {
+  margin: 0;
+  min-width: 0;
+}
+
+.tracker-expiry-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .55rem .6rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: rgba(22, 134, 223, .045);
+  color: inherit;
+  text-decoration: none;
+}
+
+.tracker-expiry-link:hover {
+  border-color: rgba(22, 134, 223, .25);
+  text-decoration: none;
+}
+
+.tracker-expiry-link:focus-visible {
+  outline: 2px solid var(
+    --tracker-brand-blue,
+    #1686df
+  );
+  outline-offset: 2px;
+}
+
+.tracker-expiry-text {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  min-width: 0;
+}
+
+.tracker-expiry-name {
+  font-size: .8rem;
+  overflow-wrap: anywhere;
+}
+
+.tracker-expiry-detail {
+  font-size: .72rem;
+  line-height: 1.4;
+  opacity: .7;
+  overflow-wrap: anywhere;
+}
+
+.tracker-expiry-days {
+  flex: 0 0 auto;
+  font-size: .75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-expiry-note {
+  margin: .8rem 0 0;
+  font-size: .73rem;
+  opacity: .7;
+}
+
+@media (max-width: 580px) {
+  .tracker-expiry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-expiry-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
