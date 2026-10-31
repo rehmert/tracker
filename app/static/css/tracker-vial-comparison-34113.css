@@ -1034,3 +1034,52 @@
 }
 
 /* END TRACKER_STAGE34_227_232 */
+
+/* TRACKER_STAGE34_233_238
+   Optimize printed comparison columns for informational content.
+   Presentation only; no inventory or dose workflow changes.
+*/
+
+@media print {
+  .tracker-vial-table th:nth-child(5),
+  .tracker-vial-table td:nth-child(5) {
+    display: none !important;
+  }
+
+  .tracker-vial-table th:nth-child(1),
+  .tracker-vial-table td:nth-child(1) {
+    width: 30%;
+  }
+
+  .tracker-vial-table th:nth-child(2),
+  .tracker-vial-table td:nth-child(2) {
+    width: 18%;
+  }
+
+  .tracker-vial-table th:nth-child(3),
+  .tracker-vial-table td:nth-child(3) {
+    width: 14%;
+    white-space: nowrap;
+  }
+
+  .tracker-vial-table th:nth-child(4),
+  .tracker-vial-table td:nth-child(4) {
+    width: 38%;
+  }
+
+  .tracker-vial-table .tracker-vial-date {
+    line-height: 1.35;
+    break-inside: avoid;
+  }
+
+  .tracker-vial-table .tracker-vial-date + .tracker-vial-date {
+    margin-top: 4pt;
+  }
+
+  .tracker-vial-table tbody td:nth-child(3) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* END TRACKER_STAGE34_233_238 */
