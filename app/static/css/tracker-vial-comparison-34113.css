@@ -1421,3 +1421,40 @@
 }
 
 /* END TRACKER_STAGE34_299_304 */
+
+/* TRACKER_STAGE34_305_310
+   Strengthen comparison readability when increased contrast is requested.
+   Presentation only; no data, filtering, or workflow changes.
+*/
+
+@media (prefers-contrast: more) {
+  .tracker-vial-table th,
+  .tracker-vial-table td {
+    border-bottom-width: 2px;
+    border-bottom-color: currentColor;
+  }
+
+  .tracker-vial-table thead th {
+    border-bottom-width: 3px;
+  }
+
+  .tracker-vial-count,
+  .tracker-vial-badge,
+  .tracker-vial-action,
+  .tracker-vial-controls input,
+  .tracker-vial-controls select {
+    border-width: 2px;
+    border-color: currentColor;
+  }
+
+  .tracker-vial-table-scroll:focus-within {
+    outline-width: 2px;
+  }
+
+  .tracker-vial-comparison .tracker-vial-disclaimer {
+    border-top-width: 2px;
+    border-top-color: currentColor;
+  }
+}
+
+/* END TRACKER_STAGE34_305_310 */
