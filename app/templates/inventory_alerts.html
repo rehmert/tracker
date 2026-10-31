@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Inventory Alerts{% endblock %}
 {% block content %}
+
+<link rel="stylesheet"
+      href="/static/css/tracker-inventory-alert-triage.css?v=34.35">
+<script src="/static/js/tracker-inventory-alert-triage.js?v=34.35"
+        defer></script>
+
 <h1>Inventory alerts</h1><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health &amp; forecasts</a><a href="/vials">Vials</a><a href="/supplies">Supplies</a></nav>
 <p class="muted">Read-only warnings based on recorded expiration dates, beyond-use dates, and historical consumption. Estimates are not purchasing or dosing recommendations.</p>
 <form method="get" action="/inventory-alerts" class="inventory-card">

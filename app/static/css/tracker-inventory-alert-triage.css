@@ -1,0 +1,117 @@
+/*
+ * Tracker Stage 34.35
+ * Inventory alert triage styling.
+ */
+
+.tracker-triage-toolbar {
+  margin: 1rem 0 .8rem;
+  padding: .9rem 1rem;
+  border: 1px solid var(
+    --tracker-brand-border,
+    rgba(22, 134, 223, .20)
+  );
+  border-radius: 12px;
+  background: var(
+    --tracker-brand-soft,
+    rgba(22, 134, 223, .055)
+  );
+}
+
+.tracker-triage-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: .7rem;
+}
+
+.tracker-triage-heading strong {
+  font-size: .9rem;
+}
+
+.tracker-triage-count {
+  font-size: .78rem;
+  opacity: .78;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-triage-controls {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 2fr)
+    minmax(130px, 1fr)
+    minmax(130px, 1fr)
+    auto;
+  align-items: end;
+  gap: .65rem;
+}
+
+.tracker-triage-field {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  min-width: 0;
+}
+
+.tracker-triage-field > span {
+  font-size: .75rem;
+  font-weight: 600;
+  opacity: .8;
+}
+
+.tracker-triage-field input,
+.tracker-triage-field select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.tracker-triage-reset {
+  white-space: nowrap;
+}
+
+.tracker-triage-reset:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.tracker-triage-empty {
+  padding: .8rem 1rem;
+  border-radius: 10px;
+  background: var(
+    --tracker-brand-soft,
+    rgba(22, 134, 223, .055)
+  );
+  font-size: .85rem;
+}
+
+table.alert-table tr.tracker-triage-high {
+  box-shadow: inset 3px 0 0 #d26958;
+}
+
+table.alert-table tr.tracker-triage-warning {
+  box-shadow: inset 3px 0 0 #d5a04a;
+}
+
+table.alert-table tbody tr:hover {
+  background: var(
+    --tracker-brand-soft,
+    rgba(22, 134, 223, .055)
+  );
+}
+
+@media (max-width: 900px) {
+  .tracker-triage-controls {
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  }
+}
+
+@media (max-width: 560px) {
+  .tracker-triage-controls {
+    grid-template-columns: 1fr;
+  }
+}
