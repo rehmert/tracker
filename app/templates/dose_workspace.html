@@ -5,6 +5,7 @@
 <script src="/static/js/tracker-workspace-selection.js?v=1" defer></script>
 <link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=4">
 <script src="/static/tracker_dose_workspace.js?v=3" defer></script>
+<script src="/static/js/tracker-workspace-history.js?v=1" defer></script>
 <script src="/static/js/tracker-workspace-shortcut.js?v=1" defer></script>
 
 <h1>Dose Workspace</h1>
@@ -297,11 +298,69 @@
 </section>
 
 <section>
-  <h2>Recent administrations</h2>
+  <div id="tracker-history-section">
+<h2>Recent administrations</h2>
+
+<!-- TRACKER_STAGE34_6_HISTORY -->
+{% if history %}
+<div id="tracker-history-controls">
+  <label for="tracker-history-search">
+    Find administration
+  </label>
+
+  <input
+    id="tracker-history-search"
+    type="search"
+    placeholder="Search compound, date, amount, site…"
+    autocomplete="off"
+    aria-controls="tracker-history-table">
+
+  <button
+    type="button"
+    id="tracker-history-clear"
+    hidden>
+    Clear
+  </button>
+
+  <span
+    id="tracker-history-count"
+    role="status"
+    aria-live="polite">
+  </span>
+</div>
+
+<div id="tracker-history-navigation">
+  <button
+    type="button"
+    id="tracker-history-previous">
+    Previous
+  </button>
+
+  <button
+    type="button"
+    id="tracker-history-next">
+    Next
+  </button>
+
+  <span
+    id="tracker-history-position"
+    role="status"
+    aria-live="polite">
+  </span>
+</div>
+
+<p
+  id="tracker-history-empty"
+  class="empty"
+  hidden>
+  No administrations match this search.
+</p>
+{% endif %}
+<!-- END_TRACKER_STAGE34_6_HISTORY -->
 
   {% if history %}
   <div class="scroll">
-    <table>
+    <table id="tracker-history-table">
       <thead>
         <tr>
           <th>When</th>
@@ -346,7 +405,9 @@
 </section>
 
 <section>
-  <h2>Recording a planned dose</h2>
+</div>
+
+<h2>Recording a planned dose</h2>
 
   <p>
     Open the calendar, select a scheduled protocol
