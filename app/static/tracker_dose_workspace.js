@@ -42,7 +42,7 @@
         (_, letter) => letter.toUpperCase()
       );
 
-      return row.dataset[property] || '';
+      return row.dataset['tracker' + property.charAt(0).toUpperCase() + property.slice(1)] || '';
     }
 
     function compare(a, b) {
