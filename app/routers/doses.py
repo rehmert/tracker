@@ -399,27 +399,15 @@ def dose_workspace(
 
         vial_guidance[vial.id] = guidance
 
-    # Prefer an already-open vial with sufficient
-    # contents, then the oldest vial ID.
-    #
-    # When no planned amount exists, highlight an
-    # inventory candidate without claiming dose
-    # sufficiency.
+    # Stage 26: date-aware inventory recommendation.
+    # This does not create or modify dose records.
 
-    candidates = [
-        vial for vial in available_vials
-        if vial_guidance[vial.id]["eligible"]
-    ]
+    from app.vial_recommendation import rank_vials
 
-    candidates.sort(
-        key=lambda vial: (
-            0 if vial.status == "in_use" else 1,
-            vial.id,
-        )
+    recommended_vial_id, vial_date_warnings = rank_vials(
+        available_vials,
+        vial_guidance,
     )
-
-    if candidates:
-        recommended_vial_id = candidates[0].id
 
     return render(
         request,
@@ -432,4 +420,5 @@ def dose_workspace(
         planned_params=planned_params,
         vial_guidance=vial_guidance,
         recommended_vial_id=recommended_vial_id,
+        vial_date_warnings=vial_date_warnings,
     )

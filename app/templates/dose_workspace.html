@@ -139,9 +139,17 @@
               </span>
             {% endif %}
 
-            <span class="tracker-vial-badge {{ guidance.state }}">
-              {{ guidance.label }}
-            </span>
+            {% if vial_date_warnings[vial.id] %}
+              {% for warning in vial_date_warnings[vial.id] %}
+                <span class="tracker-vial-badge insufficient">
+                  {{ warning }}
+                </span>
+              {% endfor %}
+            {% else %}
+              <span class="tracker-vial-badge {{ guidance.state }}">
+                {{ guidance.label }}
+              </span>
+            {% endif %}
           </td>
 
           <td>
