@@ -1,0 +1,56 @@
+/*
+ * Tracker Stage 34.30
+ * Subtle heading and action icon styling.
+ */
+
+.tracker-action-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: -0.13em;
+  pointer-events: none;
+}
+
+.tracker-heading-icon {
+  width: 0.88em;
+  height: 0.88em;
+  margin-right: 0.48em;
+  color: var(--tracker-brand-blue, #1686df);
+  opacity: 0.82;
+}
+
+.tracker-button-icon {
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.4em;
+  opacity: 0.85;
+}
+
+button:hover > .tracker-button-icon,
+a:hover > .tracker-button-icon,
+button:focus-visible > .tracker-button-icon,
+a:focus-visible > .tracker-button-icon {
+  opacity: 1;
+}
+
+/* Preserve existing destructive-action colors. */
+.tracker-destructive-action > .tracker-button-icon {
+  color: inherit;
+}
+
+/* Keep icons aligned in compact buttons. */
+button > .tracker-button-icon,
+a.btn > .tracker-button-icon {
+  vertical-align: -0.14em;
+}
+
+/* Don't interfere with screen readers. */
+.tracker-action-icon[aria-hidden="true"] {
+  speak: none;
+}
+
+/* Reduced motion: no additional animation. */
+@media (prefers-reduced-motion: reduce) {
+  .tracker-action-icon {
+    transition: none;
+  }
+}
