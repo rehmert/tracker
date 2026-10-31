@@ -694,3 +694,58 @@
 }
 
 /* END TRACKER_STAGE34_191_196 */
+
+/* TRACKER_STAGE34_197_202
+   Refine comparison row content spacing and date alignment.
+   Presentation only; no inventory or dose workflow changes.
+*/
+
+.tracker-vial-table tbody td {
+  line-height: 1.5;
+}
+
+.tracker-vial-table tbody td:first-child > strong,
+.tracker-vial-table tbody td:nth-child(2) > strong {
+  margin-bottom: .15rem;
+}
+
+.tracker-vial-table .tracker-vial-muted {
+  margin-top: .35rem;
+}
+
+.tracker-vial-table .tracker-vial-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: .35rem;
+  row-gap: .1rem;
+  margin-bottom: .5rem;
+  line-height: 1.45;
+}
+
+.tracker-vial-table .tracker-vial-date strong {
+  display: inline-block;
+  max-width: 100%;
+  font-weight: 650;
+}
+
+.tracker-vial-table .tracker-vial-warning {
+  margin-top: .55rem;
+}
+
+.tracker-vial-table tbody td:nth-child(5) .tracker-vial-muted {
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .tracker-vial-table .tracker-vial-date {
+    column-gap: .25rem;
+    margin-bottom: .45rem;
+  }
+
+  .tracker-vial-table tbody td {
+    line-height: 1.45;
+  }
+}
+
+/* END TRACKER_STAGE34_197_202 */
