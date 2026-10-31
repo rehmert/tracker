@@ -1,0 +1,291 @@
+
+{# TRACKER_RELEASE_337_344 #}
+
+<style>
+/* TRACKER_RELEASE_337_344_CSS */
+
+#ir-nav-ux {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+
+    margin: 1rem 0;
+    padding: 0.8rem 1rem;
+
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 0.75rem;
+}
+
+#ir-nav-ux-links,
+#ir-nav-ux-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+#ir-nav-ux a,
+#ir-nav-ux button {
+    font: inherit;
+}
+
+#ir-nav-ux a {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+#ir-nav-ux button {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 0.5rem;
+    background: var(--surface, transparent);
+    color: inherit;
+    cursor: pointer;
+}
+
+#ir-nav-ux button:hover {
+    background: var(--surface-2, rgba(127,127,127,.08));
+}
+
+#ir-nav-ux a:focus-visible,
+#ir-nav-ux button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+}
+
+#ir-nav-ux-status {
+    font-size: 0.9em;
+    opacity: 0.85;
+}
+
+@media (max-width: 700px) {
+    #ir-nav-ux {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    #ir-nav-ux-links,
+    #ir-nav-ux-actions {
+        justify-content: flex-start;
+    }
+}
+</style>
+
+<nav id="ir-nav-ux"
+     aria-label="Inventory review navigation"
+     hidden>
+
+<div id="ir-nav-ux-links">
+
+<a id="ir-nav-quality"
+   href="/inventory-data-quality">
+← Inventory Data Quality
+</a>
+
+<a id="ir-nav-planning"
+   href="/planning-hub">
+Planning Hub
+</a>
+
+</div>
+
+<div id="ir-nav-ux-actions">
+
+<button id="ir-nav-copy"
+        type="button"
+        aria-label="Copy the current compound review URL">
+Copy review link
+</button>
+
+<span id="ir-nav-ux-status"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true">
+</span>
+
+</div>
+
+</nav>
+
+<script>
+/* TRACKER_RELEASE_337_344_JS */
+(function () {
+    "use strict";
+
+    function normalizePath(path) {
+        return String(path || "")
+            .replace(/\/+$/, "") || "/";
+    }
+
+    function findExistingLink(target, exclude) {
+        return Array.from(
+            document.querySelectorAll("a[href]")
+        ).find(function (link) {
+            if (exclude.contains(link)) {
+                return false;
+            }
+
+            try {
+                const url = new URL(
+                    link.href,
+                    window.location.href
+                );
+
+                return (
+                    url.origin === window.location.origin &&
+                    normalizePath(url.pathname) ===
+                        normalizePath(target)
+                );
+            } catch (error) {
+                return false;
+            }
+        });
+    }
+
+    function fallbackCopy(text) {
+        const field = document.createElement("textarea");
+
+        field.value = text;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+
+        document.body.appendChild(field);
+
+        field.focus();
+        field.select();
+
+        let copied = false;
+
+        try {
+            copied = document.execCommand("copy");
+        } finally {
+            field.remove();
+        }
+
+        return copied;
+    }
+
+    async function copyText(text) {
+        if (
+            navigator.clipboard &&
+            window.isSecureContext
+        ) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+
+        return fallbackCopy(text);
+    }
+
+    function initialize() {
+        const nav = document.getElementById("ir-nav-ux");
+
+        if (!nav || nav.dataset.initialized === "1") {
+            return;
+        }
+
+        nav.dataset.initialized = "1";
+
+        const quality = document.getElementById(
+            "ir-nav-quality"
+        );
+
+        const planning = document.getElementById(
+            "ir-nav-planning"
+        );
+
+        const copy = document.getElementById(
+            "ir-nav-copy"
+        );
+
+        const status = document.getElementById(
+            "ir-nav-ux-status"
+        );
+
+        if (!quality || !planning || !copy || !status) {
+            return;
+        }
+
+        // Avoid duplicating navigation links already
+        // provided by the shared planning navigation.
+
+        if (
+            findExistingLink(
+                "/inventory-data-quality",
+                nav
+            )
+        ) {
+            quality.hidden = true;
+        }
+
+        if (
+            findExistingLink(
+                "/planning-hub",
+                nav
+            )
+        ) {
+            planning.hidden = true;
+        }
+
+        // Copy the live URL rather than constructing
+        // a new one. This preserves the selected
+        // compound, issue filter and other parameters.
+
+        copy.addEventListener(
+            "click",
+            async function () {
+                const url = window.location.href;
+
+                copy.disabled = true;
+
+                try {
+                    const copied = await copyText(url);
+
+                    if (copied) {
+                        status.textContent = "Link copied.";
+                    } else {
+                        status.textContent =
+                            "Copy unavailable in this browser.";
+                    }
+                } catch (error) {
+                    status.textContent =
+                        "Unable to copy link.";
+                } finally {
+                    copy.disabled = false;
+                }
+            }
+        );
+
+        nav.hidden = false;
+
+        // If existing navigation already provides
+        // both destinations, retain only the useful
+        // copy-link action in this component.
+
+        const links = document.getElementById(
+            "ir-nav-ux-links"
+        );
+
+        if (
+            links &&
+            quality.hidden &&
+            planning.hidden
+        ) {
+            links.hidden = true;
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
