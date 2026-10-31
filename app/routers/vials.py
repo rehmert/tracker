@@ -1,6 +1,9 @@
 from datetime import date, datetime
 import math
 import json
+import hashlib
+
+from fastapi.responses import JSONResponse
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
@@ -40,96 +43,323 @@ def vials_page(request: Request, status: str = "active", compound_id: str | None
                   status=status, statuses=VIAL_STATUSES, compound_id=compound_id, compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
 
 
+
+# TRACKER_BULK_STAGE4
+
 BULK_FIELDS = {
     "status": "choice",
-    "lot": "text", "cap_color": "text", "storage_notes": "text", "notes": "text",
-    "received_on": "date", "expires_on": "date", "beyond_use_on": "date",
-    "first_punctured_on": "date", "first_dosed_on": "date", "closed_on": "date",
+    "lot": "text",
+    "cap_color": "text",
+    "storage_notes": "text",
+    "notes": "text",
+    "received_on": "date",
+    "expires_on": "date",
+    "beyond_use_on": "date",
+    "first_punctured_on": "date",
+    "first_dosed_on": "date",
+    "closed_on": "date",
     "use_coa_content": "boolean",
 }
 
 
-@router.post("/vials/bulk")
-async def bulk_update_vials(request: Request, db: Session = Depends(get_db)):
-    """Apply only explicitly selected fields to explicitly checked vial IDs."""
-    form = await request.form()
+def _bulk_parse(form):
     try:
-        ids = sorted({int(value) for value in form.getlist("vial_ids")})
+        ids = sorted({int(x) for x in form.getlist("vial_ids")})
     except (TypeError, ValueError):
-        return services.flash_redirect("/vials", err="Invalid vial selection.")
+        raise ValueError("Invalid vial selection.")
+
     if not ids:
-        return services.flash_redirect("/vials", err="Select at least one vial.")
+        raise ValueError("Select at least one vial.")
+
     if len(ids) > 1000:
-        return services.flash_redirect("/vials", err="Select at most 1,000 vials per update.")
-    if not reserve_inventory_write(db):
-        return services.flash_redirect("/vials", err="Inventory is busy. Please retry.")
-    vials = list(db.scalars(select(Vial).where(Vial.id.in_(ids))))
-    if len(vials) != len(ids):
-        return services.flash_redirect("/vials", err="One or more selected vials no longer exist.")
+        raise ValueError("Select at most 1,000 vials.")
+
+    if any(x <= 0 for x in ids):
+        raise ValueError("Invalid vial ID.")
 
     changes = {}
-    try:
-        for field, kind in BULK_FIELDS.items():
-            mode = str(form.get(f"mode_{field}", "keep"))
-            if mode not in ("keep", "set", "clear"):
-                raise ValueError(f"Invalid action for {field}.")
-            if mode == "keep":
-                continue
-            if mode == "clear":
-                if kind in ("choice", "boolean"):
-                    raise ValueError(f"{field} cannot be cleared.")
-                changes[field] = None if kind == "date" else ""
-                continue
-            raw = str(form.get(f"value_{field}", "")).strip()
-            if kind == "choice":
-                if raw not in VIAL_STATUSES:
-                    raise ValueError("Choose a valid status.")
-                changes[field] = raw
-            elif kind == "boolean":
-                if raw not in ("yes", "no"):
-                    raise ValueError("Choose Yes or No for COA content.")
-                changes[field] = raw == "yes"
-            elif kind == "date":
-                if not raw:
-                    raise ValueError(f"Enter a date for {field}, or select Clear.")
-                changes[field] = services.parse_date(raw)
-            else:
-                if not raw:
-                    raise ValueError(f"Enter a value for {field}, or select Clear.")
-                changes[field] = raw
-        if not changes:
-            raise ValueError("Choose at least one field to update.")
 
-        for vial in vials:
-            proposed = {field: getattr(vial, field) for field in BULK_FIELDS}
-            proposed.update(changes)
-            if (proposed["received_on"] and proposed["first_punctured_on"]
-                    and proposed["first_punctured_on"] < proposed["received_on"]):
-                raise ValueError(f"Vial #{vial.id}: first puncture cannot precede receipt.")
-            if (proposed["first_punctured_on"] and proposed["first_dosed_on"]
-                    and proposed["first_dosed_on"] < proposed["first_punctured_on"]):
-                raise ValueError(f"Vial #{vial.id}: first dose cannot precede first puncture.")
-            if proposed["status"] == "sealed" and vial.doses:
-                raise ValueError(f"Vial #{vial.id} has logged doses and cannot be marked sealed.")
+    for field, kind in BULK_FIELDS.items():
+        mode = str(form.get("mode_" + field, "keep"))
+
+        if mode not in ("keep", "set", "clear"):
+            raise ValueError(f"Invalid action for {field}.")
+
+        if mode == "keep":
+            continue
+
+        if mode == "clear":
+            if kind in ("choice", "boolean"):
+                raise ValueError(f"{field} cannot be cleared.")
+
+            changes[field] = None if kind == "date" else ""
+            continue
+
+        raw = str(form.get("value_" + field, "")).strip()
+
+        if kind == "choice":
+            if raw not in VIAL_STATUSES:
+                raise ValueError("Choose a valid status.")
+            changes[field] = raw
+
+        elif kind == "boolean":
+            if raw not in ("yes", "no"):
+                raise ValueError("Choose Yes or No for COA content.")
+            changes[field] = raw == "yes"
+
+        elif kind == "date":
+            if not raw:
+                raise ValueError(
+                    f"Enter a date for {field}, or select Clear."
+                )
+            changes[field] = services.parse_date(raw)
+
+        else:
+            if not raw:
+                raise ValueError(
+                    f"Enter a value for {field}, or select Clear."
+                )
+            changes[field] = raw
+
+    if not changes:
+        raise ValueError("Choose at least one field to update.")
+
+    return ids, changes
+
+
+def _bulk_load(db, ids):
+    vials = list(
+        db.scalars(select(Vial).where(Vial.id.in_(ids)))
+    )
+
+    if len(vials) != len(ids):
+        raise ValueError(
+            "One or more selected vials no longer exist."
+        )
+
+    return sorted(vials, key=lambda v: v.id)
+
+
+def _bulk_validate(vials, changes):
+    for vial in vials:
+        proposed = {
+            field: getattr(vial, field)
+            for field in BULK_FIELDS
+        }
+        proposed.update(changes)
+
+        if (
+            proposed["received_on"]
+            and proposed["first_punctured_on"]
+            and proposed["first_punctured_on"]
+                < proposed["received_on"]
+        ):
+            raise ValueError(
+                f"Vial #{vial.id}: first puncture "
+                "cannot precede receipt."
+            )
+
+        if (
+            proposed["first_punctured_on"]
+            and proposed["first_dosed_on"]
+            and proposed["first_dosed_on"]
+                < proposed["first_punctured_on"]
+        ):
+            raise ValueError(
+                f"Vial #{vial.id}: first dose "
+                "cannot precede first puncture."
+            )
+
+        if proposed["status"] == "sealed" and vial.doses:
+            raise ValueError(
+                f"Vial #{vial.id} has logged doses "
+                "and cannot be marked sealed."
+            )
+
+
+def _bulk_serial(value):
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    return value
+
+
+def _bulk_snapshot(vials, changes):
+    """
+    Fingerprint the selected vial state and requested changes.
+
+    This is an optimistic concurrency check, not an
+    authentication token. Final server-side validation
+    remains mandatory.
+    """
+    state = []
+
+    for vial in vials:
+        state.append({
+            "id": vial.id,
+            "compound_id": vial.compound_id,
+            "fields": {
+                field: _bulk_serial(getattr(vial, field))
+                for field in BULK_FIELDS
+            },
+            "dose_ids": sorted(d.id for d in vial.doses),
+        })
+
+    payload = {
+        "vials": state,
+        "changes": {
+            key: _bulk_serial(value)
+            for key, value in sorted(changes.items())
+        },
+    }
+
+    encoded = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _bulk_rows(vials, changes):
+    rows = []
+
+    for vial in vials:
+        for field, value in changes.items():
+            old = getattr(vial, field)
+
+            rows.append({
+                "vial_id": vial.id,
+                "compound": vial.compound.name,
+                "label": vial.label or f"#{vial.id}",
+                "field": field,
+                "current": _bulk_serial(old),
+                "proposed": _bulk_serial(value),
+                "changed": old != value,
+            })
+
+    return rows
+
+
+@router.post("/vials/bulk/preview")
+async def bulk_preview_vials(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Read-only preview using current database values.
+    Does not reserve an inventory write or commit.
+    """
+    try:
+        form = await request.form()
+        ids, changes = _bulk_parse(form)
+        vials = _bulk_load(db, ids)
+        _bulk_validate(vials, changes)
+
+        return JSONResponse({
+            "ok": True,
+            "count": len(vials),
+            "fields": len(changes),
+            "rows": _bulk_rows(vials, changes),
+            "snapshot": _bulk_snapshot(vials, changes),
+        })
+
+    except (ValueError, TypeError) as exc:
+        return JSONResponse(
+            {"ok": False, "error": str(exc)},
+            status_code=422,
+        )
+
+
+@router.post("/vials/bulk")
+async def bulk_update_vials(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Apply validated bulk changes atomically.
+
+    When a preview snapshot is supplied, reject stale
+    previews rather than silently applying them.
+    """
+    form = await request.form()
+
+    try:
+        ids, changes = _bulk_parse(form)
+    except (ValueError, TypeError) as exc:
+        return services.flash_redirect(
+            "/vials", err=str(exc)
+        )
+
+    if not reserve_inventory_write(db):
+        return services.flash_redirect(
+            "/vials",
+            err="Inventory is busy. Please retry.",
+        )
+
+    try:
+        vials = _bulk_load(db, ids)
+        _bulk_validate(vials, changes)
+
+        supplied_snapshot = str(
+            form.get("bulk_preview_snapshot", "")
+        ).strip()
+
+        if supplied_snapshot:
+            current_snapshot = _bulk_snapshot(
+                vials, changes
+            )
+
+            if supplied_snapshot != current_snapshot:
+                raise ValueError(
+                    "Inventory changed since preview. "
+                    "Review the selected vials again."
+                )
+
+        updated_count = 0
 
         for vial in vials:
             before = {}
             after = {}
+
             for field, value in changes.items():
                 old = getattr(vial, field)
+
                 if old != value:
-                    before[field] = old.isoformat() if isinstance(old, date) else old
-                    after[field] = value.isoformat() if isinstance(value, date) else value
+                    before[field] = _bulk_serial(old)
+                    after[field] = _bulk_serial(value)
                     setattr(vial, field, value)
+
             if before:
-                db.add(ChangeAudit(entity_type="vial", entity_id=vial.id,
-                                   action="bulk_update", before_json=json.dumps(before),
-                                   after_json=json.dumps(after)))
+                updated_count += 1
+
+                db.add(ChangeAudit(
+                    entity_type="vial",
+                    entity_id=vial.id,
+                    action="bulk_update",
+                    before_json=json.dumps(before),
+                    after_json=json.dumps(after),
+                ))
+
         db.commit()
+
     except (ValueError, TypeError) as exc:
         db.rollback()
-        return services.flash_redirect("/vials", err=str(exc))
-    return services.flash_redirect("/vials", msg=f"Bulk update reviewed for {len(vials)} selected vial(s).")
+        return services.flash_redirect(
+            "/vials", err=str(exc)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+
+    return services.flash_redirect(
+        "/vials",
+        msg=(
+            f"Bulk update completed: {updated_count} "
+            f"of {len(vials)} selected vial(s) changed."
+        ),
+    )
 
 
 @router.get("/vials/{vid}")

@@ -96,6 +96,7 @@
           disabled>Bulk edit selected</button>
 </div>
 <form id="bulk-vials" method="post" action="/vials/bulk">
+<input type="hidden" name="bulk_preview_snapshot" id="bulk-preview-snapshot" value="">
 <details class="card" id="bulk-editor-panel">
   <summary><strong>Bulk edit selected vials</strong></summary>
   <p>Select vials below, then choose <strong>Set</strong> or <strong>Clear</strong> only for the fields you want to change. Keep leaves existing values untouched. Changes are recorded in the vial audit history.</p>
@@ -435,12 +436,294 @@
       "Apply these changes?"
     );
 
-    if (!window.confirm(lines.join("\n"))) {
-      event.preventDefault();
-    }
+    // Stage 4 owns the confirmation workflow.
+    // Retain V2 validation but suppress its dialog.
   });
 
   refreshSelection();
+})();
+</script>
+
+
+
+<!-- TRACKER_BULK_STAGE4 -->
+<style>
+#bulk-server-review {
+  width:min(1100px,95vw);
+  max-height:88vh;
+  overflow:auto;
+  padding:1.25rem;
+  border:1px solid var(--border,#bbb);
+  border-radius:12px;
+  background:var(--surface,#fff);
+  color:var(--text,#222);
+}
+#bulk-server-review::backdrop {
+  background:rgba(0,0,0,.55);
+}
+#bulk-server-review .review-scroll {
+  max-height:52vh;
+  overflow:auto;
+}
+#bulk-server-review table {
+  width:100%;
+  border-collapse:collapse;
+}
+#bulk-server-review th,
+#bulk-server-review td {
+  padding:.55rem;
+  border-bottom:1px solid var(--border,#ddd);
+  text-align:left;
+  vertical-align:top;
+}
+#bulk-server-review tr.no-change {
+  opacity:.6;
+}
+#bulk-server-review .review-actions {
+  display:flex;
+  gap:.75rem;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  margin-top:1rem;
+}
+#bulk-server-review-error {
+  color:var(--danger,#b42318);
+  white-space:pre-wrap;
+}
+</style>
+
+<dialog id="bulk-server-review"
+        aria-labelledby="bulk-server-review-title">
+  <h2 id="bulk-server-review-title">
+    Review bulk vial changes
+  </h2>
+  <p id="bulk-server-review-summary"></p>
+  <p class="note">
+    Current values are read from Tracker's database.
+    The server will check for changes and validate
+    the update again before saving.
+  </p>
+  <p id="bulk-server-review-error" role="alert"></p>
+  <div class="review-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Vial</th>
+          <th>Field</th>
+          <th>Current</th>
+          <th>Proposed</th>
+        </tr>
+      </thead>
+      <tbody id="bulk-server-review-rows"></tbody>
+    </table>
+  </div>
+  <div class="review-actions">
+    <button type="button" id="bulk-server-review-cancel">
+      Cancel
+    </button>
+    <button type="button" class="primary"
+            id="bulk-server-review-confirm">
+      Confirm and apply
+    </button>
+  </div>
+</dialog>
+
+<script>
+/* TRACKER_BULK_STAGE4_JS */
+(function () {
+  "use strict";
+
+  const form = document.getElementById("bulk-vials");
+  const dialog = document.getElementById(
+    "bulk-server-review"
+  );
+  const rows = document.getElementById(
+    "bulk-server-review-rows"
+  );
+  const summary = document.getElementById(
+    "bulk-server-review-summary"
+  );
+  const error = document.getElementById(
+    "bulk-server-review-error"
+  );
+  const snapshot = document.getElementById(
+    "bulk-preview-snapshot"
+  );
+  const confirmButton = document.getElementById(
+    "bulk-server-review-confirm"
+  );
+  const cancelButton = document.getElementById(
+    "bulk-server-review-cancel"
+  );
+
+  if (!form || !dialog || !snapshot) return;
+
+  let busy = false;
+  let approved = false;
+
+  function invalidatePreview() {
+    if (!approved) {
+      snapshot.value = "";
+    }
+  }
+
+  form.addEventListener("change", invalidatePreview);
+  form.addEventListener("input", invalidatePreview);
+
+  document.querySelectorAll(".bulk-vial-check")
+    .forEach(box => {
+      box.addEventListener(
+        "change",
+        invalidatePreview
+      );
+    });
+
+  function display(value) {
+    if (value === null || value === undefined) {
+      return "(empty)";
+    }
+
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
+    }
+
+    return String(value) || "(empty)";
+  }
+
+  function addCell(row, value) {
+    const cell = document.createElement("td");
+    cell.textContent = display(value);
+    row.appendChild(cell);
+  }
+
+  function showRows(data) {
+    rows.replaceChildren();
+
+    for (const entry of data.rows) {
+      const row = document.createElement("tr");
+
+      if (!entry.changed) {
+        row.classList.add("no-change");
+      }
+
+      addCell(
+        row,
+        entry.compound + " / " +
+        entry.label + " (#" + entry.vial_id + ")"
+      );
+      addCell(
+        row,
+        entry.field.replaceAll("_", " ")
+      );
+      addCell(row, entry.current);
+      addCell(row, entry.proposed);
+
+      rows.appendChild(row);
+    }
+
+    const changed = data.rows.filter(
+      row => row.changed
+    ).length;
+
+    summary.textContent =
+      data.count + " selected vial(s), " +
+      data.fields + " requested field(s), " +
+      changed + " individual value change(s).";
+  }
+
+  // Capture submission before the existing V2 handler.
+  // The final approved submission uses the native
+  // HTMLFormElement.submit() method, bypassing
+  // client-side preview handlers.
+
+  form.addEventListener("submit", async event => {
+    if (approved) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    if (busy) return;
+
+    busy = true;
+    snapshot.value = "";
+
+    const apply = document.getElementById("bulk-apply");
+
+    if (apply) {
+      apply.disabled = true;
+    }
+
+    try {
+      const response = await fetch(
+        "/vials/bulk/preview",
+        {
+          method: "POST",
+          body: new FormData(form),
+          credentials: "same-origin",
+          headers: {
+            "Accept": "application/json"
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.error || "Preview validation failed."
+        );
+      }
+
+      snapshot.value = data.snapshot;
+
+      showRows(data);
+      error.textContent = "";
+
+      dialog.showModal();
+
+    } catch (exc) {
+      snapshot.value = "";
+      alert(
+        "Bulk update preview failed:\n" +
+        exc.message
+      );
+
+    } finally {
+      busy = false;
+
+      if (apply) {
+        apply.disabled =
+          !document.querySelector(
+            ".bulk-vial-check:checked"
+          );
+      }
+    }
+  }, true);
+
+  cancelButton.addEventListener("click", () => {
+    snapshot.value = "";
+    dialog.close();
+  });
+
+  confirmButton.addEventListener("click", () => {
+    if (!snapshot.value || busy) return;
+
+    busy = true;
+    approved = true;
+    confirmButton.disabled = true;
+
+    // This submits the previewed form directly.
+    // The backend revalidates and checks the
+    // optimistic-concurrency fingerprint.
+
+    HTMLFormElement.prototype.submit.call(form);
+  });
+
+  dialog.addEventListener("close", () => {
+    if (!approved) {
+      snapshot.value = "";
+    }
+  });
 })();
 </script>
 
