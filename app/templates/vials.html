@@ -705,8 +705,9 @@
     dialog.close();
   });
 
+  // TRACKER_BULK_STAGE5
   confirmButton.addEventListener("click", () => {
-    if (!snapshot.value || busy) return;
+    if (!snapshot.value || busy || approved) return;
 
     busy = true;
     approved = true;
