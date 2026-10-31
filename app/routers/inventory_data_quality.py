@@ -451,3 +451,67 @@ def inventory_data_quality_csv(
             'attachment; filename="inventory-data-quality.csv"'
         },
     )
+
+
+# TRACKER_RELEASE_257_264
+
+@router.get("/inventory-review/{compound_id}")
+def inventory_compound_review(
+    request: Request,
+    compound_id: int,
+    db: Session = Depends(get_db),
+):
+    """Read-only review of affected vials for one compound."""
+    from fastapi import HTTPException
+
+    if compound_id <= 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Compound not found",
+        )
+
+    from ..models import Compound
+
+    compound = db.get(Compound, compound_id)
+
+    if compound is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Compound not found",
+        )
+
+    vials = list(
+        db.scalars(
+            select(Vial)
+            .where(Vial.compound_id == compound_id)
+            .order_by(Vial.id)
+        ).all()
+    )
+
+    views = vial_views(db, vials)
+
+    rows = classify_vials(vials, views)
+
+    groups = compound_issue_groups(rows)
+
+    expired = [
+        row for row in rows
+        if row["issue"] == "expired"
+    ]
+
+    undated = [
+        row for row in rows
+        if row["issue"] == "undated"
+    ]
+
+    return render(
+        request,
+        "inventory_compound_review.html",
+        compound=compound,
+        compound_id=compound_id,
+        rows=rows,
+        groups=groups,
+        expired=expired,
+        undated=undated,
+        totals=issue_summary(rows),
+    )

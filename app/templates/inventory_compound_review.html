@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}
+Compound Inventory Review
+{% endblock %}
+
+{% block content %}
+
+<!-- TRACKER_RELEASE_257_264 -->
+
+<section style="max-width:1500px">
+
+<h1>Inventory review: {{ compound.name }}</h1>
+
+<p class="muted">
+Read-only review of this compound's active vials
+excluded from the FEFO simulation because their
+expiration information is missing or already past.
+</p>
+
+<p>
+<a href="/inventory-data-quality">
+← Inventory Data Quality
+</a>
+·
+<a href="/planning-priorities?compound={{ compound.name|urlencode }}">
+Planning Priorities
+</a>
+·
+<a href="/fefo-forecast">
+FEFO Forecast
+</a>
+</p>
+
+<div class="card" style="padding:1rem">
+
+<h2>Review summary</h2>
+
+<div style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+gap:1rem;
+">
+
+<div>
+<strong>Affected vials</strong>
+<div style="font-size:1.6rem">
+{{ totals.total }}
+</div>
+</div>
+
+<div>
+<strong>Already expired</strong>
+<div style="font-size:1.6rem">
+{{ totals.expired }}
+</div>
+</div>
+
+<div>
+<strong>Missing dates</strong>
+<div style="font-size:1.6rem">
+{{ totals.undated }}
+</div>
+</div>
+
+</div>
+
+</div>
+
+<div class="card"
+     style="padding:1rem;margin-top:1rem">
+
+<h2>Affected quantities by unit</h2>
+
+<div style="overflow-x:auto">
+
+<table>
+<thead>
+<tr>
+<th>Unit</th>
+<th>Expired quantity</th>
+<th>Undated quantity</th>
+<th>Total affected</th>
+<th>Oldest expiration</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for group in groups %}
+
+<tr>
+<td>{{ group.unit }}</td>
+
+<td>
+{{ "%.4f"|format(group.expired_quantity) }}
+{{ group.unit }}
+</td>
+
+<td>
+{{ "%.4f"|format(group.undated_quantity) }}
+{{ group.unit }}
+</td>
+
+<td>
+<strong>
+{{ "%.4f"|format(group.total_quantity) }}
+{{ group.unit }}
+</strong>
+</td>
+
+<td>
+{{ group.oldest_expiry or "—" }}
+</td>
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="5">
+No affected inventory.
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+
+<p class="muted">
+mg and IU are displayed separately.
+Quantities from different units are never combined.
+</p>
+
+</div>
+
+{% for section_title, section_rows in [
+    ("Already-expired vials", expired),
+    ("Vials missing expiration dates", undated)
+] %}
+
+<div class="card"
+     style="padding:1rem;margin-top:1rem">
+
+<h2>{{ section_title }}</h2>
+
+<div style="overflow-x:auto">
+
+<table>
+
+<thead>
+<tr>
+<th>Vial</th>
+<th>Lot</th>
+<th>Status</th>
+<th>Remaining</th>
+<th>Expiration</th>
+<th>Beyond-use</th>
+<th>Effective date</th>
+<th>Record</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in section_rows %}
+
+<tr>
+
+<td>
+#{{ row.id }}
+<br>
+<small>{{ row.label }}</small>
+</td>
+
+<td>{{ row.lot or "—" }}</td>
+
+<td>{{ row.status }}</td>
+
+<td>
+{{ "%.4f"|format(row.remaining) }}
+{{ row.unit }}
+</td>
+
+<td>
+{{ row.expires_on or "Not recorded" }}
+</td>
+
+<td>
+{{ row.beyond_use_on or "Not recorded" }}
+</td>
+
+<td>
+{{ row.effective_expiry or "Unknown" }}
+</td>
+
+<td>
+<a href="/vials/{{ row.id }}">
+Review vial →
+</a>
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="8">
+No matching vials.
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+<div class="card"
+     style="padding:1rem;margin-top:1rem">
+
+<h2>About these results</h2>
+
+<p class="muted">
+Only active, open vials with positive remaining
+contents are included. The effective expiration
+date is the earlier of the recorded expiration
+and beyond-use dates.
+</p>
+
+<p class="muted">
+This is a data-quality review, not a recommendation
+to use, discard, or administer inventory.
+No records are modified.
+</p>
+
+</div>
+
+</section>
+
+{% endblock %}
