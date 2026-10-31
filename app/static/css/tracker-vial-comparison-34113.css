@@ -298,3 +298,44 @@
 }
 
 /* END TRACKER_STAGE34_143_148 */
+
+/* TRACKER_STAGE34_149_154
+   Search field semantics and control layout.
+*/
+
+.tracker-vial-search-group {
+  display: flex;
+  flex: 1 1 180px;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .3rem;
+}
+
+.tracker-vial-search-group label {
+  display: block;
+  width: auto;
+  flex: none;
+}
+
+.tracker-vial-search-group input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.tracker-vial-search-group .tracker-vial-clear {
+  margin-top: .15rem;
+}
+
+/* END TRACKER_STAGE34_149_154 */
+
+@media (max-width: 700px) {
+  .tracker-vial-search-group {
+    width: 100%;
+  }
+
+  .tracker-vial-search-group input {
+    min-height: 42px;
+  }
+}

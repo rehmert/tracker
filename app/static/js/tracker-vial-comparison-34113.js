@@ -221,7 +221,13 @@
     );
 
     search?.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && search.value) {
+      if (
+        event.key === 'Escape' &&
+        (
+          search.value ||
+          (filter?.value || 'all') !== 'all'
+        )
+      ) {
         event.preventDefault();
         clearSearchAndFilter();
       }
@@ -240,3 +246,5 @@
 })();
 
 /* TRACKER_STAGE34_143_148 */
+
+/* TRACKER_STAGE34_149_154 */
