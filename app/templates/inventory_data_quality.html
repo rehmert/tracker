@@ -12,6 +12,12 @@ Inventory Data Quality
 
 <h1>Inventory data quality</h1>
 
+<!-- TRACKER_RELEASE_241_248 -->
+<p class="muted">
+Review expired inventory by age, locate missing dates,
+and export the current filtered results.
+</p>
+
 <p class="muted">
 Read-only review of active vials excluded from the
 FEFO forecast because their expiration information
@@ -117,6 +123,47 @@ Already expired
 </select>
 </label>
 
+
+<label>
+<span>Expired at least</span><br>
+<select name="overdue">
+<option value="all"
+{% if overdue == "all" %}selected{% endif %}>
+Any age
+</option>
+<option value="30"
+{% if overdue == "30" %}selected{% endif %}>
+30 days
+</option>
+<option value="90"
+{% if overdue == "90" %}selected{% endif %}>
+90 days
+</option>
+</select>
+</label>
+
+<label>
+<span>Sort by</span><br>
+<select name="sort">
+<option value="oldest"
+{% if sort == "oldest" %}selected{% endif %}>
+Oldest expiration first
+</option>
+<option value="newest"
+{% if sort == "newest" %}selected{% endif %}>
+Newest expiration first
+</option>
+<option value="compound"
+{% if sort == "compound" %}selected{% endif %}>
+Compound name
+</option>
+<option value="remaining"
+{% if sort == "remaining" %}selected{% endif %}>
+Remaining quantity by unit
+</option>
+</select>
+</label>
+
 <button type="submit">
 Apply filters
 </button>
@@ -137,6 +184,17 @@ Reset
 <h2>Affected inventory records</h2>
 
 <p class="muted">
+Showing {{ filtered_count }} of {{ totals.total }}
+records requiring review.
+</p>
+
+<p>
+<a href="/inventory-data-quality.csv?compound={{ compound|urlencode }}&amp;issue={{ issue|urlencode }}&amp;overdue={{ overdue|urlencode }}&amp;sort={{ sort|urlencode }}">
+Export filtered CSV →
+</a>
+</p>
+
+<p class="muted">
 Effective expiration is the earlier of the
 recorded expiration and beyond-use dates.
 A vial with neither date is classified as undated.
@@ -153,6 +211,8 @@ A vial with neither date is classified as undated.
 <th>Lot</th>
 <th>Status</th>
 <th>Issue</th>
+<th>Review priority</th>
+<th>Days overdue</th>
 <th>Remaining</th>
 <th>Expiration</th>
 <th>Beyond-use</th>
@@ -190,6 +250,18 @@ A vial with neither date is classified as undated.
 </td>
 
 <td>
+{{ row.review_priority }}
+</td>
+
+<td>
+{% if row.days_overdue is not none %}
+{{ row.days_overdue }} days
+{% else %}
+—
+{% endif %}
+</td>
+
+<td>
 {{ "%.4f"|format(row.remaining) }}
 {{ row.unit }}
 </td>
@@ -217,7 +289,7 @@ Review vial →
 {% else %}
 
 <tr>
-<td colspan="10">
+<td colspan="12">
 No affected inventory records match these filters.
 </td>
 </tr>
@@ -236,6 +308,14 @@ No affected inventory records match these filters.
      style="padding:1rem;margin-top:1rem">
 
 <h2>Interpretation</h2>
+
+<p class="muted">
+Review priority describes the age or absence of
+recorded expiration information. It is not a
+recommendation to use, discard, or administer a product.
+The overdue filter applies to expired records;
+undated records remain visible when viewing all issues.
+</p>
 
 <p class="muted">
 Only active, open vials with positive remaining
