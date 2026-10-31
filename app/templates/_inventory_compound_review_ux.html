@@ -422,3 +422,228 @@ Reset review filters
     }
 })();
 </script>
+
+
+{# TRACKER_RELEASE_329_336 #}
+
+<style>
+/* Compound review consistency */
+
+.ir-ux-table a[href] {
+    text-underline-offset: 0.15em;
+}
+
+.ir-ux-table a[href]:hover {
+    text-decoration-thickness: 2px;
+}
+
+.ir-ux-table a[href]:focus-visible,
+#ir-ux-toolbar button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+    border-radius: 0.2rem;
+}
+
+.ir-ux-table tbody tr[data-issue="expired"] {
+    border-left: 3px solid #c47a27;
+}
+
+.ir-ux-table tbody tr[data-issue="undated"] {
+    border-left: 3px solid #6b83ae;
+}
+
+.ir-ux-table .ir-ux-badge {
+    vertical-align: middle;
+}
+
+.ir-ux-table .ir-ux-badge[data-ir-kind="expired"] {
+    border-color: #c47a27;
+}
+
+.ir-ux-table .ir-ux-badge[data-ir-kind="undated"] {
+    border-color: #6b83ae;
+}
+
+#ir-issue-explanation {
+    margin: 0.75rem 0;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 0.7rem;
+}
+
+#ir-issue-explanation summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#ir-issue-explanation p {
+    margin: 0.6rem 0;
+}
+
+#ir-issue-explanation a {
+    text-underline-offset: 0.15em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ir-ux-table *,
+    #ir-issue-explanation * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+</style>
+
+<details id="ir-issue-explanation">
+<summary>Understanding inventory issue labels</summary>
+
+<p>
+<strong>Expired:</strong>
+The record has an effective expiration date that
+has already passed.
+</p>
+
+<p>
+<strong>Undated:</strong>
+The record does not have a usable effective
+expiration date for FEFO planning.
+</p>
+
+<p class="muted">
+These classifications help identify records
+requiring review. They do not determine
+whether a compound is suitable for use.
+</p>
+
+<p>
+<a href="/inventory-data-quality">
+Return to Inventory Data Quality →
+</a>
+</p>
+</details>
+
+<script>
+/* TRACKER_RELEASE_329_336_JS */
+(function () {
+    "use strict";
+
+    function normalize(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function classify(row) {
+        const value = normalize(row.dataset.issue);
+
+        if (value === "expired" || value === "undated") {
+            return value;
+        }
+
+        return null;
+    }
+
+    function improveRows() {
+        const rows = document.querySelectorAll(
+            "tr[data-vial-id]"
+        );
+
+        rows.forEach(function (row) {
+            const issue = classify(row);
+
+            if (!issue) {
+                return;
+            }
+
+            const firstCell = row.querySelector("td");
+
+            if (!firstCell) {
+                return;
+            }
+
+            // The previous release already adds badges.
+            // Reuse them instead of adding duplicates.
+
+            const badges = Array.from(
+                firstCell.querySelectorAll(
+                    ".ir-ux-badge"
+                )
+            );
+
+            let badge = badges.find(function (item) {
+                return normalize(item.textContent) === issue;
+            });
+
+            if (!badge && badges.length) {
+                badge = badges[0];
+            }
+
+            if (!badge) {
+                badge = document.createElement("span");
+                badge.className = "ir-ux-badge";
+                firstCell.appendChild(badge);
+            }
+
+            badge.textContent =
+                issue === "expired" ? "Expired" : "Undated";
+
+            badge.dataset.irKind = issue;
+
+            // Remove duplicate issue badges, if any.
+            firstCell.querySelectorAll(
+                ".ir-ux-badge"
+            ).forEach(function (other) {
+                if (other !== badge) {
+                    other.remove();
+                }
+            });
+
+            // Improve identification of vial links
+            // without changing their destinations.
+
+            const vialLink = Array.from(
+                row.querySelectorAll("a[href]")
+            ).find(function (link) {
+                return /vial/i.test(
+                    link.getAttribute("href") || ""
+                );
+            });
+
+            if (vialLink && !vialLink.dataset.irNamed) {
+                const label = (
+                    vialLink.textContent || ""
+                ).trim();
+
+                if (label) {
+                    vialLink.setAttribute(
+                        "aria-label",
+                        "Open vial record: " + label
+                    );
+
+                    vialLink.dataset.irNamed = "1";
+                }
+            }
+        });
+    }
+
+    function initialize() {
+        if (document.documentElement.dataset.ir329Ready) {
+            return;
+        }
+
+        document.documentElement.dataset.ir329Ready = "1";
+
+        improveRows();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
+
