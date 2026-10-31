@@ -1,0 +1,377 @@
+
+{# TRACKER_RELEASE_305_312 #}
+
+<style>
+/* Inventory quality presentation enhancements */
+
+#iq-ux-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 0.75rem;
+}
+
+#iq-ux-toolbar .iq-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#iq-ux-toolbar button {
+    cursor: pointer;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 0.55rem;
+    background: var(--surface, transparent);
+    color: inherit;
+    font: inherit;
+}
+
+#iq-ux-toolbar button[aria-pressed="true"] {
+    font-weight: 700;
+    background: var(--surface-2, #e5e7eb);
+}
+
+.iq-enhanced-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.iq-enhanced-table th {
+    position: relative;
+    white-space: nowrap;
+}
+
+.iq-enhanced-table tbody tr:hover {
+    background: var(--surface-2, rgba(127,127,127,.08));
+}
+
+.iq-enhanced-table td,
+.iq-enhanced-table th {
+    vertical-align: middle;
+}
+
+.iq-table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.iq-compact .iq-enhanced-table td,
+.iq-compact .iq-enhanced-table th {
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+}
+
+.iq-compact .iq-enhanced-table {
+    font-size: 0.92em;
+}
+
+.iq-compact .iq-enhanced-table td {
+    line-height: 1.3;
+}
+
+.iq-secondary-summary {
+    margin: 0.8rem 0;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 0.7rem;
+}
+
+.iq-secondary-summary > summary {
+    cursor: pointer;
+    padding: 0.8rem 1rem;
+    font-weight: 600;
+}
+
+.iq-secondary-summary > .iq-summary-content {
+    padding: 0.25rem 1rem 1rem;
+}
+
+@media (max-width: 700px) {
+    #iq-ux-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    #iq-ux-toolbar .iq-actions {
+        width: 100%;
+    }
+
+    #iq-ux-toolbar button {
+        flex: 1;
+    }
+}
+</style>
+
+<script>
+/* TRACKER_RELEASE_305_312_JS */
+(function () {
+    "use strict";
+
+    const STORAGE_KEY = "tracker.inventoryQuality.compact.v1";
+
+    function normalizedText(element) {
+        return (element.textContent || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+    }
+
+    function findHeading(text) {
+        return Array.from(
+            document.querySelectorAll("h1,h2,h3,h4")
+        ).find(function (heading) {
+            return normalizedText(heading) === text;
+        });
+    }
+
+    function findSection(heading) {
+        if (!heading) return null;
+
+        return heading.closest(
+            "section, article, .card"
+        ) || heading.parentElement;
+    }
+
+    function enhanceTables() {
+        const tables = Array.from(
+            document.querySelectorAll("main table, section table, .card table")
+        );
+
+        // Deduplicate tables selected by overlapping selectors.
+        const unique = Array.from(new Set(tables));
+
+        unique.forEach(function (table) {
+            if (table.classList.contains("iq-enhanced-table")) {
+                return;
+            }
+
+            table.classList.add("iq-enhanced-table");
+
+            const parent = table.parentElement;
+
+            if (
+                parent &&
+                getComputedStyle(parent).overflowX === "auto"
+            ) {
+                parent.classList.add("iq-table-scroll");
+                return;
+            }
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "iq-table-scroll";
+
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
+
+        return unique.length;
+    }
+
+    function enhanceSecondarySummary() {
+        const prioritiesHeading = findHeading(
+            "inventory review priorities"
+        );
+
+        if (!prioritiesHeading) {
+            return false;
+        }
+
+        const candidateHeadings = Array.from(
+            document.querySelectorAll("h2,h3")
+        );
+
+        const secondaryHeading = candidateHeadings.find(
+            function (heading) {
+                const text = normalizedText(heading);
+
+                return (
+                    text.includes("compound") &&
+                    (
+                        text.includes("summary") ||
+                        text.includes("affected")
+                    ) &&
+                    !text.includes("review priorities")
+                );
+            }
+        );
+
+        if (!secondaryHeading) {
+            return false;
+        }
+
+        const section = findSection(secondaryHeading);
+        const prioritySection = findSection(prioritiesHeading);
+
+        if (
+            !section ||
+            section === prioritySection ||
+            section.contains(prioritySection) ||
+            prioritySection.contains(section)
+        ) {
+            return false;
+        }
+
+        // Avoid moving sections that contain forms, interactive
+        // controls, or the new priorities component.
+        if (
+            section.querySelector(
+                "form, input, select, textarea, button"
+            ) ||
+            section.textContent.includes(
+                "Inventory review priorities"
+            )
+        ) {
+            return false;
+        }
+
+        if (section.dataset.iqSecondary === "1") {
+            return true;
+        }
+
+        const details = document.createElement("details");
+        details.className = "iq-secondary-summary";
+
+        const summary = document.createElement("summary");
+        summary.textContent = "Additional compound summary";
+
+        const content = document.createElement("div");
+        content.className = "iq-summary-content";
+
+        section.parentNode.insertBefore(details, section);
+        details.appendChild(summary);
+        details.appendChild(content);
+        content.appendChild(section);
+
+        section.dataset.iqSecondary = "1";
+
+        return true;
+    }
+
+    function initialize() {
+        if (document.getElementById("iq-ux-toolbar")) {
+            return;
+        }
+
+        const heading = findHeading(
+            "inventory review priorities"
+        );
+
+        if (!heading) {
+            return;
+        }
+
+        const priorities = findSection(heading);
+
+        if (!priorities) {
+            return;
+        }
+
+        const toolbar = document.createElement("div");
+        toolbar.id = "iq-ux-toolbar";
+        toolbar.setAttribute(
+            "aria-label",
+            "Inventory dashboard display options"
+        );
+
+        const label = document.createElement("div");
+        label.innerHTML =
+            "<strong>Dashboard display</strong>" +
+            '<div class="muted">' +
+            "Choose the amount of table spacing." +
+            "</div>";
+
+        const actions = document.createElement("div");
+        actions.className = "iq-actions";
+
+        const normalButton = document.createElement("button");
+        normalButton.type = "button";
+        normalButton.textContent = "Comfortable";
+
+        const compactButton = document.createElement("button");
+        compactButton.type = "button";
+        compactButton.textContent = "Compact";
+
+        actions.appendChild(normalButton);
+        actions.appendChild(compactButton);
+
+        toolbar.appendChild(label);
+        toolbar.appendChild(actions);
+
+        priorities.parentNode.insertBefore(
+            toolbar,
+            priorities
+        );
+
+        const root = document.querySelector("main") ||
+                     document.body;
+
+        function setCompact(enabled) {
+            root.classList.toggle("iq-compact", enabled);
+
+            compactButton.setAttribute(
+                "aria-pressed",
+                String(enabled)
+            );
+
+            normalButton.setAttribute(
+                "aria-pressed",
+                String(!enabled)
+            );
+
+            try {
+                localStorage.setItem(
+                    STORAGE_KEY,
+                    enabled ? "1" : "0"
+                );
+            } catch (_) {
+                // Storage may be disabled.
+            }
+        }
+
+        normalButton.addEventListener(
+            "click",
+            function () {
+                setCompact(false);
+            }
+        );
+
+        compactButton.addEventListener(
+            "click",
+            function () {
+                setCompact(true);
+            }
+        );
+
+        let compact = false;
+
+        try {
+            compact = localStorage.getItem(
+                STORAGE_KEY
+            ) === "1";
+        } catch (_) {
+            // Continue with comfortable view.
+        }
+
+        enhanceTables();
+        enhanceSecondarySummary();
+        setCompact(compact);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
