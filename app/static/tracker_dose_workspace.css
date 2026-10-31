@@ -118,3 +118,138 @@
   white-space: normal;
   max-width: 16rem;
 }
+
+/* TRACKER_STAGE34_125_130
+   Dose Workspace responsive and accessibility refinement.
+   CSS-only: preserves existing table and interaction behavior.
+*/
+
+/* Keep wide inventory tables usable on touch devices. */
+#tracker-available-vials {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scroll-padding-inline: 1rem;
+}
+
+#tracker-available-vials:focus-within {
+  outline: 1px solid var(--border, #cbd5e1);
+  outline-offset: 2px;
+  border-radius: .35rem;
+}
+
+/* Make column headings easier to follow while scrolling. */
+#tracker-available-vials thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface, Canvas);
+}
+
+/* Improve keyboard visibility without changing sort behavior. */
+#tracker-available-vials a:focus-visible,
+#tracker-available-vials button:focus-visible,
+#tracker-available-vials input:focus-visible,
+#tracker-available-vials select:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 3px;
+  border-radius: .25rem;
+}
+
+/* Keep long inventory guidance readable. */
+#tracker-available-vials .tracker-recommendation-reason,
+#tracker-available-vials .tracker-vial-badge {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Improve the search and display-limit controls on narrow screens. */
+@media (max-width: 650px) {
+  .tracker-workspace-filter {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: .5rem;
+  }
+
+  .tracker-workspace-filter input,
+  .tracker-workspace-filter select,
+  .tracker-workspace-filter button {
+    width: 100%;
+    max-width: none;
+    min-height: 42px;
+  }
+
+  #tracker-vial-count {
+    padding: .25rem 0;
+  }
+
+  #tracker-available-vials table {
+    min-width: 900px;
+  }
+
+  #tracker-available-vials::after {
+    content: "Swipe horizontally to view additional vial details";
+    display: block;
+    padding: .5rem .25rem;
+    font-size: .78rem;
+    opacity: .7;
+  }
+
+  #tracker-workspace-shortcut {
+    align-items: stretch;
+  }
+
+  #tracker-workspace-shortcut button {
+    min-height: 42px;
+    width: 100%;
+  }
+
+  #tracker-selected-vial .tracker-selection-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+
+  #tracker-selected-vial .tracker-selection-actions a,
+  #tracker-selected-vial .tracker-selection-actions button {
+    flex: 1 1 100%;
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  #tracker-history-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+
+  #tracker-history-controls input {
+    flex: 1 1 100%;
+    min-width: 0;
+    min-height: 42px;
+  }
+
+  #tracker-history-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  #tracker-history-navigation button {
+    min-height: 40px;
+  }
+}
+
+/* Respect users who request reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  #tracker-available-vials {
+    scroll-behavior: auto;
+  }
+}
+
+/* END TRACKER_STAGE34_125_130 */
