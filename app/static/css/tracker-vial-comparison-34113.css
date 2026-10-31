@@ -339,3 +339,48 @@
     min-height: 42px;
   }
 }
+
+
+/* TRACKER_STAGE34_155_160
+   Table scanability and pointer/keyboard row feedback.
+*/
+
+.tracker-vial-table tbody tr > td {
+  transition: background-color .14s ease;
+}
+
+.tracker-vial-table tbody tr:nth-child(even) > td {
+  background: color-mix(
+    in srgb,
+    var(--surface, Canvas) 94%,
+    currentColor 6%
+  );
+}
+
+.tracker-vial-table tbody tr:hover > td,
+.tracker-vial-table tbody tr:focus-within > td {
+  background: color-mix(
+    in srgb,
+    var(--surface, Canvas) 88%,
+    currentColor 12%
+  );
+}
+
+.tracker-vial-table tbody tr:focus-within > td {
+  box-shadow:
+    inset 0 1px 0 var(--accent, currentColor),
+    inset 0 -1px 0 var(--accent, currentColor);
+}
+
+.tracker-vial-table tbody tr:hover .tracker-vial-action,
+.tracker-vial-table tbody tr:focus-within .tracker-vial-action {
+  border-color: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracker-vial-table tbody tr > td {
+    transition: none;
+  }
+}
+
+/* END TRACKER_STAGE34_155_160 */
