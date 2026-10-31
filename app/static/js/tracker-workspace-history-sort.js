@@ -226,6 +226,14 @@
     }
 
     function sort(column) {
+      const resetRequested =
+        table.dataset.trackerHistoryReset === '1';
+
+      if (resetRequested) {
+        activeColumn = null;
+        table.dataset.trackerHistoryReset = '0';
+      }
+
       if (activeColumn === column.index) {
         ascending = !ascending;
       } else {

@@ -112,6 +112,7 @@
       });
 
       button.disabled = true;
+      table.dataset.trackerHistoryReset = '1';
 
       status.firstChild
         ? status.firstChild.textContent =
