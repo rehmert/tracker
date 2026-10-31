@@ -460,6 +460,45 @@
   {% else %}<tr><td colspan="9" class="empty">No vials match. Vials are added from a <a href="/purchases">purchase</a>.</td></tr>{% endfor %}
   </tbody>
 </table></div>
+
+<!-- TRACKER_STAGE_34_38_LIFECYCLE -->
+<section class="card tracker-lifecycle"
+         id="tracker-vial-lifecycle"
+         aria-labelledby="tracker-lifecycle-heading"
+         hidden>
+  <div class="tracker-lifecycle-header">
+    <div>
+      <h2 id="tracker-lifecycle-heading">Vial lifecycle</h2>
+      <p class="note">
+        Review recorded dates and COA coverage for current inventory.
+      </p>
+    </div>
+    <span id="tracker-lifecycle-summary"
+          role="status"></span>
+  </div>
+
+  <div class="tracker-lifecycle-controls">
+    <label class="field">
+      <span>Show</span>
+      <select id="tracker-lifecycle-filter">
+        <option value="attention">Needs review</option>
+        <option value="all">All current vials</option>
+        <option value="sealed">Sealed</option>
+        <option value="in_use">In use</option>
+        <option value="missing_coa">Missing COA</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="tracker-lifecycle-results"></div>
+</section>
+
+<link rel="stylesheet"
+      href="/static/css/tracker-vial-lifecycle.css?v=34.38.1">
+<script src="/static/js/tracker-vial-lifecycle.js?v=34.38.1"
+        defer></script>
+<!-- END_TRACKER_STAGE_34_38_LIFECYCLE -->
+
 <script src="/static/vial_saved_views.js" defer></script>
 <script src="/static/js/tracker-vials-sort.js?v=1" defer></script>
 <script src="/static/js/tracker-vial-attention.js?v=1" defer></script>

@@ -1,0 +1,96 @@
+/* Tracker Stage 34.38.1 */
+
+#tracker-vial-lifecycle {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 14px;
+}
+
+#tracker-vial-lifecycle[hidden] {
+  display: none !important;
+}
+
+.tracker-lifecycle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.tracker-lifecycle-header h2 {
+  margin: 0 0 .35rem;
+  font-size: 1.1rem;
+}
+
+.tracker-lifecycle-header .note {
+  margin: 0;
+}
+
+#tracker-lifecycle-summary {
+  font-size: .8rem;
+  opacity: .75;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-lifecycle-controls {
+  display: flex;
+  gap: .75rem;
+  margin: .85rem 0;
+}
+
+.tracker-lifecycle-controls select {
+  min-width: 175px;
+}
+
+.tracker-lifecycle-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tracker-lifecycle-table th,
+.tracker-lifecycle-table td {
+  padding: .6rem .7rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(
+    --border,
+    rgba(120, 140, 160, .2)
+  );
+}
+
+.tracker-lifecycle-table th {
+  font-size: .77rem;
+  white-space: nowrap;
+}
+
+.tracker-lifecycle-table td {
+  font-size: .81rem;
+}
+
+.tracker-lifecycle-attention {
+  box-shadow: inset 3px 0 0 #d5a04a;
+}
+
+.tracker-lifecycle-issues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tracker-lifecycle-issues li {
+  margin: .15rem 0;
+  font-size: .76rem;
+  font-weight: 600;
+}
+
+.tracker-lifecycle-issues li::before {
+  content: "• ";
+  color: #c88c34;
+}
+
+@media (max-width: 720px) {
+  .tracker-lifecycle-table {
+    min-width: 780px;
+  }
+}
