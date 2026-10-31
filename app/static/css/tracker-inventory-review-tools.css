@@ -1,0 +1,90 @@
+/* Tracker Stages 34.43–34.46 */
+
+.tracker-review-tools {
+  display: flex;
+  align-items: end;
+  gap: .5rem;
+}
+
+.tracker-review-quality {
+  margin: .75rem 0 1rem;
+  padding: .75rem .9rem;
+  border: 1px solid var(
+    --border,
+    rgba(120, 140, 160, .25)
+  );
+  border-radius: 10px;
+}
+
+.tracker-review-quality summary {
+  cursor: pointer;
+  font-size: .86rem;
+  font-weight: 650;
+}
+
+.tracker-review-quality summary:focus-visible {
+  outline: 2px solid var(--accent, #1686df);
+  outline-offset: 3px;
+}
+
+.tracker-review-quality .note {
+  margin: .65rem 0;
+}
+
+.tracker-review-counts {
+  font-size: .8rem;
+  font-weight: 600;
+  margin: .65rem 0;
+}
+
+.tracker-review-quality-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+  margin: .65rem 0;
+}
+
+.tracker-review-quality-controls input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.tracker-review-quality-results {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.tracker-review-quality-results ul {
+  list-style: none;
+  margin: .5rem 0 0;
+  padding: 0;
+}
+
+.tracker-review-quality-results li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .25rem .8rem;
+  padding: .45rem .25rem;
+  border-bottom: 1px solid var(
+    --border,
+    rgba(120, 140, 160, .18)
+  );
+}
+
+.tracker-review-quality-results li small {
+  font-size: .75rem;
+  opacity: .75;
+}
+
+@media (max-width: 700px) {
+  .tracker-review-tools {
+    width: 100%;
+  }
+
+  .tracker-review-quality-results li {
+    flex-direction: column;
+  }
+}
