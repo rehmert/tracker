@@ -21,6 +21,8 @@
   <script src="/static/ux_improvements.js?v=20261030" defer></script>
   <script src="/static/release36_40.js?v=1" defer></script>
   <script src="/static/page_finder.js?v=20261030-204646" defer></script>
+  <link rel="stylesheet" href="/static/tracker_focus.css?v=1">
+  <script src="/static/tracker_focus.js?v=1" defer></script>
   <script src="/static/dose_context.js?v=20261030-210017" defer></script>
   <link rel="stylesheet" href="/static/tool_pages.css?v=release82-88">
   <link rel="stylesheet" href="/static/core_workflow_97_104.css?v=1">
@@ -83,6 +85,7 @@
     <div class="nav-sort-controls"><label for="nav-sort-mode">Menu order</label><select id="nav-sort-mode" aria-label="Navigation order"><option value="default">Default</option><option value="alpha">A–Z</option><option value="custom">Custom</option></select><button type="button" id="nav-edit-toggle" aria-pressed="false" title="Reorder navigation">Reorder</button><button type="button" id="nav-reset" title="Restore default navigation order">Reset</button></div>
     <p class="nav-sort-help" id="nav-sort-help" hidden>Use ↑ and ↓ to reorder links within each category. Changes save in this browser.</p>
           </div>
+          <div class="workspace-nav-order"><strong>Navigation focus</strong><p class="muted">Hide advanced tools from the sidebar without removing their pages or search results.</p><label class="tracker-focus-setting"><input id="tracker-focus-toggle" type="checkbox"> Show essential pages only</label></div>
           <div class="workspace-nav-order"><strong>Sidebar categories</strong><p class="muted">Use the arrows beside category names to change their order, or reset your navigation below.</p><div id="nav-category-preferences"></div><button type="button" id="nav-reset-all">Reset categories, favorites &amp; hidden links</button></div>
           <div class="workspace-nav-order"><strong>Show / hide links</strong><p class="muted">Hidden links remain available through their URLs.</p><div id="nav-visibility-preferences"></div></div>
           <div class="workspace-shortcuts"><strong>Keyboard shortcuts</strong><p><kbd>Ctrl</kbd>+<kbd>K</kbd> Search</p><p><kbd>Alt</kbd>+<kbd>1</kbd> Overview · <kbd>Alt</kbd>+<kbd>2</kbd> Doses · <kbd>Alt</kbd>+<kbd>3</kbd> Vitals</p></div>
