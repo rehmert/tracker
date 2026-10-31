@@ -499,6 +499,61 @@
         defer></script>
 <!-- END_TRACKER_STAGE_34_38_LIFECYCLE -->
 
+
+<!-- TRACKER_STAGE_34_40_42 -->
+<section id="tracker-compound-inventory"
+         class="card tracker-compound-inventory"
+         aria-labelledby="tracker-compound-inventory-title"
+         hidden>
+  <div class="tracker-ci-heading">
+    <div>
+      <h2 id="tracker-compound-inventory-title">
+        Compound inventory summary
+      </h2>
+      <p class="note">
+        Based on displayed sealed and in-use vials.
+        Recorded dates and COA associations are informational.
+      </p>
+    </div>
+    <span id="tracker-ci-count" role="status"></span>
+  </div>
+
+  <div class="tracker-ci-controls">
+    <label class="field">
+      <span>Find compound</span>
+      <input id="tracker-ci-search"
+             type="search"
+             placeholder="Search compounds..."
+             autocomplete="off">
+    </label>
+
+    <label class="field">
+      <span>Sort</span>
+      <select id="tracker-ci-sort">
+        <option value="name">Compound name</option>
+        <option value="review">Most needing review</option>
+        <option value="date">Most date warnings</option>
+        <option value="coa">Most missing COAs</option>
+      </select>
+    </label>
+
+    <button type="button" id="tracker-ci-export">
+      Export CSV
+    </button>
+  </div>
+
+  <div id="tracker-ci-results" class="scroll"></div>
+  <p id="tracker-ci-empty" class="note" hidden>
+    No compounds match the current search.
+  </p>
+</section>
+
+<link rel="stylesheet"
+      href="/static/css/tracker-compound-inventory.css?v=34.42.1">
+<script defer
+        src="/static/js/tracker-compound-inventory.js?v=34.42.1"></script>
+<!-- END TRACKER STAGE 34.40-34.42 -->
+
 <script src="/static/vial_saved_views.js" defer></script>
 <script src="/static/js/tracker-vials-sort.js?v=1" defer></script>
 <script src="/static/js/tracker-vial-attention.js?v=1" defer></script>

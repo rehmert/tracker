@@ -1,0 +1,112 @@
+/* Tracker Stages 34.40–34.42 */
+
+#tracker-compound-inventory {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 14px;
+}
+
+#tracker-compound-inventory[hidden],
+#tracker-ci-results[hidden],
+#tracker-ci-empty[hidden] {
+  display: none !important;
+}
+
+.tracker-ci-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.tracker-ci-heading h2 {
+  margin: 0 0 .3rem;
+  font-size: 1.08rem;
+}
+
+.tracker-ci-heading .note {
+  margin: 0;
+}
+
+#tracker-ci-count {
+  font-size: .8rem;
+  opacity: .75;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-ci-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin: .9rem 0;
+}
+
+.tracker-ci-controls .field {
+  min-width: 170px;
+}
+
+#tracker-ci-search {
+  min-width: 210px;
+}
+
+.tracker-ci-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tracker-ci-table th,
+.tracker-ci-table td {
+  padding: .65rem .7rem;
+  border-bottom: 1px solid var(
+    --border,
+    rgba(120, 140, 160, .22)
+  );
+  text-align: left;
+  vertical-align: top;
+}
+
+.tracker-ci-table th {
+  font-size: .76rem;
+  white-space: nowrap;
+}
+
+.tracker-ci-table td {
+  font-size: .81rem;
+}
+
+.tracker-ci-table td small {
+  display: block;
+  margin-top: .25rem;
+  font-size: .73rem;
+  opacity: .75;
+  line-height: 1.45;
+}
+
+.tracker-ci-attention {
+  box-shadow: inset 3px 0 0 #d6a34c;
+}
+
+.tracker-ci-review {
+  white-space: nowrap;
+}
+
+.tracker-ci-review:focus-visible {
+  outline: 2px solid var(--accent, #1686df);
+  outline-offset: 2px;
+}
+
+@media (max-width: 800px) {
+  .tracker-ci-table {
+    min-width: 760px;
+  }
+
+  #tracker-compound-inventory {
+    padding: .75rem;
+  }
+
+  .tracker-ci-controls .field {
+    flex: 1 1 180px;
+  }
+}
