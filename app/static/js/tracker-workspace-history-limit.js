@@ -238,10 +238,10 @@
     function captureMatches() {
       const query = search.value.trim().toLocaleLowerCase();
 
-      matchingRows = Array.from(tbody.rows).filter(row =>
-        !query ||
-        row.textContent.toLocaleLowerCase().includes(query)
-      );
+      matchingRows = Array.from(tbody.rows).filter(row => {
+        return !query ||
+          row.textContent.toLocaleLowerCase().includes(query);
+      });
     }
 
     function pageSize() {
