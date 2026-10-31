@@ -7,3 +7,41 @@
 #tracker-vial-count{font-size:.9rem;opacity:.8}
 #tracker-available-vials [hidden]{display:none!important}
 @media(max-width:650px){.tracker-workflow-actions a{flex:1 1 100%}}
+
+
+/* Stage 25: read-only vial inventory guidance */
+
+.tracker-vial-recommended {
+  background: color-mix(
+    in srgb,
+    var(--accent, #3b82f6) 7%,
+    transparent
+  );
+}
+
+.tracker-vial-badge {
+  display: inline-block;
+  padding: .2rem .5rem;
+  margin: .15rem .2rem .15rem 0;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: .5rem;
+  font-size: .8rem;
+  white-space: nowrap;
+}
+
+.tracker-vial-badge.recommended,
+.tracker-vial-badge.sufficient {
+  border-color: #16a34a;
+}
+
+.tracker-vial-badge.insufficient {
+  border-color: #dc2626;
+}
+
+.tracker-vial-badge.unknown {
+  border-color: #d97706;
+}
+
+.tracker-vial-recommended td:first-child {
+  border-left: 3px solid #16a34a;
+}

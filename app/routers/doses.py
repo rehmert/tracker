@@ -341,6 +341,86 @@ def dose_workspace(
             ):
                 planned_params["planned_unit"] = planned_unit
 
+    # Stage 25: read-only inventory guidance.
+    #
+    # Compare quantities only when the planned unit
+    # can be converted using Tracker's existing unit
+    # conversion service.
+    #
+    # Never use a guessed conversion.
+
+    vial_guidance = {}
+    recommended_vial_id = None
+
+    planned_value = planned_params.get("planned_amount")
+    planned_unit_value = planned_params.get("planned_unit")
+
+    for vial in available_vials:
+        view = views[vial.id]
+
+        guidance = {
+            "state": "unknown",
+            "label": "Check units",
+            "eligible": False,
+        }
+
+        if planned_value and planned_unit_value:
+            try:
+                required = U.amount_to_vial_base(
+                    float(planned_value),
+                    planned_unit_value,
+                    view.dim,
+                    view.conc_per_ml,
+                )
+
+                if required > 0:
+                    if required <= view.remaining_base + 1e-7:
+                        guidance = {
+                            "state": "sufficient",
+                            "label": "Sufficient",
+                            "eligible": True,
+                        }
+                    else:
+                        guidance = {
+                            "state": "insufficient",
+                            "label": "Insufficient",
+                            "eligible": False,
+                        }
+
+            except (ValueError, TypeError, ArithmeticError):
+                pass
+
+        else:
+            guidance = {
+                "state": "not-planned",
+                "label": "No planned amount",
+                "eligible": view.remaining_base > 0,
+            }
+
+        vial_guidance[vial.id] = guidance
+
+    # Prefer an already-open vial with sufficient
+    # contents, then the oldest vial ID.
+    #
+    # When no planned amount exists, highlight an
+    # inventory candidate without claiming dose
+    # sufficiency.
+
+    candidates = [
+        vial for vial in available_vials
+        if vial_guidance[vial.id]["eligible"]
+    ]
+
+    candidates.sort(
+        key=lambda vial: (
+            0 if vial.status == "in_use" else 1,
+            vial.id,
+        )
+    )
+
+    if candidates:
+        recommended_vial_id = candidates[0].id
+
     return render(
         request,
         "dose_workspace.html",
@@ -350,4 +430,6 @@ def dose_workspace(
         views=views,
         history=history,
         planned_params=planned_params,
+        vial_guidance=vial_guidance,
+        recommended_vial_id=recommended_vial_id,
     )

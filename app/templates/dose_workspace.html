@@ -2,7 +2,7 @@
 {% block title %}Dose Workspace{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=1">
+<link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=2">
 <script src="/static/tracker_dose_workspace.js?v=1" defer></script>
 
 <h1>Dose Workspace</h1>
@@ -98,6 +98,7 @@
           <th>Status</th>
           <th>Concentration</th>
           <th>Remaining</th>
+          <th>Inventory guidance</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -105,7 +106,10 @@
       <tbody>
         {% for vial in vials %}
         {% set view = views[vial.id] %}
-        <tr data-tracker-vial-row>
+        <tr data-tracker-vial-row
+            {% if vial.id == recommended_vial_id %}
+              class="tracker-vial-recommended"
+            {% endif %}>
           <td>{{ vial.compound.name }}</td>
 
           <td>
@@ -124,6 +128,20 @@
 
           <td>
             {{ view.remaining_base|amt(view.dim) }}
+          </td>
+
+          <td>
+            {% set guidance = vial_guidance[vial.id] %}
+
+            {% if vial.id == recommended_vial_id %}
+              <span class="tracker-vial-badge recommended">
+                Suggested inventory vial
+              </span>
+            {% endif %}
+
+            <span class="tracker-vial-badge {{ guidance.state }}">
+              {{ guidance.label }}
+            </span>
           </td>
 
           <td>
