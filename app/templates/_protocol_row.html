@@ -13,6 +13,7 @@
     </select>
     <select class="frequency-preset" aria-label="Quick frequency preset">
       <option value="">Custom frequency</option>
+      <option value="72h" {% if item.freq_period == 'interval' and item.freq_count == 3 %}selected{% endif %}>Every 3 days (72 hours)</option>
       <option value="84h" {% if item.freq_period == 'interval' and item.freq_count == 3.5 %}selected{% endif %}>Every 3.5 days (84 hours)</option>
     </select>
   </div></td>

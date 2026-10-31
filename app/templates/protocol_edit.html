@@ -71,8 +71,9 @@
     if (e.target.matches('.dose-day-check')) syncDays(e.target.closest('tr'));
     if (e.target.matches('.frequency-preset')) {
       const row = e.target.closest('tr');
-      if (e.target.value === '84h') {
-        row.querySelector('[name="freq_count"]').value = '3.5';
+      if (e.target.value === '72h' || e.target.value === '84h') {
+        row.querySelector('[name="freq_count"]').value =
+          e.target.value === '72h' ? '3' : '3.5';
         row.querySelector('[name="freq_period"]').value = 'interval';
         row.querySelectorAll('.dose-day-check').forEach(box => { box.checked = false; });
         syncDays(row);
@@ -82,7 +83,14 @@
     if (e.target.matches('[name="freq_count"], [name="freq_period"]')) {
       const row = e.target.closest('tr');
       const preset = row.querySelector('.frequency-preset');
-      if (preset) preset.value = row.querySelector('[name="freq_period"]').value === 'interval' && Number(row.querySelector('[name="freq_count"]').value) === 3.5 ? '84h' : '';
+      if (preset) {
+        const period = row.querySelector('[name="freq_period"]').value;
+        const count = Number(row.querySelector('[name="freq_count"]').value);
+
+        preset.value = period === 'interval'
+          ? (count === 3 ? '72h' : count === 3.5 ? '84h' : '')
+          : '';
+      }
     }
   });
   form.addEventListener('click', e => {
