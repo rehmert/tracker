@@ -441,3 +441,73 @@
 }
 
 /* END TRACKER_STAGE34_167_172 */
+
+/* TRACKER_STAGE34_173_178
+   Improve comparison table column proportions and action usability.
+   Presentation only; no inventory or dose behavior changes.
+*/
+
+.tracker-vial-table {
+  table-layout: fixed;
+  min-width: 760px;
+}
+
+.tracker-vial-table th:nth-child(1),
+.tracker-vial-table td:nth-child(1) {
+  width: 25%;
+}
+
+.tracker-vial-table th:nth-child(2),
+.tracker-vial-table td:nth-child(2) {
+  width: 16%;
+}
+
+.tracker-vial-table th:nth-child(3),
+.tracker-vial-table td:nth-child(3) {
+  width: 12%;
+}
+
+.tracker-vial-table th:nth-child(4),
+.tracker-vial-table td:nth-child(4) {
+  width: 29%;
+}
+
+.tracker-vial-table th:nth-child(5),
+.tracker-vial-table td:nth-child(5) {
+  width: 18%;
+}
+
+.tracker-vial-table td:nth-child(4) {
+  overflow-wrap: anywhere;
+}
+
+.tracker-vial-table td:nth-child(5) {
+  vertical-align: middle;
+}
+
+.tracker-vial-table .tracker-vial-action {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.tracker-vial-table .tracker-vial-date strong {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .tracker-vial-table {
+    min-width: 760px;
+  }
+
+  .tracker-vial-table td:nth-child(5) {
+    padding-inline: .55rem;
+  }
+}
+
+/* END TRACKER_STAGE34_173_178 */
