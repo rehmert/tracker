@@ -777,62 +777,67 @@
 
 
 <script>
-/* TRACKER_BULK_STAGE8 */
+/* TRACKER_BULK_STAGE9 */
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "tracker.bulkVials.selection.v1";
-  const MAX_SELECTED = 1000;
+  const KEY = "tracker.bulkVials.selection.v1";
+  const LIMIT = 1000;
 
   const form = document.getElementById("bulk-vials");
   const boxes = Array.from(
     document.querySelectorAll(".bulk-vial-check")
   );
+
+  const summary = document.getElementById("bulk7-summary");
   const compoundPicker = document.getElementById("bulk7-compound");
   const statusPicker = document.getElementById("bulk7-status");
-  const summary = document.getElementById("bulk7-summary");
   const selectAll = document.getElementById("bulk-all");
 
-  if (!form || !compoundPicker || !statusPicker || !summary) {
-    return;
-  }
+  if (!form || !summary) return;
 
-  function loadSelection() {
+  const visible = new Map(
+    boxes.map(box => [String(box.value), box])
+  );
+
+  function readStored() {
     try {
-      const saved = JSON.parse(
-        sessionStorage.getItem(STORAGE_KEY) || "{}"
+      const value = JSON.parse(
+        sessionStorage.getItem(KEY) || "{}"
       );
 
-      if (!saved || typeof saved !== "object" ||
-          Array.isArray(saved)) {
+      if (!value || typeof value !== "object" ||
+          Array.isArray(value)) {
         return {};
       }
 
-      return saved;
+      const clean = {};
+
+      for (const [id, record] of Object.entries(value)) {
+        if (!/^[1-9]\d*$/.test(id)) continue;
+        if (!record || typeof record !== "object") continue;
+
+        clean[id] = {
+          id,
+          compound: String(record.compound || ""),
+          label: String(record.label || ""),
+          status: String(record.status || "")
+        };
+
+        if (Object.keys(clean).length >= LIMIT) break;
+      }
+
+      return clean;
     } catch (_) {
       return {};
     }
   }
 
-  let selected = loadSelection();
-
-  function saveSelection() {
-    try {
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(selected)
-      );
-    } catch (error) {
-      console.warn(
-        "Unable to persist bulk vial selection:",
-        error
-      );
-    }
-  }
+  let selected = readStored();
 
   function rowData(box) {
-    const row = box.closest("tr");
-    const cells = row?.querySelectorAll("td");
+    const cells = box.closest("tr")
+      ?.querySelectorAll("td");
 
     return {
       id: String(box.value),
@@ -843,221 +848,31 @@
     };
   }
 
-  function visibleSelection() {
-    return boxes.filter(box => box.checked);
+  function save() {
+    try {
+      sessionStorage.setItem(
+        KEY,
+        JSON.stringify(selected)
+      );
+    } catch (error) {
+      console.warn("Selection storage unavailable", error);
+    }
   }
 
-  function selectedCount() {
+  function count() {
     return Object.keys(selected).length;
   }
 
-  function updateSummary() {
-    const visible = visibleSelection().length;
-    const total = selectedCount();
-
-    summary.textContent =
-      total + " selected across all views (" +
-      visible + " visible in this view).";
-
-    if (selectAll) {
-      selectAll.checked =
-        boxes.length > 0 &&
-        visible === boxes.length;
-
-      selectAll.indeterminate =
-        visible > 0 &&
-        visible < boxes.length;
-    }
-
-    const oldCount = document.getElementById("bulk-count");
-    if (oldCount) {
-      oldCount.textContent = total;
-    }
-
-    const toolbarCount = document.getElementById(
-      "bulk-toolbar-count"
-    );
-    if (toolbarCount) {
-      toolbarCount.textContent = total;
-    }
-  }
-
-  function syncFromVisible() {
-    for (const box of boxes) {
-      const id = String(box.value);
-
-      if (box.checked) {
-        selected[id] = rowData(box);
-      } else {
-        delete selected[id];
-      }
-    }
-
-    saveSelection();
-    updateSummary();
-  }
-
-  function restoreVisible() {
-    for (const box of boxes) {
-      box.checked =
-        Object.prototype.hasOwnProperty.call(
-          selected,
-          String(box.value)
-        );
-    }
-
-    updateSummary();
-  }
-
-  function setVisible(predicate, checked) {
-    const matching = boxes.filter(
-      box => predicate(rowData(box))
-    );
-
-    if (checked) {
-      const additions = matching.filter(
-        box => !selected[String(box.value)]
-      ).length;
-
-      if (selectedCount() + additions > MAX_SELECTED) {
-        alert(
-          "You can select at most " +
-          MAX_SELECTED + " vials."
-        );
-        return;
-      }
-    }
-
-    for (const box of matching) {
-      box.checked = checked;
-    }
-
-    syncFromVisible();
-  }
-
-  const compounds = [
-    ...new Set(
-      boxes.map(box => rowData(box).compound)
-        .filter(Boolean)
-    )
-  ].sort((a, b) => a.localeCompare(b));
-
-  compoundPicker.replaceChildren();
-
-  const allOption = document.createElement("option");
-  allOption.value = "";
-  allOption.textContent = "All compounds";
-  compoundPicker.appendChild(allOption);
-
-  for (const name of compounds) {
-    const option = document.createElement("option");
-    option.value = name;
-    option.textContent = name;
-    compoundPicker.appendChild(option);
-  }
-
-  document.getElementById("bulk7-select")
-    ?.addEventListener("click", () => {
-      const compound = compoundPicker.value;
-      const status = statusPicker.value;
-
-      setVisible(data => {
-        const compoundMatches =
-          !compound || data.compound === compound;
-
-        const normalizedStatus =
-          data.status.toLowerCase()
-            .replaceAll(" ", "_");
-
-        const statusMatches =
-          !status || normalizedStatus === status;
-
-        return compoundMatches && statusMatches;
-      }, true);
-    });
-
-  document.getElementById("bulk7-invert")
-    ?.addEventListener("click", () => {
-      const additions = boxes.filter(
-        box => !box.checked
-      ).length;
-
-      const removals = boxes.filter(
-        box => box.checked
-      ).length;
-
-      if (
-        selectedCount() + additions - removals >
-        MAX_SELECTED
-      ) {
-        alert("Selection exceeds 1,000 vials.");
-        return;
-      }
-
-      for (const box of boxes) {
-        box.checked = !box.checked;
-      }
-
-      syncFromVisible();
-    });
-
-  document.getElementById("bulk7-clear")
-    ?.addEventListener("click", () => {
-      setVisible(() => true, false);
-    });
-
-  // Additional controls.
-  const tools = document.getElementById(
-    "bulk-selection-tools"
-  );
-
-  if (tools) {
-    const actions = tools.querySelector(".inline");
-
-    const clearAll = document.createElement("button");
-    clearAll.type = "button";
-    clearAll.textContent = "Clear all saved selections";
-    clearAll.id = "bulk8-clear-all";
-
-    actions?.appendChild(clearAll);
-
-    clearAll.addEventListener("click", () => {
-      selected = {};
-      saveSelection();
-      restoreVisible();
-    });
-  }
-
-  // Capture checkbox changes, including the existing
-  // select-all controls.
-  boxes.forEach(box => {
-    box.addEventListener("change", () => {
-      syncFromVisible();
-    });
-  });
-
-  if (selectAll) {
-    selectAll.addEventListener("change", () => {
-      // Existing V2 handler updates the boxes first.
-      queueMicrotask(syncFromVisible);
-    });
-  }
-
-  // Include saved IDs from other inventory views when
-  // submitting the existing bulk update form.
-  function attachHiddenSelections() {
+  function synchronizeHiddenInputs() {
     form.querySelectorAll(
       'input[data-bulk8-hidden="1"]'
-    ).forEach(input => input.remove());
-
-    const visibleIds = new Set(
-      boxes.map(box => String(box.value))
-    );
+    ).forEach(node => node.remove());
 
     for (const id of Object.keys(selected)) {
-      if (visibleIds.has(id)) continue;
+      if (visible.has(id)) continue;
 
       const input = document.createElement("input");
+
       input.type = "hidden";
       input.name = "vial_ids";
       input.value = id;
@@ -1067,71 +882,243 @@
     }
   }
 
-  // Attach before Stage 4's preview capture handler.
-  // Stage 4 creates FormData(form) from these inputs.
-  form.addEventListener(
-    "submit",
-    () => {
-      attachHiddenSelections();
-    },
-    true
-  );
-
-  // Export all saved selections, including hidden ones.
-  document.getElementById("bulk7-export")
-    ?.addEventListener("click", event => {
-      event.stopImmediatePropagation();
-
-      const records = Object.values(selected);
-
-      if (!records.length) {
-        alert("Select at least one vial.");
-        return;
-      }
-
-      const escapeCSV = value =>
-        '"' + String(value ?? "")
-          .replaceAll('"', '""') + '"';
-
-      const lines = [
-        ["Vial ID", "Compound", "Label", "Status"]
-          .map(escapeCSV).join(",")
-      ];
-
-      for (const data of records) {
-        lines.push([
-          data.id,
-          data.compound,
-          data.label,
-          data.status
-        ].map(escapeCSV).join(","));
-      }
-
-      const blob = new Blob(
-        ["\uFEFF" + lines.join("\r\n") + "\r\n"],
-        { type: "text/csv;charset=utf-8" }
+  function synchronizeInterface() {
+    for (const box of boxes) {
+      const id = String(box.value);
+      box.checked = Object.prototype.hasOwnProperty.call(
+        selected, id
       );
+    }
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+    const visibleCount = boxes.filter(
+      box => box.checked
+    ).length;
 
-      link.href = url;
-      link.download = "tracker-selected-vials.csv";
+    summary.textContent =
+      count() + " selected across all views; " +
+      visibleCount + " visible.";
 
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+    if (selectAll) {
+      selectAll.checked =
+        boxes.length > 0 &&
+        visibleCount === boxes.length;
 
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      selectAll.indeterminate =
+        visibleCount > 0 &&
+        visibleCount < boxes.length;
+    }
+
+    for (const id of (
+      "bulk-count",
+      "bulk-toolbar-count"
+    )) {
+      const element = document.getElementById(id);
+
+      if (element) {
+        element.textContent = count();
+      }
+    }
+
+    synchronizeHiddenInputs();
+    save();
+  }
+
+  function commitVisibleChanges() {
+    const next = {...selected};
+
+    for (const box of boxes) {
+      const id = String(box.value);
+
+      if (box.checked) {
+        next[id] = rowData(box);
+      } else {
+        delete next[id];
+      }
+    }
+
+    if (Object.keys(next).length > LIMIT) {
+      alert("You can select at most 1,000 vials.");
+      synchronizeInterface();
+      return;
+    }
+
+    selected = next;
+    synchronizeInterface();
+  }
+
+  function selectMatching() {
+    const compound = compoundPicker?.value || "";
+    const status = statusPicker?.value || "";
+
+    for (const box of boxes) {
+      const record = rowData(box);
+
+      const compoundMatches =
+        !compound || record.compound === compound;
+
+      const statusMatches =
+        !status ||
+        record.status.toLowerCase()
+          .replaceAll(" ", "_") === status;
+
+      if (compoundMatches && statusMatches) {
+        box.checked = true;
+      }
+    }
+
+    commitVisibleChanges();
+  }
+
+  function clearVisible() {
+    for (const box of boxes) {
+      box.checked = false;
+    }
+
+    commitVisibleChanges();
+  }
+
+  function invertVisible() {
+    for (const box of boxes) {
+      box.checked = !box.checked;
+    }
+
+    commitVisibleChanges();
+  }
+
+  function clearAll() {
+    selected = {};
+    synchronizeInterface();
+  }
+
+  function populateCompounds() {
+    if (!compoundPicker) return;
+
+    const current = compoundPicker.value;
+
+    const names = [
+      ...new Set(
+        boxes.map(box => rowData(box).compound)
+          .filter(Boolean)
+      )
+    ].sort((a, b) => a.localeCompare(b));
+
+    compoundPicker.replaceChildren();
+
+    const all = new Option("All compounds", "");
+    compoundPicker.appendChild(all);
+
+    for (const name of names) {
+      compoundPicker.appendChild(
+        new Option(name, name)
+      );
+    }
+
+    compoundPicker.value = current;
+  }
+
+  function exportCSV() {
+    const records = Object.values(selected);
+
+    if (!records.length) {
+      alert("Select at least one vial.");
+      return;
+    }
+
+    const escapeCSV = value =>
+      '"' + String(value ?? "")
+        .replaceAll('"', '""') + '"';
+
+    const lines = [
+      ["Vial ID", "Compound", "Label", "Status"]
+        .map(escapeCSV).join(",")
+    ];
+
+    for (const record of records) {
+      lines.push([
+        record.id,
+        record.compound,
+        record.label,
+        record.status
+      ].map(escapeCSV).join(","));
+    }
+
+    const blob = new Blob(
+      ["\uFEFF" + lines.join("\r\n") + "\r\n"],
+      {type: "text/csv;charset=utf-8"}
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "tracker-selected-vials.csv";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // Register capture-phase handlers to prevent older
+  // selection/export handlers from acting on the same click.
+  function captureClick(id, handler) {
+    document.getElementById(id)
+      ?.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        handler();
+      }, true);
+  }
+
+  captureClick("bulk7-select", selectMatching);
+  captureClick("bulk7-invert", invertVisible);
+  captureClick("bulk7-clear", clearVisible);
+  captureClick("bulk7-export", exportCSV);
+
+  captureClick("bulk8-clear-all", clearAll);
+
+  // If Stage 8 already added this button, reuse it.
+  // Otherwise, create it.
+  if (!document.getElementById("bulk8-clear-all")) {
+    const actions = document.querySelector(
+      "#bulk-selection-tools .inline"
+    );
+
+    if (actions) {
+      const button = document.createElement("button");
+
+      button.type = "button";
+      button.id = "bulk8-clear-all";
+      button.textContent = "Clear all saved selections";
+
+      actions.appendChild(button);
+
+      captureClick("bulk8-clear-all", clearAll);
+    }
+  }
+
+  // Checkbox changes are handled once, at capture phase.
+  for (const box of boxes) {
+    box.addEventListener("change", event => {
+      event.stopImmediatePropagation();
+      commitVisibleChanges();
     }, true);
+  }
 
-  // Initial restoration.
-  restoreVisible();
+  if (selectAll) {
+    selectAll.addEventListener("change", () => {
+      queueMicrotask(commitVisibleChanges);
+    });
+  }
 
-  // Ensure hidden selections exist before the first
-  // preview request.
-  attachHiddenSelections();
+  // Refresh hidden selections before Stage 4 preview.
+  form.addEventListener("submit", () => {
+    synchronizeHiddenInputs();
+  }, true);
 
+  populateCompounds();
+  synchronizeInterface();
 })();
 </script>
 
