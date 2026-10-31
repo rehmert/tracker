@@ -2,6 +2,7 @@
 {% block title %}Dose Workspace{% endblock %}
 
 {% block content %}
+<script src="/static/js/tracker-workspace-selection.js?v=1" defer></script>
 <link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=4">
 <script src="/static/tracker_dose_workspace.js?v=3" defer></script>
 <script src="/static/js/tracker-workspace-shortcut.js?v=1" defer></script>
@@ -107,7 +108,70 @@
     <span id="tracker-vial-count" role="status" aria-live="polite"></span>
   </div>
   <p id="tracker-vial-no-matches" class="empty" hidden>No vials match this search. <button type="button" id="tracker-vial-reset">Clear search</button></p>
-  <div class="scroll" id="tracker-available-vials">
+  
+<!-- TRACKER_STAGE34_5_SELECTION -->
+<div id="tracker-selected-vial"
+     class="card"
+     hidden>
+
+  <h3>Selected vial</h3>
+
+  <div class="tracker-selection-grid">
+
+    <div class="tracker-selection-field">
+      <strong>Compound</strong>
+      <span id="tracker-selected-compound"></span>
+    </div>
+
+    <div class="tracker-selection-field">
+      <strong>Vial</strong>
+      <span id="tracker-selected-label"></span>
+    </div>
+
+    <div class="tracker-selection-field">
+      <strong>Concentration</strong>
+      <span id="tracker-selected-concentration"></span>
+    </div>
+
+    <div class="tracker-selection-field">
+      <strong>Remaining</strong>
+      <span id="tracker-selected-remaining"></span>
+    </div>
+
+  </div>
+
+  <div style="margin-top:.8rem">
+    <strong>Inventory guidance</strong>
+    <div id="tracker-selected-guidance"></div>
+  </div>
+
+  <p class="note">
+    Confirm the physical vial, concentration,
+    scheduled amount, and administration details
+    before saving the dose.
+  </p>
+
+  <div class="tracker-selection-actions">
+    <a id="tracker-selected-record"
+       href="#"
+       class="button">
+      Continue to Record Dose →
+    </a>
+
+    <button type="button"
+            id="tracker-selected-clear">
+      Clear selection
+    </button>
+  </div>
+
+  <span id="tracker-selected-status"
+        class="sr-only"
+        role="status"
+        aria-live="polite"></span>
+
+</div>
+<!-- END_TRACKER_STAGE34_5_SELECTION -->
+<div class="scroll" id="tracker-available-vials">
     <table data-tracker-sortable-vials>
       <thead>
         <tr>
