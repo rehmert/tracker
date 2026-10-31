@@ -45,3 +45,32 @@
 .tracker-vial-recommended td:first-child {
   border-left: 3px solid #16a34a;
 }
+
+/* Stage 27: vial date visibility */
+
+#tracker-available-vials th,
+#tracker-available-vials td {
+  vertical-align: middle;
+}
+
+#tracker-available-vials td {
+  white-space: nowrap;
+}
+
+#tracker-available-vials .tracker-vial-badge {
+  white-space: normal;
+}
+
+#tracker-available-vials .note {
+  font-size: .85rem;
+  opacity: .75;
+}
+
+.tracker-vial-recommended {
+  outline: 1px solid
+    color-mix(
+      in srgb,
+      var(--accent, #3b82f6) 25%,
+      transparent
+    );
+}

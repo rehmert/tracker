@@ -409,6 +409,48 @@ def dose_workspace(
         vial_guidance,
     )
 
+    # Stage 27: display recorded vial dates.
+    # Read-only: no inventory or dose records modified.
+
+    from app.vial_recommendation import first_use_date
+
+    vial_date_details = {}
+
+    for vial in available_vials:
+        vial_date_details[vial.id] = {
+            "first_used": first_use_date(vial),
+            "beyond_use": vial.beyond_use_on,
+            "expires": vial.expires_on,
+        }
+
+    recommended_reason = ""
+
+    if recommended_vial_id is not None:
+        recommended_vial = next(
+            (
+                vial for vial in available_vials
+                if vial.id == recommended_vial_id
+            ),
+            None,
+        )
+
+        if recommended_vial is not None:
+            first_used = first_use_date(recommended_vial)
+
+            if recommended_vial.status == "in_use":
+                if first_used is not None:
+                    recommended_reason = (
+                        "In-use vial with recorded first-use date"
+                    )
+                else:
+                    recommended_reason = (
+                        "In-use vial; first-use date not recorded"
+                    )
+            else:
+                recommended_reason = (
+                    "Available sealed inventory candidate"
+                )
+
     return render(
         request,
         "dose_workspace.html",
@@ -421,4 +463,6 @@ def dose_workspace(
         vial_guidance=vial_guidance,
         recommended_vial_id=recommended_vial_id,
         vial_date_warnings=vial_date_warnings,
+        vial_date_details=vial_date_details,
+        recommended_reason=recommended_reason,
     )
