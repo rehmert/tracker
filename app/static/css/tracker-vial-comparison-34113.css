@@ -384,3 +384,24 @@
 }
 
 /* END TRACKER_STAGE34_155_160 */
+
+
+/* TRACKER_STAGE34_161_166
+   Keep key inventory values readable in the comparison table.
+*/
+
+.tracker-vial-table th:nth-child(3),
+.tracker-vial-table td:nth-child(3) {
+  white-space: nowrap;
+}
+
+.tracker-vial-table .tracker-vial-date strong {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-vial-table .tracker-vial-date {
+  line-height: 1.45;
+}
+
+/* END TRACKER_STAGE34_161_166 */
