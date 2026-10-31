@@ -139,3 +139,104 @@
     min-width: 700px;
   }
 }
+
+/* TRACKER_STAGE34_131_136
+   Mobile and keyboard-accessibility refinement.
+   Presentation only; no filtering or selection logic changes.
+*/
+
+.tracker-vial-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scroll-padding-inline: 1rem;
+}
+
+.tracker-vial-table-scroll:focus-within {
+  outline: 1px solid var(--border, #cbd5e1);
+  outline-offset: 2px;
+  border-radius: .35rem;
+}
+
+.tracker-vial-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface, Canvas);
+}
+
+.tracker-vial-comparison a:focus-visible,
+.tracker-vial-comparison button:focus-visible,
+.tracker-vial-comparison input:focus-visible,
+.tracker-vial-comparison select:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 3px;
+  border-radius: .25rem;
+}
+
+.tracker-vial-action {
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+}
+
+.tracker-vial-table td {
+  overflow-wrap: anywhere;
+}
+
+.tracker-vial-warning {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .tracker-vial-comparison {
+    padding: .75rem;
+  }
+
+  .tracker-vial-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .65rem;
+  }
+
+  .tracker-vial-controls label {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tracker-vial-controls input,
+  .tracker-vial-controls select {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .tracker-vial-table {
+    min-width: 700px;
+  }
+
+  .tracker-vial-table-scroll::after {
+    content: "Swipe horizontally to view additional vial details";
+    display: block;
+    padding: .5rem .25rem;
+    font-size: .78rem;
+    opacity: .7;
+  }
+
+  .tracker-vial-action {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracker-vial-table-scroll {
+    scroll-behavior: auto;
+  }
+}
+
+/* END TRACKER_STAGE34_131_136 */
