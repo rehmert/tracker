@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+cd /opt/tracker
+
+PYTHON="/opt/tracker/.venv/bin/python"
+MODE="${1:-quick}"
+
+start=$SECONDS
+
+case "$MODE" in
+
+quick)
+    echo "=== QUICK TESTS ==="
+
+    "$PYTHON" -m compileall -q app
+
+    "$PYTHON" -m pytest \
+        -q tests \
+        -m "quick and not browser" \
+        --tb=short
+    ;;
+
+full)
+    echo "=== FULL BACKEND REGRESSION ==="
+
+    "$PYTHON" -m compileall -q app
+
+    "$PYTHON" -m pytest \
+        -q tests \
+        -m "not browser" \
+        --ignore=tests/browser \
+        --ignore=tests/test_bulk_vial_browser.py \
+        --durations=10 \
+        --tb=short
+    ;;
+
+browser)
+    echo "=== BROWSER REGRESSION ==="
+
+    "$PYTHON" -m pytest \
+        -q tests/test_bulk_vial_browser.py \
+        --tb=short
+    ;;
+
+all)
+    echo "=== COMPLETE REGRESSION ==="
+
+    "$PYTHON" -m compileall -q app
+
+    "$PYTHON" -m pytest \
+        -q tests \
+        --durations=10 \
+        --tb=short
+    ;;
+
+none)
+    echo "=== SYNTAX CHECK ONLY ==="
+
+    "$PYTHON" -m compileall -q app
+    ;;
+
+*)
+    echo "Usage: $0 {quick|full|browser|all|none}"
+    exit 2
+    ;;
+
+esac
+
+echo
+echo "Elapsed: $((SECONDS - start)) seconds"

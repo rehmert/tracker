@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 
 import pytest
+
+pytestmark = pytest.mark.browser
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]

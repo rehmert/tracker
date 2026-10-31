@@ -3,79 +3,78 @@ set -Eeuo pipefail
 
 cd /opt/tracker
 
-PYTHON="/opt/tracker/.venv/bin/python"
+PYTHON=".venv/bin/python"
 MODE="${1:-quick}"
 
-BROWSER_TEST="tests/test_bulk_vial_browser.py"
-
-run_timed() {
-    local start=$SECONDS
-    local result=0
-
-    "$@" || result=$?
-
-    echo
-    echo "Elapsed: $((SECONDS - start)) seconds"
-    return "$result"
-}
+start=$SECONDS
 
 case "$MODE" in
 
-    quick)
-        echo "=== TRACKER QUICK TESTS ==="
+quick)
+    echo "=== QUICK TESTS ==="
 
-        "$PYTHON" -m compileall -q app
+    "$PYTHON" -m compileall -q app
 
-        run_timed "$PYTHON" -m pytest \
-            -q \
-            tests/test_bulk_vial_transactions.py \
-            tests/test_bulk_vial_stage5.py \
-            --tb=short
-        ;;
+    "$PYTHON" -m pytest \
+        -q tests \
+        -m "quick and not browser" \
+        --ignore=tests/browser \
+        --tb=short
+    ;;
 
-    full)
-        echo "=== TRACKER FULL REGRESSION ==="
+full)
+    echo "=== FULL BACKEND REGRESSION ==="
 
-        "$PYTHON" -m compileall -q app
+    "$PYTHON" -m compileall -q app
 
-        run_timed "$PYTHON" -m pytest \
-            -q tests \
-            --ignore="$BROWSER_TEST" \
-            --ignore=tests/browser \
-            --durations=10 \
-            --tb=short
-        ;;
+    "$PYTHON" -m pytest \
+        -q tests \
+        --ignore=tests/browser \
+        --ignore=tests/test_bulk_vial_browser.py \
+        --durations=10 \
+        --tb=short
+    ;;
 
-    browser)
-        echo "=== TRACKER BROWSER TESTS ==="
+browser)
+    echo "=== ISOLATED BROWSER TESTS ==="
 
-        run_timed "$PYTHON" -m pytest \
-            -q "$BROWSER_TEST" \
-            --tb=short
-        ;;
+    "$PYTHON" -m pytest \
+        -q tests/test_bulk_vial_browser.py \
+        --tb=short
+    ;;
 
-    all)
-        echo "=== TRACKER COMPLETE VALIDATION ==="
+all)
+    echo "=== COMPLETE ISOLATED REGRESSION ==="
 
-        "$PYTHON" -m compileall -q app
+    "$PYTHON" -m compileall -q app
 
-        run_timed "$PYTHON" -m pytest \
-            -q tests \
-            --ignore=tests/browser \
-            --durations=10 \
-            --tb=short
-        ;;
+    "$PYTHON" -m pytest \
+        -q tests \
+        --ignore=tests/browser \
+        --durations=10 \
+        --tb=short
+    ;;
 
-    none)
-        echo "=== TRACKER SYNTAX VALIDATION ONLY ==="
+live)
+    echo "=== LIVE TRACKER BROWSER TESTS ==="
 
-        "$PYTHON" -m compileall -q app
-        echo "Pytest skipped by explicit request."
-        ;;
+    "$PYTHON" -m pytest \
+        -q tests/browser \
+        --tb=short
+    ;;
 
-    *)
-        echo "Usage: $0 {quick|full|browser|all|none}"
-        exit 2
-        ;;
+none)
+    echo "=== SYNTAX CHECK ONLY ==="
+
+    "$PYTHON" -m compileall -q app
+    ;;
+
+*)
+    echo "Usage: $0 {quick|full|browser|all|live|none}"
+    exit 2
+    ;;
 
 esac
+
+echo
+echo "Elapsed: $((SECONDS - start)) seconds"

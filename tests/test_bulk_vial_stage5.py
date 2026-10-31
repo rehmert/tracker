@@ -1,10 +1,13 @@
 
+
 """Regression tests for Tracker bulk vial editing."""
 
 from datetime import date
 from types import SimpleNamespace
 
 import pytest
+
+pytestmark = pytest.mark.quick
 from starlette.datastructures import FormData
 
 from app.routers.vials import (

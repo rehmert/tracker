@@ -1,4 +1,5 @@
 
+
 """Stage 6: isolated SQLite and HTTP bulk-vial integration tests.
 
 Uses a temporary file-backed database and a minimal FastAPI
@@ -13,6 +14,8 @@ from datetime import date
 from urllib.parse import urlencode
 
 import pytest
+
+pytestmark = pytest.mark.quick
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
