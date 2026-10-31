@@ -1395,3 +1395,29 @@
 }
 
 /* END TRACKER_STAGE34_293_298 */
+
+/* TRACKER_STAGE34_299_304
+   Preserve strong keyboard focus cues in forced-colors mode.
+   Presentation only; no selection or dose workflow changes.
+*/
+
+@media (forced-colors: active) {
+  .tracker-vial-table-scroll[tabindex="0"]:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+
+  .tracker-vial-table .tracker-vial-action:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+    border-color: Highlight;
+  }
+
+  .tracker-vial-table tbody tr:focus-within > td:first-child {
+    box-shadow:
+      inset 0 2px 0 Highlight,
+      inset 0 -2px 0 Highlight;
+  }
+}
+
+/* END TRACKER_STAGE34_299_304 */
