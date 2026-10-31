@@ -1239,3 +1239,35 @@
 }
 
 /* END TRACKER_STAGE34_257_262 */
+
+/* TRACKER_STAGE34_263_268
+   Improve mobile control sizing and recommendation badge wrapping.
+   Presentation only; no table data or interaction changes.
+*/
+
+@media (max-width: 480px) {
+  .tracker-vial-controls {
+    align-items: stretch;
+    gap: .65rem;
+  }
+
+  .tracker-vial-controls > label {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .tracker-vial-controls select {
+    box-sizing: border-box;
+    min-height: 42px;
+  }
+
+  .tracker-vial-table td:first-child .tracker-vial-badge {
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+    line-height: 1.35;
+    overflow-wrap: break-word;
+  }
+}
+
+/* END TRACKER_STAGE34_263_268 */
