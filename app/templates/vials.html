@@ -1122,4 +1122,150 @@
 })();
 </script>
 
+
+<script>
+/* TRACKER_BULK_STAGE11_UI */
+(function () {
+  "use strict";
+
+  const form = document.getElementById("bulk-vials");
+  const summary = document.getElementById("bulk7-summary");
+  const KEY = "tracker.bulkVials.selection.v1";
+
+  if (!form || !summary) return;
+
+  function selectedRecords() {
+    try {
+      return JSON.parse(
+        sessionStorage.getItem(KEY) || "{}"
+      );
+    } catch (_) {
+      return {};
+    }
+  }
+
+  async function validateSelection() {
+    const records = selectedRecords();
+    const ids = Object.keys(records);
+
+    if (!ids.length) {
+      alert("Select at least one vial.");
+      return false;
+    }
+
+    const data = new FormData();
+
+    for (const id of ids) {
+      data.append("vial_ids", id);
+    }
+
+    let response;
+
+    try {
+      response = await fetch(
+        "/vials/bulk/validate-selection",
+        {
+          method: "POST",
+          body: data,
+          credentials: "same-origin",
+        }
+      );
+    } catch (_) {
+      alert("Unable to validate vial selection.");
+      return false;
+    }
+
+    if (!response.ok) {
+      alert("Selection validation failed.");
+      return false;
+    }
+
+    const result = await response.json();
+
+    if (!result.ok) {
+      alert(result.error || "Invalid selection.");
+      return false;
+    }
+
+    if (result.missing.length) {
+      const remove = confirm(
+        result.missing.length +
+        " selected vial(s) no longer exist. " +
+        "Remove them from your selection?"
+      );
+
+      if (!remove) return false;
+
+      for (const id of result.missing) {
+        delete records[String(id)];
+      }
+    }
+
+    let changed = 0;
+
+    for (const current of result.current) {
+      const previous = records[current.id];
+
+      if (!previous) continue;
+
+      if (
+        previous.compound !== current.compound ||
+        previous.label !== current.label ||
+        previous.status !== current.status
+      ) {
+        changed++;
+      }
+
+      records[current.id] = current;
+    }
+
+    sessionStorage.setItem(
+      KEY,
+      JSON.stringify(records)
+    );
+
+    if (changed || result.missing.length) {
+      summary.textContent =
+        "Selection refreshed: " +
+        changed + " changed, " +
+        result.missing.length + " removed.";
+
+      // Refresh checkboxes and hidden inputs on the
+      // next page render before submitting updates.
+      alert(
+        "Selection metadata has been refreshed. " +
+        "Please review your selection and submit again."
+      );
+
+      location.reload();
+      return false;
+    }
+
+    return true;
+  }
+
+  // Run validation before the existing Stage 4 preview.
+  // Note: asynchronous work cannot block other capture
+  // listeners simply by calling preventDefault().
+  // Stage 11 uses a dedicated validation button rather
+  // than interfering with Stage 4's submit handler.
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.id = "bulk11-validate";
+  button.textContent = "Validate saved selection";
+
+  const tools = document.querySelector(
+    "#bulk-selection-tools .inline"
+  );
+
+  tools?.appendChild(button);
+
+  button.addEventListener(
+    "click",
+    validateSelection
+  );
+})();
+</script>
+
 {% endblock %}

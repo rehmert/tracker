@@ -271,6 +271,73 @@ async def bulk_preview_vials(
         )
 
 
+
+# TRACKER_BULK_STAGE11
+@router.post("/vials/bulk/validate-selection")
+async def validate_bulk_selection(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Read-only validation of browser-persisted vial selections."""
+    form = await request.form()
+
+    try:
+        ids = sorted({
+            int(value)
+            for value in form.getlist("vial_ids")
+        })
+    except (ValueError, TypeError):
+        return {
+            "ok": False,
+            "error": "Invalid vial selection.",
+        }
+
+    if not ids:
+        return {
+            "ok": False,
+            "error": "Select at least one vial.",
+        }
+
+    if len(ids) > 1000:
+        return {
+            "ok": False,
+            "error": "Select at most 1,000 vials.",
+        }
+
+    rows = list(db.scalars(
+        select(Vial).where(Vial.id.in_(ids))
+    ))
+
+    found = {vial.id: vial for vial in rows}
+
+    missing = [
+        vial_id for vial_id in ids
+        if vial_id not in found
+    ]
+
+    current = []
+
+    for vial_id in ids:
+        vial = found.get(vial_id)
+        if vial is None:
+            continue
+
+        current.append({
+            "id": str(vial.id),
+            "compound": vial.compound.name,
+            "label": vial.label or "",
+            "status": vial.status,
+        })
+
+    return {
+        "ok": True,
+        "requested": len(ids),
+        "found": len(current),
+        "missing": missing,
+        "current": current,
+    }
+
+
 @router.post("/vials/bulk")
 async def bulk_update_vials(
     request: Request,
