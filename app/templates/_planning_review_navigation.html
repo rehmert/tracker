@@ -1,0 +1,82 @@
+
+{# TRACKER_RELEASE_281_288 #}
+
+{% set current_path = request.url.path if request is defined else '' %}
+
+<nav class="card"
+     aria-label="Planning and inventory review"
+     style="padding:1rem;margin:1rem 0">
+
+<div style="
+display:flex;
+flex-wrap:wrap;
+align-items:center;
+justify-content:space-between;
+gap:0.75rem;
+">
+
+<div>
+<strong>Planning &amp; inventory review</strong>
+
+<p class="muted" style="margin:0.25rem 0 0">
+Review forecasts, priorities, and inventory
+records from one workflow.
+</p>
+</div>
+
+<div style="
+display:flex;
+flex-wrap:wrap;
+gap:0.5rem;
+align-items:center;
+">
+
+{% set destinations = [
+    ('/planning-hub', 'Planning Hub'),
+    ('/planning-priorities', 'Priorities'),
+    ('/inventory-data-quality', 'Inventory Quality')
+] %}
+
+{% for destination, label in destinations %}
+
+{% set active = current_path == destination %}
+
+<a href="{{ destination }}"
+   {% if active %}aria-current="page"{% endif %}
+   style="
+display:inline-block;
+padding:0.45rem 0.7rem;
+border:1px solid var(--border, #d1d5db);
+border-radius:0.6rem;
+text-decoration:none;
+{% if active %}
+font-weight:700;
+background:var(--surface-2, #e5e7eb);
+{% endif %}
+">
+
+{{ label }}
+
+</a>
+
+{% endfor %}
+
+{% if current_path.startswith('/inventory-review/') %}
+
+<span aria-current="page"
+      style="
+padding:0.45rem 0.7rem;
+border:1px solid var(--border, #d1d5db);
+border-radius:0.6rem;
+font-weight:700;
+">
+Compound Review
+</span>
+
+{% endif %}
+
+</div>
+
+</div>
+
+</nav>
