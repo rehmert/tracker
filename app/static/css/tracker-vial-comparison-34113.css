@@ -405,3 +405,39 @@
 }
 
 /* END TRACKER_STAGE34_161_166 */
+
+
+/* TRACKER_STAGE34_167_172
+   Make vial date warnings easier to distinguish and read.
+*/
+
+.tracker-vial-warning {
+  display: block;
+  width: fit-content;
+  max-width: 22rem;
+  padding: .45rem .6rem;
+  border-radius: .45rem;
+  background: color-mix(
+    in srgb,
+    currentColor 8%,
+    var(--surface, Canvas)
+  );
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.tracker-vial-needs-review .tracker-vial-warning {
+  border-width: 1px;
+  border-style: solid;
+  border-color: currentColor;
+  font-weight: 650;
+}
+
+@media (max-width: 700px) {
+  .tracker-vial-warning {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+}
+
+/* END TRACKER_STAGE34_167_172 */
