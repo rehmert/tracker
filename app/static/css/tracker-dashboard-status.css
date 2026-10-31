@@ -1,0 +1,138 @@
+/*
+ * Tracker Stage 34.32
+ * Compact dashboard status overview.
+ */
+
+.tracker-status-overview {
+  margin: 1rem 0 1.5rem;
+}
+
+.tracker-status-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .7rem;
+}
+
+.tracker-status-heading h2 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.tracker-status-heading .tracker-status-caption {
+  font-size: .78rem;
+  opacity: .7;
+}
+
+.tracker-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.tracker-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  min-width: 0;
+  padding: .95rem 1rem;
+  border: 1px solid var(
+    --tracker-brand-border,
+    rgba(22, 134, 223, .20)
+  );
+  border-radius: 12px;
+  background: var(
+    --tracker-brand-soft,
+    rgba(22, 134, 223, .075)
+  );
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.tracker-status-card:hover {
+  border-color: var(
+    --tracker-brand-blue,
+    #1686df
+  );
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.tracker-status-card:focus-visible {
+  outline: 2px solid var(
+    --tracker-brand-blue,
+    #1686df
+  );
+  outline-offset: 3px;
+}
+
+.tracker-status-label {
+  font-size: .76rem;
+  font-weight: 600;
+  letter-spacing: .015em;
+  opacity: .78;
+}
+
+.tracker-status-value {
+  font-size: clamp(1.35rem, 2vw, 1.85rem);
+  font-weight: 750;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-status-detail {
+  font-size: .74rem;
+  line-height: 1.4;
+  opacity: .72;
+}
+
+.tracker-status-card[data-attention="true"] {
+  border-color: rgba(210, 145, 48, .45);
+  background: rgba(210, 145, 48, .08);
+}
+
+.tracker-status-card[data-attention="true"]
+.tracker-status-value {
+  color: #a76b14;
+}
+
+html[data-theme="dark"]
+.tracker-status-card[data-attention="true"]
+.tracker-status-value,
+html.dark
+.tracker-status-card[data-attention="true"]
+.tracker-status-value {
+  color: #f1bd70;
+}
+
+@media (max-width: 1050px) {
+  .tracker-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 580px) {
+  .tracker-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-status-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracker-status-card {
+    transition: none;
+  }
+
+  .tracker-status-card:hover {
+    transform: none;
+  }
+}
