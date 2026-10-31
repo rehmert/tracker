@@ -14,6 +14,26 @@
   <a href="/labs">Review lab results →</a>
 </nav>
 <header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div><div class="hero-actions"><a class="dashboard-action" href="/doses">+ Record dose</a><a class="dashboard-action secondary" href="/vitals">+ Add vitals</a></div></header>
+
+{% set tracker_attention_due =
+    today_summary.today
+    | selectattr('status', 'equalto', 'due')
+    | list %}
+
+{% set tracker_attention_low =
+    forecasts
+    | selectattr('low')
+    | list %}
+
+{% set tracker_attention_coa = no_coa | int %}
+
+{% set tracker_attention_starts =
+    today_summary.missing_start %}
+
+{% if tracker_attention_due
+   or tracker_attention_low
+   or tracker_attention_coa > 0
+   or tracker_attention_starts %}
 <section
   class="tracker-attention dashboard-panel"
   data-dashboard-panel="8"
@@ -173,6 +193,8 @@
   </p>
 
 </section>
+{% endif %}
+
 
 
 <section
