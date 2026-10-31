@@ -1083,3 +1083,62 @@
 }
 
 /* END TRACKER_STAGE34_233_238 */
+
+/* TRACKER_STAGE34_239_244
+   Reduce table bulk on narrow mobile screens while preserving
+   horizontal scrolling and comfortable touch targets.
+   Presentation only; no filtering or selection logic changes.
+*/
+
+@media (max-width: 480px) {
+  .tracker-vial-comparison {
+    padding: .6rem;
+    border-radius: 10px;
+  }
+
+  .tracker-vial-comparison-header {
+    gap: .5rem;
+    margin-bottom: .75rem;
+  }
+
+  .tracker-vial-comparison-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .tracker-vial-count {
+    padding: .25rem .5rem;
+    font-size: .75rem;
+  }
+
+  .tracker-vial-table {
+    min-width: 680px;
+    font-size: .82rem;
+  }
+
+  .tracker-vial-table th,
+  .tracker-vial-table td {
+    padding: .6rem;
+  }
+
+  .tracker-vial-table .tracker-vial-muted,
+  .tracker-vial-table .tracker-vial-date {
+    font-size: .75rem;
+  }
+
+  .tracker-vial-table .tracker-vial-action {
+    min-height: 40px;
+    padding: .4rem .5rem;
+  }
+
+  .tracker-vial-warning {
+    padding: .35rem .45rem;
+    font-size: .75rem;
+  }
+
+  .tracker-vial-disclaimer {
+    margin-top: .75rem;
+    font-size: .75rem;
+  }
+}
+
+/* END TRACKER_STAGE34_239_244 */
