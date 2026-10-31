@@ -1,10 +1,88 @@
 {% extends "base.html" %}
 {% block title %}Dose log{% endblock %}
 {% block content %}
+
+<link rel="stylesheet"
+      href="/static/css/tracker-dose-handoff-34101.css">
+<script src="/static/js/tracker-dose-handoff-34101.js"
+        defer></script>
+
 <h1>Dose log</h1><p class="note">Record an actual administration here. To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Recording a dose may update inventory; merely opening a planned entry does not.</p><nav class="ux-shortcuts"><a href="/calendar">Log from calendar</a><a href="#dose-history">View history ↓</a></nav>
 
 <section>
   <h2>Add an entry</h2>
+
+<div id="tracker-planned-handoff"
+     class="tracker-planned-handoff"
+     aria-labelledby="tracker-planned-heading"
+     hidden>
+
+  <div class="tracker-planned-header">
+    <div>
+      <h3 id="tracker-planned-heading">
+        Planned administration
+      </h3>
+      <p class="note">
+        Schedule reference only — nothing has been recorded.
+      </p>
+    </div>
+    <span class="tracker-planned-badge">
+      Not recorded
+    </span>
+  </div>
+
+  <dl class="tracker-planned-details">
+    <div>
+      <dt>Compound</dt>
+      <dd data-planned-compound>—</dd>
+    </div>
+    <div>
+      <dt>Scheduled date</dt>
+      <dd data-planned-date>—</dd>
+    </div>
+    <div>
+      <dt>Scheduled time</dt>
+      <dd data-planned-time>—</dd>
+    </div>
+    <div>
+      <dt>Planned amount</dt>
+      <dd data-planned-amount>—</dd>
+    </div>
+  </dl>
+
+  <p data-planned-vial-warning
+     class="tracker-planned-warning"
+     role="status"
+     hidden></p>
+
+  <p data-planned-discrepancy
+     class="tracker-planned-discrepancy"
+     role="status"
+     hidden></p>
+
+  <p class="note">
+    Confirm the actual vial, date, time, amount,
+    injection site, and supplies before recording.
+  </p>
+
+  <nav class="tracker-planned-navigation"
+       aria-label="Planned dose navigation">
+    <a href="/calendar"
+       data-planned-calendar>
+      ← Return to calendar
+    </a>
+
+    <a href="/dose-workspace"
+       data-planned-workspace>
+      Review available vials
+    </a>
+
+    <a href="/doses">
+      Start a new entry
+    </a>
+  </nav>
+</div>
+
 {% if planned_amount is not none %}<p class="note">Pre-filled from a planned protocol dose. Confirm the vial, amount, time and actual administration before saving. Opening this page does not log a dose.</p>{% endif %}
   {% if vials %}
   <form class="grid" hx-post="/doses" hx-target="#dose-body" hx-swap="innerHTML"
