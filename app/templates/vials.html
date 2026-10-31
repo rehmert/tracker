@@ -135,6 +135,53 @@
 
 </details>
 </form>
+
+<!-- TRACKER_BULK_STAGE7 -->
+<div class="card" id="bulk-selection-tools">
+  <div class="inline" style="gap:.65rem;flex-wrap:wrap;align-items:end">
+
+    <label class="field">
+      <span>Compound</span>
+      <select id="bulk7-compound">
+        <option value="">All compounds</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Status</span>
+      <select id="bulk7-status">
+        <option value="">All statuses</option>
+        <option value="sealed">Sealed</option>
+        <option value="in_use">In use</option>
+        <option value="finished">Finished</option>
+        <option value="discarded">Discarded</option>
+      </select>
+    </label>
+
+    <button type="button" id="bulk7-select">
+      Select matching
+    </button>
+
+    <button type="button" id="bulk7-invert">
+      Invert selection
+    </button>
+
+    <button type="button" id="bulk7-clear">
+      Clear selection
+    </button>
+
+    <button type="button" id="bulk7-export">
+      Export selected CSV
+    </button>
+
+  </div>
+
+  <p class="note" id="bulk7-summary"
+     role="status" aria-live="polite">
+    0 vials selected.
+  </p>
+</div>
+
 <div class="scroll"><table>
   <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all visible vials"></th><th>Compound</th><th>Vial</th><th>Remaining</th><th class="n">Amount left</th><th class="n">Landed cost</th><th>Cost</th><th>COA</th><th>Status</th></tr></thead>
   <tbody>
@@ -725,6 +772,186 @@
       snapshot.value = "";
     }
   });
+})();
+</script>
+
+
+<script>
+/* TRACKER_BULK_STAGE7_JS */
+(function () {
+  "use strict";
+
+  const boxes = Array.from(
+    document.querySelectorAll(".bulk-vial-check")
+  );
+
+  const compoundPicker = document.getElementById(
+    "bulk7-compound"
+  );
+
+  const statusPicker = document.getElementById(
+    "bulk7-status"
+  );
+
+  const summary = document.getElementById(
+    "bulk7-summary"
+  );
+
+  if (!compoundPicker || !statusPicker || !summary) {
+    return;
+  }
+
+  function rowData(box) {
+    const row = box.closest("tr");
+    const cells = row?.querySelectorAll("td");
+
+    return {
+      id: box.value,
+      compound: cells?.[1]?.textContent.trim() || "",
+      label: cells?.[2]?.querySelector("a")
+        ?.textContent.trim() || "",
+      status: cells?.[8]?.textContent.trim() || ""
+    };
+  }
+
+  const compounds = [
+    ...new Set(
+      boxes.map(box => rowData(box).compound)
+        .filter(Boolean)
+    )
+  ].sort((a, b) => a.localeCompare(b));
+
+  for (const name of compounds) {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    compoundPicker.appendChild(option);
+  }
+
+  function updateSummary() {
+    const selected = boxes.filter(box => box.checked);
+
+    summary.textContent =
+      selected.length + " of " +
+      boxes.length + " displayed vials selected.";
+  }
+
+  function notifySelectionChanged() {
+    // Trigger the existing V2 selection counter
+    // and Stage 4 preview invalidation.
+    for (const box of boxes) {
+      box.dispatchEvent(
+        new Event("change", { bubbles: true })
+      );
+    }
+
+    updateSummary();
+  }
+
+  document.getElementById("bulk7-select")
+    .addEventListener("click", () => {
+      const compound = compoundPicker.value;
+      const status = statusPicker.value;
+
+      for (const box of boxes) {
+        const data = rowData(box);
+
+        const matchesCompound =
+          !compound || data.compound === compound;
+
+        const matchesStatus =
+          !status ||
+          data.status.toLowerCase().replaceAll(" ", "_")
+            === status;
+
+        if (matchesCompound && matchesStatus) {
+          box.checked = true;
+        }
+      }
+
+      notifySelectionChanged();
+    });
+
+  document.getElementById("bulk7-invert")
+    .addEventListener("click", () => {
+      for (const box of boxes) {
+        box.checked = !box.checked;
+      }
+
+      notifySelectionChanged();
+    });
+
+  document.getElementById("bulk7-clear")
+    .addEventListener("click", () => {
+      for (const box of boxes) {
+        box.checked = false;
+      }
+
+      notifySelectionChanged();
+    });
+
+  document.getElementById("bulk7-export")
+    .addEventListener("click", () => {
+      const selected = boxes.filter(
+        box => box.checked
+      );
+
+      if (!selected.length) {
+        alert("Select at least one vial to export.");
+        return;
+      }
+
+      const escapeCSV = value =>
+        '"' + String(value ?? "")
+          .replaceAll('"', '""') + '"';
+
+      const lines = [
+        ["Vial ID", "Compound", "Label", "Status"]
+          .map(escapeCSV).join(",")
+      ];
+
+      for (const box of selected) {
+        const data = rowData(box);
+
+        lines.push([
+          data.id,
+          data.compound,
+          data.label,
+          data.status
+        ].map(escapeCSV).join(","));
+      }
+
+      const blob = new Blob(
+        ["\uFEFF" + lines.join("\r\n") + "\r\n"],
+        { type: "text/csv;charset=utf-8" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "tracker-selected-vials.csv";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+
+  boxes.forEach(box => {
+    box.addEventListener("change", updateSummary);
+  });
+
+  const selectAll = document.getElementById("bulk-all");
+
+  if (selectAll) {
+    selectAll.addEventListener("change", () => {
+      setTimeout(updateSummary, 0);
+    });
+  }
+
+  updateSummary();
 })();
 </script>
 
