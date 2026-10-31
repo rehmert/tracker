@@ -564,3 +564,56 @@
 }
 
 /* END TRACKER_STAGE34_179_184 */
+
+/* TRACKER_STAGE34_185_190
+   Improve inventory badge readability and label wrapping.
+   Presentation only; no inventory or recommendation logic changes.
+*/
+
+.tracker-vial-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+.tracker-vial-muted {
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.tracker-vial-table tbody td:first-child > strong {
+  display: block;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.tracker-vial-table tbody td:nth-child(2) > strong {
+  display: block;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.tracker-vial-table .tracker-vial-badge + .tracker-vial-badge {
+  margin-left: .2rem;
+}
+
+.tracker-vial-table .tracker-vial-date + .tracker-vial-date {
+  margin-top: .45rem;
+}
+
+@media (max-width: 700px) {
+  .tracker-vial-table .tracker-vial-badge {
+    padding: .3rem .5rem;
+    font-size: .76rem;
+  }
+
+  .tracker-vial-table .tracker-vial-muted {
+    font-size: .76rem;
+  }
+}
+
+/* END TRACKER_STAGE34_185_190 */
