@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#1686df"/>
+      <stop offset="1" stop-color="#082a61"/>
+    </linearGradient>
+    <linearGradient id="glass" x2="1" y2="1">
+      <stop stop-color="#d8f4ff"/>
+      <stop offset=".55" stop-color="#76b8e8"/>
+      <stop offset="1" stop-color="#2674b9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="128" height="128" rx="27" fill="url(#bg)"/>
+
+  <!-- Calendar -->
+  <rect x="65" y="30" width="47" height="58"
+        rx="7" fill="#f5faff"/>
+  <path d="M65 37 Q65 30 72 30 H105 Q112 30 112 37
+           V46 H65Z" fill="#2398f0"/>
+  <path d="M77 26 V37 M100 26 V37"
+        stroke="#fff" stroke-width="5"
+        stroke-linecap="round"/>
+  <path d="M79 65 L87 73 L101 56"
+        fill="none" stroke="#1474ce"
+        stroke-width="6" stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Vial -->
+  <rect x="25" y="23" width="48" height="17"
+        rx="5" fill="#dbe9f5"/>
+  <rect x="28" y="17" width="42" height="10"
+        rx="4" fill="#47b5ff"/>
+  <path d="M31 39 H67 V47 Q74 51 74 59 V99
+           Q74 108 65 108 H33
+           Q24 108 24 99 V59
+           Q24 51 31 47Z"
+        fill="url(#glass)"
+        stroke="#c9edff" stroke-width="2"/>
+  <rect x="27" y="63" width="44" height="32"
+        rx="4" fill="#f4fbff"/>
+
+  <!-- Tracking chart -->
+  <rect x="35" y="78" width="7" height="11"
+        rx="2" fill="#38a9f1"/>
+  <rect x="46" y="72" width="7" height="17"
+        rx="2" fill="#1687dc"/>
+  <rect x="57" y="67" width="7" height="22"
+        rx="2" fill="#0754a6"/>
+</svg>
