@@ -33,3 +33,65 @@ a.active > .tracker-nav-icon {
     transition: opacity 140ms ease;
   }
 }
+
+/*
+ * Stage 34.37
+ * Consistent icon slots across all sidebar links.
+ */
+
+#app-sidebar .nav-links a.tracker-nav-iconized
+  > .tracker-nav-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  min-width: 1.1rem;
+  flex: 0 0 1.1rem;
+  margin-right: .55rem;
+  vertical-align: middle;
+  color: var(--tracker-brand-blue, #1686df);
+  opacity: .82;
+}
+
+/*
+ * The SVG replaces the original decorative dot.
+ * Keeping both would create inconsistent indentation.
+ */
+#app-sidebar .nav-links a.tracker-nav-iconized
+  > .nav-dot {
+  display: none !important;
+}
+
+/*
+ * Apply the same spacing to regular links and favorites.
+ * The existing sidebar layout continues to control
+ * the width of the navigation and favorite buttons.
+ */
+#app-sidebar .nav-links a.tracker-nav-iconized {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+#app-sidebar .nav-links a.tracker-nav-iconized
+  > .nav-text {
+  min-width: 0;
+}
+
+/* Active links receive a slightly stronger icon. */
+#app-sidebar .nav-links a[aria-current="page"]
+  > .tracker-nav-icon {
+  opacity: 1;
+  color: var(--tracker-brand-deep, #0754a6);
+}
+
+/* Preserve consistent icon geometry in dark mode. */
+html[data-theme="dark"]
+  #app-sidebar .nav-links
+  .tracker-nav-icon {
+  opacity: .9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app-sidebar .tracker-nav-icon {
+    transition: none;
+  }
+}
