@@ -289,3 +289,267 @@ Copy review link
     }
 })();
 </script>
+
+
+{# TRACKER_RELEASE_345_352 #}
+
+<style>
+/* TRACKER_RELEASE_345_352_CSS */
+
+/*
+ * Use consistent spacing and borders for the
+ * existing review navigation and result toolbar.
+ */
+
+#ir-nav-ux,
+#ir-ux-toolbar {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin-block: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+}
+
+#ir-nav-ux {
+    gap: 0.75rem;
+}
+
+#ir-nav-ux-links,
+#ir-nav-ux-actions {
+    min-width: 0;
+    gap: 0.6rem;
+}
+
+#ir-nav-ux-actions {
+    margin-left: auto;
+}
+
+#ir-nav-ux-status {
+    min-height: 1.25em;
+    overflow-wrap: anywhere;
+}
+
+#ir-nav-active-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 999px;
+    font-size: 0.85em;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+#ir-nav-active-filter[data-issue="expired"] {
+    border-color: #c47a27;
+}
+
+#ir-nav-active-filter[data-issue="undated"] {
+    border-color: #6b83ae;
+}
+
+#ir-nav-active-filter[hidden] {
+    display: none !important;
+}
+
+#ir-nav-ux [hidden],
+#ir-ux-toolbar [hidden] {
+    display: none !important;
+}
+
+#ir-nav-copy {
+    white-space: nowrap;
+}
+
+#ir-nav-copy:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+#ir-nav-ux a:focus-visible,
+#ir-nav-ux button:focus-visible,
+#ir-ux-toolbar button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+    #ir-nav-ux {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #ir-nav-ux-links,
+    #ir-nav-ux-actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+
+    #ir-nav-ux-actions {
+        flex-wrap: wrap;
+    }
+
+    #ir-nav-active-filter {
+        white-space: normal;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #ir-nav-ux *,
+    #ir-ux-toolbar * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+</style>
+
+<script>
+/* TRACKER_RELEASE_345_352_JS */
+(function () {
+    "use strict";
+
+    function normalize(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function issueFromSelection(select) {
+        if (!select) {
+            return null;
+        }
+
+        const option = select.options[
+            select.selectedIndex
+        ];
+
+        if (!option) {
+            return null;
+        }
+
+        const value = normalize(option.value);
+        const label = normalize(option.textContent);
+
+        if (
+            value === "expired" ||
+            label.includes("expired")
+        ) {
+            return "expired";
+        }
+
+        if (
+            value === "undated" ||
+            label.includes("undated")
+        ) {
+            return "undated";
+        }
+
+        return "all";
+    }
+
+    function initialize() {
+        const nav = document.getElementById(
+            "ir-nav-ux"
+        );
+
+        const actions = document.getElementById(
+            "ir-nav-ux-actions"
+        );
+
+        const issueSelect = document.getElementById(
+            "ir-issue"
+        );
+
+        if (!nav || !actions || !issueSelect) {
+            return;
+        }
+
+        if (nav.dataset.consolidated345 === "1") {
+            return;
+        }
+
+        nav.dataset.consolidated345 = "1";
+
+        /*
+         * Add one small filter indicator to the
+         * existing navigation rather than adding
+         * another toolbar.
+         */
+
+        const indicator = document.createElement(
+            "span"
+        );
+
+        indicator.id = "ir-nav-active-filter";
+        indicator.setAttribute("role", "status");
+        indicator.setAttribute("aria-live", "polite");
+        indicator.hidden = true;
+
+        actions.insertBefore(
+            indicator,
+            actions.firstChild
+        );
+
+        function refresh() {
+            const issue = issueFromSelection(
+                issueSelect
+            );
+
+            if (issue === "expired") {
+                indicator.textContent =
+                    "Reviewing: Expired";
+                indicator.dataset.issue = "expired";
+                indicator.hidden = false;
+            } else if (issue === "undated") {
+                indicator.textContent =
+                    "Reviewing: Undated";
+                indicator.dataset.issue = "undated";
+                indicator.hidden = false;
+            } else {
+                indicator.textContent = "";
+                indicator.dataset.issue = "all";
+                indicator.hidden = true;
+            }
+        }
+
+        /*
+         * Existing issue-filter logic remains
+         * responsible for displaying records.
+         */
+
+        issueSelect.addEventListener(
+            "change",
+            refresh
+        );
+
+        /*
+         * On browser history navigation, allow
+         * existing handlers to restore the filter
+         * before refreshing the indicator.
+         */
+
+        window.addEventListener(
+            "popstate",
+            function () {
+                window.requestAnimationFrame(refresh);
+            }
+        );
+
+        refresh();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
+
