@@ -1347,3 +1347,28 @@
 }
 
 /* END TRACKER_STAGE34_281_286 */
+
+/* TRACKER_STAGE34_287_292
+   Keep sticky identity cells readable in forced-colors mode.
+   Override later mobile sticky-cell backgrounds with system colors.
+   Presentation only; no inventory or dose workflow changes.
+*/
+
+@media (forced-colors: active) {
+  .tracker-vial-table tbody tr:nth-child(even) > td:first-child,
+  .tracker-vial-table tbody tr:hover > td:first-child,
+  .tracker-vial-table tbody tr:focus-within > td:first-child {
+    background: Canvas;
+    color: CanvasText;
+    border-inline-end: 1px solid CanvasText;
+    forced-color-adjust: auto;
+  }
+
+  .tracker-vial-table tbody tr:focus-within > td:first-child {
+    box-shadow:
+      inset 0 1px 0 Highlight,
+      inset 0 -1px 0 Highlight;
+  }
+}
+
+/* END TRACKER_STAGE34_287_292 */
