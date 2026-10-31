@@ -240,3 +240,27 @@
 }
 
 /* END TRACKER_STAGE34_131_136 */
+
+/* TRACKER_STAGE34_137_142
+   Keyboard navigation and accessible table identification.
+*/
+
+.tracker-vial-table-scroll[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: 3px;
+  border-radius: .35rem;
+}
+
+.tracker-vial-table caption.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* END TRACKER_STAGE34_137_142 */
