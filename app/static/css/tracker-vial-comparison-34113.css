@@ -948,3 +948,89 @@
 }
 
 /* END TRACKER_STAGE34_221_226 */
+
+/* TRACKER_STAGE34_227_232
+   Make the vial comparison useful in printed and PDF views.
+   Presentation only; no inventory or dose workflow changes.
+*/
+
+@media print {
+  .tracker-vial-comparison {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+    color: #000;
+    background: #fff;
+    break-inside: auto;
+  }
+
+  .tracker-vial-controls,
+  .tracker-vial-table-scroll::after,
+  .tracker-vial-action,
+  .tracker-vial-clear {
+    display: none !important;
+  }
+
+  .tracker-vial-table-scroll {
+    max-width: none;
+    overflow: visible !important;
+    padding: 0;
+    border: 0;
+  }
+
+  .tracker-vial-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: auto;
+    font-size: 8.5pt;
+    border-collapse: collapse;
+  }
+
+  .tracker-vial-table thead {
+    display: table-header-group;
+  }
+
+  .tracker-vial-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .tracker-vial-table th,
+  .tracker-vial-table td {
+    padding: 5pt;
+    border: 1px solid #777;
+    color: #000;
+    background: #fff !important;
+    overflow-wrap: break-word;
+  }
+
+  .tracker-vial-table thead th {
+    border-bottom: 2px solid #000;
+  }
+
+  .tracker-vial-badge,
+  .tracker-vial-count {
+    color: #000;
+    background: #fff;
+    border: 1px solid #555;
+  }
+
+  .tracker-vial-muted,
+  .tracker-vial-disclaimer {
+    color: #222;
+    opacity: 1;
+  }
+
+  .tracker-vial-disclaimer {
+    max-width: none;
+    margin-top: 10pt;
+    padding-top: 6pt;
+    border-top: 1px solid #777;
+    font-size: 8pt;
+  }
+}
+
+/* END TRACKER_STAGE34_227_232 */
