@@ -1,3 +1,4 @@
+{# TRACKER_RELEASE_313_320 #}
 
 {# TRACKER_RELEASE_297_304 #}
 
@@ -126,7 +127,7 @@ All issues
 
 <br>
 
-<a href="/inventory-data-quality?compound={{ group.compound|urlencode }}&amp;issue=expired">
+<a href="/inventory-review/{{ group.compound_id }}?issue=expired">
 Expired ({{ group.expired_vials }})
 </a>
 
@@ -136,7 +137,7 @@ Expired ({{ group.expired_vials }})
 
 <br>
 
-<a href="/inventory-data-quality?compound={{ group.compound|urlencode }}&amp;issue=undated">
+<a href="/inventory-review/{{ group.compound_id }}?issue=undated">
 Undated ({{ group.undated_vials }})
 </a>
 

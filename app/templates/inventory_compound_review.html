@@ -634,4 +634,316 @@ Review planning priorities →
 
 </section>
 
+
+<!-- TRACKER_RELEASE_313_320 -->
+
+<div id="ir-issue-navigation"
+     class="card"
+     aria-label="Compound issue navigation"
+     style="padding:0.8rem;margin:1rem 0"
+     hidden>
+
+<strong>Review issue type</strong>
+
+<div style="
+display:flex;
+flex-wrap:wrap;
+gap:0.6rem;
+margin-top:0.6rem;
+">
+
+<a data-ir-issue-link="all" href="?issue=all">
+All issues
+</a>
+
+<a data-ir-issue-link="expired" href="?issue=expired">
+Expired
+</a>
+
+<a data-ir-issue-link="undated" href="?issue=undated">
+Undated
+</a>
+
+</div>
+
+<p id="ir-active-issue"
+   class="muted"
+   role="status"
+   aria-live="polite"
+   style="margin:0.6rem 0 0">
+</p>
+
+</div>
+
+<script>
+/* TRACKER_RELEASE_313_320_JS */
+(function () {
+    "use strict";
+
+    const VALID = new Set([
+        "all",
+        "expired",
+        "undated"
+    ]);
+
+    const LABELS = {
+        all: "Showing all inventory issues",
+        expired: "Showing expired inventory",
+        undated: "Showing undated inventory"
+    };
+
+    function normalized(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function currentIssue() {
+        const params = new URLSearchParams(
+            window.location.search
+        );
+
+        const requested = normalized(
+            params.get("issue")
+        );
+
+        return VALID.has(requested)
+            ? requested
+            : "all";
+    }
+
+    function findOption(select, issue) {
+        const options = Array.from(select.options);
+
+        if (issue === "all") {
+            return options.find(function (option) {
+                const value = normalized(option.value);
+                const label = normalized(option.textContent);
+
+                return (
+                    value === "all" ||
+                    value === "" ||
+                    label.includes("all")
+                );
+            });
+        }
+
+        return options.find(function (option) {
+            return (
+                normalized(option.value) === issue ||
+                normalized(option.textContent)
+                    .includes(issue)
+            );
+        });
+    }
+
+    function selectedIssue(select) {
+        const option = select.options[
+            select.selectedIndex
+        ];
+
+        if (!option) {
+            return "all";
+        }
+
+        const value = normalized(option.value);
+        const label = normalized(option.textContent);
+
+        for (const issue of ["expired", "undated"]) {
+            if (
+                value === issue ||
+                label.includes(issue)
+            ) {
+                return issue;
+            }
+        }
+
+        return "all";
+    }
+
+    function updateUrl(issue, method) {
+        const url = new URL(window.location.href);
+
+        if (issue === "all") {
+            url.searchParams.delete("issue");
+        } else {
+            url.searchParams.set("issue", issue);
+        }
+
+        window.history[method](
+            { issue: issue },
+            "",
+            url.pathname + url.search + url.hash
+        );
+    }
+
+    function initialize() {
+        const select = document.getElementById(
+            "ir-issue"
+        );
+
+        const navigation = document.getElementById(
+            "ir-issue-navigation"
+        );
+
+        const status = document.getElementById(
+            "ir-active-issue"
+        );
+
+        if (!select || !navigation || !status) {
+            return;
+        }
+
+        // The existing review filter remains responsible
+        // for displaying and hiding inventory rows.
+
+        const available = [
+            "all",
+            "expired",
+            "undated"
+        ].every(function (issue) {
+            return Boolean(findOption(select, issue));
+        });
+
+        if (!available) {
+            // Do not expose navigation that cannot
+            // be applied by the existing filter.
+            return;
+        }
+
+        navigation.hidden = false;
+
+        function refreshNavigation() {
+            const issue = selectedIssue(select);
+
+            status.textContent = LABELS[issue];
+
+            navigation.querySelectorAll(
+                "[data-ir-issue-link]"
+            ).forEach(function (link) {
+                const target = link.dataset.irIssueLink;
+
+                const url = new URL(
+                    window.location.href
+                );
+
+                if (target === "all") {
+                    url.searchParams.delete("issue");
+                } else {
+                    url.searchParams.set(
+                        "issue",
+                        target
+                    );
+                }
+
+                link.href = (
+                    url.pathname +
+                    url.search +
+                    url.hash
+                );
+
+                if (target === issue) {
+                    link.setAttribute(
+                        "aria-current",
+                        "page"
+                    );
+                    link.style.fontWeight = "700";
+                } else {
+                    link.removeAttribute(
+                        "aria-current"
+                    );
+                    link.style.fontWeight = "";
+                }
+            });
+        }
+
+        function applyIssue(issue) {
+            const option = findOption(
+                select,
+                issue
+            );
+
+            if (!option) {
+                return;
+            }
+
+            if (select.value !== option.value) {
+                select.value = option.value;
+
+                select.dispatchEvent(
+                    new Event("change", {
+                        bubbles: true
+                    })
+                );
+            }
+
+            refreshNavigation();
+        }
+
+        // Apply the URL filter on initial page load.
+        applyIssue(currentIssue());
+
+        // Keep the URL synchronized with the
+        // existing filter dropdown.
+        select.addEventListener(
+            "change",
+            function () {
+                const issue = selectedIssue(select);
+
+                if (issue !== currentIssue()) {
+                    updateUrl(issue, "replaceState");
+                }
+
+                refreshNavigation();
+            }
+        );
+
+        // Issue navigation changes the filter
+        // without requiring a page reload.
+        navigation.addEventListener(
+            "click",
+            function (event) {
+                const link = event.target.closest(
+                    "[data-ir-issue-link]"
+                );
+
+                if (!link) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const issue = link.dataset.irIssueLink;
+
+                if (!VALID.has(issue)) {
+                    return;
+                }
+
+                updateUrl(issue, "pushState");
+                applyIssue(issue);
+            }
+        );
+
+        // Restore the correct filter when the
+        // browser's Back/Forward buttons are used.
+        window.addEventListener(
+            "popstate",
+            function () {
+                applyIssue(currentIssue());
+            }
+        );
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
+
 {% endblock %}
