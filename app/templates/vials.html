@@ -184,6 +184,205 @@
   </p>
 </div>
 
+
+<!-- STAGE34_VIAL_QUICK_FIND -->
+<style>
+#tracker-vial-find-panel {
+  display:flex;
+  align-items:end;
+  flex-wrap:wrap;
+  gap:.75rem;
+  margin:.75rem 0;
+  padding:.8rem 1rem;
+}
+#tracker-vial-find-panel .field {
+  flex:1 1 18rem;
+}
+#tracker-vial-find-panel input {
+  width:100%;
+}
+#tracker-vial-find-panel .find-count {
+  font-size:.9rem;
+  white-space:nowrap;
+}
+#tracker-vials-sortable tr.tracker-find-match > td {
+  background:rgba(59,130,246,.09);
+}
+#tracker-vials-sortable tr.tracker-find-current > td {
+  background:rgba(59,130,246,.20);
+}
+#tracker-vials-sortable tr.tracker-find-current {
+  outline:2px solid var(--accent,#2563eb);
+  outline-offset:-2px;
+}
+</style>
+
+<div class="card" id="tracker-vial-find-panel">
+  <label class="field">
+    <span>Quick find in displayed inventory</span>
+    <input
+      id="tracker-vial-quick-find"
+      type="search"
+      placeholder="Compound, vial, lot, status..."
+      autocomplete="off"
+      aria-controls="tracker-vials-sortable">
+  </label>
+
+  <span id="tracker-vial-find-count"
+        class="find-count"
+        role="status"
+        aria-live="polite">
+    Enter text to highlight matching vials.
+  </span>
+
+  <button type="button"
+          id="tracker-vial-find-next"
+          disabled>
+    Next match
+  </button>
+
+  <button type="button"
+          id="tracker-vial-find-clear">
+    Clear
+  </button>
+</div>
+
+<script>
+/* STAGE34_VIAL_QUICK_FIND_JS */
+(function () {
+  "use strict";
+
+  function initialize() {
+    const input = document.getElementById(
+      "tracker-vial-quick-find"
+    );
+    const table = document.getElementById(
+      "tracker-vials-sortable"
+    );
+    const count = document.getElementById(
+      "tracker-vial-find-count"
+    );
+    const next = document.getElementById(
+      "tracker-vial-find-next"
+    );
+    const clear = document.getElementById(
+      "tracker-vial-find-clear"
+    );
+
+    if (!input || !table || !count || !next || !clear) {
+      return;
+    }
+
+    let matches = [];
+    let current = -1;
+
+    function resetHighlights() {
+      table.querySelectorAll("tbody tr").forEach(row => {
+        row.classList.remove(
+          "tracker-find-match",
+          "tracker-find-current"
+        );
+      });
+    }
+
+    function update() {
+      resetHighlights();
+      matches = [];
+      current = -1;
+
+      const query = input.value.trim().toLocaleLowerCase();
+
+      if (!query) {
+        count.textContent =
+          "Enter text to highlight matching vials.";
+        next.disabled = true;
+        return;
+      }
+
+      table.querySelectorAll("tbody tr").forEach(row => {
+        const checkbox = row.querySelector(
+          "input.bulk-vial-check"
+        );
+
+        if (!checkbox) return;
+
+        const cells = Array.from(row.querySelectorAll("td"));
+        const searchable = cells.slice(1).map(
+          cell => cell.textContent
+        ).join(" ").toLocaleLowerCase();
+
+        if (searchable.includes(query)) {
+          row.classList.add("tracker-find-match");
+          matches.push(row);
+        }
+      });
+
+      count.textContent =
+        matches.length.toLocaleString() +
+        (matches.length === 1
+          ? " matching vial"
+          : " matching vials");
+
+      next.disabled = matches.length === 0;
+    }
+
+    function nextMatch() {
+      if (!matches.length) return;
+
+      if (current >= 0) {
+        matches[current].classList.remove(
+          "tracker-find-current"
+        );
+      }
+
+      current = (current + 1) % matches.length;
+
+      const row = matches[current];
+
+      row.classList.add("tracker-find-current");
+      row.scrollIntoView({
+        behavior: "auto",
+        block: "center"
+      });
+
+      count.textContent =
+        "Match " + (current + 1) +
+        " of " + matches.length;
+    }
+
+    input.addEventListener("input", update);
+
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        nextMatch();
+      }
+    });
+
+    next.addEventListener("click", nextMatch);
+
+    clear.addEventListener("click", () => {
+      input.value = "";
+      update();
+      input.focus();
+    });
+
+    update();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialize,
+      {once:true}
+    );
+  } else {
+    initialize();
+  }
+})();
+</script>
+<!-- END_STAGE34_VIAL_QUICK_FIND -->
+
 <div class="scroll"><table id="tracker-vials-sortable">
   <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all visible vials"></th><th data-vial-sort="compound" aria-sort="none"><button type="button" class="vial-sort-button">Compound</button></th><th data-vial-sort="vial" aria-sort="none"><button type="button" class="vial-sort-button">Vial</button></th><th data-vial-sort="remaining" aria-sort="none"><button type="button" class="vial-sort-button">Remaining</button></th><th class="n" data-vial-sort="amount" aria-sort="none"><button type="button" class="vial-sort-button">Amount left</button></th><th class="n" data-vial-sort="landed" aria-sort="none"><button type="button" class="vial-sort-button">Landed cost</button></th><th data-vial-sort="cost" aria-sort="none"><button type="button" class="vial-sort-button">Cost</button></th><th data-vial-sort="coa" aria-sort="none"><button type="button" class="vial-sort-button">COA</button></th><th data-vial-sort="status" aria-sort="none"><button type="button" class="vial-sort-button">Status</button></th></tr></thead>
   <tbody>
