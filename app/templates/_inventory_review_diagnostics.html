@@ -1,0 +1,327 @@
+
+{# TRACKER_RELEASE_361_368 #}
+
+<script>
+/* TRACKER_RELEASE_361_368_JS */
+(function () {
+    "use strict";
+
+    const PREFIX = "[Tracker Review Diagnostics]";
+
+    function audit() {
+        const findings = [];
+        const checks = [];
+
+        function check(name, passed, detail) {
+            checks.push({
+                name: name,
+                passed: passed,
+                detail: detail || ""
+            });
+
+            if (!passed) {
+                findings.push({
+                    category: name,
+                    detail: detail || "Check failed"
+                });
+            }
+        }
+
+        // 361: Verify required review controls.
+
+        const requiredControls = [
+            "ir-search",
+            "ir-issue",
+            "ir-sort",
+            "ir-export"
+        ];
+
+        requiredControls.forEach(function (id) {
+            check(
+                "Required control: " + id,
+                Boolean(document.getElementById(id)),
+                "Expected review control is missing."
+            );
+        });
+
+        // 362: Identify duplicate IDs.
+
+        const counts = new Map();
+
+        document.querySelectorAll("[id]").forEach(
+            function (element) {
+                const id = element.id;
+
+                counts.set(
+                    id,
+                    (counts.get(id) || 0) + 1
+                );
+            }
+        );
+
+        counts.forEach(function (count, id) {
+            if (count > 1) {
+                findings.push({
+                    category: "Duplicate element ID",
+                    detail: id + " appears " + count + " times"
+                });
+            }
+        });
+
+        // Check that expected enhancement components
+        // are not duplicated.
+
+        const components = [
+            "ir-ux-toolbar",
+            "ir-nav-ux",
+            "ir-issue-navigation",
+            "ir-issue-explanation",
+            "ir-nav-active-filter"
+        ];
+
+        components.forEach(function (id) {
+            const count = document.querySelectorAll(
+                '[id="' + id + '"]'
+            ).length;
+
+            check(
+                "Component uniqueness: " + id,
+                count <= 1,
+                "Found " + count + " instances."
+            );
+        });
+
+        // 363: Compare the selected issue with
+        // the current URL parameter.
+
+        const issue = document.getElementById(
+            "ir-issue"
+        );
+
+        const params = new URLSearchParams(
+            window.location.search
+        );
+
+        const urlIssue = (
+            params.get("issue") || "all"
+        ).toLowerCase();
+
+        let selectedIssue = "all";
+
+        if (issue) {
+            const option = issue.options[
+                issue.selectedIndex
+            ];
+
+            if (option) {
+                const value = String(
+                    option.value || ""
+                ).toLowerCase();
+
+                const label = String(
+                    option.textContent || ""
+                ).toLowerCase();
+
+                if (
+                    value === "expired" ||
+                    label.includes("expired")
+                ) {
+                    selectedIssue = "expired";
+                } else if (
+                    value === "undated" ||
+                    label.includes("undated")
+                ) {
+                    selectedIssue = "undated";
+                }
+            }
+        }
+
+        check(
+            "Issue filter / URL synchronization",
+            !issue ||
+                !["all", "expired", "undated"].includes(urlIssue) ||
+                urlIssue === selectedIssue,
+            "URL issue=" + urlIssue +
+                ", selected issue=" + selectedIssue
+        );
+
+        // 364: Compare displayed rows with
+        // the results counter.
+
+        const rows = Array.from(
+            document.querySelectorAll(
+                "tr[data-vial-id]"
+            )
+        );
+
+        const visibleRows = rows.filter(
+            function (row) {
+                if (row.hidden || row.closest("[hidden]")) {
+                    return false;
+                }
+
+                const style = window.getComputedStyle(row);
+
+                return (
+                    style.display !== "none" &&
+                    style.visibility !== "hidden"
+                );
+            }
+        );
+
+        const counter = document.getElementById(
+            "ir-ux-count"
+        );
+
+        check(
+            "Results counter exists",
+            Boolean(counter),
+            "Review results counter not found."
+        );
+
+        if (counter && rows.length) {
+            const displayed = (
+                counter.textContent || ""
+            ).trim();
+
+            const expected = visibleRows.length
+                .toLocaleString();
+
+            check(
+                "Results counter synchronization",
+                displayed.startsWith(expected + " of "),
+                "Visible rows=" + expected +
+                    "; counter=" + displayed
+            );
+        }
+
+        // 365: Verify reset control availability.
+
+        const reset = document.getElementById(
+            "ir-ux-reset"
+        );
+
+        check(
+            "Reset filter control",
+            Boolean(reset),
+            "Reset button not found."
+        );
+
+        // 366: Check navigation controls.
+
+        const navigation = document.getElementById(
+            "ir-nav-ux"
+        );
+
+        check(
+            "Review navigation",
+            Boolean(navigation),
+            "Review navigation component not found."
+        );
+
+        const copy = document.getElementById(
+            "ir-nav-copy"
+        );
+
+        check(
+            "Copy review link",
+            Boolean(copy),
+            "Copy-link button not found."
+        );
+
+        // 367: Verify enhancement components.
+
+        const expected = [
+            "ir-ux-toolbar",
+            "ir-nav-ux"
+        ];
+
+        expected.forEach(function (id) {
+            check(
+                "Enhancement component: " + id,
+                Boolean(document.getElementById(id)),
+                "Expected component is missing."
+            );
+        });
+
+        // 368: Produce a structured report.
+
+        return {
+            release: "361-368",
+            timestamp: new Date().toISOString(),
+            pathname: window.location.pathname,
+            checks: checks,
+            findings: findings,
+            summary: {
+                totalChecks: checks.length,
+                failedChecks: checks.filter(
+                    function (item) {
+                        return !item.passed;
+                    }
+                ).length,
+                findings: findings.length,
+                visibleRows: visibleRows.length,
+                totalRows: rows.length
+            }
+        };
+    }
+
+    function initialize() {
+        if (
+            document.documentElement.dataset
+                .trackerReviewDiagnostics
+        ) {
+            return;
+        }
+
+        document.documentElement.dataset
+            .trackerReviewDiagnostics = "1";
+
+        function runAudit() {
+            const report = audit();
+
+            window.trackerReviewDiagnostics = report;
+
+            if (report.findings.length) {
+                console.warn(
+                    PREFIX,
+                    report.summary
+                );
+
+                console.table(report.findings);
+            } else {
+                console.info(
+                    PREFIX,
+                    "No diagnostic findings.",
+                    report.summary
+                );
+            }
+
+            return report;
+        }
+
+        // Expose a manual audit function so
+        // diagnostics can be rerun after filtering.
+
+        window.runTrackerReviewAudit = runAudit;
+
+        // Allow existing UI handlers to initialize
+        // before performing the first audit.
+
+        window.setTimeout(
+            runAudit,
+            250
+        );
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
