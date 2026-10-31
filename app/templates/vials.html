@@ -31,8 +31,72 @@
   <a href="/vials?status={{ key }}{% if compound_id %}&amp;compound_id={{ compound_id }}{% endif %}" {% if status == key %}aria-current="true"{% endif %}>{{ text }}</a>
   {% endfor %}
 </p>
-<form id="bulk-vials" method="post" action="/vials/bulk" onsubmit="return confirm('Apply the selected changes to the checked vials?');">
-<details class="card" open>
+
+<!-- TRACKER_BULK_EDITOR_V2 -->
+<style>
+#bulk-selection-toolbar {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.65rem;
+  padding:.8rem 1rem;
+  margin:1rem 0;
+}
+#bulk-selection-toolbar .bulk-selection-count {
+  font-weight:700;
+  margin-right:auto;
+}
+#bulk-editor-panel {
+  scroll-margin-top:1rem;
+}
+#bulk-editor-panel summary {
+  cursor:pointer;
+}
+#bulk-editor-panel .bulk-field-inactive {
+  opacity:.55;
+}
+#bulk-editor-panel .bulk-field-inactive input,
+#bulk-editor-panel .bulk-field-inactive select[name^="value_"] {
+  pointer-events:none;
+}
+#bulk-selected-preview {
+  max-height:11rem;
+  overflow:auto;
+  padding:.65rem;
+  border:1px solid var(--border,#ccc);
+  border-radius:.5rem;
+  margin:.75rem 0;
+}
+#bulk-selected-preview:empty {
+  display:none;
+}
+#bulk-selection-toolbar button:focus-visible,
+#bulk-editor-panel button:focus-visible {
+  outline:2px solid currentColor;
+  outline-offset:3px;
+}
+@media(max-width:700px) {
+  #bulk-selection-toolbar {
+    align-items:stretch;
+  }
+  #bulk-selection-toolbar .bulk-selection-count {
+    width:100%;
+  }
+}
+</style>
+
+<div class="card" id="bulk-selection-toolbar"
+     aria-label="Bulk vial selection controls">
+  <span class="bulk-selection-count">
+    <span id="bulk-toolbar-count">0</span> vials selected
+  </span>
+  <button type="button" id="bulk-select-all">Select all displayed</button>
+  <button type="button" id="bulk-select-none">Clear selection</button>
+  <button type="button" id="bulk-open-editor" class="primary"
+          disabled>Bulk edit selected</button>
+</div>
+<form id="bulk-vials" method="post" action="/vials/bulk">
+<details class="card" id="bulk-editor-panel">
   <summary><strong>Bulk edit selected vials</strong></summary>
   <p>Select vials below, then choose <strong>Set</strong> or <strong>Clear</strong> only for the fields you want to change. Keep leaves existing values untouched. Changes are recorded in the vial audit history.</p>
   <div class="grid">
@@ -55,7 +119,19 @@
   </label>
   {% endfor %}
   </div>
-  <p><strong><span id="bulk-count">0</span> selected</strong> <button class="primary" type="submit">Apply to selected vials</button></p>
+  
+<div id="bulk-selected-preview" aria-label="Selected vials"></div>
+<p>
+  <strong><span id="bulk-count">0</span> selected</strong>
+  <button class="primary" type="submit" id="bulk-apply" disabled>
+    Preview and apply changes
+  </button>
+</p>
+<p class="note">
+  Only fields set to Set or Clear will be changed.
+  All other values remain unchanged.
+</p>
+
 </details>
 </form>
 <div class="scroll"><table>
@@ -77,20 +153,295 @@
   </tbody>
 </table></div>
 <script src="/static/vial_saved_views.js" defer></script>
+
 <script>
+/* TRACKER_BULK_EDITOR_V2_JS */
 (function () {
-  const boxes = [...document.querySelectorAll('.bulk-vial-check')];
-  const all = document.getElementById('bulk-all');
-  const count = document.getElementById('bulk-count');
-  function refresh() {
-    const checked = boxes.filter(b => b.checked).length;
-    count.textContent = checked;
-    all.checked = boxes.length > 0 && checked === boxes.length;
-    all.indeterminate = checked > 0 && checked < boxes.length;
+  "use strict";
+
+  const form = document.getElementById("bulk-vials");
+  const panel = document.getElementById("bulk-editor-panel");
+  const boxes = Array.from(
+    document.querySelectorAll(".bulk-vial-check")
+  );
+
+  const all = document.getElementById("bulk-all");
+  const count = document.getElementById("bulk-count");
+  const toolbarCount = document.getElementById(
+    "bulk-toolbar-count"
+  );
+  const selectAll = document.getElementById(
+    "bulk-select-all"
+  );
+  const selectNone = document.getElementById(
+    "bulk-select-none"
+  );
+  const openEditor = document.getElementById(
+    "bulk-open-editor"
+  );
+  const apply = document.getElementById("bulk-apply");
+  const selectedPreview = document.getElementById(
+    "bulk-selected-preview"
+  );
+
+  if (!form || !panel || !all) return;
+
+  function selected() {
+    return boxes.filter(box => box.checked);
   }
-  all.addEventListener('change', () => { boxes.forEach(b => b.checked = all.checked); refresh(); });
-  boxes.forEach(b => b.addEventListener('change', refresh));
-  refresh();
+
+  function vialDescription(box) {
+    const row = box.closest("tr");
+
+    if (!row) return "Vial #" + box.value;
+
+    const cells = row.querySelectorAll("td");
+
+    const compound = cells[1]
+      ? cells[1].textContent.trim()
+      : "";
+
+    const vialLink = cells[2]
+      ? cells[2].querySelector("a")
+      : null;
+
+    const label = vialLink
+      ? vialLink.textContent.trim()
+      : "#" + box.value;
+
+    return compound + " — " + label + " (#" + box.value + ")";
+  }
+
+  function refreshSelection() {
+    const current = selected();
+    const total = current.length;
+
+    count.textContent = total.toLocaleString();
+    toolbarCount.textContent = total.toLocaleString();
+
+    all.checked = boxes.length > 0 &&
+      total === boxes.length;
+
+    all.indeterminate = total > 0 &&
+      total < boxes.length;
+
+    openEditor.disabled = total === 0;
+    apply.disabled = total === 0;
+
+    selectedPreview.replaceChildren();
+
+    if (total) {
+      const title = document.createElement("strong");
+      title.textContent = "Selected vials:";
+      selectedPreview.appendChild(title);
+
+      const list = document.createElement("ul");
+
+      current.forEach(box => {
+        const item = document.createElement("li");
+        item.textContent = vialDescription(box);
+        list.appendChild(item);
+      });
+
+      selectedPreview.appendChild(list);
+    }
+  }
+
+  function setAll(value) {
+    boxes.forEach(box => {
+      box.checked = value;
+    });
+
+    refreshSelection();
+  }
+
+  all.addEventListener("change", () => {
+    setAll(all.checked);
+  });
+
+  selectAll.addEventListener("click", () => {
+    setAll(true);
+  });
+
+  selectNone.addEventListener("click", () => {
+    setAll(false);
+  });
+
+  boxes.forEach(box => {
+    box.addEventListener("change", refreshSelection);
+  });
+
+  openEditor.addEventListener("click", () => {
+    if (!selected().length) return;
+
+    panel.open = true;
+
+    panel.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+    const firstMode = panel.querySelector(
+      'select[name^="mode_"]'
+    );
+
+    if (firstMode) {
+      firstMode.focus({
+        preventScroll: true
+      });
+    }
+  });
+
+  // Visually distinguish fields that will be modified.
+
+  const modes = Array.from(
+    form.querySelectorAll('select[name^="mode_"]')
+  );
+
+  function refreshModes() {
+    modes.forEach(mode => {
+      const field = mode.closest(".field");
+      const key = mode.name.slice(5);
+      const value = form.elements.namedItem("value_" + key);
+
+      if (field) {
+        field.classList.toggle(
+          "bulk-field-inactive",
+          mode.value === "keep"
+        );
+      }
+
+      if (value) {
+        value.disabled = mode.value !== "set";
+      }
+    });
+  }
+
+  modes.forEach(mode => {
+    mode.addEventListener("change", refreshModes);
+  });
+
+  refreshModes();
+
+  function requestedChanges() {
+    const changes = [];
+
+    modes.forEach(mode => {
+      if (mode.value === "keep") return;
+
+      const key = mode.name.slice(5);
+      const field = mode.closest(".field");
+      const title = field
+        ? field.querySelector("span")
+        : null;
+
+      const label = title
+        ? title.textContent.trim()
+        : key;
+
+      if (mode.value === "clear") {
+        changes.push({
+          label: label,
+          action: "Clear"
+        });
+        return;
+      }
+
+      const input = form.elements.namedItem(
+        "value_" + key
+      );
+
+      const value = input
+        ? String(input.value).trim()
+        : "";
+
+      if (!value) {
+        throw new Error(
+          "Enter a value for " + label +
+          ", or choose Clear."
+        );
+      }
+
+      changes.push({
+        label: label,
+        action: "Set",
+        value: value
+      });
+    });
+
+    return changes;
+  }
+
+  form.addEventListener("submit", event => {
+    const current = selected();
+
+    if (!current.length) {
+      event.preventDefault();
+      alert("Select at least one vial.");
+      return;
+    }
+
+    let changes;
+
+    try {
+      changes = requestedChanges();
+    } catch (error) {
+      event.preventDefault();
+      alert(error.message);
+      return;
+    }
+
+    if (!changes.length) {
+      event.preventDefault();
+      alert("Choose at least one field to update.");
+      return;
+    }
+
+    const lines = [
+      "BULK VIAL UPDATE",
+      "",
+      "Selected vials: " + current.length,
+      ""
+    ];
+
+    current.slice(0, 25).forEach(box => {
+      lines.push("• " + vialDescription(box));
+    });
+
+    if (current.length > 25) {
+      lines.push(
+        "• ... and " + (current.length - 25) +
+        " additional vials"
+      );
+    }
+
+    lines.push("", "REQUESTED CHANGES", "");
+
+    changes.forEach(change => {
+      lines.push(
+        "• " + change.label + ": " +
+        (
+          change.action === "Clear"
+            ? "CLEAR"
+            : "SET → " + change.value
+        )
+      );
+    });
+
+    lines.push(
+      "",
+      "Unselected fields will remain unchanged.",
+      "",
+      "Apply these changes?"
+    );
+
+    if (!window.confirm(lines.join("\n"))) {
+      event.preventDefault();
+    }
+  });
+
+  refreshSelection();
 })();
 </script>
+
 {% endblock %}
