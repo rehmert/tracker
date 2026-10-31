@@ -136,6 +136,87 @@ Quantities from different units are never combined.
 
 </div>
 
+
+<!-- TRACKER_RELEASE_265_272 -->
+
+<div class="card"
+     id="inventory-review-controls"
+     style="padding:1rem;margin-top:1rem">
+
+<h2>Review affected vials</h2>
+
+<p class="muted">
+Search, filter, and sort the records below.
+These controls do not modify inventory.
+</p>
+
+<div style="
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:0.8rem;
+align-items:end;
+">
+
+<label>
+<span>Search vial or lot</span>
+<input
+    id="ir-search"
+    type="search"
+    placeholder="Vial ID, label, or lot"
+    autocomplete="off">
+</label>
+
+<label>
+<span>Issue type</span>
+<select id="ir-issue">
+<option value="all">All issues</option>
+<option value="expired">Expired</option>
+<option value="undated">Missing dates</option>
+</select>
+</label>
+
+<label>
+<span>Sort records</span>
+<select id="ir-sort">
+<option value="id">Vial ID</option>
+<option value="remaining-desc">
+Remaining quantity: highest first
+</option>
+<option value="remaining-asc">
+Remaining quantity: lowest first
+</option>
+</select>
+</label>
+
+<div>
+<button type="button" id="ir-clear">
+Clear filters
+</button>
+</div>
+
+<div>
+<button type="button" id="ir-export">
+Export visible CSV
+</button>
+</div>
+
+</div>
+
+<p class="muted"
+   id="ir-count"
+   role="status"
+   aria-live="polite"
+   style="margin-top:1rem">
+Loading review records…
+</p>
+
+<p class="muted">
+Quantity sorting is performed within each issue table.
+Each row retains its original unit.
+</p>
+
+</div>
+
 {% for section_title, section_rows in [
     ("Already-expired vials", expired),
     ("Vials missing expiration dates", undated)
@@ -145,6 +226,8 @@ Quantities from different units are never combined.
      style="padding:1rem;margin-top:1rem">
 
 <h2>{{ section_title }}</h2>
+
+<p class="muted ir-section-count"></p>
 
 <div style="overflow-x:auto">
 
@@ -167,7 +250,17 @@ Quantities from different units are never combined.
 
 {% for row in section_rows %}
 
-<tr>
+<tr class="ir-vial-row"
+    data-vial-id="{{ row.id }}"
+    data-issue="{{ row.issue }}"
+    data-label="{{ row.label or '' }}"
+    data-lot="{{ row.lot or '' }}"
+    data-remaining="{{ row.remaining }}"
+    data-unit="{{ row.unit }}"
+    data-status="{{ row.status }}"
+    data-expiry="{{ row.expires_on or '' }}"
+    data-beyond="{{ row.beyond_use_on or '' }}"
+    data-effective="{{ row.effective_expiry or '' }}">
 
 <td>
 #{{ row.id }}
@@ -244,5 +337,242 @@ No records are modified.
 </div>
 
 </section>
+
+
+<script>
+/* TRACKER_RELEASE_265_272_JS */
+(function () {
+    "use strict";
+
+    const search = document.getElementById("ir-search");
+    const issue = document.getElementById("ir-issue");
+    const sort = document.getElementById("ir-sort");
+    const clear = document.getElementById("ir-clear");
+    const exportButton = document.getElementById("ir-export");
+    const count = document.getElementById("ir-count");
+
+    if (!search || !issue || !sort || !count) {
+        return;
+    }
+
+    const rows = Array.from(
+        document.querySelectorAll(".ir-vial-row")
+    );
+
+    function rowMatches(row) {
+        const query = search.value.trim().toLowerCase();
+        const selectedIssue = issue.value;
+
+        if (
+            selectedIssue !== "all" &&
+            row.dataset.issue !== selectedIssue
+        ) {
+            return false;
+        }
+
+        if (!query) {
+            return true;
+        }
+
+        const searchable = [
+            row.dataset.vialId,
+            row.dataset.label,
+            row.dataset.lot
+        ].join(" ").toLowerCase();
+
+        return searchable.includes(query);
+    }
+
+    function sortRows() {
+        const mode = sort.value;
+
+        const tables = new Set(
+            rows.map(row => row.closest("tbody"))
+        );
+
+        tables.forEach(tbody => {
+            if (!tbody) {
+                return;
+            }
+
+            const sectionRows = rows.filter(
+                row => row.parentElement === tbody
+            );
+
+            sectionRows.sort((a, b) => {
+                if (mode === "remaining-desc" ||
+                    mode === "remaining-asc") {
+
+                    const av = Number(
+                        a.dataset.remaining || 0
+                    );
+
+                    const bv = Number(
+                        b.dataset.remaining || 0
+                    );
+
+                    const difference =
+                        mode === "remaining-desc"
+                            ? bv - av
+                            : av - bv;
+
+                    if (difference !== 0) {
+                        return difference;
+                    }
+                }
+
+                return (
+                    Number(a.dataset.vialId) -
+                    Number(b.dataset.vialId)
+                );
+            });
+
+            sectionRows.forEach(row => {
+                tbody.appendChild(row);
+            });
+        });
+    }
+
+    function refresh() {
+        sortRows();
+
+        let visible = 0;
+
+        rows.forEach(row => {
+            const show = rowMatches(row);
+
+            row.hidden = !show;
+            row.style.display = show ? "" : "none";
+
+            if (show) {
+                visible++;
+            }
+        });
+
+        count.textContent =
+            visible + " of " + rows.length +
+            " affected vials shown";
+
+        document.querySelectorAll(
+            ".ir-section-count"
+        ).forEach(label => {
+            const card = label.closest(".card");
+
+            if (!card) {
+                return;
+            }
+
+            const sectionRows = Array.from(
+                card.querySelectorAll(".ir-vial-row")
+            );
+
+            const matching = sectionRows.filter(
+                row => !row.hidden
+            ).length;
+
+            label.textContent =
+                matching + " of " +
+                sectionRows.length +
+                " records shown";
+        });
+    }
+
+    function csvCell(value) {
+        let text = String(value ?? "");
+
+        // Prevent CSV formula injection when opened
+        // in spreadsheet applications.
+        if (/^[\s]*[=+\-@]/.test(text)) {
+            text = "'" + text;
+        }
+
+        return '"' +
+            text.replace(/"/g, '""') +
+            '"';
+    }
+
+    function exportCsv() {
+        const headers = [
+            "Vial ID",
+            "Issue",
+            "Label",
+            "Lot",
+            "Status",
+            "Remaining",
+            "Unit",
+            "Expiration",
+            "Beyond-use",
+            "Effective expiration"
+        ];
+
+        const output = [
+            headers.map(csvCell).join(",")
+        ];
+
+        const visibleRows = Array.from(
+            document.querySelectorAll(
+                ".ir-vial-row"
+            )
+        ).filter(row => !row.hidden);
+
+        visibleRows.forEach(row => {
+            const d = row.dataset;
+
+            output.push([
+                d.vialId,
+                d.issue,
+                d.label,
+                d.lot,
+                d.status,
+                d.remaining,
+                d.unit,
+                d.expiry,
+                d.beyond,
+                d.effective
+            ].map(csvCell).join(","));
+        });
+
+        const csv = "\ufeff" + output.join("\r\n") + "\r\n";
+
+        const blob = new Blob(
+            [csv],
+            {type: "text/csv;charset=utf-8"}
+        );
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "compound-inventory-review.csv";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 1000);
+    }
+
+    search.addEventListener("input", refresh);
+    issue.addEventListener("change", refresh);
+    sort.addEventListener("change", refresh);
+
+    clear.addEventListener("click", () => {
+        search.value = "";
+        issue.value = "all";
+        sort.value = "id";
+        refresh();
+        search.focus();
+    });
+
+    exportButton.addEventListener(
+        "click",
+        exportCsv
+    );
+
+    refresh();
+})();
+</script>
 
 {% endblock %}
