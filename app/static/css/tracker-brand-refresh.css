@@ -1,0 +1,157 @@
+/*
+ * Tracker Stage 34.28
+ * Subtle application-wide visual identity.
+ *
+ * Additive styling only.
+ * No layout, visibility, or interaction changes.
+ */
+
+:root {
+  --tracker-brand-blue: #1686df;
+  --tracker-brand-deep: #0754a6;
+  --tracker-brand-soft: rgba(22, 134, 223, .075);
+  --tracker-brand-border: rgba(22, 134, 223, .20);
+  --tracker-brand-focus: rgba(22, 134, 223, .22);
+}
+
+/* Interactive focus: consistent, accessible blue accents. */
+
+:where(
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"]
+):focus-visible {
+  outline: 2px solid var(--tracker-brand-blue);
+  outline-offset: 3px;
+}
+
+/* Gentle hover treatment for links. */
+
+:where(main, .content, .page-content) a:not(.btn):hover {
+  text-decoration-color: var(--tracker-brand-blue);
+  text-underline-offset: 3px;
+}
+
+/* Small visual signature for section headings. */
+
+:where(main, .content, .page-content)
+  :where(h2, h3) {
+  text-decoration-color: var(--tracker-brand-border);
+}
+
+/* Refined cards without changing dimensions. */
+
+:where(
+  .card,
+  .panel,
+  .stat-card,
+  .summary-card
+) {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+:where(
+  .card,
+  .panel,
+  .stat-card,
+  .summary-card
+):hover {
+  border-color: var(--tracker-brand-border);
+}
+
+/* Soft blue treatment for selected table rows. */
+
+:where(table) tr[aria-selected="true"] {
+  box-shadow: inset 3px 0 0 var(--tracker-brand-blue);
+}
+
+/* Modern selection color. */
+
+::selection {
+  background: rgba(22, 134, 223, .22);
+}
+
+/* Small blue indicator for the active navigation item. */
+
+:where(
+  nav,
+  .sidebar,
+  .side-nav
+) a[aria-current="page"] {
+  box-shadow: inset 3px 0 0 var(--tracker-brand-blue);
+}
+
+/* Lightly emphasize form controls on hover. */
+
+:where(input, select, textarea):not(:disabled):hover {
+  border-color: var(--tracker-brand-border);
+}
+
+/* Tracker-branded progress indicators. */
+
+:where(progress) {
+  accent-color: var(--tracker-brand-blue);
+}
+
+:where(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--tracker-brand-blue);
+}
+
+/* Dark theme: preserve contrast and avoid bright surfaces. */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tracker-brand-blue: #65b9ff;
+    --tracker-brand-deep: #3399e8;
+    --tracker-brand-soft: rgba(101, 185, 255, .10);
+    --tracker-brand-border: rgba(101, 185, 255, .23);
+    --tracker-brand-focus: rgba(101, 185, 255, .25);
+  }
+}
+
+/* Respect Tracker's explicit theme choice. */
+
+:where(
+  html[data-theme="dark"],
+  body[data-theme="dark"],
+  html.dark,
+  body.dark
+) {
+  --tracker-brand-blue: #65b9ff;
+  --tracker-brand-deep: #3399e8;
+  --tracker-brand-soft: rgba(101, 185, 255, .10);
+  --tracker-brand-border: rgba(101, 185, 255, .23);
+  --tracker-brand-focus: rgba(101, 185, 255, .25);
+}
+
+:where(
+  html[data-theme="light"],
+  body[data-theme="light"],
+  html.light,
+  body.light
+) {
+  --tracker-brand-blue: #1686df;
+  --tracker-brand-deep: #0754a6;
+  --tracker-brand-soft: rgba(22, 134, 223, .075);
+  --tracker-brand-border: rgba(22, 134, 223, .20);
+  --tracker-brand-focus: rgba(22, 134, 223, .22);
+}
+
+/* Respect reduced-motion preferences. */
+
+@media (prefers-reduced-motion: reduce) {
+  :where(
+    .card,
+    .panel,
+    .stat-card,
+    .summary-card
+  ) {
+    transition: none;
+  }
+}
