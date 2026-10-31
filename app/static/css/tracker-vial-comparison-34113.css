@@ -749,3 +749,60 @@
 }
 
 /* END TRACKER_STAGE34_197_202 */
+
+/* TRACKER_STAGE34_203_208
+   Refine comparison panel heading and inventory count presentation.
+   Presentation only; no search, filter, or inventory logic changes.
+*/
+
+.tracker-vial-comparison-header {
+  align-items: center;
+  gap: 1rem;
+}
+
+.tracker-vial-comparison-header > div {
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.tracker-vial-comparison-header h2 {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.tracker-vial-comparison-header .note {
+  margin-top: .35rem;
+  margin-bottom: 0;
+  line-height: 1.45;
+}
+
+.tracker-vial-count {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  box-sizing: border-box;
+  padding: .35rem .75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .tracker-vial-comparison-header {
+    align-items: flex-start;
+    gap: .65rem;
+    margin-bottom: .85rem;
+  }
+
+  .tracker-vial-comparison-header > div {
+    flex-basis: 100%;
+  }
+
+  .tracker-vial-count {
+    min-height: 2.25rem;
+  }
+}
+
+/* END TRACKER_STAGE34_203_208 */
