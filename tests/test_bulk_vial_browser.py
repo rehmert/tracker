@@ -14,6 +14,11 @@ SCRIPT_MARKER = "/* TRACKER_BULK_STAGE9 */"
 
 
 def selection_script():
+    script = ROOT / "app/static/js/tracker-bulk-selection.js"
+
+    if script.exists():
+        return script.read_text()
+
     source = TEMPLATE.read_text()
     start = source.index(SCRIPT_MARKER)
     end = source.index("</script>", start)
@@ -250,12 +255,17 @@ def test_hidden_cross_view_selection(page):
         content=selection_script()
     )
 
-    hidden = page.locator(
-        'input[data-bulk8-hidden="1"]'
-    )
+    submitted_ids = page.evaluate("""() => {
+        const form = document.getElementById("bulk-vials");
+        const data = new FormData(form);
 
-    assert hidden.count() == 1
-    assert hidden.input_value() == "99"
+        return data.getAll("vial_ids");
+    }""")
+
+    assert "99" in submitted_ids, (
+        "Cross-view selection was not included "
+        "in the bulk update form."
+    )
 
 
 def test_export_selected_csv(page):
