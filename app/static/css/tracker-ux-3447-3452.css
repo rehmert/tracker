@@ -1,0 +1,133 @@
+/*
+ * Tracker UX Stages 34.47–34.52
+ * Application-wide progressive enhancements.
+ */
+
+/* Form validation */
+
+.tracker-validation-summary {
+  padding: .85rem 1rem;
+  margin: .75rem 0 1rem;
+  border: 1px solid #d97777;
+  border-radius: 10px;
+  background: rgba(210, 60, 60, .07);
+}
+
+.tracker-validation-summary strong {
+  display: block;
+  margin-bottom: .4rem;
+  font-size: .87rem;
+}
+
+.tracker-validation-summary ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.tracker-validation-summary li {
+  margin: .25rem 0;
+}
+
+.tracker-validation-summary button {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: underline;
+  text-align: left;
+  cursor: pointer;
+  font-size: .82rem;
+}
+
+.tracker-field-invalid {
+  border-color: #cf5757 !important;
+  box-shadow: 0 0 0 2px
+    rgba(207, 87, 87, .12);
+}
+
+/* Submission feedback */
+
+button[data-tracker-pending="true"],
+input[data-tracker-pending="true"] {
+  opacity: .72;
+  cursor: progress;
+}
+
+/* Dismissible messages */
+
+.flash.ok,
+.flash.error {
+  position: relative;
+  padding-right: 2.7rem;
+}
+
+.tracker-flash-dismiss {
+  position: absolute;
+  top: .35rem;
+  right: .45rem;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tracker-flash-dismiss:hover {
+  background: rgba(120, 140, 160, .14);
+}
+
+/* Responsive data tables */
+
+.tracker-responsive-table {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+}
+
+.tracker-responsive-table.tracker-table-overflowing {
+  scrollbar-width: thin;
+}
+
+.tracker-responsive-table table {
+  width: 100%;
+}
+
+/* Accessibility */
+
+.tracker-responsive-table:focus-visible,
+.tracker-flash-dismiss:focus-visible,
+.tracker-validation-summary button:focus-visible {
+  outline: 2px solid var(--accent, #1686df);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .tracker-responsive-table {
+    margin-inline: -.15rem;
+  }
+
+  .tracker-responsive-table table {
+    min-width: max-content;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracker-responsive-table,
+  .tracker-validation-summary,
+  .tracker-flash-dismiss {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
