@@ -1,0 +1,262 @@
+
+{# TRACKER_RELEASE_377_384 #}
+
+<script>
+/* TRACKER_RELEASE_377_384_JS */
+(function () {
+    "use strict";
+
+    const VERSION = "377-384";
+
+    let initialized = false;
+    let scheduled = false;
+    let observer = null;
+
+    const statistics = {
+        version: VERSION,
+        eventsObserved: 0,
+        publicationsRequested: 0,
+        lastTrigger: null,
+        lastPublishedAt: null
+    };
+
+    function api() {
+        const state = window.TrackerReviewState;
+
+        if (
+            !state ||
+            typeof state.read !== "function" ||
+            typeof state.publish !== "function"
+        ) {
+            return null;
+        }
+
+        return state;
+    }
+
+    function publish() {
+        scheduled = false;
+
+        const state = api();
+
+        if (!state) {
+            return;
+        }
+
+        statistics.publicationsRequested += 1;
+
+        const snapshot = state.publish(false);
+
+        statistics.lastPublishedAt =
+            new Date().toISOString();
+
+        return snapshot;
+    }
+
+    function schedule(trigger) {
+        statistics.eventsObserved += 1;
+        statistics.lastTrigger = trigger;
+
+        if (scheduled) {
+            return;
+        }
+
+        scheduled = true;
+
+        // Existing handlers get an opportunity
+        // to update filters and visible rows
+        // before the shared state is read.
+
+        window.requestAnimationFrame(function () {
+            window.setTimeout(publish, 0);
+        });
+    }
+
+    function isReviewControl(element) {
+        if (!element || !element.closest) {
+            return false;
+        }
+
+        return Boolean(
+            element.closest(
+                "#ir-search, " +
+                "#ir-issue, " +
+                "#ir-sort, " +
+                "#ir-export, " +
+                "#ir-ux-reset"
+            )
+        );
+    }
+
+    function installControlListeners() {
+        // Event delegation avoids registering
+        // duplicate handlers on individual
+        // controls.
+
+        document.addEventListener(
+            "input",
+            function (event) {
+                if (isReviewControl(event.target)) {
+                    schedule("control:input");
+                }
+            }
+        );
+
+        document.addEventListener(
+            "change",
+            function (event) {
+                if (isReviewControl(event.target)) {
+                    schedule("control:change");
+                }
+            }
+        );
+
+        document.addEventListener(
+            "click",
+            function (event) {
+                const target = event.target;
+
+                if (
+                    target &&
+                    target.closest &&
+                    target.closest(
+                        "#ir-ux-reset, " +
+                        "#ir-issue-navigation"
+                    )
+                ) {
+                    schedule("control:click");
+                }
+            }
+        );
+    }
+
+    function installHistoryListener() {
+        window.addEventListener(
+            "popstate",
+            function () {
+                schedule("history:popstate");
+            }
+        );
+    }
+
+    function installRowObserver() {
+        const rows = document.querySelectorAll(
+            "tr[data-vial-id]"
+        );
+
+        if (!rows.length) {
+            return;
+        }
+
+        const parents = new Set();
+
+        rows.forEach(function (row) {
+            if (row.parentElement) {
+                parents.add(row.parentElement);
+            }
+        });
+
+        if (!parents.size) {
+            return;
+        }
+
+        observer = new MutationObserver(
+            function (mutations) {
+                const relevant = mutations.some(
+                    function (mutation) {
+                        if (
+                            mutation.type === "attributes"
+                        ) {
+                            return true;
+                        }
+
+                        return (
+                            mutation.type === "childList"
+                        );
+                    }
+                );
+
+                if (relevant) {
+                    schedule("rows:mutation");
+                }
+            }
+        );
+
+        parents.forEach(function (parent) {
+            observer.observe(parent, {
+                subtree: true,
+                childList: true,
+                attributes: true,
+                attributeFilter: [
+                    "hidden",
+                    "style",
+                    "class"
+                ]
+            });
+        });
+    }
+
+    function initialize() {
+        if (initialized) {
+            return;
+        }
+
+        if (!api()) {
+            console.warn(
+                "[Tracker Review Integration]",
+                "Shared-state API unavailable."
+            );
+            return;
+        }
+
+        initialized = true;
+
+        installControlListeners();
+        installHistoryListener();
+        installRowObserver();
+
+        schedule("initialization");
+    }
+
+    // Read-only diagnostics.
+    //
+    // This object exposes integration status
+    // without allowing callers to modify
+    // internal counters or observers.
+
+    window.TrackerReviewIntegration =
+        Object.freeze({
+            version: VERSION,
+
+            status: function () {
+                return {
+                    version: VERSION,
+                    initialized: initialized,
+                    observerActive: Boolean(observer),
+                    eventsObserved:
+                        statistics.eventsObserved,
+                    publicationsRequested:
+                        statistics.publicationsRequested,
+                    lastTrigger:
+                        statistics.lastTrigger,
+                    lastPublishedAt:
+                        statistics.lastPublishedAt
+                };
+            },
+
+            refresh: function () {
+                schedule("manual:refresh");
+            }
+        });
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            { once: true }
+        );
+    } else {
+        initialize();
+    }
+})();
+</script>
