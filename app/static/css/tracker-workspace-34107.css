@@ -1,0 +1,93 @@
+.tracker-workspace-context {
+  margin: 1rem 0 1.5rem;
+  padding: 1.1rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 12px;
+  background: var(--surface, transparent);
+}
+
+.tracker-workspace-context[hidden] {
+  display: none !important;
+}
+
+.tracker-workspace-context-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.tracker-workspace-context-header h2 {
+  margin: 0;
+}
+
+.tracker-workspace-context-badge {
+  display: inline-flex;
+  padding: .35rem .65rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 999px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.tracker-workspace-context-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(145px, 1fr)
+  );
+  gap: .8rem;
+  margin: 1rem 0;
+}
+
+.tracker-workspace-context-grid dt {
+  font-size: .8rem;
+  opacity: .75;
+}
+
+.tracker-workspace-context-grid dd {
+  margin: .25rem 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tracker-workspace-context-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+  margin-top: 1rem;
+}
+
+.tracker-workspace-context-actions a {
+  display: inline-flex;
+  padding: .45rem .7rem;
+  border: 1px solid var(--border, #d8dce3);
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.tracker-workspace-context-actions a:hover {
+  text-decoration: underline;
+}
+
+.tracker-workspace-context-actions a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.tracker-workspace-context .note {
+  margin-top: .75rem;
+}
+
+@media (max-width: 650px) {
+  .tracker-workspace-context {
+    padding: .8rem;
+  }
+
+  .tracker-workspace-context-actions a {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

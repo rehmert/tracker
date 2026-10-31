@@ -2,6 +2,88 @@
 {% block title %}Dose Workspace{% endblock %}
 
 {% block content %}
+
+<link rel="stylesheet"
+      href="/static/css/tracker-workspace-34107.css">
+<script src="/static/js/tracker-workspace-34107.js"
+        defer></script>
+
+
+<section
+  id="tracker-workspace-34107-context"
+  class="tracker-workspace-context"
+  aria-labelledby="tracker-workspace-34107-heading"
+  hidden
+>
+  <div class="tracker-workspace-context-header">
+    <div>
+      <h2 id="tracker-workspace-34107-heading">
+        Scheduled administration
+      </h2>
+      <p class="note">
+        Review the plan before choosing a vial.
+      </p>
+    </div>
+
+    <span class="tracker-workspace-context-badge">
+      Planning only
+    </span>
+  </div>
+
+  <dl class="tracker-workspace-context-grid">
+    <div>
+      <dt>Compound</dt>
+      <dd data-workspace-compound>—</dd>
+    </div>
+
+    <div>
+      <dt>Scheduled date</dt>
+      <dd data-workspace-date>—</dd>
+    </div>
+
+    <div>
+      <dt>Scheduled time</dt>
+      <dd data-workspace-time>—</dd>
+    </div>
+
+    <div>
+      <dt>Planned amount</dt>
+      <dd data-workspace-amount>—</dd>
+    </div>
+  </dl>
+
+  <p class="note">
+    Vial recommendations and available inventory
+    are informational. Review the actual vial,
+    amount, date, and time before recording.
+    Opening this workspace does not create a dose log.
+  </p>
+
+  <nav
+    class="tracker-workspace-context-actions"
+    aria-label="Dose workflow navigation"
+  >
+    <a href="/calendar"
+       data-workspace-calendar>
+      ← Back to calendar
+    </a>
+
+    <a href="/doses"
+       data-workspace-dose>
+      Record dose →
+    </a>
+
+    <a href="/dose-workspace">
+      Clear planned context
+    </a>
+  </nav>
+
+  <p class="note"
+     data-workspace-link-count
+     role="status"
+     aria-live="polite"></p>
+</section>
+
 <script src="/static/js/tracker-workspace-selection.js?v=1" defer></script>
 <link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=4">
 <script src="/static/tracker_dose_workspace.js?v=34.25" defer></script>
@@ -97,7 +179,7 @@
   </p>
 
   {% if vials %}
-  
+
 <!-- TRACKER_STAGE34_WORKSPACE_SHORTCUT -->
 <div class="card" id="tracker-workspace-shortcut">
   <div class="details">
@@ -128,7 +210,7 @@
     <span id="tracker-vial-count" role="status" aria-live="polite"></span>
   </div>
   <p id="tracker-vial-no-matches" class="empty" hidden>No vials match this search. <button type="button" id="tracker-vial-reset">Clear search</button></p>
-  
+
 <!-- TRACKER_STAGE34_5_SELECTION -->
 <div id="tracker-selected-vial"
      class="card"
