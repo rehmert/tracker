@@ -54,4 +54,5 @@ jobs:
         run: |
           python -m pytest -q \
             tests/test_bulk_vial_browser.py \
-            tests/test_stage33_browser_sorting.py
+            tests/test_stage33_browser_sorting.py \
+            tests/test_bulk_delete_browser.py
