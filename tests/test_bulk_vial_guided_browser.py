@@ -285,6 +285,9 @@ def test_quick_edit_navigation_opens_dates_and_updates_selection(page):
     tab.locator('[name="value_expires_on"]').fill("2027-12-31")
     assert tab.locator('[name="mode_expires_on"]').input_value() == "set"
     tab.locator('[data-bulk-focus-field="status"]').click()
+    assert tab.locator('[name="mode_status"]').input_value() == "keep"
+    assert "1 field to update" in tab.locator("#bulk-edits-count").inner_text()
+    tab.locator('[name="value_status"]').select_option("in_use")
     assert tab.locator('[name="mode_status"]').input_value() == "set"
     assert "2 fields to update" in tab.locator("#bulk-edits-count").inner_text()
     tab.locator("#bulk-back-to-vials").click()

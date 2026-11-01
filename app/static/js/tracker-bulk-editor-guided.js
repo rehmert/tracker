@@ -93,12 +93,8 @@
         if (group) group.open = true;
         const input = form.elements.namedItem("value_" + key);
         const mode = form.elements.namedItem("mode_" + key);
-        // A select has a preselected value; opting it into Set here makes
-        // the quick action meaningful even when the default is retained.
-        if (input?.tagName === "SELECT" && mode?.value === "keep") {
-          mode.value = "set";
-          mode.dispatchEvent(new Event("change", {bubbles:true}));
-        }
+        // Navigation alone must never opt a field into a mass update.
+        // Changing a value or explicitly selecting Set is required.
         (input || mode)?.focus({preventScroll:true});
         target.scrollIntoView({behavior:"auto", block:"nearest"});
         refresh();
