@@ -101,7 +101,7 @@
 </div>
 <script>
 /* TRACKER_BULK_VIAL_DELETE */
-(() => {
+document.addEventListener("DOMContentLoaded", () => {
   "use strict";
   const form = document.getElementById("bulk-vials");
   const button = document.getElementById("bulk-delete-selected");
@@ -110,7 +110,7 @@
 
   function selectedIds() {
     return [...new Set([
-      ...document.querySelectorAll('#tracker-vials-sortable input.bulk-vial-check:checked'),
+      ...document.querySelectorAll('input.bulk-vial-check:checked'),
       ...form.querySelectorAll('input[type="hidden"][name="vial_ids"]')
     ].map(input => String(input.value)))];
   }
@@ -164,7 +164,7 @@
       sync();
     }
   });
-})();
+});
 </script>
 <form id="bulk-vials" method="post" action="/vials/bulk">
 <input type="hidden" name="bulk_preview_snapshot" id="bulk-preview-snapshot" value="">
