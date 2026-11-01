@@ -350,14 +350,34 @@ def _bulk_delete_assessment(db: Session, ids: list[int]):
             reasons.append("has preparation history")
         if db.scalar(select(BlendComponent.id).where(BlendComponent.source_vial_id == vial.id).limit(1)) is not None:
             reasons.append("is referenced by a blend")
+        # Legacy/manual inventory usage can exist without a preparation event.
+        # Deleting that vial would leave a dangling foreign-key reference.
+        if db.scalar(select(SupplyUsage.id).where(SupplyUsage.vial_id == vial.id).limit(1)) is not None:
+            reasons.append("has linked supply usage")
         result.append({
             "id": vial.id,
             "name": f"{vial.compound.name} · {vial.label or ('#' + str(vial.id))}",
             "eligible": not reasons,
             "reason": ", ".join(reasons),
+            # Metadata used to detect records changed after preview.
+            "status": vial.status,
+            "lot": vial.lot,
+            "purchase_id": vial.purchase_id,
+            "unit_price_cents": vial.unit_price_cents,
+            "coa_ids": [coa.id for coa in vial.all_coas],
         })
     missing = sorted(set(ids) - {v.id for v in vials})
     return result, missing
+
+
+def _bulk_delete_snapshot(ids: list[int], rows: list[dict], missing: list[int]) -> str:
+    """Fingerprint exactly the records and eligibility confirmed by the user."""
+    payload = json.dumps(
+        {"ids": ids, "rows": rows, "missing": missing},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 @router.post("/vials/bulk/delete-preview")
@@ -376,6 +396,7 @@ async def bulk_delete_preview(request: Request, db: Session = Depends(get_db)):
         "blocked": [row for row in rows if not row["eligible"]],
         "missing": missing,
         "requested": len(ids),
+        "snapshot": _bulk_delete_snapshot(ids, rows, missing),
     }
 
 
@@ -392,9 +413,12 @@ async def bulk_delete_vials(request: Request, db: Session = Depends(get_db)):
         return services.flash_redirect("/vials", err="Inventory is busy. Please retry.")
     try:
         rows, missing = _bulk_delete_assessment(db, ids)
+        supplied_snapshot = str(form.get("delete_preview_snapshot", "")).strip()
+        if not supplied_snapshot or supplied_snapshot != _bulk_delete_snapshot(ids, rows, missing):
+            raise ValueError("Deletion preview is missing or stale. Review the selected vials again.")
         eligible_ids = {row["id"] for row in rows if row["eligible"]}
         if not eligible_ids:
-            raise ValueError("No selected vials are eligible for deletion. Vials with doses, preparation history, or blend references must be retained.")
+            raise ValueError("No selected vials are eligible for deletion. Vials with recorded usage or history must be retained.")
         vials = list(db.scalars(select(Vial).where(Vial.id.in_(eligible_ids)).order_by(Vial.id)))
         for vial in vials:
             db.add(ChangeAudit(
@@ -423,7 +447,7 @@ async def bulk_delete_vials(request: Request, db: Session = Depends(get_db)):
         db.rollback()
         raise
     blocked = len(rows) - len(eligible_ids)
-    detail = f" {blocked} retained because they have dose, preparation, or blend history." if blocked else ""
+    detail = f" {blocked} retained because they have linked usage or history." if blocked else ""
     if missing:
         detail += f" {len(missing)} selected vial(s) were already missing."
     return services.flash_redirect(
@@ -656,10 +680,17 @@ def delete_vial(vid: int, db: Session = Depends(get_db)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
-    if v.doses:
+    rows, _ = _bulk_delete_assessment(db, [vid])
+    if not rows[0]["eligible"]:
+        db.rollback()
         return services.flash_redirect(
-            f"/vials/{vid}", err="This vial has logged doses. Mark it discarded instead.")
+            f"/vials/{vid}", err="Cannot delete this vial: " + rows[0]["reason"] +
+            ". Mark it discarded instead.")
     pid = v.purchase_id
+    # A COA may be shared; keep the certificate and file when removing a vial.
+    v.linked_coas.clear()
+    v.coa = None
+    db.flush()
     db.delete(v)
     db.commit()
     return services.flash_redirect(f"/purchases/{pid}" if pid else "/vials", msg="Vial deleted.")

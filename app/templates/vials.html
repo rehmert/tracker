@@ -153,11 +153,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!confirm(message)) return;
       const submit = new FormData();
       ids.forEach(id => submit.append("vial_ids", id));
+      submit.append("delete_preview_snapshot", preview.snapshot);
       const deleted = await fetch("/vials/bulk/delete", {
         method:"POST", body:submit, credentials:"same-origin", redirect:"follow"
       });
       if (!deleted.ok) throw new Error("Deletion request failed");
-      window.location.assign(deleted.url || "/vials");
+      const destination = new URL(deleted.url || "/vials", window.location.href);
+      // Redirects containing err= are failed operations despite HTTP 200.
+      if (destination.searchParams.has("err")) {
+        throw new Error(destination.searchParams.get("err") || "Deletion was not completed.");
+      }
+      // IDs saved across filtered inventory views must not outlive deletion.
+      try { sessionStorage.removeItem("tracker.bulkVials.selection.v1"); }
+      catch (_) { /* Storage can be unavailable. */ }
+      window.location.assign(destination.href);
     } catch (error) {
       alert(error.message || "Bulk deletion failed. No deletion was confirmed.");
     } finally {
