@@ -73,6 +73,25 @@ def test_parse_multiple_vials():
     assert changes == {"lot": "LOT-B"}
 
 
+
+def test_parse_vial_label_set():
+    _, changes = _bulk_parse(form(
+        ("vial_ids", "1"),
+        ("mode_label", "set"),
+        ("value_label", "New vial label"),
+    ))
+
+    assert changes == {"label": "New vial label"}
+
+
+def test_parse_vial_label_clear():
+    _, changes = _bulk_parse(form(
+        ("vial_ids", "1"),
+        ("mode_label", "clear"),
+    ))
+
+    assert changes == {"label": ""}
+
 def test_parse_keep_preserves_fields():
     ids, changes = _bulk_parse(form(
         ("vial_ids", "1"),
