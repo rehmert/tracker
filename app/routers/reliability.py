@@ -152,17 +152,91 @@ def release_info(request:Request,db:Session=Depends(get_db)):
     from sqlalchemy import inspect
     return render(request,'release_info.html',version='2.1.0',tables=len(inspect(db.bind).get_table_names()))
 
+# Audit history intentionally remains read-only.
+AUDIT_PAGE_SIZES = (25, 50, 100)
+AUDIT_RECORD_URLS = {
+    'dose': '/doses/{id}/edit',
+    'vial': '/vials/{id}',
+    'protocol': '/protocols/{id}',
+    'purchase': '/purchases/{id}',
+    'blend': '/blends/{id}',
+}
+
+
+def _audit_record_url(entity_type: str, entity_id: int) -> str | None:
+    pattern = AUDIT_RECORD_URLS.get(entity_type)
+    return pattern.format(id=entity_id) if pattern and entity_id > 0 else None
+
+
 @router.get('/audit-history')
-def audit_history(request:Request, entity_type:str='', action:str='', page:int=1, db:Session=Depends(get_db)):
-    allowed={'dose','vial','preparation','supply','protocol','purchase','blend'}
-    q=select(ChangeAudit)
-    if entity_type in allowed:
-        q=q.where(ChangeAudit.entity_type==entity_type)
+def audit_history(
+    request: Request,
+    entity_type: str = '',
+    entity_id: str = '',
+    action: str = '',
+    page: int = 1,
+    page_size: int = 50,
+    db: Session = Depends(get_db),
+):
+    from urllib.parse import urlencode
+
+    allowed = {'dose', 'vial', 'preparation', 'supply', 'protocol', 'purchase', 'blend'}
+    if entity_type not in allowed:
+        entity_type = ''
+
+    if entity_id:
+        if not entity_id.isdecimal() or int(entity_id) < 1:
+            raise HTTPException(400, 'Record ID must be a positive integer.')
+        record_id = int(entity_id)
     else:
-        entity_type=''
+        record_id = None
+
+    action = action.strip()[:40]
+    if page_size not in AUDIT_PAGE_SIZES:
+        raise HTTPException(400, 'Unsupported audit page size.')
+
+    q = select(ChangeAudit)
+    if entity_type:
+        q = q.where(ChangeAudit.entity_type == entity_type)
+    if record_id is not None:
+        q = q.where(ChangeAudit.entity_id == record_id)
     if action:
-        q=q.where(ChangeAudit.action==action[:40])
-    page=max(1,min(page,10000))
-    count=db.scalar(select(func.count()).select_from(q.subquery())) or 0
-    rows=list(db.scalars(q.order_by(ChangeAudit.id.desc()).offset((page-1)*50).limit(50)))
-    return render(request,'audit_history.html',rows=rows,entity_type=entity_type,action=action,page=page,total=count,allowed=sorted(allowed))
+        q = q.where(ChangeAudit.action == action)
+
+    total = db.scalar(select(func.count()).select_from(q.subquery())) or 0
+    total_pages = max(1, (total + page_size - 1) // page_size)
+    page = max(1, min(page, total_pages))
+    rows = list(db.scalars(
+        q.order_by(ChangeAudit.id.desc())
+         .offset((page - 1) * page_size)
+         .limit(page_size)
+    ))
+
+    actions = list(db.scalars(
+        select(ChangeAudit.action).distinct().order_by(ChangeAudit.action)
+    ))
+    if action and action not in actions:
+        actions.append(action)
+        actions.sort()
+
+    def page_url(index):
+        return '/audit-history?' + urlencode({
+            'entity_type': entity_type,
+            'entity_id': entity_id,
+            'action': action,
+            'page_size': page_size,
+            'page': index,
+        })
+
+    return render(
+        request, 'audit_history.html',
+        rows=rows, entity_type=entity_type, entity_id=entity_id,
+        action=action, actions=actions,
+        page=page, page_size=page_size, total_pages=total_pages,
+        total=total, allowed=sorted(allowed),
+        first=(page - 1) * page_size + 1 if total else 0,
+        last=min(page * page_size, total),
+        previous_url=page_url(page - 1) if page > 1 else '',
+        next_url=page_url(page + 1) if page < total_pages else '',
+        record_url=_audit_record_url,
+    )

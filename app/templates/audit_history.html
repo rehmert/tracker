@@ -1,7 +1,59 @@
-{% extends "base.html" %}{% block title %}Audit history{% endblock %}{% block content %}
-<h1>Audit history</h1><p class="note">Recorded changes from features that currently write audit events. This is not yet a complete history of every action in Tracker.</p>
-<section><form method="get" action="/audit-history" class="inline"><label>Record type <select name="entity_type"><option value="">All types</option>{% for typ in allowed %}<option value="{{ typ }}" {% if typ==entity_type %}selected{% endif %}>{{ typ|capitalize }}</option>{% endfor %}</select></label><label>Action <input name="action" value="{{ action }}" placeholder="e.g. reconcile"></label><button>Filter</button><a href="/audit-history">Clear</a></form></section>
-<section><p>{{ total }} matching event(s); showing page {{ page }}.</p><div class="scroll"><table><thead><tr><th>When (Eastern)</th><th>Record</th><th>Action</th><th>Before</th><th>After</th></tr></thead><tbody>
-{% for row in rows %}<tr><td>{{ row.created_at|utc_dt }}</td><td>{{ row.entity_type }} #{{ row.entity_id }}</td><td>{{ row.action }}</td><td><details><summary>View</summary><pre class="audit-json">{{ row.before_json }}</pre></details></td><td><details><summary>View</summary><pre class="audit-json">{{ row.after_json }}</pre></details></td></tr>{% else %}<tr><td colspan="5">No audit events match these filters.</td></tr>{% endfor %}
-</tbody></table></div><nav class="ux-shortcuts" aria-label="Audit history pagination">{% if page>1 %}<a href="/audit-history?entity_type={{ entity_type|urlencode }}&amp;action={{ action|urlencode }}&amp;page={{ page-1 }}">← Previous</a>{% endif %}{% if page*50<total %}<a href="/audit-history?entity_type={{ entity_type|urlencode }}&amp;action={{ action|urlencode }}&amp;page={{ page+1 }}">Next →</a>{% endif %}</nav></section>
+{% extends "base.html" %}
+{% block title %}Audit history{% endblock %}
+{% block content %}
+<h1>Audit history</h1>
+<p class="note">Recorded changes from features that currently write audit events. Not every Tracker action is audited.</p>
+<section class="card">
+  <form method="get" action="/audit-history" class="inline" style="align-items:end;gap:.65rem;flex-wrap:wrap">
+    <label class="field"><span>Record type</span>
+      <select name="entity_type">
+        <option value="">All types</option>
+        {% for typ in allowed %}<option value="{{ typ }}" {% if typ==entity_type %}selected{% endif %}>{{ typ|capitalize }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field"><span>Record ID</span>
+      <input name="entity_id" value="{{ entity_id }}" inputmode="numeric"
+             pattern="[0-9]*" placeholder="Any ID" aria-label="Filter audit history by record ID">
+    </label>
+    <label class="field"><span>Action</span>
+      <select name="action">
+        <option value="">All actions</option>
+        {% for item in actions %}<option value="{{ item }}" {% if item == action %}selected{% endif %}>{{ item|replace('_',' ') }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field"><span>Rows per page</span>
+      <select name="page_size">
+        {% for size in (25,50,100) %}<option value="{{ size }}" {% if page_size == size %}selected{% endif %}>{{ size }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit">Apply filters</button>
+    <a href="/audit-history">Clear</a>
+  </form>
+</section>
+<section>
+  <p role="status">{{ total }} matching event(s) · Showing {{ first }}–{{ last }} · Page {{ page }} of {{ total_pages }}</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Event</th><th>When (Eastern)</th><th>Record</th><th>Action</th><th>Before</th><th>After</th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>#{{ row.id }}</td>
+        <td>{{ row.created_at|utc_dt }}</td>
+        <td>
+          {% set link = record_url(row.entity_type, row.entity_id) %}
+          {% if link %}<a href="{{ link }}">{{ row.entity_type }} #{{ row.entity_id }}</a>
+          {% else %}{{ row.entity_type }} #{{ row.entity_id }}{% endif %}
+        </td>
+        <td>{{ row.action|replace('_',' ') }}</td>
+        <td><details><summary>View</summary><pre class="audit-json">{{ row.before_json }}</pre></details></td>
+        <td><details><summary>View</summary><pre class="audit-json">{{ row.after_json }}</pre></details></td>
+      </tr>
+      {% else %}<tr><td colspan="6">No audit events match these filters.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  <nav class="ux-shortcuts" aria-label="Audit history pagination">
+    {% if previous_url %}<a href="{{ previous_url }}">← Previous</a>{% endif %}
+    {% if next_url %}<a href="{{ next_url }}">Next →</a>{% endif %}
+  </nav>
+</section>
 {% endblock %}
