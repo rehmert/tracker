@@ -159,3 +159,83 @@ def test_grouped_fields_preserve_all_backend_form_names():
     assert "if (!entry.changed && !showUnchanged.checked) continue" in source
     assert "confirmButton.disabled = changed === 0" in source
     assert "value.disabled = mode.value === \"clear\"" in source
+
+
+
+def review_script():
+    source = TEMPLATE.read_text(encoding="utf-8")
+    start = source.index("/* TRACKER_BULK_STAGE4_JS */")
+    end = source.index("</script>", start)
+    return source[start:end]
+
+
+def review_html():
+    return """<!doctype html><html><body>
+      <form id="bulk-vials">
+        <input id="bulk-preview-snapshot" type="hidden" name="bulk_preview_snapshot">
+        <input class="bulk-vial-check" name="vial_ids" type="checkbox" checked value="1">
+        <select name="mode_lot"><option value="set" selected>Set</option></select>
+        <input name="value_lot" value="NEW">
+        <button id="bulk-apply" type="submit">Review</button>
+      </form>
+      <dialog id="bulk-server-review">
+        <p id="bulk-server-review-summary"></p>
+        <p id="bulk-server-review-error"></p>
+        <input id="bulk-review-show-unchanged" type="checkbox">
+        <table><tbody id="bulk-server-review-rows"></tbody></table>
+        <button id="bulk-server-review-cancel">Cancel</button>
+        <button id="bulk-server-review-confirm">Confirm and apply</button>
+      </dialog>
+    </body></html>"""
+
+
+@pytest.mark.parametrize("all_unchanged", [False, True])
+def test_server_review_shows_real_changes_by_default(all_unchanged):
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        tab = browser.new_page()
+        errors = []
+        tab.on("pageerror", lambda error: errors.append(str(error)))
+        tab.set_content(review_html())
+        changed = not all_unchanged
+        response = {
+            "ok": True, "count": 2, "fields": 1, "snapshot": "saved-state",
+            "rows": [
+                {
+                    "vial_id": 1, "compound": "A", "label": "One",
+                    "field": "lot", "current": "OLD", "proposed": "NEW",
+                    "changed": changed,
+                },
+                {
+                    "vial_id": 2, "compound": "A", "label": "Two",
+                    "field": "lot", "current": "NEW", "proposed": "NEW",
+                    "changed": False,
+                },
+            ],
+        }
+        tab.evaluate("""data => {
+            window.fetch = async () => ({
+                ok: true,
+                json: async () => data
+            });
+        }""", response)
+        tab.add_script_tag(content=review_script())
+        tab.locator("#bulk-apply").click()
+        assert tab.locator("#bulk-server-review").evaluate("(el) => el.open")
+        assert tab.locator("#bulk-preview-snapshot").input_value() == "saved-state"
+        if all_unchanged:
+            assert tab.locator("#bulk-server-review-rows tr").count() == 0
+            assert tab.locator("#bulk-server-review-confirm").is_disabled()
+            assert "Nothing needs updating" in tab.locator(
+                "#bulk-server-review-error"
+            ).inner_text()
+        else:
+            assert tab.locator("#bulk-server-review-rows tr").count() == 1
+            assert tab.locator("#bulk-server-review-confirm").is_enabled()
+        assert "already matching" in tab.locator(
+            "#bulk-server-review-summary"
+        ).inner_text()
+        tab.locator("#bulk-review-show-unchanged").check()
+        assert tab.locator("#bulk-server-review-rows tr").count() == 2
+        assert not errors, errors
+        browser.close()
