@@ -16,7 +16,7 @@
   let selected = {};
   function metadata(box) {
     const cells = box.closest('tr')?.querySelectorAll('td') || [];
-    return {id:String(box.value),compound:cells[1]?.textContent.trim()||'',label:cells[2]?.querySelector('a')?.textContent.trim()||'',status:cells[8]?.textContent.trim()||''};
+    return {id:String(box.value),compound:cells[1]?.textContent.trim()||'',label:cells[2]?.querySelector('a')?.textContent.trim()||'',status:box.closest('tr')?.dataset.attentionStatus||''};
   }
   function load() {
     try {
