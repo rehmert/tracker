@@ -1,5 +1,3 @@
-
-
 """Regression tests for Tracker bulk vial editing."""
 
 from datetime import date
@@ -41,6 +39,7 @@ def vial(
     values.update({
         "status": status,
         "lot": lot,
+        "label": f"Test vial {vid}",
         "cap_color": "",
         "storage_notes": "",
         "notes": "",
@@ -54,7 +53,6 @@ def vial(
         id=vid,
         compound_id=10,
         compound=SimpleNamespace(name="Test compound"),
-        label=f"Test vial {vid}",
         doses=doses if doses is not None else [],
         **values,
     )
@@ -91,6 +89,7 @@ def test_parse_vial_label_clear():
     ))
 
     assert changes == {"label": ""}
+
 
 def test_parse_keep_preserves_fields():
     ids, changes = _bulk_parse(form(
