@@ -115,3 +115,22 @@ def test_database_explorer_does_not_list_secret_table(explorer_client):
     assert explorer_client.get(
         "/record-explorer/database?table=vendor_site_credentials"
     ).status_code == 404
+
+
+def test_full_tracker_app_record_explorer_routes(monkeypatch):
+    """Exercise actual app routing, lifespan migrations, and page rendering."""
+    from app.main import app
+
+    monkeypatch.setenv("TRACKER_INSTANCE", "DEV")
+    with TestClient(app) as client:
+        for route in (
+            "/record-explorer/vials",
+            "/record-explorer/database",
+            "/record-explorer/notes",
+            "/record-explorer/health",
+        ):
+            response = client.get(route)
+            assert response.status_code == 200, (
+                route, response.status_code, response.text[:300]
+            )
+            assert "tracker-instance--dev" in response.text
