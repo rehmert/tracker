@@ -22,8 +22,9 @@
     }
 
     function refresh() {
-      const active = current().filter(item => item.mode.value !== "keep");
-      for (const item of current()) {
+      const items = current();
+      const active = items.filter(item => item.mode.value !== "keep");
+      for (const item of items) {
         item.field.classList.toggle(
           "bulk-edit-active", item.mode.value !== "keep"
         );
@@ -44,7 +45,7 @@
           ", or choose Clear."
         : active.length ? "Ready to preview selected vials." :
           "Choose at least one field to edit.";
-      for (const item of current()) {
+      for (const item of items) {
         if (item.input) item.input.setAttribute(
           "aria-invalid", String(invalid.includes(item))
         );
