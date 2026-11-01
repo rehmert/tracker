@@ -29,7 +29,7 @@ def test_compound_defaults_to_iu_and_purchase_tracks_iu(tmp_path):
         db.add(p)
         db.commit()
         response = add_vials(pid=p.id, compound_id=c.id, quantity=2, content_value="36",
-                             content_unit="IU", unit_price="25", kit_size=1, kit_count=1, volume_ml="", concentration="", form="lyophilized", label="", lot="", expires_on="", notes="", cap_color="", db=db)
+                             content_unit="IU", unit_price="25", price_basis="per_vial", price_amount="", kit_size=1, kit_count=1, volume_ml="", concentration="", form="lyophilized", label="", lot="", expires_on="", notes="", cap_color="", db=db)
         assert response.status_code == 303
         vials = list(db.scalars(select(Vial).where(Vial.compound_id == c.id)))
         assert len(vials) == 2, response.headers.get("location")
