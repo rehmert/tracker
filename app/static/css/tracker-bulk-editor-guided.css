@@ -91,3 +91,21 @@
 @media (max-width: 800px) {
   #bulk-editor-panel .bulk-edit-navigation #bulk-back-to-vials { margin-left: 0; }
 }
+
+/* Searchable bounded selection tray for large multi-view edits. */
+#bulk-selected-preview #bulk-selected-search {
+  width:100%;
+  max-width:30rem;
+  display:block;
+  margin:.55rem 0;
+  padding:.45rem .6rem;
+}
+#bulk-selected-preview .bulk-selected-match-count {
+  margin:.25rem 0;
+  font-size:.85rem;
+  color:var(--muted);
+}
+#bulk-selected-preview #bulk-selected-more { margin:.35rem 0; }
+#bulk-selection-toolbar #bulk-undo-selection:disabled {
+  opacity:.5;
+}

@@ -2,9 +2,9 @@
 {% from "_macros.html" import gauge %}
 {% block title %}Vials{% endblock %}
 {% block content %}
-<script defer src="/static/js/tracker-bulk-selection.js?v=bulk-editor-guided"></script>
-<link rel="stylesheet" href="/static/css/tracker-bulk-editor-guided.css?v=20261101-workflow">
-<script defer src="/static/js/tracker-bulk-editor-guided.js?v=20261101-workflow"></script>
+<script defer src="/static/js/tracker-bulk-selection.js?v=bulk-selection-batch-20261101"></script>
+<link rel="stylesheet" href="/static/css/tracker-bulk-editor-guided.css?v=20261101-batch">
+<script defer src="/static/js/tracker-bulk-editor-guided.js?v=20261101-batch"></script>
 <!-- TRACKER_BULK_CONSOLIDATED -->
 <h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
 <form method="get" class="inline" id="vial-filter-form">
@@ -93,7 +93,8 @@
   </span>
   <button type="button" id="bulk-jump-to-vials">Find vials</button>
   <button type="button" id="bulk-select-all">Select all displayed</button>
-  <button type="button" id="bulk-select-none">Clear selection</button>
+  <button type="button" id="bulk-select-none">Clear all selected</button>
+  <button type="button" id="bulk-undo-selection" disabled>Undo selection</button>
   <button type="button" id="bulk-open-editor" class="primary"
           disabled>Bulk edit selected</button>
   <button type="button" id="bulk-delete-selected" class="danger"
@@ -206,7 +207,10 @@ document.addEventListener("DOMContentLoaded", () => {
     </button>
 
     <button type="button" id="bulk7-clear">
-      Clear selection
+      Clear displayed
+    </button>
+    <button type="button" id="bulk7-deselect">
+      Remove matching
     </button>
 
     <button type="button" id="bulk7-export">
@@ -599,7 +603,7 @@ document.addEventListener("DOMContentLoaded", () => {
   {% endfor %}
   </div>
 
-<div id="bulk-selected-preview" aria-label="Selected vials"></div>
+<div id="bulk-selected-preview" aria-label="Selected vials" aria-live="polite"></div>
 <p>
   <strong><span id="bulk-count">0</span> selected</strong>
   <button class="primary" type="submit" id="bulk-apply" disabled>
@@ -1095,6 +1099,7 @@ document.addEventListener("DOMContentLoaded", () => {
     Review bulk vial changes
   </h2>
   <p id="bulk-server-review-summary"></p>
+  <p id="bulk-server-review-impact" class="note"></p>
   <p class="note">
     Current values are read from Tracker's database.
     The server will check for changes and validate
@@ -1176,9 +1181,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const visibleCount = document.getElementById("bulk-review-visible-count");
   const more = document.getElementById("bulk-review-more");
   const fieldSummary = document.getElementById("bulk-review-field-summary");
+  const impact = document.getElementById("bulk-server-review-impact");
 
   if (!form || !dialog || !snapshot || !showUnchanged ||
-      !search || !visibleCount || !more || !fieldSummary) return;
+      !search || !visibleCount || !more || !fieldSummary || !impact) return;
 
   let busy = false;
   let approved = false;
@@ -1265,6 +1271,21 @@ document.addEventListener("DOMContentLoaded", () => {
       Math.min(PAGE_SIZE, Math.max(0, filtered.length - rowLimit)) + " more";
 
     const changedRows = data.rows.filter(entry => entry.changed);
+    const affectedIds = new Set(changedRows.map(entry => entry.vial_id));
+    const affectedCompounds = new Map();
+    for (const entry of changedRows) {
+      const key = String(entry.compound || "(unnamed)");
+      if (!affectedCompounds.has(key)) affectedCompounds.set(key, new Set());
+      affectedCompounds.get(key).add(entry.vial_id);
+    }
+    const groups = [...affectedCompounds.entries()]
+      .map(([name, ids]) => [name, ids.size])
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    impact.textContent = affectedIds.size + " of " + data.count +
+      " selected vial(s) will actually change. " +
+      (groups.length ? "By compound: " + groups.slice(0, 5)
+        .map(([name, n]) => name + " (" + n + ")").join(" · ") +
+        (groups.length > 5 ? " · +" + (groups.length - 5) + " more" : "") : "");
     const changed = changedRows.length;
     const unchanged = data.rows.length - changed;
     summary.textContent =

@@ -14,6 +14,10 @@
   const all = document.getElementById('bulk-all');
   let submitting = false;
   let selected = {};
+  let previousSelection = null;
+  let lastClickIndex = null;
+  let showSelected = 8;
+  let selectedQuery = "";
   function metadata(box) {
     const cells = box.closest('tr')?.querySelectorAll('td') || [];
     return {id:String(box.value),compound:cells[1]?.textContent.trim()||'',label:cells[2]?.querySelector('a')?.textContent.trim()||'',status:box.closest('tr')?.dataset.attentionStatus||''};
@@ -32,6 +36,23 @@
     } catch (_) {return {};}
   }
   selected=load();
+  // Clear only after Tracker reports a successful bulk update; errors retain
+  // the selection for correction. Do not clear on unrelated page visits.
+  const flash = new URLSearchParams(location.search).get('msg') || '';
+  if (flash.startsWith('Bulk update completed:')) {
+    selected = {};
+    try {sessionStorage.removeItem(KEY);} catch (_) {}
+  }
+  function remember() {
+    previousSelection = {...selected};
+  }
+  function restore() {
+    if (!previousSelection) return;
+    const earlier = previousSelection;
+    previousSelection = {...selected};
+    selected = earlier;
+    sync();
+  }
   function save() {try {sessionStorage.setItem(KEY,JSON.stringify(selected));} catch(e) {console.warn('Bulk selection storage unavailable',e);}}
   function hidden() {
     form.querySelectorAll('[data-bulk-persisted="1"], [data-bulk8-hidden="1"]').forEach(e=>e.remove());
@@ -55,38 +76,52 @@
       const control=document.getElementById(id);
       if(control)control.disabled=selectedCount===0;
     }
+    const undo = document.getElementById('bulk-undo-selection');
+    if (undo) undo.disabled = !previousSelection;
     const preview=document.getElementById('bulk-selected-preview');
     if(preview) {
+      // Preserve the search text and row-limit when selection changes.
       preview.replaceChildren();
       if(selectedCount) {
         const heading=document.createElement('strong');
-        heading.textContent='Selected vials (' + selectedCount + '):';
+        heading.textContent='Selected vials ('+selectedCount+'):';
         preview.appendChild(heading);
-        const entries=Object.values(selected);
-        const appendList=(target, items)=>{
-          const list=document.createElement('ul');
-          for(const entry of items) {
-            const row=document.createElement('li');
-            row.className='bulk-selected-row';
-            const name=document.createElement('span');
-            name.textContent=(entry.compound ? entry.compound+' — ' : '')+(entry.label||('Vial #'+entry.id))+' (#'+entry.id+')';
-            const remove=document.createElement('button');
-            remove.type='button';
-            remove.dataset.bulkRemoveId=entry.id;
-            remove.setAttribute('aria-label','Remove vial #'+entry.id+' from selection');
-            remove.textContent='Remove';
-            row.append(name, remove);
-            list.appendChild(row);
-          }
-          target.appendChild(list);
-        };
-        appendList(preview, entries.slice(0,8));
-        if(entries.length>8) {
-          const more=document.createElement('details');
-          const title=document.createElement('summary');
-          title.textContent='Show remaining '+(entries.length-8)+' selected vials';
-          more.appendChild(title);
-          appendList(more,entries.slice(8));
+        const search=document.createElement('input');
+        search.type='search';
+        search.id='bulk-selected-search';
+        search.placeholder='Find within selected vials…';
+        search.setAttribute('aria-label','Find within selected vials');
+        search.value=selectedQuery;
+        preview.appendChild(search);
+        const entries=Object.values(selected).filter(entry=>
+          [entry.compound,entry.label,entry.id,entry.status]
+          .join(' ').toLocaleLowerCase().includes(selectedQuery.toLocaleLowerCase())
+        );
+        const status=document.createElement('p');
+        status.className='bulk-selected-match-count';
+        status.textContent=entries.length+' matching selected vial(s).';
+        preview.appendChild(status);
+        const list=document.createElement('ul');
+        for(const entry of entries.slice(0,showSelected)) {
+          const row=document.createElement('li');
+          row.className='bulk-selected-row';
+          const name=document.createElement('span');
+          name.textContent=(entry.compound ? entry.compound+' — ' : '')+
+            (entry.label||('Vial #'+entry.id))+' (#'+entry.id+')';
+          const remove=document.createElement('button');
+          remove.type='button';
+          remove.dataset.bulkRemoveId=entry.id;
+          remove.setAttribute('aria-label','Remove vial #'+entry.id+' from selection');
+          remove.textContent='Remove';
+          row.append(name,remove);
+          list.appendChild(row);
+        }
+        preview.appendChild(list);
+        if(entries.length>showSelected) {
+          const more=document.createElement('button');
+          more.type='button';
+          more.id='bulk-selected-more';
+          more.textContent='Show '+Math.min(25,entries.length-showSelected)+' more';
           preview.appendChild(more);
         }
       }
@@ -97,6 +132,8 @@
     const next={...selected};
     for (const b of boxes) {const id=String(b.value);if(b.checked)next[id]=metadata(b);else delete next[id];}
     if(Object.keys(next).length>LIMIT) {alert('Maximum selection is 1,000 vials.');sync();return;}
+    if (Object.keys(next).length !== Object.keys(selected).length ||
+      Object.keys(next).some(id=>!Object.hasOwn(selected,id))) remember();
     selected=next;sync();
   }
   if(compoundSelect) {
@@ -107,7 +144,8 @@
   const actions={
     // All bulk controls use this one persisted cross-view selection source.
     'bulk-select-all':()=>{for(const b of boxes)b.checked=true;commitVisible();},
-    'bulk-select-none':()=>{selected={};sync();},
+    'bulk-select-none':()=>{remember();selected={};sync();},
+    'bulk-undo-selection':restore,
     'bulk-open-editor':()=>{
       if(!Object.keys(selected).length)return;
       const panel=document.getElementById('bulk-editor-panel');
@@ -119,7 +157,15 @@
     'bulk7-select':()=>{for(const b of boxes){const d=metadata(b);if((!compoundSelect?.value||compoundSelect.value===d.compound)&&(!statusSelect?.value||statusSelect.value===d.status.toLowerCase().replaceAll(' ','_')))b.checked=true;}commitVisible();},
     'bulk7-invert':()=>{for(const b of boxes)b.checked=!b.checked;commitVisible();},
     'bulk7-clear':()=>{for(const b of boxes)b.checked=false;commitVisible();},
-    'bulk8-clear-all':()=>{selected={};sync();},
+    'bulk7-deselect':()=>{
+      for(const b of boxes){
+        const d=metadata(b);
+        if((!compoundSelect?.value||compoundSelect.value===d.compound)&&
+           (!statusSelect?.value||statusSelect.value===d.status.toLowerCase().replaceAll(' ','_')))b.checked=false;
+      }
+      commitVisible();
+    },
+    'bulk8-clear-all':()=>{remember();selected={};sync();},
     'bulk7-export':()=>{
       const records=Object.values(selected);if(!records.length){alert('Select at least one vial.');return;}
       const csv=v=>{
@@ -133,14 +179,28 @@
     }
   };
   const selectedPreview=document.getElementById('bulk-selected-preview');
-  if(selectedPreview) selectedPreview.addEventListener('click',event=>{
-    const remove=event.target.closest('button[data-bulk-remove-id]');
-    if(!remove) return;
-    const id=remove.dataset.bulkRemoveId;
-    if(!Object.hasOwn(selected,id)) return;
-    delete selected[id];
-    sync();
-  });
+  if(selectedPreview) {
+    selectedPreview.addEventListener('input',event=>{
+      if(event.target.id!=='bulk-selected-search')return;
+      selectedQuery=event.target.value;
+      showSelected=8;
+      // Re-render without stealing focus or resetting the cursor.
+      const cursor=event.target.selectionStart;
+      sync();
+      const field=document.getElementById('bulk-selected-search');
+      field?.focus({preventScroll:true});
+      if(cursor!==null)field?.setSelectionRange(cursor,cursor);
+    });
+    selectedPreview.addEventListener('click',event=>{
+      const more=event.target.closest('#bulk-selected-more');
+      if(more){showSelected+=25;sync();return;}
+      const remove=event.target.closest('button[data-bulk-remove-id]');
+      if(!remove) return;
+      const id=remove.dataset.bulkRemoveId;
+      if(!Object.hasOwn(selected,id)) return;
+      remember();delete selected[id];sync();
+    });
+  }
   if(!document.getElementById('bulk8-clear-all')) {
     const target=document.querySelector('#bulk-selection-tools .inline');
     if(target){const button=document.createElement('button');button.type='button';button.id='bulk8-clear-all';button.textContent='Clear all saved selections';target.append(button);}
@@ -149,6 +209,18 @@
   document.addEventListener('click',event=>{
     const button=event.target.closest('button');if(!button || !Object.hasOwn(actions,button.id))return;
     event.preventDefault();event.stopImmediatePropagation();actions[button.id]();
+  },true);
+  // Shift-click selects the intervening displayed rows. A filter never
+  // modifies selections on other inventory pages.
+  document.addEventListener('click',event=>{
+    const idx=boxes.indexOf(event.target);
+    if(idx<0)return;
+    if(event.shiftKey && lastClickIndex!==null) {
+      const checked=event.target.checked;
+      const lo=Math.min(idx,lastClickIndex), hi=Math.max(idx,lastClickIndex);
+      for(let i=lo;i<=hi;i++)boxes[i].checked=checked;
+    }
+    lastClickIndex=idx;
   },true);
   document.addEventListener('change',event=>{
     if(boxes.includes(event.target)){event.stopImmediatePropagation();commitVisible();}
@@ -172,7 +244,8 @@
     const missing=(result.missing||[]).map(String);
     if(missing.length){
       if(!confirm(`${missing.length} selected vial(s) no longer exist. Remove them and review again?`))return;
-      for(const id of missing)delete selected[id];sync();alert('Selection updated. Review it before submitting again.');return;
+      remember();
+    for(const id of missing)delete selected[id];sync();alert('Selection updated. Review it before submitting again.');return;
     }
     // Refresh display metadata from the server without blocking the edit.
     // Selection validity is determined by vial IDs; cosmetic metadata changes
