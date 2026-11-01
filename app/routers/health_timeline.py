@@ -1,9 +1,12 @@
 """Read-only timeline of recorded health events and active protocol milestones."""
+import csv
+import io
 from collections import Counter
 from datetime import datetime, timedelta, time
 from itertools import groupby
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,14 +29,13 @@ EVENT_TYPES = {
 }
 
 
-@router.get("/health-timeline")
-def timeline(
-    request: Request,
+def _timeline_context(
+    db: Session,
     days: int = 90,
     event_type: str = "all",
     q: str = "",
-    db: Session = Depends(get_db),
 ):
+    """One read-only source for both on-screen entries and CSV exports."""
     days = days if days in RANGES else 90
     event_type = event_type if event_type in EVENT_TYPES else "all"
     q = q.strip()[:100]
@@ -116,8 +118,65 @@ def timeline(
         {"day": day, "events": list(day_events)}
         for day, day_events in groupby(events, key=lambda event: event["at"].date())
     ]
-    return render(
-        request, "health_timeline.html", events=events, groups=groups,
+    return dict(
+        events=events, groups=groups,
         days=days, ranges=RANGES, event_type=event_type, event_types=EVENT_TYPES,
         q=q, total=total, counts=counts,
+    )
+
+
+@router.get("/health-timeline")
+def timeline(
+    request: Request,
+    days: int = 90,
+    event_type: str = "all",
+    q: str = "",
+    db: Session = Depends(get_db),
+):
+    return render(
+        request, "health_timeline.html",
+        **_timeline_context(db, days=days, event_type=event_type, q=q),
+    )
+
+
+def _csv_safe(value) -> str:
+    """Prevent Excel and similar spreadsheet apps from evaluating user text."""
+    text = "" if value is None else str(value)
+    if text.startswith(("\t", "\r", "\n")) or text.lstrip().startswith(("=", "+", "-", "@")):
+        return "'" + text
+    return text
+
+
+@router.get("/health-timeline/export.csv")
+def export_timeline_csv(
+    days: int = 90,
+    event_type: str = "all",
+    q: str = "",
+    db: Session = Depends(get_db),
+):
+    """Download exactly the entries shown by the selected timeline filters."""
+    context = _timeline_context(db, days=days, event_type=event_type, q=q)
+    output = io.StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(("Date and time", "Event type", "Title", "Details", "Record"))
+    for event in context["events"]:
+        writer.writerow((
+            event["at"].isoformat(sep=" "),
+            _csv_safe(event["type"]),
+            _csv_safe(event["title"]),
+            _csv_safe(event["detail"]),
+            _csv_safe(event["link"]),
+        ))
+    # BOM helps Excel recognize the UTF-8 text in this user-owned download.
+    payload = output.getvalue().encode("utf-8-sig")
+    return Response(
+        content=payload,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="tracker-health-timeline-{datetime.now():%Y%m%d}.csv"'
+            ),
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
     )
