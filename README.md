@@ -180,3 +180,16 @@ investigational. Only logged administrations of mass-based vials are modeled.
 Existing databases gain `pk_scenarios` and `pk_planned_doses` via SQLAlchemy
 `create_all` at startup. No destructive migrations are required. Back up your
 SQLite database and `data/` directory before deployment.
+
+
+## Distinguishing development and production instances
+
+Both installations run the same Git commit. In each server's **local**
+`/etc/tracker.env`, set `TRACKER_INSTANCE=DEV` or `TRACKER_INSTANCE=PROD`
+and restart the `tracker` systemd service. This value is not stored in
+the repository, databases, or uploaded records.
+
+The selected label appears beside the Tracker brand in the sidebar (and
+mobile navigation) and at the beginning of the browser tab title. DEV is
+amber; PROD is muted green. Missing/unknown values leave the label hidden
+rather than guessing the instance's role. No other behavior changes.

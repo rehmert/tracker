@@ -23,3 +23,8 @@ LAB_DIR.mkdir(parents=True, exist_ok=True)
 WEIGHT_UNIT = os.getenv("TRACKER_WEIGHT_UNIT", "lb").strip().lower()
 if WEIGHT_UNIT not in ("kg", "lb"):
     WEIGHT_UNIT = "lb"
+
+# Optional per-host UI identity. Never infer production when this is unset.
+def instance_label() -> str:
+    value = os.getenv("TRACKER_INSTANCE", "").strip().upper()
+    return value if value in {"DEV", "PROD"} else ""

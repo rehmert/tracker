@@ -15,6 +15,7 @@
 
   <!-- Tracker visual identity -->
   <link rel="stylesheet" href="/static/css/tracker-brand-refresh.css?v=34.28">
+  <link rel="stylesheet" href="/static/css/tracker-instance.css?v=20261101">
 
   <!-- Tracker application identity -->
   <link rel="icon"
@@ -28,7 +29,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f7fa">
   <link rel="manifest" href="/static/manifest.webmanifest">
-  <title>{% block title %}Home{% endblock %} · Tracker</title>
+  {% set instance = tracker_instance_label() %}
+  <title>{% if instance %}[{{ instance }}] {% endif %}{% block title %}Home{% endblock %} · Tracker</title>
   <link rel="stylesheet" href="/static/app.css?v=sidebar-scroll-20261031">
   <link rel="stylesheet" href="/static/ux_improvements.css?v=20261030">
   <link rel="stylesheet" href="/static/stage4.css?v=1">
@@ -71,7 +73,7 @@
   <button class="sidebar-backdrop" type="button" data-close-sidebar aria-label="Close navigation" tabindex="-1"></button>
   <nav class="rail" id="app-sidebar" aria-label="Main navigation">
     <div class="rail-top"><span class="rail-kicker">YOUR WORKSPACE</span><button type="button" class="sidebar-collapse" id="sidebar-collapse" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="app-sidebar" title="Collapse sidebar">‹</button></div>
-    <a class="brand" href="/">Tracker</a>
+    <a class="brand" href="/">Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</a>
 
     <div class="nav-scroll">
       <ul class="nav-links nav-pinned"><li data-nav-key="/"><a href="/" title="Overview" {% if path == '/' %}aria-current="page"{% endif %}><span class="nav-dot"></span><span class="nav-text">Dashboard</span></a></li></ul>
@@ -101,7 +103,7 @@
     </div>
   </nav>
   <main id="main-content">
-    <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker</span><a href="/" aria-label="Overview">Overview</a></div>
+    <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</span><a href="/" aria-label="Overview">Overview</a></div>
     <div class="workspace-toolbar" aria-label="Workspace tools">
       <div class="ux-add-menu"><button type="button" id="ux-add-toggle" aria-expanded="false" aria-controls="ux-add-panel" class="ux-add-button">+ Add</button><div id="ux-add-panel" class="ux-add-panel" hidden><a href="/doses">Record dose</a><a href="/vitals">Record vitals</a><a href="/purchases">New purchase</a><a href="/protocols">New protocol</a><a href="/quick-entry">All quick entries</a><a href="/vials">Vials</a><a href="/labs">Lab results</a></div></div>
       <button type="button" class="workspace-search" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search Tracker (Ctrl+K)">⌕ <span>Search Tracker</span> <kbd>Ctrl K</kbd></button>
