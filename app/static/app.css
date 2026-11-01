@@ -824,3 +824,25 @@ main .page-header .description {
     }
 }
 
+
+
+/* Keep the sidebar header visible while allowing long navigation lists to scroll. */
+.rail .nav-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  padding-right: .15rem;
+  scrollbar-width: thin;
+}
+@media (max-width: 760px) {
+  .rail .nav-scroll {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 55vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
