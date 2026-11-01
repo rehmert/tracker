@@ -35,7 +35,8 @@ jobs:
           python -m pytest -q tests \
             --ignore=tests/browser \
             --ignore=tests/test_bulk_vial_browser.py \
-            --ignore=tests/test_stage33_browser_sorting.py
+            --ignore=tests/test_stage33_browser_sorting.py \
+            --ignore=tests/test_bulk_delete_browser.py
 
   browser:
     runs-on: ubuntu-latest
