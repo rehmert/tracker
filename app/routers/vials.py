@@ -49,6 +49,7 @@ def vials_page(request: Request, status: str = "active", compound_id: str | None
 BULK_FIELDS = {
     "status": "choice",
     "lot": "text",
+    "label": "text",
     "cap_color": "text",
     "storage_notes": "text",
     "notes": "text",
