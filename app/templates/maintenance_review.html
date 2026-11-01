@@ -17,6 +17,8 @@ local maintenance environment.
 <div class="card" style="padding:1rem">
 
 <h2>System checks</h2>
+<p role="status" aria-live="polite"><strong>{{ passed }} passing</strong>
+ · <strong>{{ attention }} needing attention</strong></p>
 
 <div style="overflow-x:auto">
 <table>
@@ -63,8 +65,9 @@ local maintenance environment.
 </p>
 
 <p class="muted">
-These checks do not prove that a complete
-application restore will succeed.
+Backup counts and modification times do not verify archive contents.
+Use <a href="/backups">Verify now</a> on a specific archive.
+These checks do not prove that a complete application restore will succeed.
 </p>
 
 </div>

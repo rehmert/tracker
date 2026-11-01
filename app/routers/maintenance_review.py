@@ -3,11 +3,12 @@
 
 import sqlite3
 from pathlib import Path
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request
 from sqlalchemy.engine import make_url
 
-from .. import config
+from .. import config, backup
 from app.templating import render
 
 router = APIRouter()
@@ -84,20 +85,56 @@ def maintenance_review(request: Request):
             "detail": str(exc),
         })
 
-    backup_directory = Path("/tmp/tracker-backups")
-
+    # Application archives are created by app.backup, not by the installer.
+    # A temporary source-code backup cannot substitute for a SQLite +
+    # uploads archive. This is availability/freshness, not verification.
+    backup_directory = backup.BACKUP_DIR
     checks.append({
-        "name": "Source backup directory",
+        "name": "Configured backup directory",
         "ok": backup_directory.is_dir(),
         "detail": (
-            "Available"
+            "Found: " + str(backup_directory)
             if backup_directory.is_dir()
-            else "Not found"
+            else "Missing: " + str(backup_directory)
         ),
     })
+
+    try:
+        archives = backup.list_backups()
+        latest = archives[0] if archives else None
+        checks.append({
+            "name": "Tracker backup archives",
+            "ok": bool(archives),
+            "detail": (
+                f"{len(archives)} archive(s) available"
+                if archives else "No backup archives found"
+            ),
+        })
+        if latest:
+            age = max(
+                0.0,
+                (datetime.now(timezone.utc) -
+                 latest["modified"]).total_seconds() / 3600,
+            )
+            checks.append({
+                "name": "Latest backup age",
+                "ok": age <= 24,
+                "detail": (
+                    f'{latest["name"]} · {age:.1f} hours old · '
+                    f'{latest["size"] / 1048576:.1f} MB'
+                ),
+            })
+    except (OSError, ValueError) as exc:
+        checks.append({
+            "name": "Backup archive inventory",
+            "ok": False,
+            "detail": "Unable to inspect backup archives: " + str(exc),
+        })
 
     return render(
         request,
         "maintenance_review.html",
         checks=checks,
+        passed=sum(1 for check in checks if check["ok"]),
+        attention=sum(1 for check in checks if not check["ok"]),
     )
