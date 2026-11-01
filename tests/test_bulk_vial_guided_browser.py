@@ -292,3 +292,24 @@ def test_quick_edit_navigation_opens_dates_and_updates_selection(page):
         "(el) => el === document.activeElement"
     )
     assert not errors, errors
+
+
+
+def test_vial_checkboxes_still_submit_when_form_is_below_table(page):
+    tab, errors = page
+    tab.locator('.bulk-vial-check[value="2"]').check()
+    payload = tab.locator("#bulk-vials").evaluate(
+        "(form) => new FormData(form).getAll('vial_ids')"
+    )
+    assert payload == ["2"]
+    assert not errors, errors
+
+
+def test_jump_to_table_focuses_first_vial_checkbox(page):
+    tab, errors = page
+    tab.locator("#bulk-jump-to-vials").click()
+    focused = tab.evaluate(
+        "() => document.activeElement?.classList.contains('bulk-vial-check')"
+    )
+    assert focused
+    assert not errors, errors
