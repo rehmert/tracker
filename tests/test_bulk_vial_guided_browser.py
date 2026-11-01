@@ -221,6 +221,7 @@ def test_server_review_shows_real_changes_by_default(all_unchanged):
         }""", response)
         tab.add_script_tag(content=review_script())
         tab.locator("#bulk-apply").click()
+        tab.locator("#bulk-server-review[open]").wait_for()
         assert tab.locator("#bulk-server-review").evaluate("(el) => el.open")
         assert tab.locator("#bulk-preview-snapshot").input_value() == "saved-state"
         if all_unchanged:
