@@ -836,36 +836,6 @@ main .page-header .description {
   scrollbar-gutter: stable;
   padding-right: .15rem;
   scrollbar-width: thin;
-  /* Ensure proper scrolling behavior */
-  -webkit-overflow-scrolling: touch;
-}
-.rail .nav-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-.rail .nav-scroll::-webkit-scrollbar-track {
-  background: var(--wash);
-  border-radius: 4px;
-}
-.rail .nav-scroll::-webkit-scrollbar-thumb {
-  background: var(--rule);
-  border-radius: 4px;
-}
-.rail .nav-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
-}
-
-/* Ensure rail container has proper scrolling properties */
-.rail {
-  padding: 1.5rem 1rem;
-  border-right: 1px solid var(--rule);
-  background: var(--surface);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  /* Make sure the rail itself can scroll when needed */
-  overflow: hidden;
 }
 @media (max-width: 760px) {
   .rail .nav-scroll {
