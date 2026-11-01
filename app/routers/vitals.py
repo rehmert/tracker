@@ -11,7 +11,7 @@ from ..models import VitalReading
 from ..templating import render
 
 router = APIRouter()
-RANGES = {30: "30 days", 90: "90 days", 365: "1 year", 3650: "All"}
+RANGES = {7: "7 days", 30: "30 days", 90: "90 days", 180: "6 months", 365: "1 year", 3650: "All"}
 
 
 def _opt(text: str, cast):
@@ -29,19 +29,40 @@ def vitals_page(request: Request, days: int = 90, events: int = 1,
                 db: Session = Depends(get_db)):
     days = days if days in RANGES else 90
     now = datetime.now()
-    rows = list(db.scalars(select(VitalReading)
-                           .where(VitalReading.measured_at >= now - timedelta(days=days))
-                           .order_by(VitalReading.measured_at.desc(), VitalReading.id.desc())))
+    readings_query = select(VitalReading)
+    if days != 3650:
+        readings_query = readings_query.where(
+            VitalReading.measured_at >= now - timedelta(days=days)
+        )
+    rows = list(db.scalars(readings_query.order_by(
+        VitalReading.measured_at.desc(), VitalReading.id.desc()
+    )))
     unit = config.WEIGHT_UNIT
 
-    def pts(getter):
-        return [(r.measured_at, getter(r)) for r in rows if getter(r) is not None]
+    # When the display is limited to seven days, the 30-day statistics must
+    # still reflect thirty days, not a silently truncated seven-day sample.
+    summary_rows = rows
+    if days == 7:
+        summary_rows = list(db.scalars(select(VitalReading).where(
+            VitalReading.measured_at >= now - timedelta(days=30)
+        )))
 
-    w = pts(lambda r: metrics.weight_from_kg(r.weight_kg, unit))
-    sy, di, hr = pts(lambda r: r.systolic), pts(lambda r: r.diastolic), pts(lambda r: r.pulse_bpm)
+    def pts(readings, getter):
+        return [(r.measured_at, getter(r)) for r in readings
+                if getter(r) is not None]
+
+    w = pts(summary_rows, lambda r: metrics.weight_from_kg(r.weight_kg, unit))
+    sy = pts(summary_rows, lambda r: r.systolic)
+    di = pts(summary_rows, lambda r: r.diastolic)
+    hr = pts(summary_rows, lambda r: r.pulse_bpm)
+
+    chart_w = pts(rows, lambda r: metrics.weight_from_kg(r.weight_kg, unit))
+    chart_sy = pts(rows, lambda r: r.systolic)
+    chart_di = pts(rows, lambda r: r.diastolic)
+    chart_hr = pts(rows, lambda r: r.pulse_bpm)
 
     # One shared time axis so dose / vial events line up across all three charts.
-    x_start = (now - timedelta(days=days)) if days < 3650 else \
+    x_start = (now - timedelta(days=days)) if days != 3650 else \
         min([r.measured_at for r in rows] or [now - timedelta(days=30)])
     x_range = (x_start, now)
     ev = services.events_between(db, x_start, now) if events else []
@@ -56,12 +77,12 @@ def vitals_page(request: Request, days: int = 90, events: int = 1,
         w=metrics.summarize(w, now), sy=metrics.summarize(sy, now),
         di=metrics.summarize(di, now), hr=metrics.summarize(hr, now),
         events_on=bool(events), markers=markers, dose_counts=dose_counts,
-        weight_chart=charts.line_chart([charts.Series("Weight", w)], unit=f" {unit}",
+        weight_chart=charts.line_chart([charts.Series("Weight", chart_w)], unit=f" {unit}",
                                        x_range=x_range, events=ev),
-        bp_chart=charts.line_chart([charts.Series("Top number", sy, "s1", "{:.0f}"),
-                                    charts.Series("Bottom number", di, "s2", "{:.0f}")],
+        bp_chart=charts.line_chart([charts.Series("Top number", chart_sy, "s1", "{:.0f}"),
+                                    charts.Series("Bottom number", chart_di, "s2", "{:.0f}")],
                                    unit=" mmHg", x_range=x_range, events=ev),
-        hr_chart=charts.line_chart([charts.Series("Pulse", hr, "s1", "{:.0f}")], unit=" bpm",
+        hr_chart=charts.line_chart([charts.Series("Pulse", chart_hr, "s1", "{:.0f}")], unit=" bpm",
                                    x_range=x_range, events=ev),
         now=now.strftime("%Y-%m-%dT%H:%M"))
 

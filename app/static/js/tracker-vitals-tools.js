@@ -18,8 +18,6 @@
       tbody.querySelectorAll('tr')
     ).filter(row => row.querySelectorAll('td').length >= 7);
 
-    if (!rows.length) return;
-
     const toolbar = document.querySelector(
       '[data-vitals-toolbar]'
     );
@@ -49,6 +47,12 @@
     const resetButton = toolbar.querySelector(
       '[data-vitals-reset]'
     );
+
+    if (!rows.length) {
+      if (count) count.textContent = '0 of 0 readings';
+      if (exportButton) exportButton.disabled = true;
+      return;
+    }
 
     const state = {
       search: '',
@@ -280,19 +284,23 @@
 
     function exportCsv() {
       const header = [
-        'When',
-        'Weight',
+        'When (local)',
+        'Weight (' + (table.dataset.vitalsWeightUnit || 'kg') + ')',
         'Blood pressure',
         'Pulse',
         'Context',
         'Notes'
       ];
 
-      const data = visibleRows().map(row =>
-        Array.from(row.cells)
+      const data = visibleRows().map(row => {
+        const values = Array.from(row.cells)
           .slice(0, 6)
-          .map(cell => cell.textContent.trim())
-      );
+          .map(cell => cell.textContent.trim());
+        // Export the unambiguous local timestamp stored with the rendered row,
+        // not the localized display text.
+        values[0] = row.dataset.vitalsWhen || values[0];
+        return values;
+      });
 
       const csv = [header, ...data]
         .map(values => values.map(csvEscape).join(','))
