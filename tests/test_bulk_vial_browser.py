@@ -43,27 +43,27 @@ def html_fixture():
 </thead>
 <tbody>
 
-<tr>
+<tr data-attention-status="sealed">
 <td><input type="checkbox" class="bulk-vial-check"
-           name="vial_ids" value="1"></td>
+           name="vial_ids" value="1" form="bulk-vials"></td>
 <td>Compound A</td>
 <td><a>Vial A1</a></td>
 <td></td><td></td><td></td><td></td><td></td>
 <td>Sealed</td>
 </tr>
 
-<tr>
+<tr data-attention-status="in_use">
 <td><input type="checkbox" class="bulk-vial-check"
-           name="vial_ids" value="2"></td>
+           name="vial_ids" value="2" form="bulk-vials"></td>
 <td>Compound A</td>
 <td><a>Vial A2</a></td>
 <td></td><td></td><td></td><td></td><td></td>
 <td>In use</td>
 </tr>
 
-<tr>
+<tr data-attention-status="sealed">
 <td><input type="checkbox" class="bulk-vial-check"
-           name="vial_ids" value="3"></td>
+           name="vial_ids" value="3" form="bulk-vials"></td>
 <td>Compound B</td>
 <td><a>Vial B1</a></td>
 <td></td><td></td><td></td><td></td><td></td>
