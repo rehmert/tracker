@@ -105,13 +105,28 @@
     for(const name of names)compoundSelect.appendChild(new Option(name,name));
   }
   const actions={
+    // All bulk controls use this one persisted cross-view selection source.
+    'bulk-select-all':()=>{for(const b of boxes)b.checked=true;commitVisible();},
+    'bulk-select-none':()=>{selected={};sync();},
+    'bulk-open-editor':()=>{
+      if(!Object.keys(selected).length)return;
+      const panel=document.getElementById('bulk-editor-panel');
+      if(!panel)return;
+      panel.open=true;
+      panel.scrollIntoView({behavior:'auto',block:'start'});
+      panel.querySelector('select[name^="mode_"]')?.focus({preventScroll:true});
+    },
     'bulk7-select':()=>{for(const b of boxes){const d=metadata(b);if((!compoundSelect?.value||compoundSelect.value===d.compound)&&(!statusSelect?.value||statusSelect.value===d.status.toLowerCase().replaceAll(' ','_')))b.checked=true;}commitVisible();},
     'bulk7-invert':()=>{for(const b of boxes)b.checked=!b.checked;commitVisible();},
     'bulk7-clear':()=>{for(const b of boxes)b.checked=false;commitVisible();},
     'bulk8-clear-all':()=>{selected={};sync();},
     'bulk7-export':()=>{
       const records=Object.values(selected);if(!records.length){alert('Select at least one vial.');return;}
-      const csv=v=>'"'+String(v??'').replaceAll('"','""')+'"';
+      const csv=v=>{
+        const raw=String(v??'');
+        const safe=/^\s*[=+\-@]/.test(raw)?"'"+raw:raw;
+        return '"'+safe.replaceAll('"','""')+'"';
+      };
       const rows=[['Vial ID','Compound','Label','Status'],...records.map(r=>[r.id,r.compound,r.label,r.status])];
       const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(csv).join(',')).join('\r\n')+'\r\n'],{type:'text/csv;charset=utf-8'});
       const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='tracker-selected-vials.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);

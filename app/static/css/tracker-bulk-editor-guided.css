@@ -33,7 +33,8 @@
   white-space: nowrap;
 }
 #bulk-editor-panel .bulk-edit-fields { margin-top: .9rem; }
-#bulk-editor-panel .bulk-edit-field {
+#bulk-editor-panel .bulk-edit-field,
+#bulk-editor-panel .bulk-edit-field.bulk-field-inactive {
   padding: .65rem;
   border: 1px solid var(--rule, #dce5ec);
   border-radius: .6rem;
