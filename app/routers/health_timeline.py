@@ -2,10 +2,10 @@
 import csv
 import io
 from collections import Counter
-from datetime import datetime, timedelta, time
+from datetime import date, datetime, timedelta, time
 from itertools import groupby
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ from ..templating import render
 router = APIRouter()
 # The "All" option retains its existing value for bookmarked URLs but no
 # longer imposes an arbitrary ten-year cutoff.
-RANGES = {30: "30 days", 90: "90 days", 365: "1 year", 3650: "All"}
+RANGES = {7: "7 days", 30: "30 days", 90: "90 days", 180: "6 months", 365: "1 year", 3650: "All", 0: "Custom dates"}
 EVENT_TYPES = {
     "all": "All event types",
     "Vital": "Vitals",
@@ -34,19 +34,35 @@ def _timeline_context(
     days: int = 90,
     event_type: str = "all",
     q: str = "",
+    start_date: date | None = None,
+    end_date: date | None = None,
 ):
     """One read-only source for both on-screen entries and CSV exports."""
     days = days if days in RANGES else 90
     event_type = event_type if event_type in EVENT_TYPES else "all"
     q = q.strip()[:100]
     search = q.casefold()
-    since = None if days == 3650 else datetime.now() - timedelta(days=days)
+
+    # Explicit dates take precedence over presets. A one-sided date boundary
+    # is intentionally unbounded on the other side.
+    if start_date is not None or end_date is not None:
+        days = 0
+    if days == 0:
+        if start_date and end_date and start_date > end_date:
+            raise HTTPException(400, "From date must not be after through date.")
+        since = datetime.combine(start_date, time.min) if start_date else None
+        through = datetime.combine(end_date, time.max) if end_date else None
+    else:
+        since = None if days == 3650 else datetime.now() - timedelta(days=days)
+        through = None
 
     events = []
 
     vital_query = select(VitalReading)
     if since is not None:
         vital_query = vital_query.where(VitalReading.measured_at >= since)
+    if through is not None:
+        vital_query = vital_query.where(VitalReading.measured_at <= through)
     for reading in db.scalars(vital_query):
         parts = []
         if reading.weight_kg is not None:
@@ -66,6 +82,8 @@ def _timeline_context(
     dose_query = select(DoseLog)
     if since is not None:
         dose_query = dose_query.where(DoseLog.taken_at >= since)
+    if through is not None:
+        dose_query = dose_query.where(DoseLog.taken_at <= through)
     for dose in db.scalars(dose_query):
         events.append(dict(
             at=dose.taken_at, type="Dose" if dose.kind == "dose" else "Waste",
@@ -77,6 +95,8 @@ def _timeline_context(
     report_query = select(LabReport)
     if since is not None:
         report_query = report_query.where(LabReport.drawn_on >= since.date())
+    if through is not None:
+        report_query = report_query.where(LabReport.drawn_on <= through.date())
     for report in db.scalars(report_query):
         events.append(dict(
             at=datetime.combine(report.drawn_on, time.min), type="Lab",
@@ -88,14 +108,18 @@ def _timeline_context(
     for protocol in db.scalars(
         select(Protocol).where(Protocol.is_active.is_(True))
     ):
-        if protocol.start_date and (since is None or protocol.start_date >= since.date()):
+        if (protocol.start_date
+                and (since is None or protocol.start_date >= since.date())
+                and (through is None or protocol.start_date <= through.date())):
             events.append(dict(
                 at=datetime.combine(protocol.start_date, time.min),
                 type="Protocol", title=f"{protocol.name} · start date",
                 detail="Scheduled protocol start, not a confirmed administration",
                 link=f"/protocols/{protocol.id}",
             ))
-        if protocol.end_date and (since is None or protocol.end_date >= since.date()):
+        if (protocol.end_date
+                and (since is None or protocol.end_date >= since.date())
+                and (through is None or protocol.end_date <= through.date())):
             events.append(dict(
                 at=datetime.combine(protocol.end_date, time.min),
                 type="Protocol", title=f"{protocol.name} · end date",
@@ -127,6 +151,7 @@ def _timeline_context(
         events=events, groups=groups,
         days=days, ranges=RANGES, event_type=event_type, event_types=EVENT_TYPES,
         q=q, total=total, counts=counts,
+        start_date=start_date, end_date=end_date,
     )
 
 
@@ -136,11 +161,16 @@ def timeline(
     days: int = 90,
     event_type: str = "all",
     q: str = "",
+    start_date: date | None = None,
+    end_date: date | None = None,
     page: int = 1,
     page_size: int = 50,
     db: Session = Depends(get_db),
 ):
-    context = _timeline_context(db, days=days, event_type=event_type, q=q)
+    context = _timeline_context(
+        db, days=days, event_type=event_type, q=q,
+        start_date=start_date, end_date=end_date,
+    )
     matching = len(context["events"])
     page_size = page_size if page_size in (25, 50, 100) else 50
     total_pages = max(1, (matching + page_size - 1) // page_size)
@@ -178,10 +208,15 @@ def export_timeline_csv(
     days: int = 90,
     event_type: str = "all",
     q: str = "",
+    start_date: date | None = None,
+    end_date: date | None = None,
     db: Session = Depends(get_db),
 ):
     """Download exactly the entries shown by the selected timeline filters."""
-    context = _timeline_context(db, days=days, event_type=event_type, q=q)
+    context = _timeline_context(
+        db, days=days, event_type=event_type, q=q,
+        start_date=start_date, end_date=end_date,
+    )
     output = io.StringIO(newline="")
     writer = csv.writer(output)
     writer.writerow(("Date and time", "Event type", "Title", "Details", "Record"))

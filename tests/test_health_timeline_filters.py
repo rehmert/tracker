@@ -308,3 +308,105 @@ def test_csv_export_remains_full_when_timeline_is_paginated(timeline_records):
     assert len(exported) == 60
     assert all(row["Event type"] == "Vital" for row in exported)
     assert all("Pagination sample" in row["Details"] for row in exported)
+
+
+
+@pytest.mark.parametrize("days", [7, 180])
+def test_additional_timeline_presets(timeline_records, days):
+    client, _ = timeline_records
+    response = client.get("/health-timeline", params={"days": days})
+    assert response.status_code == 200
+    assert "Active timeline regimen · start date" in response.text
+    assert "Unwanted what-if regimen" not in response.text
+
+
+def test_custom_date_range_is_inclusive_and_shared_with_csv(timeline_records):
+    client, _ = timeline_records
+    selected = (date.today() - timedelta(days=4)).isoformat()
+    params = {"days": 0, "start_date": selected, "end_date": selected}
+    response = client.get("/health-timeline", params=params)
+    assert response.status_code == 200
+    assert "Showing 5 of 5 events" in response.text
+    assert "Active timeline regimen · start date" in response.text
+    assert "Active timeline regimen · end date" not in response.text
+    assert "Unwanted what-if regimen" not in response.text
+    assert 'value="' + selected + '"' in response.text
+    exported = _csv_rows(client.get("/health-timeline/export.csv", params=params))
+    assert len(exported) == 5
+    assert all(row["Date and time"].startswith(selected) for row in exported)
+    assert all("Unwanted what-if regimen" not in row["Title"] for row in exported)
+
+
+def test_custom_dates_override_preset_and_one_sided_ranges(timeline_records):
+    client, _ = timeline_records
+    selected = date.today() - timedelta(days=4)
+    just_end = client.get("/health-timeline", params={
+        "days": 30, "start_date": selected.isoformat(), "end_date": selected.isoformat(),
+    })
+    assert just_end.status_code == 200
+    assert 'value="0" selected' in just_end.text
+    assert "Showing 5 of 5 events" in just_end.text
+
+    future = client.get("/health-timeline", params={
+        "days": 0, "start_date": (selected + timedelta(days=1)).isoformat(),
+    })
+    assert future.status_code == 200
+    assert "Showing 1 of 1 events" in future.text
+    assert "Active timeline regimen · end date" in future.text
+    assert "Active timeline regimen · start date" not in future.text
+
+    old = client.get("/health-timeline", params={
+        "days": 0, "end_date": (date.today() - timedelta(days=365 * 11)).isoformat(),
+        "event_type": "Vital",
+    })
+    assert old.status_code == 200
+    assert "Showing 1 of 1 events" in old.text
+
+
+@pytest.mark.parametrize("endpoint", [
+    "/health-timeline", "/health-timeline/export.csv"
+])
+def test_reversed_custom_dates_rejected(timeline_records, endpoint):
+    client, _ = timeline_records
+    response = client.get(endpoint, params={
+        "days": 0, "start_date": "2026-11-20", "end_date": "2026-11-01",
+    })
+    assert response.status_code == 400
+    assert "From date must not be after through date" in response.text
+
+
+def test_quick_filters_keep_custom_dates_and_search(timeline_records):
+    client, _ = timeline_records
+    _add_pagination_vitals(timeline_records)
+    selected = (date.today() - timedelta(days=2)).isoformat()
+    response = client.get("/health-timeline", params={
+        "days": 0, "start_date": selected, "end_date": selected,
+        "event_type": "all", "q": "Pagination sample", "page": 2, "page_size": 25,
+    })
+    assert response.status_code == 200
+    matching_links = re.findall(
+        r'<a href="([^"]+)"[^>]*>\s*Vitals \(', response.text
+    )
+    assert len(matching_links) == 1
+    qs = parse_qs(urlsplit(unescape(matching_links[0])).query)
+    assert qs["start_date"] == [selected]
+    assert qs["end_date"] == [selected]
+    assert qs["event_type"] == ["Vital"]
+    assert qs["page"] == ["1"]
+    assert qs["q"] == ["Pagination sample"]
+
+    next_links = re.findall(r'<a href="([^"]+)">Next', response.text)
+    assert len(next_links) == 1
+    page_qs = parse_qs(urlsplit(unescape(next_links[0])).query)
+    assert page_qs["start_date"] == [selected]
+    assert page_qs["end_date"] == [selected]
+
+
+def test_print_and_quick_filter_controls_exist(timeline_records):
+    client, _ = timeline_records
+    html = client.get("/health-timeline").text
+    assert 'id="health-timeline-print"' in html
+    assert 'aria-label="Quick timeline event filters"' in html
+    assert 'name="start_date"' in html
+    assert 'name="end_date"' in html
+    assert 'tracker-health-timeline-dates.js' in html

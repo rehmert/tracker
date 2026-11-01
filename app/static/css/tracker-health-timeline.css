@@ -47,3 +47,36 @@
   font-variant-numeric: tabular-nums;
   color: var(--muted, #64748b);
 }
+
+.timeline-date-help { margin: .55rem 0; }
+.timeline-type-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: 1rem 0 .5rem;
+}
+.timeline-type-shortcuts a {
+  border: 1px solid var(--rule, #dce5ec);
+  padding: .3rem .7rem;
+  border-radius: 99px;
+  text-decoration: none;
+  font-size: .9rem;
+}
+.timeline-type-shortcuts a[aria-current="page"] {
+  background: var(--teal, #0d9488);
+  color: var(--teal-ink, white);
+  border-color: var(--teal, #0d9488);
+}
+.timeline-print-action { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
+.timeline-print-action .note { margin: 0; }
+
+@media print {
+  #app-sidebar, .sidebar-backdrop, .mobile-topbar,
+  #command-overlay, #toast-region, #ux-breadcrumbs,
+  .timeline-controls, .health-timeline-pagination,
+  .r5-heading > .button, .workspace-toolbar { display: none !important; }
+  #app-shell, #main-content { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .r5-timeline { padding: .3rem 0 !important; }
+  .r5-event, .timeline-day-group { break-inside: avoid; }
+  .r5-event { padding-bottom: .4rem; }
+}

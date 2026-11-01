@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Health timeline{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/css/tracker-health-timeline.css?v=20261101">
+<link rel="stylesheet" href="/static/css/tracker-health-timeline.css?v=20261101-batch2">
+<script src="/static/js/tracker-health-timeline-dates.js?v=20261101-batch2" defer></script>
 <header class="r5-heading">
   <div>
     <h1>Health timeline</h1>
@@ -19,6 +20,16 @@
           <option value="{{ n }}" {% if days == n %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
+    </label>
+    <label class="field" for="timeline-from">
+      <span>From date (optional)</span>
+      <input id="timeline-from" name="start_date" type="date"
+             value="{{ start_date.isoformat() if start_date else '' }}">
+    </label>
+    <label class="field" for="timeline-through">
+      <span>Through date (optional)</span>
+      <input id="timeline-through" name="end_date" type="date"
+             value="{{ end_date.isoformat() if end_date else '' }}">
     </label>
     <label class="field" for="timeline-event-type">
       <span>Event type</span>
@@ -49,6 +60,10 @@
       <a class="button" href="/health-timeline">Reset</a>
     </div>
   </form>
+  <p class="note timeline-date-help">
+    Choose a time period or enter dates to use a custom range. The through date is inclusive.
+    One empty date field means no boundary on that side.
+  </p>
   <p class="note timeline-results" role="status" aria-live="polite">
     {% if total_pages > 1 %}
       Showing {{ page_start }}–{{ page_end }} of {{ matching }} matching events
@@ -61,6 +76,24 @@
   {% if total_pages > 1 %}
     <p class="note">CSV export includes every matching event, not only this page.</p>
   {% endif %}
+  <nav class="timeline-type-shortcuts" aria-label="Quick timeline event filters">
+    <a href="{{ request.url.include_query_params(event_type='all', page=1) }}"
+       {% if event_type == 'all' %}aria-current="page"{% endif %}>
+      All ({{ total }})
+    </a>
+    {% for key, label in event_types.items() %}
+      {% if key != 'all' %}
+      <a href="{{ request.url.include_query_params(event_type=key, page=1) }}"
+         {% if event_type == key %}aria-current="page"{% endif %}>
+        {{ label }} ({{ counts.get(key, 0) }})
+      </a>
+      {% endif %}
+    {% endfor %}
+  </nav>
+  <div class="timeline-print-action">
+    <button type="button" id="health-timeline-print" onclick="window.print()">Print this page</button>
+    <p class="note">Print includes only the events shown on this page.</p>
+  </div>
 </section>
 
 <section class="r5-timeline" aria-label="Health timeline events">
