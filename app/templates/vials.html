@@ -311,6 +311,12 @@ document.addEventListener("DOMContentLoaded", () => {
   </button>
 
   <button type="button"
+          id="tracker-vial-find-select"
+          disabled>
+    Select matching
+  </button>
+
+  <button type="button"
           id="tracker-vial-find-clear">
     Clear
   </button>
@@ -334,11 +340,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const next = document.getElementById(
       "tracker-vial-find-next"
     );
+    const selectMatching = document.getElementById(
+      "tracker-vial-find-select"
+    );
     const clear = document.getElementById(
       "tracker-vial-find-clear"
     );
 
-    if (!input || !table || !count || !next || !clear) {
+    if (
+      !input || !table || !count || !next ||
+      !selectMatching || !clear
+    ) {
       return;
     }
 
@@ -365,6 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
         count.textContent =
           "Enter text to highlight matching vials.";
         next.disabled = true;
+        selectMatching.disabled = true;
         return;
       }
 
@@ -393,6 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
           : " matching vials");
 
       next.disabled = matches.length === 0;
+      selectMatching.disabled = matches.length === 0;
     }
 
     function nextMatch() {
@@ -429,6 +443,30 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     next.addEventListener("click", nextMatch);
+
+    selectMatching.addEventListener("click", () => {
+      let selectedCount = 0;
+
+      matches.forEach(row => {
+        const checkbox = row.querySelector(
+          "input.bulk-vial-check"
+        );
+
+        if (!checkbox || checkbox.checked) return;
+
+        checkbox.checked = true;
+        checkbox.dispatchEvent(
+          new Event("change", {bubbles:true})
+        );
+        selectedCount += 1;
+      });
+
+      count.textContent =
+        selectedCount.toLocaleString() +
+        (selectedCount === 1
+          ? " matching vial added to selection"
+          : " matching vials added to selection");
+    });
 
     clear.addEventListener("click", () => {
       input.value = "";
