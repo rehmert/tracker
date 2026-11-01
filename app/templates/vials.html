@@ -1057,6 +1057,36 @@ document.addEventListener("DOMContentLoaded", () => {
   color:var(--danger,#b42318);
   white-space:pre-wrap;
 }
+#bulk-server-review .bulk-review-controls {
+  display:flex;
+  align-items:end;
+  gap:.65rem 1rem;
+  flex-wrap:wrap;
+  margin:.85rem 0;
+}
+#bulk-server-review .bulk-review-search {
+  flex: 1 1 18rem;
+}
+#bulk-server-review .bulk-review-search input {
+  display:block;
+  width:100%;
+  margin-top:.25rem;
+}
+#bulk-server-review .bulk-review-field-summary {
+  font-size:.88rem;
+  color:var(--muted);
+  overflow-wrap:anywhere;
+}
+#bulk-server-review .bulk-review-pager {
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+  flex-wrap:wrap;
+  padding:.65rem 0;
+}
+#bulk-server-review .bulk-review-pager button[hidden] {
+  display:none;
+}
 </style>
 
 <dialog id="bulk-server-review"
@@ -1071,10 +1101,19 @@ document.addEventListener("DOMContentLoaded", () => {
     the update again before saving.
   </p>
   <p id="bulk-server-review-error" role="alert"></p>
-  <label class="bulk-review-unchanged">
-    <input type="checkbox" id="bulk-review-show-unchanged">
-    Show values that already match (hidden by default)
-  </label>
+  <p id="bulk-review-field-summary" class="bulk-review-field-summary"></p>
+  <div class="bulk-review-controls">
+    <label class="bulk-review-search">Find a vial or field in the review
+      <input id="bulk-review-search" type="search"
+             autocomplete="off" placeholder="Compound, vial, field, value…"
+             aria-controls="bulk-server-review-rows">
+    </label>
+    <label class="bulk-review-unchanged">
+      <input type="checkbox" id="bulk-review-show-unchanged">
+      Include values already matching
+    </label>
+  </div>
+  <p class="note">Review search and row display controls do not change the vials or fields being updated.</p>
   <div class="review-scroll">
     <table>
       <thead>
@@ -1087,6 +1126,10 @@ document.addEventListener("DOMContentLoaded", () => {
       </thead>
       <tbody id="bulk-server-review-rows"></tbody>
     </table>
+  </div>
+  <div class="bulk-review-pager">
+    <span id="bulk-review-visible-count" role="status" aria-live="polite"></span>
+    <button id="bulk-review-more" type="button" hidden>Show 50 more</button>
   </div>
   <div class="review-actions">
     <button type="button" id="bulk-server-review-cancel">
@@ -1129,12 +1172,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const showUnchanged = document.getElementById(
     "bulk-review-show-unchanged"
   );
+  const search = document.getElementById("bulk-review-search");
+  const visibleCount = document.getElementById("bulk-review-visible-count");
+  const more = document.getElementById("bulk-review-more");
+  const fieldSummary = document.getElementById("bulk-review-field-summary");
 
-  if (!form || !dialog || !snapshot) return;
+  if (!form || !dialog || !snapshot || !showUnchanged ||
+      !search || !visibleCount || !more || !fieldSummary) return;
 
   let busy = false;
   let approved = false;
   let reviewData = null;
+  const PAGE_SIZE = 50;
+  let rowLimit = PAGE_SIZE;
 
   function invalidatePreview() {
     if (!approved) {
@@ -1175,8 +1225,19 @@ document.addEventListener("DOMContentLoaded", () => {
     reviewData = data;
     rows.replaceChildren();
 
-    for (const entry of data.rows) {
-      if (!entry.changed && !showUnchanged.checked) continue;
+    const query = search.value.trim().toLocaleLowerCase();
+    const filtered = data.rows.filter(entry => {
+      if (!entry.changed && !showUnchanged.checked) return false;
+      if (!query) return true;
+      const haystack = [
+        entry.vial_id, entry.compound, entry.label,
+        entry.field.replaceAll("_", " "),
+        display(entry.current), display(entry.proposed)
+      ].join(" ").toLocaleLowerCase();
+      return haystack.includes(query);
+    });
+
+    for (const entry of filtered.slice(0, rowLimit)) {
       const row = document.createElement("tr");
 
       if (!entry.changed) {
@@ -1188,33 +1249,55 @@ document.addEventListener("DOMContentLoaded", () => {
         entry.compound + " / " +
         entry.label + " (#" + entry.vial_id + ")"
       );
-      addCell(
-        row,
-        entry.field.replaceAll("_", " ")
-      );
+      addCell(row, entry.field.replaceAll("_", " "));
       addCell(row, entry.current);
       addCell(row, entry.proposed);
 
       rows.appendChild(row);
     }
 
-    const changed = data.rows.filter(
-      row => row.changed
-    ).length;
+    const shown = Math.min(filtered.length, rowLimit);
+    visibleCount.textContent =
+      "Showing " + shown + " of " + filtered.length +
+      " matching review row(s).";
+    more.hidden = filtered.length <= rowLimit;
+    more.textContent = "Show " +
+      Math.min(PAGE_SIZE, filtered.length - rowLimit) + " more";
 
+    const changedRows = data.rows.filter(entry => entry.changed);
+    const changed = changedRows.length;
     const unchanged = data.rows.length - changed;
     summary.textContent =
       data.count + " selected vial(s), " +
       data.fields + " requested field(s), " +
       changed + " individual value change(s), " +
       unchanged + " already matching.";
+
+    const byField = new Map();
+    for (const entry of changedRows) {
+      const label = entry.field.replaceAll("_", " ");
+      byField.set(label, (byField.get(label) || 0) + 1);
+    }
+    fieldSummary.textContent = byField.size
+      ? "Changes by field: " + [...byField]
+          .map(([field, count]) => field + " (" + count + ")")
+          .join(" · ")
+      : "No value changes are necessary.";
+
     confirmButton.disabled = changed === 0;
     if (changed === 0) {
       error.textContent = "Nothing needs updating. Cancel and edit the requested changes.";
     }
   }
 
-  showUnchanged.addEventListener("change", () => {
+  function resetReviewRows() {
+    rowLimit = PAGE_SIZE;
+    if (reviewData) showRows(reviewData);
+  }
+  search.addEventListener("input", resetReviewRows);
+  showUnchanged.addEventListener("change", resetReviewRows);
+  more.addEventListener("click", () => {
+    rowLimit += PAGE_SIZE;
     if (reviewData) showRows(reviewData);
   });
 
@@ -1264,6 +1347,8 @@ document.addEventListener("DOMContentLoaded", () => {
       snapshot.value = data.snapshot;
 
       error.textContent = "";
+      search.value = "";
+      rowLimit = PAGE_SIZE;
       showUnchanged.checked = false;
       showRows(data);
 

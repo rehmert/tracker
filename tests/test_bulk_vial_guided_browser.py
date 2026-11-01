@@ -205,8 +205,12 @@ def review_html():
       <dialog id="bulk-server-review">
         <p id="bulk-server-review-summary"></p>
         <p id="bulk-server-review-error"></p>
+        <p id="bulk-review-field-summary"></p>
+        <input id="bulk-review-search" type="search">
         <input id="bulk-review-show-unchanged" type="checkbox">
         <table><tbody id="bulk-server-review-rows"></tbody></table>
+        <p id="bulk-review-visible-count"></p>
+        <button id="bulk-review-more" type="button" hidden>Show 50 more</button>
         <button id="bulk-server-review-cancel">Cancel</button>
         <button id="bulk-server-review-confirm">Confirm and apply</button>
       </dialog>
@@ -316,3 +320,59 @@ def test_jump_to_table_focuses_first_vial_checkbox(page):
     )
     assert focused
     assert not errors, errors
+
+
+def test_large_bulk_review_is_progressive_and_search_is_visual_only():
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        tab = browser.new_page()
+        errors = []
+        tab.on("pageerror", lambda error: errors.append(str(error)))
+        tab.set_content(review_html())
+        preview = {
+            "ok": True, "count": 125, "fields": 1,
+            "snapshot": "review-125",
+            "rows": [
+                {
+                    "vial_id": i, "compound": "Sample",
+                    "label": f"Distinct vial {i:03d}",
+                    "field": "lot", "current": "A",
+                    "proposed": "B", "changed": True,
+                }
+                for i in range(1, 126)
+            ]
+        }
+        tab.evaluate("""data => {
+            window.fetch = async () => ({
+                ok: true, json: async () => data
+            });
+        }""", preview)
+        tab.add_script_tag(content=review_script())
+        tab.locator("#bulk-apply").click()
+        tab.locator("#bulk-server-review[open]").wait_for()
+        assert tab.locator("#bulk-server-review-rows tr").count() == 50
+        assert "Showing 50 of 125" in tab.locator(
+            "#bulk-review-visible-count").inner_text()
+        assert "lot (125)" in tab.locator(
+            "#bulk-review-field-summary").inner_text()
+        tab.locator("#bulk-review-more").click()
+        assert tab.locator("#bulk-server-review-rows tr").count() == 100
+        tab.locator("#bulk-review-more").click()
+        assert tab.locator("#bulk-server-review-rows tr").count() == 125
+        assert tab.locator("#bulk-review-more").is_hidden()
+
+        tab.locator("#bulk-review-search").fill("Distinct vial 117")
+        assert tab.locator("#bulk-server-review-rows tr").count() == 1
+        assert "117" in tab.locator("#bulk-server-review-rows").inner_text()
+        assert tab.locator("#bulk-server-review-confirm").is_enabled()
+        assert tab.locator("#bulk-preview-snapshot").input_value() == "review-125"
+        assert "125 individual value change" in tab.locator(
+            "#bulk-server-review-summary").inner_text()
+
+        tab.locator("#bulk-review-search").fill("not in any vial")
+        assert tab.locator("#bulk-server-review-rows tr").count() == 0
+        assert "Showing 0 of 0" in tab.locator(
+            "#bulk-review-visible-count").inner_text()
+        assert tab.locator("#bulk-server-review-confirm").is_enabled()
+        assert not errors, errors
+        browser.close()
