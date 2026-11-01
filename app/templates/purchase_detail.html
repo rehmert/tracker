@@ -58,7 +58,45 @@
     <script>(()=>{const c=document.getElementById('purchase-vial-compound'),u=document.getElementById('purchase-vial-unit');if(!c||!u)return;function update(){const selected=c.selectedOptions[0];if(selected&&selected.dataset.unit)u.value=selected.dataset.unit;}c.addEventListener('change',update);update();})();</script>
     <label class="field"><span>Liquid volume (mL)</span><input type="number" name="volume_ml" step="any" min="0"><small>Solutions: the volume in the vial. Powders: leave blank until reconstituted.</small></label>
     <label class="field"><span>Or concentration per mL</span><input type="number" name="concentration" step="any" min="0"><small>Solutions only, in the contents unit. Used if "Contents" is blank.</small></label>
-    <label class="field"><span>Price per vial ({{ currency }})</span><input type="number" name="unit_price" step="0.01" min="0" value="0"></label>
+    <label class="field"><span>Price basis</span>
+      <select name="price_basis" id="purchase-vial-price-basis">
+        <option value="per_vial">Price per vial</option>
+        <option value="per_half_kit">Price per half kit (5 vials)</option>
+        <option value="per_full_kit">Price per full kit (10 vials)</option>
+      </select></label>
+    <label class="field"><span id="purchase-vial-price-label">Price per vial ({{ currency }})</span>
+      <input type="number" name="price_amount" id="purchase-vial-price-amount" step="0.01" min="0" value="0">
+      <small id="purchase-vial-price-help">Enter the cost for one vial.</small>
+    </label>
+    <input type="hidden" name="unit_price" value="0">
+    <script>
+    (() => {
+      const size = document.querySelector('form[action$="/vials"] select[name="kit_size"]');
+      const basis = document.getElementById("purchase-vial-price-basis");
+      const label = document.getElementById("purchase-vial-price-label");
+      const help = document.getElementById("purchase-vial-price-help");
+      if (!size || !basis || !label || !help) return;
+      function updatePriceBasis() {
+        const kitSize = Number(size.value);
+        [...basis.options].forEach(option => {
+          option.disabled = option.value === "per_half_kit" ? kitSize !== 5
+            : option.value === "per_full_kit" ? kitSize !== 10
+            : false;
+        });
+        if (basis.selectedOptions[0]?.disabled) basis.value = "per_vial";
+        const isHalf = basis.value === "per_half_kit";
+        const isFull = basis.value === "per_full_kit";
+        const unit = isHalf ? "half kit (5 vials)" : isFull ? "full kit (10 vials)" : "vial";
+        label.textContent = "Price per " + unit + " ({{ currency }})";
+        help.textContent = isHalf || isFull
+          ? "Enter the total price for one " + unit + ". The app allocates it across the vials and preserves the exact kit total."
+          : "Enter the cost for one vial.";
+      }
+      size.addEventListener("change", updatePriceBasis);
+      basis.addEventListener("change", updatePriceBasis);
+      updatePriceBasis();
+    })();
+    </script>
     <label class="field"><span>Label</span><input name="label" placeholder="e.g. 10 mg vial"></label>
     <label class="field"><span>Lot / batch</span><input name="lot"></label>
     <label class="field"><span>Expires</span><input type="date" name="expires_on"></label>
