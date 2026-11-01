@@ -7,6 +7,8 @@
     const count = document.getElementById("bulk-edits-count");
     const detail = document.getElementById("bulk-edits-details");
     const reset = document.getElementById("bulk-edits-reset");
+    const apply = document.getElementById("bulk-apply");
+    const validation = document.getElementById("bulk-edit-validation");
     if (!form || !fields.length || !count || !detail || !reset) return;
 
     function current() {
@@ -34,6 +36,21 @@
             (item.mode.value === "clear" ? "Clear" : "Set")).join(" · ")
         : "Enter a new value or explicitly choose Set or Clear.";
       reset.disabled = active.length === 0;
+      const invalid = active.filter(item =>
+        item.mode.value === "set" && !String(item.input?.value ?? "").trim()
+      );
+      if (validation) validation.textContent = invalid.length
+        ? "Enter a value for " + invalid.map(item=>item.label).join(", ") +
+          ", or choose Clear."
+        : active.length ? "Ready to preview selected vials." :
+          "Choose at least one field to edit.";
+      for (const item of current()) {
+        if (item.input) item.input.setAttribute(
+          "aria-invalid", String(invalid.includes(item))
+        );
+      }
+      const selected = Number(document.getElementById("bulk-toolbar-count")?.textContent || "0");
+      if (apply) apply.disabled = selected < 1 || !active.length || invalid.length > 0;
 
       for (const group of form.querySelectorAll(".bulk-edit-group")) {
         const n = group.querySelectorAll(".bulk-edit-active").length;
@@ -100,6 +117,8 @@
         refresh();
       });
     }
+
+    document.addEventListener("tracker:bulk-selection-changed", refresh);
 
     reset.addEventListener("click", () => {
       for (const item of current()) {

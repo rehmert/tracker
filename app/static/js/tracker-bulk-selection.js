@@ -135,6 +135,7 @@
       }
     }
     hidden();save();
+    document.dispatchEvent(new Event('tracker:bulk-selection-changed'));
   }
   function commitVisible() {
     const next={...selected};
@@ -209,7 +210,8 @@
       remember();delete selected[id];sync();
     });
   }
-  if(!document.getElementById('bulk8-clear-all')) {
+  if(!document.getElementById('bulk8-clear-all') &&
+     !document.getElementById('bulk-select-none')) {
     const target=document.querySelector('#bulk-selection-tools .inline');
     if(target){const button=document.createElement('button');button.type='button';button.id='bulk8-clear-all';button.textContent='Clear all saved selections';target.append(button);}
   }

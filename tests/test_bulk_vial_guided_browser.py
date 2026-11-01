@@ -93,6 +93,7 @@ def editor_html():
           </div>
           <strong id="bulk-edits-count"></strong>
           <span id="bulk-edits-details"></span>
+          <p id="bulk-edit-validation"></p>
           <button type="button" id="bulk-edits-reset">Reset edits</button>
           <button id="bulk-apply">Preview</button>
         </details>
@@ -133,9 +134,12 @@ def test_entering_field_value_automatically_opts_in(page):
     assert tab.locator("#bulk-editor-panel").evaluate("(el) => el.open")
     assert tab.locator('[name="mode_lot"]').input_value() == "keep"
     assert "No changes requested" in tab.locator("#bulk-edits-count").inner_text()
+    assert tab.locator("#bulk-apply").is_disabled()
     tab.locator('[name="value_lot"]').fill("LOT-NEW")
     assert tab.locator('[name="mode_lot"]').input_value() == "set"
     assert "1 field to update" in tab.locator("#bulk-edits-count").inner_text()
+    assert tab.locator("#bulk-apply").is_enabled()
+    assert "Ready to preview" in tab.locator("#bulk-edit-validation").inner_text()
     assert tab.locator('[data-bulk-field="lot"]').evaluate(
         "(element) => element.classList.contains('bulk-edit-active')"
     )
@@ -145,6 +149,7 @@ def test_entering_field_value_automatically_opts_in(page):
     assert tab.locator('[name="mode_lot"]').input_value() == "keep"
     assert tab.locator('[name="value_lot"]').input_value() == ""
     assert "No changes requested" in tab.locator("#bulk-edits-count").inner_text()
+    assert tab.locator("#bulk-apply").is_disabled()
     assert not errors, errors
 
 
@@ -485,3 +490,30 @@ def test_unconfirmed_or_stale_success_url_does_not_clear_selection(page):
     tab.add_script_tag(path=str(GUIDED))
     assert "1 selected across all views" in tab.locator("#bulk7-summary").inner_text()
     assert not errors, errors
+
+
+
+def test_incomplete_set_shows_inline_validation_and_blocks_preview(page):
+    tab, errors = page
+    tab.locator('.bulk-vial-check[value="1"]').check()
+    tab.locator("#bulk-open-editor").click()
+    tab.locator('[name="mode_lot"]').select_option("set")
+    assert "Enter a value for Lot" in tab.locator("#bulk-edit-validation").inner_text()
+    assert tab.locator('[name="value_lot"]').get_attribute("aria-invalid") == "true"
+    assert tab.locator("#bulk-apply").is_disabled()
+    tab.locator('[name="value_lot"]').fill("NEW")
+    assert tab.locator("#bulk-apply").is_enabled()
+    assert tab.locator('[name="value_lot"]').get_attribute("aria-invalid") == "false"
+    tab.locator("#bulk-select-none").click()
+    assert tab.locator("#bulk-apply").is_disabled()
+    tab.locator("#bulk-undo-selection").click()
+    assert tab.locator("#bulk-apply").is_enabled()
+    assert not errors, errors
+
+
+def test_main_page_has_one_clear_all_button_and_inline_guidance():
+    source = TEMPLATE.read_text(encoding="utf-8")
+    selection = SELECT.read_text(encoding="utf-8")
+    assert 'id="bulk-select-none"' in source
+    assert 'id="bulk-edit-validation"' in source
+    assert "!document.getElementById('bulk-select-none')" in selection
