@@ -245,3 +245,66 @@ def test_mismatched_price_basis_creates_no_vials(env):
     assert "err=" in response.headers["location"]
     with env["Session"]() as db:
         assert db.query(Vial).count() == before
+
+
+def test_separate_kit_additions_keep_unique_coa_groups(env):
+    """Each kit is grouped within its own addition, never a prior request."""
+    pid = env["purchase_id"]
+    cid = env["compound_id"]
+    pairs = [
+        ("compound_id", str(cid)),
+        ("kit_size", "5"), ("kit_count", "2"),
+        ("content_value", "10"), ("content_unit", "mg"),
+        ("price_basis", "per_half_kit"), ("price_amount", "12.01"),
+    ]
+    first = post_form(env, f"/purchases/{pid}/vials", pairs)
+    second = post_form(env, f"/purchases/{pid}/vials", pairs)
+    assert "msg=" in first.headers["location"], first.headers["location"]
+    assert "msg=" in second.headers["location"], second.headers["location"]
+    with env["Session"]() as db:
+        rows = list(db.scalars(
+            select(Vial).where(Vial.purchase_id == pid).order_by(Vial.id)
+        ))
+        created = [v for v in rows if v.kit_ref]
+        assert len(created) == 20
+        groups = {}
+        for vial in created:
+            groups.setdefault(vial.kit_ref, []).append(vial)
+        assert len(groups) == 4
+        assert sorted(len(group) for group in groups.values()) == [5, 5, 5, 5]
+        assert all(sum(v.unit_price_cents for v in group) == 1201
+                   for group in groups.values())
+        assert {v.kit_ref for v in created[:10]}.isdisjoint(
+            {v.kit_ref for v in created[10:]})
+        assert all(len(v.kit_ref) <= 120 for v in created)
+
+
+@pytest.mark.parametrize("mutations", [
+    [("price_amount", "-1")],
+    [("content_value", "nan")],
+    [("content_value", "inf")],
+    [("content_value", "1e309")],
+    [("volume_ml", "inf")],
+    [("kit_size", "1"), ("quantity", "201")],
+    [("kit_size", "1"), ("kit_count", "2")],
+])
+def test_invalid_vial_purchase_does_not_change_inventory(env, mutations):
+    pid = env["purchase_id"]
+    with env["Session"]() as db:
+        before = db.query(Vial).count()
+    values = {
+        "compound_id": str(env["compound_id"]),
+        "kit_size": "5",
+        "kit_count": "1",
+        "quantity": "1",
+        "content_value": "10",
+        "content_unit": "mg",
+        "price_basis": "per_vial",
+        "price_amount": "12.00",
+    }
+    values.update(dict(mutations))
+    response = post_form(env, f"/purchases/{pid}/vials", list(values.items()))
+    assert response.status_code == 303
+    assert "err=" in response.headers["location"], response.headers["location"]
+    with env["Session"]() as db:
+        assert db.query(Vial).count() == before

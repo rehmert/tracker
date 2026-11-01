@@ -1,7 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{{ p.vendor }}<script src="/static/bulk_purchase_ux.js" defer></script>
-{% endblock %}
+{% block title %}{{ p.vendor }}{% endblock %}
 {% block content %}
+<script src="/static/bulk_purchase_ux.js?v=purchase-fix-20261101" defer></script>
+<script src="/static/js/tracker-purchase-vials.js?v=20261101" defer></script>
+<style>
+#purchase-vial-form [hidden] { display: none !important; }
+#purchase-vial-preview { margin: 0; }
+</style>
 <h1>{{ p.vendor }} <small class="sub">{{ p.purchased_on|dt }}</small></h1>
 
 <div class="ux-callout"><strong>Purchase workflow:</strong> Step 1 · Order saved. Step 2 · Add purchased inventory using the sections below. Step 3 · Review the purchase summary and inventory records. Saving an item updates inventory immediately.</div>
@@ -42,16 +47,23 @@
 
 <section>
   <h2>Add vials to this purchase</h2>
-  <form method="post" action="/purchases/{{ p.id }}/vials" class="grid">
+  <form method="post" action="/purchases/{{ p.id }}/vials" class="grid"
+        id="purchase-vial-form" data-currency="{{ currency }}">
     <input type="hidden" name="submission_token" value="{{ vial_submission_token }}">
     <label class="field"><span>Compound</span>
       <select name="compound_id" id="purchase-vial-compound" required>{% for c in compounds %}<option value="{{ c.id }}" data-unit="{{ c.primary_unit }}">{{ c.name }}</option>{% endfor %}</select></label>
     <label class="field"><span>Form</span>
       <select name="form"><option value="lyophilized">Lyophilized Powder</option><option value="solution">Ready-Made Solution</option></select></label>
     <label class="field"><span>Package size</span><select name="kit_size"><option value="1">Individual vials</option><option value="5">Half kit (5)</option><option value="10">Full kit (10)</option></select></label>
-    <label class="field"><span>Number of kits (for kits)</span><input name="kit_count" type="number" value="1" min="1" max="100"></label>
+    <label class="field" id="purchase-vial-kits-field" hidden>
+      <span>Number of kits</span>
+      <input name="kit_count" type="number" value="1" min="1" max="100" disabled>
+    </label>
     <label class="field"><span>Cap color</span><input name="cap_color"></label>
-    <label class="field"><span>Number of identical vials</span><input type="number" name="quantity" min="1" max="200" value="1"></label>
+    <label class="field" id="purchase-vial-quantity-field">
+      <span>Number of identical vials</span>
+      <input type="number" name="quantity" min="1" max="200" value="1">
+    </label>
     <label class="field"><span>Contents per vial</span><input type="number" name="content_value" step="any" min="0"></label>
     <label class="field"><span>Contents unit</span>
       <select name="content_unit" id="purchase-vial-unit">{% for u in CONTENT_UNITS %}<option {% if u == 'mg' %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
@@ -69,39 +81,15 @@
       <small id="purchase-vial-price-help">Enter the cost for one vial.</small>
     </label>
     <input type="hidden" name="unit_price" value="0">
-    <script>
-    (() => {
-      const size = document.querySelector('form[action$="/vials"] select[name="kit_size"]');
-      const basis = document.getElementById("purchase-vial-price-basis");
-      const label = document.getElementById("purchase-vial-price-label");
-      const help = document.getElementById("purchase-vial-price-help");
-      if (!size || !basis || !label || !help) return;
-      function updatePriceBasis() {
-        const kitSize = Number(size.value);
-        [...basis.options].forEach(option => {
-          option.disabled = option.value === "per_half_kit" ? kitSize !== 5
-            : option.value === "per_full_kit" ? kitSize !== 10
-            : false;
-        });
-        if (basis.selectedOptions[0]?.disabled) basis.value = "per_vial";
-        const isHalf = basis.value === "per_half_kit";
-        const isFull = basis.value === "per_full_kit";
-        const unit = isHalf ? "half kit (5 vials)" : isFull ? "full kit (10 vials)" : "vial";
-        label.textContent = "Price per " + unit + " ({{ currency }})";
-        help.textContent = isHalf || isFull
-          ? "Enter the total price for one " + unit + ". The app allocates it across the vials and preserves the exact kit total."
-          : "Enter the cost for one vial.";
-      }
-      size.addEventListener("change", updatePriceBasis);
-      basis.addEventListener("change", updatePriceBasis);
-      updatePriceBasis();
-    })();
-    </script>
+
     <label class="field"><span>Label</span><input name="label" placeholder="e.g. 10 mg vial"></label>
     <label class="field"><span>Lot / batch</span><input name="lot"></label>
     <label class="field"><span>Expires</span><input type="date" name="expires_on"></label>
     <label class="field wide"><span>Notes</span><input name="notes"></label>
-    <div><button class="primary">Add vial(s)</button></div>
+    <p class="note wide" id="purchase-vial-preview" role="status" aria-live="polite">
+      1 individual vial · Line total: {{ currency }}0.00
+    </p>
+    <div><button class="primary" type="submit" id="purchase-vial-submit">Add 1 vial</button></div>
   </form>
 </section>
 

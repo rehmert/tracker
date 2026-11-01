@@ -1,5 +1,6 @@
 from datetime import date
 import math
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
@@ -138,16 +139,26 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
         compound = db.get(Compound, compound_id)
         if compound is None:
             raise ValueError("Choose a compound first (add one on the Compounds page).")
-        if kit_size not in (1, 5, 10) or not 1 <= kit_count <= 100:
-            raise ValueError("Kit size must be 1, 5 or 10 and count must be 1-100.")
-        quantity = kit_size * kit_count if kit_size != 1 else quantity
-        if not 1 <= quantity <= 1000:
-            raise ValueError("Quantity must be between 1 and 200.")
+        if kit_size not in (1, 5, 10):
+            raise ValueError("Package size must be 1, 5 or 10 vials.")
+        if kit_size == 1:
+            if kit_count != 1:
+                raise ValueError("Kit count must be 1 for individual vials.")
+            if not 1 <= quantity <= 200:
+                raise ValueError("Individual vial quantity must be between 1 and 200.")
+        else:
+            if not 1 <= kit_count <= 100:
+                raise ValueError("Number of kits must be between 1 and 100.")
+            quantity = kit_size * kit_count
+
         def number(text: str, what: str) -> float:
             try:
-                return float(text)
-            except ValueError:
-                raise ValueError(f"Enter {what} as a number.")
+                value = float(text)
+            except (ValueError, TypeError, OverflowError):
+                raise ValueError(f"Enter {what} as a valid number.")
+            if not math.isfinite(value):
+                raise ValueError(f"Enter {what} as a finite number.")
+            return value
 
         unit = U.parse_unit(content_unit)
         if compound.primary_unit == "IU" and unit.dim != "iu":
@@ -170,8 +181,8 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
         else:
             form = "lyophilized"
             content = number(content_value, "the vial contents")
-        if content <= 0:
-            raise ValueError("Enter how much is in the vial (above 0).")
+        if not math.isfinite(content) or content <= 0:
+            raise ValueError("Enter a finite vial content amount above 0.")
         _, dim = U.to_base(content, unit.name)
         existing = db.scalars(select(Vial).where(Vial.compound_id == compound_id)).first()
         if existing and U.parse_unit(existing.content_unit).dim != dim:
@@ -181,6 +192,8 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
             raise ValueError("Choose a valid price basis.")
         entered_price = price_amount.strip() if price_amount.strip() else unit_price
         entered_cents = services.to_cents(entered_price)
+        if entered_cents < 0:
+            raise ValueError("Vial or kit price cannot be negative.")
         if price_basis == "per_vial":
             vial_prices = [entered_cents] * quantity
         else:
@@ -196,8 +209,12 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
         return services.flash_redirect(back, err=str(exc))
 
     created_vials = []
+    # A unique batch marker prevents a later purchase addition from merging
+    # independent kit groups (including COA kit-scope selection).
+    batch_ref = uuid4().hex if kit_size > 1 else ""
     for i in range(quantity):
-        vial = Vial(cap_color=cap_color.strip(), kit_ref=(f"purchase-{pid}-kit-{i // kit_size + 1}" if kit_size > 1 else ""),compound_id=compound_id, purchase_id=pid, label=label.strip(),
+        kit_ref = f"purchase-{pid}-batch-{batch_ref}-kit-{i // kit_size + 1}" if batch_ref else ""
+        vial = Vial(cap_color=cap_color.strip(), kit_ref=kit_ref, compound_id=compound_id, purchase_id=pid, label=label.strip(),
                     lot=lot.strip(), form=form, content_value=content,
                     content_unit=unit.name, volume_ml=vol, expires_on=expiry,
                     unit_price_cents=vial_prices[i], notes=notes.strip())
