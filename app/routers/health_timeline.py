@@ -28,7 +28,7 @@ def timeline(request: Request, days: int = 90, db: Session = Depends(get_db)):
         events.append(dict(at=d.taken_at, type="Dose" if d.kind == "dose" else "Waste", title=f"{d.vial.compound.name}: {d.entered_value:g} {d.entered_unit}", detail=d.site or d.notes, link="/doses"))
     for report in db.scalars(select(LabReport).where(LabReport.drawn_on >= since.date())):
         events.append(dict(at=datetime.combine(report.drawn_on, time.min), type="Lab", title=f"{report.lab_name or 'Lab report'} · {len(report.results)} results", detail=report.notes, link="/labs"))
-    for p in db.scalars(select(Protocol)):
+    for p in db.scalars(select(Protocol).where(Protocol.is_active.is_(True))):
         if p.start_date and p.start_date >= since.date():
             events.append(dict(at=datetime.combine(p.start_date, time.min), type="Protocol", title=f"{p.name} · start date", detail="Scheduled protocol start, not a confirmed administration", link="/protocols"))
         if p.end_date and p.end_date >= since.date():
