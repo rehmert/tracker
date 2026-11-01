@@ -2,6 +2,7 @@
 (() => {
   'use strict';
   const KEY = 'tracker.bulkVials.selection.v1';
+  const PENDING = 'tracker.bulkVials.pendingUpdate.v1';
   const LIMIT = 1000;
   const form = document.getElementById('bulk-vials');
   const summary = document.getElementById('bulk7-summary');
@@ -36,12 +37,19 @@
     } catch (_) {return {};}
   }
   selected=load();
-  // Clear only after Tracker reports a successful bulk update; errors retain
-  // the selection for correction. Do not clear on unrelated page visits.
-  const flash = new URLSearchParams(location.search).get('msg') || '';
-  if (flash.startsWith('Bulk update completed:')) {
+  // Clear only when this tab really submitted a confirmed bulk update.
+  // A crafted or stale success URL must never clear unrelated selections.
+  const params = new URLSearchParams(location.search);
+  const flash = params.get('msg') || '';
+  const completed = flash.startsWith('Bulk update completed:');
+  let pending = false;
+  try {pending=sessionStorage.getItem(PENDING)==='1';} catch (_) {}
+  if (completed && pending) {
     selected = {};
     try {sessionStorage.removeItem(KEY);} catch (_) {}
+  }
+  if (pending && (completed || params.has('err'))) {
+    try {sessionStorage.removeItem(PENDING);} catch (_) {}
   }
   function remember() {
     previousSelection = {...selected};

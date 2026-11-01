@@ -19,6 +19,7 @@ def editor_html():
       <button id="bulk-select-all">Select all displayed</button>
       <button id="bulk-select-none">Clear selection</button>
       <button id="bulk-open-editor" disabled>Bulk edit selected</button>
+      <button id="bulk-undo-selection" disabled>Undo selection</button>
       <button id="bulk-jump-to-vials" type="button">Find vials</button>
       <span id="bulk-toolbar-count">0</span>
       <div id="bulk-selection-tools">
@@ -28,6 +29,7 @@ def editor_html():
           <button id="bulk7-select">Select matching</button>
           <button id="bulk7-invert">Invert selection</button>
           <button id="bulk7-clear">Clear visible</button>
+          <button id="bulk7-deselect">Remove matching</button>
           <button id="bulk7-export">Export selected CSV</button>
         </div>
       </div>
@@ -452,6 +454,9 @@ def test_bulk_update_success_clears_only_confirmed_selection(page, message, clea
     tab, errors = page
     tab.locator('.bulk-vial-check[value="1"]').check()
     assert "1 selected across all views" in tab.locator("#bulk7-summary").inner_text()
+    tab.evaluate("""() => sessionStorage.setItem(
+        "tracker.bulkVials.pendingUpdate.v1", "1"
+    )""")
     dest = "http://tracker-guided.test/vials"
     if message:
         dest += "?msg=" + quote(message)
@@ -468,3 +473,15 @@ def test_impact_summary_counts_distinct_affected_vials():
     assert 'id="bulk-server-review-impact"' in html
     assert "new Set(changedRows.map(entry => entry.vial_id))" in html
     assert "affectedCompounds.get(key).add(entry.vial_id)" in html
+
+
+
+def test_unconfirmed_or_stale_success_url_does_not_clear_selection(page):
+    tab, errors = page
+    tab.locator('.bulk-vial-check[value="1"]').check()
+    tab.goto("http://tracker-guided.test/vials"
+             "?msg=Bulk+update+completed%3A+1+of+1+selected+vial%28s%29+changed.")
+    tab.add_script_tag(path=str(SELECT))
+    tab.add_script_tag(path=str(GUIDED))
+    assert "1 selected across all views" in tab.locator("#bulk7-summary").inner_text()
+    assert not errors, errors

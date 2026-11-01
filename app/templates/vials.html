@@ -1416,6 +1416,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // The backend revalidates and checks the optimistic-
     // concurrency fingerprint before committing changes.
+    // Only a confirmed submission may later clear this tab's selection.
+    try {
+      sessionStorage.setItem("tracker.bulkVials.pendingUpdate.v1", "1");
+    } catch (_) { /* Storage can be unavailable. */ }
     HTMLFormElement.prototype.submit.call(form);
   });
 
