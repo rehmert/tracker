@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import services, units as U
 from ..inventory_lock import reserve_inventory_write
 from ..db import get_db
-from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply, ChangeAudit
+from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply, ChangeAudit, BlendComponent
 from .. import manual_supplies
 from ..templating import render
 
@@ -336,6 +336,99 @@ async def validate_bulk_selection(
         "missing": missing,
         "current": current,
     }
+
+
+def _bulk_delete_assessment(db: Session, ids: list[int]):
+    vials = list(db.scalars(select(Vial).where(Vial.id.in_(ids)).order_by(Vial.id)))
+    result = []
+    for vial in vials:
+        reasons = []
+        if db.scalar(select(DoseLog.id).where(DoseLog.vial_id == vial.id).limit(1)) is not None:
+            reasons.append("has logged doses")
+        if db.scalar(select(PreparationEvent.id).where(PreparationEvent.vial_id == vial.id).limit(1)) is not None:
+            reasons.append("has preparation history")
+        if db.scalar(select(BlendComponent.id).where(BlendComponent.source_vial_id == vial.id).limit(1)) is not None:
+            reasons.append("is referenced by a blend")
+        result.append({
+            "id": vial.id,
+            "name": f"{vial.compound.name} · {vial.label or ('#' + str(vial.id))}",
+            "eligible": not reasons,
+            "reason": ", ".join(reasons),
+        })
+    missing = sorted(set(ids) - {v.id for v in vials})
+    return result, missing
+
+
+@router.post("/vials/bulk/delete-preview")
+async def bulk_delete_preview(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    try:
+        ids = sorted({int(value) for value in form.getlist("vial_ids")})
+        if not ids or len(ids) > 1000 or any(value <= 0 for value in ids):
+            raise ValueError
+    except (ValueError, TypeError):
+        return {"ok": False, "error": "Select between 1 and 1,000 valid vials."}
+    rows, missing = _bulk_delete_assessment(db, ids)
+    return {
+        "ok": True,
+        "eligible": [row for row in rows if row["eligible"]],
+        "blocked": [row for row in rows if not row["eligible"]],
+        "missing": missing,
+        "requested": len(ids),
+    }
+
+
+@router.post("/vials/bulk/delete")
+async def bulk_delete_vials(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    try:
+        ids = sorted({int(value) for value in form.getlist("vial_ids")})
+        if not ids or len(ids) > 1000 or any(value <= 0 for value in ids):
+            raise ValueError
+    except (ValueError, TypeError):
+        return services.flash_redirect("/vials", err="Select between 1 and 1,000 valid vials.")
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/vials", err="Inventory is busy. Please retry.")
+    try:
+        rows, missing = _bulk_delete_assessment(db, ids)
+        eligible_ids = {row["id"] for row in rows if row["eligible"]}
+        if not eligible_ids:
+            raise ValueError("No selected vials are eligible for deletion. Vials with doses, preparation history, or blend references must be retained.")
+        vials = list(db.scalars(select(Vial).where(Vial.id.in_(eligible_ids)).order_by(Vial.id)))
+        for vial in vials:
+            db.add(ChangeAudit(
+                entity_type="vial",
+                entity_id=vial.id,
+                action="bulk_delete",
+                before_json=json.dumps({
+                    "compound": vial.compound.name,
+                    "label": vial.label,
+                    "lot": vial.lot,
+                    "status": vial.status,
+                    "purchase_id": vial.purchase_id,
+                }),
+                after_json="{}",
+            ))
+            # COAs are shared records; detach this vial without deleting the COA or its file.
+            vial.linked_coas.clear()
+            vial.coa = None
+            db.flush()
+            db.delete(vial)
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        return services.flash_redirect("/vials", err=str(exc))
+    except Exception:
+        db.rollback()
+        raise
+    blocked = len(rows) - len(eligible_ids)
+    detail = f" {blocked} retained because they have dose, preparation, or blend history." if blocked else ""
+    if missing:
+        detail += f" {len(missing)} selected vial(s) were already missing."
+    return services.flash_redirect(
+        "/vials",
+        msg=f"Bulk deletion completed: {len(eligible_ids)} vial(s) deleted.{detail}",
+    )
 
 
 @router.post("/vials/bulk")
