@@ -113,7 +113,12 @@ def _timeline_context(
             (event["title"], event["detail"] or "", event["type"])
         ).casefold())
     ]
-    events.sort(key=lambda event: event["at"], reverse=True)
+    events.sort(
+        key=lambda event: (
+            event["at"], event["type"], event["link"], event["title"]
+        ),
+        reverse=True,
+    )
     groups = [
         {"day": day, "events": list(day_events)}
         for day, day_events in groupby(events, key=lambda event: event["at"].date())
@@ -131,12 +136,33 @@ def timeline(
     days: int = 90,
     event_type: str = "all",
     q: str = "",
+    page: int = 1,
+    page_size: int = 50,
     db: Session = Depends(get_db),
 ):
-    return render(
-        request, "health_timeline.html",
-        **_timeline_context(db, days=days, event_type=event_type, q=q),
+    context = _timeline_context(db, days=days, event_type=event_type, q=q)
+    matching = len(context["events"])
+    page_size = page_size if page_size in (25, 50, 100) else 50
+    total_pages = max(1, (matching + page_size - 1) // page_size)
+    page = min(max(1, page), total_pages)
+    first = (page - 1) * page_size
+    visible = context["events"][first:first + page_size]
+    context.update(
+        events=visible,
+        groups=[
+            {"day": day, "events": list(day_events)}
+            for day, day_events in groupby(
+                visible, key=lambda event: event["at"].date()
+            )
+        ],
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        matching=matching,
+        page_start=first + 1 if matching else 0,
+        page_end=first + len(visible),
     )
+    return render(request, "health_timeline.html", **context)
 
 
 def _csv_safe(value) -> str:

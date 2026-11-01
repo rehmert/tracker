@@ -28,3 +28,22 @@
 .timeline-day-group .r5-event {
   margin-left: .45rem;
 }
+
+.health-timeline-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  margin: 1.2rem 0;
+}
+.health-timeline-pagination a {
+  padding: .4rem .7rem;
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: 8px;
+  text-decoration: none;
+}
+.health-timeline-pagination span {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted, #64748b);
+}

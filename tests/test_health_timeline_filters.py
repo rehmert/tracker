@@ -4,6 +4,9 @@ All record creation uses an independent in-memory database.
 """
 import csv
 import io
+import re
+from html import unescape
+from urllib.parse import parse_qs, urlsplit
 from datetime import date, datetime, timedelta
 
 import pytest
@@ -69,6 +72,7 @@ def timeline_records():
             ids = {
                 "active": active.id, "dose": dose.id,
                 "waste": waste.id, "vital": vital.id, "lab": report.id,
+                "engine": engine,
             }
         with TestClient(app) as client:
             yield client, ids
@@ -220,3 +224,87 @@ def test_csv_export_control_uses_current_form_filters(timeline_records):
     assert 'formmethod="get"' in page.text
     assert 'value="CBC"' in page.text
     assert 'value="Lab" selected' in page.text
+
+
+def _add_pagination_vitals(timeline_records, count=60):
+    _, ids = timeline_records
+    with Session(ids["engine"]) as db:
+        when = datetime.combine(date.today() - timedelta(days=2), datetime.min.time())
+        for index in range(count):
+            db.add(VitalReading(
+                measured_at=when + timedelta(seconds=index),
+                weight_kg=90,
+                context="Pagination sample",
+                notes=f"Row {index:03d}",
+            ))
+        db.commit()
+
+
+def test_health_timeline_page_boundaries_and_filters(timeline_records):
+    client, _ = timeline_records
+    _add_pagination_vitals(timeline_records)
+    filters = {"days": 90, "event_type": "Vital", "q": "Pagination sample", "page_size": 25}
+    first = client.get("/health-timeline", params=filters)
+    assert first.status_code == 200
+    assert first.text.count('class="r5-event"') == 25
+    assert "Showing 1–25 of 60 matching events" in first.text
+    assert "Page 1 of 3" in first.text
+    assert "CSV export includes every matching event" in first.text
+
+    next_links = re.findall(r'<a href="([^"]+)">Next', first.text)
+    assert len(next_links) == 1
+    next_url = unescape(next_links[0])
+    query = parse_qs(urlsplit(next_url).query)
+    assert query["page"] == ["2"]
+    assert query["days"] == ["90"]
+    assert query["event_type"] == ["Vital"]
+    assert query["q"] == ["Pagination sample"]
+    assert query["page_size"] == ["25"]
+
+    middle = client.get(next_url)
+    assert middle.status_code == 200
+    assert middle.text.count('class="r5-event"') == 25
+    assert "Showing 26–50 of 60 matching events" in middle.text
+    assert "Page 2 of 3" in middle.text
+
+    last = client.get("/health-timeline", params={**filters, "page": 3})
+    assert last.status_code == 200
+    assert last.text.count('class="r5-event"') == 10
+    assert "Showing 51–60 of 60 matching events" in last.text
+    assert "Page 3 of 3" in last.text
+    assert "Next →" not in last.text
+
+
+def test_health_timeline_invalid_pages_and_sizes_are_clamped(timeline_records):
+    client, _ = timeline_records
+    _add_pagination_vitals(timeline_records)
+    params = {"days": 90, "event_type": "Vital", "q": "Pagination sample"}
+    first = client.get("/health-timeline", params={**params, "page": -42, "page_size": 9})
+    assert first.status_code == 200
+    assert "Page 1 of 2" in first.text
+    assert first.text.count('class="r5-event"') == 50
+
+    last = client.get("/health-timeline", params={**params, "page": 9999, "page_size": 25})
+    assert last.status_code == 200
+    assert "Page 3 of 3" in last.text
+    assert last.text.count('class="r5-event"') == 10
+
+    empty = client.get("/health-timeline", params={"q": "not present", "page": 10000})
+    assert empty.status_code == 200
+    assert "No entries match these filters" in empty.text
+    assert "Page " not in empty.text
+
+
+def test_csv_export_remains_full_when_timeline_is_paginated(timeline_records):
+    client, _ = timeline_records
+    _add_pagination_vitals(timeline_records)
+    params = {
+        "days": 90, "event_type": "Vital", "q": "Pagination sample",
+        "page": 2, "page_size": 25,
+    }
+    display = client.get("/health-timeline", params=params)
+    assert display.text.count('class="r5-event"') == 25
+    exported = _csv_rows(client.get("/health-timeline/export.csv", params=params))
+    assert len(exported) == 60
+    assert all(row["Event type"] == "Vital" for row in exported)
+    assert all("Pagination sample" in row["Details"] for row in exported)

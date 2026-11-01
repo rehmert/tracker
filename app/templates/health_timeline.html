@@ -35,6 +35,14 @@
       <input id="timeline-search" name="q" type="search" value="{{ q }}"
              maxlength="100" placeholder="Compound, lab, note, status…">
     </label>
+    <label class="field" for="timeline-page-size">
+      <span>Entries per page</span>
+      <select id="timeline-page-size" name="page_size">
+        {% for size in (25, 50, 100) %}
+          <option value="{{ size }}" {% if page_size == size %}selected{% endif %}>{{ size }}</option>
+        {% endfor %}
+      </select>
+    </label>
     <div class="timeline-filter-actions">
       <button type="submit" class="primary">Apply filters</button>
       <button type="submit" formaction="/health-timeline/export.csv" formmethod="get">Download matching CSV</button>
@@ -42,9 +50,17 @@
     </div>
   </form>
   <p class="note timeline-results" role="status" aria-live="polite">
-    Showing {{ events|length }} of {{ total }} events in this time period.
+    {% if total_pages > 1 %}
+      Showing {{ page_start }}–{{ page_end }} of {{ matching }} matching events
+      ({{ total }} in this time period).
+    {% else %}
+      Showing {{ events|length }} of {{ total }} events in this time period.
+    {% endif %}
     {% if event_type != "all" or q %}Filters are active.{% endif %}
   </p>
+  {% if total_pages > 1 %}
+    <p class="note">CSV export includes every matching event, not only this page.</p>
+  {% endif %}
 </section>
 
 <section class="r5-timeline" aria-label="Health timeline events">
@@ -72,4 +88,16 @@
     {% endif %}
   {% endfor %}
 </section>
+
+{% if total_pages > 1 %}
+<nav class="health-timeline-pagination" aria-label="Health timeline pages">
+  {% if page > 1 %}
+    <a href="{{ request.url.include_query_params(page=page - 1, page_size=page_size) }}">← Previous</a>
+  {% endif %}
+  <span>Page {{ page }} of {{ total_pages }}</span>
+  {% if page < total_pages %}
+    <a href="{{ request.url.include_query_params(page=page + 1, page_size=page_size) }}">Next →</a>
+  {% endif %}
+</nav>
+{% endif %}
 {% endblock %}
