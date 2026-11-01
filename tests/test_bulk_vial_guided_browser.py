@@ -204,6 +204,7 @@ def review_html():
       </form>
       <dialog id="bulk-server-review">
         <p id="bulk-server-review-summary"></p>
+        <p id="bulk-server-review-impact"></p>
         <p id="bulk-server-review-error"></p>
         <p id="bulk-review-field-summary"></p>
         <input id="bulk-review-search" type="search">
@@ -264,6 +265,8 @@ def test_server_review_shows_real_changes_by_default(all_unchanged):
         assert "already matching" in tab.locator(
             "#bulk-server-review-summary"
         ).inner_text()
+        expected = "1 of 2" if not all_unchanged else "0 of 2"
+        assert expected in tab.locator("#bulk-server-review-impact").inner_text()
         tab.locator("#bulk-review-show-unchanged").check()
         assert tab.locator("#bulk-server-review-rows tr").count() == 2
         assert not errors, errors
@@ -355,6 +358,8 @@ def test_large_bulk_review_is_progressive_and_search_is_visual_only():
             "#bulk-review-visible-count").inner_text()
         assert "lot (125)" in tab.locator(
             "#bulk-review-field-summary").inner_text()
+        assert "125 of 125" in tab.locator("#bulk-server-review-impact").inner_text()
+        assert "Sample (125)" in tab.locator("#bulk-server-review-impact").inner_text()
         tab.locator("#bulk-review-more").click()
         assert tab.locator("#bulk-server-review-rows tr").count() == 100
         tab.locator("#bulk-review-more").click()
@@ -376,3 +381,90 @@ def test_large_bulk_review_is_progressive_and_search_is_visual_only():
         assert tab.locator("#bulk-server-review-confirm").is_enabled()
         assert not errors, errors
         browser.close()
+
+
+
+def test_selection_undo_range_and_matching_controls(page):
+    tab, errors = page
+    assert tab.locator("#bulk-undo-selection").is_disabled()
+    tab.locator('.bulk-vial-check[value="1"]').check()
+    assert tab.locator("#bulk-undo-selection").is_enabled()
+    tab.locator('.bulk-vial-check[value="2"]').click(modifiers=["Shift"])
+    assert tab.locator(".bulk-vial-check:checked").count() == 2
+    tab.locator("#bulk-undo-selection").click()
+    assert tab.locator(".bulk-vial-check:checked").count() == 1
+    tab.locator("#bulk-undo-selection").click()
+    assert tab.locator(".bulk-vial-check:checked").count() == 2
+
+    tab.locator("#bulk7-compound").select_option("Compound A")
+    tab.locator("#bulk7-deselect").click()
+    assert tab.locator(".bulk-vial-check:checked").count() == 1
+    assert tab.locator('.bulk-vial-check[value="2"]').is_checked()
+    tab.locator("#bulk-select-none").click()
+    assert tab.locator(".bulk-vial-check:checked").count() == 0
+    tab.locator("#bulk-undo-selection").click()
+    assert tab.locator(".bulk-vial-check:checked").count() == 1
+    assert not errors, errors
+
+
+def test_large_selection_search_and_incremental_reveal(page):
+    tab, errors = page
+    tab.evaluate("""() => {
+      const values = {};
+      for(let i=100;i<140;i++){
+        values[String(i)] = {
+          id:String(i),compound:"Compound Search",
+          label:"Vial "+i,status:"sealed"
+        };
+      }
+      sessionStorage.setItem("tracker.bulkVials.selection.v1",
+                             JSON.stringify(values));
+    }""")
+    tab.reload()
+    tab.add_script_tag(path=str(SELECT))
+    tab.add_script_tag(path=str(GUIDED))
+    tab.locator("#bulk-open-editor").click()
+    assert "40 matching" in tab.locator(".bulk-selected-match-count").inner_text()
+    assert tab.locator(".bulk-selected-row").count() == 8
+    tab.locator("#bulk-selected-more").click()
+    assert tab.locator(".bulk-selected-row").count() == 33
+    tab.locator("#bulk-selected-more").click()
+    assert tab.locator(".bulk-selected-row").count() == 40
+    tab.locator("#bulk-selected-search").fill("Vial 125")
+    assert "1 matching" in tab.locator(".bulk-selected-match-count").inner_text()
+    assert tab.locator(".bulk-selected-row").count() == 1
+    assert "125" in tab.locator(".bulk-selected-row").inner_text()
+    tab.locator('[data-bulk-remove-id="125"]').click()
+    assert "0 matching" in tab.locator(".bulk-selected-match-count").inner_text()
+    assert "39 selected across all views" in tab.locator("#bulk7-summary").inner_text()
+    tab.locator("#bulk-undo-selection").click()
+    assert "1 matching" in tab.locator(".bulk-selected-match-count").inner_text()
+    assert not errors, errors
+
+
+@pytest.mark.parametrize("message, cleared", [
+    ("Bulk update completed: 2 of 2 selected vial(s) changed.", True),
+    ("Other operation completed", False),
+    ("", False),
+])
+def test_bulk_update_success_clears_only_confirmed_selection(page, message, cleared):
+    from urllib.parse import quote
+    tab, errors = page
+    tab.locator('.bulk-vial-check[value="1"]').check()
+    assert "1 selected across all views" in tab.locator("#bulk7-summary").inner_text()
+    dest = "http://tracker-guided.test/vials"
+    if message:
+        dest += "?msg=" + quote(message)
+    tab.goto(dest)
+    tab.add_script_tag(path=str(SELECT))
+    tab.add_script_tag(path=str(GUIDED))
+    expected = "0 selected across all views" if cleared else "1 selected across all views"
+    assert expected in tab.locator("#bulk7-summary").inner_text()
+    assert not errors, errors
+
+
+def test_impact_summary_counts_distinct_affected_vials():
+    html = TEMPLATE.read_text(encoding="utf-8")
+    assert 'id="bulk-server-review-impact"' in html
+    assert "new Set(changedRows.map(entry => entry.vial_id))" in html
+    assert "affectedCompounds.get(key).add(entry.vial_id)" in html
