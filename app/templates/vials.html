@@ -110,7 +110,7 @@
 
   function selectedIds() {
     return [...new Set([
-      ...form.querySelectorAll('input[name="vial_ids"]:checked'),
+      ...document.querySelectorAll('#tracker-vials-sortable input.bulk-vial-check:checked'),
       ...form.querySelectorAll('input[type="hidden"][name="vial_ids"]')
     ].map(input => String(input.value)))];
   }
