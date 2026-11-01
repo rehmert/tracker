@@ -37,6 +37,10 @@ def test_delete_confirmation_and_persisted_selection(succeeds):
         page = browser.new_page()
         posted = []
         alerts = []
+        errors = []
+        requests = []
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        page.on("request", lambda request: requests.append((request.method, request.url)))
 
         def route_handler(route):
             request = route.request
@@ -69,6 +73,11 @@ def test_delete_confirmation_and_persisted_selection(succeeds):
             KEY,
         )
         page.locator("#bulk-delete-selected").click()
+        page.wait_for_timeout(850)
+        assert posted, (
+            f"Deletion request missing; JS errors={errors}, dialogs={alerts}, "
+            f"requests={requests}"
+        )
 
         if succeeds:
             page.wait_for_url("**/vials?msg=Deleted", timeout=10000)
