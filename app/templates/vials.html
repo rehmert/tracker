@@ -2,7 +2,7 @@
 {% from "_macros.html" import gauge %}
 {% block title %}Vials{% endblock %}
 {% block content %}
-<script defer src="/static/js/tracker-bulk-selection.js?v=bulk-review-2"></script>
+<script defer src="/static/js/tracker-bulk-selection.js?v=bulk-review-3"></script>
 <!-- TRACKER_BULK_CONSOLIDATED -->
 <h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
 <form method="get" class="inline" id="vial-filter-form">
@@ -1195,10 +1195,15 @@ document.addEventListener("DOMContentLoaded", () => {
     approved = true;
     confirmButton.disabled = true;
 
-    // This submits the previewed form directly.
-    // The backend revalidates and checks the
-    // optimistic-concurrency fingerprint.
+    // This is the intentional, confirmed save. The normal submit
+    // event is bypassed below, so clear the global unsaved-form
+    // guard explicitly before navigating to the server response.
+    if (typeof form.trackerResetDirtyState === "function") {
+      form.trackerResetDirtyState();
+    }
 
+    // The backend revalidates and checks the optimistic-
+    // concurrency fingerprint before committing changes.
     HTMLFormElement.prototype.submit.call(form);
   });
 
