@@ -172,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
   <summary><strong>Bulk edit selected vials</strong></summary>
   <p>Select vials below, then choose <strong>Set</strong> or <strong>Clear</strong> only for the fields you want to change. Keep leaves existing values untouched. Changes are recorded in the vial audit history.</p>
   <div class="grid">
-  {% set fields = [('status','Status','status'), ('lot','Lot','text'), ('cap_color','Cap color','text'), ('storage_notes','Storage notes','text'), ('notes','Notes','text'), ('received_on','Received on','date'), ('expires_on','Expires on','date'), ('beyond_use_on','Beyond use on','date'), ('first_punctured_on','First punctured on','date'), ('first_dosed_on','First dosed on','date'), ('closed_on','Closed on','date'), ('use_coa_content','Use averaged COA content','boolean')] %}
+  {% set fields = [('status','Status','status'), ('lot','Lot','text'), ('label','Vial label','text'), ('cap_color','Cap color','text'), ('storage_notes','Storage notes','text'), ('notes','Notes','text'), ('received_on','Received on','date'), ('expires_on','Expires on','date'), ('beyond_use_on','Beyond use on','date'), ('first_punctured_on','First punctured on','date'), ('first_dosed_on','First dosed on','date'), ('closed_on','Closed on','date'), ('use_coa_content','Use averaged COA content','boolean')] %}
   {% for key, title, kind in fields %}
   <label class="field"><span>{{ title }}</span>
     <select name="mode_{{ key }}" aria-label="Action for {{ title }}">
