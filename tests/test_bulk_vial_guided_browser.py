@@ -105,6 +105,13 @@ def page():
 
 def test_entering_field_value_automatically_opts_in(page):
     tab, errors = page
+    # The bulk editor starts collapsed. Exercise the actual user workflow
+    # rather than trying to fill an element hidden inside closed <details>.
+    assert tab.locator("#bulk-open-editor").is_disabled()
+    assert not tab.locator("#bulk-editor-panel").evaluate("(el) => el.open")
+    tab.locator('.bulk-vial-check[value="1"]').check()
+    tab.locator("#bulk-open-editor").click()
+    assert tab.locator("#bulk-editor-panel").evaluate("(el) => el.open")
     assert tab.locator('[name="mode_lot"]').input_value() == "keep"
     assert "No changes requested" in tab.locator("#bulk-edits-count").inner_text()
     tab.locator('[name="value_lot"]').fill("LOT-NEW")
