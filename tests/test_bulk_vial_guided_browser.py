@@ -180,7 +180,7 @@ def test_grouped_fields_preserve_all_backend_form_names():
     assert 'name="mode_{{ key }}"' in source
     assert 'name="value_{{ key }}"' in source
     assert "bulk-review-show-unchanged" in source
-    assert "if (!entry.changed && !showUnchanged.checked) continue" in source
+    assert "if (!entry.changed && !showUnchanged.checked) return false" in source
     assert "confirmButton.disabled = changed === 0" in source
     assert "value.disabled = mode.value === \"clear\"" in source
 

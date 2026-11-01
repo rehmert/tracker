@@ -1262,7 +1262,7 @@ document.addEventListener("DOMContentLoaded", () => {
       " matching review row(s).";
     more.hidden = filtered.length <= rowLimit;
     more.textContent = "Show " +
-      Math.min(PAGE_SIZE, filtered.length - rowLimit) + " more";
+      Math.min(PAGE_SIZE, Math.max(0, filtered.length - rowLimit)) + " more";
 
     const changedRows = data.rows.filter(entry => entry.changed);
     const changed = changedRows.length;
