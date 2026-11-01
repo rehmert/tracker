@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from . import config, models  # noqa: F401  (models import registers tables)
 from .db import Base, engine
 from .routers import (coas, compounds, dashboard, doses, labs, pages, protocols, purchases, supplies,
-                      vials, vitals, pk, calendar, backups, search, inventory_intelligence, health_timeline, health_insights, exports, reliability, blends, vendor_prices)
+                      vials, vitals, pk, calendar, backups, search_improved, inventory_intelligence, health_timeline, health_insights, exports, reliability, blends, vendor_prices)
 from .security import require_auth
 from .routers import inventory_timeline
 
@@ -66,8 +66,8 @@ def healthz():
 
 
 # Release 65–68: Unified daily activity
-from .routers import activity
-app.include_router(activity.router)
+from .routers import activity_improved
+app.include_router(activity_improved.router)
 
 # Release 69-72: read-only workflow tools
 from .routers import workflow_tools

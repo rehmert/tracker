@@ -125,3 +125,8 @@ temp/
 .pytest_cache/
 coverage.xml
 test-results/
+
+# ==========================================
+# AI Rules
+# ==========================================
+.clinerules

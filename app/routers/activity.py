@@ -139,6 +139,46 @@ def collect_activity(db, start, end, category="all"):
                 f"/protocols/{revision.protocol_id}/history",
             )
 
+    # Vial lifecycle events
+    if category in ("all", "vial"):
+        for vial in db.scalars(select(Vial)):
+            # Vial creation event
+            add(
+                vial.created_at,
+                "vial",
+                "Vial created",
+                f"Compound: {vial.compound.name if vial.compound else 'Unknown'}",
+                f"/vials/{vial.id}",
+            )
+
+            # Additional lifecycle events
+            if vial.received_on:
+                add(
+                    vial.received_on,
+                    "vial",
+                    "Vial received",
+                    f"Lot: {vial.lot or 'N/A'}",
+                    f"/vials/{vial.id}",
+                )
+                
+            if vial.first_dosed_on:
+                add(
+                    vial.first_dosed_on,
+                    "vial",
+                    "First dose recorded",
+                    f"Dose amount: {vial.first_dosed_amount}",
+                    f"/vials/{vial.id}",
+                )
+                
+            if vial.closed_on:
+                add(
+                    vial.closed_on,
+                    "vial",
+                    "Vial closed",
+                    f"Status: {vial.status}",
+                    f"/vials/{vial.id}",
+                )
+
     events.sort(
         key=lambda item: item["when"],
         reverse=True,
@@ -192,6 +232,7 @@ def activity(
         "purchase",
         "notes",
         "protocol",
+        "vial",
     }
 
     if category not in categories:
