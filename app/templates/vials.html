@@ -3,8 +3,8 @@
 {% block title %}Vials{% endblock %}
 {% block content %}
 <script defer src="/static/js/tracker-bulk-selection.js?v=bulk-editor-guided"></script>
-<link rel="stylesheet" href="/static/css/tracker-bulk-editor-guided.css?v=20261101">
-<script defer src="/static/js/tracker-bulk-editor-guided.js?v=20261101"></script>
+<link rel="stylesheet" href="/static/css/tracker-bulk-editor-guided.css?v=20261101-workflow">
+<script defer src="/static/js/tracker-bulk-editor-guided.js?v=20261101-workflow"></script>
 <!-- TRACKER_BULK_CONSOLIDATED -->
 <h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
 <form method="get" class="inline" id="vial-filter-form">
@@ -91,6 +91,7 @@
   <span class="bulk-selection-count">
     <span id="bulk-toolbar-count">0</span> vials selected
   </span>
+  <button type="button" id="bulk-jump-to-vials">Find vials</button>
   <button type="button" id="bulk-select-all">Select all displayed</button>
   <button type="button" id="bulk-select-none">Clear selection</button>
   <button type="button" id="bulk-open-editor" class="primary"
@@ -174,75 +175,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
-<form id="bulk-vials" method="post" action="/vials/bulk">
-<input type="hidden" name="bulk_preview_snapshot" id="bulk-preview-snapshot" value="">
-<details class="card" id="bulk-editor-panel">
-  <summary><strong>Bulk edit selected vials</strong> <span class="note">— guided changes</span></summary>
-  <p class="note">1. Select the vials you want. 2. Enter new values (Tracker automatically chooses <strong>Set</strong>), or choose <strong>Clear</strong> explicitly. 3. Review the actual changes before applying. All unedited values stay untouched.</p>
-  <div class="bulk-edit-summary" role="status" aria-live="polite">
-    <strong id="bulk-edits-count">No changes requested yet</strong>
-    <span id="bulk-edits-details">Choose fields below to edit.</span>
-    <button type="button" id="bulk-edits-reset">Reset requested changes</button>
-  </div>
-  <div id="bulk-edit-field-groups">
-  {% set field_groups = [
-    ('Identification & status', 'Common changes to vial status, lot and visible identifiers.', [
-      ('status','Status','status'), ('lot','Lot','text'),
-      ('label','Vial label','text'), ('cap_color','Cap color','text')
-    ]),
-    ('Recorded dates', 'Receipt, expiry and lifecycle dates. Review chronology before applying.', [
-      ('received_on','Received on','date'), ('expires_on','Expires on','date'),
-      ('beyond_use_on','Beyond use on','date'), ('first_punctured_on','First punctured on','date'),
-      ('first_dosed_on','First dosed on','date'), ('closed_on','Closed on','date')
-    ]),
-    ('Notes & COA preferences', 'Text changes replace the existing value on every selected vial.', [
-      ('storage_notes','Storage notes','text'), ('notes','Notes','text'),
-      ('use_coa_content','Use averaged COA content','boolean')
-    ])
-  ] %}
-  {% for group_title, group_note, fields in field_groups %}
-    <details class="bulk-edit-group" {% if loop.first %}open{% endif %}>
-      <summary><strong>{{ group_title }}</strong> <span class="note">{{ group_note }}</span></summary>
-      <div class="grid bulk-edit-fields">
-        {% for key, title, kind in fields %}
-        <label class="field bulk-edit-field" data-bulk-field="{{ key }}">
-          <span>{{ title }}</span>
-          <select name="mode_{{ key }}" aria-label="Action for {{ title }}">
-            <option value="keep">Keep unchanged</option>
-            <option value="set">Set to value</option>
-            {% if kind not in ('status','boolean') %}<option value="clear">Clear existing value</option>{% endif %}
-          </select>
-          {% if kind == 'status' %}
-            <select name="value_{{ key }}" aria-label="New {{ title }}">{% for st in statuses %}<option value="{{ st }}">{{ st|replace('_',' ') }}</option>{% endfor %}</select>
-          {% elif kind == 'boolean' %}
-            <select name="value_{{ key }}" aria-label="New {{ title }}"><option value="yes">Yes</option><option value="no">No</option></select>
-          {% elif kind == 'date' %}
-            <input type="date" name="value_{{ key }}" aria-label="New {{ title }}">
-          {% else %}
-            <input type="text" name="value_{{ key }}" aria-label="New {{ title }}">
-          {% endif %}
-        </label>
-        {% endfor %}
-      </div>
-    </details>
-  {% endfor %}
-  </div>
-
-<div id="bulk-selected-preview" aria-label="Selected vials"></div>
-<p>
-  <strong><span id="bulk-count">0</span> selected</strong>
-  <button class="primary" type="submit" id="bulk-apply" disabled>
-    Preview and apply changes
-  </button>
-</p>
-<p class="note">
-  Review the changes carefully. Setting the same vial label or notes applies that identical value to every selected vial.
-  The server validates status transitions and dates before saving.
-</p>
-
-</details>
-</form>
-
 <!-- TRACKER_BULK_STAGE7 -->
 <div class="card" id="bulk-selection-tools">
   <div class="inline" style="gap:.65rem;flex-wrap:wrap;align-items:end">
@@ -603,6 +535,85 @@ document.addEventListener("DOMContentLoaded", () => {
   {% else %}<tr><td colspan="9" class="empty">No vials match. Vials are added from a <a href="/purchases">purchase</a>.</td></tr>{% endfor %}
   </tbody>
 </table></div>
+
+<!-- Guided bulk edits follow the selectable inventory table. -->
+<form id="bulk-vials" method="post" action="/vials/bulk">
+<input type="hidden" name="bulk_preview_snapshot" id="bulk-preview-snapshot" value="">
+<details class="card" id="bulk-editor-panel">
+  <summary><strong>Bulk edit selected vials</strong> <span class="note">— guided changes</span></summary>
+  <p class="note">Select vials in the table above. Enter new values to choose <strong>Set</strong> automatically, or choose <strong>Clear</strong> explicitly. Only requested fields are changed after server validation.</p>
+  <div class="bulk-edit-navigation" aria-label="Jump to common bulk edit fields">
+    <span>Quick edit:</span>
+    <button type="button" data-bulk-focus-field="status">Status</button>
+    <button type="button" data-bulk-focus-field="lot">Lot</button>
+    <button type="button" data-bulk-focus-field="expires_on">Expiration</button>
+    <button type="button" data-bulk-focus-field="cap_color">Cap color</button>
+    <button type="button" id="bulk-back-to-vials">Back to vial list</button>
+  </div>
+  <div class="bulk-edit-summary" role="status" aria-live="polite">
+    <strong id="bulk-edits-count">No changes requested yet</strong>
+    <span id="bulk-edits-details">Choose fields below to edit.</span>
+    <button type="button" id="bulk-edits-reset">Reset requested changes</button>
+  </div>
+  <div id="bulk-edit-field-groups">
+  {% set field_groups = [
+    ('Identification & status', 'Common changes to vial status, lot and visible identifiers.', [
+      ('status','Status','status'), ('lot','Lot','text'),
+      ('label','Vial label','text'), ('cap_color','Cap color','text')
+    ]),
+    ('Recorded dates', 'Receipt, expiry and lifecycle dates. Review chronology before applying.', [
+      ('received_on','Received on','date'), ('expires_on','Expires on','date'),
+      ('beyond_use_on','Beyond use on','date'), ('first_punctured_on','First punctured on','date'),
+      ('first_dosed_on','First dosed on','date'), ('closed_on','Closed on','date')
+    ]),
+    ('Notes & COA preferences', 'Text changes replace the existing value on every selected vial.', [
+      ('storage_notes','Storage notes','text'), ('notes','Notes','text'),
+      ('use_coa_content','Use averaged COA content','boolean')
+    ])
+  ] %}
+  {% for group_title, group_note, fields in field_groups %}
+    <details class="bulk-edit-group" {% if loop.first %}open{% endif %}>
+      <summary><strong>{{ group_title }}</strong> <span class="note">{{ group_note }}</span></summary>
+      <div class="grid bulk-edit-fields">
+        {% for key, title, kind in fields %}
+        <label class="field bulk-edit-field" data-bulk-field="{{ key }}">
+          <span>{{ title }}</span>
+          <select name="mode_{{ key }}" aria-label="Action for {{ title }}">
+            <option value="keep">Keep unchanged</option>
+            <option value="set">Set to value</option>
+            {% if kind not in ('status','boolean') %}<option value="clear">Clear existing value</option>{% endif %}
+          </select>
+          {% if kind == 'status' %}
+            <select name="value_{{ key }}" aria-label="New {{ title }}">{% for st in statuses %}<option value="{{ st }}">{{ st|replace('_',' ') }}</option>{% endfor %}</select>
+          {% elif kind == 'boolean' %}
+            <select name="value_{{ key }}" aria-label="New {{ title }}"><option value="yes">Yes</option><option value="no">No</option></select>
+          {% elif kind == 'date' %}
+            <input type="date" name="value_{{ key }}" aria-label="New {{ title }}">
+          {% else %}
+            <input type="text" name="value_{{ key }}" aria-label="New {{ title }}">
+          {% endif %}
+        </label>
+        {% endfor %}
+      </div>
+    </details>
+  {% endfor %}
+  </div>
+
+<div id="bulk-selected-preview" aria-label="Selected vials"></div>
+<p>
+  <strong><span id="bulk-count">0</span> selected</strong>
+  <button class="primary" type="submit" id="bulk-apply" disabled>
+    Preview and apply changes
+  </button>
+</p>
+<p class="note">
+  This is a common-value edit: entering a label, lot, or note replaces that field on every selected vial.
+  You can remove individual vials from the selection above. The server validates status transitions and dates before saving.
+</p>
+
+</details>
+</form>
+
 
 <!-- TRACKER_STAGE_34_38_LIFECYCLE -->
 <section class="card tracker-lifecycle"

@@ -58,3 +58,36 @@
   #bulk-editor-panel .bulk-edit-summary { align-items: stretch; }
   #bulk-editor-panel .bulk-edit-group > summary { align-items: baseline; }
 }
+
+/* Bulk selection is performed first; keep the toolbar in view on long lists. */
+@media (min-width: 801px) {
+  #bulk-selection-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    background: var(--surface, #fff);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, .08);
+    border: 1px solid var(--rule, #dce5ec);
+  }
+}
+#tracker-vials-sortable { scroll-margin-top: 6rem; }
+#bulk-editor-panel { margin-top: 1rem; }
+#bulk-editor-panel .bulk-edit-navigation {
+  display: flex;
+  gap: .45rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: .7rem 0;
+}
+#bulk-editor-panel .bulk-edit-navigation > span {
+  font-size: .84rem;
+  font-weight: 700;
+}
+#bulk-editor-panel .bulk-edit-navigation button {
+  font-size: .83rem;
+  padding: .3rem .55rem;
+}
+#bulk-editor-panel .bulk-edit-navigation #bulk-back-to-vials { margin-left: auto; }
+@media (max-width: 800px) {
+  #bulk-editor-panel .bulk-edit-navigation #bulk-back-to-vials { margin-left: 0; }
+}

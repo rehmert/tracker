@@ -19,6 +19,7 @@ def editor_html():
       <button id="bulk-select-all">Select all displayed</button>
       <button id="bulk-select-none">Clear selection</button>
       <button id="bulk-open-editor" disabled>Bulk edit selected</button>
+      <button id="bulk-jump-to-vials" type="button">Find vials</button>
       <span id="bulk-toolbar-count">0</span>
       <div id="bulk-selection-tools">
         <div class="inline">
@@ -50,6 +51,11 @@ def editor_html():
         <details id="bulk-editor-panel">
           <div id="bulk-selected-preview"></div>
           <span id="bulk-count"></span>
+          <div class="bulk-edit-navigation">
+            <button type="button" data-bulk-focus-field="status">Status</button>
+            <button type="button" data-bulk-focus-field="expires_on">Expiration</button>
+            <button type="button" id="bulk-back-to-vials">Back to vials</button>
+          </div>
           <div id="bulk-edit-field-groups">
             <details class="bulk-edit-group" open><summary>Identification</summary>
               <label class="field bulk-edit-field" data-bulk-field="lot">
@@ -69,6 +75,17 @@ def editor_html():
                 <select name="value_status">
                   <option value="sealed">Sealed</option><option value="in_use">In use</option>
                 </select>
+              </label>
+            </details>
+            <details class="bulk-edit-group" data-dates><summary>Dates</summary>
+              <label class="field bulk-edit-field" data-bulk-field="expires_on">
+                <span>Expires on</span>
+                <select name="mode_expires_on">
+                  <option value="keep">Keep</option>
+                  <option value="set">Set</option>
+                  <option value="clear">Clear</option>
+                </select>
+                <input name="value_expires_on" type="date">
               </label>
             </details>
           </div>
@@ -247,3 +264,31 @@ def test_server_review_shows_real_changes_by_default(all_unchanged):
         assert tab.locator("#bulk-server-review-rows tr").count() == 2
         assert not errors, errors
         browser.close()
+
+def test_editor_comes_after_inventory_table():
+    html = TEMPLATE.read_text(encoding="utf-8")
+    assert html.index('id="tracker-vials-sortable"') < html.index('id="bulk-editor-panel"')
+    assert html.index('id="bulk-selection-tools"') < html.index('id="tracker-vials-sortable"')
+    assert html.count('id="bulk-vials"') == 1
+    assert 'form="bulk-vials"' in html
+    assert 'data-bulk-focus-field="expires_on"' in html
+    assert 'id="bulk-jump-to-vials"' in html
+
+
+def test_quick_edit_navigation_opens_dates_and_updates_selection(page):
+    tab, errors = page
+    tab.locator('.bulk-vial-check[value="1"]').check()
+    tab.locator("#bulk-open-editor").click()
+    assert not tab.locator(".bulk-edit-group[data-dates]").evaluate("(el) => el.open")
+    tab.locator('[data-bulk-focus-field="expires_on"]').click()
+    assert tab.locator(".bulk-edit-group[data-dates]").evaluate("(el) => el.open")
+    tab.locator('[name="value_expires_on"]').fill("2027-12-31")
+    assert tab.locator('[name="mode_expires_on"]').input_value() == "set"
+    tab.locator('[data-bulk-focus-field="status"]').click()
+    assert tab.locator('[name="mode_status"]').input_value() == "set"
+    assert "2 fields to update" in tab.locator("#bulk-edits-count").inner_text()
+    tab.locator("#bulk-back-to-vials").click()
+    assert tab.locator('.bulk-vial-check[value="1"]').evaluate(
+        "(el) => el === document.activeElement"
+    )
+    assert not errors, errors

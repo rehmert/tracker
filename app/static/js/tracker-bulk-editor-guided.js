@@ -72,6 +72,39 @@
       summary.appendChild(badge);
     }
 
+    const table = document.getElementById("tracker-vials-sortable");
+    const jumpToVials = document.getElementById("bulk-jump-to-vials");
+    const backToVials = document.getElementById("bulk-back-to-vials");
+    const scrollToTable = () => {
+      if (!table) return;
+      table.scrollIntoView({behavior:"auto", block:"start"});
+      const first = table.querySelector(".bulk-vial-check");
+      if (first) first.focus({preventScroll:true});
+    };
+    jumpToVials?.addEventListener("click", scrollToTable);
+    backToVials?.addEventListener("click", scrollToTable);
+
+    for (const button of form.querySelectorAll("[data-bulk-focus-field]")) {
+      button.addEventListener("click", () => {
+        const key = button.dataset.bulkFocusField;
+        const target = fields.find(field => field.dataset.bulkField === key);
+        if (!target) return;
+        const group = target.closest(".bulk-edit-group");
+        if (group) group.open = true;
+        const input = form.elements.namedItem("value_" + key);
+        const mode = form.elements.namedItem("mode_" + key);
+        // A select has a preselected value; opting it into Set here makes
+        // the quick action meaningful even when the default is retained.
+        if (input?.tagName === "SELECT" && mode?.value === "keep") {
+          mode.value = "set";
+          mode.dispatchEvent(new Event("change", {bubbles:true}));
+        }
+        (input || mode)?.focus({preventScroll:true});
+        target.scrollIntoView({behavior:"auto", block:"nearest"});
+        refresh();
+      });
+    }
+
     reset.addEventListener("click", () => {
       for (const item of current()) {
         item.mode.value = "keep";
