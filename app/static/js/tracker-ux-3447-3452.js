@@ -345,6 +345,20 @@
       removeValidationSummary(form);
 
       /*
+       * Explicit destructive actions (for example, deleting a COA)
+       * intentionally discard any edits on the page. Clear all dirty
+       * form state only after the form's own confirmation has allowed
+       * submission to proceed.
+       */
+      if (form.matches('[data-tracker-discard-changes]')) {
+        state.dirtyForms.forEach(dirtyForm => {
+          dirtyForm.classList.remove(CONFIG.dirtyClass);
+        });
+        state.dirtyForms.clear();
+        return;
+      }
+
+      /*
        * HTMX controls its own request lifecycle.
        * Do not disable or lock HTMX submissions.
        */
