@@ -1,5 +1,74 @@
-{% extends "base.html" %}{% block title %}Health timeline{% endblock %}{% block content %}
-<header class="r5-heading"><div><h1>Health timeline</h1><p class="note">Your measurements, recorded administrations, lab reports, and active protocol dates in one chronological view. What-if protocols are excluded. Timing alone does not establish causation.</p></div><a class="button" href="/labs">Lab trends →</a></header>
-<section><form method="get" class="inline"><label for="timeline-days">Period</label><select id="timeline-days" name="days" onchange="this.form.submit()">{% for n,label in ranges.items() %}<option value="{{ n }}" {% if days == n %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></form></section>
-<section class="r5-timeline">{% for e in events %}<article class="r5-event"><div class="r5-event-meta"><time datetime="{{ e.at.isoformat() }}">{{ e.at|dt }}</time><span class="r5-badge">{{ e.type }}</span></div><div class="r5-event-body"><a href="{{ e.link }}"><strong>{{ e.title }}</strong></a>{% if e.detail %}<p class="note">{{ e.detail }}</p>{% endif %}</div></article>{% else %}<p class="empty">No recorded events in this period.</p>{% endfor %}</section>
+{% extends "base.html" %}
+{% block title %}Health timeline{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-health-timeline.css?v=20261101">
+<header class="r5-heading">
+  <div>
+    <h1>Health timeline</h1>
+    <p class="note">Measurements, recorded administrations, lab reports and active protocol dates in chronological order. What-if protocols are excluded. Timing alone does not establish causation.</p>
+  </div>
+  <a class="button" href="/health-insights">View health trends</a>
+</header>
+
+<section class="timeline-controls" aria-label="Timeline filters">
+  <form method="get" action="/health-timeline" class="grid" id="health-timeline-filters">
+    <label class="field" for="timeline-days">
+      <span>Time period</span>
+      <select id="timeline-days" name="days">
+        {% for n, label in ranges.items() %}
+          <option value="{{ n }}" {% if days == n %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field" for="timeline-event-type">
+      <span>Event type</span>
+      <select id="timeline-event-type" name="event_type">
+        {% for key, label in event_types.items() %}
+          <option value="{{ key }}" {% if event_type == key %}selected{% endif %}>
+            {{ label }}{% if key != "all" %} ({{ counts.get(key, 0) }}){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field" for="timeline-search">
+      <span>Search entries</span>
+      <input id="timeline-search" name="q" type="search" value="{{ q }}"
+             maxlength="100" placeholder="Compound, lab, note, status…">
+    </label>
+    <div class="timeline-filter-actions">
+      <button type="submit" class="primary">Apply filters</button>
+      <a class="button" href="/health-timeline">Reset</a>
+    </div>
+  </form>
+  <p class="note timeline-results" role="status" aria-live="polite">
+    Showing {{ events|length }} of {{ total }} events in this time period.
+    {% if event_type != "all" or q %}Filters are active.{% endif %}
+  </p>
+</section>
+
+<section class="r5-timeline" aria-label="Health timeline events">
+  {% for group in groups %}
+    <div class="timeline-day-group">
+      <h2 class="timeline-day-heading">{{ group.day.strftime('%A, %B %d, %Y') }}</h2>
+      {% for e in group.events %}
+        <article class="r5-event">
+          <div class="r5-event-meta">
+            <time datetime="{{ e.at.isoformat() }}">{{ e.at|dt }}</time>
+            <span class="r5-badge">{{ e.type }}</span>
+          </div>
+          <div class="r5-event-body">
+            <a href="{{ e.link }}"><strong>{{ e.title }}</strong></a>
+            {% if e.detail %}<p class="note">{{ e.detail }}</p>{% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% if total %}
+      <p class="empty">No entries match these filters. <a href="/health-timeline">Reset the timeline</a> to view all event types.</p>
+    {% else %}
+      <p class="empty">No recorded events or active protocol dates in this period.</p>
+    {% endif %}
+  {% endfor %}
+</section>
 {% endblock %}

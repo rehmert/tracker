@@ -1,37 +1,123 @@
+"""Read-only timeline of recorded health events and active protocol milestones."""
+from collections import Counter
 from datetime import datetime, timedelta, time
+from itertools import groupby
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+from .. import config, metrics
 from ..db import get_db
 from ..models import VitalReading, DoseLog, LabReport, Protocol
 from ..templating import render
-from .. import config, metrics
 
 router = APIRouter()
+# The "All" option retains its existing value for bookmarked URLs but no
+# longer imposes an arbitrary ten-year cutoff.
 RANGES = {30: "30 days", 90: "90 days", 365: "1 year", 3650: "All"}
+EVENT_TYPES = {
+    "all": "All event types",
+    "Vital": "Vitals",
+    "Dose": "Doses",
+    "Waste": "Waste",
+    "Lab": "Lab reports",
+    "Protocol": "Active protocols",
+}
+
 
 @router.get("/health-timeline")
-def timeline(request: Request, days: int = 90, db: Session = Depends(get_db)):
+def timeline(
+    request: Request,
+    days: int = 90,
+    event_type: str = "all",
+    q: str = "",
+    db: Session = Depends(get_db),
+):
     days = days if days in RANGES else 90
-    since = datetime.now() - timedelta(days=days)
+    event_type = event_type if event_type in EVENT_TYPES else "all"
+    q = q.strip()[:100]
+    search = q.casefold()
+    since = None if days == 3650 else datetime.now() - timedelta(days=days)
+
     events = []
-    for r in db.scalars(select(VitalReading).where(VitalReading.measured_at >= since)):
+
+    vital_query = select(VitalReading)
+    if since is not None:
+        vital_query = vital_query.where(VitalReading.measured_at >= since)
+    for reading in db.scalars(vital_query):
         parts = []
-        if r.weight_kg is not None:
-            parts.append(f"Weight {metrics.weight_from_kg(r.weight_kg, config.WEIGHT_UNIT):.1f} {config.WEIGHT_UNIT}")
-        if r.systolic is not None:
-            parts.append(f"BP {r.systolic}/{r.diastolic or '—'}")
-        if r.pulse_bpm is not None:
-            parts.append(f"Pulse {r.pulse_bpm} bpm")
-        events.append(dict(at=r.measured_at, type="Vital", title=" · ".join(parts), detail=r.context or r.notes, link="/vitals"))
-    for d in db.scalars(select(DoseLog).where(DoseLog.taken_at >= since)):
-        events.append(dict(at=d.taken_at, type="Dose" if d.kind == "dose" else "Waste", title=f"{d.vial.compound.name}: {d.entered_value:g} {d.entered_unit}", detail=d.site or d.notes, link="/doses"))
-    for report in db.scalars(select(LabReport).where(LabReport.drawn_on >= since.date())):
-        events.append(dict(at=datetime.combine(report.drawn_on, time.min), type="Lab", title=f"{report.lab_name or 'Lab report'} · {len(report.results)} results", detail=report.notes, link="/labs"))
-    for p in db.scalars(select(Protocol).where(Protocol.is_active.is_(True))):
-        if p.start_date and p.start_date >= since.date():
-            events.append(dict(at=datetime.combine(p.start_date, time.min), type="Protocol", title=f"{p.name} · start date", detail="Scheduled protocol start, not a confirmed administration", link="/protocols"))
-        if p.end_date and p.end_date >= since.date():
-            events.append(dict(at=datetime.combine(p.end_date, time.min), type="Protocol", title=f"{p.name} · end date", detail="Scheduled protocol end", link="/protocols"))
-    events.sort(key=lambda x: x["at"], reverse=True)
-    return render(request, "health_timeline.html", events=events, days=days, ranges=RANGES)
+        if reading.weight_kg is not None:
+            parts.append(
+                f"Weight {metrics.weight_from_kg(reading.weight_kg, config.WEIGHT_UNIT):.1f} {config.WEIGHT_UNIT}"
+            )
+        if reading.systolic is not None:
+            parts.append(f"BP {reading.systolic}/{reading.diastolic or '—'}")
+        if reading.pulse_bpm is not None:
+            parts.append(f"Pulse {reading.pulse_bpm} bpm")
+        detail = " · ".join(filter(None, (reading.context, reading.notes)))
+        events.append(dict(
+            at=reading.measured_at, type="Vital", title=" · ".join(parts),
+            detail=detail, link=f"/vitals/{reading.id}/edit",
+        ))
+
+    dose_query = select(DoseLog)
+    if since is not None:
+        dose_query = dose_query.where(DoseLog.taken_at >= since)
+    for dose in db.scalars(dose_query):
+        events.append(dict(
+            at=dose.taken_at, type="Dose" if dose.kind == "dose" else "Waste",
+            title=f"{dose.vial.compound.name}: {dose.entered_value:g} {dose.entered_unit}",
+            detail=" · ".join(filter(None, (dose.site, dose.notes))),
+            link=f"/doses/{dose.id}/edit",
+        ))
+
+    report_query = select(LabReport)
+    if since is not None:
+        report_query = report_query.where(LabReport.drawn_on >= since.date())
+    for report in db.scalars(report_query):
+        events.append(dict(
+            at=datetime.combine(report.drawn_on, time.min), type="Lab",
+            title=f"{report.lab_name or 'Lab report'} · {len(report.results)} results",
+            detail=report.notes, link=f"/labs/{report.id}",
+        ))
+
+    # What-if plans remain excluded regardless of search or filter settings.
+    for protocol in db.scalars(
+        select(Protocol).where(Protocol.is_active.is_(True))
+    ):
+        if protocol.start_date and (since is None or protocol.start_date >= since.date()):
+            events.append(dict(
+                at=datetime.combine(protocol.start_date, time.min),
+                type="Protocol", title=f"{protocol.name} · start date",
+                detail="Scheduled protocol start, not a confirmed administration",
+                link=f"/protocols/{protocol.id}",
+            ))
+        if protocol.end_date and (since is None or protocol.end_date >= since.date()):
+            events.append(dict(
+                at=datetime.combine(protocol.end_date, time.min),
+                type="Protocol", title=f"{protocol.name} · end date",
+                detail="Scheduled protocol end", link=f"/protocols/{protocol.id}",
+            ))
+
+    # Counts describe the selected time range before applying type and text
+    # filters, so users can see what is available without changing filters.
+    counts = Counter(event["type"] for event in events)
+    total = len(events)
+    events = [
+        event for event in events
+        if (event_type == "all" or event["type"] == event_type)
+        and (not search or search in " ".join(
+            (event["title"], event["detail"] or "", event["type"])
+        ).casefold())
+    ]
+    events.sort(key=lambda event: event["at"], reverse=True)
+    groups = [
+        {"day": day, "events": list(day_events)}
+        for day, day_events in groupby(events, key=lambda event: event["at"].date())
+    ]
+    return render(
+        request, "health_timeline.html", events=events, groups=groups,
+        days=days, ranges=RANGES, event_type=event_type, event_types=EVENT_TYPES,
+        q=q, total=total, counts=counts,
+    )

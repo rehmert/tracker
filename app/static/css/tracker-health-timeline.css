@@ -1,0 +1,30 @@
+/* Scoped additions to the existing Health Timeline styles. */
+.timeline-controls {
+  margin-block: 1rem;
+}
+#health-timeline-filters {
+  align-items: end;
+}
+.timeline-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+  padding-bottom: .15rem;
+}
+.timeline-results {
+  margin: .65rem 0 0;
+}
+.timeline-day-group + .timeline-day-group {
+  margin-top: 1.75rem;
+}
+.timeline-day-heading {
+  font-size: 1rem;
+  font-weight: 650;
+  padding-bottom: .4rem;
+  margin: 0 0 1rem;
+  border-bottom: 1px solid var(--rule, #dce5ec);
+}
+.timeline-day-group .r5-event {
+  margin-left: .45rem;
+}
