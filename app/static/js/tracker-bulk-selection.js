@@ -46,7 +46,30 @@
     const count=boxes.filter(b=>b.checked).length;
     summary.textContent=`${Object.keys(selected).length} selected across all views (${count} visible).`;
     if(all) {all.checked=boxes.length>0 && count===boxes.length; all.indeterminate=count>0 && count<boxes.length;}
-    for(const id of ['bulk-count','bulk-toolbar-count']) {const el=document.getElementById(id);if(el)el.textContent=String(Object.keys(selected).length);}
+    const selectedCount=Object.keys(selected).length;
+    for(const id of ['bulk-count','bulk-toolbar-count']) {const el=document.getElementById(id);if(el)el.textContent=String(selectedCount);}
+    // This manager owns selection changes in the capture phase, so the older
+    // editor's checkbox listeners do not run. Keep its controls in sync here.
+    for(const id of ['bulk-open-editor','bulk-apply']) {
+      const control=document.getElementById(id);
+      if(control)control.disabled=selectedCount===0;
+    }
+    const preview=document.getElementById('bulk-selected-preview');
+    if(preview) {
+      preview.replaceChildren();
+      if(selectedCount) {
+        const heading=document.createElement('strong');
+        heading.textContent='Selected vials:';
+        preview.appendChild(heading);
+        const list=document.createElement('ul');
+        for(const entry of Object.values(selected)) {
+          const item=document.createElement('li');
+          item.textContent=(entry.compound ? entry.compound+' — ' : '')+(entry.label||('Vial #'+entry.id))+' (#'+entry.id+')';
+          list.appendChild(item);
+        }
+        preview.appendChild(list);
+      }
+    }
     hidden();save();
   }
   function commitVisible() {
