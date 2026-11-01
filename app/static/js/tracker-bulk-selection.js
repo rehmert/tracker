@@ -130,14 +130,14 @@
       if(!confirm(`${missing.length} selected vial(s) no longer exist. Remove them and review again?`))return;
       for(const id of missing)delete selected[id];sync();alert('Selection updated. Review it before submitting again.');return;
     }
-    let changed=0;
+    // Refresh display metadata from the server without blocking the edit.
+    // Selection validity is determined by vial IDs; cosmetic metadata changes
+    // must not force a second submission or prevent the review dialog.
     for(const current of result.current||[]){
-      const id=String(current.id),old=selected[id];if(!old)continue;
-      if(old.compound!==current.compound||old.label!==current.label||old.status!==current.status)changed++;
+      const id=String(current.id);if(!selected[id])continue;
       selected[id]={id,compound:current.compound,label:current.label,status:current.status};
     }
     sync();
-    if(changed){alert(`${changed} vial record(s) changed. Review the selection before submitting again.`);return;}
     // Re-dispatch so Stage 4 performs its normal server-side preview and confirmation.
     submitting=true;
     try {form.requestSubmit(event.submitter && event.submitter.form===form ? event.submitter : undefined);}
