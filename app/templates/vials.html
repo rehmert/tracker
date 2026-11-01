@@ -96,7 +96,76 @@
   <button type="button" id="bulk-select-none">Clear selection</button>
   <button type="button" id="bulk-open-editor" class="primary"
           disabled>Bulk edit selected</button>
+  <button type="button" id="bulk-delete-selected" class="danger"
+          disabled>Delete selected</button>
 </div>
+<script>
+/* TRACKER_BULK_VIAL_DELETE */
+(() => {
+  "use strict";
+  const form = document.getElementById("bulk-vials");
+  const button = document.getElementById("bulk-delete-selected");
+  const count = document.getElementById("bulk-toolbar-count");
+  if (!form || !button || !count) return;
+
+  function selectedIds() {
+    return [...new Set([
+      ...form.querySelectorAll('input[name="vial_ids"]:checked'),
+      ...form.querySelectorAll('input[type="hidden"][name="vial_ids"]')
+    ].map(input => String(input.value)))];
+  }
+
+  function sync() {
+    button.disabled = Number(count.textContent || 0) < 1;
+  }
+  new MutationObserver(sync).observe(count, {childList:true, characterData:true, subtree:true});
+  sync();
+
+  button.addEventListener("click", async () => {
+    const ids = selectedIds();
+    if (!ids.length) return;
+    button.disabled = true;
+    const data = new FormData();
+    ids.forEach(id => data.append("vial_ids", id));
+    try {
+      const response = await fetch("/vials/bulk/delete-preview", {
+        method:"POST", body:data, credentials:"same-origin"
+      });
+      if (!response.ok) throw new Error("Preview request failed");
+      const preview = await response.json();
+      if (!preview.ok) throw new Error(preview.error || "Could not preview deletion");
+      const eligible = preview.eligible || [];
+      const blocked = preview.blocked || [];
+      const missing = preview.missing || [];
+      if (!eligible.length) {
+        alert("None of the selected vials can be deleted. Vials with logged doses, preparation history, or blend references must be retained.");
+        return;
+      }
+      const names = eligible.slice(0, 12).map(row => "• " + row.name).join("\n");
+      const more = eligible.length > 12 ? "\n… and " + (eligible.length - 12) + " more" : "";
+      const blockedText = blocked.slice(0, 8).map(row => "• " + row.name + ": " + row.reason).join("\n");
+      const blockedMore = blocked.length > 8 ? "\n… and " + (blocked.length - 8) + " more" : "";
+      const message = "Permanently delete " + eligible.length + " eligible vial(s)?\n\n"
+        + names + more
+        + (blocked.length ? "\n\n" + blocked.length + " vial(s) will be retained:\n" + blockedText + blockedMore : "")
+        + (missing.length ? "\n\n" + missing.length + " selected vial(s) are already missing." : "")
+        + "\n\nCOA records and files will be retained.";
+      if (!confirm(message)) return;
+      const submit = new FormData();
+      ids.forEach(id => submit.append("vial_ids", id));
+      const deleted = await fetch("/vials/bulk/delete", {
+        method:"POST", body:submit, credentials:"same-origin", redirect:"follow"
+      });
+      if (!deleted.ok) throw new Error("Deletion request failed");
+      window.location.assign(deleted.url || "/vials");
+    } catch (error) {
+      alert(error.message || "Bulk deletion failed. No deletion was confirmed.");
+    } finally {
+      sync();
+    }
+  });
+})();
+</script>
 <form id="bulk-vials" method="post" action="/vials/bulk">
 <input type="hidden" name="bulk_preview_snapshot" id="bulk-preview-snapshot" value="">
 <details class="card" id="bulk-editor-panel">
