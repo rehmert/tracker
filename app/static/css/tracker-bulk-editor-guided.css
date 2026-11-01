@@ -1,0 +1,59 @@
+/* Scope all guided bulk-editor presentation to the existing form. */
+#bulk-editor-panel .bulk-edit-summary {
+  display: flex;
+  align-items: center;
+  gap: .5rem 1rem;
+  flex-wrap: wrap;
+  padding: .8rem 1rem;
+  margin: .8rem 0;
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: .7rem;
+  background: var(--wash, transparent);
+}
+#bulk-editor-panel #bulk-edits-details { flex: 1 1 17rem; color: var(--muted); font-size: .9rem; overflow-wrap: anywhere; }
+#bulk-editor-panel .bulk-edit-group {
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: .7rem;
+  margin: .55rem 0;
+  padding: .65rem .85rem;
+}
+#bulk-editor-panel .bulk-edit-group > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  list-style-position: inside;
+}
+#bulk-editor-panel .bulk-edit-group > summary .note { font-size: .82rem; }
+#bulk-editor-panel .bulk-edit-group-count {
+  margin-left: auto;
+  color: var(--teal, #087c70);
+  font-weight: 750;
+  white-space: nowrap;
+}
+#bulk-editor-panel .bulk-edit-fields { margin-top: .9rem; }
+#bulk-editor-panel .bulk-edit-field {
+  padding: .65rem;
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: .6rem;
+  opacity: 1;
+}
+#bulk-editor-panel .bulk-edit-field.bulk-edit-active {
+  border-color: var(--teal, #0d9488);
+  box-shadow: inset 3px 0 0 var(--teal, #0d9488);
+}
+#bulk-editor-panel .bulk-edit-field select,
+#bulk-editor-panel .bulk-edit-field input { width: 100%; }
+#bulk-selected-preview ul { padding-left: 1rem; margin: .45rem 0; }
+#bulk-selected-preview li { margin: .3rem 0; overflow-wrap: anywhere; }
+#bulk-selected-preview .bulk-selected-row { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+#bulk-selected-preview .bulk-selected-row span { flex: 1 1 16rem; }
+#bulk-selected-preview .bulk-selected-row button { font-size: .75rem; padding: .18rem .5rem; }
+#bulk-selected-preview details { margin: .5rem 0; }
+#bulk-server-review .bulk-review-unchanged { display: block; margin: .7rem 0; }
+#bulk-server-review #bulk-server-review-confirm:disabled { opacity: .5; cursor: not-allowed; }
+@media(max-width:700px) {
+  #bulk-editor-panel .bulk-edit-summary { align-items: stretch; }
+  #bulk-editor-panel .bulk-edit-group > summary { align-items: baseline; }
+}

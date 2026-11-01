@@ -60,15 +60,35 @@
       preview.replaceChildren();
       if(selectedCount) {
         const heading=document.createElement('strong');
-        heading.textContent='Selected vials:';
+        heading.textContent='Selected vials (' + selectedCount + '):';
         preview.appendChild(heading);
-        const list=document.createElement('ul');
-        for(const entry of Object.values(selected)) {
-          const item=document.createElement('li');
-          item.textContent=(entry.compound ? entry.compound+' — ' : '')+(entry.label||('Vial #'+entry.id))+' (#'+entry.id+')';
-          list.appendChild(item);
+        const entries=Object.values(selected);
+        const appendList=(target, items)=>{
+          const list=document.createElement('ul');
+          for(const entry of items) {
+            const row=document.createElement('li');
+            row.className='bulk-selected-row';
+            const name=document.createElement('span');
+            name.textContent=(entry.compound ? entry.compound+' — ' : '')+(entry.label||('Vial #'+entry.id))+' (#'+entry.id+')';
+            const remove=document.createElement('button');
+            remove.type='button';
+            remove.dataset.bulkRemoveId=entry.id;
+            remove.setAttribute('aria-label','Remove vial #'+entry.id+' from selection');
+            remove.textContent='Remove';
+            row.append(name, remove);
+            list.appendChild(row);
+          }
+          target.appendChild(list);
+        };
+        appendList(preview, entries.slice(0,8));
+        if(entries.length>8) {
+          const more=document.createElement('details');
+          const title=document.createElement('summary');
+          title.textContent='Show remaining '+(entries.length-8)+' selected vials';
+          more.appendChild(title);
+          appendList(more,entries.slice(8));
+          preview.appendChild(more);
         }
-        preview.appendChild(list);
       }
     }
     hidden();save();
@@ -97,6 +117,15 @@
       const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='tracker-selected-vials.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }
   };
+  const selectedPreview=document.getElementById('bulk-selected-preview');
+  if(selectedPreview) selectedPreview.addEventListener('click',event=>{
+    const remove=event.target.closest('button[data-bulk-remove-id]');
+    if(!remove) return;
+    const id=remove.dataset.bulkRemoveId;
+    if(!Object.hasOwn(selected,id)) return;
+    delete selected[id];
+    sync();
+  });
   if(!document.getElementById('bulk8-clear-all')) {
     const target=document.querySelector('#bulk-selection-tools .inline');
     if(target){const button=document.createElement('button');button.type='button';button.id='bulk8-clear-all';button.textContent='Clear all saved selections';target.append(button);}
