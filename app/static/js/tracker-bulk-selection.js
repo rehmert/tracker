@@ -6,7 +6,8 @@
   const form = document.getElementById('bulk-vials');
   const summary = document.getElementById('bulk7-summary');
   if (!form || !summary) return;
-  const boxes = [...form.querySelectorAll('.bulk-vial-check')];
+  // Vial rows live outside the form and associate through form="bulk-vials".
+  const boxes = [...document.querySelectorAll('.bulk-vial-check[form="bulk-vials"]')];
   const visible = new Map(boxes.map(b => [String(b.value), b]));
   const compoundSelect = document.getElementById('bulk7-compound');
   const statusSelect = document.getElementById('bulk7-status');
