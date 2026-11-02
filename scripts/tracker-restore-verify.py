@@ -93,9 +93,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", required=True, type=Path)
     parser.add_argument("--max-bytes", type=int, default=10 * 1024**3)
+    parser.add_argument("--record-status", action="store_true",
+                        help="Store restore evidence for a configured Tracker archive")
     args = parser.parse_args()
     try:
         stats = restore_check(args.archive, args.max_bytes)
+        if args.record_status:
+            from app.recovery_status import record_restore
+            record_restore(args.archive, stats)
+            print("PASS: Recovery receipt recorded for configured backup")
     except (OSError, ValueError, KeyError, TypeError, sqlite3.Error,
             zipfile.BadZipFile) as exc:
         print(f"FAIL: Isolated restore: {type(exc).__name__}: {str(exc)[:180]}")

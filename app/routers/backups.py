@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
 from ..backup import create_backup, list_backups, prune_backups, verify_named_backup
+from .. import backup
 from ..templating import render
+from ..recovery_status import restore_status
 
 router = APIRouter()
 
 
 @router.get('/backups')
 def backup_page(request: Request, msg: str = '', err: str = ''):
-    return render(request, 'backups.html', backups=list_backups(), msg=msg, err=err)
+    return render(request, 'backups.html', backups=list_backups(), recovery=restore_status(), backup_directory=backup.BACKUP_DIR, msg=msg, err=err)
 
 
 @router.post('/backups/create')

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Request
 from sqlalchemy.engine import make_url
 
 from .. import config, backup
+from ..recovery_status import restore_status
 from app.templating import render
 
 router = APIRouter()
@@ -130,6 +131,13 @@ def maintenance_review(request: Request):
             "ok": False,
             "detail": "Unable to inspect backup archives: " + str(exc),
         })
+
+    recovery = restore_status()
+    checks.append({
+        "name": "Isolated backup restoration",
+        "ok": recovery["ok"],
+        "detail": recovery["detail"],
+    })
 
     return render(
         request,

@@ -6,7 +6,13 @@
 {% if err %}<p class="notice" role="alert">{{ err }}</p>{% endif %}<p>Create a verified snapshot of your SQLite database and uploaded files. Backups are stored outside the application data directory.</p>
 <form action="/backups/create" method="post"><button type="submit">Create verified backup</button></form>
 <p class="muted">For automated daily backups, install the included systemd timer. Store an additional copy off this server.</p></section>
-<section class="card"><h2>Backup history</h2><div class="scroll"><table><thead><tr><th>Created (Eastern)</th><th>Archive</th><th>Size</th><th>Verification</th></tr></thead><tbody>
-{% for b in backups %}<tr><td>{{ b.modified|dt }}</td><td>{{ b.name }}</td><td>{{ '%.1f'|format(b.size / 1048576) }} MB</td><td><form method="post" action="/backups/verify"><input type="hidden" name="name" value="{{ b.name }}"><button type="submit" class="secondary" aria-label="Verify {{ b.name }}">Verify now</button></form></td></tr>{% else %}<tr><td colspan="4">No backups yet.</td></tr>{% endfor %}
-</tbody></table></div><p class="muted">Verification checks archive contents, SHA-256 checksums and SQLite integrity without restoring or modifying data. Restore remains a server-side operation.</p></section>
+<section class="card" aria-labelledby="recovery-check-title">
+<h2 id="recovery-check-title">Isolated restore readiness</h2>
+<p role="status"><strong>{{ 'RESTORE CHECK PASSED' if recovery.ok else 'RESTORE CHECK NEEDED' }}</strong> — {{ recovery.detail }}</p>
+<p class="muted">This is a recorded point-in-time test of the newest configured backup. It does not continuously verify that the archive is unchanged or prove complete disaster recovery. A new backup needs a new restore check.</p>
+<p class="muted">The scheduled backup command automatically performs a private temporary restore before recording a pass. To check an existing archive from the server, run <code>.venv/bin/python scripts/tracker-restore-verify.py --archive PATH --record-status</code> with PATH referring to an archive in {{ backup_directory }}.</p>
+</section>
+<section class="card"><h2>Backup history</h2><div class="scroll"><table><thead><tr><th>Created (Eastern)</th><th>Archive</th><th>Size</th><th>Verification</th><th>Restore evidence</th></tr></thead><tbody>
+{% for b in backups %}<tr><td>{{ b.modified|dt }}</td><td>{{ b.name }}</td><td>{{ '%.1f'|format(b.size / 1048576) }} MB</td><td><form method="post" action="/backups/verify"><input type="hidden" name="name" value="{{ b.name }}"><button type="submit" class="secondary" aria-label="Verify {{ b.name }}">Verify now</button></form></td><td>{{ 'Restore-tested' if recovery.ok and recovery.archive == b.name else 'No current restore evidence' }}</td></tr>{% else %}<tr><td colspan="5">No backups yet.</td></tr>{% endfor %}
+</tbody></table></div><p class="muted">Verify now checks archive checksums and SQLite integrity but does not perform an isolated restore. The scheduled job does both. Restore checks never overwrite live data.</p></section>
 {% endblock %}
