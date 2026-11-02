@@ -93,7 +93,8 @@ PY
  timeout 600 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings \
   tests/test_navigation_http_smoke.py tests/test_template_engine_consistency.py \
   tests/test_deployment_guard.py tests/test_record_explorer_template_regression.py \
-  tests/test_release_workflow.py tests/test_restore_verification.py
+  tests/test_release_workflow.py tests/test_restore_verification.py \
+  tests/test_recovery_status.py tests/test_recovery_readiness_ui.py
  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings tests \
   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \

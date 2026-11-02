@@ -97,7 +97,12 @@ def main() -> int:
                         help="Store restore evidence for a configured Tracker archive")
     args = parser.parse_args()
     try:
+        before = args.archive.stat()
         stats = restore_check(args.archive, args.max_bytes)
+        after = args.archive.stat()
+        if (before.st_size, before.st_mtime_ns, before.st_ino) != (
+                after.st_size, after.st_mtime_ns, after.st_ino):
+            raise ValueError("Archive changed during isolated restore")
         if args.record_status:
             from app.recovery_status import record_restore
             record_restore(args.archive, stats)
