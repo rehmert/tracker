@@ -10,6 +10,7 @@ from sqlalchemy.engine import make_url
 
 from .. import config, backup
 from ..recovery_status import restore_status
+from ..replica_health import replica_health
 from app.templating import render
 
 router = APIRouter()
@@ -138,6 +139,14 @@ def maintenance_review(request: Request):
         "ok": recovery["ok"],
         "detail": recovery["detail"],
     })
+
+    secondary = replica_health()
+    if secondary["configured"]:
+        checks.append({
+            "name": "Secondary local backup copy",
+            "ok": secondary["ok"],
+            "detail": secondary["detail"],
+        })
 
     return render(
         request,

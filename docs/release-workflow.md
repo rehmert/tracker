@@ -104,3 +104,31 @@ does not delete the archive, and never prunes prior backups. A successful
 manual creation updates the restore status immediately. The separate
 "Verify now" button continues to check archive checksum/SQLite integrity
 without claiming to perform an isolated restore.
+
+
+## Secondary local backup integrity (optional)
+
+The existing scripts/replicate_backups.sh entry point now invokes
+scripts/tracker_replica.py, which uses only Python's standard library and
+the existing Tracker ZIP verifier. The default directories are
+/opt/tracker/backups (primary) and /tracker-backups (secondary);
+override via TRACKER_BACKUP_DIR and TRACKER_BACKUP_REPLICA_DIR or use
+--source/--dest on the Python command.
+
+Replication confirms primary archive hashes match existing secondary
+archives; new copies are checked for ZIP contents, SHA-256 and SQLite
+integrity before being copied to a temporary file, rehashed and atomically
+published. It refuses to overwrite a conflicting existing replica, avoids
+source/destination symlinks and only prunes secondary archives after the
+full selected set has matched successfully. A private receipt in the
+secondary directory supports a lightweight status row in Maintenance Review.
+That row uses metadata and is point-in-time evidence; it does not rehash
+all backups during a page view.
+
+Use this command on each host if /tracker-backups is available:
+
+    bash /opt/tracker/scripts/replicate_backups.sh
+
+A missing optional secondary directory is not an application failure.
+A local or same-host secondary backup is **not off-site redundancy**.
+Retain separate off-host copies, with their own restore checks.
