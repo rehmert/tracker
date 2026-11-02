@@ -34,9 +34,16 @@
         time.defaultValue = data.new_time;
         time.value = data.new_time;
       }
+      // Deliberately clear dose amount. A repeated amount is never implied
+      // by a previous record or an earlier calendar handoff.
+      const amount = form.querySelector('input[name="amount"]');
+      if (amount) {
+        amount.defaultValue = '0';
+        amount.value = '0';
+      }
       if (status) {
         status.textContent =
-          'Entry recorded. The form is ready for another entry; review all details.';
+          'Entry recorded. Enter the next actual amount and review all details.';
       }
     });
   }

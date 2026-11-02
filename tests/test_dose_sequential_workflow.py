@@ -173,6 +173,7 @@ def test_client_listens_after_settle_and_does_not_auto_submit():
     assert "tracker:dose-saved" in js
     assert "token.defaultValue = data.submission_token" in js
     assert "time.defaultValue = data.new_time" in js
+    assert "amount.defaultValue = '0'" in js
     assert "form.submit()" not in js
     assert "tracker-dose-sequential-20261102.js" in template
     assert "HX-Trigger-After-Settle" in template
