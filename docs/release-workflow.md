@@ -58,3 +58,32 @@ It validates archive paths, checksums, SQLite integrity, uploaded file
 hashes and foreign keys in a private temporary extraction that is removed
 automatically. This is a non-destructive validation, not a complete
 interactive disaster-recovery exercise.
+
+## Recovery evidence on the Backups and Maintenance Review pages
+
+The existing nightly tracker-backup.service invokes
+python -m scripts.tracker_backup create. It now performs an **isolated**
+SQLite-and-uploads restore check after creating each archive and before
+pruning older backups. If the restore check fails, the command exits
+nonzero; it retains the created archive and does not write a success
+receipt or prune backups.
+
+After a successful check, a private atomic
+.tracker-restore-receipt.json is written in TRACKER_BACKUP_DIR
+(default /opt/tracker/backups). It records the archive name, time, size,
+modification time, SHA-256 and restored-data counts. The UI uses lightweight
+metadata checks, not expensive ZIP hashing on each page view.
+A new/changed archive, an old test (24+ hours), or a missing receipt
+produces an attention status. This is point-in-time evidence, not
+continual assurance of unchanged bytes or whole-host recoverability.
+
+Run this to record a dry-run receipt for an existing configured backup:
+
+    cd /opt/tracker
+    .venv/bin/python scripts/tracker-restore-verify.py \
+      --archive /opt/tracker/backups/tracker-EXAMPLE.zip \
+      --record-status
+
+Without --record-status, the isolated restoration remains read-only.
+Archive verification in the Backups UI does not claim to be a restore.
+Store an off-host copy and periodically rehearse whole-host recovery.
