@@ -53,7 +53,7 @@ def _error(msg: str) -> HTMLResponse:
 
 
 @router.get("/doses")
-def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", db: Session = Depends(get_db)):
+def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, db: Session = Depends(get_db)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
@@ -63,6 +63,51 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         and any(v.id == vial_id for v in vials)
         else None
     )
+
+    # Historical entries can prefill a NEW record only after explicit selection.
+    # Never reuse the historical timestamp, supplies, notes, or submission token.
+    # A planned calendar handoff always takes precedence over history shortcuts.
+    repeat_notice = ""
+    repeat_site = ""
+    repeat_amount = None
+    repeat_unit = ""
+    if repeat_from is not None and not (
+        planned_date or planned_time or planned_amount is not None
+        or planned_unit or vial_id is not None or compound_id is not None
+    ):
+        source = db.get(DoseLog, repeat_from)
+        if source is None or source.kind != "dose":
+            repeat_notice = "The selected historical administration is unavailable for prefill."
+        else:
+            matching = next((v for v in vials if v.id == source.vial_id), None)
+            if matching is None:
+                repeat_notice = "The historical vial is no longer available. Choose an available vial."
+            else:
+                try:
+                    converted = U.amount_to_vial_base(
+                        source.entered_value, source.entered_unit,
+                        views[matching.id].dim, views[matching.id].conc_per_ml,
+                    )
+                    if (
+                        converted > 0
+                        and converted <= views[matching.id].remaining_base + 1e-7
+                        and source.entered_unit in U.DOSE_UNITS
+                    ):
+                        selected_vial_id = matching.id
+                        repeat_amount = source.entered_value
+                        repeat_unit = source.entered_unit
+                        repeat_site = source.site if source.site in INJECTION_SITES else ""
+                        repeat_notice = (
+                            "Previous recorded details loaded for review only. "
+                            "Confirm the actual amount, vial, time, site and supplies before saving."
+                        )
+                    else:
+                        repeat_notice = (
+                            "Previous amount does not fit the available vial contents. "
+                            "Enter the actual amount manually."
+                        )
+                except (ValueError, TypeError):
+                    repeat_notice = "Previous entry could not be used to prefill a new record."
 
     if planned_date:
         try:
@@ -77,7 +122,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
     return render(request, "doses.html", rows=_rows(db, compound_id), vials=vials, views=views,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
-                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else None, planned_unit=planned_unit, selected_compound_id=compound_id, selected_vial_id=selected_vial_id, supplies=manual_supplies.available(db))
+                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else repeat_amount, planned_unit=planned_unit or repeat_unit, repeat_site=repeat_site, repeat_notice=repeat_notice, selected_compound_id=compound_id, selected_vial_id=selected_vial_id, supplies=manual_supplies.available(db))
 
 
 @router.post("/doses/preview")
@@ -128,7 +173,7 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     state, digest = idempotency.check(db, submission_token, "dose_create", payload)
     if submission_token and state == "replay":
         db.rollback()
-        return reject_dose("This entry was already recorded. Refresh the page before logging another dose.")
+        return reject_dose("This entry was already recorded. Use the refreshed form to log another administration.")
     if submission_token and state != "new":
         db.rollback()
         return reject_dose("Invalid or reused submission identifier. Refresh the page.")
@@ -170,7 +215,17 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     if submission_token:
         idempotency.record(db, submission_token, "dose_create", digest)
     db.commit()
-    return render(request, "_dose_rows.html", rows=_rows(db))
+    # Issue a new one-use submission token only AFTER the database commits.
+    # HX-Trigger-After-Settle fires after the form's existing HTMX reset.
+    # A rejected or replayed request never receives a fresh token.
+    response = render(request, "_dose_rows.html", rows=_rows(db))
+    response.headers["HX-Trigger-After-Settle"] = json.dumps({
+        "tracker:dose-saved": {
+            "submission_token": idempotency.new_token(),
+            "new_time": datetime.now().strftime("%Y-%m-%dT%H:%M"),
+        },
+    })
+    return response
 
 
 @router.delete("/doses/{did}")
