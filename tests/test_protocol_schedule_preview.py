@@ -141,7 +141,7 @@ def test_protocol_table_links_to_workspace_and_exclusions_update_date():
         assert first.status_code == 200
         # Exact row-specific destination, not the introduction or another plan.
         def planned_workspace_link(markup):
-            links = re.findall(r'href="(/dose-workspace\\?[^"]+)"', markup)
+            links = re.findall(r'href="(/dose-workspace\?[^"]+)"', markup)
             for raw in links:
                 url = html.unescape(raw)
                 params = parse_qs(urlsplit(url).query)
