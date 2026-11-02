@@ -1,5 +1,8 @@
 """Verify synthetic SQLite+uploads backups restore in isolation."""
 from pathlib import Path
+import os
+import subprocess
+import sys
 import importlib.util
 import sqlite3
 
@@ -67,3 +70,20 @@ def test_restoration_never_calls_migrations():
     assert "TemporaryDirectory" in source
     assert "migrate(" not in source
     assert "create_all(" not in source
+
+
+def test_restore_cli_without_pythonpath_in_isolated_interpreter(tmp_path):
+    """Replicate timer launch: direct script with no project PYTHONPATH."""
+    _, archive = synthetic_archive(tmp_path)
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
+    env["TRACKER_BACKUP_DIR"] = str(archive.parent)
+    env["TRACKER_DATA_DIR"] = str(tmp_path / "cli-data")
+    result = subprocess.run(
+        [sys.executable, "-I", str(ROOT / "scripts/tracker-restore-verify.py"),
+         "--archive", str(archive), "--record-status"],
+        cwd=tmp_path, env=env, text=True, capture_output=True, timeout=60,
+    )
+    assert result.returncode == 0, (result.stdout[:600], result.stderr[:600])
+    assert "Recovery receipt recorded" in result.stdout
+    assert (archive.parent / ".tracker-restore-receipt.json").is_file()
