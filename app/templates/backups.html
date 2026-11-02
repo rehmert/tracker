@@ -19,6 +19,20 @@
 <p class="muted">This is a recorded point-in-time test of the newest configured backup. It does not continuously verify that the archive is unchanged or prove complete disaster recovery. A new backup needs a new restore check.</p>
 <p class="muted">Manual and scheduled backup creation both perform a private temporary restore before recording a pass. You can test the latest archive on demand below, or use <code>.venv/bin/python scripts/tracker-restore-verify.py --archive PATH --record-status</code> with PATH referring to an archive in {{ backup_directory }}.</p>
 </section>
+<section class="card" aria-labelledby="storage-health-heading">
+<h2 id="storage-health-heading">Backup storage &amp; placement</h2>
+<div class="scroll"><table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody>
+<tr><td>Primary backup storage</td>
+<td><strong>{{ 'AVAILABLE' if storage.primary.ok else 'REVIEW' }}</strong></td>
+<td>{{ storage.primary.detail }}</td></tr>
+{% if storage.secondary.configured %}
+<tr><td>Secondary local filesystem</td>
+<td><strong>{{ 'SEPARATE' if storage.secondary.ok else 'REVIEW' }}</strong></td>
+<td>{{ storage.secondary.detail }}</td></tr>
+{% endif %}
+</tbody></table></div>
+<p class="muted">Space checks are advisory, based on free bytes and the latest compressed archive. Actual backup and temporary restoration requirements may be higher. Separate filesystems do not guarantee separate devices or off-site protection.</p>
+</section>
 <section class="card"><h2>Backup history</h2><div class="scroll"><table><thead><tr><th>Created (Eastern)</th><th>Archive</th><th>Size</th><th>Verification</th><th>Restore evidence</th></tr></thead><tbody>
 {% for b in backups %}<tr><td>{{ b.modified|dt }}</td><td>{{ b.name }}</td><td>{{ '%.1f'|format(b.size / 1048576) }} MB</td><td><form method="post" action="/backups/verify"><input type="hidden" name="name" value="{{ b.name }}"><button type="submit" class="secondary" aria-label="Verify {{ b.name }}">Verify now</button></form></td><td>{{ 'Restore-tested' if recovery.ok and recovery.archive == b.name else 'No current restore evidence' }}</td></tr>{% else %}<tr><td colspan="5">No backups yet.</td></tr>{% endfor %}
 </tbody></table></div><p class="muted">Verify now checks archive checksums and SQLite integrity but does not perform an isolated restore. The scheduled job and manual backup creation do both. Use “Test latest backup restoration” above to retest the existing newest archive. Restore checks never overwrite live data.</p></section>

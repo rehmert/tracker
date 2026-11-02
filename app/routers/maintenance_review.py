@@ -11,6 +11,7 @@ from sqlalchemy.engine import make_url
 from .. import config, backup
 from ..recovery_status import restore_status
 from ..replica_health import replica_health
+from ..storage_health import backup_storage_status
 from app.templating import render
 
 router = APIRouter()
@@ -146,6 +147,19 @@ def maintenance_review(request: Request):
             "name": "Secondary local backup copy",
             "ok": secondary["ok"],
             "detail": secondary["detail"],
+        })
+
+    storage = backup_storage_status()
+    checks.append({
+        "name": "Backup volume headroom",
+        "ok": storage["primary"]["ok"],
+        "detail": storage["primary"]["detail"],
+    })
+    if storage["secondary"]["configured"]:
+        checks.append({
+            "name": "Secondary local storage placement",
+            "ok": storage["secondary"]["ok"],
+            "detail": storage["secondary"]["detail"],
         })
 
     return render(

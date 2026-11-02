@@ -10,6 +10,7 @@ from fastapi.responses import RedirectResponse
 from .. import backup
 from ..backup import create_backup, list_backups, prune_backups, verify_named_backup
 from ..recovery_status import restore_status, invalidate_restore_evidence
+from ..storage_health import backup_storage_status
 from ..templating import render
 from scripts.tracker_backup import verify_restorable
 
@@ -33,7 +34,8 @@ def _message(text: str, error: bool = False):
 def backup_page(request: Request, msg: str = "", err: str = ""):
     return render(
         request, "backups.html", backups=list_backups(),
-        recovery=restore_status(), backup_directory=backup.BACKUP_DIR,
+        recovery=restore_status(), storage=backup_storage_status(),
+        backup_directory=backup.BACKUP_DIR,
         msg=msg, err=err,
     )
 

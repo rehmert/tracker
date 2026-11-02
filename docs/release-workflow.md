@@ -134,3 +134,20 @@ Use this command on each host if /tracker-backups is available:
 A missing optional secondary directory is not an application failure.
 A local or same-host secondary backup is **not off-site redundancy**.
 Retain separate off-host copies, with their own restore checks.
+
+
+## Backup storage headroom and secondary placement
+
+The Backups page and Maintenance Review now show a **read-only** capacity
+signal for the primary archive filesystem, including free space, number of
+archives and aggregate ZIP size. The warning threshold is the larger of
+512 MiB or three times the latest archive's compressed size. It is only
+a heuristic, not a guarantee of enough space for snapshots, decompression,
+or future uploads; no backup is blocked by this check.
+
+If a secondary local directory is configured or present, the pages
+compare filesystem device IDs and free capacity. A copy on the **same**
+filesystem is labeled a shared-failure risk. A different filesystem
+does not prove a different physical drive or off-site backup.
+No automated secondary copying, scheduler, or retention behavior is
+changed by this release.
