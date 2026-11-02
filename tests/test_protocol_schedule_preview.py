@@ -140,13 +140,20 @@ def test_protocol_table_links_to_workspace_and_exclusions_update_date():
         first = client.get("/protocols")
         assert first.status_code == 200
         # Exact row-specific destination, not the introduction or another plan.
-        first_href = (
-            f"/dose-workspace?compound_id={cid}"
-            f"&amp;planned_date={start.isoformat()}"
-            "&amp;planned_time=09%3A30"
-            "&amp;planned_amount=1.25&amp;planned_unit=mg"
-        )
-        assert first_href in first.text
+        def planned_workspace_link(markup):
+            links = re.findall(r'href="(/dose-workspace\\?[^"]+)"', markup)
+            for raw in links:
+                url = html.unescape(raw)
+                params = parse_qs(urlsplit(url).query)
+                if params.get("compound_id") == [str(cid)]:
+                    return url, params
+            raise AssertionError("Expected the protocol's actual vial link")
+
+        first_url, first_params = planned_workspace_link(first.text)
+        assert first_params["planned_date"] == [start.isoformat()]
+        assert first_params["planned_time"] == ["09:30"]
+        assert first_params["planned_amount"] == ["1.25"]
+        assert first_params["planned_unit"] == ["mg"]
 
         with SessionLocal() as db:
             db.add(ProjectionExclusion(protocol_item_id=item_id,
@@ -156,12 +163,13 @@ def test_protocol_table_links_to_workspace_and_exclusions_update_date():
         after = client.get("/protocols")
         assert after.status_code == 200
         next_day = start + timedelta(days=7)
-        next_href = first_href.replace(start.isoformat(), next_day.isoformat())
-        assert next_href in after.text
+        next_url, next_params = planned_workspace_link(after.text)
+        assert next_params["planned_date"] == [next_day.isoformat()]
+        assert next_params["planned_time"] == ["09:30"]
+        assert next_url != first_url
 
         # Verify the actual link is GET-only and the workspace renders.
-        workspace_url = html.unescape(next_href)
-        response = client.get(workspace_url)
+        response = client.get(next_url)
         assert response.status_code == 200
         assert "Dose Workspace" in response.text
         assert "Recording a planned dose" in response.text
