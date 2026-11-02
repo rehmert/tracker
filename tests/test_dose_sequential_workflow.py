@@ -94,7 +94,11 @@ def test_prepare_similar_is_review_only_and_preserves_current_time():
             page.text,
         )
         assert timestamps and "2026-10-25T09:30" not in timestamps
-        assert "Prepare similar" in client.get("/doses").text
+        with SessionLocal() as db:
+            compound_id = db.get(Vial, vial_id).compound_id
+        history = client.get(f"/doses?compound_id={compound_id}")
+        assert history.status_code == 200
+        assert f'<a href="/doses?repeat_from={did}">Prepare similar</a>' in history.text
     with SessionLocal() as db:
         assert db.scalar(
             select(func.count()).select_from(DoseLog)
@@ -144,7 +148,13 @@ def test_historical_waste_is_not_a_reusable_dose():
             did = db.scalar(
                 select(DoseLog.id).where(DoseLog.vial_id == vial_id)
             )
-        assert "Prepare similar" not in client.get("/doses").text
+        with SessionLocal() as db:
+            compound_id = db.get(Vial, vial_id).compound_id
+        history = client.get(f"/doses?compound_id={compound_id}")
+        assert history.status_code == 200
+        # The introduction mentions "Prepare similar", so inspect the
+        # actual link for this waste record rather than arbitrary page text.
+        assert f'href="/doses?repeat_from={did}"' not in history.text
         page = client.get(f"/doses?repeat_from={did}")
     assert "unavailable for prefill" in page.text
 
