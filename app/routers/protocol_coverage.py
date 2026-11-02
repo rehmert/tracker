@@ -3,8 +3,7 @@ from collections import defaultdict
 from datetime import date
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
-from fastapi.templating import Jinja2Templates
-from pathlib import Path
+from ..templating import render
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 import csv
@@ -13,7 +12,6 @@ from ..db import get_db
 from ..models import Protocol, ProtocolItem, Compound, Vial
 
 router = APIRouter()
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[1] / "templates"))
 
 # Deliberately counts vials, not remaining doses: concentrations, IU and
 # escalation schedules cannot safely be converted to a common quantity.
@@ -56,7 +54,7 @@ def coverage_rows(db):
 @router.get('/protocol-coverage')
 def protocol_coverage(request:Request, db:Session=Depends(get_db)):
     rows=coverage_rows(db)
-    return templates.TemplateResponse(request,'protocol_coverage.html',{'path':'/protocol-coverage','rows':rows,'protocol_count':len(set(r['protocol_id'] for r in rows))})
+    return render(request, 'protocol_coverage.html', rows=rows, protocol_count=len(set(r['protocol_id'] for r in rows)))
 
 @router.get('/protocol-coverage.csv')
 def protocol_coverage_csv(db:Session=Depends(get_db)):
