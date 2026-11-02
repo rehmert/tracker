@@ -41,7 +41,7 @@ def test_first_replica_verifies_latest_copy_and_receipt(copies):
     result = replica.replicate(source, target, keep=4)
     assert (result["copied"], result["matched"]) == (1, 0)
     assert replica.fingerprint(target / archive.name) == replica.fingerprint(archive)
-    assert (target / replica.RECEIPT).stat().st_mode & 0o777 == 0o600
+    assert (target / replica.RECEIPT).stat().st_mode & 0o777 == 0o644
     assert replica_health(source, target)["ok"]
     assert (data / "tracker.db").read_bytes() == before_db
 
@@ -126,8 +126,48 @@ def test_replica_command_works_without_pythonpath(copies, tmp_path):
     assert (target / archive.name).is_file()
 
 
-def test_missing_optional_replica_is_informational(copies):
+def test_missing_optional_replica_is_informational(copies, monkeypatch):
     _, source, target, _ = copies
     target.rmdir()
+    # Explicit configuration with a nonexistent destination is actionable.
+    # No replica is copied and the primary remains untouched.
+    configured = replica_health(source, target)
+    assert not configured["ok"] and configured["state"] == "invalid"
+
+
+def test_successful_copy_prunes_only_after_verifying_current_set(copies):
+    _, source, target, archive = copies
+    old = target / "tracker-20200101T000000000000Z.zip"
+    old.write_bytes(b"expired secondary file")
+    result = replica.replicate(source, target, keep=1)
+    assert result["pruned"] == 1
+    assert not old.exists()
+    assert (target / archive.name).exists()
+
+
+def test_status_requires_replica_receipt(copies):
+    _, source, target, archive = copies
+    (target / archive.name).write_bytes(archive.read_bytes())
     status = replica_health(source, target)
-    assert not status["ok"] and status["state"] == "invalid"
+    assert status["state"] == "unverified"
+    assert not status["ok"]
+
+
+def test_maintenance_review_reports_verified_local_copy(copies, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.routers.maintenance_review import router
+    from app import config
+    data, source, target, archive = copies
+    monkeypatch.setattr(config, "DB_URL", f"sqlite:///{data / 'tracker.db'}")
+    monkeypatch.setattr(backup, "BACKUP_DIR", source)
+    monkeypatch.setenv("TRACKER_BACKUP_REPLICA_DIR", str(target))
+    replica.replicate(source, target)
+    app = FastAPI()
+    app.include_router(router)
+    with TestClient(app) as client:
+        result = client.get("/maintenance-review")
+    assert result.status_code == 200
+    assert "Secondary local backup copy" in result.text
+    assert "Local secondary copy byte-matched" in result.text
+    assert "not off-host" in result.text

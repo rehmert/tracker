@@ -55,7 +55,10 @@ def _atomic_receipt(destination: Path, info: dict) -> None:
             prefix=".tracker-replica-", suffix=".tmp", delete=False
         ) as stream:
             temp_path = Path(stream.name)
-            os.fchmod(stream.fileno(), 0o600)
+            # Receipt contains archive names, file metadata and a digest,
+            # never credentials or backup contents. Allow Tracker's service
+            # account to read it when replication runs as root.
+            os.fchmod(stream.fileno(), 0o644)
             json.dump(info, stream, sort_keys=True)
             stream.write("\n")
             stream.flush()

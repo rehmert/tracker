@@ -120,8 +120,10 @@ archives; new copies are checked for ZIP contents, SHA-256 and SQLite
 integrity before being copied to a temporary file, rehashed and atomically
 published. It refuses to overwrite a conflicting existing replica, avoids
 source/destination symlinks and only prunes secondary archives after the
-full selected set has matched successfully. A private receipt in the
-secondary directory supports a lightweight status row in Maintenance Review.
+full selected set has matched successfully. A metadata-only receipt (mode 0644 so Tracker can read it when a root
+account performs replication) in the secondary directory supports a lightweight
+status row in Maintenance Review. The directory must be traversable by the
+Tracker service account; the backup archives themselves can remain private.
 That row uses metadata and is point-in-time evidence; it does not rehash
 all backups during a page view.
 
