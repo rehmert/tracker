@@ -2,6 +2,11 @@
 {% block title %}{{ p.name }}{% endblock %}
 {% block content %}<p><a href="/protocols/{{ p.id }}/history">View version history</a></p>
 <h1>{{ p.name }}</h1>
+<nav class="ux-shortcuts" aria-label="Protocol navigation">
+  <a href="/protocols">All protocols</a>
+  <a href="/calendar">View schedule</a>
+  <a href="/doses">Record an actual dose</a>
+</nav>
 <section><p><strong>Status:</strong> {{ "Active — included in dashboard forecasts" if p.is_active else "What-if — excluded from dashboard forecasts" }}</p>
 <form method="post" action="/protocols/{{ p.id }}/active"><button type="submit">{{ "Mark as what-if" if p.is_active else "Mark as active" }}</button></form>
 <p class="note">Mark active only for a protocol you are currently following. Forecasts are estimates, not dose recommendations.</p>

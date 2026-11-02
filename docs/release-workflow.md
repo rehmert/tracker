@@ -151,3 +151,23 @@ filesystem is labeled a shared-failure risk. A different filesystem
 does not prove a different physical drive or off-site backup.
 No automated secondary copying, scheduler, or retention behavior is
 changed by this release.
+
+## Faster dose logging and safe history reuse
+
+A committed HTMX dose log response emits a one-use token in
+HX-Trigger-After-Settle. The client renews the form token after the
+existing reset handler and refreshes the local recording time. Failed,
+invalid, and replayed submissions never rotate the token; durable
+idempotency remains enforced by the server.
+
+The dose History table includes Prepare similar for recorded
+administrations (not waste). It opens a new GET-only form and prefills
+the same vial, historical entered amount/unit and recorded site only
+if the vial is still active and has sufficient remaining inventory.
+It does not copy historical time, notes, disposable consumption or
+one-use token, and never posts a dose. Calendar-planned handoff takes
+priority over history prefill. Users explicitly review and submit.
+
+Protocol editing has shortcuts to the protocol list, calendar and dose
+log. There are no changes to dosing calculations, projections,
+inventory mutation endpoints, or database schema.

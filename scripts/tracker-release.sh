@@ -96,7 +96,8 @@ PY
   tests/test_release_workflow.py tests/test_restore_verification.py \
   tests/test_recovery_status.py tests/test_recovery_readiness_ui.py \
   tests/test_backup_restore_actions.py tests/test_secondary_replica.py \
-  tests/test_backup_storage_health.py tests/test_backup_storage_ui.py
+  tests/test_backup_storage_health.py tests/test_backup_storage_ui.py \
+  tests/test_dose_sequential_workflow.py
  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings tests \
   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
