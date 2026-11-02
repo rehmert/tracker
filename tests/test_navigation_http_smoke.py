@@ -57,16 +57,14 @@ def sidebar_routes(client):
     return paths
 
 
-def test_sidebar_destinations_have_registered_get_handlers(sidebar_routes):
-    routes = [
-        route for route in app.routes
-        if "GET" in (getattr(route, "methods", None) or ())
-    ]
-    missing = [
-        path for path in sidebar_routes
-        if not any(route.path == path for route in routes)
-    ]
-    assert not missing, f"Sidebar destinations without GET handlers: {missing}"
+def test_sidebar_destinations_are_unique_local_paths(sidebar_routes):
+    # The next test performs real GET requests, which prove registration,
+    # routing and rendering without relying on FastAPI internals.
+    assert sidebar_routes == list(dict.fromkeys(sidebar_routes))
+    assert all(
+        path.startswith("/") and not path.startswith("//")
+        for path in sidebar_routes
+    )
 
 
 def test_every_sidebar_page_renders_without_server_error(client, sidebar_routes):
