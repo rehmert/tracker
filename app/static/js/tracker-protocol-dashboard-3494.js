@@ -86,7 +86,7 @@
 
     const allowedSorts = new Set([
       'original', 'name-asc', 'name-desc',
-      'items-desc', 'items-asc'
+      'items-desc', 'items-asc', 'next-asc'
     ]);
 
     search.value =
@@ -129,6 +129,14 @@
 
         case 'items-asc':
           return itemCount(a) - itemCount(b);
+
+        case 'next-asc': {
+          // YYYY-MM-DD lexical order is chronological; unprojected plans
+          // sort after dated rows while retaining their original order.
+          const nextA = a.dataset.nextPlanned || '9999-12-31';
+          const nextB = b.dataset.nextPlanned || '9999-12-31';
+          return nextA.localeCompare(nextB);
+        }
 
         default:
           return original.get(a) - original.get(b);

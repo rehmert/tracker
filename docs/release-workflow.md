@@ -171,3 +171,16 @@ priority over history prefill. Users explicitly review and submit.
 Protocol editing has shortcuts to the protocol list, calendar and dose
 log. There are no changes to dosing calculations, projections,
 inventory mutation endpoints, or database schema.
+
+## Protocol list next planned and vial handoff
+
+The Protocols page shows the closest visible projected occurrence for each
+active, dated protocol within 60 days, honoring saved escalation weeks,
+weekly day selections, 84-hour schedule times and hidden projections. It
+includes a Next planned first sort and a Choose vial shortcut. The shortcut
+passes compound, date, time, amount and unit to the existing Dose Workspace;
+it never logs a dose, chooses a physical vial or consumes inventory.
+
+What-if protocols, missing start dates, ended plans and schedules without an
+occurrence in the lookahead are labeled explicitly. This is calendar planning
+information only; actual administrations are not reconciled in the index.

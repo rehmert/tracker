@@ -12,6 +12,8 @@ from ..db import get_db
 from ..models import Compound, Protocol, ProtocolItem, ProtocolRevision
 from ..templating import render
 from ..audit_helpers import record, snapshot
+from ..projection_exclusions import exclusions_for
+from ..protocol_schedule_preview import preview as schedule_preview
 
 PROTOCOL_FIELDS = ("name", "notes", "is_active", "horizon_weeks", "start_date", "end_date")
 
@@ -137,10 +139,23 @@ def _horizon(text: str) -> float:
 @router.get("/protocols")
 def protocols_page(request: Request, db: Session = Depends(get_db)):
     refs = services.compound_refs(db)
+    protocols = list(db.scalars(
+        select(Protocol).order_by(Protocol.updated_at.desc())
+    ))
+    # One read for all hidden-projection rules, not one query per protocol.
+    item_ids = [
+        item.id for protocol in protocols if protocol.is_active
+        for item in protocol.items
+    ]
+    rules = exclusions_for(db, item_ids)
+    on = date.today()  # app.main configures Eastern local wall time
     rows = []
-    for p in db.scalars(select(Protocol).order_by(Protocol.updated_at.desc())):
+    for p in protocols:
         t = calc.totals(_evaluate(_saved_inputs(p), refs, p.horizon_weeks, _stages(p)))
-        rows.append({"p": p, "t": t})
+        rows.append({
+            "p": p, "t": t,
+            "schedule": schedule_preview(p, on, rules),
+        })
     return render(request, "protocols.html", rows=rows)
 
 

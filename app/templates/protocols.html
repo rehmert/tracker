@@ -9,6 +9,7 @@
 
 <h1>Protocols</h1>
 <p class="note">Protocols can be active schedules or hypothetical what-if plans. Saving a protocol does not record an administration or consume inventory.</p>
+<p class="note">Next planned shows the nearest non-hidden calendar projection within 60 days, not a confirmed or recorded administration. Choose vial opens the existing read-only inventory workspace; nothing is logged until you explicitly submit a dose.</p>
 <nav class="ux-shortcuts" aria-label="Protocol workflow"><a href="/calendar">View schedule</a><a href="/doses">Record a dose</a><a href="/pk">Simulate exposure</a></nav>
 
 <div class="tracker-protocol-tools"
@@ -38,6 +39,7 @@
       <option value="name-desc">Name Z–A</option>
       <option value="items-desc">Most items</option>
       <option value="items-asc">Fewest items</option>
+      <option value="next-asc">Next planned first</option>
     </select>
   </label>
 
@@ -52,11 +54,22 @@
 </div>
 
 <div class="scroll"><table data-tracker-protocol-table>
-  <thead><tr><th>Name</th><th>Status</th><th class="n">Items</th><th class="n">Est. cost / month</th><th>Updated</th></tr></thead>
+  <thead><tr><th>Name</th><th>Status</th><th class="n">Items</th><th class="n">Est. cost / month</th><th>Updated</th><th>Next planned (60 days)</th></tr></thead>
   <tbody>
   {% for r in rows %}
-  <tr><td><a href="/protocols/{{ r.p.id }}">{{ r.p.name }}</a></td><td>{{ "Active" if r.p.is_active else "What-if" }}</td><td class="n">{{ r.p.items|length }}</td><td class="n">{{ r.t.month|money }}</td><td>{{ r.p.updated_at|utc_dt }}</td></tr>
-  {% else %}<tr><td colspan="5" class="empty">No protocols yet. Create one below to start planning.</td></tr>{% endfor %}
+  <tr data-next-planned="{{ r.schedule.next.date.isoformat() if r.schedule.next else '' }}"><td><a href="/protocols/{{ r.p.id }}">{{ r.p.name }}</a></td><td>{{ "Active" if r.p.is_active else "What-if" }}</td><td class="n">{{ r.p.items|length }}</td><td class="n">{{ r.t.month|money }}</td><td>{{ r.p.updated_at|utc_dt }}</td><td>
+  {% if r.schedule.next %}
+    {% set event = r.schedule.next %}
+    <strong>{{ event.date.isoformat() }}</strong>{% if event.time %} · {{ event.time }}{% endif %}
+    <span class="note">· {{ event.compound }} · {{ event.amount|num_input }} {{ event.unit }}</span>
+    <a href="/dose-workspace?compound_id={{ event.compound_id }}&amp;planned_date={{ event.date.isoformat() }}&amp;planned_time={{ event.time|urlencode }}&amp;planned_amount={{ event.amount|num_input }}&amp;planned_unit={{ event.unit|urlencode }}">Choose vial</a>
+  {% elif r.schedule.state == 'missing_start' %}
+    <a href="/protocols/{{ r.p.id }}">Set a start date</a>
+  {% else %}
+    <span class="note">{{ r.schedule.detail }}</span>
+  {% endif %}
+</td></tr>
+  {% else %}<tr><td colspan="6" class="empty">No protocols yet. Create one below to start planning.</td></tr>{% endfor %}
   </tbody>
 </table></div>
 <section>
