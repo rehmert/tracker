@@ -80,6 +80,31 @@ def record_restore(archive: Path, stats: dict, backup_dir: Path | None = None) -
     return receipt
 
 
+def invalidate_restore_evidence(archive_name: str,
+                                backup_dir: Path | None = None) -> None:
+    """Revoke an earlier pass before attempting to retest that same archive.
+
+    A failed retest must not leave a green receipt from an older test.
+    Only an existing, regular, same-archive receipt may be removed.
+    """
+    if not NAME_PATTERN.fullmatch(archive_name):
+        raise ValueError("Invalid archive for retest")
+    root = Path(backup_dir if backup_dir is not None else backup.BACKUP_DIR)
+    path = root / RECEIPT_NAME
+    if path.is_symlink():
+        raise ValueError("Symlinked recovery receipt")
+    if not path.exists():
+        return
+    if not path.is_file() or path.stat().st_size > 8192:
+        raise ValueError("Invalid recovery receipt")
+    try:
+        receipt = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeError) as error:
+        raise ValueError("Unreadable recovery receipt") from error
+    if receipt.get("archive") == archive_name:
+        path.unlink()
+
+
 def restore_status(backup_dir: Path | None = None, *, max_age_hours: float = 24,
                    now: datetime | None = None) -> dict:
     """Read one receipt without opening any ZIP or changing any files."""

@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 
 from .. import backup
 from ..backup import create_backup, list_backups, prune_backups, verify_named_backup
-from ..recovery_status import restore_status
+from ..recovery_status import restore_status, invalidate_restore_evidence
 from ..templating import render
 from scripts.tracker_backup import verify_restorable
 
@@ -76,6 +76,9 @@ def backup_restore_check(name: str = Form(...)):
         archives = list_backups()
         if not archives or name != archives[0]["name"]:
             raise ValueError("Select the latest configured archive")
+        # Revoke any earlier green result before rechecking this archive.
+        # A failed retest must not leave stale success evidence visible.
+        invalidate_restore_evidence(name)
         # Existing verifier enforces the archive filename and rejects symlinks.
         verify_named_backup(name)
         archive = backup.BACKUP_DIR / name

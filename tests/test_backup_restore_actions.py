@@ -133,3 +133,23 @@ def test_on_demand_restore_failure_preserves_live_archive(fixture):
     assert "RESTORE CHECK NEEDED" in page.text
     assert archive.is_file()
     assert [action for action, _ in calls] == ["failed"]
+
+
+def test_failed_retest_invalidates_previous_green_receipt(fixture):
+    client, root, calls, monkeypatch = fixture
+    archive = backup.create_backup()
+    record_restore(
+        archive, {"files": 1, "uploads": 0, "tables": 1, "bytes": 8192},
+        root,
+    )
+
+    def fail_retest(_path):
+        raise subprocess.CalledProcessError(1, ["restore-check"])
+
+    monkeypatch.setattr(backups, "verify_restorable", fail_retest)
+    with client:
+        assert "RESTORE CHECK PASSED" in client.get("/backups").text
+        response = client.post("/backups/restore-check", data={"name": archive.name})
+        assert "err=" in response.headers["location"]
+        assert "RESTORE CHECK NEEDED" in client.get("/backups").text
+    assert not (root / ".tracker-restore-receipt.json").exists()
