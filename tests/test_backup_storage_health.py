@@ -43,7 +43,6 @@ def test_counts_only_existing_archive_files(tmp_path):
 def test_low_headroom_is_attention_not_a_crash(tmp_path, monkeypatch):
     _, primary, secondary = setup(tmp_path)
     import app.storage_health as module
-    disk = os.statvfs(primary)
     class Usage:
         free = 100 * 1024 * 1024
         total = 1024 * 1024 * 1024
@@ -84,11 +83,18 @@ def test_different_filesystems_are_labeled_but_not_offhost(tmp_path, monkeypatch
     from app import storage_health as mod
     original = mod.Path.stat
 
+    class DifferentDevice:
+        def __init__(self, real):
+            self._real = real
+            self.st_dev = real.st_dev + 1
+
+        def __getattr__(self, key):
+            return getattr(self._real, key)
+
     def distinct(path, *args, **kwargs):
         record = original(path, *args, **kwargs)
         if Path(path) == secondary:
-            from types import SimpleNamespace
-            return SimpleNamespace(st_dev=record.st_dev + 1)
+            return DifferentDevice(record)
         return record
 
     monkeypatch.setattr(mod.Path, "stat", distinct)
