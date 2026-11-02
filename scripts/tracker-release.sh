@@ -1,0 +1,205 @@
+#!/usr/bin/env bash
+# Versioned, fail-closed Tracker DEV/PROD deployer. Run as root.
+set -Eeuo pipefail
+umask 022
+APP=/opt/tracker
+PY="$APP/.venv/bin/python"
+fail() { echo "ERROR: $*" >&2; exit 1; }
+g() { git -C "$APP" "$@"; }
+instance_check() {
+ "$PY" - "$1" <<'PY'
+import re,sys
+from pathlib import Path
+labels=[]
+for line in Path('/etc/tracker.env').read_text().splitlines():
+ m=re.match(r'^\s*(?:export\s+)?TRACKER_INSTANCE\s*=(.*)$',line)
+ if m: labels.append(m.group(1).strip().strip("\"'").upper())
+if labels != [sys.argv[1]]: raise SystemExit('Incorrect local instance label')
+PY
+}
+changed() { g diff --name-only --diff-filter=ACMR "$BASE" "$TARGET" -- app/; }
+cleanup() {
+ code=$?
+ trap - EXIT
+ if ((code!=0 && INSTALLED==1)); then
+  echo "Post-deploy failure: attempting code-only rollback"
+  cd "$APP"
+  umask 022
+  if [[ "$(g rev-parse HEAD)" == "$TARGET" && -z "$(g status --porcelain)" ]]; then
+   if g reset --hard "$BASE"; then
+    while IFS= read -r f; do
+     if [[ -f "$APP/$f" && ! -L "$APP/$f" ]]; then chmod a+r "$APP/$f"; fi
+    done < <(changed)
+    if ((RESTART==1)); then
+     systemctl reset-failed tracker || true
+     systemctl restart tracker || true
+    fi
+    echo "Previous code restored (database untouched)"
+   fi
+  else echo "Rollback withheld: checkout not in expected clean state"; fi
+ fi
+ if [[ -d "$QA" ]]; then g worktree remove --force "$QA" >/dev/null 2>&1 || true; fi
+ echo "EXIT_STATUS=$code"
+ echo "Finished: $(date -Is)"
+ exit "$code"
+}
+worker() {
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"
+ QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0
+ export GIT_CONFIG_COUNT=2
+ export GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
+ export GIT_CONFIG_KEY_1=safe.directory GIT_CONFIG_VALUE_1="$QA"
+ umask 022
+ exec >> "$RUN/deployment.log" 2>&1
+ trap cleanup EXIT
+ echo "Started: $(date -Is); instance: $INSTANCE"
+ cd "$APP"
+ [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "Not a clean main checkout"
+ [[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Starting commit differs from pinned base"
+ instance_check "$INSTANCE"
+ systemctl is-active --quiet tracker || fail "Tracker not active before update"
+ echo "=== Fetch exact release ==="
+ g fetch origin main "refs/heads/$REF:refs/remotes/origin/$REF"
+ [[ "$(g rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] || fail "Release ref differs from pinned target"
+ if [[ "$INSTANCE" == PROD ]]; then
+  [[ "$REF" == main && "$(g rev-parse origin/main)" == "$TARGET" ]] || fail "PROD requires promoted main"
+ fi
+ g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from base"
+ if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py)'; then
+  fail "Schema/dependency/systemd changes require separately reviewed deployment"
+ fi
+ RESTART=0
+ [[ -z "$(changed)" ]] || RESTART=1
+ echo "=== Isolated source tests ==="
+ g worktree add --detach "$QA" "$TARGET"
+ cd "$QA"
+ export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
+ mkdir -p "$TRACKER_DATA_DIR"
+ git diff --check "$BASE" "$TARGET"
+ "$PY" -m compileall -q app scripts tests
+ "$PY" - <<'PY'
+from pathlib import Path
+from jinja2 import Environment
+files=sorted(Path('app/templates').rglob('*.html'))
+for f in files: Environment().parse(f.read_text())
+print(f'PASS: {len(files)} Jinja templates')
+PY
+ "$PY" - "$QA" <<'PY'
+import app,sys
+from pathlib import Path
+assert Path(app.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve())
+print('PASS: Isolated source import')
+PY
+ timeout 600 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings \
+  tests/test_navigation_http_smoke.py tests/test_template_engine_consistency.py \
+  tests/test_deployment_guard.py tests/test_record_explorer_template_regression.py \
+  tests/test_release_workflow.py tests/test_restore_verification.py
+ timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings tests \
+  --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
+  --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
+  --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
+  --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
+ echo "=== ALL TESTS PASSED ==="
+ cd "$APP"
+ unset TRACKER_DATA_DIR PYTHONPATH
+ [[ -z "$(g status --porcelain)" && "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Live checkout changed"
+ echo "=== Verified source and data recovery backup ==="
+ umask 077
+ mkdir -m 700 "$SAVE"
+ g archive --format=tar HEAD | gzip > "$SAVE/source.tar.gz"
+ cp -p /etc/tracker.env "$SAVE/tracker.env"
+ chmod 600 "$SAVE/source.tar.gz" "$SAVE/tracker.env"
+ if [[ -f "$APP/.env" ]]; then cp -p "$APP/.env" "$SAVE/local.env"; chmod 600 "$SAVE/local.env"; fi
+ DATA_DIR="$("$PY" - <<'PY'
+from pathlib import Path
+import re
+root=Path('/opt/tracker'); data=root/'data'
+for line in Path('/etc/tracker.env').read_text().splitlines():
+ m=re.match(r'^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$',line)
+ if m and m.group(1).strip(): data=Path(m.group(1).strip().strip("\"'"))
+if not data.is_absolute(): data=root/data
+print(data.resolve())
+PY
+)"
+ [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
+ mkdir -m 700 "$SAVE/archives"
+ ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
+from pathlib import Path
+import sys
+from app.backup import create_backup
+print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
+PY
+)"
+ chmod 600 "$ARCHIVE"
+ PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
+  "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
+ echo "=== ISOLATED RESTORE VERIFICATION PASSED ==="
+ echo "=== Install via fast-forward ==="
+ umask 022
+ g merge --ff-only "$TARGET"
+ INSTALLED=1
+ [[ "$(g rev-parse HEAD)" == "$TARGET" ]] || fail "Unexpected new HEAD"
+ while IFS= read -r f; do
+  [[ -f "$APP/$f" && ! -L "$APP/$f" ]] || fail "Missing new source: $f"
+  chmod a+r "$APP/$f"
+ done < <(changed)
+ "$PY" "$APP/scripts/tracker-deployment-guard.py" \
+  --root "$APP" --base "$BASE" --target "$TARGET" --service tracker
+ [[ -z "$(g status --porcelain)" ]] || fail "Working tree became dirty"
+ if ((RESTART==1)); then
+  echo "Restarting Tracker"
+  systemctl reset-failed tracker
+  systemctl restart tracker
+ else echo "Tooling-only release: no Tracker restart"; fi
+ "$PY" "$APP/scripts/tracker-runtime-smoke.py" --instance "$INSTANCE"
+ systemctl is-active --quiet tracker || fail "Tracker service not active"
+ echo "======================================"
+ echo " TRACKER RELEASE DEPLOYMENT SUCCESS"
+ echo "======================================"
+ g log -1 --oneline
+ echo "Verified recovery archive: $ARCHIVE"
+}
+if [[ "${1:-}" == --worker ]]; then
+ shift
+ [[ $# -eq 5 ]] || fail "Bad worker arguments"
+ worker "$@"
+ exit 0
+fi
+INSTANCE=''; BASE=''; TARGET=''; REF=''
+while (( $# )); do
+ case "$1" in
+  --instance|--base|--target|--ref)
+   (( $# >= 2 )) || fail "Missing argument for $1"
+   case "$1" in
+    --instance) INSTANCE="$2";;
+    --base) BASE="$2";;
+    --target) TARGET="$2";;
+    --ref) REF="$2";;
+   esac
+   shift 2;;
+  *) fail "Unknown argument: $1";;
+ esac
+done
+[[ "$INSTANCE" == DEV || "$INSTANCE" == PROD ]] || fail "Choose DEV or PROD"
+[[ "$BASE" =~ ^[0-9a-f]{40}$ && "$TARGET" =~ ^[0-9a-f]{40}$ ]] || fail "Use full 40-character SHAs"
+[[ "$REF" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ && "$REF" != *..* ]] || fail "Invalid branch"
+[[ "$INSTANCE" != PROD || "$REF" == main ]] || fail "PROD requires --ref main"
+[[ $(id -u) == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run as root on configured Tracker host"
+instance_check "$INSTANCE"
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
+[[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "Not a clean main checkout"
+[[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Unexpected starting commit"
+systemctl is-active --quiet tracker || fail "Tracker service is not active"
+mkdir -p /tmp/tracker-backups
+umask 077
+RUN="$(mktemp -d /tmp/tracker-backups/release.XXXXXXXX)"
+chmod 700 "$RUN"
+cp "$0" "$RUN/worker.sh"
+chmod 700 "$RUN/worker.sh"
+bash -n "$RUN/worker.sh"
+UNIT="tracker-release-$(date +%s)-$$"
+systemd-run --unit="$UNIT" --collect --property='MemoryMax=1G' \
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF"
+echo "Launched: $UNIT"
+echo "Log: $RUN/deployment.log"
+printf 'Check: tail -n 45 "%s/deployment.log" | cut -c1-240\n' "$RUN"
