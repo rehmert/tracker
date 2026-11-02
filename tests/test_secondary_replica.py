@@ -126,7 +126,7 @@ def test_replica_command_works_without_pythonpath(copies, tmp_path):
     assert (target / archive.name).is_file()
 
 
-def test_missing_optional_replica_is_informational(copies, monkeypatch):
+def test_missing_configured_replica_reports_attention(copies):
     _, source, target, _ = copies
     target.rmdir()
     # Explicit configuration with a nonexistent destination is actionable.
@@ -171,3 +171,20 @@ def test_maintenance_review_reports_verified_local_copy(copies, monkeypatch):
     assert "Secondary local backup copy" in result.text
     assert "Local secondary copy byte-matched" in result.text
     assert "not off-host" in result.text
+
+
+def test_replication_shell_entrypoint_has_valid_bash_syntax():
+    result = subprocess.run(
+        ["bash", "-n", str(ROOT / "scripts/replicate_backups.sh")],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_replica_expired_evidence_is_not_presented_as_current(copies):
+    from datetime import datetime, timedelta, timezone
+    _, source, target, _ = copies
+    replica.replicate(source, target)
+    future = datetime.now(timezone.utc) + timedelta(hours=26)
+    status = replica_health(source, target, now=future)
+    assert not status["ok"] and status["state"] == "stale"
