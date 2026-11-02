@@ -87,3 +87,20 @@ Run this to record a dry-run receipt for an existing configured backup:
 Without --record-status, the isolated restoration remains read-only.
 Archive verification in the Backups UI does not claim to be a restore.
 Store an off-host copy and periodically rehearse whole-host recovery.
+
+
+## Manual backup recovery checks
+
+The Backups page now offers **Create and test backup** and
+**Test latest backup restoration**. Both perform a full private temporary
+restore via the same verification subprocess used by scheduled backups.
+The latter only accepts the newest filename from the configured backup
+directory, never a user-supplied filesystem path. Its receipt reflects
+the newest backup, not an older archive.
+
+These are explicit server-side actions. They may take longer for large
+archives. An unsuccessful restore never writes a new success receipt,
+does not delete the archive, and never prunes prior backups. A successful
+manual creation updates the restore status immediately. The separate
+"Verify now" button continues to check archive checksum/SQLite integrity
+without claiming to perform an isolated restore.

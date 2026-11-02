@@ -3,16 +3,23 @@
 {% block content %}
 <section class="card"><h1>Data protection</h1>
 {% if msg %}<p class="notice" role="status">{{ msg }}</p>{% endif %}
-{% if err %}<p class="notice" role="alert">{{ err }}</p>{% endif %}<p>Create a verified snapshot of your SQLite database and uploaded files. Backups are stored outside the application data directory.</p>
-<form action="/backups/create" method="post"><button type="submit">Create verified backup</button></form>
+{% if err %}<p class="notice" role="alert">{{ err }}</p>{% endif %}<p>Create a snapshot of your SQLite database and uploads, then verify it through a private isolated restoration. Backups are stored outside the application data directory.</p>
+<form action="/backups/create" method="post"><button type="submit">Create and test backup</button></form>
 <p class="muted">For automated daily backups, install the included systemd timer. Store an additional copy off this server.</p></section>
 <section class="card" aria-labelledby="recovery-check-title">
 <h2 id="recovery-check-title">Isolated restore readiness</h2>
 <p role="status"><strong>{{ 'RESTORE CHECK PASSED' if recovery.ok else 'RESTORE CHECK NEEDED' }}</strong> — {{ recovery.detail }}</p>
+{% if backups %}
+<form action="/backups/restore-check" method="post">
+<input type="hidden" name="name" value="{{ backups[0].name }}">
+<button type="submit" class="secondary">Test latest backup restoration</button>
+</form>
+<p class="muted">Runs a full verification in a temporary directory. Large archives may take longer; this does not overwrite live data.</p>
+{% endif %}
 <p class="muted">This is a recorded point-in-time test of the newest configured backup. It does not continuously verify that the archive is unchanged or prove complete disaster recovery. A new backup needs a new restore check.</p>
-<p class="muted">The scheduled backup command automatically performs a private temporary restore before recording a pass. To check an existing archive from the server, run <code>.venv/bin/python scripts/tracker-restore-verify.py --archive PATH --record-status</code> with PATH referring to an archive in {{ backup_directory }}.</p>
+<p class="muted">Manual and scheduled backup creation both perform a private temporary restore before recording a pass. You can test the latest archive on demand below, or use <code>.venv/bin/python scripts/tracker-restore-verify.py --archive PATH --record-status</code> with PATH referring to an archive in {{ backup_directory }}.</p>
 </section>
 <section class="card"><h2>Backup history</h2><div class="scroll"><table><thead><tr><th>Created (Eastern)</th><th>Archive</th><th>Size</th><th>Verification</th><th>Restore evidence</th></tr></thead><tbody>
 {% for b in backups %}<tr><td>{{ b.modified|dt }}</td><td>{{ b.name }}</td><td>{{ '%.1f'|format(b.size / 1048576) }} MB</td><td><form method="post" action="/backups/verify"><input type="hidden" name="name" value="{{ b.name }}"><button type="submit" class="secondary" aria-label="Verify {{ b.name }}">Verify now</button></form></td><td>{{ 'Restore-tested' if recovery.ok and recovery.archive == b.name else 'No current restore evidence' }}</td></tr>{% else %}<tr><td colspan="5">No backups yet.</td></tr>{% endfor %}
-</tbody></table></div><p class="muted">Verify now checks archive checksums and SQLite integrity but does not perform an isolated restore. The scheduled job does both. Restore checks never overwrite live data.</p></section>
+</tbody></table></div><p class="muted">Verify now checks archive checksums and SQLite integrity but does not perform an isolated restore. The scheduled job and manual backup creation do both. Use “Test latest backup restoration” above to retest the existing newest archive. Restore checks never overwrite live data.</p></section>
 {% endblock %}

@@ -1,36 +1,104 @@
-from fastapi import APIRouter, Request, Form
+"""Backup creation, archive integrity and explicit isolated restore actions."""
+import sqlite3
+import subprocess
+import zipfile
+from urllib.parse import quote
+
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
-from ..backup import create_backup, list_backups, prune_backups, verify_named_backup
+
 from .. import backup
-from ..templating import render
+from ..backup import create_backup, list_backups, prune_backups, verify_named_backup
 from ..recovery_status import restore_status
+from ..templating import render
+from scripts.tracker_backup import verify_restorable
 
 router = APIRouter()
 
+ARCHIVE_ERRORS = (OSError, ValueError, KeyError, TypeError,
+                  zipfile.BadZipFile, sqlite3.DatabaseError)
+RESTORE_ERRORS = ARCHIVE_ERRORS + (
+    subprocess.CalledProcessError, subprocess.TimeoutExpired,
+)
 
-@router.get('/backups')
-def backup_page(request: Request, msg: str = '', err: str = ''):
-    return render(request, 'backups.html', backups=list_backups(), recovery=restore_status(), backup_directory=backup.BACKUP_DIR, msg=msg, err=err)
+
+def _message(text: str, error: bool = False):
+    parameter = "err" if error else "msg"
+    return RedirectResponse(
+        "/backups?" + parameter + "=" + quote(text), status_code=303
+    )
 
 
-@router.post('/backups/create')
+@router.get("/backups")
+def backup_page(request: Request, msg: str = "", err: str = ""):
+    return render(
+        request, "backups.html", backups=list_backups(),
+        recovery=restore_status(), backup_directory=backup.BACKUP_DIR,
+        msg=msg, err=err,
+    )
+
+
+@router.post("/backups/create")
 def backup_create():
+    """A manual backup gets exactly the same restore gate as the timer."""
     try:
         archive = create_backup()
+    except ARCHIVE_ERRORS as exc:
+        return _message(f"Backup creation failed: {exc}", error=True)
+    try:
+        verify_restorable(archive)
+    except RESTORE_ERRORS:
+        # The archive remains for diagnosis and no existing backups are pruned.
+        return _message(
+            "Backup archive created, but the isolated restore test failed. "
+            "The new archive was retained and older backups were not pruned.",
+            error=True,
+        )
+    try:
         prune_backups()
-        return RedirectResponse('/backups?msg=Backup+created+and+verified', status_code=303)
-    except (OSError, ValueError) as exc:
-        from urllib.parse import quote
-        return RedirectResponse('/backups?err=' + quote(str(exc)), status_code=303)
+    except ARCHIVE_ERRORS:
+        return _message(
+            "Backup passed its isolated restore test, but backup retention "
+            "cleanup failed. Review the archive directory.",
+            error=True,
+        )
+    return _message("Backup created and isolated restoration verified")
 
 
-@router.post('/backups/verify')
+@router.post("/backups/restore-check")
+def backup_restore_check(name: str = Form(...)):
+    """Explicit on-demand restore test of the newest configured archive.
+
+    Only the most recent archive may update the single latest-restore receipt.
+    An archive path is never accepted from the caller.
+    """
+    try:
+        archives = list_backups()
+        if not archives or name != archives[0]["name"]:
+            raise ValueError("Select the latest configured archive")
+        # Existing verifier enforces the archive filename and rejects symlinks.
+        verify_named_backup(name)
+        archive = backup.BACKUP_DIR / name
+    except ARCHIVE_ERRORS:
+        return _message("Cannot test restoration: invalid or missing latest backup", error=True)
+    try:
+        verify_restorable(archive)
+    except RESTORE_ERRORS:
+        return _message(
+            "Isolated restoration failed. No success receipt was recorded; "
+            "the live database and uploaded files were not modified.",
+            error=True,
+        )
+    return _message(f"Isolated restoration verified for {name}")
+
+
+@router.post("/backups/verify")
 def backup_verify(name: str = Form(...)):
-    from urllib.parse import quote
     try:
         manifest = verify_named_backup(name)
-        count = len(manifest['files'])
-        msg = f'Verified {name}: {count} files, checksums and SQLite integrity passed'
-        return RedirectResponse('/backups?msg=' + quote(msg), status_code=303)
-    except (OSError, ValueError, KeyError, TypeError, __import__('zipfile').BadZipFile, __import__('sqlite3').DatabaseError) as exc:
-        return RedirectResponse('/backups?err=' + quote(f'Verification failed for {name}: {exc}'), status_code=303)
+        count = len(manifest["files"])
+        return _message(
+            f"Verified {name}: {count} files, checksums and SQLite integrity passed"
+        )
+    except ARCHIVE_ERRORS as exc:
+        return _message(f"Verification failed for {name}: {exc}", error=True)
