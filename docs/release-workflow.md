@@ -20,6 +20,11 @@ access; fast-forwards code; and verifies /healthz and every sidebar page with
 local credentials. Changes under app/ restart Tracker; tooling-only changes
 do not. Failed post-install checks attempt a *code-only* rollback.
 
+The release command now streams its complete log by default and returns a failure
+status when the worker reports failure. It automatically stops following when
+the worker exits. Press Ctrl+C to stop watching; the systemd worker continues.
+Add `--detach` to return immediately and print the logfile path instead.
+
 The log must report TRACKER RELEASE DEPLOYMENT SUCCESS and EXIT_STATUS=0.
 Do not promote to PROD on a partial or failed log.
 

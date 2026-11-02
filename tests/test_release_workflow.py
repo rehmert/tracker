@@ -67,3 +67,13 @@ def test_runtime_credentials_from_local_file(tmp_path):
         "TRACKER_USER": "operator",
         "TRACKER_PASS": "two words",
     }
+
+
+def test_release_streams_logs_by_default_and_supports_detach():
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "FOLLOW=1" in source
+    assert "--detach) FOLLOW=0" in source
+    assert 'touch "$RUN/deployment.log"' in source
+    assert 'tail -n +1 --follow=descriptor --pid="$pid" "$log"' in source
+    assert 'follow_deployment_log "$UNIT" "$RUN/deployment.log"' in source
+    assert "=== DEPLOYMENT FAILED" in source

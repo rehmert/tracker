@@ -159,15 +159,44 @@ PY
  g log -1 --oneline
  echo "Verified recovery archive: $ARCHIVE"
 }
+follow_deployment_log() {
+ local unit="$1" log="$2" pid="" i final
+ echo "=== Live deployment log (Ctrl+C detaches; worker continues) ==="
+ # A root-only log is created before systemd-run, avoiding any startup race.
+ for ((i=0; i<30; i++)); do
+  pid="$(systemctl show "$unit.service" -p MainPID --value 2>/dev/null || true)"
+  if [[ "$pid" =~ ^[1-9][0-9]*$ ]]; then break; fi
+  if grep -q '^EXIT_STATUS=' "$log" 2>/dev/null; then break; fi
+  sleep 0.2
+ done
+ if [[ "$pid" =~ ^[1-9][0-9]*$ ]]; then
+  # GNU tail exits when this specific, detached systemd worker exits.
+  tail -n +1 --follow=descriptor --pid="$pid" "$log"
+ else
+  # A worker that has already exited still gets its full log displayed.
+  cat "$log"
+ fi
+ final="$(sed -n 's/^EXIT_STATUS=//p' "$log" | tail -n 1)"
+ if [[ "$final" == 0 ]]; then
+  echo "=== DEPLOYMENT FINISHED SUCCESSFULLY ==="
+ elif [[ "$final" =~ ^[0-9]+$ ]]; then
+  echo "=== DEPLOYMENT FAILED (exit $final) ===" >&2
+  return 1
+ else
+  echo "=== DEPLOYMENT STATUS UNKNOWN; check the log ===" >&2
+  return 1
+ fi
+}
 if [[ "${1:-}" == --worker ]]; then
  shift
  [[ $# -eq 5 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1
 while (( $# )); do
  case "$1" in
+  --detach) FOLLOW=0; shift;;
   --instance|--base|--target|--ref)
    (( $# >= 2 )) || fail "Missing argument for $1"
    case "$1" in
@@ -198,8 +227,14 @@ cp "$0" "$RUN/worker.sh"
 chmod 700 "$RUN/worker.sh"
 bash -n "$RUN/worker.sh"
 UNIT="tracker-release-$(date +%s)-$$"
+# Make the log available before the worker starts; no source/data changes.
+touch "$RUN/deployment.log"
 systemd-run --unit="$UNIT" --collect --property='MemoryMax=1G' \
  /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
-printf 'Check: tail -n 45 "%s/deployment.log" | cut -c1-240\n' "$RUN"
+if (( FOLLOW )); then
+ follow_deployment_log "$UNIT" "$RUN/deployment.log"
+else
+ printf 'Detached. To follow: tail -n +1 -f "%s/deployment.log"\n' "$RUN"
+fi
