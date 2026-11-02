@@ -9,7 +9,9 @@
     const form = document.querySelector('form[hx-post="/doses"]');
     if (!form) return;
 
-    form.addEventListener('tracker:dose-saved', (event) => {
+    // HTMX may dispatch response-triggered events on the form or the
+    // swapped history tbody. Both bubble to document.body.
+    document.body.addEventListener('tracker:dose-saved', (event) => {
       const data = event.detail || {};
       const token = form.querySelector('input[name="submission_token"]');
       const time = form.querySelector('input[name="taken_at"]');

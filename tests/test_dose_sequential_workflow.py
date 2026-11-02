@@ -171,6 +171,7 @@ def test_client_listens_after_settle_and_does_not_auto_submit():
     js = (root / "app/static/js/tracker-dose-sequential-20261102.js").read_text()
     template = (root / "app/templates/doses.html").read_text()
     assert "tracker:dose-saved" in js
+    assert "document.body.addEventListener" in js
     assert "token.defaultValue = data.submission_token" in js
     assert "time.defaultValue = data.new_time" in js
     assert "amount.defaultValue = '0'" in js
