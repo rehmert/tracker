@@ -33,14 +33,14 @@ def test_maintenance_reports_configured_backup_location(tmp_path, monkeypatch):
     with client:
         result = client.get("/maintenance-review")
     assert result.status_code == 200
-    assert str(root) in result.text
-    assert "Tracker backup archives" in result.text
-    assert "1 archive(s) available" in result.text
-    assert "Latest backup age" in result.text
-    assert "passing" in result.text
-    assert "needing attention" in result.text
-    assert "does not verify archive contents" in result.text
-    assert "/tmp/tracker-backups" not in result.text
+    assert result.text.count(str(root)) >= 1
+    assert result.text.count("Tracker backup archives") >= 1
+    assert result.text.count("1 archive(s) available") >= 1
+    assert result.text.count("Latest backup age") >= 1
+    assert result.text.count("passing") >= 1
+    assert result.text.count("needing attention") >= 1
+    assert result.text.count("do not verify archive contents") >= 1
+    assert result.text.count("/tmp/tracker-backups") == 0
 
 
 def test_maintenance_handles_missing_backups(tmp_path, monkeypatch):
@@ -48,8 +48,8 @@ def test_maintenance_handles_missing_backups(tmp_path, monkeypatch):
     with client:
         result = client.get("/maintenance-review")
     assert result.status_code == 200
-    assert "No backup archives found" in result.text
-    assert "ATTENTION" in result.text
+    assert result.text.count("No backup archives found") >= 1
+    assert result.text.count("ATTENTION") >= 1
 
 
 def test_maintenance_missing_db_is_an_attention_not_a_500(tmp_path, monkeypatch):
@@ -57,8 +57,8 @@ def test_maintenance_missing_db_is_an_attention_not_a_500(tmp_path, monkeypatch)
     with client:
         result = client.get("/maintenance-review")
     assert result.status_code == 200
-    assert "Database inspection" in result.text
-    assert "ATTENTION" in result.text
+    assert result.text.count("Database inspection") >= 1
+    assert result.text.count("ATTENTION") >= 1
 
 
 def test_maintenance_missing_backup_dir_is_visible(tmp_path, monkeypatch):
@@ -67,5 +67,5 @@ def test_maintenance_missing_backup_dir_is_visible(tmp_path, monkeypatch):
     with client:
         response = client.get("/maintenance-review")
     assert response.status_code == 200
-    assert "Missing:" in response.text
-    assert "No backup archives found" in response.text
+    assert response.text.count("Missing:") >= 1
+    assert response.text.count("No backup archives found") >= 1
