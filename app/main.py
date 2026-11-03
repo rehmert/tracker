@@ -16,6 +16,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import PlainTextResponse
+
+from .request_origin import reject_cross_origin_write
 
 from . import config, models  # noqa: F401  (models import registers tables)
 from .db import Base, engine
@@ -46,8 +49,14 @@ app = FastAPI(title="Tracker", dependencies=[Depends(require_auth)],
 
 @app.middleware("http")
 async def tracker_response_protection(request, call_next):
-    """Set browser protections without overriding route-specific policy."""
-    response = await call_next(request)
+    """Set browser protections and reject foreign browser writes."""
+    if reject_cross_origin_write(request.method, request.headers):
+        response = PlainTextResponse(
+            "Cross-origin write request denied.",
+            status_code=403,
+        )
+    else:
+        response = await call_next(request)
 
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
