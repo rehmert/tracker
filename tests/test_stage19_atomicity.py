@@ -84,18 +84,86 @@ def test_dose_delete_failure_rolls_back_record_and_audit():
 
 
 def test_locked_writer_rejects_dose_edit_and_delete_without_mutation():
+    """A locked writer must reject edits and deletes without mutations.
+
+    SQLite's normal busy timeout is appropriate for production,
+    but waiting several seconds twice adds no coverage to this
+    test. Change the timeout only on pooled connections checked
+    out during this isolated test, and dispose those connections
+    after restoring the listener.
+    """
     vid = seed_vials('Stage19Lock-' + str(uuid4()), 1)[0]
+
     with TestClient(app) as client:
-        assert client.post('/doses', data={'vial_id': str(vid), 'taken_at': '2026-10-30T12:00',
-                                           'amount': '2', 'unit': 'mg'}).status_code == 200
+        assert client.post(
+            '/doses',
+            data={
+                'vial_id': str(vid),
+                'taken_at': '2026-10-30T12:00',
+                'amount': '2',
+                'unit': 'mg',
+            },
+        ).status_code == 200
+
         with SessionLocal() as db:
-            did = db.scalar(select(DoseLog.id).where(DoseLog.vial_id == vid))
+            did = db.scalar(
+                select(DoseLog.id).where(
+                    DoseLog.vial_id == vid
+                )
+            )
+
         before = _snapshot(vid)
-        with engine.connect() as blocker:
-            blocker.exec_driver_sql('BEGIN IMMEDIATE')
-            try:
-                assert client.delete(f'/doses/{did}').status_code == 409
-                assert client.post(f'/doses/{did}/edit', data={'taken_at': '2026-10-30T12:00', 'amount': '3', 'unit': 'mg'}).status_code == 409
-            finally:
-                blocker.rollback()
+
+        def short_busy_timeout(
+            dbapi_connection,
+            connection_record,
+            connection_proxy,
+        ):
+            dbapi_connection.execute(
+                "PRAGMA busy_timeout=150"
+            )
+
+        event.listen(
+            engine, "checkout", short_busy_timeout
+        )
+        try:
+            with engine.connect() as blocker:
+                # Verify the test-specific timeout really
+                # applies to checked-out connections.
+                timeout = blocker.exec_driver_sql(
+                    "PRAGMA busy_timeout"
+                ).scalar_one()
+                assert timeout == 150
+
+                blocker.exec_driver_sql(
+                    "BEGIN IMMEDIATE"
+                )
+                try:
+                    assert client.delete(
+                        f'/doses/{did}'
+                    ).status_code == 409
+
+                    assert client.post(
+                        f'/doses/{did}/edit',
+                        data={
+                            'taken_at': '2026-10-30T12:00',
+                            'amount': '3',
+                            'unit': 'mg',
+                        },
+                    ).status_code == 409
+                finally:
+                    blocker.rollback()
+        finally:
+            event.remove(
+                engine, "checkout", short_busy_timeout
+            )
+            # Discard pooled connections that may retain
+            # this test's shorter busy timeout.
+            engine.dispose()
+
     assert _snapshot(vid) == before
+
+    with SessionLocal() as db:
+        dose = db.get(DoseLog, did)
+        assert dose is not None
+        assert dose.amount_base == 2000

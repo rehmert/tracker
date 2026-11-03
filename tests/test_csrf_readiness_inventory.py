@@ -1,6 +1,8 @@
 """Regression coverage for the CSRF source inventory."""
 
 import importlib.util
+
+import pytest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,6 +13,12 @@ spec = importlib.util.spec_from_file_location(
 )
 audit = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(audit)
+
+
+@pytest.fixture(scope="module")
+def inventory():
+    """Scan the immutable test source once per module."""
+    return audit.build(ROOT)
 
 
 def test_form_scanner():
@@ -31,8 +39,8 @@ def test_form_scanner():
     ]
 
 
-def test_known_routes_are_in_inventory():
-    result = audit.build(ROOT)
+def test_known_routes_are_in_inventory(inventory):
+    result = inventory
     keys = {
         (r["method"], r["path"])
         for r in result["routes"]
@@ -41,8 +49,8 @@ def test_known_routes_are_in_inventory():
     assert ("POST", "/pk/compounds") in keys
 
 
-def test_known_browser_paths_are_in_inventory():
-    result = audit.build(ROOT)
+def test_known_browser_paths_are_in_inventory(inventory):
+    result = inventory
     browser = result["html_and_htmx"]
     scripts = result["javascript"]
 
@@ -58,8 +66,8 @@ def test_known_browser_paths_are_in_inventory():
     )
 
 
-def test_inventory_labels_missing_enforcement():
-    result = audit.build(ROOT)
+def test_inventory_labels_missing_enforcement(inventory):
+    result = inventory
     assert result["status"] == (
         "inventory_only_not_csrf_protected"
     )
@@ -72,8 +80,8 @@ def test_inventory_labels_missing_enforcement():
     )
 
 
-def test_inventory_does_not_mutate_source(tmp_path):
-    result = audit.build(ROOT)
+def test_inventory_does_not_mutate_source(inventory, tmp_path):
+    result = inventory
     assert result["routes"]
     # The scanner has no requested output destination.
     assert list(tmp_path.iterdir()) == []
