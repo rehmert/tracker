@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Protocol calendar{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-calendar-workbench.css?v=20261103b">
+<script src="/static/js/tracker-calendar-workbench.js?v=20261103b" defer></script>
 <h1>Protocol calendar</h1>
 <p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
 {% if missing_start %}<section><h2>Start dates needed</h2><p class="note">These active protocols have no start date, so no doses are projected for them:</p>
@@ -11,12 +13,45 @@
 <a class="button" href="/calendar/export.ics?month={{ shown.strftime('%Y-%m') }}">Export month (.ics)</a>
 </form>
 <p class="row"><a href="/calendar?month={{ previous }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a href="/calendar?month={{ next_month }}">Next →</a></p>
+<section class="calendar-workbench" id="calendar-workbench" aria-label="Calendar tools">
+  <div class="calendar-summary" aria-label="Current month entry totals">
+    <div><strong>{{ status_counts['due'] }}</strong><span>Due Today</span></div>
+    <div><strong>{{ status_counts['upcoming'] }}</strong><span>Upcoming</span></div>
+    <div><strong>{{ status_counts['unrecorded'] }}</strong><span>Not Logged</span></div>
+    <div><strong>{{ status_counts['recorded'] }}</strong><span>Matched Logs</span></div>
+    <div><strong>{{ status_counts['extra'] }}</strong><span>Unmatched Logs</span></div>
+  </div>
+  <div class="calendar-controls">
+    <label class="field" for="calendar-search"><span>Find compound or protocol</span>
+      <input id="calendar-search" type="search" placeholder="Filter this month" autocomplete="off" aria-controls="calendar-grid">
+    </label>
+    <label class="field" for="calendar-status-filter"><span>Show</span>
+      <select id="calendar-status-filter" aria-controls="calendar-grid">
+        <option value="all">All entries</option>
+        <option value="needs-action">Due and not logged</option>
+        <option value="due">Due today</option>
+        <option value="upcoming">Upcoming</option>
+        <option value="unrecorded">Not logged</option>
+        <option value="recorded">Matched logs</option>
+        <option value="extra">Unmatched logs</option>
+      </select>
+    </label>
+    <div class="calendar-actions">
+      <a class="button" id="calendar-jump-today" href="/calendar?month={{ today.strftime('%Y-%m') }}#calendar-day-{{ today.isoformat() }}">Today</a>
+      <button type="button" id="calendar-reset-filters">Clear Filters</button>
+      <button type="button" id="calendar-print">Print</button>
+    </div>
+  </div>
+  <p id="calendar-filter-summary" role="status" aria-live="polite">Showing {{ calendar_total }} of {{ calendar_total }} entries in this month.</p>
+  <p class="note">Filtering only changes what is displayed. It does not change protocols, dose logs, or inventory.</p>
+</section>
 <p class="ux-legend" aria-label="Calendar legend"><span>✓ Recorded on date (not verified)</span><span>! No matching log</span><span>◉ Due today</span><span>○ Upcoming</span></p>
-<div class="calendar-grid">
+<div class="calendar-grid" id="calendar-grid" aria-label="Month calendar">
 {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}<div class="calendar-head">{{ day }}</div>{% endfor %}
-{% for d in days %}<div class="calendar-day {% if not d.in_month %}outside{% endif %}">
-<strong>{{ d.date.day }}</strong>
+{% for d in days %}<div class="calendar-day {% if not d.in_month %}outside{% endif %}{% if d.date == today %} is-today{% endif %}" id="calendar-day-{{ d.date.isoformat() }}" data-calendar-date="{{ d.date.isoformat() }}">
+<strong aria-label="{{ d.date.strftime('%A %B %d, %Y') }}">{{ d.date.day }}{% if d.date == today %}<span class="calendar-today-mark">Today</span>{% endif %}</strong>
 {% for x in d.events %}
+<div class="calendar-activity" data-calendar-status="{{ x.status }}" data-calendar-search="{{ (x.name ~ ' ' ~ (x.protocol|default('', true)))|e }}">
   {% if x.status == 'recorded' %}<div class="calendar-event recorded" title="A dose was recorded on this date for this compound; amount and timing have not been verified">✓ {{ x.name }} · {{ x.actual_dose }} <small>({{ x.protocol }})</small></div>
   {% elif x.status == 'extra' %}<div class="calendar-event recorded" title="Recorded dose without a matching planned entry">✓ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(unmatched log)</small></div>
   {% elif x.status == 'unrecorded' %}<div class="calendar-event calendar-unrecorded" title="Past projected entry with no matching dose log">! {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(not recorded)</small></div>
@@ -38,10 +73,12 @@
     <button type="submit" class="tag">Hide projection</button>
   </form>
   {% endif %}
+</div>
 {% endfor %}
 </div>{% endfor %}
 </div>
 <p class="note">✓ Recorded · ! Past projection without a matching log · ◉ Projected today · ○ Upcoming. A missing log does not prove a dose was missed. Monthly and fractional-day frequencies use an approximate cadence.</p>
+<p class="note" id="calendar-print-caption">Displayed month: {{ shown.strftime('%B %Y') }}. Counts describe matching calendar entries, not verification of doses or clinical correctness.</p>
 <details><summary>Manage hidden projections ({{ exclusions|length }})</summary>
 <p class="note">Restoring a projection does not create or change administration records. If a protocol item was deleted, its exclusions are removed with it.</p>
 {% for rule in exclusions %}

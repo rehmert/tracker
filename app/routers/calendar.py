@@ -43,6 +43,19 @@ def reconcile(planned, actual, today):
     return result
 
 
+def calendar_status_counts(days: list[dict]) -> dict[str, int]:
+    """Count current-month entries only; never alters reconciliation or records."""
+    counts = dict.fromkeys(("due", "upcoming", "unrecorded", "recorded", "extra"), 0)
+    for day in days:
+        if not day["in_month"]:
+            continue
+        for event in day["events"]:
+            status = event.get("status")
+            if status in counts:
+                counts[status] += 1
+    return counts
+
+
 def _parse_month(month: str) -> date:
     today = date.today()
     try:
@@ -104,7 +117,10 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
                      'events': events.get(cursor, [])})
         cursor += timedelta(days=1)
     previous = first - timedelta(days=1)
+    status_counts = calendar_status_counts(days)
     return render(request, 'calendar.html', days=days, shown=shown,
+                  today=date.today(), status_counts=status_counts,
+                  calendar_total=sum(status_counts.values()),
                   exclusions=list(db.scalars(select(ProjectionExclusion).order_by(ProjectionExclusion.scheduled_on.desc(), ProjectionExclusion.id.desc()))),
                   missing_start=missing_start,
                   previous=previous.strftime('%Y-%m'), next_month=end.strftime('%Y-%m'))

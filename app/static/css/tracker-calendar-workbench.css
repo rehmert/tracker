@@ -1,0 +1,33 @@
+/* Calendar productivity; read-only controls and print visibility. */
+.calendar-workbench { border:1px solid var(--rule,#d0d7df); background:var(--surface,#fff);
+  border-radius:14px; padding:.85rem 1rem; margin:.65rem 0 1rem; }
+.calendar-summary { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.55rem; }
+.calendar-summary>div { background:var(--wash,#f6f7f9); border-radius:10px; padding:.65rem .7rem; }
+.calendar-summary strong { display:block; font-size:1.35rem; font-variant-numeric:tabular-nums; }
+.calendar-summary span { display:block; font-size:.76rem; color:var(--muted,#667); }
+.calendar-controls { display:flex; flex-wrap:wrap; align-items:end; gap:.65rem; margin-top:.8rem; }
+.calendar-controls .field { min-width:10rem; flex:1 1 12rem; }
+.calendar-controls .field:first-child { flex:2 1 14rem; }
+.calendar-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
+.calendar-actions .button,.calendar-actions button { min-height:2.5rem; }
+#calendar-filter-summary { font-size:.86rem; margin:.55rem 0; }
+.calendar-day.is-today { background:color-mix(in srgb,var(--teal,#207b9d) 8%,var(--surface,#fff)); box-shadow:inset 0 0 0 2px var(--teal,#207b9d); }
+.calendar-today-mark { display:block; font-size:.7rem; font-weight:600; color:var(--teal,#207b9d); }
+.calendar-activity { margin:.3rem 0 .45rem; }
+.calendar-activity[hidden] { display:none!important; }
+.calendar-day.calendar-filtered-empty .calendar-activity { display:none; }
+#calendar-print-caption { font-size:.78rem; }
+@media(max-width:850px) { .calendar-summary { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:500px) { .calendar-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .calendar-controls .field { flex-basis:100%; } }
+@media print {
+  .calendar-workbench,.calendar-actions,.calendar-day form,.calendar-activity a.tag,
+  .calendar-day .calendar-today-mark,nav.rail,.workspace-toolbar,.sidebar-backdrop {
+    display:none!important;
+  }
+  .calendar-grid { break-inside:auto; }
+  .calendar-day { min-height:0; break-inside:avoid; }
+  .calendar-day.outside { opacity:.5; }
+  .calendar-activity[hidden] { display:none!important; }
+  main { width:100%!important; max-width:100%!important; margin:0!important; padding:0!important; }
+}
