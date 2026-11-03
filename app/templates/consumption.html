@@ -1,1 +1,114 @@
-{% extends "base.html" %}{% block title %}Supply consumption{% endblock %}{% block content %}<h1>Supply consumption</h1><form method="get" class="inline"><label class="field"><span>Period</span><select name="days" onchange="this.form.submit()">{% for d in [30,90,180,365] %}<option value="{{ d }}" {% if d==days %}selected{% endif %}>{{ d }} days</option>{% endfor %}</select></label></form><section><div class="scroll"><table><thead><tr><th>Supply</th><th>Used in period</th><th>Remaining</th><th>Average / day</th><th>Coverage at observed rate</th></tr></thead><tbody>{% for r in rows %}<tr><td>{{ r.s.name }}</td><td>{{ r.used|num }}</td><td>{{ r.s.remaining_qty|num }}</td><td>{{ r.per_day|num }}</td><td>{% if r.coverage is not none %}{{ r.coverage|num }} days{% else %}Not enough usage data{% endif %}</td></tr>{% endfor %}</tbody></table></div></section><p class="note">Coverage is a historical estimate, not a prediction or recommendation.</p>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Supply consumption{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-supply-consumption-review.css?v=20261103">
+<script src="/static/js/tracker-supply-consumption-review.js?v=20261103" defer></script>
+
+<h1>Supply consumption</h1>
+<p class="note">Review recorded supply usage and remaining quantities. Coverage is calculated from the observed rate for the selected period; it is an estimate, not a prediction, purchasing recommendation, or dosing instruction.</p>
+<form method="get" action="/consumption" class="inline" id="supply-consumption-period">
+  <label class="field"><span>Usage period</span>
+    <select name="days" onchange="this.form.submit()">
+      {% for d in [30,90,180,365] %}
+      <option value="{{ d }}" {% if d==days %}selected{% endif %}>Last {{ d }} days</option>
+      {% endfor %}
+    </select>
+  </label>
+  <noscript><button type="submit">Apply period</button></noscript>
+</form>
+<nav class="ux-shortcuts" aria-label="Supply consumption links">
+  <a href="/supplies">Supplies &amp; stock</a>
+  <a href="/purchases">Purchases</a>
+  <a href="/inventory-alerts">Inventory alerts</a>
+</nav>
+
+<section id="supply-consumption-review" aria-label="Supply consumption review">
+  <div class="supply-consumption-tools">
+    <label class="field"><span>Find supply</span>
+      <input id="supply-consumption-search" type="search"
+             placeholder="Search supply names…" autocomplete="off"
+             aria-controls="supply-consumption-table">
+    </label>
+    <label class="field"><span>Supply type</span>
+      <select id="supply-consumption-kind" aria-controls="supply-consumption-table">
+        <option value="">All supply types</option>
+      </select>
+    </label>
+    <label class="field"><span>Coverage review</span>
+      <select id="supply-consumption-filter" aria-controls="supply-consumption-table">
+        <option value="all">All supplies</option>
+        <option value="no-usage">No usage in period</option>
+        <option value="zero-stock">Zero remaining</option>
+        <option value="short-7">Up to 7 days coverage</option>
+        <option value="short-30">Up to 30 days coverage</option>
+        <option value="long-30">Over 30 days coverage</option>
+      </select>
+    </label>
+    <label class="field"><span>Sort rows</span>
+      <select id="supply-consumption-sort" aria-controls="supply-consumption-table">
+        <option value="name-asc">Supply A–Z</option>
+        <option value="name-desc">Supply Z–A</option>
+        <option value="used-desc">Most used</option>
+        <option value="remaining-asc">Least remaining</option>
+        <option value="coverage-asc">Least coverage</option>
+        <option value="coverage-desc">Most coverage</option>
+      </select>
+    </label>
+    <button type="button" id="supply-consumption-reset">Reset</button>
+    <button type="button" id="supply-consumption-export">Export filtered CSV</button>
+  </div>
+
+  {% set summary = namespace(used=0, zero=0, short=0) %}
+  {% for r in rows %}
+    {% if r.used > 0 %}{% set summary.used = summary.used + 1 %}{% endif %}
+    {% if r.s.remaining_qty <= 0 %}{% set summary.zero = summary.zero + 1 %}{% endif %}
+    {% if r.coverage is not none and r.coverage <= 30 %}{% set summary.short = summary.short + 1 %}{% endif %}
+  {% endfor %}
+  <div class="supply-consumption-stats" aria-label="Visible supply summary">
+    <div><strong id="supply-consumption-total">{{ rows|length }}</strong><span>Supplies shown</span></div>
+    <div><strong id="supply-consumption-used">{{ summary.used }}</strong><span>Used in period</span></div>
+    <div><strong id="supply-consumption-zero">{{ summary.zero }}</strong><span>Zero remaining</span></div>
+    <div><strong id="supply-consumption-short">{{ summary.short }}</strong><span>Up to 30 days observed coverage</span></div>
+  </div>
+
+  <p id="supply-consumption-count" class="note" role="status" aria-live="polite">
+    Showing {{ rows|length }} of {{ rows|length }} supplies.
+  </p>
+  <p id="supply-consumption-empty" class="note" hidden>
+    No supplies match those filters. Reset to view all recorded supplies.
+  </p>
+
+  <div class="scroll">
+    <table id="supply-consumption-table" data-period-days="{{ days }}">
+      <thead>
+        <tr>
+          <th>Supply</th><th>Type</th><th>Used in period</th>
+          <th>Remaining</th><th>Average / day</th>
+          <th>Coverage at observed rate</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr data-supply-consumption-row
+            data-supply-name="{{ r.s.name }}"
+            data-supply-kind="{{ r.s.kind }}"
+            data-supply-used="{{ r.used }}"
+            data-supply-remaining="{{ r.s.remaining_qty }}"
+            data-supply-rate="{{ r.per_day }}"
+            data-supply-coverage="{{ r.coverage if r.coverage is not none else '' }}">
+          <td>{{ r.s.name }}</td>
+          <td>{{ r.s.kind|replace('_', ' ')|title }}</td>
+          <td class="n">{{ r.used|num }}</td>
+          <td class="n">{{ r.s.remaining_qty|num }}</td>
+          <td class="n">{{ r.per_day|num }}</td>
+          <td class="n">{% if r.coverage is not none %}{{ r.coverage|num }} days{% else %}No usage in selected period{% endif %}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="empty">No supplies recorded. Add supplies from a purchase.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Usage, quantities, and coverage may have different units for different supply types; totals are counts of supplies, not a sum of incompatible units. A missing coverage estimate means no recorded usage during the selected period. Filtering, sorting, and exporting never change inventory.</p>
+</section>
+{% endblock %}

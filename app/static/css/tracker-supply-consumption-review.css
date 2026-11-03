@@ -1,0 +1,56 @@
+/* Supply consumption: display-only review controls. */
+#supply-consumption-review { margin-top:1rem; }
+.supply-consumption-tools {
+  display:grid;
+  grid-template-columns:minmax(200px,2fr) repeat(3,minmax(130px,1fr)) auto auto;
+  align-items:end;
+  gap:.7rem;
+  padding:.85rem 1rem;
+  border:1px solid var(--rule,#dce5ec);
+  border-radius:12px;
+  margin-bottom:.8rem;
+}
+.supply-consumption-tools .field { min-width:0; }
+.supply-consumption-tools input,
+.supply-consumption-tools select { width:100%;box-sizing:border-box; }
+.supply-consumption-tools > button { white-space:nowrap; }
+.supply-consumption-tools > button:disabled { opacity:.5;cursor:default; }
+.supply-consumption-stats {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:.7rem;
+  margin:.7rem 0;
+}
+.supply-consumption-stats > div {
+  min-width:0;
+  border:1px solid var(--rule,#dce5ec);
+  background:var(--wash,transparent);
+  border-radius:10px;
+  padding:.65rem .8rem;
+}
+.supply-consumption-stats strong {
+  display:block;
+  font-size:1.2rem;
+  font-variant-numeric:tabular-nums;
+}
+.supply-consumption-stats span {
+  display:block;
+  font-size:.78rem;
+  color:var(--muted,#667);
+  margin-top:.2rem;
+}
+#supply-consumption-table [data-supply-consumption-row][hidden] { display:none!important; }
+#supply-consumption-table td.n { font-variant-numeric:tabular-nums; }
+@media(max-width:1120px) {
+  .supply-consumption-tools { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .supply-consumption-tools .field:first-child { grid-column:span 2; }
+}
+@media(max-width:720px) {
+  .supply-consumption-tools { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .supply-consumption-tools .field:first-child {grid-column:span 2;}
+  .supply-consumption-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:440px) {
+  .supply-consumption-tools {grid-template-columns:1fr;}
+  .supply-consumption-tools .field:first-child {grid-column:auto;}
+}
