@@ -20,6 +20,7 @@ from fastapi.responses import PlainTextResponse
 
 from .request_origin import reject_cross_origin_write
 from .csrf_runtime import prepare_html_cookie
+from .csrf_reporting import report_status, REPORT_HEADER
 
 from . import config, models  # noqa: F401  (models import registers tables)
 from .db import Base, engine
@@ -56,11 +57,17 @@ async def tracker_response_protection(request, call_next):
             "Cross-origin write request denied.",
             status_code=403,
         )
+        csrf_report = None
     else:
+        # Header-only verification cannot consume form bodies.
+        csrf_report = report_status(request)
         response = await call_next(request)
 
-    # Browser token rollout is issuance-only. Existing
-    # write requests are not rejected for missing tokens.
+    if csrf_report is not None:
+        response.headers[REPORT_HEADER] = csrf_report
+
+    # Token verification remains non-enforcing.
+    # Missing or invalid tokens do not block existing writes.
     try:
         prepare_html_cookie(request, response)
     except (OSError, ValueError):
