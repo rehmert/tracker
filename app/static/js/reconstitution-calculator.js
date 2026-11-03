@@ -14,6 +14,7 @@
   let kind = 'single';
   let sequence = 0;
   let timer;
+  let lastResult = null;
 
   const number = (v) => Number(v).toLocaleString(
     undefined, { maximumSignificantDigits: 7 }
@@ -64,6 +65,31 @@
     updateLayout();
   }
 
+  function syncTargetUnit() {
+    const basis = $('recon-basis').value;
+    const index = basis === 'total' ? 0 : Number(basis);
+    const row = rows()[index];
+
+    if (!row) return;
+
+    const vialUnit = field(row, 'unit').value;
+    const targetUnit = $('recon-target-unit');
+
+    const mismatch =
+      (vialUnit === 'IU') !== (targetUnit.value === 'IU');
+
+    if (mismatch) {
+      targetUnit.value =
+        vialUnit === 'IU' ? 'IU' : vialUnit;
+      $('recon-target').value = '';
+    }
+
+    $('recon-unit-hint').textContent =
+      mismatch
+        ? 'Unit dimension changed. Re-enter your target amount.'
+        : 'Check that the target amount and selected unit refer to the same component.';
+  }
+
   function updateBasis() {
     const select = $('recon-basis');
     const previous = select.value;
@@ -91,6 +117,23 @@
     select.value = [...select.options].some(
       (option) => option.value === previous
     ) ? previous : '0';
+
+    const totalOption = [...select.options].find(
+      (option) => option.value === 'total'
+    );
+
+    if (totalOption) {
+      totalOption.disabled = new Set(rows().map(
+        (row) => field(row, 'unit').value === 'IU'
+          ? 'IU' : 'mass'
+      )).size > 1;
+
+      if (totalOption.disabled && select.value === 'total') {
+        select.value = '0';
+      }
+    }
+
+    syncTargetUnit();
   }
 
   function updateLayout() {
@@ -242,7 +285,7 @@
 
     const entries = [
       [
-        'Approximate BAC water if negligible displacement',
+        'Illustrative diluent volume (negligible displacement only)',
         `${number(choice.nominal_final_ml)} mL`
       ],
       [
@@ -296,7 +339,8 @@
       'Draw (U-100 marks)',
       'Nominal final mL',
       'Exact on selected volume grid?',
-      'Nearest grid volume (mL)'
+      'Nearest grid volume (mL)',
+      'Amount change if rounded (%)'
     ].forEach((heading) => {
       headers.append(element('th', '', heading));
     });
@@ -314,7 +358,10 @@
         option.matches_volume_step
           ? 'Yes'
           : 'No — approximate only',
-        number(option.nearest_measurable_ml)
+        number(option.nearest_measurable_ml),
+        option.rounding_error_pct == null
+          ? 'n/a'
+          : `${option.rounding_error_pct > 0 ? '+' : ''}${number(option.rounding_error_pct)}%`
       ].forEach((value) => {
         tr.append(element('td', '', value));
       });
@@ -347,6 +394,9 @@
   }
 
   function display(data) {
+    lastResult = data;
+    $('recon-export').disabled = false;
+
     if (data.method === 'optimize') {
       displayOptimization(data);
       return;
@@ -419,6 +469,17 @@
       bar
     );
 
+    const scale = element('div', 'recon-scale-labels');
+
+    [0, 0.25, 0.5, 0.75, 1].forEach((fraction) => {
+      scale.append(
+        element('span', '',
+          number(data.syringe_ml * 100 * fraction))
+      );
+    });
+
+    results.append(scale);
+
     const scroller = element('div', 'recon-scroll');
     const table = element('table');
     const thead = element('thead');
@@ -490,6 +551,9 @@
   }
 
   function schedule() {
+    lastResult = null;
+    $('recon-export').disabled = true;
+
     $('recon-working').hidden = true;
     $('recon-working-list').replaceChildren();
     clearTimeout(timer);
@@ -557,6 +621,72 @@
     'click', () => addComponent()
   );
 
+  $('recon-export').addEventListener('click', () => {
+    if (!lastResult) return;
+
+    const data = lastResult;
+
+    const lines = [
+      'Tracker — Reconstitution arithmetic preview',
+      'Read-only calculation; not a dose or preparation recommendation.',
+      `Calculation mode: ${data.method}`,
+      `Vial type: ${data.kind}`,
+      ''
+    ];
+
+    if (data.method === 'optimize') {
+      const option = data.recommended;
+
+      lines.push(
+        `Content: ${data.content} ${data.content_unit}`,
+        `Entered amount: ${data.target_amount} ${data.target_unit}`,
+        `Complete theoretical draws: ${data.complete_draws}`,
+        `Theoretical compound remainder: ${data.theoretical_leftover} ${data.content_unit}`,
+        `Nominal final volume: ${option.nominal_final_ml} mL`,
+        `U-100 markings: ${option.draw_units}`
+      );
+
+    } else {
+      lines.push(
+        `Nominal final volume: ${data.final_volume_ml} mL`,
+        `Calculated draw: ${data.draw_ml} mL`,
+        `U-100 markings: ${data.draw_units}`,
+        `Complete theoretical draws: ${data.full_draws}`
+      );
+
+      data.components.forEach((item) => lines.push(
+        `${item.name}: ${item.vial_amount} ${item.unit} total; ` +
+        `${item.concentration} ${item.unit}/mL; ` +
+        `${item.amount_per_draw} ${item.unit} per draw`
+      ));
+    }
+
+    lines.push(
+      '',
+      'Warnings:',
+      ...(data.warnings || []),
+      'Nominal final volume is not an exact diluent-addition instruction.',
+      'No inventory or dose records were changed.'
+    );
+
+    const blob = new Blob(
+      [lines.join('\n') + '\n'],
+      {type: 'text/plain;charset=utf-8'}
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = 'tracker-reconstitution-preview.txt';
+
+    document.body.append(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+
   body.addEventListener('input', (event) => {
     if (event.target.dataset.field === 'name') {
       updateBasis();
@@ -564,7 +694,17 @@
     schedule();
   });
 
-  body.addEventListener('change', schedule);
+  body.addEventListener('change', (event) => {
+    if (event.target.dataset.field === 'unit') {
+      updateBasis();
+    }
+    schedule();
+  });
+
+  $('recon-basis').addEventListener('change', () => {
+    syncTargetUnit();
+    schedule();
+  });
 
   [
     'recon-method',

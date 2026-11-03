@@ -251,3 +251,84 @@
     grid-template-columns:1fr;
   }
 }
+
+/* Read-only inventory prefill and result usability */
+
+.recon-vial-picker {
+  max-width: 1420px;
+  border: 1px solid var(--border, #d5dce4);
+  border-radius: .75rem;
+  padding: .85rem 1rem;
+  margin: .9rem 0;
+}
+
+.recon-vial-picker label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: .4rem;
+}
+
+.recon-picker-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
+.recon-picker-row select {
+  flex: 1 1 280px;
+  min-width: 0;
+  max-width: 100%;
+  padding: .6rem;
+  border-radius: .5rem;
+  border: 1px solid var(--border, #ccd4dd);
+  background: var(--surface, #fff);
+  color: inherit;
+}
+
+.recon-picker-row button {
+  padding: .55rem .9rem;
+}
+
+.recon-vial-picker p {
+  margin: .35rem 0 0;
+  font-size: .86rem;
+}
+
+.recon-result-actions {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  flex-wrap: wrap;
+  margin: .65rem 0;
+}
+
+.recon-result-actions button {
+  padding: .5rem .8rem;
+}
+
+.recon-result-actions span {
+  font-size: .85rem;
+}
+
+.recon-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+  font-size: .75rem;
+  opacity: .8;
+  margin-top: -.25rem;
+  margin-bottom: .85rem;
+}
+
+@media(max-width:650px) {
+  .recon-picker-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .recon-picker-row select,
+  .recon-picker-row button {
+    width: 100%;
+  }
+}

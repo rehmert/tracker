@@ -3,7 +3,7 @@
 {% block content %}
 
 <link rel="stylesheet"
- href="/static/css/reconstitution-calculator.css?v=20261103c">
+ href="/static/css/reconstitution-calculator.css?v=20261103d">
 
 <div class="recon" id="recon-calculator">
 
@@ -18,14 +18,65 @@
   <a href="/blends">Recorded blend workflow</a>
 </div>
 
+<form class="recon-vial-picker"
+      method="get"
+      action="/reconstitution-calculator">
+
+  <label for="recon-vial-select">
+    Load a recent active vial from Tracker
+  </label>
+
+  <div class="recon-picker-row">
+    <select id="recon-vial-select" name="vial_id" required>
+      <option value="">Select a vial</option>
+      {% for v in recent_vials %}
+      <option value="{{ v.id }}"
+        {% if initial and initial.vial_id == v.id %}selected{% endif %}>
+        {{ v.compound.name }} ·
+        {{ v.label or ('#' ~ v.id) }} ·
+        {{ v.status|replace('_',' ') }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <button type="submit">Load vial</button>
+    <a href="/vials">Browse all vials</a>
+  </div>
+
+  <p class="muted">
+    Shows the most recent 250 sealed or in-use vials.
+    Loading is read-only.
+  </p>
+</form>
+
 {% if initial %}
 <p class="recon-notice">
   Loaded label values from
   <a href="/vials/{{ initial.vial_id }}">
     {{ initial.name }} · {{ initial.label }}
   </a>.
-  Verify the label, any COA adjustments, and the recorded
-  liquid volume before relying on the arithmetic.
+  Prefilled from <strong>{{ initial.content_source }}</strong>
+  content: {{ initial.amount|num }} {{ initial.unit }}
+  (label: {{ initial.label_amount|num }} {{ initial.unit }}).
+
+  This is the <strong>original whole-vial basis</strong>,
+  not the current usable stock.
+
+  Tracker's modeled remaining content is
+  {{ initial.remaining_amount|num }} {{ initial.unit }}.
+
+  {% if initial.partial %}
+  <strong>This vial has recorded consumption or transfers.</strong>
+  The calculator still uses its original content and
+  recorded full-vial liquid volume; it does not infer the
+  current recoverable volume.
+  {% endif %}
+
+  {% if initial.status not in ('sealed', 'in_use') %}
+  <strong>Historical vial status: {{ initial.status }}.</strong>
+  {% endif %}
+
+  Verify actual quantities before relying on the arithmetic.
 </p>
 {% endif %}
 
@@ -106,6 +157,8 @@
         </select>
       </label>
     </div>
+    <p class="muted" id="recon-unit-hint"
+       role="status" aria-live="polite"></p>
   </div>
 
   <div class="recon-field" id="recon-marks-wrap" hidden>
@@ -179,6 +232,16 @@
   <p id="recon-status" role="status" aria-live="polite">
     Enter the vial information and a target or draw size.
   </p>
+  <div class="recon-result-actions">
+    <button type="button" id="recon-export" disabled>
+      Download preview (.txt)
+    </button>
+    <span class="muted">
+      Saved locally only when clicked;
+      nothing is written to Tracker.
+    </span>
+  </div>
+
   <div id="recon-result" aria-live="polite"></div>
   <details id="recon-working" class="recon-working" hidden>
     <summary>Show the calculation steps</summary>
@@ -302,7 +365,7 @@
 <script id="recon-prefill" type="application/json">
   {{ initial|tojson }}
 </script>
-<script src="/static/js/reconstitution-calculator.js?v=20261103c"
+<script src="/static/js/reconstitution-calculator.js?v=20261103d"
  defer></script>
 
 </div>
