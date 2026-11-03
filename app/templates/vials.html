@@ -1141,7 +1141,14 @@ document.addEventListener("DOMContentLoaded", () => {
     <span id="bulk-review-visible-count" role="status" aria-live="polite"></span>
     <button id="bulk-review-more" type="button" hidden>Show 50 more</button>
   </div>
+  <p class="note" id="bulk-review-export-note">
+    CSV contains every proposed value change from this preview, independent of the displayed review filter.
+    It is not a record of changes applied to inventory.
+  </p>
   <div class="review-actions">
+    <button type="button" id="bulk-review-export" disabled>
+      Export proposed changes CSV
+    </button>
     <button type="button" id="bulk-server-review-cancel">
       Cancel
     </button>
@@ -1187,6 +1194,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const more = document.getElementById("bulk-review-more");
   const fieldSummary = document.getElementById("bulk-review-field-summary");
   const impact = document.getElementById("bulk-server-review-impact");
+  const exportButton = document.getElementById("bulk-review-export");
 
   if (!form || !dialog || !snapshot || !showUnchanged ||
       !search || !visibleCount || !more || !fieldSummary || !impact) return;
@@ -1311,10 +1319,53 @@ document.addEventListener("DOMContentLoaded", () => {
       : "No value changes are necessary.";
 
     confirmButton.disabled = changed === 0;
+    if (exportButton) exportButton.disabled = changed === 0;
     if (changed === 0) {
       error.textContent = "Nothing needs updating. Cancel and edit the requested changes.";
     }
   }
+
+  function exportProposedChanges() {
+    // Always export the complete reviewed change set. Search, pagination,
+    // and "include unchanged" only affect the on-screen table.
+    if (!reviewData?.ok || !Array.isArray(reviewData.rows)) return;
+    const changes = reviewData.rows.filter(entry => entry.changed);
+    if (!changes.length) return;
+
+    function cell(value) {
+      const original = value === null || value === undefined
+        ? "" : String(value);
+      // Protect spreadsheet imports from formula execution, even with
+      // leading whitespace or control characters.
+      const safe = /^\s*[=+@-]/.test(original) || /^[\t\r\n]/.test(original)
+        ? "'" + original : original;
+      return '"' + safe.replaceAll('"', '""') + '"';
+    }
+
+    const headers = [
+      "Vial ID", "Compound", "Vial label", "Field",
+      "Current value", "Proposed value", "Status"
+    ];
+    const records = changes.map(entry => [
+      entry.vial_id, entry.compound, entry.label,
+      entry.field.replaceAll("_", " "), entry.current,
+      entry.proposed, "PROPOSED - NOT SAVED"
+    ]);
+    const csv = "\uFEFF" +
+      [headers, ...records].map(row => row.map(cell).join(","))
+        .join("\r\n") + "\r\n";
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "tracker-bulk-vial-proposed-changes.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  exportButton?.addEventListener("click", exportProposedChanges);
 
   function resetReviewRows() {
     rowLimit = PAGE_SIZE;
@@ -1432,6 +1483,8 @@ document.addEventListener("DOMContentLoaded", () => {
   dialog.addEventListener("close", () => {
     if (!approved) {
       snapshot.value = "";
+      reviewData = null;
+      if (exportButton) exportButton.disabled = true;
     }
   });
 })();

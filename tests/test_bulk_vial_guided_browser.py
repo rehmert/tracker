@@ -223,6 +223,7 @@ def review_html():
         <table><tbody id="bulk-server-review-rows"></tbody></table>
         <p id="bulk-review-visible-count"></p>
         <button id="bulk-review-more" type="button" hidden>Show 50 more</button>
+        <button id="bulk-review-export" disabled>Export proposed changes CSV</button>
         <button id="bulk-server-review-cancel">Cancel</button>
         <button id="bulk-server-review-confirm">Confirm and apply</button>
       </dialog>
@@ -587,3 +588,113 @@ def test_bulk_edit_status_and_clear_values_remain_safe(page):
     assert tab.locator('[name="mode_lot"]').input_value() == "keep"
     assert tab.locator("#bulk-apply").is_disabled()
     assert not errors, errors
+
+
+def test_review_csv_exports_all_proposed_changes_not_search_results():
+    import csv
+    from io import StringIO
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        tab = browser.new_page(accept_downloads=True)
+        errors = []
+        tab.on("pageerror", lambda error: errors.append(str(error)))
+        tab.set_content(review_html())
+
+        preview = {
+            "ok": True, "count": 3, "fields": 1,
+            "snapshot": "review-export-snapshot",
+            "rows": [
+                {
+                    "vial_id": 1, "compound": "=SUM(1,2)",
+                    "label": 'Vial "A"', "field": "storage_notes",
+                    "current": "Prior, value", "proposed": "+HYPERLINK(1,2)",
+                    "changed": True
+                },
+                {
+                    "vial_id": 2, "compound": "Sample",
+                    "label": "Vial B", "field": "storage_notes",
+                    "current": "Same", "proposed": "Same",
+                    "changed": False
+                },
+                {
+                    "vial_id": 3, "compound": "Sample",
+                    "label": "Vial C", "field": "storage_notes",
+                    "current": "", "proposed": "Ordinary note",
+                    "changed": True
+                },
+            ],
+        }
+        tab.evaluate("""data => {
+            window.fetch = async () => ({
+                ok: true, json: async () => data
+            });
+        }""", preview)
+        tab.add_script_tag(content=review_script())
+
+        assert tab.locator("#bulk-review-export").is_disabled()
+        tab.locator("#bulk-apply").click()
+        tab.locator("#bulk-server-review[open]").wait_for()
+        assert tab.locator("#bulk-review-export").is_enabled()
+
+        # Hide all rows on screen. Download must still include the complete
+        # server-validated set of changed rows, not the visible search result.
+        tab.locator("#bulk-review-search").fill("no matching records")
+        assert tab.locator("#bulk-server-review-rows tr").count() == 0
+
+        with tab.expect_download() as download_info:
+            tab.locator("#bulk-review-export").click()
+        download = download_info.value
+        assert download.suggested_filename == (
+            "tracker-bulk-vial-proposed-changes.csv"
+        )
+        rows = list(csv.reader(StringIO(
+            Path(download.path()).read_text(encoding="utf-8-sig")
+        )))
+        assert rows[0] == [
+            "Vial ID", "Compound", "Vial label", "Field",
+            "Current value", "Proposed value", "Status",
+        ]
+        assert len(rows) == 3  # Header + only the two changed rows
+        assert rows[1] == [
+            "1", "'=SUM(1,2)", 'Vial "A"', "storage notes",
+            "Prior, value", "'+HYPERLINK(1,2)", "PROPOSED - NOT SAVED"
+        ]
+        assert rows[2][0] == "3"
+        assert rows[2][-1] == "PROPOSED - NOT SAVED"
+        assert tab.locator("#bulk-preview-snapshot").input_value() == (
+            "review-export-snapshot"
+        )
+        assert not errors, errors
+        browser.close()
+
+
+def test_review_csv_disabled_when_no_changes_would_be_applied():
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        tab = browser.new_page()
+        errors = []
+        tab.on("pageerror", lambda error: errors.append(str(error)))
+        tab.set_content(review_html())
+        tab.evaluate("""() => {
+            window.fetch = async () => ({
+                ok: true, json: async () => ({
+                    ok: true, count: 1, fields: 1,
+                    snapshot: "unchanged-snapshot",
+                    rows: [{
+                        vial_id: 1, compound: "A", label: "One",
+                        field: "lot", current: "OLD",
+                        proposed: "OLD", changed: false
+                    }]
+                })
+            });
+        }""")
+        tab.add_script_tag(content=review_script())
+        tab.locator("#bulk-apply").click()
+        tab.locator("#bulk-server-review[open]").wait_for()
+        assert tab.locator("#bulk-review-export").is_disabled()
+        assert tab.locator("#bulk-server-review-confirm").is_disabled()
+        tab.locator("#bulk-server-review-cancel").click()
+        assert tab.locator("#bulk-review-export").is_disabled()
+        assert not errors, errors
+        browser.close()
