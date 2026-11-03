@@ -71,8 +71,15 @@
 
   <!-- Consistent page and section Title Case -->
   <script defer src="/static/js/tracker-page-title-case.js?v=20261103"></script>
+
+  <!-- Accessible long-page navigation -->
+  <link rel="stylesheet"
+        href="/static/css/tracker-page-navigation.css?v=20261103">
+  <script defer
+          src="/static/js/tracker-page-navigation.js?v=20261103"></script>
 </head>
 <body>
+<a class="tracker-skip-link" href="#main-content">Skip to Content</a>
 <div class="shell" id="app-shell">
   <button class="sidebar-backdrop" type="button" data-close-sidebar aria-label="Close navigation" tabindex="-1"></button>
   <nav class="rail" id="app-sidebar" aria-label="Main navigation">
@@ -106,7 +113,7 @@
       </div>
     </div>
   </nav>
-  <main id="main-content">
+  <main id="main-content" tabindex="-1">
     <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</span><a href="/" aria-label="Overview">Overview</a></div>
     <div class="workspace-toolbar" aria-label="Workspace tools">
       <div class="ux-add-menu"><button type="button" id="ux-add-toggle" aria-expanded="false" aria-controls="ux-add-panel" class="ux-add-button">+ Add</button><div id="ux-add-panel" class="ux-add-panel" hidden><a href="/doses">Record Dose</a><a href="/vitals">Record Vitals</a><a href="/purchases">New Purchase</a><a href="/protocols">New Protocol</a><a href="/quick-entry">All Quick Entries</a><a href="/vials">Vials</a><a href="/labs">Lab Results</a></div></div>
@@ -157,6 +164,7 @@
       </div>
     </div>
     <nav class="ux-breadcrumbs" id="ux-breadcrumbs" aria-label="Breadcrumb" hidden></nav>
+    <div id="tracker-page-jump-slot"></div>
     {% if msg %}<p class="flash ok" role="status">{{ msg }}</p>{% endif %}
     {% if err %}<p class="flash error" role="alert">{{ err }}</p>{% endif %}
     {% block content %}{% endblock %}
