@@ -1,0 +1,43 @@
+/* Scoped supply-use confirmation preview. */
+
+form[data-tracker-supply-use] {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tracker-supply-use-preview {
+  display: block;
+  flex: 1 0 100%;
+  width: 100%;
+  margin-top: .2rem;
+  font-size: .78rem;
+  line-height: 1.4;
+  color: var(--muted, #666);
+}
+
+.tracker-supply-use-preview[data-valid="true"] {
+  color: var(--ink, inherit);
+}
+
+.tracker-supply-use-preview[data-valid="false"] {
+  color: #b45454;
+  font-weight: 600;
+}
+
+form[data-tracker-supply-use] input:focus-visible,
+form[data-tracker-supply-use] button:focus-visible {
+  outline: 3px solid var(--teal, #287b9b);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  form[data-tracker-supply-use] {
+    min-width: 180px;
+  }
+}
+
+@media print {
+  .tracker-supply-use-preview {
+    display: none !important;
+  }
+}
