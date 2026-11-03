@@ -1,13 +1,17 @@
-"""Categorical CSRF reporting without enforcement.
+"""CSRF reporting without enforcement.
 
-Does not read request bodies, log credentials, or reject
-requests. Form submissions without a header remain
-uninspected in this release.
+Small URL-encoded form submissions are inspected using the
+cached request body. Multipart uploads and oversized or
+streamed bodies remain uninspected. No tokens, payloads,
+or credentials are logged.
 """
+
+from urllib.parse import parse_qsl
 
 from .csrf_runtime import (
     COOKIE_NAME,
     HEADER_NAME,
+    FIELD_NAME,
     load_key,
 )
 from .csrf_tokens import verify_pair
@@ -24,8 +28,26 @@ FORM_TYPES = frozenset({
 })
 
 
-def report_status(request):
-    """Categorize write requests using headers and cookies only."""
+MAX_INSPECT_BYTES = 64 * 1024
+
+
+def _verify(cookie, submitted):
+    if not submitted or not cookie:
+        return "missing"
+
+    try:
+        secret = load_key()
+        return (
+            "valid"
+            if verify_pair(cookie, submitted, secret)
+            else "invalid"
+        )
+    except (OSError, ValueError):
+        return "unavailable"
+
+
+async def report_status(request):
+    """Report CSRF status; never reject the write request."""
     if request.method.upper() not in UNSAFE_METHODS:
         return None
 
@@ -36,20 +58,55 @@ def report_status(request):
     submitted = request.headers.get(HEADER_NAME)
     cookie = request.cookies.get(COOKIE_NAME)
 
-    if not submitted:
-        if content_type in FORM_TYPES:
+    # A header takes precedence. Do not read or alter the body.
+    if submitted:
+        return _verify(cookie, submitted)
+
+    if content_type == "application/x-www-form-urlencoded":
+        # Avoid reading unbounded request streams in middleware.
+        length = request.headers.get("content-length", "")
+        try:
+            size = int(length)
+        except ValueError:
             return "form-uninspected"
-        return "missing"
 
-    if not cookie:
-        return "missing"
+        if size < 0 or size > MAX_INSPECT_BYTES:
+            return "form-uninspected"
 
-    try:
-        key = load_key()
-        return (
-            "valid"
-            if verify_pair(cookie, submitted, key)
-            else "invalid"
+        try:
+            # Starlette caches request.body(), allowing call_next
+            # to receive the original payload unchanged.
+            body = await request.body()
+            if len(body) > MAX_INSPECT_BYTES:
+                return "form-uninspected"
+
+            text = body.decode("utf-8", errors="strict")
+            fields = parse_qsl(
+                text,
+                keep_blank_values=True,
+                strict_parsing=False,
+                max_num_fields=1024,
+                errors="strict",
+            )
+        except (UnicodeError, ValueError):
+            return "invalid"
+
+        tokens = [
+            value for key, value in fields
+            if key == FIELD_NAME
+        ]
+
+        if len(tokens) > 1:
+            return "invalid"
+
+        return _verify(
+            cookie,
+            tokens[0] if tokens else None,
         )
-    except (OSError, ValueError):
-        return "unavailable"
+
+    if content_type == "multipart/form-data":
+        # Do not parse multipart in HTTP middleware:
+        # files and streams must remain owned by endpoints.
+        return "form-uninspected"
+
+    return "missing"

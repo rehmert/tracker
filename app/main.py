@@ -59,8 +59,10 @@ async def tracker_response_protection(request, call_next):
         )
         csrf_report = None
     else:
-        # Header-only verification cannot consume form bodies.
-        csrf_report = report_status(request)
+        # Bounded URL-encoded inspection uses the cached
+        # request body; multipart and streaming bodies are
+        # left untouched for the original endpoint.
+        csrf_report = await report_status(request)
         response = await call_next(request)
 
     if csrf_report is not None:

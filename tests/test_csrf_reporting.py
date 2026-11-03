@@ -67,7 +67,7 @@ def test_missing_json_token_is_reported(client):
     assert response.status_code != 403
 
 
-def test_urlencoded_form_without_header_is_uninspected(client):
+def test_urlencoded_form_without_header_is_missing(client):
     # An actual URL-encoded form body must be present.
     # data={} has no content type in the HTTP test client.
     response = client.post(
@@ -79,10 +79,10 @@ def test_urlencoded_form_without_header_is_uninspected(client):
     assert response.status_code == 422
     assert response.headers[
         REPORT_HEADER
-    ] == "form-uninspected"
+    ] == "missing"
 
 
-def test_explicit_urlencoded_content_type_is_uninspected(client):
+def test_explicit_urlencoded_content_type_is_missing(client):
     response = client.post(
         "/compounds",
         content="name=",
@@ -95,7 +95,7 @@ def test_explicit_urlencoded_content_type_is_uninspected(client):
     assert response.status_code == 422
     assert response.headers[
         REPORT_HEADER
-    ] == "form-uninspected"
+    ] == "missing"
 
 
 def test_empty_body_without_content_type_is_missing(client):
@@ -199,13 +199,13 @@ def test_csrf_report_preserves_security_headers(client):
     ] == "private, no-store"
 
 
-def test_reporter_never_reads_body():
+def test_reporter_does_not_parse_multipart_or_json():
     from pathlib import Path
 
     source = Path(
         "app/csrf_reporting.py"
     ).read_text()
 
-    assert "request.body(" not in source
     assert "request.form(" not in source
     assert "request.json(" not in source
+    assert "MAX_INSPECT_BYTES = 64 * 1024" in source
