@@ -90,16 +90,9 @@ from pathlib import Path
 assert Path(app.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve())
 print('PASS: Isolated source import')
 PY
- timeout 600 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings \
-  tests/test_navigation_http_smoke.py tests/test_template_engine_consistency.py \
-  tests/test_deployment_guard.py tests/test_record_explorer_template_regression.py \
-  tests/test_release_workflow.py tests/test_restore_verification.py \
-  tests/test_recovery_status.py tests/test_recovery_readiness_ui.py \
-  tests/test_backup_restore_actions.py tests/test_secondary_replica.py \
-  tests/test_backup_storage_health.py tests/test_backup_storage_ui.py \
-  tests/test_dose_sequential_workflow.py \
-  tests/test_protocol_schedule_preview.py tests/test_protocol_inventory_handoff.py
- timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings tests \
+ echo "=== COMPLETE REGRESSION SUITE ==="
+ echo "Critical safety tests are included in full-suite collection."
+ timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings --durations=20 tests \
   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
   --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \

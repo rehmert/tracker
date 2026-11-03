@@ -39,9 +39,33 @@ def test_release_safety_stages_exist():
         "tracker-deployment-guard.py", "tracker-runtime-smoke.py",
         "tracker-restore-verify.py", "create_backup(",
         "INSTALLED=0", "reset --hard", "EXIT_STATUS=$code",
-        "test_navigation_http_smoke.py", "test_restore_verification.py",
     ):
-        assert marker in source, marker
+        assert marker in source
+
+
+def test_critical_safety_tests_remain_in_full_suite():
+    """All critical tests are collected by the complete suite.
+
+    The optimized deployer executes the entire tests directory,
+    not an independent, duplicate critical-test subset.
+    """
+    source = SCRIPT.read_text(encoding="utf-8")
+
+    assert ' -m pytest -q ' in source
+    assert '--durations=20 tests ' in source
+    assert source.count('"$PY" -m pytest') == 1
+
+    # Neither critical file may be excluded from collection.
+    critical = (
+        "test_navigation_http_smoke.py",
+        "test_restore_verification.py",
+    )
+    for filename in critical:
+        assert (ROOT / "tests" / filename).is_file()
+        assert f"--ignore=tests/{filename}" not in source
+
+    # Preserve the existing exclusions for browser-only tests.
+    assert "--ignore=tests/browser" in source, marker
 
 
 def test_live_sidebar_parser_does_not_follow_unrelated_links():
