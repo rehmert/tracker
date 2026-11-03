@@ -65,3 +65,38 @@
     margin-left: 0;
   }
 }
+
+/* Table-only date review and arithmetic comparison (charts remain unchanged). */
+.vitals-filter-overview {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.65rem;
+  margin:.65rem 0 .8rem;
+}
+.vitals-filter-overview > div {
+  min-width:0;
+  padding:.7rem .9rem;
+  border-radius:11px;
+  border:1px solid var(--rule,#d8dce3);
+  background:var(--wash,transparent);
+}
+.vitals-filter-overview strong {
+  display:block;
+  font-size:1.02rem;
+  font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere;
+}
+.vitals-filter-overview span {
+  display:block;
+  color:var(--muted,#677);
+  font-size:.78rem;
+  margin-top:.24rem;
+}
+[data-vitals-date-error]:not([hidden]) {
+  padding:.55rem .8rem;
+  border-left:3px solid var(--amber,#d49431);
+  background:var(--wash,transparent);
+}
+@media(max-width:780px) {
+  .vitals-filter-overview { grid-template-columns:1fr; }
+}

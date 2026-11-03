@@ -4,10 +4,10 @@
 
 <link
   rel="stylesheet"
-  href="/static/css/tracker-vitals-tools.css"
+  href="/static/css/tracker-vitals-tools.css?v=20261103-dates"
 >
 <script
-  src="/static/js/tracker-vitals-tools.js"
+  src="/static/js/tracker-vitals-tools.js?v=20261103-dates"
   defer
 ></script>
 
@@ -119,6 +119,16 @@
   </label>
 
   <label>
+    <span>From date</span>
+    <input type="date" data-vitals-from aria-label="First recorded date to show">
+  </label>
+
+  <label>
+    <span>Through date</span>
+    <input type="date" data-vitals-through aria-label="Last recorded date to show">
+  </label>
+
+  <label>
     <span>Sort by</span>
     <select data-vitals-sort>
       <option value="date-desc">Newest first</option>
@@ -149,8 +159,14 @@
     aria-live="polite"
   ></span>
 </div>
-
-  <p class="note">Averages are per reading, not per day, so several readings on one day weigh more than a single one.</p>
+  <p class="note" id="vitals-table-filter-help">Search, measurement and exact-date filters affect only the readings below and their filtered CSV export. They do not change the charts or rolling 7-/30-day summaries. Dates are the recorded local calendar dates.</p>
+  <p data-vitals-date-error role="status" class="note" hidden>Through date is earlier than From date. Adjust the dates to show matching readings.</p>
+  <div class="vitals-filter-overview" aria-label="Matching readings, oldest to newest">
+    <div><strong data-vitals-weight-compare>—</strong><span>Weight: oldest → newest recorded values</span></div>
+    <div><strong data-vitals-bp-compare>—</strong><span>Blood pressure: oldest → newest pairs</span></div>
+    <div><strong data-vitals-pulse-compare>—</strong><span>Pulse: oldest → newest recorded values</span></div>
+  </div>
+  <p class="note">Comparison values use only readings matching the table filters; a metric can have fewer observations than the total. These are arithmetic comparisons, not medical interpretations. Averages are per reading, not per day, so several readings on one day weigh more than a single one.</p>
   <div class="scroll"><table data-vitals-table data-vitals-weight-unit="{{ unit }}">
     <thead><tr><th>When</th><th class="n">Weight ({{ unit }})</th><th class="n">Blood pressure</th><th class="n">Pulse</th><th>Context</th><th>Notes</th><th></th></tr></thead>
     <tbody>

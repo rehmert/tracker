@@ -40,6 +40,13 @@
       '[data-vitals-count]'
     );
 
+    const from = toolbar.querySelector('[data-vitals-from]');
+    const through = toolbar.querySelector('[data-vitals-through]');
+    const dateError = document.querySelector('[data-vitals-date-error]');
+    const weightCompare = document.querySelector('[data-vitals-weight-compare]');
+    const bpCompare = document.querySelector('[data-vitals-bp-compare]');
+    const pulseCompare = document.querySelector('[data-vitals-pulse-compare]');
+
     const exportButton = toolbar.querySelector(
       '[data-vitals-export]'
     );
@@ -51,6 +58,9 @@
     if (!rows.length) {
       if (count) count.textContent = '0 of 0 readings';
       if (exportButton) exportButton.disabled = true;
+      for (const element of [weightCompare, bpCompare, pulseCompare]) {
+        if (element) element.textContent = 'No readings in selected range';
+      }
       return;
     }
 
@@ -201,6 +211,65 @@
         );
     }
 
+    function matchesDates(row) {
+      // Timestamp is the recorded local date, without timezone conversion.
+      const localDate = (row.dataset.vitalsWhen || '').slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate)) return false;
+      if (from?.value && localDate < from.value) return false;
+      if (through?.value && localDate > through.value) return false;
+      return true;
+    }
+
+    function describeMatchingReadings() {
+      // Always compare calendar-chronological order, regardless of
+      // the user's current table sort.
+      const chronological = visibleRows().sort((a, b) =>
+        (a.dataset.vitalsWhen || '').localeCompare(b.dataset.vitalsWhen || '')
+      );
+      const displayWeightUnit = table.dataset.vitalsWeightUnit || 'kg';
+
+      function range(values, formatter, unit) {
+        if (!values.length) return 'No matching measurements';
+        const first = values[0];
+        const last = values[values.length - 1];
+        if (values.length === 1) {
+          return formatter(last) + unit + ' (one reading)';
+        }
+        const delta = last - first;
+        const prefix = delta > 0 ? '+' : '';
+        return formatter(first) + ' → ' + formatter(last) + unit +
+          ' (' + prefix + formatter(delta) + unit + ')';
+      }
+
+      if (weightCompare) {
+        const weightValues = chronological
+          .map(row => measurement(row, 'weight'))
+          .filter(value => value !== null);
+        weightCompare.textContent = range(weightValues,
+          value => value.toFixed(1), ' ' + displayWeightUnit);
+      }
+
+      if (pulseCompare) {
+        const pulseValues = chronological
+          .map(row => measurement(row, 'pulse'))
+          .filter(value => value !== null);
+        pulseCompare.textContent = range(pulseValues,
+          value => value.toFixed(0), ' bpm');
+      }
+
+      if (bpCompare) {
+        const pressurePairs = chronological.map(bp)
+          .filter(pair => pair[0] !== null && pair[1] !== null);
+        const format = pair => pair[0] + '/' + pair[1];
+        bpCompare.textContent = !pressurePairs.length
+          ? 'No matching measurements'
+          : pressurePairs.length === 1
+            ? format(pressurePairs[0]) + ' (one reading)'
+            : format(pressurePairs[0]) + ' → ' +
+              format(pressurePairs[pressurePairs.length - 1]) + ' mmHg';
+      }
+    }
+
     function compareRows(a, b) {
       const [key, direction] = state.sort.split('-');
 
@@ -249,12 +318,17 @@
     }
 
     function update() {
+      const invalidDates = Boolean(from?.value && through?.value &&
+        from.value > through.value);
+      if (dateError) dateError.hidden = !invalidDates;
       const sorted = [...rows].sort(compareRows);
 
       for (const row of sorted) {
         row.hidden = !(
+          !invalidDates &&
           matchesType(row) &&
-          matchesSearch(row)
+          matchesSearch(row) &&
+          matchesDates(row)
         );
 
         tbody.appendChild(row);
@@ -266,6 +340,7 @@
         `${visible} of ${rows.length} readings`;
 
       exportButton.disabled = visible === 0;
+      describeMatchingReadings();
 
       saveState();
     }
@@ -345,6 +420,9 @@
       update();
     });
 
+    from?.addEventListener('change', update);
+    through?.addEventListener('change', update);
+
     exportButton.addEventListener(
       'click',
       exportCsv
@@ -358,6 +436,8 @@
       search.value = '';
       type.value = 'all';
       sort.value = 'date-desc';
+      if (from) from.value = '';
+      if (through) through.value = '';
 
       update();
       search.focus();
