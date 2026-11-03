@@ -3,7 +3,7 @@
 {% block content %}
 
 <link rel="stylesheet"
- href="/static/css/reconstitution-calculator.css?v=20261102a">
+ href="/static/css/reconstitution-calculator.css?v=20261103c">
 
 <div class="recon" id="recon-calculator">
 
@@ -180,6 +180,10 @@
     Enter the vial information and a target or draw size.
   </p>
   <div id="recon-result" aria-live="polite"></div>
+  <details id="recon-working" class="recon-working" hidden>
+    <summary>Show the calculation steps</summary>
+    <ol id="recon-working-list"></ol>
+  </details>
 
   <div class="recon-notice">
     <strong>Arithmetic only.</strong>
@@ -195,6 +199,73 @@
 </section>
 
 </div>
+
+<section class="recon-guide" aria-labelledby="recon-guide-title">
+  <h2 id="recon-guide-title">Understanding reconstitution calculations</h2>
+  <p class="muted">Reference arithmetic for reviewing your entries. This is not a dose or preparation recommendation.</p>
+
+  <div class="recon-guide-grid">
+    <details class="card" open>
+      <summary>Total amount, concentration, and liquid volume</summary>
+      <p>A vial's total content (for example, 5 mg) is different from its concentration (mg/mL). Concentration equals total content divided by the <strong>final solution volume</strong>.</p>
+      <p>Adding more liquid lowers concentration and increases the volume needed to measure the same entered amount. It does not increase the compound present.</p>
+      <p>The <strong>water added</strong> and final solution volume may differ because of powder displacement. A nominal volume from the reverse calculator is not an exact mixing instruction.</p>
+    </details>
+
+    <details class="card">
+      <summary>Unit conversions and U-100 markings</summary>
+      <table class="recon-guide-table"><tbody>
+        <tr><th>Mass</th><td>1 mg = 1,000 mcg</td></tr>
+        <tr><th>Liquid</th><td>1 mL = 100 U-100 syringe marks</td></tr>
+        <tr><th>1 mark</th><td>0.01 mL on a U-100 syringe</td></tr>
+        <tr><th>IU</th><td>Biological activity, not interchangeable with mg or syringe marks</td></tr>
+      </tbody></table>
+      <p>U-100 0.3 mL, 0.5 mL, and 1 mL syringes use the same volume-per-mark scale, but capacity and graduation increments differ. Do not use these markings with a U-40 syringe.</p>
+    </details>
+
+    <details class="card">
+      <summary>Calculating a draw and checking a blend</summary>
+      <p>Draw volume (mL) = entered component amount ÷ that component's concentration (amount/mL). U-100 marks = draw volume × 100.</p>
+      <p>In a premixed blend, each component has its own concentration in the same liquid. A single withdrawal contains a proportional amount of <em>every</em> component. Verify each component separately.</p>
+    </details>
+
+    <details class="card">
+      <summary>Remainder versus physical waste</summary>
+      <p>Complete theoretical draws = total vial amount ÷ entered amount, rounded down. If the division leaves a remainder, changing the dilution cannot eliminate that compound remainder.</p>
+      <p>Actual recoverable yield can be smaller because of vial hold-up, syringe dead space, transfers, and handling. Optimizer results are nominal mathematical comparisons, not verified yields.</p>
+    </details>
+
+    <details class="card">
+      <summary>Common errors to check</summary>
+      <ul>
+        <li>Mixing up mg and mcg (a factor of 1,000)</li>
+        <li>Confusing biological IU with U-100 volume marks</li>
+        <li>Entering the BAC-water bottle size rather than the actual vial liquid volume</li>
+        <li>Using old marks after changing the final volume or concentration</li>
+        <li>Rounding fractional marks as if it cannot change the amount</li>
+        <li>Assuming a blend contains equal amounts of every component</li>
+      </ul>
+    </details>
+
+    <details class="card">
+      <summary>Product instructions and storage matter</summary>
+      <p>Follow the product or pharmacy instructions for the appropriate diluent, preparation technique, compatibility, storage, and beyond-use period. There is no single safe mixing, storage, or expiry rule for every substance.</p>
+      <p>Use aseptic handling and record actual measured quantities through Tracker's vial workflow; this calculator never changes inventory.</p>
+    </details>
+  </div>
+
+  <details class="card recon-guide-example">
+    <summary>Worked arithmetic example (not a suggested dose)</summary>
+    <p>5 mg in 2 mL nominal final volume gives 2.5 mg/mL. A hypothetical 250 mcg (= 0.25 mg) amount corresponds to 0.1 mL, or 10 U-100 marks. The vial contains 20 complete theoretical amounts of this size.</p>
+  </details>
+
+  <p class="muted recon-guide-source">
+    Further reading:
+    <a href="https://peptidetracker.ai/calculator/reconstitution"
+       rel="noopener noreferrer" target="_blank">Peptide Tracker's reconstitution explanation</a>.
+    All explanations here are independently written for Tracker.
+  </p>
+</section>
 
 <template id="recon-component-template">
   <div class="recon-component">
@@ -231,7 +302,7 @@
 <script id="recon-prefill" type="application/json">
   {{ initial|tojson }}
 </script>
-<script src="/static/js/reconstitution-calculator.js?v=20261102a"
+<script src="/static/js/reconstitution-calculator.js?v=20261103c"
  defer></script>
 
 </div>

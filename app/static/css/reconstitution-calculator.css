@@ -185,3 +185,69 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Scoped, responsive educational reference */
+.recon-guide {
+  max-width:1420px;
+  padding:1rem 0 2rem;
+}
+.recon-guide-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.85rem;
+}
+.recon-guide .card {
+  min-width:0;
+  margin:0;
+  padding:1rem;
+}
+.recon-guide details summary,
+.recon-working summary {
+  cursor:pointer;
+  font-weight:650;
+  line-height:1.5;
+}
+.recon-guide details[open] summary,
+.recon-working[open] summary {
+  margin-bottom:.7rem;
+}
+.recon-guide p,
+.recon-guide li {
+  line-height:1.55;
+}
+.recon-guide li {
+  margin:.35rem 0;
+}
+.recon-guide-table {
+  width:100%;
+  border-collapse:collapse;
+}
+.recon-guide-table th,
+.recon-guide-table td {
+  text-align:left;
+  padding:.5rem;
+  border-bottom:1px solid var(--border,#d5dce3);
+}
+.recon-guide-example {
+  margin-top:1rem!important;
+}
+.recon-guide-source {
+  margin-top:1rem;
+  font-size:.88rem;
+}
+.recon-working {
+  margin:1rem 0;
+  padding:.8rem 1rem;
+  border:1px solid var(--border,#d5dce3);
+  border-radius:.7rem;
+}
+.recon-working li {
+  line-height:1.5;
+  margin:.5rem 0;
+  overflow-wrap:anywhere;
+}
+@media(max-width:850px){
+  .recon-guide-grid {
+    grid-template-columns:1fr;
+  }
+}

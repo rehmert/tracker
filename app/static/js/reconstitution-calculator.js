@@ -198,6 +198,39 @@
     );
   }
 
+  function explainCalculation(data) {
+    const box = $('recon-working');
+    const list = $('recon-working-list');
+    list.replaceChildren();
+
+    const add = (line) => list.append(element('li', '', line));
+
+    if (data.method === 'optimize') {
+      const c = data.recommended;
+
+      add(`Total content: ${number(data.content)} ${data.content_unit}. Entered amount: ${number(data.target_amount)} ${data.target_unit}. Convert to compatible units before dividing.`);
+
+      add(`Complete theoretical draws: ${data.complete_draws}; remaining compound: ${number(data.theoretical_leftover)} ${data.content_unit}. Dilution cannot remove that remainder.`);
+
+      add(`${number(c.draw_units)} U-100 marks = ${number(c.draw_ml)} mL. Nominal final solution volume = ${number(c.nominal_final_ml)} mL.`);
+
+      add('This is not the verified volume of diluent to add; displacement and physical handling losses are not modeled.');
+
+    } else {
+      data.components.forEach((c) => {
+        add(`${c.name}: ${number(c.vial_amount)} ${c.unit} / ${number(data.final_volume_ml)} mL = ${number(c.concentration)} ${c.unit}/mL.`);
+
+        add(`${c.name}: ${number(c.concentration)} ${c.unit}/mL x ${number(data.draw_ml)} mL = ${number(c.amount_per_draw)} ${c.unit}.`);
+      });
+
+      add(`${number(data.draw_ml)} mL x 100 = ${number(data.draw_units)} U-100 marks.`);
+
+      add(`${number(data.final_volume_ml)} mL / ${number(data.draw_ml)} mL per draw = ${data.full_draws} complete theoretical draws (rounded down).`);
+    }
+
+    box.hidden = false;
+  }
+
   function displayOptimization(data) {
     results.replaceChildren();
 
@@ -309,6 +342,8 @@
         element('p', 'recon-message', warning)
       );
     });
+
+    explainCalculation(data);
   }
 
   function display(data) {
@@ -450,9 +485,13 @@
         )
       );
     }
+
+    explainCalculation(data);
   }
 
   function schedule() {
+    $('recon-working').hidden = true;
+    $('recon-working-list').replaceChildren();
     clearTimeout(timer);
     sequence += 1;
 
