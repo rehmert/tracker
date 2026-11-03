@@ -5,7 +5,7 @@ import math
 from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -335,6 +335,83 @@ def _report(db: Session, rid: int) -> LabReport:
     if r is None:
         raise HTTPException(404, "Report not found")
     return r
+
+
+
+def _lab_csv_text(value):
+    """Protect spreadsheet software from formulas in text fields."""
+    text = "" if value is None else str(value)
+    if text.lstrip().startswith(("=", "+", "-", "@")):
+        return "'" + text
+    if text.startswith(("\t", "\r", "\n")):
+        return "'" + text
+    return text
+
+
+def _lab_csv_response(rows, filename: str):
+    """UTF-8 CSV with BOM and CRLF line endings."""
+    buffer = io.StringIO(newline="")
+    writer = csv.writer(buffer, lineterminator="\r\n")
+    writer.writerows(rows)
+    return Response(
+        content=buffer.getvalue().encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
+    )
+
+
+@router.get("/labs/{rid}/export.csv")
+def export_lab_report_csv(rid: int, db: Session = Depends(get_db)):
+    """Download original recorded measurements without display rounding."""
+    report = _report(db, rid)
+    rows = [[
+        "drawn_on", "lab_name", "analyte", "value",
+        "unit", "ref_low", "ref_high", "note",
+    ]]
+
+    for result in report.results:
+        rows.append([
+            report.drawn_on.isoformat(),
+            _lab_csv_text(report.lab_name),
+            _lab_csv_text(result.analyte),
+            result.value,
+            _lab_csv_text(result.unit),
+            "" if result.ref_low is None else result.ref_low,
+            "" if result.ref_high is None else result.ref_high,
+            _lab_csv_text(result.note),
+        ])
+
+    return _lab_csv_response(
+        rows, f"lab-report-{rid}-results.csv"
+    )
+
+
+@router.get("/labs/{rid}/template.csv")
+def lab_report_template_csv(rid: int, db: Session = Depends(get_db)):
+    """Blank template with names and units but no previous results."""
+    report = _report(db, rid)
+    rows = [[
+        "analyte", "value", "unit",
+        "ref_low", "ref_high", "note",
+    ]]
+
+    for result in report.results:
+        rows.append([
+            _lab_csv_text(result.analyte),
+            "",
+            _lab_csv_text(result.unit),
+            "",
+            "",
+            "",
+        ])
+
+    return _lab_csv_response(
+        rows, f"lab-report-{rid}-blank-template.csv"
+    )
 
 
 REPORT_SORT_COLUMNS = ("analyte", "value", "unit", "range", "status", "note")

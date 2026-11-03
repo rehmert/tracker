@@ -6,6 +6,17 @@
   <a class="btn" href="/labs/new?copy_from={{ rep.id }}">
     Start new report using these analytes
   </a>
+  <a class="btn" href="/labs/{{ rep.id }}/export.csv">
+    Export Recorded Results CSV
+  </a>
+  <a class="btn" href="/labs/{{ rep.id }}/template.csv">
+    Download Reusable CSV Template
+  </a>
+</p>
+<p class="note">
+  The reusable CSV includes only analyte names and units.
+  Fill in new measurements and their printed reference
+  ranges before importing it as a new report.
 </p>
 {% if rep.stored_name %}<p>Report file: <a href="/labs/{{ rep.id }}/file" target="_blank" rel="noopener">{{ rep.original_name }}</a> <small>({{ (rep.size_bytes / 1024)|round|int }} KB · sha256 {{ rep.sha256[:10] }}…)</small></p>{% endif %}
 {% if rep.notes %}<p class="note">{{ rep.notes }}</p>{% endif %}
