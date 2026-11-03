@@ -1,0 +1,48 @@
+/* Vitals edit-only unsaved changes controls. */
+
+.tracker-vitals-restore {
+  padding: .45rem .7rem;
+  border-radius: 8px;
+  border: 1px solid var(--rule, #ccc);
+  background: var(--surface, #fff);
+  color: var(--ink, inherit);
+  font-size: .85rem;
+  cursor: pointer;
+}
+
+.tracker-vitals-restore:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.tracker-vitals-dirty-status {
+  display: inline-flex;
+  align-items: center;
+  padding: .35rem .6rem;
+  font-size: .82rem;
+  color: var(--muted, #666);
+}
+
+form[data-unsaved="true"]
+.tracker-vitals-dirty-status {
+  font-weight: 650;
+  color: var(--ink, inherit);
+}
+
+.tracker-vitals-restore:focus-visible {
+  outline: 3px solid var(--teal, #287b9b);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .tracker-vitals-restore {
+    width: 100%;
+  }
+}
+
+@media print {
+  .tracker-vitals-restore,
+  .tracker-vitals-dirty-status {
+    display: none !important;
+  }
+}

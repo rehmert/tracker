@@ -8,6 +8,12 @@
 <script defer
         src="/static/js/tracker-vitals-entry.js?v=20261103-edit"></script>
 
+
+<link rel="stylesheet"
+      href="/static/css/tracker-vitals-edit-guard.css?v=20261103">
+<script defer
+        src="/static/js/tracker-vitals-edit-guard.js?v=20261103"></script>
+
 <h1>Edit Vital Reading</h1>
 
 <p class="note">
@@ -93,6 +99,7 @@
       </button>
 
       <a class="link"
+         data-vitals-edit-cancel
          href="/vitals?days={{ days }}&amp;events={{ events }}">
         Cancel
       </a>
