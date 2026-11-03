@@ -3,6 +3,8 @@ Never writes dose logs or changes inventory. Reconciliation is a same-day,
 same-compound association; it does not claim clinical equivalence of amounts.
 """
 from datetime import date, datetime, timedelta, timezone
+import csv
+from io import StringIO
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from sqlalchemy import select
 from fastapi.responses import RedirectResponse, Response
@@ -54,6 +56,40 @@ def calendar_status_counts(days: list[dict]) -> dict[str, int]:
             if status in counts:
                 counts[status] += 1
     return counts
+
+
+
+_REVIEW_STATUSES = frozenset(("unrecorded", "due", "upcoming"))
+
+
+def calendar_review_items(days: list[dict]) -> list[dict]:
+    """Chronological, display-only projected entries requiring review.
+
+    A missing matching log is not proof an administration was missed.
+    Outside-month grid cells and already-matched logs are excluded.
+    """
+    items = [
+        {"date": day["date"], "event": event}
+        for day in days if day["in_month"]
+        for event in day["events"]
+        if event.get("status") in _REVIEW_STATUSES
+    ]
+    return sorted(items, key=lambda item: (
+        item["date"],
+        item["event"].get("dose_time") or "",
+        (item["event"].get("name") or "").casefold(),
+        (item["event"].get("protocol") or "").casefold(),
+        item["event"].get("protocol_item_id") or 0,
+    ))
+
+
+def _calendar_csv_safe(value: object) -> str:
+    """Prevent spreadsheet formulas in free-text CSV cells."""
+    text = "" if value is None else str(value)
+    stripped = text.lstrip()
+    if stripped.startswith(("=", "+", "-", "@")) or (text and text[0].isspace()):
+        return "'" + text
+    return text
 
 
 def _parse_month(month: str) -> date:
@@ -118,12 +154,52 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
         cursor += timedelta(days=1)
     previous = first - timedelta(days=1)
     status_counts = calendar_status_counts(days)
+    review_items = calendar_review_items(days)
     return render(request, 'calendar.html', days=days, shown=shown,
                   today=date.today(), status_counts=status_counts,
+                  review_items=review_items,
                   calendar_total=sum(status_counts.values()),
                   exclusions=list(db.scalars(select(ProjectionExclusion).order_by(ProjectionExclusion.scheduled_on.desc(), ProjectionExclusion.id.desc()))),
                   missing_start=missing_start,
                   previous=previous.strftime('%Y-%m'), next_month=end.strftime('%Y-%m'))
+
+
+@router.get('/calendar/review.csv')
+def export_calendar_review_csv(month: str = '', db: Session = Depends(get_db)):
+    """Export only projected review entries; never changes protocols or logs."""
+    shown = _parse_month(month)
+    first, end, events, _ = _month_events(shown, db)
+    days = [
+        {'date': day, 'in_month': first <= day < end, 'events': entries}
+        for day, entries in events.items()
+    ]
+    items = calendar_review_items(days)
+    labels = {
+        'unrecorded': 'No matching log',
+        'due': 'Due today',
+        'upcoming': 'Upcoming',
+    }
+    output = StringIO(newline='')
+    writer = csv.writer(output)
+    writer.writerow(('Date', 'Time', 'Status', 'Protocol', 'Compound',
+                     'Planned amount', 'Unit'))
+    for item in items:
+        event = item['event']
+        writer.writerow((
+            item['date'].isoformat(),
+            _calendar_csv_safe(event.get('dose_time')),
+            labels[event['status']],
+            _calendar_csv_safe(event.get('protocol')),
+            _calendar_csv_safe(event.get('name')),
+            _calendar_csv_safe(event.get('amount_value')),
+            _calendar_csv_safe(event.get('amount_unit')),
+        ))
+    return Response(
+        content=output.getvalue().encode('utf-8-sig'),
+        media_type='text/csv',
+        headers={'Content-Disposition':
+                 f'attachment; filename="tracker-calendar-review-{shown:%Y-%m}.csv"'},
+    )
 
 
 @router.post('/calendar/exclude')

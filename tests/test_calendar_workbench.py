@@ -41,8 +41,8 @@ def test_calendar_html_renders_workbench_and_today_link():
         'id="calendar-print"',
         'id="calendar-filter-summary"',
         'id="calendar-grid"',
-        'tracker-calendar-workbench.js?v=20261103b',
-        'tracker-calendar-workbench.css?v=20261103b',
+        'tracker-calendar-workbench.js?v=20261103c',
+        'tracker-calendar-workbench.css?v=20261103c',
         'Due and not logged',
         'Unmatched Logs',
     ):

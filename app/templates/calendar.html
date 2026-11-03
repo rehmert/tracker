@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Protocol calendar{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/css/tracker-calendar-workbench.css?v=20261103b">
-<script src="/static/js/tracker-calendar-workbench.js?v=20261103b" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-calendar-workbench.css?v=20261103c">
+<script src="/static/js/tracker-calendar-workbench.js?v=20261103c" defer></script>
 <h1>Protocol calendar</h1>
 <p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
 {% if missing_start %}<section><h2>Start dates needed</h2><p class="note">These active protocols have no start date, so no doses are projected for them:</p>
@@ -40,11 +40,45 @@
       <a class="button" id="calendar-jump-today" href="/calendar?month={{ today.strftime('%Y-%m') }}#calendar-day-{{ today.isoformat() }}">Today</a>
       <button type="button" id="calendar-reset-filters">Clear Filters</button>
       <button type="button" id="calendar-print">Print</button>
+      <a class="button" id="calendar-review-export" href="/calendar/review.csv?month={{ shown.strftime('%Y-%m') }}">Export review CSV</a>
     </div>
   </div>
   <p id="calendar-filter-summary" role="status" aria-live="polite">Showing {{ calendar_total }} of {{ calendar_total }} entries in this month.</p>
   <p class="note">Filtering only changes what is displayed. It does not change protocols, dose logs, or inventory.</p>
 </section>
+<details class="calendar-review" id="calendar-review-agenda">
+  <summary>Chronological review list ({{ review_items|length }})</summary>
+  <p class="note">Planned entries without a matching recorded administration and future projections for this month. A missing log does not establish that an administration was missed. Use the dose log to record only what actually occurred.</p>
+  <p class="note">This list follows the search and status filters above. CSV export always contains the complete month's review list, regardless of these display filters.</p>
+  <p id="calendar-agenda-summary" role="status" aria-live="polite">Showing {{ review_items|length }} of {{ review_items|length }} review entries.</p>
+  <div class="scroll">
+    <table class="calendar-review-table">
+      <thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Compound / Protocol</th><th>Planned</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for item in review_items %}
+      {% set x = item.event %}
+      <tr class="calendar-review-row" data-calendar-status="{{ x.status }}" data-calendar-search="{{ (x.name ~ ' ' ~ (x.protocol|default('', true)))|e }}">
+        <td><a href="#calendar-day-{{ item.date.isoformat() }}"><time datetime="{{ item.date.isoformat() }}">{{ item.date.strftime('%a %b %d') }}</time></a></td>
+        <td>{{ x.dose_time or 'Not set' }}</td>
+        <td>
+          {% if x.status == 'unrecorded' %}<span class="calendar-review-status unrecorded">No matching log</span>
+          {% elif x.status == 'due' %}<span class="calendar-review-status due">Due today</span>
+          {% else %}<span class="calendar-review-status upcoming">Upcoming</span>{% endif %}
+        </td>
+        <td><strong>{{ x.name }}</strong><small>{{ x.protocol }}</small></td>
+        <td>{{ x.dose }}</td>
+        <td class="calendar-review-actions">
+          <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;planned_date={{ item.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">Log this dose</a>
+          <a class="tag" href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ item.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">Choose vial first</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">No projected entries to review for this month.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
 <p class="ux-legend" aria-label="Calendar legend"><span>✓ Recorded on date (not verified)</span><span>! No matching log</span><span>◉ Due today</span><span>○ Upcoming</span></p>
 <div class="calendar-grid" id="calendar-grid" aria-label="Month calendar">
 {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}<div class="calendar-head">{{ day }}</div>{% endfor %}

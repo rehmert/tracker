@@ -14,6 +14,8 @@
 
     const events = [...grid.querySelectorAll('.calendar-activity')];
     const days = [...grid.querySelectorAll('.calendar-day')];
+    const reviewRows = [...document.querySelectorAll('#calendar-review-agenda .calendar-review-row')];
+    const agendaSummary = document.getElementById('calendar-agenda-summary');
     const normalize = value => String(value || '').normalize('NFKC')
       .toLocaleLowerCase().trim();
 
@@ -34,6 +36,20 @@
         const items = [...day.querySelectorAll('.calendar-activity')];
         day.classList.toggle('calendar-filtered-empty',
           items.length > 0 && items.every(item => item.hidden));
+      }
+      let visibleReview = 0;
+      for (const row of reviewRows) {
+        const status = row.dataset.calendarStatus;
+        const matchesStatus = filter === 'all' || status === filter ||
+          (filter === 'needs-action' && (status === 'due' || status === 'unrecorded'));
+        const matchesText = !query || normalize(row.dataset.calendarSearch).includes(query);
+        const show = matchesStatus && matchesText;
+        row.hidden = !show;
+        if (show) visibleReview += 1;
+      }
+      if (agendaSummary) {
+        agendaSummary.textContent = 'Showing ' + visibleReview + ' of ' +
+          reviewRows.length + ' review entries.';
       }
       summary.textContent = 'Showing ' + visible + ' of ' +
         events.length + ' entries in this month.';

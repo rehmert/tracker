@@ -31,3 +31,24 @@
   .calendar-activity[hidden] { display:none!important; }
   main { width:100%!important; max-width:100%!important; margin:0!important; padding:0!important; }
 }
+
+/* Read-only chronological agenda for the selected calendar month. */
+.calendar-review { margin:0 0 1rem; padding:.8rem 1rem; border:1px solid var(--rule,#ddd);
+  background:var(--surface,#fff); border-radius:14px; }
+.calendar-review>summary { cursor:pointer; font-weight:700; }
+.calendar-review>summary:focus-visible { outline:2px solid var(--teal,#287b9b); outline-offset:3px; }
+.calendar-review .note { font-size:.84rem; }
+#calendar-agenda-summary { font-size:.86rem; margin:.65rem 0; }
+.calendar-review-table { width:100%; min-width:760px; }
+.calendar-review-table th,.calendar-review-table td { padding:.5rem .65rem; vertical-align:middle; }
+.calendar-review-table td small { display:block; color:var(--muted,#667); font-size:.74rem; }
+.calendar-review-table td strong { display:block; font-weight:600; }
+.calendar-review-table .calendar-review-actions { white-space:nowrap; }
+.calendar-review-table .calendar-review-actions .tag { display:inline-block; margin:.15rem .2rem .15rem 0; }
+.calendar-review-row[hidden] { display:none!important; }
+.calendar-review-status { display:inline-block; border-radius:8px; padding:.2rem .45rem;
+  background:var(--wash,#f6f7f9); font-size:.77rem; font-weight:600; white-space:nowrap; }
+.calendar-review-status.unrecorded { border-left:3px solid var(--amber,#e09a3b); }
+.calendar-review-status.due { border-left:3px solid var(--teal,#287b9b); }
+.calendar-review-status.upcoming { border-left:3px solid var(--rule,#aaa); }
+@media print { #calendar-review-agenda { display:none!important; } }
