@@ -42,6 +42,28 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="Tracker", dependencies=[Depends(require_auth)],
               lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+
+
+@app.middleware("http")
+async def tracker_response_protection(request, call_next):
+    """Set browser protections without overriding route-specific policy."""
+    response = await call_next(request)
+
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # Endpoint-specific policies, especially CSV exports,
+    # take precedence over this conservative default.
+    if (
+        not request.url.path.startswith("/static/")
+        and "cache-control" not in response.headers
+    ):
+        response.headers["Cache-Control"] = "private, no-store"
+
+    return response
+
+
 app.mount("/static", StaticFiles(directory=config.BASE_DIR / "static"), name="static")
 
 for module in (dashboard, compounds, purchases, vials, coas, doses, supplies, vitals, labs, protocols, pages, pk, calendar, backups, search, inventory_intelligence, health_timeline, health_insights, exports, reliability, blends, vendor_prices):
