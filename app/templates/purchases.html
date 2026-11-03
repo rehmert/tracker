@@ -1,15 +1,92 @@
 {% extends "base.html" %}
 {% block title %}Purchases{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-purchase-history-review.css?v=20261103">
+<script src="/static/js/tracker-purchase-history-review.js?v=20261103" defer></script>
 <h1>Purchases</h1><nav class="ux-shortcuts" aria-label="Purchase actions"><a href="#new-purchase">+ Record a purchase</a><a href="#purchase-history">Purchase history</a><a href="/vials">Vials</a><a href="/supplies">Supplies</a><a href="/vendor-prices">Compare prices</a></nav><p class="note">Workflow: create the order below, then open it to add purchased vials or supplies. Inventory is not created by the order header alone.</p>
-<div class="scroll" id="purchase-history" data-enhanced-table><table>
-  <thead><tr><th>Date</th><th>Vendor</th><th>Order</th><th class="n">Vials</th><th class="n">Supplies / pills</th><th class="n">Total with shipping and tax</th></tr></thead>
-  <tbody>
+<section id="purchase-history" aria-labelledby="purchase-history-title">
+  <h2 id="purchase-history-title">Purchase history</h2>
+  <p class="note">Order headers without any vials or supplies are flagged as <strong>Needs items</strong>. An order header alone does not add inventory, and its allocated line-item total may show zero until items are recorded.</p>
+
+  <div class="purchase-review-toolbar" data-purchase-review-toolbar>
+    <label class="field"><span>Find purchase</span>
+      <input type="search" data-purchase-search placeholder="Vendor, order reference, or date…" autocomplete="off" aria-controls="purchase-history-table">
+    </label>
+    <label class="field"><span>Vendor</span>
+      <select data-purchase-vendor aria-controls="purchase-history-table">
+        <option value="">All vendors</option>
+      </select>
+    </label>
+    <label class="field"><span>Inventory items</span>
+      <select data-purchase-status aria-controls="purchase-history-table">
+        <option value="all">All orders</option>
+        <option value="needs-items">Needs items</option>
+        <option value="has-items">Items recorded</option>
+      </select>
+    </label>
+    <label class="field"><span>From date</span>
+      <input type="date" data-purchase-from aria-controls="purchase-history-table">
+    </label>
+    <label class="field"><span>Through date</span>
+      <input type="date" data-purchase-through aria-controls="purchase-history-table">
+    </label>
+    <button type="button" data-purchase-reset>Reset</button>
+    <button type="button" data-purchase-export>Export filtered CSV</button>
+  </div>
+
+  <p class="note" data-purchase-date-error hidden role="status">Through date precedes From date. Adjust the dates to show matching purchases.</p>
+  {% set purchase_review = namespace(needs=0) %}
   {% for r in rows %}
-  <tr><td>{{ r.p.purchased_on|dt }}</td><td><a href="/purchases/{{ r.p.id }}">{{ r.p.vendor }}</a></td><td>{{ r.p.order_ref or '—' }}</td><td class="n">{{ r.n }}</td><td class="n">{{ r.supply_count }}</td><td class="n">{{ r.total|money }}</td></tr>
-  {% else %}<tr><td colspan="6" class="empty">No purchases yet.</td></tr>{% endfor %}
-  </tbody>
-</table></div>
+    {% if r.n == 0 and r.supply_count == 0 %}
+      {% set purchase_review.needs = purchase_review.needs + 1 %}
+    {% endif %}
+  {% endfor %}
+  <div class="purchase-review-totals" aria-label="Purchases matching current filters">
+    <div><strong data-purchase-visible-count>{{ rows|length }}</strong><span>Matching orders</span></div>
+    <div><strong data-purchase-needs-count>{{ purchase_review.needs }}</strong><span>Orders to review</span></div>
+    <div><strong data-purchase-visible-total>{{ rows|sum(attribute='total')|money }}</strong><span>Recorded line-item totals</span></div>
+  </div>
+  <p class="note" data-purchase-results role="status" aria-live="polite">Showing {{ rows|length }} of {{ rows|length }} purchases.</p>
+  <p class="note" data-purchase-empty hidden>No purchases match those filters. Reset the filters to see all orders.</p>
+  <div class="scroll">
+    <table id="purchase-history-table" data-purchase-history data-currency="{{ currency }}">
+      <thead><tr>
+        <th scope="col" data-purchase-sort="date">Date</th>
+        <th scope="col" data-purchase-sort="vendor">Vendor</th>
+        <th scope="col" data-purchase-sort="order">Order</th>
+        <th scope="col" class="n" data-purchase-sort="vials">Vials</th>
+        <th scope="col" class="n" data-purchase-sort="supplies">Supplies / pills</th>
+        <th scope="col" class="n" data-purchase-sort="total">Total with shipping and tax</th>
+        <th scope="col">Next step</th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+      {% set needs_items = r.n == 0 and r.supply_count == 0 %}
+      <tr data-purchase-row
+          data-purchase-id="{{ r.p.id }}"
+          data-purchase-date="{{ r.p.purchased_on.isoformat() }}"
+          data-purchase-vendor="{{ r.p.vendor }}"
+          data-purchase-order="{{ r.p.order_ref or '' }}"
+          data-purchase-vials="{{ r.n }}"
+          data-purchase-supplies="{{ r.supply_count }}"
+          data-purchase-total-cents="{{ r.total }}"
+          data-purchase-status="{{ 'needs-items' if needs_items else 'has-items' }}">
+        <td>{{ r.p.purchased_on|dt }}</td>
+        <td><a href="/purchases/{{ r.p.id }}">{{ r.p.vendor }}</a></td>
+        <td>{{ r.p.order_ref or '—' }}</td>
+        <td class="n">{{ r.n }}</td>
+        <td class="n">{{ r.supply_count }}</td>
+        <td class="n">{{ r.total|money }}</td>
+        <td>{% if needs_items %}<a class="purchase-needs-items" href="/purchases/{{ r.p.id }}">Needs items · Add inventory</a>{% else %}<a href="/purchases/{{ r.p.id }}">Review items</a>{% endif %}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="empty">No purchases yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Review totals use the server-calculated allocated line-item amounts for matching orders; they are not a payment ledger. Filters, sorting and CSV exports do not change purchases or inventory.</p>
+</section>
 
 <section>
   <h2 id="new-purchase">Step 1 · Record order details</h2><p class="note">After saving, you will be taken to Step 2 to add the actual purchased inventory.</p>
