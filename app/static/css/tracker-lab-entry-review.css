@@ -1,0 +1,71 @@
+/* Lab report creation guidance, scoped to this page. */
+
+.tracker-lab-entry-jumps {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin: .8rem 0 1.2rem;
+}
+
+.tracker-lab-entry-jumps a {
+  padding: .42rem .7rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.tracker-lab-entry-jumps a:hover {
+  background: var(--wash);
+  border-color: var(--teal);
+}
+
+#lab-csv-entry,
+#lab-manual-entry {
+  scroll-margin-top: 1.5rem;
+}
+
+.tracker-lab-entry-review {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .35rem 1rem;
+  margin: .85rem 0;
+  padding: .75rem .9rem;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-size: .85rem;
+}
+
+.tracker-lab-entry-review strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tracker-lab-entry-review span {
+  color: var(--muted);
+}
+
+.tracker-lab-entry-review[data-lab-review-status="review"] {
+  border-color: var(--amber);
+}
+
+#lab-rows tr[data-lab-review-state="incomplete"] {
+  box-shadow: inset 3px 0 var(--amber);
+}
+
+@media (max-width: 650px) {
+  .tracker-lab-entry-jumps a {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+@media print {
+  .tracker-lab-entry-jumps,
+  .tracker-lab-entry-review {
+    display: none !important;
+  }
+}

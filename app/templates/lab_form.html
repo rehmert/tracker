@@ -1,9 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Add lab report{% endblock %}
 {% block content %}
+<link rel="stylesheet"
+      href="/static/css/tracker-lab-entry-review.css?v=20261103">
+<script defer
+        src="/static/js/tracker-lab-entry-review.js?v=20261103"></script>
+
 <h1>Add a lab report</h1>
+<p class="note">
+  Choose CSV import or manual entry. The two forms create
+  separate reports; use only the one you intend to save.
+</p>
+<nav class="tracker-lab-entry-jumps"
+     aria-label="Lab report entry methods">
+  <a href="#lab-csv-entry">Import CSV</a>
+  <a href="#lab-manual-entry">Enter Manually</a>
+</nav>
 <section>
-  <h2>Import analytes from CSV</h2>
+  <h2 id="lab-csv-entry">Import analytes from CSV</h2>
   <p class="note">Create a report with all analytes in one upload. Required CSV columns: <code>analyte,value,unit</code>. Optional: <code>ref_low,ref_high,note</code>. <a href="/labs/csv-template">Download CSV template</a>.</p>
   <form method="post" action="/labs/import-csv" enctype="multipart/form-data">
     <div class="grid">
@@ -15,8 +29,8 @@
     <p><button class="primary">Import CSV and create report</button></p>
   </form>
 </section>
-<h2>Or enter results manually</h2>
-<form method="post" action="/labs" enctype="multipart/form-data">
+<h2 id="lab-manual-entry">Or enter results manually</h2>
+<form method="post" action="/labs" enctype="multipart/form-data" data-lab-manual-entry>
   <div class="grid">
     <label class="field"><span>Date drawn</span><input type="date" name="drawn_on" value="{{ v.drawn_on }}" required></label>
     <label class="field"><span>Lab</span><input name="lab_name" value="{{ v.lab_name }}" maxlength="160"></label>
@@ -26,6 +40,17 @@
 
   <h2>Results</h2>
   <p class="note">One row per analyte. Use the unit printed on the report. The printed range is optional; enter both ends or neither.</p>
+  <div class="tracker-lab-entry-review"
+       data-lab-entry-review
+       role="status"
+       aria-live="polite">
+    <strong data-lab-complete-count>
+      Review pending
+    </strong>
+    <span data-lab-review-message>
+      Enter analytes to see a completeness summary.
+    </span>
+  </div>
   <div class="scroll"><table class="items">
     <thead><tr><th>Analyte</th><th>Value</th><th>Unit</th><th>Printed range, low</th><th>Printed range, high</th><th></th></tr></thead>
     <tbody id="lab-rows">{% for row in rows %}{% include "_lab_row.html" %}{% endfor %}</tbody>
