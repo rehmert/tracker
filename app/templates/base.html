@@ -91,10 +91,10 @@
     <div id="nav-sortable">
     {% for section, links in sections %}
       <section class="nav-section" data-section="{{ section }}">
-        <button class="nav-section-toggle" type="button" aria-expanded="false"><span>{{ section }}</span><span class="nav-chevron" aria-hidden="true">⌄</span></button>
+        <button class="nav-section-toggle" type="button" aria-expanded="false"><span>{{ section|nav_title }}</span><span class="nav-chevron" aria-hidden="true">⌄</span></button>
         <ul class="nav-links nav-group" data-group="{{ section }}">
         {% for href, text in links %}
-          <li data-nav-key="{{ href }}"><a href="{{ href }}" title="{{ text }}" {% if (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text }}</span></a><button class="nav-star" type="button" data-favorite="{{ href }}" aria-label="Favorite {{ text }}" aria-pressed="false">☆</button><span class="nav-move" hidden><button type="button" class="nav-up" aria-label="Move {{ text }} up">↑</button><button type="button" class="nav-down" aria-label="Move {{ text }} down">↓</button></span></li>
+          <li data-nav-key="{{ href }}"><a href="{{ href }}" title="{{ text|nav_title }}" {% if (href != '/' and path.startswith(href)) %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">{{ text|nav_title }}</span></a><button class="nav-star" type="button" data-favorite="{{ href }}" aria-label="Favorite {{ text|nav_title }}" aria-pressed="false">☆</button><span class="nav-move" hidden><button type="button" class="nav-up" aria-label="Move {{ text|nav_title }} up">↑</button><button type="button" class="nav-down" aria-label="Move {{ text|nav_title }} down">↓</button></span></li>
         {% endfor %}
         </ul>
       </section>
@@ -105,7 +105,7 @@
   <main id="main-content">
     <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</span><a href="/" aria-label="Overview">Overview</a></div>
     <div class="workspace-toolbar" aria-label="Workspace tools">
-      <div class="ux-add-menu"><button type="button" id="ux-add-toggle" aria-expanded="false" aria-controls="ux-add-panel" class="ux-add-button">+ Add</button><div id="ux-add-panel" class="ux-add-panel" hidden><a href="/doses">Record dose</a><a href="/vitals">Record vitals</a><a href="/purchases">New purchase</a><a href="/protocols">New protocol</a><a href="/quick-entry">All quick entries</a><a href="/vials">Vials</a><a href="/labs">Lab results</a></div></div>
+      <div class="ux-add-menu"><button type="button" id="ux-add-toggle" aria-expanded="false" aria-controls="ux-add-panel" class="ux-add-button">+ Add</button><div id="ux-add-panel" class="ux-add-panel" hidden><a href="/doses">Record Dose</a><a href="/vitals">Record Vitals</a><a href="/purchases">New Purchase</a><a href="/protocols">New Protocol</a><a href="/quick-entry">All Quick Entries</a><a href="/vials">Vials</a><a href="/labs">Lab Results</a></div></div>
       <button type="button" class="workspace-search" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search Tracker (Ctrl+K)">⌕ <span>Search Tracker</span> <kbd>Ctrl K</kbd></button>
       <div class="workspace-nav-find" id="page-finder-container"><div class="nav-find"><input id="nav-filter" type="search" placeholder="Find a page…" aria-label="Filter navigation links"><div id="page-finder-results" class="page-finder-results" role="listbox" aria-label="Matching pages" hidden></div></div></div>
       <div class="workspace-settings" id="workspace-settings">

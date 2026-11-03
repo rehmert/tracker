@@ -68,12 +68,35 @@ def label_unit(unit: str) -> str:
     return unit
 
 
+_NAV_ACRONYMS = {
+    "pk": "PK", "fefo": "FEFO", "sqlite": "SQLite",
+    "coas": "COAs", "ui": "UI", "ux": "UX",
+    "csv": "CSV", "api": "API", "http": "HTTP",
+}
+
+
+def nav_title(value: str) -> str:
+    """Human-friendly Title Case for navigation only."""
+    import re
+
+    def word(match):
+        value = match.group(0)
+        return _NAV_ACRONYMS.get(
+            value.lower(), value.capitalize()
+        )
+
+    return re.sub(r"[A-Za-z]+", word, str(value))
+
+
 templates.env.filters.update(money=money, money_precise=money_precise, amt=amt, conc=conc,
                              num=num, dt=dt, utc_dt=utc_dt, eastern_dt=eastern_dt, from_json=json.loads)
 templates.env.globals.update(
     DOSE_UNITS=U.DOSE_UNITS, CONTENT_UNITS=U.CONTENT_UNITS,
     PERIOD_LABELS=calc.PERIOD_LABELS, currency=config.CURRENCY,
     tracker_instance_label=config.instance_label)
+
+
+templates.env.filters["nav_title"] = nav_title
 
 
 def render(request, template_name: str, **ctx):
