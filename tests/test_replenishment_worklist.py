@@ -202,11 +202,15 @@ def test_navigation_and_purchase_anchor_are_present():
     base = (root / "app/templates/base.html").read_text()
     alerts = (root / "app/templates/inventory_alerts.html").read_text()
     supplies = (root / "app/templates/supplies.html").read_text()
+    vials = (root / "app/templates/vials.html").read_text()
     purchases = (root / "app/templates/purchases.html").read_text()
     assert "('/replenishment-review','Replenishment review')" in base
     assert 'href="/replenishment-review"' in alerts
     assert 'id="supply-stock"' in supplies
     assert 'id="new-purchase"' in purchases
+    assert 'href="/replenishment-review"' in vials
+    assert 'href="/replenishment-review"' in supplies
+    assert 'href="/purchases#new-purchase"' in supplies
 
 
 def test_active_protocol_compound_with_no_vials_is_surfaced():
