@@ -12,14 +12,14 @@
 
     function matches() {
       const query = input.value.trim().toLocaleLowerCase();
-      if (!query) return [];
+      if (!query) return {items: [], total: 0};
 
       const pages = [];
 
       document.querySelectorAll(
         '#nav-sortable .nav-section'
       ).forEach(section => {
-        const category = section.dataset.section || '';
+        const category = section.querySelector('.nav-section-toggle span')?.textContent.trim() || section.dataset.section || '';
 
         section.querySelectorAll(
           '[data-nav-key] > a'
@@ -51,12 +51,20 @@
         pages.push(dashboard);
       }
 
-      return pages.sort((a, b) =>
+      function rank(entry) {
+        const label = entry.name.toLocaleLowerCase();
+        if (label === query) return 0;
+        if (label.startsWith(query)) return 1;
+        if (label.split(/\s+/).some(word => word.startsWith(query))) return 2;
+        if (label.includes(query)) return 3;
+        return 4;
+      }
+      pages.sort((a, b) => rank(a)-rank(b) ||
         a.name.localeCompare(b.name, undefined, {
-          sensitivity: 'base',
-          numeric: true
+          sensitivity: 'base', numeric: true
         })
-      ).slice(0, 12);
+      );
+      return {items: pages.slice(0, 12), total: pages.length};
     }
 
     function setActive(index) {
@@ -67,20 +75,22 @@
       active = index;
 
       options.forEach((option, i) => {
-        option.classList.toggle(
-          'is-active', i === active
-        );
-        option.setAttribute(
-          'aria-selected',
-          String(i === active)
-        );
+        option.classList.toggle('is-active', i === active);
+        option.setAttribute('aria-selected', String(i === active));
       });
+      if (active >= 0 && options[active]) {
+        input.setAttribute('aria-activedescendant', options[active].id);
+        options[active].scrollIntoView({block: 'nearest'});
+      } else {
+        input.removeAttribute('aria-activedescendant');
+      }
     }
 
     function render() {
-      const items = matches();
+      const {items, total} = matches();
       results.replaceChildren();
       active = -1;
+      input.removeAttribute('aria-activedescendant');
 
       if (!input.value.trim()) {
         results.hidden = true;
@@ -94,8 +104,15 @@
         results.appendChild(empty);
       }
 
-      items.forEach(item => {
+      if (items.length) {
+        const summary = document.createElement('div');
+        summary.className = 'page-finder-summary';
+        summary.textContent = `Showing ${items.length} of ${total} matching pages`;
+        results.appendChild(summary);
+      }
+      items.forEach((item, index) => {
         const link = document.createElement('a');
+        link.id = `page-finder-option-${index}`;
 
         link.href = item.href;
         link.className = 'page-finder-result';

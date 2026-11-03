@@ -14,7 +14,7 @@
 <script src="/static/js/tracker-dose-sequential-20261102.js" defer></script>
 
 <h1>Dose log</h1>
-{% if repeat_notice %}<p class="note" role="status" id="dose-repeat-notice">{{ repeat_notice }}</p>{% endif %}<p class="note">Use “Prepare similar” in History to load previous recorded details for review. It never records an administration, and does not copy the previous time, notes, or supplies.</p><p class="note">Record an actual administration here. To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Recording a dose may update inventory; merely opening a planned entry does not.</p><nav class="ux-shortcuts"><a href="/calendar">Log from calendar</a><a href="#dose-history">View history ↓</a></nav>
+{% if repeat_notice %}<p class="note" role="status" id="dose-repeat-notice">{{ repeat_notice }}</p>{% endif %}{% if calendar_vial_notice %}<p class="note" role="status" id="dose-calendar-vial-notice">{{ calendar_vial_notice }}</p>{% endif %}<p class="note">Use “Prepare similar” in History to load previous recorded details for review. It never records an administration, and does not copy the previous time, notes, or supplies.</p><p class="note">Record an actual administration here. To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Recording a dose may update inventory; merely opening a planned entry does not.</p><nav class="ux-shortcuts"><a href="/calendar">Log from calendar</a><a href="#dose-history">View history ↓</a></nav>
 
 <section>
   <h2>Add an entry</h2>
@@ -100,8 +100,11 @@
     <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="load, input delay:200ms, change" hx-target="#dose-preview">
       <label class="field"><span>Vial</span>
         <select name="vial_id" required>
+          {% if selected_compound_id is not none and selected_vial_id is none %}
+          <option value="" selected disabled>Select a vial for this compound</option>
+          {% endif %}
           {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
-          <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" {% if (selected_vial_id is not none and v.id == selected_vial_id) or (selected_vial_id is none and selected_compound_id and v.compound_id == selected_compound_id) %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ d.remaining_base|amt(d.dim) }} left</option>
+          <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" data-vial-status="{{ v.status }}" {% if selected_vial_id is not none and v.id == selected_vial_id %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ v.status|replace('_',' ') }} · {{ d.remaining_base|amt(d.dim) }} left</option>
           {% endfor %}
         </select></label>
       <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}"></label>

@@ -128,14 +128,13 @@
 
       const selected = vialSelect.selectedOptions[0];
 
-      if (
-        selected &&
-        selected.dataset.compoundId &&
-        selected.dataset.compoundId !== compoundId
-      ) {
+      if (!selected?.value || !selected.dataset.compoundId) {
         warning.textContent =
-          'The selected vial belongs to a different ' +
-          'compound than the planned entry.';
+          'Select a vial for the planned compound before recording.';
+        warning.hidden = false;
+      } else if (selected.dataset.compoundId !== compoundId) {
+        warning.textContent =
+          'The selected vial belongs to a different compound.';
         warning.hidden = false;
       } else {
         warning.textContent = '';

@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from math import isfinite
 import json
 from html import escape
 
@@ -52,16 +53,85 @@ def _error(msg: str) -> HTMLResponse:
                         headers={"HX-Retarget": "#form-msg", "HX-Reswap": "innerHTML"})
 
 
+
+def _select_dose_vial(vials, views, compound_id, vial_id, planned_date,
+                      planned_amount, planned_unit):
+    """Choose one vial for a dose form; read only, never administers anything.
+
+    The oldest *usable* in-use vial means lowest inventory ID. A planned
+    amount must fit that vial; explicit selections are always respected
+    when available and the compound matches. The POST endpoint retains
+    its independent final inventory and quantity validation.
+    """
+    scheduled = compound_id is not None and bool(planned_date)
+    warning = ""
+
+    if vial_id is not None:
+        explicit = next((v for v in vials if v.id == vial_id), None)
+        if (explicit is not None
+                and (compound_id is None or explicit.compound_id == compound_id)
+                and views[explicit.id].remaining_base > 0):
+            return explicit.id, ""
+        if scheduled:
+            warning = ("Requested vial is unavailable, empty, or belongs to a "
+                       "different compound. An eligible vial is selected if possible.")
+
+    if compound_id is None:
+        return None, warning
+
+    opened = sorted(
+        (v for v in vials
+         if v.compound_id == compound_id and v.status == "in_use"
+         and views[v.id].remaining_base > 0),
+        key=lambda v: v.id,
+    )
+
+    if (scheduled and planned_amount is not None
+            and isfinite(planned_amount) and planned_amount > 0):
+        usable = []
+        for v in opened:
+            view = views[v.id]
+            try:
+                amount = U.amount_to_vial_base(
+                    planned_amount, planned_unit, view.dim, view.conc_per_ml,
+                )
+            except (U.UnitError, ValueError, TypeError):
+                continue
+            if isfinite(amount) and 0 < amount <= view.remaining_base + 1e-7:
+                usable.append(v)
+        opened = usable
+
+    if opened:
+        if scheduled and not warning:
+            warning = ("First eligible in-use vial selected automatically. "
+                       "Confirm the physical vial and actual administration "
+                       "details before recording.")
+        return opened[0].id, warning
+
+    if not scheduled:
+        sealed = sorted(
+            (v for v in vials
+             if v.compound_id == compound_id and v.status == "sealed"
+             and views[v.id].remaining_base > 0),
+            key=lambda v: v.id,
+        )
+        if sealed:
+            return sealed[0].id, ""
+
+    if scheduled and not warning:
+        warning = ("No in-use vial with enough usable inventory was found "
+                   "for this scheduled compound. Choose a vial manually.")
+    return None, warning
+
+
 @router.get("/doses")
 def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, db: Session = Depends(get_db)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
-    selected_vial_id = (
-        vial_id
-        if vial_id is not None
-        and any(v.id == vial_id for v in vials)
-        else None
+    selected_vial_id, calendar_vial_notice = _select_dose_vial(
+        vials, views, compound_id, vial_id, planned_date,
+        planned_amount, planned_unit,
     )
 
     # Historical entries can prefill a NEW record only after explicit selection.
@@ -122,7 +192,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
     return render(request, "doses.html", rows=_rows(db, compound_id), vials=vials, views=views,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
-                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else repeat_amount, planned_unit=planned_unit or repeat_unit, repeat_site=repeat_site, repeat_notice=repeat_notice, selected_compound_id=compound_id, selected_vial_id=selected_vial_id, supplies=manual_supplies.available(db))
+                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else repeat_amount, planned_unit=planned_unit or repeat_unit, repeat_site=repeat_site, repeat_notice=repeat_notice, selected_compound_id=compound_id, selected_vial_id=selected_vial_id, calendar_vial_notice=calendar_vial_notice, supplies=manual_supplies.available(db))
 
 
 @router.post("/doses/preview")
