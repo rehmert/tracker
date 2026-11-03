@@ -61,6 +61,27 @@ class Scan(html.parser.HTMLParser):
             self.images_missing_alt += 1
 
 
+def managed_htmx_source_is_configured():
+    """Recognize only Tracker's explicit pinned HTMX installer."""
+    fetch = ROOT / "scripts" / "fetch_vendor.sh"
+    ignore = ROOT / ".gitignore"
+    template = TEMPLATES / "base.html"
+
+    if not all(p.is_file() for p in (fetch, ignore, template)):
+        return False
+
+    recipe = fetch.read_text(encoding="utf-8")
+    ignored = ignore.read_text(encoding="utf-8")
+    base = template.read_text(encoding="utf-8")
+
+    return all((
+        "htmx.org@2.0.4/dist/htmx.min.js" in recipe,
+        "app/static/vendor/htmx.min.js" in recipe,
+        "app/static/vendor/" in ignored,
+        "/static/vendor/htmx.min.js" in base,
+    ))
+
+
 def run():
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -73,6 +94,16 @@ def run():
         "--strict",
         action="store_true",
         help="Treat warnings as failures"
+    )
+
+    parser.add_argument(
+        "--source-only",
+        action="store_true",
+        help=(
+            "Audit an isolated Git source checkout. "
+            "Validate the configured managed HTMX asset "
+            "without requiring its downloaded bytes."
+        ),
     )
 
     parser.add_argument(
@@ -206,11 +237,26 @@ def run():
                     str(relative)
                 )
 
-                check(
-                    f"Static asset {name}",
-                    (STATIC / name).is_file(),
-                    f"referenced by {relative}"
-                )
+                exists = (STATIC / name).is_file()
+
+                if (
+                    not exists
+                    and args.source_only
+                    and name == "vendor/htmx.min.js"
+                    and managed_htmx_source_is_configured()
+                ):
+                    check(
+                        f"Managed source asset {name}",
+                        True,
+                        "Pinned download recipe verified; "
+                        "runtime asset must be checked on host",
+                    )
+                else:
+                    check(
+                        f"Static asset {name}",
+                        exists,
+                        f"referenced by {relative}",
+                    )
 
     report["stats"].update({
         "templates": len(templates),
