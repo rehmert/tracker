@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import json
 from html import escape
 
@@ -459,9 +459,17 @@ def dose_workspace(
 
     from app.vial_recommendation import rank_vials
 
+    # Evaluate recorded expiration and beyond-use against the planned
+    # administration date, not merely the date this page was opened.
+    # Without planned context the usual current-day guidance still applies.
+    reference_date = (
+        date.fromisoformat(planned_params["planned_date"])
+        if planned_params.get("planned_date") else date.today()
+    )
     recommended_vial_id, vial_date_warnings = rank_vials(
         available_vials,
         vial_guidance,
+        today=reference_date,
     )
 
     # Stage 27: display recorded vial dates.

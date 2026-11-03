@@ -184,3 +184,20 @@ it never logs a dose, chooses a physical vial or consumes inventory.
 What-if protocols, missing start dates, ended plans and schedules without an
 occurrence in the lookahead are labeled explicitly. This is calendar planning
 information only; actual administrations are not reconciled in the index.
+
+## Protocol inventory handoff and planned-date date warnings
+
+The Protocols page now reports a conservative, read-only inventory check beside
+its next visible planned occurrence. It compares each active vial's recorded
+remaining quantity to that event in compatible units and excludes candidates
+with recorded expiration or beyond-use dates reached by the planned day. It
+reports missing stock, insufficient single-vial quantity, unit/concentration
+incompatibility, or recorded date warnings instead of guessing.
+
+When a matching candidate exists, Review suggested vial opens the normal
+/doses form with that vial and the plan's context prefilled; all entry fields
+must still be confirmed and the normal dose write validation remains in place.
+The existing Choose vial link continues to open Dose Workspace. Dose Workspace
+now checks recorded vial dates against the planned date when one is supplied,
+instead of only today. This is not a sterility or clinical judgment, and
+future availability can change. No dosing, inventory or schema writes added.

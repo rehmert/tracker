@@ -9,7 +9,7 @@
 
 <h1>Protocols</h1>
 <p class="note">Protocols can be active schedules or hypothetical what-if plans. Saving a protocol does not record an administration or consume inventory.</p>
-<p class="note">Next planned shows the nearest non-hidden calendar projection within 60 days, not a confirmed or recorded administration. Choose vial opens the existing read-only inventory workspace; nothing is logged until you explicitly submit a dose.</p>
+<p class="note">Next planned shows the nearest non-hidden calendar projection within 60 days, not a confirmed or recorded administration. Inventory checks use recorded quantities, unit conversions and recorded expiration/beyond-use dates as of the planned day. They do not confirm sterility, clinical suitability, or future stock. Choose vial opens the read-only workspace; Review suggested vial preselects one candidate for manual confirmation. Neither action records anything.</p>
 <nav class="ux-shortcuts" aria-label="Protocol workflow"><a href="/calendar">View schedule</a><a href="/doses">Record a dose</a><a href="/pk">Simulate exposure</a></nav>
 
 <div class="tracker-protocol-tools"
@@ -62,6 +62,12 @@
     {% set event = r.schedule.next %}
     <strong>{{ event.date.isoformat() }}</strong>{% if event.time %} · {{ event.time }}{% endif %}
     <span class="note">· {{ event.compound }} · {{ event.amount|num_input }} {{ event.unit }}</span>
+    <div class="note" data-protocol-inventory-state="{{ r.inventory.state }}">
+      <strong>Inventory:</strong> {{ r.inventory.detail }}.
+      {% if r.inventory.suggested_id %}
+      <a href="/doses?compound_id={{ event.compound_id }}&amp;vial_id={{ r.inventory.suggested_id }}&amp;planned_date={{ event.date.isoformat() }}&amp;planned_time={{ event.time|urlencode }}&amp;planned_amount={{ event.amount|num_input }}&amp;planned_unit={{ event.unit|urlencode }}">Review suggested vial {{ r.inventory.suggested_label }}</a>
+      {% endif %}
+    </div>
     <a href="/dose-workspace?compound_id={{ event.compound_id }}&amp;planned_date={{ event.date.isoformat() }}&amp;planned_time={{ event.time|urlencode }}&amp;planned_amount={{ event.amount|num_input }}&amp;planned_unit={{ event.unit|urlencode }}">Choose vial</a>
   {% elif r.schedule.state == 'missing_start' %}
     <a href="/protocols/{{ r.p.id }}">Set a start date</a>
