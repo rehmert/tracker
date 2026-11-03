@@ -2,6 +2,12 @@
 {% block title %}Edit Vital Reading{% endblock %}
 {% block content %}
 
+
+<link rel="stylesheet"
+      href="/static/css/tracker-vitals-entry.css?v=20261103-edit">
+<script defer
+        src="/static/js/tracker-vitals-entry.js?v=20261103-edit"></script>
+
 <h1>Edit Vital Reading</h1>
 
 <p class="note">
@@ -11,7 +17,8 @@
 <section class="card" style="max-width:920px">
   <form method="post"
         action="/vitals/{{ reading.id }}/edit"
-        class="grid">
+        class="grid"
+        data-tracker-vitals-entry="edit">
 
     <input type="hidden" name="days" value="{{ days }}">
     <input type="hidden" name="events" value="{{ events }}">

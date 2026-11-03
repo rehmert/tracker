@@ -4,9 +4,13 @@
 
   function initialize() {
     const form = document.querySelector(
-      'form[action="/vitals"][method="post"]'
+      'form[data-tracker-vitals-entry]'
     );
     if (!form || form.dataset.entryEnhanced) return;
+
+    const mode = form.dataset.trackerVitalsEntry;
+    const editing = mode === 'edit';
+    if (mode !== 'create' && !editing) return;
 
     const get = name => form.elements.namedItem(name);
 
@@ -122,8 +126,11 @@
       }
 
       summary.textContent = values.length
-        ? 'Ready to Record: ' + values.join(' · ')
-        : 'Enter at least one measurement to save.';
+        ? (editing ? 'Updated Reading: ' : 'Ready to Record: ') +
+          values.join(' · ')
+        : (editing
+          ? 'No measurements entered. Saving will clear recorded measurements.'
+          : 'Enter at least one measurement to save.');
 
       return {
         partialBP,
@@ -146,7 +153,7 @@
 
       const state = update();
 
-      if (!state.hasMeasurement) {
+      if (!editing && !state.hasMeasurement) {
         event.preventDefault();
         error.textContent =
           'Enter weight, blood pressure or pulse.';
@@ -166,7 +173,8 @@
 
       submitting = true;
       save.disabled = true;
-      save.textContent = 'Saving…';
+      save.textContent = editing
+        ? 'Saving Changes…' : 'Saving…';
     });
 
     window.addEventListener('pageshow', () => {

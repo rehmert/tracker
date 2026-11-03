@@ -15,7 +15,7 @@
 <link rel="stylesheet"
       href="/static/css/tracker-vitals-entry.css?v=20261103">
 <script defer
-        src="/static/js/tracker-vitals-entry.js?v=20261103"></script>
+        src="/static/js/tracker-vitals-entry.js?v=20261103-edit"></script>
 
 <h1>Vitals</h1>
 <p class="note">Weight, blood pressure and pulse as you record them. This page shows your numbers and simple averages; it doesn't interpret them. Take questions about what a reading means to a clinician.</p>
@@ -27,7 +27,7 @@
 
 <section>
   <h2>Add a reading</h2>
-  <form method="post" action="/vitals" class="grid">
+  <form method="post" action="/vitals" class="grid" data-tracker-vitals-entry="create">
     <label class="field"><span>When</span><input type="datetime-local" name="measured_at" value="{{ now }}"></label>
     <label class="field"><span>Weight</span><input type="number" name="weight" step="any" min="0"></label>
     <label class="field"><span>Weight unit</span><select name="weight_unit"><option {% if unit == 'kg' %}selected{% endif %}>kg</option><option {% if unit == 'lb' %}selected{% endif %}>lb</option></select></label>
