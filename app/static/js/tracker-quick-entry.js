@@ -113,6 +113,37 @@
       }
     });
 
+    actions.forEach(action => {
+      action.addEventListener('keydown', event => {
+        if (![
+          'ArrowDown', 'ArrowUp', 'Home', 'End'
+        ].includes(event.key)) return;
+
+        const visible = actions.filter(
+          item => !item.hidden
+        );
+        const current = visible.indexOf(action);
+        if (current < 0) return;
+
+        let next = current;
+
+        if (event.key === 'ArrowDown') {
+          next = (current + 1) % visible.length;
+        } else if (event.key === 'ArrowUp') {
+          next = (
+            current - 1 + visible.length
+          ) % visible.length;
+        } else if (event.key === 'Home') {
+          next = 0;
+        } else if (event.key === 'End') {
+          next = visible.length - 1;
+        }
+
+        event.preventDefault();
+        visible[next].focus();
+      });
+    });
+
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         category = tab.dataset.quickCategory;
