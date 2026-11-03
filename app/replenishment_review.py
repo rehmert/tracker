@@ -102,6 +102,6 @@ def build_replenishment(db, history_days: int = 90,
 def safe_csv_text(value) -> str:
     """Prevent spreadsheet formula execution in user-controlled text cells."""
     s = str(value if value is not None else "")
-    if s.lstrip().startswith(("=", "+", "-", "@", "\t", "\r", "\n")):
+    if s.startswith(("\t", "\r", "\n")) or s.lstrip().startswith(("=", "+", "-", "@")):
         return "'" + s
     return s
