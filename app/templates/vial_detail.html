@@ -61,6 +61,7 @@
 
 <section>
   <h2>Vial details</h2>
+<p><a href="/reconstitution-calculator?vial_id={{ v.id }}">Open full reconstitution calculator →</a></p>
   <details><summary>Reconstitution calculator (arithmetic only)</summary><div class="grid">
   <label class="field"><span>Vial content ({{ "IU" if v.content_unit == "IU" else "mg" }})</span><input id="rc-content" type="number" step="any" value="{{ v.content_value if v.content_unit in ('mg', 'IU') else (v.content_value / 1000 if v.content_unit == 'mcg' else v.content_value * 1000) }}"></label>
   <label class="field"><span>BAC water added (mL)</span><input id="rc-water" type="number" step="any" min="0"></label>

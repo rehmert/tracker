@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}Reconstitution Calculator{% endblock %}
+{% block content %}
+
+<link rel="stylesheet"
+ href="/static/css/reconstitution-calculator.css?v=20261102a">
+
+<div class="recon" id="recon-calculator">
+
+<div class="recon-header">
+  <div>
+    <h1>Reconstitution calculator</h1>
+    <p class="muted">
+      Single-vial or shared-vial blend arithmetic with
+      live measurement previews. Nothing is saved or deducted.
+    </p>
+  </div>
+  <a href="/blends">Recorded blend workflow</a>
+</div>
+
+{% if initial %}
+<p class="recon-notice">
+  Loaded label values from
+  <a href="/vials/{{ initial.vial_id }}">
+    {{ initial.name }} · {{ initial.label }}
+  </a>.
+  Verify the label, any COA adjustments, and the recorded
+  liquid volume before relying on the arithmetic.
+</p>
+{% endif %}
+
+<div class="recon-switch" role="group" aria-label="Vial type">
+  <button type="button" class="recon-mode active"
+    data-kind="single" aria-pressed="true">
+    Single compound
+  </button>
+  <button type="button" class="recon-mode"
+    data-kind="blend" aria-pressed="false">
+    Premixed blend vial
+  </button>
+</div>
+
+<div class="recon-layout">
+
+<div class="card recon-inputs">
+  <h2>1 · Vial contents</h2>
+  <p class="muted">
+    Enter amounts in the same physical vial.
+    For separately reconstituted source vials, use the
+    <a href="/blends">blend transfer planner</a>.
+  </p>
+
+  <div id="recon-components" class="recon-components"></div>
+  <button type="button" id="recon-add" class="recon-add" hidden>
+    + Add component
+  </button>
+
+  <h2>2 · Calculation</h2>
+
+  <label class="recon-field">
+    What do you want to calculate?
+    <select id="recon-method">
+      <option value="target">
+        Volume for entered target amount
+      </option>
+      <option value="draw">
+        Amounts in a chosen U-100 draw
+      </option>
+      <option value="reverse">
+        Final volume for target draw size
+      </option>
+      <option value="optimize">
+        Minimize theoretical remainder / dilution planner
+      </option>
+    </select>
+  </label>
+
+  <div class="recon-field" id="recon-volume-wrap">
+    <label for="recon-volume">
+      Nominal final liquid volume (mL)
+    </label>
+    <input id="recon-volume" type="number" min="0" step="any"
+      placeholder="e.g. 2" inputmode="decimal">
+  </div>
+
+  <div id="recon-target-wrap">
+    <label class="recon-field">
+      Target basis
+      <select id="recon-basis"></select>
+    </label>
+
+    <div class="recon-inline">
+      <label class="recon-field">
+        Entered target amount
+        <input id="recon-target" type="number" min="0" step="any"
+          placeholder="Enter amount" inputmode="decimal">
+      </label>
+
+      <label class="recon-field">
+        Unit
+        <select id="recon-target-unit">
+          <option>mcg</option>
+          <option>mg</option>
+          <option>g</option>
+          <option>IU</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="recon-field" id="recon-marks-wrap" hidden>
+    <label for="recon-marks">
+      Chosen U-100 markings (100 marks = 1 mL)
+    </label>
+    <input id="recon-marks" type="number" min="0" step="any"
+      placeholder="e.g. 10" inputmode="decimal">
+  </div>
+
+  <div id="recon-optimize-wrap" hidden>
+    <p class="muted">
+      Single dry-vial dilution planning. Enter the vial
+      contents and your target amount above.
+      Options use whole syringe graduation increments.
+      If capacity is blank, a 3 mL planning limit is
+      assumed. Verify actual vial capacity.
+    </p>
+    <div class="recon-inline">
+      <label class="recon-field">
+        Preferred U-100 marks per draw
+        <input id="recon-preferred" type="number"
+          min="0.5" step="0.5" value="10">
+      </label>
+      <label class="recon-field">
+        Actual syringe mark increment
+        <select id="recon-graduation">
+          <option value="0.5">0.5 unit</option>
+          <option value="1" selected>1 unit</option>
+          <option value="2">2 units</option>
+        </select>
+      </label>
+      <label class="recon-field">
+        Final-volume measurement increment
+        <select id="recon-volume-step">
+          <option value="0.01" selected>0.01 mL</option>
+          <option value="0.05">0.05 mL</option>
+          <option value="0.1">0.1 mL</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="recon-inline">
+    <label class="recon-field">
+      Syringe capacity
+      <select id="recon-syringe">
+        <option value="0.3">
+          30-unit / 0.3 mL U-100
+        </option>
+        <option value="0.5">
+          50-unit / 0.5 mL U-100
+        </option>
+        <option value="1" selected>
+          100-unit / 1 mL U-100
+        </option>
+      </select>
+    </label>
+
+    <label class="recon-field">
+      Vial capacity (optional, mL)
+      <input id="recon-capacity" type="number" min="0"
+        step="any" placeholder="Optional" inputmode="decimal">
+    </label>
+  </div>
+</div>
+
+<section class="card recon-output"
+ aria-labelledby="recon-output-heading">
+  <h2 id="recon-output-heading">Calculation preview</h2>
+  <p id="recon-status" role="status" aria-live="polite">
+    Enter the vial information and a target or draw size.
+  </p>
+  <div id="recon-result" aria-live="polite"></div>
+
+  <div class="recon-notice">
+    <strong>Arithmetic only.</strong>
+    The entered liquid volume is treated as the nominal
+    <em>final solution volume</em>; actual powder displacement,
+    solubility, compatibility, sterility, and vial headspace
+    are not modeled. Reverse mode calculates nominal final
+    volume, <strong>not an exact amount of diluent to add</strong>.
+    U-100 markings are volume markings, not IU of medication.
+    Do not use this page to determine an appropriate dose or
+    whether substances should be mixed.
+  </div>
+</section>
+
+</div>
+
+<template id="recon-component-template">
+  <div class="recon-component">
+    <div class="recon-component-top">
+      <strong class="recon-component-title">Component</strong>
+      <button type="button" class="recon-remove"
+        aria-label="Remove component">Remove</button>
+    </div>
+
+    <div class="recon-inline">
+      <label class="recon-field">
+        Compound / label
+        <input data-field="name" type="text" maxlength="120"
+          placeholder="Name (optional)">
+      </label>
+      <label class="recon-field">
+        Vial amount
+        <input data-field="amount" type="number" min="0"
+          step="any" placeholder="Amount" inputmode="decimal">
+      </label>
+      <label class="recon-field">
+        Unit
+        <select data-field="unit">
+          <option>mg</option>
+          <option>mcg</option>
+          <option>g</option>
+          <option>IU</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</template>
+
+<script id="recon-prefill" type="application/json">
+  {{ initial|tojson }}
+</script>
+<script src="/static/js/reconstitution-calculator.js?v=20261102a"
+ defer></script>
+
+</div>
+{% endblock %}

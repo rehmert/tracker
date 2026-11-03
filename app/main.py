@@ -129,3 +129,7 @@ app.include_router(inventory_data_quality.router)
 # Read-only replenishment review
 from .routers import replenishment_review
 app.include_router(replenishment_review.router)
+
+# Read-only unified reconstitution calculator
+from .routers import reconstitution_calculator
+app.include_router(reconstitution_calculator.router)
