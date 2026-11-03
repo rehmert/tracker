@@ -129,11 +129,18 @@
       'span',
       'tracker-triage-count'
     );
+    const breakdown = makeElement(
+      'span',
+      'tracker-triage-breakdown'
+    );
+    breakdown.setAttribute('aria-label', 'Visible alerts by priority');
 
     count.setAttribute('role', 'status');
     count.setAttribute('aria-live', 'polite');
 
-    heading.append(title, count);
+    const headingStatus = makeElement('div', 'tracker-triage-status');
+    headingStatus.append(count, breakdown);
+    heading.append(title, headingStatus);
 
     const controls = makeElement(
       'div',
@@ -185,11 +192,21 @@
 
     reset.type = 'button';
 
+    const exportButton = makeElement(
+      'button',
+      'tracker-triage-export',
+      'Export filtered CSV'
+    );
+    exportButton.id = 'tracker-triage-export';
+    exportButton.type = 'button';
+    exportButton.title = 'Download only alerts visible with the current filters';
+
     controls.append(
       searchLabel,
       priority.label,
       category.label,
-      reset
+      reset,
+      exportButton
     );
 
     toolbar.append(heading, controls);
@@ -251,6 +268,7 @@
       const selectedCategory = category.select.value;
 
       let visible = 0;
+      const priorityCounts = new Map();
 
       records.forEach(record => {
         const matches =
@@ -266,12 +284,23 @@
         // default [hidden] behavior.
         record.row.style.display = matches ? '' : 'none';
 
-        if (matches) visible++;
+        if (matches) {
+          visible++;
+          priorityCounts.set(
+            record.priority,
+            (priorityCounts.get(record.priority) || 0) + 1
+          );
+        }
       });
 
       count.textContent =
         `${visible} of ${records.length} alerts shown`;
+      breakdown.textContent = [...priorityCounts]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([name, amount]) => `${amount} ${name.toLowerCase()}`)
+        .join(' · ') || 'None matching';
 
+      exportButton.disabled = visible === 0;
       empty.hidden = visible !== 0;
       tableContainer.hidden = visible === 0;
 
@@ -283,6 +312,37 @@
       return visible;
     }
 
+    function csvCell(value) {
+      const valueText = String(value ?? '');
+      // Spreadsheet programs can execute formulas embedded in exported text.
+      // Export priority/category/name/reason/date as literal strings.
+      const safe = /^[\s\u0000-\u001f]*[=+\-@]/.test(valueText) ||
+                   /^[\t\r\n]/.test(valueText)
+        ? "'" + valueText : valueText;
+      return '"' + safe.replaceAll('"', '""') + '"';
+    }
+
+    function exportFilteredCsv() {
+      const visible = records.filter(record => !record.row.hidden);
+      if (!visible.length) return;
+      const heading = ['Priority', 'Category', 'Item', 'Reason', 'Relevant date'];
+      const content = [heading, ...visible.map(record =>
+        Array.from(record.row.cells, cell => normalize(cell.textContent))
+      )];
+      const csv = '\uFEFF' + content.map(line => line.map(csvCell).join(','))
+        .join('\r\n') + '\r\n';
+      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'tracker-inventory-alerts-filtered.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    exportButton.addEventListener('click', exportFilteredCsv);
     search.addEventListener('input', applyFilters);
 
     priority.select.addEventListener('change', () => {

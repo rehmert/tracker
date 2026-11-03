@@ -42,6 +42,7 @@
     minmax(180px, 2fr)
     minmax(130px, 1fr)
     minmax(130px, 1fr)
+    auto
     auto;
   align-items: end;
   gap: .65rem;
@@ -114,4 +115,23 @@ table.alert-table tbody tr:hover {
   .tracker-triage-controls {
     grid-template-columns: 1fr;
   }
+}
+
+/* Stage 34.37: visible-priority tally and filtered CSV controls. */
+.tracker-triage-status {
+  display:flex;
+  align-items:flex-end;
+  flex-direction:column;
+  gap:.2rem;
+}
+.tracker-triage-breakdown {
+  color:var(--muted,#667085);
+  font-size:.75rem;
+  font-variant-numeric:tabular-nums;
+}
+.tracker-triage-export { white-space:nowrap; }
+.tracker-triage-export:disabled { opacity:.5; cursor:default; }
+
+@media(max-width:900px) {
+  .tracker-triage-status { align-items:flex-start; }
 }

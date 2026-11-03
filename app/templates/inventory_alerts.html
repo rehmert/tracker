@@ -9,8 +9,8 @@
 
 
 <link rel="stylesheet"
-      href="/static/css/tracker-inventory-alert-triage.css?v=34.35">
-<script src="/static/js/tracker-inventory-alert-triage.js?v=34.35"
+      href="/static/css/tracker-inventory-alert-triage.css?v=20261103-csv">
+<script src="/static/js/tracker-inventory-alert-triage.js?v=20261103-csv"
         defer></script>
 
 <h1>Inventory alerts</h1><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health &amp; forecasts</a><a href="/vials">Vials</a><a href="/supplies">Supplies</a></nav>
@@ -21,6 +21,7 @@
   <button type="submit">Apply</button>
 </form>
 <p role="status">{{ alerts|length }} alert{{ '' if alerts|length==1 else 's' }} within the selected horizon.</p>
+<p class="muted">Review filters and the optional filtered CSV export operate only on the alerts shown on this page. They do not acknowledge, dismiss, or change inventory records.</p>
 <div class="scroll"><table class="alert-table"><thead><tr><th>Priority</th><th>Category</th><th>Item</th><th>Reason</th><th>Relevant date</th></tr></thead><tbody>
 {% for alert in alerts %}<tr><td><span class="alert-{{ alert.level }}">{{ alert.level|title }}</span></td><td>{{ alert.category }}</td><td><a href="{{ alert.href }}">{{ alert.name }}</a></td><td>{{ alert.reason }}</td><td>{{ alert.due or '—' }}</td></tr>
 {% else %}<tr><td colspan="5">No alerts for the selected horizon. Items without usage history may not have depletion estimates.</td></tr>{% endfor %}
