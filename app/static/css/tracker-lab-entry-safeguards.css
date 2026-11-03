@@ -1,0 +1,40 @@
+/* Scoped safeguards for Lab Report creation. */
+
+.tracker-lab-unsaved-indicator {
+  display: inline-block;
+  margin: .2rem 0 .8rem;
+  padding: .3rem .6rem;
+  font-size: .82rem;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+}
+
+.tracker-lab-unsaved-indicator[data-dirty="true"] {
+  color: var(--ink);
+  border-color: var(--amber);
+}
+
+.tracker-lab-duplicate-warning {
+  padding: .6rem .8rem;
+  margin: .7rem 0;
+  border-left: 3px solid var(--amber);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: .86rem;
+}
+
+.tracker-lab-duplicate-warning[hidden] {
+  display: none !important;
+}
+
+#lab-rows tr[data-lab-duplicate="true"] {
+  box-shadow: inset 3px 0 var(--amber);
+}
+
+@media print {
+  .tracker-lab-unsaved-indicator,
+  .tracker-lab-duplicate-warning {
+    display: none !important;
+  }
+}
