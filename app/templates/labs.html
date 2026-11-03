@@ -1,16 +1,56 @@
 {% extends "base.html" %}
 {% block title %}Lab results{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-labs-overview.css?v=20261103">
+<script src="/static/js/tracker-labs-overview.js?v=20261103" defer></script>
 <h1>Lab results</h1>
 <p class="note">Enter results exactly as printed on your report, including the unit and the lab's own reference range if it shows one. The charts show your numbers over time with that printed range shaded. This page doesn't tell you what a result means.</p>
 <p class="row"><a class="btn primary" href="/labs/new">Add a lab report</a> <a class="btn" href="/labs/compare">Compare two reports</a></p>
 
 {% if cards %}
-<section>
+<section id="lab-trends-section">
   <h2>Trends by analyte</h2>
-  <div class="labgrid">
+  <p class="note">Reference-range filters describe only the latest recorded value relative to that report's printed range. They are not clinical interpretations.</p>
+  <div class="labs-overview-counts" aria-label="Latest results by printed reference range">
+    <div><strong>{{ cards|length }}</strong><span>Analytes</span></div>
+    <div><strong>{{ cards|selectattr('status','equalto','above')|list|length }}</strong><span>Above</span></div>
+    <div><strong>{{ cards|selectattr('status','equalto','below')|list|length }}</strong><span>Below</span></div>
+    <div><strong>{{ cards|selectattr('status','equalto','within')|list|length }}</strong><span>Within</span></div>
+    <div><strong>{{ cards|rejectattr('status')|list|length }}</strong><span>No printed range</span></div>
+  </div>
+  <div class="labs-overview-controls" id="labs-trend-controls">
+    <label class="field" for="labs-analyte-search"><span>Find analyte</span>
+      <input type="search" id="labs-analyte-search" placeholder="Search analyte names…" autocomplete="off" aria-controls="labs-trend-grid">
+    </label>
+    <label class="field" for="labs-range-filter"><span>Latest result</span>
+      <select id="labs-range-filter" aria-controls="labs-trend-grid">
+        <option value="all">All analytes</option>
+        <option value="outside">Outside printed range</option>
+        <option value="above">Above printed range</option>
+        <option value="below">Below printed range</option>
+        <option value="within">Within printed range</option>
+        <option value="unknown">No printed range</option>
+      </select>
+    </label>
+    <label class="field" for="labs-trend-sort"><span>Sort</span>
+      <select id="labs-trend-sort" aria-controls="labs-trend-grid">
+        <option value="recent">Latest draw first</option>
+        <option value="name-asc">Name A–Z</option>
+        <option value="name-desc">Name Z–A</option>
+        <option value="results-desc">Most measurements</option>
+      </select>
+    </label>
+    <button type="button" id="labs-trend-clear">Reset filters</button>
+  </div>
+  <p id="labs-trend-count" role="status" aria-live="polite">Showing {{ cards|length }} of {{ cards|length }} analytes.</p>
+  <p class="note" id="labs-trend-empty" hidden>No analytes match the current filters.</p>
+  <div class="labgrid" id="labs-trend-grid">
     {% for c in cards %}
-    <article class="labcard">
+    <article class="labcard" data-labs-trend-card
+             data-lab-name="{{ c.name }}"
+             data-lab-status="{{ c.status or 'unknown' }}"
+             data-lab-date="{{ c.rep.drawn_on.isoformat() }}"
+             data-lab-results="{{ c.n }}">
       <h3><a href="/labs/trends/{{ c.key|urlencode }}">{{ c.name }}</a></h3>
       <p class="latest"><strong>{{ c.res.value|num }} {{ c.res.unit }}</strong>
         <small>{{ c.rep.drawn_on|dt }}{% if c.res.ref_low is not none %} · printed range {{ c.res.ref_low|num }} to {{ c.res.ref_high|num }}{% if c.status %} · {{ c.status }} that range{% endif %}{% endif %}</small></p>
@@ -22,13 +62,21 @@
 </section>
 {% endif %}
 
-<section>
+<section id="labs-reports-section">
   <h2>Reports</h2>
-  <div class="scroll"><table>
+  <div class="labs-reports-controls">
+    <label class="field" for="labs-report-search"><span>Find report by date or lab</span>
+      <input id="labs-report-search" type="search" placeholder="Search saved reports…" autocomplete="off" aria-controls="labs-reports-table">
+    </label>
+    <button type="button" id="labs-reports-clear">Clear report search</button>
+    <span id="labs-reports-count" role="status" aria-live="polite">Showing {{ reports|length }} of {{ reports|length }} reports.</span>
+  </div>
+  <p id="labs-reports-empty" class="note" hidden>No reports match that search.</p>
+  <div class="scroll"><table id="labs-reports-table">
     <thead><tr><th>Drawn</th><th>Lab</th><th class="n">Results</th><th>File</th></tr></thead>
     <tbody>
     {% for r in reports %}
-    <tr><td><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td><td>{{ r.lab_name or '—' }}</td><td class="n">{{ r.results|length }}</td><td>{{ 'yes' if r.stored_name else '—' }}</td></tr>
+    <tr data-labs-report-row data-lab-report-date="{{ r.drawn_on.isoformat() }}" data-lab-report-name="{{ r.lab_name }}"><td><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td><td>{{ r.lab_name or '—' }}</td><td class="n">{{ r.results|length }}</td><td>{{ 'yes' if r.stored_name else '—' }}</td></tr>
     {% else %}<tr><td colspan="4" class="empty">No lab reports yet.</td></tr>{% endfor %}
     </tbody>
   </table></div>
