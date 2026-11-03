@@ -1,0 +1,134 @@
+/* Quick Entry: scoped daily workflow navigation. */
+
+.tracker-quick-entry {
+  max-width: 1050px;
+}
+
+.tracker-quick-entry-header .note {
+  max-width: 74ch;
+}
+
+.tracker-quick-entry-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .65rem;
+  padding: .8rem;
+  margin: 1rem 0 .7rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.tracker-quick-entry-toolbar label {
+  flex: 1 1 280px;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+.tracker-quick-entry-toolbar input {
+  width: 100%;
+  min-width: 0;
+  padding: .6rem;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.tracker-quick-entry-toolbar button,
+.tracker-quick-entry-tabs button {
+  padding: .5rem .75rem;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.tracker-quick-entry-hint {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: .8rem;
+}
+
+.tracker-quick-entry-tabs {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-bottom: .8rem;
+}
+
+.tracker-quick-entry-tabs button[aria-pressed="true"] {
+  background: var(--wash);
+  border-color: var(--teal);
+  font-weight: 650;
+}
+
+.tracker-quick-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit, minmax(min(100%, 235px), 1fr)
+  );
+  gap: .75rem;
+}
+
+.tracker-quick-entry-card {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  min-height: 145px;
+  padding: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.tracker-quick-entry-card:hover {
+  border-color: var(--teal);
+  background: var(--wash);
+}
+
+.tracker-quick-entry-card strong {
+  font-size: 1rem;
+}
+
+.tracker-quick-entry-card span {
+  color: var(--muted);
+  font-size: .86rem;
+  line-height: 1.45;
+}
+
+.tracker-quick-entry-card small {
+  margin-top: auto;
+  font-size: .76rem;
+}
+
+.tracker-quick-entry-card[hidden],
+.tracker-quick-entry [hidden] {
+  display: none !important;
+}
+
+.tracker-quick-entry-footnote {
+  margin-top: 1.2rem;
+}
+
+@media (max-width: 600px) {
+  .tracker-quick-entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-quick-entry-card {
+    min-height: 105px;
+  }
+}
+
+@media print {
+  .tracker-quick-entry-toolbar,
+  .tracker-quick-entry-tabs {
+    display: none !important;
+  }
+}

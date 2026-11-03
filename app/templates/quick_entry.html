@@ -1,1 +1,173 @@
-{% extends "base.html" %}{% block title %}Quick entry{% endblock %}{% block content %}<h1>Quick entry</h1><p class="note">Choose a record type. Scheduled administrations are not recorded until you explicitly save an actual entry.</p><div class="quick-actions"><a class="quick-tile" href="/doses">Record dose</a><a class="quick-tile" href="/vitals">Record vitals</a><a class="quick-tile" href="/supplies">Record supply usage</a><a class="quick-tile" href="/vials">Record vial preparation</a></div>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Quick entry{% endblock %}
+{% block content %}
+
+<link rel="stylesheet"
+      href="/static/css/tracker-quick-entry.css?v=20261103">
+<script defer
+        src="/static/js/tracker-quick-entry.js?v=20261103"></script>
+
+<div class="tracker-quick-entry" data-quick-entry>
+  <header class="tracker-quick-entry-header">
+    <h1>Quick Entry</h1>
+    <p class="note">
+      Choose what you want to record or review.
+      Scheduled administrations are not recorded until
+      you explicitly save an actual entry.
+    </p>
+  </header>
+
+  <div class="tracker-quick-entry-toolbar"
+       role="search"
+       aria-label="Find a Tracker action">
+    <label>
+      <span>Find an Action</span>
+      <input type="search"
+             data-quick-search
+             autocomplete="off"
+             placeholder="Dose, vitals, supplies, labs…"
+             aria-controls="tracker-quick-actions">
+    </label>
+    <button type="button"
+            data-quick-reset>Clear</button>
+    <p class="note tracker-quick-entry-hint">
+      Tip: Press / to search when you are not typing.
+    </p>
+  </div>
+
+  <div class="tracker-quick-entry-tabs"
+       role="group"
+       aria-label="Action category">
+    <button type="button"
+            data-quick-category="all"
+            aria-pressed="true">All Actions</button>
+    <button type="button"
+            data-quick-category="record"
+            aria-pressed="false">Record</button>
+    <button type="button"
+            data-quick-category="review"
+            aria-pressed="false">Review &amp; Plan</button>
+  </div>
+
+  <p data-quick-count
+     class="note"
+     role="status"
+     aria-live="polite"></p>
+
+  <div id="tracker-quick-actions"
+       class="tracker-quick-entry-grid">
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="dose injection administration log"
+       href="/doses">
+      <strong>Record dose</strong>
+      <span>Log an actual administration with vial and amount details.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="vitals weight blood pressure pulse"
+       href="/vitals">
+      <strong>Record vitals</strong>
+      <span>Enter weight, blood pressure, or pulse.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="supplies pill syringe needle inventory consumption"
+       href="/supplies">
+      <strong>Record supply usage</strong>
+      <span>Review remaining supplies and record what was used.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="vial preparation reconstitution bac water"
+       href="/vials">
+      <strong>Record vial preparation</strong>
+      <span>Review vials and open the preparation workflow.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="lab results analytes bloodwork test"
+       href="/labs">
+      <strong>Record lab results</strong>
+      <span>Open laboratory records and results entry.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="purchases orders vendor price inventory"
+       href="/purchases">
+      <strong>Record a purchase</strong>
+      <span>Create an order, then add purchased inventory.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="notes journal pages reference"
+       href="/pages">
+      <strong>Record a note</strong>
+      <span>Open your notes and reference entries.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="review"
+       data-quick-keywords="calendar planned scheduled upcoming"
+       href="/calendar">
+      <strong>Review calendar</strong>
+      <span>Check planned entries; scheduling alone records nothing.</span>
+      <small>Review &amp; Plan</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="review"
+       data-quick-keywords="dose workspace available vials planning"
+       href="/dose-workspace">
+      <strong>Review dose workspace</strong>
+      <span>Check vial availability and recording context.</span>
+      <small>Review &amp; Plan</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="review"
+       data-quick-keywords="consumption supplies history usage"
+       href="/consumption">
+      <strong>Review consumption</strong>
+      <span>See previously recorded supply consumption.</span>
+      <small>Review &amp; Plan</small>
+    </a>
+
+  </div>
+
+  <p data-quick-empty class="note" hidden>
+    No actions match your search. Clear the search or
+    choose another category.
+  </p>
+
+  <p class="note tracker-quick-entry-footnote">
+    Opening an action does not itself create a record.
+    Entries are saved only through their respective workflows.
+  </p>
+</div>
+
+{% endblock %}
