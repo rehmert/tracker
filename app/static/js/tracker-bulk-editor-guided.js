@@ -9,6 +9,8 @@
     const reset = document.getElementById("bulk-edits-reset");
     const apply = document.getElementById("bulk-apply");
     const validation = document.getElementById("bulk-edit-validation");
+    const impact = document.getElementById("bulk-edit-impact");
+    const editsOnly = document.getElementById("bulk-show-edited-only");
     if (!form || !fields.length || !count || !detail || !reset) return;
 
     function current() {
@@ -21,20 +23,34 @@
       });
     }
 
+    function clearField(item) {
+      item.mode.value = "keep";
+      if (item.input?.tagName === "INPUT") item.input.value = "";
+      item.mode.dispatchEvent(new Event("change", {bubbles:true}));
+    }
+
     function refresh() {
       const items = current();
-      const active = items.filter(item => item.mode.value !== "keep");
+      const active = items.filter(item => item.mode?.value !== "keep");
       for (const item of items) {
-        item.field.classList.toggle(
-          "bulk-edit-active", item.mode.value !== "keep"
-        );
+        const changed = item.mode?.value !== "keep";
+        item.field.classList.toggle("bulk-edit-active", changed);
+        const undo = item.field.querySelector(".bulk-edit-undo");
+        if (undo) {
+          undo.hidden = !changed;
+          undo.disabled = !changed;
+        }
       }
       count.textContent = active.length
         ? active.length + (active.length === 1 ? " field to update" : " fields to update")
         : "No changes requested yet";
       detail.textContent = active.length
-        ? active.map(item => item.label + ": " +
-            (item.mode.value === "clear" ? "Clear" : "Set")).join(" · ")
+        ? active.map(item => {
+            if (item.mode.value === "clear") return item.label + ": Clear";
+            const value = String(item.input?.value ?? "").trim();
+            const preview = value.length > 48 ? value.slice(0, 48) + "…" : value;
+            return item.label + ": Set → " + (preview || "(value required)");
+          }).join(" · ")
         : "Enter a new value or explicitly choose Set or Clear.";
       reset.disabled = active.length === 0;
       const invalid = active.filter(item =>
@@ -52,6 +68,20 @@
       }
       const selected = Number(document.getElementById("bulk-toolbar-count")?.textContent || "0");
       if (apply) apply.disabled = selected < 1 || !active.length || invalid.length > 0;
+      if (impact) {
+        const cells = selected * active.length;
+        impact.textContent = selected + " selected vial" + (selected === 1 ? "" : "s") +
+          " × " + active.length + " requested field" + (active.length === 1 ? "" : "s") +
+          " = up to " + cells.toLocaleString() +
+          " field values to review. Actual changes are checked in server preview.";
+      }
+      if (editsOnly) {
+        editsOnly.disabled = active.length === 0;
+        if (!active.length) editsOnly.checked = false;
+        for (const item of items) {
+          item.field.hidden = editsOnly.checked && item.mode.value === "keep";
+        }
+      }
 
       for (const group of form.querySelectorAll(".bulk-edit-group")) {
         const n = group.querySelectorAll(".bulk-edit-active").length;
@@ -61,8 +91,22 @@
     }
 
     for (const item of current()) {
-      const {mode, input} = item;
+      const {mode, input, field, label} = item;
       if (!mode || !input) continue;
+      const undo = document.createElement("button");
+      undo.type = "button";
+      undo.className = "bulk-edit-undo";
+      undo.textContent = "Undo this field";
+      undo.setAttribute("aria-label", "Undo requested change to " + label);
+      undo.hidden = true;
+      undo.disabled = true;
+      undo.addEventListener("click", event => {
+        event.preventDefault();
+        clearField(item);
+        refresh();
+        mode.focus({preventScroll:true});
+      });
+      field.appendChild(undo);
       // The older V2 handler controls disabled state. Its unchanged fields
       // remain enabled so editing can opt in without selecting Set first.
       input.addEventListener("input", () => {
@@ -81,6 +125,8 @@
       });
       mode.addEventListener("change", refresh);
     }
+
+    editsOnly?.addEventListener("change", refresh);
 
     for (const group of form.querySelectorAll(".bulk-edit-group")) {
       const summary = group.querySelector("summary");
@@ -105,6 +151,10 @@
     for (const button of form.querySelectorAll("[data-bulk-focus-field]")) {
       button.addEventListener("click", () => {
         const key = button.dataset.bulkFocusField;
+        if (editsOnly?.checked) {
+          editsOnly.checked = false;
+          refresh();
+        }
         const target = fields.find(field => field.dataset.bulkField === key);
         if (!target) return;
         const group = target.closest(".bulk-edit-group");
@@ -122,11 +172,7 @@
     document.addEventListener("tracker:bulk-selection-changed", refresh);
 
     reset.addEventListener("click", () => {
-      for (const item of current()) {
-        item.mode.value = "keep";
-        if (item.input.tagName === "INPUT") item.input.value = "";
-        item.mode.dispatchEvent(new Event("change", {bubbles:true}));
-      }
+      for (const item of current()) clearField(item);
       const snapshot = document.getElementById("bulk-preview-snapshot");
       if (snapshot) snapshot.value = "";
       refresh();

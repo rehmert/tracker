@@ -58,6 +58,10 @@ def editor_html():
             <button type="button" data-bulk-focus-field="expires_on">Expiration</button>
             <button type="button" id="bulk-back-to-vials">Back to vials</button>
           </div>
+          <div class="bulk-edit-review-tools">
+            <p id="bulk-edit-impact"></p>
+            <label><input id="bulk-show-edited-only" type="checkbox" disabled> Show only fields being updated</label>
+          </div>
           <div id="bulk-edit-field-groups">
             <details class="bulk-edit-group" open><summary>Identification</summary>
               <label class="field bulk-edit-field" data-bulk-field="lot">
@@ -517,3 +521,69 @@ def test_main_page_has_one_clear_all_button_and_inline_guidance():
     assert 'id="bulk-select-none"' in source
     assert 'id="bulk-edit-validation"' in source
     assert "!document.getElementById('bulk-select-none')" in selection
+
+
+def test_bulk_edit_reviewer_shows_real_proposed_values_and_impact(page):
+    tab, errors = page
+    tab.locator('.bulk-vial-check[value="1"]').check()
+    tab.locator('.bulk-vial-check[value="2"]').check()
+    tab.locator("#bulk-open-editor").click()
+    assert "2 selected vials × 0 requested fields = up to 0" in (
+        tab.locator("#bulk-edit-impact").inner_text()
+    )
+    assert tab.locator("#bulk-show-edited-only").is_disabled()
+
+    tab.locator('[name="value_lot"]').fill("LOT-2026-NEW")
+    assert "Lot: Set → LOT-2026-NEW" in tab.locator("#bulk-edits-details").inner_text()
+    assert "2 selected vials × 1 requested field = up to 2" in (
+        tab.locator("#bulk-edit-impact").inner_text()
+    )
+    assert tab.locator("#bulk-show-edited-only").is_enabled()
+    assert tab.locator("#bulk-apply").is_enabled()
+    assert not errors, errors
+
+
+def test_bulk_edit_reviewer_hide_keep_fields_and_individual_undo(page):
+    tab, errors = page
+    tab.locator('.bulk-vial-check[value="1"]').check()
+    tab.locator("#bulk-open-editor").click()
+
+    tab.locator('[name="value_lot"]').fill("LOT-A")
+    tab.locator("#bulk-show-edited-only").check()
+    assert tab.locator('[data-bulk-field="lot"]').is_visible()
+    assert tab.locator('[data-bulk-field="status"]').is_hidden()
+    assert tab.locator('[data-bulk-field="expires_on"]').is_hidden()
+
+    # Quick edit must expose an inactive field without opting it in.
+    tab.locator('[data-bulk-focus-field="status"]').click()
+    assert not tab.locator("#bulk-show-edited-only").is_checked()
+    assert tab.locator('[data-bulk-field="status"]').is_visible()
+    assert tab.locator('[name="mode_status"]').input_value() == "keep"
+
+    tab.locator('[data-bulk-field="lot"] .bulk-edit-undo').click()
+    assert tab.locator('[name="mode_lot"]').input_value() == "keep"
+    assert tab.locator('[name="value_lot"]').input_value() == ""
+    assert tab.locator("#bulk-show-edited-only").is_disabled()
+    assert tab.locator("#bulk-apply").is_disabled()
+    assert not errors, errors
+
+
+def test_bulk_edit_status_and_clear_values_remain_safe(page):
+    tab, errors = page
+    tab.locator('.bulk-vial-check[value="2"]').check()
+    tab.locator("#bulk-open-editor").click()
+    tab.locator('[name="value_status"]').select_option("in_use")
+    assert tab.locator('[name="mode_status"]').input_value() == "set"
+    assert "Status: Set → in_use" in tab.locator("#bulk-edits-details").inner_text()
+
+    tab.locator('[name="mode_lot"]').select_option("clear")
+    assert "Lot: Clear" in tab.locator("#bulk-edits-details").inner_text()
+    assert "1 selected vial × 2 requested fields = up to 2" in (
+        tab.locator("#bulk-edit-impact").inner_text()
+    )
+
+    tab.locator("#bulk-edits-reset").click()
+    assert tab.locator('[name="mode_status"]').input_value() == "keep"
+    assert tab.locator('[name="mode_lot"]').input_value() == "keep"
+    assert tab.locator("#bulk-apply").is_disabled()
+    assert not errors, errors

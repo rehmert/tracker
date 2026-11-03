@@ -109,3 +109,19 @@
 #bulk-selection-toolbar #bulk-undo-selection:disabled {
   opacity:.5;
 }
+
+/* Review requested edits before opening the existing server-side preview. */
+#bulk-editor-panel .bulk-edit-review-tools {
+  display:flex; gap:.5rem 1rem; align-items:center; flex-wrap:wrap;
+  margin:.6rem 0 .85rem; padding:.55rem .7rem;
+  background:var(--wash,transparent); border-radius:.6rem;
+}
+#bulk-editor-panel #bulk-edit-impact { flex:1 1 18rem; margin:0; overflow-wrap:anywhere; }
+#bulk-editor-panel .bulk-edit-review-tools .check { margin:0; font-size:.84rem; }
+#bulk-editor-panel .bulk-edit-undo {
+  width:auto; max-width:100%; margin:.4rem 0 0; padding:.28rem .48rem;
+  font-size:.78rem; text-align:left;
+}
+#bulk-editor-panel .bulk-edit-undo[hidden],
+#bulk-editor-panel .bulk-edit-field[hidden] { display:none!important; }
+#bulk-editor-panel #bulk-edits-details { white-space:normal; line-height:1.5; }
