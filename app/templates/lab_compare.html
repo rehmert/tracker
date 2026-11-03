@@ -1,15 +1,127 @@
 {% extends "base.html" %}
 {% block title %}Compare lab reports{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-lab-compare-review.css?v=20261103">
+<script defer src="/static/js/tracker-lab-compare-review.js?v=20261103"></script>
+
 <h1>Compare lab reports</h1>
-<p class="note">Compares matching analytes and converts units only when Tracker has a known conversion. Differences are arithmetic, not clinical interpretation.</p>
-<form method="get" class="grid">
-<label class="field"><span>Report A</span><select name="first_id">{% for r in reports %}<option value="{{ r.id }}" {% if left and left.id == r.id %}selected{% endif %}>{{ r.drawn_on }} · {{ r.lab_name or ('Report #' ~ r.id) }}</option>{% endfor %}</select></label>
-<label class="field"><span>Report B</span><select name="second_id">{% for r in reports %}<option value="{{ r.id }}" {% if right and right.id == r.id %}selected{% endif %}>{{ r.drawn_on }} · {{ r.lab_name or ('Report #' ~ r.id) }}</option>{% endfor %}</select></label>
-<button type="submit">Compare</button>
+<p class="note">Compare the values recorded in two reports. Difference means Report A minus Report B after a known unit conversion, when available. A and B are your selections, not necessarily newest and oldest. Numeric differences are not clinical interpretations.</p>
+
+<form method="get" action="/labs/compare" class="lab-compare-picker">
+  <label class="field"><span>Report A</span>
+    <select name="first_id">{% for r in reports %}
+      <option value="{{ r.id }}" {% if left and left.id == r.id %}selected{% endif %}>{{ r.drawn_on }} · {{ r.lab_name or ('Report #' ~ r.id) }}</option>
+    {% endfor %}</select>
+  </label>
+  <label class="field"><span>Report B</span>
+    <select name="second_id">{% for r in reports %}
+      <option value="{{ r.id }}" {% if right and right.id == r.id %}selected{% endif %}>{{ r.drawn_on }} · {{ r.lab_name or ('Report #' ~ r.id) }}</option>
+    {% endfor %}</select>
+  </label>
+  <button type="submit" class="primary">Compare</button>
 </form>
-{% if left and right %}<div class="scroll"><table><thead><tr><th>Analyte</th><th>Report A</th><th>Report B</th><th>Change A − B</th></tr></thead><tbody>
-{% for r in rows %}<tr><td>{{ r.name }}</td><td>{% if r.newer %}{{ r.newer.value|num }} {{ r.newer.unit }}{% else %}—{% endif %}</td><td>{% if r.older %}{{ r.older.value|num }} {{ r.older.unit }}{% else %}—{% endif %}</td><td>{% if r.comparable %}{{ r.delta|signed_decimal }} {{ r.newer.unit }}{% else %}—{% endif %}</td></tr>{% endfor %}
-</tbody></table></div>{% else %}<p>At least two lab reports are needed.</p>{% endif %}
+
+{% if left and right %}
+<section id="lab-compare-results"
+         data-report-a-date="{{ left.drawn_on.isoformat() }}"
+         data-report-b-date="{{ right.drawn_on.isoformat() }}"
+         aria-label="Selected lab report comparison">
+  <div class="lab-compare-context">
+    <div><strong>Report A · {{ left.drawn_on }}</strong><span>{{ left.lab_name or ('Report #' ~ left.id) }}</span><a href="/labs/{{ left.id }}">Open Report A</a></div>
+    <div><strong>Report B · {{ right.drawn_on }}</strong><span>{{ right.lab_name or ('Report #' ~ right.id) }}</span><a href="/labs/{{ right.id }}">Open Report B</a></div>
+    <a class="btn" href="/labs/compare?first_id={{ right.id }}&amp;second_id={{ left.id }}">Swap A and B</a>
+  </div>
+
+  {% if left.id == right.id %}
+  <p role="status" class="note lab-compare-warning">The same report is selected for A and B. Choose different reports to compare separate draws.</p>
+  {% endif %}
+
+  {% set counts = namespace(comparable=0, incompatible=0, only_a=0, only_b=0) %}
+  {% for r in rows %}
+    {% if r.comparable %}{% set counts.comparable = counts.comparable + 1 %}
+    {% elif r.newer and r.older %}{% set counts.incompatible = counts.incompatible + 1 %}
+    {% elif r.newer %}{% set counts.only_a = counts.only_a + 1 %}
+    {% else %}{% set counts.only_b = counts.only_b + 1 %}{% endif %}
+  {% endfor %}
+  <div class="lab-compare-overview" aria-label="Comparison coverage summary">
+    <div><strong>{{ rows|length }}</strong><span>Analytes across both reports</span></div>
+    <div><strong>{{ counts.comparable }}</strong><span>Comparable</span></div>
+    <div><strong>{{ counts.incompatible }}</strong><span>Incompatible units</span></div>
+    <div><strong>{{ counts.only_a + counts.only_b }}</strong><span>Missing from one report</span></div>
+  </div>
+
+  <div class="lab-compare-toolbar" id="lab-compare-toolbar">
+    <label class="field"><span>Find analyte</span>
+      <input id="lab-compare-search" type="search" placeholder="Search test names…" autocomplete="off" aria-controls="lab-compare-table">
+    </label>
+    <label class="field"><span>Show</span>
+      <select id="lab-compare-filter" aria-controls="lab-compare-table">
+        <option value="all">All analytes</option>
+        <option value="comparable">Comparable values</option>
+        <option value="different">Nonzero numeric difference</option>
+        <option value="same">Zero numeric difference</option>
+        <option value="needs-review">Missing or incompatible</option>
+        <option value="incompatible">Incompatible units</option>
+        <option value="only-a">Only in Report A</option>
+        <option value="only-b">Only in Report B</option>
+      </select>
+    </label>
+    <label class="field"><span>Sort</span>
+      <select id="lab-compare-sort" aria-controls="lab-compare-table">
+        <option value="name-asc">Analyte A–Z</option>
+        <option value="name-desc">Analyte Z–A</option>
+        <option value="review-first">Missing or incompatible first</option>
+      </select>
+    </label>
+    <button id="lab-compare-reset" type="button">Reset</button>
+    <button id="lab-compare-export" type="button">Export filtered CSV</button>
+  </div>
+  <p id="lab-compare-count" role="status" aria-live="polite">Showing {{ rows|length }} of {{ rows|length }} analytes.</p>
+  <p id="lab-compare-empty" class="note" hidden>No analytes match these filters.</p>
+
+  <div class="scroll">
+    <table id="lab-compare-table">
+      <thead><tr>
+        <th>Analyte</th><th>Report A</th><th>Report B</th>
+        <th>Report B in A units</th><th>Difference A − B</th><th>Comparison</th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+      {% if not r.newer %}{% set state = 'only-b' %}
+      {% elif not r.older %}{% set state = 'only-a' %}
+      {% elif not r.comparable %}{% set state = 'incompatible' %}
+      {% elif r.delta == 0 %}{% set state = 'same' %}
+      {% else %}{% set state = 'different' %}{% endif %}
+      <tr data-lab-compare-row
+          data-analyte="{{ r.name }}"
+          data-state="{{ state }}"
+          data-a-value="{{ r.newer.value if r.newer else '' }}"
+          data-a-unit="{{ r.newer.unit if r.newer else '' }}"
+          data-b-value="{{ r.older.value if r.older else '' }}"
+          data-b-unit="{{ r.older.unit if r.older else '' }}"
+          data-b-converted="{{ r.converted if r.comparable else '' }}"
+          data-delta="{{ r.delta if r.comparable else '' }}">
+        <td>{{ r.name }}</td>
+        <td>{% if r.newer %}{{ r.newer.value|num }} {{ r.newer.unit }}{% else %}—{% endif %}</td>
+        <td>{% if r.older %}{{ r.older.value|num }} {{ r.older.unit }}{% else %}—{% endif %}</td>
+        <td>{% if r.comparable and r.newer.unit != r.older.unit %}{{ r.converted|num }} {{ r.newer.unit }}{% else %}—{% endif %}</td>
+        <td>{% if r.comparable %}{{ r.delta|signed_decimal }} {{ r.newer.unit }}{% else %}—{% endif %}</td>
+        <td>
+          {% if state == 'same' %}Zero difference
+          {% elif state == 'different' %}Nonzero difference
+          {% elif state == 'incompatible' %}Units not convertible
+          {% elif state == 'only-a' %}Only Report A
+          {% else %}Only Report B{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Values are shown as recorded. If the units differ, B is converted into A's unit only when Tracker supports that conversion. The CSV contains unrounded recorded values and the selected reports' dates. Filters and exports do not modify stored lab results.</p>
+</section>
+{% else %}
+<p>At least two lab reports are needed. <a href="/labs/new">Add a lab report</a> to begin comparing draws.</p>
+{% endif %}
 <p><a href="/labs">← Lab results</a></p>
 {% endblock %}

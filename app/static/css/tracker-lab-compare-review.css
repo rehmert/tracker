@@ -1,0 +1,105 @@
+/* Lab report comparison: scoped, read-only table review controls. */
+.lab-compare-picker {
+  display:flex;
+  align-items:end;
+  gap:.65rem 1rem;
+  flex-wrap:wrap;
+  margin:.9rem 0 1rem;
+}
+.lab-compare-picker .field {
+  flex:1 1 14rem;
+  min-width:0;
+}
+.lab-compare-picker select {
+  width:100%;
+}
+.lab-compare-context {
+  display:flex;
+  align-items:center;
+  gap:.65rem 1rem;
+  flex-wrap:wrap;
+  margin:.8rem 0;
+}
+.lab-compare-context > div {
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  flex:1 1 16rem;
+  gap:.25rem;
+  padding:.7rem .85rem;
+  border:1px solid var(--rule,#dce5ec);
+  border-radius:.7rem;
+  background:var(--wash,transparent);
+}
+.lab-compare-context > div > span {
+  color:var(--muted,#667);
+  overflow-wrap:anywhere;
+}
+.lab-compare-context > .btn {flex:0 0 auto;}
+.lab-compare-warning {
+  border-left:3px solid var(--amber,#b98321);
+  padding:.6rem .8rem;
+  background:var(--wash,transparent);
+}
+.lab-compare-overview {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:.6rem;
+  margin:.75rem 0 1rem;
+}
+.lab-compare-overview > div {
+  min-width:0;
+  padding:.65rem .8rem;
+  border:1px solid var(--rule,#dce5ec);
+  border-radius:.65rem;
+}
+.lab-compare-overview strong {
+  display:block;
+  font-size:1.3rem;
+  font-variant-numeric:tabular-nums;
+}
+.lab-compare-overview span {
+  display:block;
+  color:var(--muted,#667);
+  font-size:.8rem;
+}
+.lab-compare-toolbar {
+  display:flex;
+  align-items:end;
+  gap:.6rem 1rem;
+  flex-wrap:wrap;
+  margin:1rem 0 .5rem;
+}
+.lab-compare-toolbar .field {
+  flex:1 1 11rem;
+  min-width:0;
+}
+.lab-compare-toolbar .field:first-child {flex:2 1 14rem;}
+.lab-compare-toolbar input,.lab-compare-toolbar select {
+  box-sizing:border-box;
+  width:100%;
+}
+#lab-compare-count {
+  font-size:.88rem;
+  color:var(--muted,#667);
+  margin:.65rem 0;
+}
+#lab-compare-table [data-lab-compare-row][hidden] {
+  display:none!important;
+}
+#lab-compare-table td {
+  vertical-align:top;
+  overflow-wrap:anywhere;
+}
+#lab-compare-table th:nth-child(5),
+#lab-compare-table td:nth-child(5) {
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:740px){
+  .lab-compare-overview {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:500px){
+  .lab-compare-toolbar .field {flex-basis:100%;}
+}
