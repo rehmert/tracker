@@ -1,0 +1,81 @@
+/* Supplies inventory stock health presentation. */
+
+.tracker-stock-health {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .7rem;
+  margin: .75rem 0 1rem;
+}
+
+.tracker-stock-health > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--rule, #ddd);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.tracker-stock-health strong {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  color: var(--ink, inherit);
+}
+
+.tracker-stock-health span {
+  font-size: .82rem;
+  color: var(--muted, #666);
+}
+
+.tracker-stock-status {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--rule, #ccc);
+  border-radius: 999px;
+  padding: .2rem .55rem;
+  font-size: .76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tracker-stock-status[data-stock-state="available"] {
+  color: var(--ink, inherit);
+}
+
+.tracker-stock-status[data-stock-state="low"] {
+  border-color: #b78631;
+  color: var(--ink, inherit);
+  background: rgba(183, 134, 49, .12);
+}
+
+.tracker-stock-status[data-stock-state="depleted"] {
+  border-color: #b45454;
+  color: var(--ink, inherit);
+  background: rgba(180, 84, 84, .11);
+}
+
+@media (max-width: 900px) {
+  .tracker-stock-health {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .tracker-stock-health {
+    gap: .4rem;
+  }
+
+  .tracker-stock-health > div {
+    padding: .65rem;
+  }
+}
+
+@media print {
+  .tracker-stock-health > div,
+  .tracker-stock-status {
+    box-shadow: none;
+  }
+}
