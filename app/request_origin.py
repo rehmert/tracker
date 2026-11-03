@@ -96,7 +96,12 @@ def reject_cross_origin_write(method, headers):
 
     fetch_site = headers.get("sec-fetch-site", "").strip().lower()
 
-    if fetch_site == "cross-site":
+    # "same-site" is not "same-origin": sibling subdomains
+    # can share a site while being separate security origins.
+    # Normal same-origin form, fetch, and HTMX writes use
+    # "same-origin". Requests without Fetch Metadata remain
+    # compatible with existing non-browser clients.
+    if fetch_site in ("cross-site", "same-site"):
         return True
 
     # A present Origin must be valid and match the target host.

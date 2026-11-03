@@ -182,3 +182,104 @@ def test_put_and_delete_blocked(client):
                 "host": "testserver",
             },
         )
+
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["POST", "PUT", "PATCH", "DELETE"],
+)
+def test_same_site_write_metadata_blocks(method):
+    # A sibling subdomain is same-site but cross-origin.
+    assert reject_cross_origin_write(
+        method,
+        {
+            "host": "tracker.example",
+            "sec-fetch-site": "same-site",
+        },
+    )
+
+
+def test_same_site_header_cannot_be_overridden_by_origin():
+    # Even if another header appears to match, retain the
+    # conservative Fetch Metadata rejection.
+    assert reject_cross_origin_write(
+        "POST",
+        {
+            "host": "tracker.example",
+            "origin": "https://tracker.example",
+            "sec-fetch-site": "same-site",
+        },
+    )
+
+
+def test_same_site_http_post_blocked_before_validation(client):
+    response = client.post(
+        "/compounds",
+        headers={
+            "Sec-Fetch-Site": "same-site",
+        },
+        data={},
+        follow_redirects=False,
+    )
+    assert response.status_code == 403
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["cache-control"] == "private, no-store"
+
+
+def test_same_site_json_write_blocked(client):
+    response = client.post(
+        "/pk/compounds",
+        headers={
+            "Sec-Fetch-Site": "same-site",
+        },
+        json={"name": "Testosterone Cypionate"},
+    )
+    assert response.status_code == 403
+
+
+def test_same_origin_metadata_allows_existing_validation(client):
+    response = client.post(
+        "/compounds",
+        headers={
+            "Origin": "http://testserver",
+            "Sec-Fetch-Site": "same-origin",
+        },
+        data={},
+        follow_redirects=False,
+    )
+    assert response.status_code == 422
+
+
+def test_user_initiated_metadata_keeps_legacy_behavior(client):
+    # "none" is used for certain user-initiated browser
+    # navigations. Its absence of an Origin is not proof
+    # of a foreign write.
+    response = client.post(
+        "/compounds",
+        headers={"Sec-Fetch-Site": "none"},
+        data={},
+        follow_redirects=False,
+    )
+    assert response.status_code == 422
+
+
+def test_foreign_origin_still_blocked_with_same_origin_metadata(client):
+    response = client.post(
+        "/compounds",
+        headers={
+            "Origin": "https://attacker.example",
+            "Sec-Fetch-Site": "same-origin",
+        },
+        data={},
+        follow_redirects=False,
+    )
+    assert response.status_code == 403
+
+
+def test_safe_get_remains_unchanged(client):
+    response = client.get(
+        "/healthz",
+        headers={"Sec-Fetch-Site": "same-site"},
+    )
+    assert response.status_code == 200
