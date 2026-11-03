@@ -17,7 +17,7 @@
 {% if repeat_notice %}<p class="note" role="status" id="dose-repeat-notice">{{ repeat_notice }}</p>{% endif %}{% if calendar_vial_notice %}<p class="note" role="status" id="dose-calendar-vial-notice">{{ calendar_vial_notice }}</p>{% endif %}<p class="note">Use “Prepare similar” in History to load previous recorded details for review. It never records an administration, and does not copy the previous time, notes, or supplies.</p><p class="note">Record an actual administration here. To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Recording a dose may update inventory; merely opening a planned entry does not.</p><nav class="ux-shortcuts"><a href="/calendar">Log from calendar</a><a href="#dose-history">View history ↓</a></nav>
 
 <section>
-  <h2>Add an entry</h2>
+  <h2 id="quick-dose-entry">Add an entry</h2>
 
 <div id="tracker-planned-handoff"
      class="tracker-planned-handoff"

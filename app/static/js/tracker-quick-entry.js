@@ -81,6 +81,38 @@
 
     search.addEventListener('input', update);
 
+    search.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        search.value = '';
+        update();
+        return;
+      }
+
+      const visible = actions.filter(
+        action => !action.hidden
+      );
+
+      if (
+        event.key === 'ArrowDown' &&
+        visible.length
+      ) {
+        event.preventDefault();
+        visible[0].focus();
+        return;
+      }
+
+      // Only navigate automatically when the
+      // search has one unambiguous result.
+      if (
+        event.key === 'Enter' &&
+        visible.length === 1
+      ) {
+        event.preventDefault();
+        window.location.assign(visible[0].href);
+      }
+    });
+
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         category = tab.dataset.quickCategory;

@@ -3,9 +3,9 @@
 {% block content %}
 
 <link rel="stylesheet"
-      href="/static/css/tracker-quick-entry.css?v=20261103">
+      href="/static/css/tracker-quick-entry.css?v=20261103-fastpaths">
 <script defer
-        src="/static/js/tracker-quick-entry.js?v=20261103"></script>
+        src="/static/js/tracker-quick-entry.js?v=20261103-fastpaths"></script>
 
 <div class="tracker-quick-entry" data-quick-entry>
   <header class="tracker-quick-entry-header">
@@ -16,6 +16,18 @@
       you explicitly save an actual entry.
     </p>
   </header>
+
+
+  <nav class="tracker-quick-fast-paths"
+       aria-label="Jump directly to a recording workflow">
+    <span class="tracker-quick-fast-heading">
+      Fast paths
+    </span>
+    <a href="/doses#quick-dose-entry">Dose Entry</a>
+    <a href="/vitals#quick-vitals-entry">Vital Reading</a>
+    <a href="/supplies#tracker-stock-section">Supply Use</a>
+    <a href="/purchases#new-purchase">New Purchase</a>
+  </nav>
 
   <div class="tracker-quick-entry-toolbar"
        role="search"

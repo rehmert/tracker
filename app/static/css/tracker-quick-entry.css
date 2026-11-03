@@ -132,3 +132,52 @@
     display: none !important;
   }
 }
+
+/* Direct links into existing recording forms. */
+.tracker-quick-fast-paths {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin: .9rem 0;
+}
+
+.tracker-quick-fast-heading {
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 650;
+  margin-right: .3rem;
+}
+
+.tracker-quick-fast-paths a {
+  display: inline-flex;
+  padding: .42rem .65rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: .84rem;
+  text-decoration: none;
+}
+
+.tracker-quick-fast-paths a:hover {
+  border-color: var(--teal);
+  background: var(--wash);
+}
+
+.tracker-quick-fast-paths a:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+}
+
+#quick-dose-entry,
+#quick-vitals-entry,
+#tracker-stock-section {
+  scroll-margin-top: 1.5rem;
+}
+
+@media print {
+  .tracker-quick-fast-paths {
+    display: none !important;
+  }
+}
