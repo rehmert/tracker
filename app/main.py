@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import PlainTextResponse
 
 from .request_origin import reject_cross_origin_write
+from .csrf_runtime import prepare_html_cookie
 
 from . import config, models  # noqa: F401  (models import registers tables)
 from .db import Base, engine
@@ -57,6 +58,16 @@ async def tracker_response_protection(request, call_next):
         )
     else:
         response = await call_next(request)
+
+    # Browser token rollout is issuance-only. Existing
+    # write requests are not rejected for missing tokens.
+    try:
+        prepare_html_cookie(request, response)
+    except (OSError, ValueError):
+        response = PlainTextResponse(
+            "CSRF signing key unavailable.",
+            status_code=503,
+        )
 
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"

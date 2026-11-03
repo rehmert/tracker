@@ -3,7 +3,12 @@
   let scenarios = [], current = null, lastGraph = null;
   const error = e => { $('pkError').textContent = e.message || String(e); };
   const request = async (url, method='GET', body) => {
-    const r = await fetch(url, {method, headers: body ? {'Content-Type':'application/json'} : {}, body: body ? JSON.stringify(body) : undefined});
+    const headers = body ? {'Content-Type':'application/json'} : {};
+    if (method.toUpperCase() !== 'GET') {
+      const csrf = window.trackerCsrfToken?.();
+      if (csrf) headers['X-Tracker-CSRF'] = csrf;
+    }
+    const r = await fetch(url, {method, headers, body: body ? JSON.stringify(body) : undefined});
     if (!r.ok) throw new Error(`${r.status}: ${await r.text()}`);
     return r.json();
   };
