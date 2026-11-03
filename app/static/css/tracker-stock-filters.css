@@ -83,3 +83,58 @@ tbody tr[hidden] {
     display: none !important;
   }
 }
+
+.tracker-stock-filter-toolbar [data-stock-breakdown] {
+  flex: 1 0 100%;
+  font-size: .82rem;
+  color: var(--muted, #666);
+}
+
+@media print {
+  body.tracker-stock-print-mode * {
+    visibility: hidden !important;
+  }
+
+  body.tracker-stock-print-mode
+  #tracker-stock-section,
+  body.tracker-stock-print-mode
+  #tracker-stock-section * {
+    visibility: visible !important;
+  }
+
+  body.tracker-stock-print-mode
+  #tracker-stock-section {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.tracker-stock-print-mode
+  #tracker-stock-section .scroll {
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  body.tracker-stock-print-mode
+  #tracker-stock-section .tracker-stock-filter-toolbar,
+  body.tracker-stock-print-mode
+  #tracker-stock-section .tracker-stock-filter-quick-actions,
+  body.tracker-stock-print-mode
+  #tracker-stock-section [data-stock-filter-empty],
+  body.tracker-stock-print-mode
+  #tracker-stock-section
+  [data-stock-review-table] th:last-child,
+  body.tracker-stock-print-mode
+  #tracker-stock-section
+  [data-stock-review-table] td:last-child {
+    display: none !important;
+  }
+
+  body.tracker-stock-print-mode
+  [data-stock-review-table] tbody tr[hidden] {
+    display: none !important;
+  }
+}

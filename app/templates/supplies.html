@@ -11,12 +11,12 @@
 
 
 <link rel="stylesheet"
-      href="/static/css/tracker-stock-filters.css?v=20261103">
+      href="/static/css/tracker-stock-filters.css?v=20261103-batch4">
 <script defer
-        src="/static/js/tracker-stock-filters.js?v=20261103-csv"></script>
+        src="/static/js/tracker-stock-filters.js?v=20261103-batch4"></script>
 
 <h1>Supplies & disposable inventory</h1><p class="note">BAC water is tracked in mL, without an active ingredient. Add BAC water vials directly from a purchase using the dedicated BAC water form.</p><section><h2>Add purchased inventory</h2><p class="note">Choose an order to add bulk packages or individual supplies. Package quantities, line prices, and live inventory previews are managed together on the purchase page.</p><div class="row">{% for p in purchases[:10] %}<a class="button" href="/purchases/{{ p.id }}">#{{ p.id }} · {{ p.vendor }}</a>{% endfor %}<a class="button" href="/purchases">All purchases</a></div></section>
-<section>
+<section id="tracker-stock-section">
 <h2>Stock</h2>
 {% set stock = namespace(available=0, low=0, depleted=0) %}
 {% for item in supplies %}
@@ -76,6 +76,17 @@
       <option value="available">Available</option>
     </select>
   </label>
+  <label>
+    <span>Sort Stock By</span>
+    <select data-stock-sort>
+      <option value="original">Original Order</option>
+      <option value="attention">Needs Attention First</option>
+      <option value="product">Product: A–Z</option>
+      <option value="category">Category: A–Z</option>
+      <option value="remaining-asc">Remaining: Low to High</option>
+      <option value="remaining-desc">Remaining: High to Low</option>
+    </select>
+  </label>
   <button type="button"
           data-stock-filter-reset>Reset</button>
   <button type="button"
@@ -87,6 +98,9 @@
     Print Stock Review
   </button>
   <span data-stock-visible-count
+        role="status"
+        aria-live="polite"></span>
+  <span data-stock-breakdown
         role="status"
         aria-live="polite"></span>
 </div>

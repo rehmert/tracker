@@ -18,7 +18,7 @@ def test_export_controls_registered():
     assert "data-stock-print" in html
     assert "Export Filtered CSV" in html
     assert "Print Stock Review" in html
-    assert "tracker-stock-filters.js?v=20261103-csv" in html
+    assert "tracker-stock-filters.js?v=20261103-batch4" in html
 
 
 def test_export_uses_filtered_rows():
