@@ -1,0 +1,85 @@
+/* Scoped Supplies stock-review filtering. */
+
+.tracker-stock-filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .65rem;
+  margin: .85rem 0;
+  padding: .8rem;
+  border: 1px solid var(--rule, #ddd);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+
+.tracker-stock-filter-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  min-width: 0;
+  flex: 1 1 13rem;
+  font-size: .83rem;
+}
+
+.tracker-stock-filter-toolbar input,
+.tracker-stock-filter-toolbar select {
+  width: 100%;
+  min-width: 0;
+  padding: .48rem .6rem;
+  border: 1px solid var(--rule, #ccc);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--ink, inherit);
+}
+
+.tracker-stock-filter-toolbar button,
+.tracker-stock-quick-filter {
+  padding: .48rem .7rem;
+  border: 1px solid var(--rule, #ccc);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--ink, inherit);
+  cursor: pointer;
+}
+
+.tracker-stock-filter-toolbar [data-stock-visible-count] {
+  flex: 1 0 100%;
+  color: var(--muted, #666);
+  font-size: .82rem;
+}
+
+.tracker-stock-filter-quick-actions {
+  margin: .6rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+[data-stock-review-table]
+tbody tr[hidden] {
+  display: none !important;
+}
+
+.tracker-stock-filter-toolbar :focus-visible,
+.tracker-stock-quick-filter:focus-visible {
+  outline: 3px solid var(--teal, #287b9b);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .tracker-stock-filter-toolbar {
+    display: block;
+  }
+
+  .tracker-stock-filter-toolbar label {
+    margin-bottom: .6rem;
+  }
+}
+
+@media print {
+  .tracker-stock-filter-toolbar,
+  .tracker-stock-filter-quick-actions,
+  [data-stock-filter-empty] {
+    display: none !important;
+  }
+}
