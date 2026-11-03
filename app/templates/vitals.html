@@ -11,6 +11,12 @@
   defer
 ></script>
 
+
+<link rel="stylesheet"
+      href="/static/css/tracker-vitals-entry.css?v=20261103">
+<script defer
+        src="/static/js/tracker-vitals-entry.js?v=20261103"></script>
+
 <h1>Vitals</h1>
 <p class="note">Weight, blood pressure and pulse as you record them. This page shows your numbers and simple averages; it doesn't interpret them. Take questions about what a reading means to a clinician.</p>
 <nav class="ux-shortcuts" aria-label="Vitals related views">
@@ -30,7 +36,7 @@
     <label class="field"><span>Pulse (beats per minute)</span><input type="number" name="pulse" step="1" min="0"></label>
     <label class="field"><span>Context</span><input name="context" maxlength="80" placeholder="e.g. morning, seated, after coffee"></label>
     <label class="field wide"><span>Notes</span><input name="notes"></label>
-    <div><button class="primary">Save reading</button></div>
+    <div><button class="primary" type="submit">Save reading</button></div>
   </form>
   <p class="note">Fill in any combination. Blood pressure needs both numbers. Entries outside physically possible ranges are rejected as likely typos.</p>
 </section>

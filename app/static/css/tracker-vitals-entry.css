@@ -1,0 +1,58 @@
+/* Vitals entry preview and validation. */
+
+.tracker-vitals-now {
+  display: block;
+  margin-top: .4rem;
+  padding: .4rem .65rem;
+  border: 1px solid var(--rule, #ccc);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--ink, inherit);
+  cursor: pointer;
+  font-size: .82rem;
+}
+
+.tracker-vitals-entry-summary,
+.tracker-vitals-entry-error {
+  grid-column: 1 / -1;
+  margin: .25rem 0;
+  padding: .65rem .8rem;
+  border-radius: 9px;
+  font-size: .86rem;
+  line-height: 1.5;
+}
+
+.tracker-vitals-entry-summary {
+  background: var(--surface, #f5f7fa);
+  color: var(--ink, inherit);
+  border: 1px solid var(--rule, #ddd);
+}
+
+.tracker-vitals-entry-error {
+  border: 1px solid #b45454;
+  background: rgba(180, 84, 84, .08);
+  color: var(--ink, inherit);
+}
+
+.tracker-vitals-entry-error[hidden] {
+  display: none !important;
+}
+
+.tracker-vitals-now:focus-visible {
+  outline: 3px solid var(--teal, #287b9b);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .tracker-vitals-now {
+    width: 100%;
+  }
+}
+
+@media print {
+  .tracker-vitals-now,
+  .tracker-vitals-entry-summary,
+  .tracker-vitals-entry-error {
+    display: none !important;
+  }
+}
