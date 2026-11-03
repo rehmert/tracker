@@ -60,20 +60,61 @@
     ).filter(visible).slice(0, 40);
   }
 
+  function headingSlug(value) {
+    const normalized = value
+      .normalize("NFKD")
+      .replace(/[\\u0300-\\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64)
+      .replace(/-+$/g, "");
+
+    return normalized || "section";
+  }
+
   function ensureIds() {
-    headings.forEach(function (heading, index) {
+    headings.forEach(function (heading) {
+      // Existing explicit IDs are permanent.
       if (heading.id) return;
 
-      const base = "tracker-section-" + (index + 1);
+      const title = heading.textContent
+        .replace(/\\s+/g, " ")
+        .trim();
+
+      const base = "tracker-heading-" +
+        headingSlug(title);
+
       let candidate = base;
       let suffix = 2;
 
+      // Avoid collisions with all elements, not
+      // just the selected page headings.
       while (document.getElementById(candidate)) {
         candidate = base + "-" + suffix++;
       }
 
       heading.id = candidate;
     });
+  }
+
+  function legacySectionTarget(id) {
+    // Previously shared links used heading order.
+    // Keep those URLs functional after this update.
+    const match = /^tracker-section-(\\d+)$/.exec(id);
+    if (!match) return null;
+
+    const index = Number(match[1]) - 1;
+
+    if (
+      !Number.isSafeInteger(index) ||
+      index < 0 ||
+      index >= headings.length
+    ) {
+      return null;
+    }
+
+    return headings[index];
   }
 
   function currentFromScroll() {
@@ -141,7 +182,10 @@
       return;
     }
 
-    const target = document.getElementById(id);
+    // Explicit IDs win. Legacy generated links
+    // are resolved only when no matching ID exists.
+    const target = document.getElementById(id) ||
+      legacySectionTarget(id);
 
     if (!target || !headings.includes(target)) return;
 
