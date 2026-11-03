@@ -1,0 +1,45 @@
+/* Scoped lab-entry navigation utilities. */
+
+.tracker-lab-source-search {
+  flex: 1 1 230px;
+  min-width: 0;
+}
+
+.tracker-lab-source-search input {
+  width: 100%;
+  min-width: 0;
+}
+
+.tracker-lab-review-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem;
+  margin: .7rem 0;
+}
+
+.tracker-lab-review-navigation button {
+  padding: .45rem .75rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.tracker-lab-review-navigation button:hover {
+  border-color: var(--teal);
+  background: var(--wash);
+}
+
+.tracker-lab-review-navigation .note {
+  margin: 0;
+  font-size: .83rem;
+}
+
+@media print {
+  .tracker-lab-review-navigation,
+  .tracker-lab-source-search {
+    display: none !important;
+  }
+}

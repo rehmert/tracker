@@ -11,6 +11,10 @@
 <script defer
         src="/static/js/tracker-lab-entry-safeguards.js?v=20261103"></script>
 
+<link rel="stylesheet"
+      href="/static/css/tracker-lab-navigation.css?v=20261103">
+<script defer
+        src="/static/js/tracker-lab-navigation.js?v=20261103"></script>
 <h1>Add a lab report</h1>
 <p class="note">
   Choose CSV import or manual entry. The two forms create
@@ -33,6 +37,13 @@
 
   <form method="get" action="/labs/new"
         class="tracker-lab-source-picker-form">
+    <label class="field tracker-lab-source-search">
+      <span>Find source report</span>
+      <input type="search"
+             data-lab-source-search
+             autocomplete="off"
+             placeholder="Search by date or lab name">
+    </label>
     <label class="field" for="lab-source-report">
       <span>Source report</span>
       <select id="lab-source-report"
@@ -54,6 +65,10 @@
     <a href="/labs/new">Start without a layout</a>
     {% endif %}
   </form>
+  <p class="note"
+     data-lab-source-count
+     role="status"
+     aria-live="polite"></p>
   <p class="note">
     The 50 most recent reports are shown.
     You can also reuse a layout from any older report's
@@ -114,6 +129,18 @@
     </strong>
     <span data-lab-review-message>
       Enter analytes to see a completeness summary.
+    </span>
+  </div>
+  <div class="tracker-lab-review-navigation">
+    <button type="button"
+            data-lab-find-incomplete>
+      Find Next Incomplete Field
+    </button>
+    <span data-lab-navigation-message
+          class="note"
+          role="status"
+          aria-live="polite">
+      Review the rows before saving.
     </span>
   </div>
   <div class="scroll"><table class="items">
