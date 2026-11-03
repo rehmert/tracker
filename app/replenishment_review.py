@@ -6,12 +6,13 @@ estimated near-term stock depletion.
 """
 from __future__ import annotations
 
+from datetime import date, timedelta
 from math import isfinite
 
 from sqlalchemy import select
 
 from .forecasting import forecast_inventory
-from .models import Compound, Supply, SupplyCategory
+from .models import Compound, Protocol, Supply, SupplyCategory
 from .supply_categories import DEFAULTS
 
 WINDOWS = (30, 90, 180)
@@ -99,6 +100,48 @@ def build_replenishment(db, history_days: int = 90,
             if item is None:
                 continue
             (unknown if item["state"] == "unestimated" else urgent).append(item)
+    # A completely unstocked compound can vanish from the historical
+    # consumption forecast. Surface that gap when an ACTIVE, not-ended
+    # protocol references it, without making a claim about the next dose.
+    # Exclude far-future protocols and what-if plans from this watchlist.
+    today = date.today()
+    deadline = today + timedelta(days=horizon_days)
+    covered_compound_ids = {
+        compound_ids.get(str(row["name"])) for row in compounds
+    }
+    already_added = set()
+    all_compounds = {
+        c.id: c.name for c in db.scalars(select(Compound)).all()
+    }
+    for protocol in db.scalars(
+        select(Protocol).where(Protocol.is_active.is_(True))
+    ):
+        if protocol.end_date is not None and protocol.end_date < today:
+            continue
+        if protocol.start_date is not None and protocol.start_date > deadline:
+            continue
+        for item in protocol.items:
+            cid = item.compound_id
+            if cid in covered_compound_ids or cid in already_added:
+                continue
+            name = all_compounds.get(cid)
+            if not name:
+                continue
+            already_added.add(cid)
+            urgent.append({
+                "category": "Compound",
+                "name": name,
+                "unit": "IU" if item.amount_unit == "IU" else
+                        ("mL" if item.amount_unit in ("mL", "uL") else "mcg"),
+                "remaining": 0.0,
+                "used": None,
+                "days_left": None,
+                "depletion": None,
+                "state": "depleted",
+                "label": "No usable active vial stock for active protocol",
+                "review_href": f"/vials?status=all&compound_id={cid}",
+                "purchase_href": "/purchases#new-purchase",
+            })
     urgent.sort(key=lambda x: (
         0 if x["state"] == "depleted" else 1,
         x["days_left"] if x["days_left"] is not None else float("inf"),

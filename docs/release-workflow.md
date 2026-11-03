@@ -217,9 +217,10 @@ The same usage-history windows (30/90/180 days) and alert horizons
 (7/14/21/30/60/90 days) apply to the web view and CSV export. It creates no
 orders, does not suggest quantities, and does not automatically subscribe or
 send notifications. Forecasts reflect recorded historical use, not future
-protocol amounts. Compounds with no usable active inventory and no historical
-forecast row may not appear; consult Planning hub and scheduled forecasts for
-protocol-specific coverage.
+protocol amounts. Compounds with no eligible active inventory but referenced by a current active
+protocol are shown as a no-stock review item (not a scheduled administration).
+What-if and already-ended protocols are excluded. Consult Planning hub and
+scheduled forecasts for actual protocol-specific demand coverage.
 
 Supply quantities on the replenishment worklist display the category's
 recorded unit (including custom categories) when known; unknown category units

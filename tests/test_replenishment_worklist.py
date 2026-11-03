@@ -14,7 +14,7 @@ from sqlalchemy import select, func
 
 from app.main import app
 from app.db import SessionLocal
-from app.models import Compound, DoseLog, Purchase, Supply, SupplyUsage, Vial
+from app.models import Compound, DoseLog, Protocol, ProtocolItem, Purchase, Supply, SupplyUsage, Vial
 from app.replenishment_review import (
     build_replenishment, classify_forecast, safe_csv_text,
 )
@@ -207,3 +207,63 @@ def test_navigation_and_purchase_anchor_are_present():
     assert 'href="/replenishment-review"' in alerts
     assert 'id="supply-stock"' in supplies
     assert 'id="new-purchase"' in purchases
+
+
+def test_active_protocol_compound_with_no_vials_is_surfaced():
+    suffix = uuid4().hex
+    with TestClient(app) as client:
+        with SessionLocal() as db:
+            active_compound = Compound(name="NoStockActive-" + suffix)
+            inactive_compound = Compound(name="NoStockWhatIf-" + suffix)
+            ended_compound = Compound(name="NoStockEnded-" + suffix)
+            db.add_all([active_compound, inactive_compound, ended_compound])
+            db.flush()
+            active = Protocol(
+                name="Active unstocked", is_active=True,
+                start_date=date.today(),
+            )
+            draft = Protocol(name="What-if unstocked", is_active=False,
+                             start_date=date.today())
+            ended = Protocol(name="Ended unstocked", is_active=True,
+                             start_date=date.today() - timedelta(days=90),
+                             end_date=date.today() - timedelta(days=1))
+            for p, compound in (
+                (active, active_compound),
+                (draft, inactive_compound),
+                (ended, ended_compound),
+            ):
+                p.items.append(ProtocolItem(
+                    compound_id=compound.id, amount_value=1,
+                    amount_unit="mg", freq_count=1, freq_period="week",
+                    start_week=1, position=0,
+                ))
+            db.add_all([active, draft, ended])
+            db.commit()
+            cid = active_compound.id
+
+        page = client.get("/replenishment-review?days=30&horizon=21")
+    assert page.status_code == 200
+    assert "NoStockActive-" + suffix in page.text
+    assert "No usable active vial stock for active protocol" in page.text
+    assert f"/vials?status=all&amp;compound_id={cid}" in page.text
+    assert "NoStockWhatIf-" + suffix not in page.text
+    assert "NoStockEnded-" + suffix not in page.text
+
+
+def test_active_future_protocol_outside_horizon_not_shown_as_now_unstocked():
+    suffix = uuid4().hex
+    with TestClient(app) as client:
+        with SessionLocal() as db:
+            compound = Compound(name="FutureNoStock-" + suffix)
+            protocol = Protocol(name="Future unstocked", is_active=True,
+                                start_date=date.today() + timedelta(days=200))
+            protocol.items.append(ProtocolItem(
+                compound=compound, amount_value=1, amount_unit="mg",
+                freq_count=1, freq_period="week", start_week=1,
+                position=0,
+            ))
+            db.add(protocol)
+            db.commit()
+        page = client.get("/replenishment-review?days=30&horizon=21")
+    assert page.status_code == 200
+    assert "FutureNoStock-" + suffix not in page.text
