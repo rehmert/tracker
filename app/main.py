@@ -125,3 +125,7 @@ app.include_router(planning_priorities.router)
 # TRACKER_RELEASE_233_240
 from .routers import inventory_data_quality
 app.include_router(inventory_data_quality.router)
+
+# Read-only replenishment review
+from .routers import replenishment_review
+app.include_router(replenishment_review.router)

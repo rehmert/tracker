@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Replenishment Review{% endblock %}
+{% block content %}
+<section style="max-width:1500px">
+
+<h1>Replenishment review</h1>
+
+<p class="muted">
+Read-only inventory attention list combining scheduled FEFO
+shortfalls, historical-use depletion estimates, and missing
+usage information. These are planning signals, not purchase
+quantities or dosing recommendations.
+</p>
+
+<nav class="ux-shortcuts" aria-label="Related inventory pages">
+  <a href="/planning-priorities">Planning priorities</a>
+  <a href="/inventory-data-quality">Data quality</a>
+  <a href="/inventory-intelligence">Inventory insights</a>
+  <a href="/purchases">Purchases</a>
+</nav>
+
+<div class="card" style="padding:1rem;margin:1rem 0">
+<form method="get" action="/replenishment-review">
+<div style="display:flex;flex-wrap:wrap;gap:0.9rem;align-items:end">
+
+<label>Scheduled outlook
+<select name="horizon">
+{% for days in horizons %}
+<option value="{{ days }}"
+ {% if days == horizon %}selected{% endif %}>
+ {{ days }} days
+</option>
+{% endfor %}
+</select>
+</label>
+
+<label>Usage lookback
+<select name="history">
+{% for days in windows %}
+<option value="{{ days }}"
+ {% if days == history %}selected{% endif %}>
+ {{ days }} days
+</option>
+{% endfor %}
+</select>
+</label>
+
+<label>Show
+<select name="category">
+{% for key, title in [
+ ('attention','Needs attention'),
+ ('all','All'),
+ ('shortfall','Scheduled shortfall'),
+ ('depleted','Depleted'),
+ ('near-term','Historical depletion'),
+ ('review','Data review'),
+ ('no-history','No usage estimate'),
+ ('stable','No identified issue')
+] %}
+<option value="{{ key }}"
+ {% if key == category %}selected{% endif %}>
+ {{ title }}
+</option>
+{% endfor %}
+</select>
+</label>
+
+<label>Find item
+<input type="search" name="q" value="{{ q }}"
+ placeholder="Compound or supply">
+</label>
+
+<button type="submit">Apply</button>
+<a href="/replenishment-review">Reset</a>
+
+</div>
+</form>
+
+<p>
+<a href="/replenishment-review.csv?horizon={{ horizon }}&amp;history={{ history }}&amp;category={{ category }}&amp;q={{ q|urlencode }}">
+Export current view as CSV
+</a>
+</p>
+</div>
+
+<div class="card" style="padding:1rem;margin:1rem 0">
+<h2>Review summary</h2>
+<p class="muted">Counts include all items, independent of filters.</p>
+<div style="display:flex;flex-wrap:wrap;gap:1.2rem">
+<span><strong>{{ totals.get('shortfall',0) }}</strong> scheduled shortfalls</span>
+<span><strong>{{ totals.get('depleted',0) }}</strong> depleted</span>
+<span><strong>{{ totals.get('near-term',0) }}</strong> historical alerts</span>
+<span><strong>{{ totals.get('review',0) }}</strong> data review</span>
+<span><strong>{{ totals.get('no-history',0) }}</strong> without usage estimate</span>
+</div>
+</div>
+
+{% if warnings %}
+<details class="card" style="padding:1rem;margin-bottom:1rem">
+<summary>Schedule / inventory warnings ({{ warnings|length }})</summary>
+<ul>
+{% for warning in warnings %}
+<li>{{ warning }}</li>
+{% endfor %}
+</ul>
+</details>
+{% endif %}
+
+<div class="card" style="padding:1rem">
+<h2>Inventory worklist</h2>
+<div class="scroll" style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Review flag</th>
+<th>Stock</th>
+<th>Scheduled demand</th>
+<th>Scheduled shortfall</th>
+<th>First shortfall</th>
+<th>Historical estimate</th>
+<th>Links</th>
+</tr>
+</thead>
+<tbody>
+{% for item in rows %}
+<tr>
+
+<td>
+<strong>{{ item.name }}</strong>
+<div class="muted">{{ item.kind }} · {{ item.unit }}</div>
+</td>
+
+<td>
+{% if item.status == 'shortfall' %}
+<strong>Scheduled shortfall</strong>
+{% elif item.status == 'depleted' %}
+<strong>Depleted recorded stock</strong>
+{% elif item.status == 'near-term' %}
+<strong>Historical depletion within {{ horizon }} days</strong>
+{% elif item.status == 'review' %}
+<strong>Data review</strong>
+{% elif item.status == 'no-history' %}
+No historical estimate
+{% else %}
+No identified issue
+{% endif %}
+
+{% if item.incomplete %}
+<div class="muted">Incomplete schedule — provisional</div>
+{% endif %}
+{% if item.undated %}
+<div class="muted">Undated stock excluded from FEFO</div>
+{% endif %}
+</td>
+
+<td>{{ item.remaining|num }} {{ item.unit }}</td>
+
+<td>
+{% if item.scheduled is not none %}
+{{ item.scheduled|num }} {{ item.unit }}
+{% else %}—{% endif %}
+</td>
+
+<td>
+{% if item.shortage is not none %}
+{{ item.shortage|num }} {{ item.unit }}
+{% else %}—{% endif %}
+</td>
+
+<td>{{ item.first_shortage or '—' }}</td>
+
+<td>
+{% if item.days_left is not none %}
+{{ '%.1f'|format(item.days_left) }} days
+{% if item.depletion %}
+<div class="muted">{{ item.depletion }}</div>
+{% endif %}
+{% else %}
+Insufficient recorded use
+{% endif %}
+</td>
+
+<td>
+{% if item.kind == 'Compound' and item.id is not none %}
+<a href="/vials?status=all&amp;compound_id={{ item.id }}">Vials</a>
+{% elif item.kind == 'Supply' %}
+<a href="/supplies">Supplies</a>
+{% else %}
+<a href="/vials">Vials</a>
+{% endif %}
+· <a href="/purchases">Purchases</a>
+</td>
+
+</tr>
+{% else %}
+<tr><td colspan="8">No inventory matches these filters.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<p class="muted">
+Scheduled shortfalls use the FEFO simulator and allocate only
+dated stock. Historical depletion is a separate average-use
+estimate, not a scheduled prediction. Missing usage history
+produces no depletion date. Supply quantities use recorded
+units. No inventory changes are made.
+</p>
+</div>
+</section>
+{% endblock %}
