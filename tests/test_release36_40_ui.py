@@ -21,6 +21,17 @@ def test_inventory_health_explains_non_mutating_diagnostics():
     assert html.count('No stock is changed') == 1
 
 def test_enhanced_tables_are_explicitly_opted_in():
-    for name in ('purchases.html', 'inventory_health.html', 'supplies.html'):
+    for name in ('inventory_health.html', 'supplies.html'):
         assert 'data-enhanced-table' in (ROOT / 'app/templates' / name).read_text()
     assert 'data-enhanced-table' not in (ROOT / 'app/templates/vials.html').read_text()
+
+
+def test_purchases_use_dedicated_review_instead_of_generic_table_tools():
+    purchases = (ROOT / 'app/templates/purchases.html').read_text()
+    assert 'data-enhanced-table' not in purchases
+    assert 'data-purchase-history' in purchases
+    assert 'data-purchase-review-toolbar' in purchases
+    assert 'tracker-purchase-history-review.js?v=20261103' in purchases
+    assert 'tracker-purchase-history-review.css?v=20261103' in purchases
+    # The Purchase creation form must remain untouched by the review controls.
+    assert '<form method="post" action="/purchases"' in purchases
