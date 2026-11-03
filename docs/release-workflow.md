@@ -201,3 +201,22 @@ The existing Choose vial link continues to open Dose Workspace. Dose Workspace
 now checks recorded vial dates against the planned date when one is supplied,
 instead of only today. This is not a sterility or clinical judgment, and
 future availability can change. No dosing, inventory or schema writes added.
+
+
+## Replenishment review (read-only)
+
+Inventory tools → Replenishment review combines Tracker's existing historical
+compound and supply consumption forecasts into a worklist for near-term
+depletion and records that cannot be estimated. Inventory with zero recorded
+remaining stock is shown separately from estimated depletion inside the
+selected horizon. Unknown estimates are kept in a collapsed section and are
+not classified as out of stock. This view can be exported to CSV, or used to
+open filtered active vials, the supplies list, or the ordinary purchase form.
+
+The same usage-history windows (30/90/180 days) and alert horizons
+(7/14/21/30/60/90 days) apply to the web view and CSV export. It creates no
+orders, does not suggest quantities, and does not automatically subscribe or
+send notifications. Forecasts reflect recorded historical use, not future
+protocol amounts. Compounds with no usable active inventory and no historical
+forecast row may not appear; consult Planning hub and scheduled forecasts for
+protocol-specific coverage.

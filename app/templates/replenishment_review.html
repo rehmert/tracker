@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Replenishment Review{% endblock %}
+{% block content %}
+<h1>Replenishment review</h1>
+<p class="note">A read-only worklist from recorded inventory and historical consumption. These are estimates, not purchasing quantities or dose recommendations. Missing usage history is not evidence of adequate stock.</p>
+<nav class="ux-shortcuts" aria-label="Inventory workflow">
+  <a href="/inventory-alerts">Inventory alerts</a>
+  <a href="/planning-hub">Planning hub</a>
+  <a href="/vials">Vials</a>
+  <a href="/supplies#supply-stock">Supplies</a>
+  <a href="/purchases#new-purchase">Record a purchase</a>
+</nav>
+
+<form method="get" action="/replenishment-review" class="inline" id="replenishment-controls">
+  <label class="field"><span>Historical usage</span>
+    <select name="days">{% for n in windows %}<option value="{{ n }}" {% if history_days == n %}selected{% endif %}>{{ n }} days</option>{% endfor %}</select>
+  </label>
+  <label class="field"><span>Review horizon</span>
+    <select name="horizon">{% for n in horizons %}<option value="{{ n }}" {% if horizon_days == n %}selected{% endif %}>{{ n }} days</option>{% endfor %}</select>
+  </label>
+  <button type="submit">Apply</button>
+  <a href="/replenishment-review.csv?days={{ history_days }}&amp;horizon={{ horizon_days }}">Export worklist (CSV)</a>
+</form>
+
+<section aria-labelledby="replenishment-attention-title">
+  <h2 id="replenishment-attention-title">Replenishment attention ({{ urgent|length }})</h2>
+  <p class="note">Includes no recorded stock remaining and estimated depletion within {{ horizon_days }} days. A usage-based date is approximate, not an order deadline.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Status</th><th>Type</th><th>Item</th><th>Remaining</th><th>Est. days left</th><th>Estimated date</th><th>Actions</th></tr></thead>
+    <tbody>{% for item in urgent %}
+    <tr data-replenishment-state="{{ item.state }}">
+      <td><strong>{{ item.label }}</strong></td>
+      <td>{{ item.category }}</td>
+      <td>{{ item.name }}</td>
+      <td class="n">{{ item.remaining|num }} {{ item.unit }}</td>
+      <td class="n">{{ item.days_left|n1 if item.days_left is not none else '—' }}</td>
+      <td>{{ item.depletion or '—' }}</td>
+      <td><a href="{{ item.review_href }}">Review stock</a> · <a href="{{ item.purchase_href }}">Record purchase</a></td>
+    </tr>
+    {% else %}<tr><td colspan="7">No recorded stock depletion within this horizon. Unestimated items may still need review.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+<details id="unestimated-inventory">
+  <summary>Insufficient history to estimate ({{ unknown|length }})</summary>
+  <p class="note">These items have recorded positive stock, but a reliable depletion date cannot be calculated from the selected history window. They are not treated as depleted. Check levels manually where relevant.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Type</th><th>Item</th><th>Recorded remaining</th><th>Action</th></tr></thead>
+    <tbody>{% for item in unknown %}
+    <tr data-replenishment-state="unestimated"><td>{{ item.category }}</td><td>{{ item.name }}</td>
+      <td class="n">{{ item.remaining|num }} {{ item.unit }}</td>
+      <td><a href="{{ item.review_href }}">Review stock</a></td></tr>
+    {% else %}<tr><td colspan="4">No unestimated items in this selection.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</details>
+<p class="note">Current estimates exclude expired and past-beyond-use vials; items with no eligible active stock and no forecast history may not appear. For scheduled demand, compare with <a href="/scheduled-forecast">Scheduled forecast</a> and <a href="/planning-hub">Planning hub</a>. All links open normal review/entry pages; nothing is automatically purchased or recorded.</p>
+{% endblock %}

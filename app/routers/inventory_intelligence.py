@@ -9,6 +9,10 @@ from ..models import Vial, DoseLog
 from ..services import vial_views
 from ..templating import render
 from ..forecasting import forecast_inventory
+from ..replenishment_review import build_replenishment, WINDOWS, HORIZONS, safe_csv_text
+import csv
+import io
+from fastapi.responses import Response
 
 router = APIRouter()
 
@@ -68,3 +72,47 @@ def inventory_alerts(request: Request, days: int = Query(90, ge=30, le=180), hor
     window = days if days in (30, 90, 180) else 90
     alerts = collect_inventory_alerts(db, window_days=window, horizon_days=horizon)
     return render(request, "inventory_alerts.html", alerts=alerts, forecast_days=window, horizon=horizon)
+
+
+@router.get("/replenishment-review")
+def replenishment_review(request: Request,
+                         days: int = Query(90, ge=30, le=180),
+                         horizon: int = Query(21, ge=7, le=90),
+                         db: Session = Depends(get_db)):
+    if days not in WINDOWS or horizon not in HORIZONS:
+        from fastapi import HTTPException
+        raise HTTPException(422, "Unsupported forecast window or review horizon")
+    board = build_replenishment(db, history_days=days, horizon_days=horizon)
+    return render(request, "replenishment_review.html", **board,
+                  windows=WINDOWS, horizons=HORIZONS)
+
+
+@router.get("/replenishment-review.csv")
+def replenishment_review_csv(days: int = Query(90, ge=30, le=180),
+                             horizon: int = Query(21, ge=7, le=90),
+                             db: Session = Depends(get_db)):
+    if days not in WINDOWS or horizon not in HORIZONS:
+        from fastapi import HTTPException
+        raise HTTPException(422, "Unsupported forecast window or review horizon")
+    board = build_replenishment(db, history_days=days, horizon_days=horizon)
+    buffer = io.StringIO(newline="")
+    writer = csv.writer(buffer)
+    writer.writerow([
+        "Status", "Category", "Item", "Remaining", "Unit",
+        "Recorded usage", "Estimated days left", "Estimated depletion",
+        "History window days", "Review horizon days", "Review URL",
+    ])
+    for row in board["urgent"] + board["unknown"]:
+        writer.writerow([
+            safe_csv_text(row["label"]), row["category"],
+            safe_csv_text(row["name"]), row["remaining"],
+            safe_csv_text(row["unit"]), "" if row["used"] is None else row["used"],
+            "" if row["days_left"] is None else round(row["days_left"], 2),
+            row["depletion"].isoformat() if row["depletion"] else "",
+            days, horizon, safe_csv_text(row["review_href"]),
+        ])
+    return Response(
+        buffer.getvalue(), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="replenishment-review.csv"',
+                 "Cache-Control": "no-store"},
+    )
