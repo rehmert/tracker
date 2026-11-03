@@ -2,7 +2,7 @@
 {% block title %}Add lab report{% endblock %}
 {% block content %}
 <link rel="stylesheet"
-      href="/static/css/tracker-lab-entry-review.css?v=20261103-layout">
+      href="/static/css/tracker-lab-entry-review.css?v=20261103-picker">
 <script defer
         src="/static/js/tracker-lab-entry-review.js?v=20261103"></script>
 
@@ -21,6 +21,47 @@
   <a href="#lab-csv-entry">Import CSV</a>
   <a href="#lab-manual-entry">Enter Manually</a>
 </nav>
+{% if source_reports %}
+<section class="tracker-lab-source-picker"
+         aria-labelledby="lab-source-picker-heading">
+  <h2 id="lab-source-picker-heading">Reuse an Existing Layout</h2>
+  <p class="note">
+    Select a saved report to start a new manual entry with
+    its analyte names and units. Previous measurements,
+    reference ranges, notes, and files are never copied.
+  </p>
+
+  <form method="get" action="/labs/new"
+        class="tracker-lab-source-picker-form">
+    <label class="field" for="lab-source-report">
+      <span>Source report</span>
+      <select id="lab-source-report"
+              name="copy_from"
+              required>
+        <option value="">Choose a saved report</option>
+        {% for r in source_reports %}
+        <option value="{{ r.id }}"
+          {% if copied_from and copied_from.id == r.id %}selected{% endif %}>
+          {{ r.drawn_on|dt }}
+          {% if r.lab_name %} · {{ r.lab_name }}{% endif %}
+          · {{ r.results|length }} results
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Use This Layout</button>
+    {% if copied_from %}
+    <a href="/labs/new">Start without a layout</a>
+    {% endif %}
+  </form>
+  <p class="note">
+    The 50 most recent reports are shown.
+    You can also reuse a layout from any older report's
+    detail page.
+  </p>
+</section>
+{% endif %}
+
 <section>
   <h2 id="lab-csv-entry">Import analytes from CSV</h2>
   <p class="note">Create a report with all analytes in one upload. Required CSV columns: <code>analyte,value,unit</code>. Optional: <code>ref_low,ref_high,note</code>. <a href="/labs/csv-template">Download CSV template</a>.</p>

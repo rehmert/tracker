@@ -83,3 +83,59 @@
   font-size: .87rem;
   max-width: 75ch;
 }
+
+/* Select a saved report as an analyte-layout source. */
+
+.tracker-lab-source-picker {
+  margin: 1rem 0 1.4rem;
+  padding: .9rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.tracker-lab-source-picker h2 {
+  margin-top: .1rem;
+}
+
+.tracker-lab-source-picker .note {
+  max-width: 76ch;
+}
+
+.tracker-lab-source-picker-form {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin: .8rem 0;
+}
+
+.tracker-lab-source-picker-form .field {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.tracker-lab-source-picker-form select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.tracker-lab-source-picker-form button {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .tracker-lab-source-picker-form {
+    align-items: stretch;
+  }
+
+  .tracker-lab-source-picker-form .field {
+    flex-basis: 100%;
+  }
+}
+
+@media print {
+  .tracker-lab-source-picker {
+    display: none !important;
+  }
+}

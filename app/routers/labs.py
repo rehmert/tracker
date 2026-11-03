@@ -57,9 +57,18 @@ def labs_index(request: Request, db: Session = Depends(get_db)):
 
 
 def _form(request: Request, db: Session, rows=None, values=None, error=None, copied_from=None):
+    # The chooser is read-only and capped for a compact page.
+    # Keep the query here so it is available on initial
+    # creation and on form re-render after validation errors.
+    source_reports = list(db.scalars(
+        select(LabReport)
+        .order_by(LabReport.drawn_on.desc(), LabReport.id.desc())
+        .limit(50)
+    ))
     return render(request, "lab_form.html", rows=rows or [dict(BLANK_ROW) for _ in range(3)],
                   v=values or {"drawn_on": date.today().isoformat(), "lab_name": "", "notes": ""},
-                  names=_name_options(db), copied_from=copied_from, err=error or request.query_params.get("err"))
+                  names=_name_options(db), copied_from=copied_from, source_reports=source_reports,
+                  err=error or request.query_params.get("err"))
 
 
 @router.get('/labs/compare')
