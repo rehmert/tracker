@@ -2,7 +2,7 @@
 {% block title %}Add lab report{% endblock %}
 {% block content %}
 <link rel="stylesheet"
-      href="/static/css/tracker-lab-entry-review.css?v=20261103">
+      href="/static/css/tracker-lab-entry-review.css?v=20261103-layout">
 <script defer
         src="/static/js/tracker-lab-entry-review.js?v=20261103"></script>
 
@@ -34,6 +34,20 @@
     <p><button class="primary">Import CSV and create report</button></p>
   </form>
 </section>
+{% if copied_from %}
+<p class="tracker-lab-layout-notice" role="status">
+  New report layout copied from
+  <a href="/labs/{{ copied_from.id }}">
+    {{ copied_from.drawn_on|dt }}
+    {% if copied_from.lab_name %}
+      · {{ copied_from.lab_name }}
+    {% endif %}
+  </a>.
+  Only analyte names and units are prefilled.
+  Enter new measured values and the reference ranges
+  printed on the new report. Nothing has been saved.
+</p>
+{% endif %}
 <h2 id="lab-manual-entry">Or enter results manually</h2>
 <form method="post" action="/labs" enctype="multipart/form-data" data-lab-manual-entry>
   <div class="grid">

@@ -2,6 +2,11 @@
 {% block title %}Lab report {{ rep.drawn_on|dt }}{% endblock %}
 {% block content %}
 <h1>Lab report <small class="sub">{{ rep.drawn_on|dt }}{% if rep.lab_name %} · {{ rep.lab_name }}{% endif %}</small></h1>
+<p class="row">
+  <a class="btn" href="/labs/new?copy_from={{ rep.id }}">
+    Start new report using these analytes
+  </a>
+</p>
 {% if rep.stored_name %}<p>Report file: <a href="/labs/{{ rep.id }}/file" target="_blank" rel="noopener">{{ rep.original_name }}</a> <small>({{ (rep.size_bytes / 1024)|round|int }} KB · sha256 {{ rep.sha256[:10] }}…)</small></p>{% endif %}
 {% if rep.notes %}<p class="note">{{ rep.notes }}</p>{% endif %}
 

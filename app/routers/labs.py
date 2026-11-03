@@ -56,10 +56,10 @@ def labs_index(request: Request, db: Session = Depends(get_db)):
     return render(request, "labs.html", cards=cards, reports=reports)
 
 
-def _form(request: Request, db: Session, rows=None, values=None, error=None):
+def _form(request: Request, db: Session, rows=None, values=None, error=None, copied_from=None):
     return render(request, "lab_form.html", rows=rows or [dict(BLANK_ROW) for _ in range(3)],
                   v=values or {"drawn_on": date.today().isoformat(), "lab_name": "", "notes": ""},
-                  names=_name_options(db), err=error or request.query_params.get("err"))
+                  names=_name_options(db), copied_from=copied_from, err=error or request.query_params.get("err"))
 
 
 @router.get('/labs/compare')
@@ -84,8 +84,34 @@ def compare_reports(request: Request, first_id: int | None = None, second_id: in
 
 
 @router.get("/labs/new")
-def new_report(request: Request, db: Session = Depends(get_db)):
-    return _form(request, db)
+def new_report(request: Request, copy_from: int | None = None,
+               db: Session = Depends(get_db)):
+    if copy_from is None:
+        return _form(request, db)
+
+    previous = db.get(LabReport, copy_from)
+    if previous is None:
+        raise HTTPException(404, "Source lab report not found")
+
+    # Copy names and units only. Never reuse measurements,
+    # reference ranges, dates, notes, or uploaded files.
+    rows = [
+        dict(
+            analyte=result.analyte,
+            value="",
+            unit=result.unit,
+            ref_low="",
+            ref_high="",
+        )
+        for result in previous.results
+    ]
+
+    return _form(
+        request,
+        db,
+        rows=rows or None,
+        copied_from=previous,
+    )
 
 
 @router.get("/labs/row")
