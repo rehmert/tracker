@@ -11,7 +11,8 @@ from math import isfinite
 from sqlalchemy import select
 
 from .forecasting import forecast_inventory
-from .models import Compound
+from .models import Compound, Supply, SupplyCategory
+from .supply_categories import DEFAULTS
 
 WINDOWS = (30, 90, 180)
 HORIZONS = (7, 14, 21, 30, 60, 90)
@@ -26,7 +27,8 @@ def _finite(value):
 
 
 def classify_forecast(kind: str, forecast: dict, horizon: int,
-                      compound_ids: dict[str, int]) -> dict | None:
+                      compound_ids: dict[str, int],
+                      supply_unit: str = "") -> dict | None:
     """Return a replenishment watch row, or None if coverage exceeds horizon."""
     remaining = _finite(forecast.get("remaining"))
     left = _finite(forecast.get("days_left"))
@@ -50,7 +52,7 @@ def classify_forecast(kind: str, forecast: dict, horizon: int,
         unit = str(forecast.get("unit") or "")
     else:
         review = "/supplies#supply-stock"
-        unit = "recorded units"
+        unit = supply_unit
     return {
         "category": kind,
         "name": name,
@@ -76,11 +78,24 @@ def build_replenishment(db, history_days: int = 90,
     compound_ids = {
         c.name: c.id for c in db.scalars(select(Compound)).all()
     }
+    # Read supply category units without seeding or modifying categories.
+    category_units = {key: unit for key, _label, unit in DEFAULTS}
+    category_units.update({
+        category.key: category.unit
+        for category in db.scalars(select(SupplyCategory)).all()
+    })
+    supply_units = {
+        supply.id: category_units.get(supply.kind, "")
+        for supply in db.scalars(select(Supply)).all()
+    }
     urgent, unknown = [], []
     for category, rows in (("Compound", compounds), ("Supply", supplies)):
         for forecast in rows:
-            item = classify_forecast(category, forecast, horizon_days,
-                                     compound_ids)
+            item = classify_forecast(
+                category, forecast, horizon_days, compound_ids,
+                supply_unit=supply_units.get(forecast.get("id"), "")
+                if category == "Supply" else "",
+            )
             if item is None:
                 continue
             (unknown if item["state"] == "unestimated" else urgent).append(item)

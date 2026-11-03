@@ -220,3 +220,7 @@ send notifications. Forecasts reflect recorded historical use, not future
 protocol amounts. Compounds with no usable active inventory and no historical
 forecast row may not appear; consult Planning hub and scheduled forecasts for
 protocol-specific coverage.
+
+Supply quantities on the replenishment worklist display the category's
+recorded unit (including custom categories) when known; unknown category units
+are left blank rather than guessed. Category lookup is read-only.

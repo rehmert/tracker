@@ -47,7 +47,16 @@ def test_no_history_is_unestimated_not_out_of_stock():
     assert row["state"] == "unestimated"
     assert row["review_href"] == "/supplies#supply-stock"
     assert row["remaining"] == 18
+    assert row["unit"] == ""
     assert row["days_left"] is None
+
+
+def test_supply_unit_comes_from_inventory_category_not_mass_assumption():
+    row = classify_forecast(
+        "Supply", sample(name="BAC", remaining=3, used=2, days_left=10),
+        21, {}, supply_unit="mL",
+    )
+    assert row["unit"] == "mL"
 
 
 def test_healthy_coverage_is_not_an_alert():
@@ -138,6 +147,7 @@ def test_http_board_links_and_reuses_actual_inventory_forecast():
         assert 'data-replenishment-state="unestimated"' in page.text
         assert f'/vials?status=active&amp;compound_id={cid}' in page.text
         assert "/purchases#new-purchase" in page.text
+    assert f"{supply_name}</td>" in page.text
         assert '/supplies#supply-stock' in page.text
         assert '/replenishment-review.csv?days=30&amp;horizon=14' in page.text
 
