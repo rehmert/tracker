@@ -1,0 +1,55 @@
+.pk-dose-tools {
+  display:flex;
+  gap:.65rem;
+  align-items:center;
+  flex-wrap:wrap;
+  margin:.85rem 0;
+}
+
+.pk-dose-tools label {
+  display:inline-flex;
+  gap:.5rem;
+  align-items:center;
+}
+
+.pk-dose-batch {
+  padding:.8rem;
+  border:1px solid var(--border,#aaa);
+  border-radius:10px;
+  margin:1rem 0;
+}
+
+.pk-dose-batch label {
+  display:inline-flex;
+  flex-direction:column;
+  margin:.4rem;
+}
+
+.pk-dose-batch .scroll {
+  max-height:220px;
+  overflow:auto;
+}
+
+#plannedRows input[type="datetime-local"] {
+  min-width:170px;
+}
+
+#plannedRows input {
+  max-width:100%;
+  box-sizing:border-box;
+}
+
+@media(max-width:680px) {
+  .pk-dose-tools {
+    display:grid;
+    grid-template-columns:1fr;
+  }
+
+  .pk-dose-batch label {
+    display:flex;
+  }
+
+  .pk-dose-batch input {
+    width:100%;
+  }
+}

@@ -21,6 +21,8 @@ from ..pk_workbench import ExperimentInput, run_experiment
 from ..pk_model_history import capture as model_capture
 from ..pk_analysis_93 import metrics as exposure_metrics
 
+from .. import pk_scenario_ops as scenario_ops
+
 router = APIRouter(prefix="/pk")
 
 class ScenarioInput(BaseModel):
@@ -931,3 +933,48 @@ def pk_update_experiment(
             db.get(Compound, data.settings.compound_id)
         ),
     )
+
+
+
+@router.get("/scenarios/{sid}/dose-state")
+def pk_dose_state(
+    sid:int,db:Session=Depends(get_db)
+):
+    return scenario_ops.state(db,sid)
+
+
+@router.post("/scenarios/{sid}/doses/generate-preview")
+def pk_dose_preview(
+    sid:int,
+    data:scenario_ops.SequenceInput,
+    db:Session=Depends(get_db)
+):
+    scenario_ops.scenario(db,sid)
+    return {"doses":scenario_ops.preview(data)}
+
+
+@router.post("/scenarios/{sid}/doses/create-batch")
+def pk_dose_batch_create(
+    sid:int,
+    data:scenario_ops.SequenceInput,
+    db:Session=Depends(get_db)
+):
+    return scenario_ops.create_many(db,sid,data)
+
+
+@router.post("/scenarios/{sid}/doses/delete-batch")
+def pk_dose_batch_delete(
+    sid:int,
+    data:scenario_ops.DeleteInput,
+    db:Session=Depends(get_db)
+):
+    return scenario_ops.delete_many(db,sid,data)
+
+
+@router.post("/scenarios/{sid}/doses/undo-delete")
+def pk_dose_batch_undo(
+    sid:int,
+    data:scenario_ops.RestoreInput,
+    db:Session=Depends(get_db)
+):
+    return scenario_ops.restore(db,sid,data)

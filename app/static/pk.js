@@ -120,7 +120,12 @@
       lastRenderedScenarioId = scenarioId;
     }
 
-    const all = current?.doses || [];
+    const all=(current?.doses||[]).filter(d=>
+      !window.trackerPkDoseFilter ||
+      window.trackerPkDoseFilter(d)
+    ).sort((a,b)=>window.trackerPkDoseSort==='desc'
+      ? b.planned_at.localeCompare(a.planned_at)
+      : a.planned_at.localeCompare(b.planned_at));
     const pageSizeSelect = $('pkPlannedPageSize');
 
     const maxOption = Math.max(
@@ -164,6 +169,7 @@
 
     for (const d of shown) {
       const tr=document.createElement('tr');
+      tr.dataset.doseId=String(d.id);
       for(const value of [d.planned_at.replace('T',' ').slice(0,16),String(d.amount_mg)]) {const td=document.createElement('td');td.textContent=value;tr.append(td);}
       const td=document.createElement('td');
       const edit=document.createElement('button');edit.textContent='Edit';edit.type='button';edit.onclick=async()=>{
@@ -196,6 +202,14 @@
 
     // All rows remain in the saved scenario; only
     // the currently visible slice is rendered.
+    document.dispatchEvent(
+      new CustomEvent('tracker:pk-dose-rows',{
+        detail:{
+          scenarioId:current?.id??null,
+          doses:current?.doses||[]
+        }
+      })
+    );
   }
 
   $('pkPlannedPageSize').addEventListener(

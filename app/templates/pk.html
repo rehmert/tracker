@@ -87,6 +87,64 @@
 <button id="update" type="button">Update name and half-lives</button>
 <button id="remove" type="button">Delete scenario</button>
 <h3>Future planned doses</h3>
+<div class="pk-dose-tools">
+  <label>Filter
+    <select id="pkDoseFilter">
+      <option value="all">All</option>
+      <option value="future">Upcoming</option>
+      <option value="past">Past</option>
+    </select>
+  </label>
+  <label>Sort
+    <select id="pkDoseSort">
+      <option value="asc">Oldest first</option>
+      <option value="desc">Newest first</option>
+    </select>
+  </label>
+  <span id="pkSelectedCount" role="status">
+    0 selected
+  </span>
+  <button type="button" id="pkDeleteSelected">
+    Delete selected
+  </button>
+  <button type="button" id="pkUndoDelete" hidden>
+    Undo last bulk deletion
+  </button>
+</div>
+<details class="pk-dose-batch">
+  <summary>Generate a series of planned doses</summary>
+  <label>First date/time
+    <input id="pkBatchStart" type="datetime-local">
+  </label>
+  <label>Amount (mg)
+    <input id="pkBatchAmount" type="number"
+           min="0.001" step="any" value="1">
+  </label>
+  <label>Interval (days)
+    <input id="pkBatchInterval" type="number"
+           min="0.125" max="90"
+           step="any" value="7">
+  </label>
+  <label>Count
+    <input id="pkBatchCount" type="number"
+           min="1" max="200" value="8">
+  </label>
+  <button type="button" id="pkBatchPreview">
+    Preview dates
+  </button>
+  <button type="button" id="pkBatchSave" disabled>
+    Add previewed doses
+  </button>
+  <p id="pkBatchStatus" role="status"></p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Scheduled</th><th>mg</th></tr>
+      </thead>
+      <tbody id="pkBatchPreviewRows"></tbody>
+    </table>
+  </div>
+</details>
 <p>Choose a saved scenario to add, edit or remove future hypothetical doses.</p>
 <label>Date/time <input id="plannedAt" type="datetime-local"></label>
 <label>Dose (mg) <input id="amount" type="number" min="0.001" step="any"></label>
@@ -113,6 +171,7 @@
   <table aria-label="Future planned doses">
     <thead>
       <tr>
+        <th>Select</th>
         <th>Date/time</th>
         <th>mg</th>
         <th>Actions</th>
@@ -225,4 +284,8 @@
         defer></script>
 <link rel="stylesheet"
       href="/static/css/tracker-pk-planned-pagination.css?v=batch109">
+<script src="/static/js/tracker-pk-tools125.js?v=bundle125"
+        defer></script>
+<link rel="stylesheet"
+      href="/static/css/tracker-pk-tools125.css?v=bundle125">
 {% endblock %}
