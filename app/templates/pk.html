@@ -164,6 +164,14 @@
 </div>
 <div class="card pk-custom-section">
 <h2 id="pkScenarioLibraryAnchor">Saved scenarios</h2>
+<details class="pk-revision-restore">
+  <summary>Historical scenario revisions and recovery</summary>
+  <button type="button" id="pkRevisionLoad">Load revision history</button>
+  <label>Restorable revision <select id="pkRevisionSelect"></select></label>
+  <button type="button" id="pkRevisionPreview">Preview revision</button>
+  <button type="button" id="pkRevisionRestore" disabled>Restore revision</button>
+  <p id="pkRevisionStatus" role="status"></p>
+</details>
 <label>Scenario <select id="scenario"><option value="">Unsaved / no future doses</option></select></label>
 <div class="pk-scenario-organize">
   <label>Find scenario
@@ -608,6 +616,7 @@
         defer></script>
 <script src="/static/js/tracker-pk-grid217.js?v=bundle217"
         defer></script>
+<script src="/static/js/tracker-pk-revisions229.js?v=bundle229" defer></script>
 <script src="/static/js/tracker-pk-runtime221.js?v=bundle221"
         defer></script>
 <script src="/static/js/tracker-pk-report173.js?v=bundle173"

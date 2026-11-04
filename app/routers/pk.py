@@ -36,6 +36,7 @@ from .. import pk_crosscheck205
 from .. import pk_diagnostics213
 from .. import pk_sensitivity217
 from .. import pk_operational221
+from .. import pk_revision229
 from .. import pk_health189
 from .. import pk_transform165 as transform165
 from .. import pk_sensitivity169 as sensitivity169
@@ -1537,3 +1538,16 @@ def pk_sensitivity_grid(
 @router.get("/workspace/health/runtime")
 def pk_runtime_identity():
     return pk_operational221.status()
+
+
+@router.get("/workspace/{sid}/revisions")
+def pk_workspace_revisions(sid:int,db:Session=Depends(get_db)):
+    return pk_revision229.history(db,sid)
+
+@router.get("/workspace/{sid}/revisions/{audit_id}/preview")
+def pk_workspace_revision_preview(sid:int,audit_id:int,db:Session=Depends(get_db)):
+    return pk_revision229.preview(db,sid,audit_id)
+
+@router.post("/workspace/{sid}/revisions/{audit_id}/restore")
+def pk_workspace_revision_restore(sid:int,audit_id:int,data:pk_revision229.RestoreRequest,db:Session=Depends(get_db)):
+    return pk_revision229.restore(db,sid,audit_id,data.expected_version)
