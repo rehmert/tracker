@@ -74,7 +74,7 @@ def test_template_and_backend_remain_compatible():
     html = HTML.read_text()
     router = ROUTER.read_text()
 
-    assert "?v=20261104f" in html
+    assert "?v=20261104g" in html
     assert 'id="tracker-dose-correction-form"' in html
     assert 'id="tracker-dose-correction-review"' in html
     assert 'name="supply_qty_{{ s.id }}"' in html

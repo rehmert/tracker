@@ -181,11 +181,28 @@
 
         const list = document.createElement("ul");
 
-        for (const issue of issues) {
+        issues.forEach((issue, index) => {
           const entry = document.createElement("li");
           entry.textContent = issue;
+
+          const target = issueControls[index];
+
+          if (target) {
+            const jump = document.createElement("button");
+            jump.type = "button";
+            jump.textContent = "Go to quantity field";
+
+            jump.addEventListener("click", () => {
+              const section = target.closest("details");
+              if (section) section.open = true;
+              target.focus();
+            });
+
+            entry.appendChild(jump);
+          }
+
           list.appendChild(entry);
-        }
+        });
 
         panel.appendChild(list);
 

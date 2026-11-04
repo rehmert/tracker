@@ -84,7 +84,7 @@ def test_template_and_backend_contracts():
     html = HTML.read_text()
     router = ROUTER.read_text()
 
-    assert "?v=20261104f" in html
+    assert "?v=20261104g" in html
     assert 'id="tracker-dose-correction-review"' in html
     assert 'data-original="{{ used.get(s.id, 0) }}"' in html
     assert 'name="supply_id_used"' in html
