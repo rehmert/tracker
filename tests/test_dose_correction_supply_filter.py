@@ -34,9 +34,10 @@ def test_originally_used_zero_stock_supply_remains_visible():
 
 def test_existing_order_and_no_duplicates():
     result = _correction_available_supplies(
-        [item(3, 1), item(1, 0), item(2, 5)],
+        [item(3, 1), item(2, 5), item(1, 0)],
         {3: 1, 1: 1},
     )
+    # Originally used items come first; order is stable within groups.
     assert [s.id for s in result] == [3, 1, 2]
 
 

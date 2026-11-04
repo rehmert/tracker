@@ -320,12 +320,20 @@ def delete_dose(did: int, db: Session = Depends(get_db)):
 
 
 def _correction_available_supplies(supplies, used):
-    """Keep stocked supplies and original usage, in existing order."""
-    return [
+    """Keep eligible supplies, with original usage first.
+
+    Preserve relative database ordering within each group.
+    This affects only the displayed correction picker.
+    """
+    eligible = [
         supply
         for supply in supplies
         if supply.remaining_qty > 0 or supply.id in used
     ]
+    return sorted(
+        eligible,
+        key=lambda supply: supply.id not in used,
+    )
 
 
 @router.get("/doses/{did}/edit")
