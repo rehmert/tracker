@@ -1,5 +1,10 @@
 """End-to-end smoke test through the real FastAPI app (needs requirements-dev.txt)."""
 import re
+from uuid import uuid4
+
+from sqlalchemy import select
+from app.db import SessionLocal
+from app.models import Compound, Vial, Coa, Page, LabReport
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,52 +18,104 @@ def client():
         yield c
 
 
-def test_full_flow(client):
+@pytest.fixture(scope="module")
+def flow_ids():
+    """Track IDs belonging to this integration test module."""
+    return {"tag": uuid4().hex[:12]}
+
+
+def test_full_flow(client, flow_ids):
     assert client.get("/healthz").json() == {"ok": True}
     for path in ("/", "/compounds", "/purchases", "/vials", "/doses", "/protocols"):
         assert client.get(path).status_code == 200
 
-    client.post("/compounds", data={"name": "Test Peptide", "category": "peptide"})
-    client.post("/compounds", data={"name": "Test Cyp", "category": "testosterone"})
+    peptide_name = "Test Peptide " + flow_ids["tag"]
+    cyp_name = "Test Cyp " + flow_ids["tag"]
+
+    client.post(
+        "/compounds",
+        data={"name": peptide_name, "category": "peptide"},
+    )
+    client.post(
+        "/compounds",
+        data={"name": cyp_name, "category": "testosterone"},
+    )
+
+    with SessionLocal() as db:
+        flow_ids["compound_id"] = db.scalar(
+            select(Compound.id).where(
+                Compound.name == peptide_name
+            )
+        )
+        flow_ids["cyp_id"] = db.scalar(
+            select(Compound.id).where(
+                Compound.name == cyp_name
+            )
+        )
+
+    assert flow_ids["compound_id"] is not None
+    assert flow_ids["cyp_id"] is not None
 
     # purchase: two powder vials, $100 each, $20 shipping -> $110 landed each
     r = client.post("/purchases", data={"vendor": "Acme", "shipping": "20"})
     pid = int(re.search(r"/purchases/(\d+)", str(r.url)).group(1))
     client.post(f"/purchases/{pid}/vials", data={
-        "compound_id": 1, "form": "lyophilized", "quantity": 2, "content_value": 10,
-        "content_unit": "mg", "unit_price": "100", "label": "10 mg"})
+        "compound_id": flow_ids["compound_id"],
+        "form": "lyophilized",
+        "quantity": 2,
+        "content_value": 10,
+        "content_unit": "mg",
+        "unit_price": "100",
+        "label": "10 mg",
+    })
+
+    with SessionLocal() as db:
+        vial_ids = list(db.scalars(
+            select(Vial.id)
+            .where(Vial.purchase_id == pid)
+            .order_by(Vial.id)
+        ))
+
+    assert len(vial_ids) == 2
+    first_vial, second_vial = vial_ids
+
     page = client.get(f"/purchases/{pid}").text
     assert "$110.00" in page
 
     # reconstitute vial 1 with 2 mL -> 5 mg/mL
-    client.post("/vials/1/reconstitute", data={"volume_ml": 2})
-    assert "5 mg/mL" in client.get("/vials/1").text
+    client.post(f"/vials/{first_vial}/reconstitute", data={"volume_ml": 2})
+    assert "5 mg/mL" in client.get(f"/vials/{first_vial}").text
 
     # volume dose of 0.1 mL = 500 mcg ; cost = 500/10000 * $110 = $5.50
-    pv = client.post("/doses/preview", data={"vial_id": 1, "amount": "0.1", "unit": "mL"})
+    pv = client.post("/doses/preview", data={"vial_id": first_vial, "amount": "0.1", "unit": "mL"})
     assert "500 mcg" in pv.text and "$5.50" in pv.text
-    ok = client.post("/doses", data={"vial_id": 1, "amount": "0.1", "unit": "mL"})
+    ok = client.post("/doses", data={"vial_id": first_vial, "amount": "0.1", "unit": "mL"})
     assert "500 mcg" in ok.text
-    bad = client.post("/doses", data={"vial_id": 2, "amount": "0.1", "unit": "mL"})
+    bad = client.post("/doses", data={"vial_id": second_vial, "amount": "0.1", "unit": "mL"})
     assert bad.headers.get("HX-Retarget") == "#form-msg"   # vial 2 has no volume yet
 
     # COA upload with content mismatch, then opt in to COA content
     pdf = b"%PDF-1.4\n%fake\n"
-    r = client.post("/vials/1/coas", files={"file": ("coa.pdf", pdf, "application/pdf")},
+    r = client.post(f"/vials/{first_vial}/coas", files={"file": ("coa.pdf", pdf, "application/pdf")},
                     data={"purity_pct": "99.2", "reported_content": "9", "reported_unit": "mg"})
     assert "COA uploaded" in r.text
-    evil = client.post("/vials/1/coas", files={"file": ("x.pdf", b"not a pdf", "application/pdf")})
+    evil = client.post(f"/vials/{first_vial}/coas", files={"file": ("x.pdf", b"not a pdf", "application/pdf")})
     assert "don&#39;t match" in evil.text or "don't match" in evil.text
-    assert client.get("/coas/1/file").content == pdf
+    with SessionLocal() as db:
+        coa_id = db.get(Vial, first_vial).coa_id
+        assert coa_id is not None
+        assert db.get(Coa, coa_id).original_name == "coa.pdf"
+
+    assert client.get(f"/coas/{coa_id}/file").content == pdf
     form = {"status": "in_use", "content_value": 10, "content_unit": "mg", "unit_price": "100",
             "volume_ml": 2, "use_coa_content": "on"}
-    client.post("/vials/1", data=form)
-    assert "from COA" in client.get("/vials/1").text
+    client.post(f"/vials/{first_vial}", data=form)
+    assert "from COA" in client.get(f"/vials/{first_vial}").text
 
     # protocol what-if
     r = client.post("/protocols", data={"name": "Plan A"})
     ppid = int(re.search(r"/protocols/(\d+)", str(r.url)).group(1))
-    rows = {"compound_id": ["1"], "amount": ["250"], "unit": ["mcg"], "freq_count": ["5"],
+    rows = {"compound_id": [str(flow_ids["compound_id"])], "amount": ["250"], "unit": ["mcg"], "freq_count": ["5"],
             "freq_period": ["week"], "horizon_weeks": "12"}
     calc = client.post(f"/protocols/{ppid}/calc", data=rows)
     assert calc.status_code == 200 and "Cost per month" in calc.text
@@ -67,7 +124,7 @@ def test_full_flow(client):
     assert "vs saved" in client.post(f"/protocols/{ppid}/calc", data=rows).text
 
 
-def test_vitals_and_notes(client):
+def test_vitals_and_notes(client, flow_ids):
     # vitals: lb entry is stored in kg and shown in the display unit (kg by default)
     client.post("/vitals", data={"weight": "180", "weight_unit": "lb", "systolic": "118",
                                  "diastolic": "76", "pulse": "62", "context": "morning"})
@@ -82,14 +139,30 @@ def test_vitals_and_notes(client):
     assert client.delete(f"/vitals/{rid}").headers.get("HX-Refresh") == "true"
 
     # notes: create two pages, link them, add sources, check safety
-    r = client.post("/pages", data={"title": "First note", "tags": "Reading, Sleep",
-                                    "body": "# Heading\n\nSee [[Second note]] and <script>alert(1)</script>",
-                                    "compound_ids": [1]})
+    first_title = "First note " + flow_ids["tag"]
+    second_title = "Second note " + flow_ids["tag"]
+
+    r = client.post("/pages", data={
+        "title": first_title,
+        "tags": "Reading, Sleep",
+        "body": f"# Heading\n\nSee [[{second_title}]] and <script>alert(1)</script>",
+        "compound_ids": [flow_ids["compound_id"]],
+    })
     pid = int(re.search(r"/pages/(\d+)", str(r.url)).group(1))
-    client.post("/pages", data={"title": "Second note", "body": "Backlink target"})
+    client.post(
+        "/pages",
+        data={"title": second_title, "body": "Backlink target"},
+    )
+
+    with SessionLocal() as db:
+        second_page_id = db.scalar(
+            select(Page.id).where(Page.title == second_title)
+        )
+
+    assert second_page_id is not None
     view = client.get(f"/pages/{pid}").text
     assert 'class="wikilink"' in view and "<script>alert" not in view
-    assert "Linked from" in client.get("/pages/2").text
+    assert "Linked from" in client.get(f"/pages/{second_page_id}").text
     client.post(f"/pages/{pid}/sources", data={"kind": "book", "title": "Some Book", "author": "A. Writer",
                                                "location": "ch. 3"})
     client.post(f"/pages/{pid}/sources", data={"kind": "web", "title": "Article",
@@ -100,13 +173,13 @@ def test_vitals_and_notes(client):
     assert "Some Book" in view and 'href="https://example.org/a"' in view
     assert "First note" in client.get("/pages?q=writer").text           # searches sources
     assert "First note" in client.get("/pages?tag=sleep").text
-    assert "First note" in client.get("/pages?compound_id=1").text
-    assert "already exists" in client.post("/pages", data={"title": "first NOTE"}).text
-    prev = client.post("/pages/preview", data={"body": "**hi** [[First note]]"})
+    assert "First note" in client.get(f'/pages?compound_id={flow_ids["compound_id"]}').text
+    assert "already exists" in client.post("/pages", data={"title": first_title.upper()}).text
+    prev = client.post("/pages/preview", data={"body": f"**hi** [[{first_title}]]"})
     assert "<strong>hi</strong>" in prev.text and f"/pages/{pid}" in prev.text
 
 
-def test_events_overlay_and_labs(client):
+def test_events_overlay_and_labs(client, flow_ids):
     # --- events on vitals charts (doses were logged "now" in test_full_flow)
     client.post("/vitals", data={"weight": "80", "weight_unit": "kg"})
     page = client.get("/vitals?days=30").text
@@ -116,14 +189,22 @@ def test_events_overlay_and_labs(client):
     # --- lab reports
     pdf = b"%PDF-1.4\n%fake lab report\n"
     r = client.post("/labs", data={
-        "drawn_on": "2026-09-01", "lab_name": "Lab A", "analyte": ["Total testosterone", "Glucose"],
+        "drawn_on": "2026-09-01", "lab_name": "Lab A " + flow_ids["tag"], "analyte": ["Total testosterone", "Glucose"],
         "value": ["600", "90"], "unit": ["ng/dL", "mg/dL"], "ref_low": ["264", ""], "ref_high": ["916", ""]},
         files={"file": ("rep.pdf", pdf, "application/pdf")})
     assert "Saved 2 result" in r.text and "within" in r.text
     client.post("/labs", data={
         "drawn_on": "2026-10-01", "lab_name": "Lab B", "analyte": ["Testosterone"], "value": ["18"],
         "unit": ["nmol/L"], "ref_low": ["9.2"], "ref_high": ["31.8"]})
-    assert client.get("/labs/1/file").content == pdf
+    with SessionLocal() as db:
+        report_id = db.scalar(
+            select(LabReport.id).where(
+                LabReport.lab_name == "Lab A " + flow_ids["tag"]
+            )
+        )
+
+    assert report_id is not None
+    assert client.get(f"/labs/{report_id}/file").content == pdf
 
     index = client.get("/labs").text
     assert "Trends by analyte" in index and "<svg" in index

@@ -14,9 +14,9 @@ MODE="${1:---quick}"
 if (( $# )); then shift; fi
 
 case "$MODE" in
-  --quick|--full|--profile|--one) ;;
+  --quick|--full|--profile|--one|--parallel-check) ;;
   *)
-    echo "Usage: $0 --quick|--full|--profile|--one [pytest args]" >&2
+    echo "Usage: $0 --quick|--full|--profile|--one|--parallel-check [pytest args]" >&2
     exit 2
     ;;
 esac
@@ -76,5 +76,23 @@ case "$MODE" in
     }
     exec "$PY" -m pytest \
       "${COMMON[@]}" "$@"
+    ;;
+  --parallel-check)
+    WORKERS="${TRACKER_TEST_WORKERS:-2}"
+    [[ "$WORKERS" =~ ^[1-8]$ ]] || {
+      echo "ERROR: TRACKER_TEST_WORKERS must be 1-8." >&2
+      exit 2
+    }
+    "$PY" -m pytest --help | grep -F -- '--dist=' >/dev/null || {
+      echo "ERROR: pytest-xdist is not installed." >&2
+      exit 2
+    }
+    echo "=== EXPERIMENTAL PARALLEL TESTING: $WORKERS WORKERS ==="
+    echo "=== GUARDED DEPLOYMENTS REMAIN SERIAL ==="
+    exec "$PY" -m pytest \
+      "${COMMON[@]}" \
+      -n "$WORKERS" --dist=loadfile \
+      --durations=20 tests \
+      "${BROWSER_EXCLUSIONS[@]}" "$@"
     ;;
 esac
