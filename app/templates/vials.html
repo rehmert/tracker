@@ -735,6 +735,51 @@ document.addEventListener("DOMContentLoaded", () => {
 </form>
 
 
+<style>
+#tracker-inventory-reports {
+  margin-top: 1rem;
+  padding: .75rem 1rem;
+}
+#tracker-inventory-reports > summary {
+  cursor: pointer;
+  padding: .3rem .1rem;
+  line-height: 1.5;
+}
+#tracker-inventory-reports > summary .note {
+  font-size: .86rem;
+  font-weight: 400;
+}
+#tracker-inventory-reports[open] > summary {
+  margin-bottom: .7rem;
+}
+#tracker-inventory-reports > summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+#tracker-inventory-reports .tracker-lifecycle,
+#tracker-inventory-reports .tracker-compound-inventory {
+  margin-top: .8rem;
+}
+@media (max-width: 700px) {
+  #tracker-inventory-reports > summary .note {
+    display: block;
+  }
+}
+</style>
+<!-- TRACKER_INVENTORY_REPORTS_CONSOLIDATED -->
+<details class="card tracker-inventory-reports"
+         id="tracker-inventory-reports">
+  <summary>
+    <strong>Inventory reports</strong>
+    <span class="note">
+      — vial lifecycle, expiry and compound inventory
+    </span>
+  </summary>
+  <p class="note">
+    Detailed reports for the currently displayed inventory.
+    Open this section to review lifecycle dates, COA coverage,
+    and compound-level inventory summaries.
+  </p>
 <!-- TRACKER_STAGE_34_38_LIFECYCLE -->
 <section class="card tracker-lifecycle"
          id="tracker-vial-lifecycle"
@@ -828,6 +873,9 @@ document.addEventListener("DOMContentLoaded", () => {
         src="/static/js/tracker-compound-inventory.js?v=34.42.1"></script>
 <!-- END TRACKER STAGE 34.40-34.42 -->
 
+
+</details>
+<!-- END_TRACKER_INVENTORY_REPORTS_CONSOLIDATED -->
 
 <!-- TRACKER_STAGE_34_43_46 -->
 <link rel="stylesheet"
