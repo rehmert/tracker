@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from . import pk
 from .pk_scenario_ops import scenario
 from .pk_metrics181 import metrics, resolution
+from .pk_alignment193 import shared_step, validate_alignment
 from sqlalchemy import select
 from .models import DoseLog,Vial
 
@@ -39,14 +40,17 @@ def analyze(db,sid,days):
             DoseLog.taken_at<=start
         )) if d.vial.content_unit in ('mg','mcg','g')]
     variants=[]
+    curves=[]
+    step=shared_step(obj.half_life_hours)
 
     for factor in (.75,1.0,1.25):
         rows=pk.series(
             start,end,actual,planned,
             obj.half_life_hours*factor,
             obj.absorption_half_life_hours,
-            step_hours=resolution(obj.half_life_hours*factor)
+            step_hours=step
         )
+        curves.append(rows)
 
         values=[r['planned'] for r in rows]
 
@@ -59,13 +63,14 @@ def analyze(db,sid,days):
             'trough':min(values),
             'mean':metrics(rows)['mean'],
             'auc':metrics(rows)['auc'],
-            'resolution_hours':resolution(obj.half_life_hours*factor)
+            'resolution_hours':step
         })
 
     return {
         'recorded_administrations':len(actual),
         'scenario_id':sid,
-        'times':[r['at'] for r in rows],
+        'times':validate_alignment(curves),
+        'sample_interval_hours':step,
         'variants':variants,
         'disclaimer':(
             'Illustrative parameter sensitivity; '
