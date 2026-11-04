@@ -1,0 +1,6 @@
+.pk-workspace-nav{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.8rem 0;padding:.7rem;border:1px solid var(--border,#bbb);border-radius:10px}
+.pk-workspace-nav a{padding:.4rem .7rem;min-height:36px;display:inline-flex;align-items:center;border-radius:6px}
+.pk-workspace-nav a:focus-visible{outline:3px solid var(--accent,#387c69)}
+.pk-workspace-nav a:hover{background:var(--surface-secondary,#eee)}
+#pkWorkspaceStatus{margin:.3rem 0;overflow-wrap:anywhere}
+@media(max-width:700px){.pk-workspace-nav a{min-height:44px}}
