@@ -37,6 +37,7 @@ from .. import pk_diagnostics213
 from .. import pk_sensitivity217
 from .. import pk_operational221
 from .. import pk_revision229
+from .. import pk_operations237
 from .. import pk_health189
 from .. import pk_transform165 as transform165
 from .. import pk_sensitivity169 as sensitivity169
@@ -1551,3 +1552,8 @@ def pk_workspace_revision_preview(sid:int,audit_id:int,db:Session=Depends(get_db
 @router.post("/workspace/{sid}/revisions/{audit_id}/restore")
 def pk_workspace_revision_restore(sid:int,audit_id:int,data:pk_revision229.RestoreRequest,db:Session=Depends(get_db)):
     return pk_revision229.restore(db,sid,audit_id,data.expected_version)
+
+
+@router.get("/workspace/health/operations")
+def pk_workspace_operations(db:Session=Depends(get_db)):
+    return pk_operations237.health(db)
