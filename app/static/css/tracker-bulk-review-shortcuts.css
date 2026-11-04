@@ -1,0 +1,71 @@
+/* Requested-change navigation within the guided vial editor. */
+#bulk-editor-panel .bulk-review-shortcuts {
+  margin: .7rem 0;
+  padding: .7rem .8rem;
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: .65rem;
+}
+
+#bulk-editor-panel .bulk-review-shortcuts h3 {
+  margin: 0 0 .35rem;
+  font-size: 1rem;
+}
+
+#bulk-review-shortcut-status {
+  margin: .2rem 0 .65rem;
+  font-size: .86rem;
+  color: var(--muted, #64748b);
+}
+
+#bulk-review-shortcut-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+
+#bulk-editor-panel .bulk-review-shortcut {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: .5rem;
+  overflow: hidden;
+}
+
+#bulk-editor-panel .bulk-review-shortcut button {
+  width: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: .4rem .6rem;
+  font-size: .83rem;
+}
+
+#bulk-editor-panel .bulk-review-jump {
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+#bulk-editor-panel .bulk-review-undo {
+  border-left: 1px solid var(--rule, #dce5ec);
+  font-weight: 650;
+}
+
+#bulk-editor-panel .bulk-review-incomplete {
+  border-color: #b45309;
+}
+
+#bulk-editor-panel .bulk-review-shortcut button:focus-visible {
+  outline: 2px solid var(--accent, #2563eb);
+  outline-offset: -2px;
+}
+
+@media (max-width: 700px) {
+  #bulk-editor-panel .bulk-review-shortcut {
+    width: 100%;
+  }
+  #bulk-editor-panel .bulk-review-jump {
+    flex: 1;
+  }
+}

@@ -5,6 +5,8 @@
 <script defer src="/static/js/tracker-bulk-selection.js?v=bulk-selection-batch-20261101"></script>
 <link rel="stylesheet" href="/static/css/tracker-bulk-editor-guided.css?v=20261103b">
 <script defer src="/static/js/tracker-bulk-editor-guided.js?v=20261103b"></script>
+<link rel="stylesheet" href="/static/css/tracker-bulk-review-shortcuts.css?v=20261103">
+<script defer src="/static/js/tracker-bulk-review-shortcuts.js?v=20261103"></script>
 <!-- TRACKER_BULK_CONSOLIDATED -->
 <h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
 <form method="get" class="inline" id="vial-filter-form">
@@ -598,6 +600,17 @@ document.addEventListener("DOMContentLoaded", () => {
     <span id="bulk-edits-details">Choose fields below to edit.</span>
     <button type="button" id="bulk-edits-reset">Reset requested changes</button>
   </div>
+  <section class="bulk-review-shortcuts"
+         aria-label="Requested bulk changes">
+    <h3>Requested changes</h3>
+    <p id="bulk-review-shortcut-status" role="status" aria-live="polite">
+      0 vials selected · 0 fields requested
+    </p>
+    <div id="bulk-review-shortcut-list"
+         aria-label="Jump to or undo requested field changes">
+      <p class="note">No fields changed.</p>
+    </div>
+  </section>
   <p id="bulk-edit-validation" class="note" role="status" aria-live="polite"></p>
   <div class="bulk-edit-review-tools">
     <p id="bulk-edit-impact" class="note" role="status" aria-live="polite">Select vials and edit fields to preview impact.</p>
