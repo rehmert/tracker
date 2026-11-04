@@ -323,8 +323,15 @@ def delete_dose(did: int, db: Session = Depends(get_db)):
 def edit_page(did: int, request: Request, db: Session = Depends(get_db)):
     d = db.get(DoseLog, did)
     if not d: raise HTTPException(404)
+    # Match the existing server-side count-category rule.
+    # Metadata only; no inventory or correction changes.
+    counted_supply_kinds = set(db.scalars(
+        select(SupplyCategory.key).where(SupplyCategory.unit == "count")
+    ))
+
     return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=list(db.scalars(select(Supply).order_by(Supply.name))), used={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))},
-                  history=list(db.scalars(select(ChangeAudit).where(ChangeAudit.entity_type == "dose", ChangeAudit.entity_id == did).order_by(ChangeAudit.id.desc()))))
+                  history=list(db.scalars(select(ChangeAudit).where(ChangeAudit.entity_type == "dose", ChangeAudit.entity_id == did).order_by(ChangeAudit.id.desc()))),
+                  counted_supply_kinds=counted_supply_kinds)
 
 @router.post("/doses/{did}/edit")
 async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amount: float = Form(...),
