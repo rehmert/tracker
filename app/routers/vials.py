@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import services, units as U
 from ..inventory_lock import reserve_inventory_write
 from ..db import get_db
-from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply, ChangeAudit, BlendComponent
+from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply, ChangeAudit, BlendComponent, SupplyCategory
 from .. import manual_supplies
 from ..templating import render
 
@@ -566,12 +566,19 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_db)):
     doses = list(db.scalars(select(DoseLog).where(DoseLog.vial_id == vid)
                             .order_by(DoseLog.taken_at.desc())))
     rows = [{"dose": d, "cost": vd.cost_per_base * d.amount_base} for d in doses]
+
+    # Read-only category metadata, matching the Dose log.
+    counted_supply_kinds = set(db.scalars(
+        select(SupplyCategory.key).where(SupplyCategory.unit == "count")
+    ))
+
     return render(request, "vial_detail.html", v=v, vd=vd, label_base=label_base,
                   coa_variance=coa_variance, rows=rows, statuses=VIAL_STATUSES,
                   extras=vd.landed_cents - v.unit_price_cents, today=date.today().isoformat(),
                   bac_supplies=list(db.scalars(select(Supply).where(Supply.kind == "bac_water", Supply.remaining_qty > 0))),
                   all_coas=list(db.scalars(select(Coa).order_by(Coa.id.desc()))),
                   disposable_supplies=manual_supplies.available(db),
+                  counted_supply_kinds=counted_supply_kinds,
                   prep_events=list(db.scalars(select(PreparationEvent).where(PreparationEvent.vial_id == vid).order_by(PreparationEvent.id.desc()))), prep_usage={e.id: [(db.get(SupplyUsage, link.usage_id), db.get(Supply, db.get(SupplyUsage, link.usage_id).supply_id)) for link in db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == e.id))] for e in db.scalars(select(PreparationEvent).where(PreparationEvent.vial_id == vid))})
 
 
