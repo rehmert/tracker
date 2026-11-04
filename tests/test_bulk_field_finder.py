@@ -23,14 +23,14 @@ def test_requested_changes_remain_visible():
 
     assert 'fieldMode(field) !== "keep"' in script
     assert "const visible = matches || changed;" in script
-    assert "field.hidden = !visible" in script
+    assert "field.hidden = !(visible && permitted)" in script
 
 
 def test_empty_search_restores_group_visibility():
     script = SCRIPT.read_text()
 
     assert "originalOpen = new Map(" in script
-    assert "group.hidden = false" in script
+    assert "group.hidden = visibleFields.length === 0" in script
     assert "group.open = originalOpen.get(group)" in script
     assert 'event.key === "Escape"' in script
 

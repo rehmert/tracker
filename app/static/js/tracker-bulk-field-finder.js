@@ -10,6 +10,7 @@
     const input = document.getElementById("bulk-field-search");
     const clear = document.getElementById("bulk-field-search-clear");
     const status = document.getElementById("bulk-field-search-status");
+    const editsOnly = document.getElementById("bulk-show-edited-only");
 
     if (!form || !input || !clear || !status) return;
 
@@ -58,10 +59,13 @@
         // Never hide a requested edit just because it
         // does not match the current search query.
         const visible = matches || changed;
+        const permitted = !editsOnly?.checked || changed;
 
-        field.hidden = !visible;
+        // Search retains requested edits, but edited-only is
+        // an additional filter rather than a competing owner.
+        field.hidden = !(visible && permitted);
 
-        if (activeSearch && matches) matched++;
+        if (activeSearch && matches && permitted) matched++;
         if (activeSearch && changed && !matches) retained++;
       }
 
@@ -75,7 +79,8 @@
         if (activeSearch && !group.hidden) {
           group.open = true;
         } else if (!activeSearch) {
-          group.hidden = false;
+          // Keep empty groups hidden in edited-only mode.
+          group.hidden = visibleFields.length === 0;
           if (searching && originalOpen.has(group)) {
             group.open = originalOpen.get(group);
           }
@@ -84,10 +89,14 @@
 
       searching = activeSearch;
       clear.disabled = !activeSearch;
+      const modeNote = editsOnly?.checked
+        ? " · Showing requested changes only"
+        : "";
 
       if (!activeSearch) {
         status.textContent =
-          "Search field names; requested changes remain visible.";
+          "Search field names; requested changes remain visible." +
+          modeNote;
       } else {
         status.textContent =
           matched + " matching field" +
@@ -97,11 +106,12 @@
               " additional requested change" +
               (retained === 1 ? "" : "s") +
               " kept visible"
-            : "");
+            : "") + modeNote;
       }
     }
 
     input.addEventListener("input", refresh);
+    editsOnly?.addEventListener("change", refresh);
 
     input.addEventListener("keydown", event => {
       if (event.key === "Escape" && input.value) {
@@ -118,6 +128,14 @@
     });
 
     form.addEventListener("change", event => {
+      if (event.target.closest(".bulk-edit-field")) {
+        refresh();
+      }
+    });
+
+    // Guided editing can opt a field into Set on each keystroke.
+    // Reapply composed visibility immediately after that change.
+    form.addEventListener("input", event => {
       if (event.target.closest(".bulk-edit-field")) {
         refresh();
       }

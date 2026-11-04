@@ -151,6 +151,15 @@
     for (const button of form.querySelectorAll("[data-bulk-focus-field]")) {
       button.addEventListener("click", () => {
         const key = button.dataset.bulkFocusField;
+        const fieldSearch = document.getElementById("bulk-field-search");
+        if (fieldSearch?.value) {
+          // A shortcut is explicit navigation, not a request to
+          // keep a conflicting search filter.
+          fieldSearch.value = "";
+          fieldSearch.dispatchEvent(
+            new Event("input", {bubbles:true})
+          );
+        }
         if (editsOnly?.checked) {
           editsOnly.checked = false;
           refresh();
