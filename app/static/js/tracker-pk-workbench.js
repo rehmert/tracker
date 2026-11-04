@@ -22,6 +22,7 @@
     const csv = $("pkExpCsv");
 
     let result = null;
+    const previewCache = new Map();
 
     const number = inspector.number;
 
@@ -584,6 +585,16 @@
         const csrf=window.trackerCsrfToken?.();
         if(csrf) headers["X-Tracker-CSRF"]=csrf;
 
+        const key=JSON.stringify(parameters());
+        const recent=previewCache.get(key);
+
+        if(recent && Date.now()-recent.at<15000) {
+          render(recent.data);
+          status.textContent=
+            "Recently calculated preview (15-second cache).";
+          return;
+        }
+
         const response=await fetch(
           "/pk/workbench/"+
           encodeURIComponent(host.dataset.protocolId),
@@ -602,7 +613,15 @@
           );
         }
 
-        render(await response.json());
+        const fresh=await response.json();
+        previewCache.set(key,{
+          at:Date.now(),data:fresh
+        });
+        if(previewCache.size>12)
+          previewCache.delete(
+            previewCache.keys().next().value
+          );
+        render(fresh);
         status.textContent=
           "Experiment calculated. Nothing saved.";
       } catch(error) {

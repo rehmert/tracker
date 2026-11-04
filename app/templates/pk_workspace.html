@@ -2,6 +2,19 @@
 {% block title %}PK Analysis Workspace{% endblock %}
 {% block content %}
 <h1>PK Analysis Workspace</h1>
+<div class="pk-dashboard-preferences"
+     aria-label="PK dashboard panels">
+  <label><input type="checkbox"
+    data-pk-toggle="protocols" checked>Protocols</label>
+  <label><input type="checkbox"
+    data-pk-toggle="labs" checked>Labs</label>
+  <label><input type="checkbox"
+    data-pk-toggle="inventory" checked>Inventory</label>
+</div>
+<link rel="stylesheet"
+ href="/static/css/tracker-pk-bundle88.css?v=bundle88">
+<script src="/static/js/tracker-pk-dashboard.js?v=bundle88"
+ defer></script>
 <p class="note">Read-only overview. Exposure models are
 hypothetical and not measured drug concentrations.</p>
 <nav class="ux-shortcuts">
@@ -11,7 +24,7 @@ hypothetical and not measured drug concentrations.</p>
   <a href="/inventory-forecast">Inventory forecast</a>
 </nav>
 
-<section>
+<section data-pk-panel="protocols">
   <h2>Protocols and experiments</h2>
   <div class="scroll">
     <table class="items">
@@ -36,7 +49,7 @@ hypothetical and not measured drug concentrations.</p>
   </div>
 </section>
 
-<section>
+<section data-pk-panel="labs">
   <h2>Recent laboratory reports</h2>
   <ul>
     {% for lab in labs %}
@@ -48,7 +61,7 @@ hypothetical and not measured drug concentrations.</p>
   </ul>
 </section>
 
-<section>
+<section data-pk-panel="inventory">
   <h2>Active-protocol inventory planning</h2>
   <p class="note">Approximate demand from the existing
   inventory forecast; not a reservation of stock.</p>

@@ -95,7 +95,7 @@ def test_workbench_ui_and_read_only_endpoint():
     assert 'id="pkExpReset"' in html
     assert 'id="pkExpPlot"' in html
 
-    assert "tracker-pk-workbench.js?v=bundle84" in html
+    assert "tracker-pk-workbench.js?v=bundle88" in html
     assert "trackerPkInspector" in js
     assert "trackerPkAxes" in js
     assert "pkExpInventory" in js

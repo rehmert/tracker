@@ -1,0 +1,61 @@
+/* Releases 85-88: Responsive workbench and dashboard */
+.pk-dashboard-preferences {
+  display:flex;
+  gap:1rem;
+  flex-wrap:wrap;
+  margin:.8rem 0;
+}
+[data-pk-panel][hidden] {display:none!important}
+#pkExpDoseEditor .scroll {
+  max-height:420px;
+  overflow:auto;
+}
+#pkExpDoseEditor th {
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:var(--card,#fff);
+}
+#pkExpDoseEditor td {
+  min-width:105px;
+  vertical-align:middle;
+}
+#pkExpDoseEditor select,
+#pkExpDoseEditor input {
+  box-sizing:border-box;
+  max-width:100%;
+  min-width:72px;
+}
+#pkExpReportText {
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  font-size:.85rem;
+}
+#pkExpCompareResults {
+  max-width:100%;
+  overflow:auto;
+}
+#pkExpCompareResults canvas {
+  display:block;
+  width:100%;
+  height:auto;
+}
+@media(max-width:680px) {
+  .pk-experiment-library .pk-inspector-tools {
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+  .pk-experiment-library select,
+  .pk-experiment-library input {
+    width:100%;
+    box-sizing:border-box;
+  }
+  #pkExpDoseEditor td {min-width:115px}
+}
+@media print {
+  .pk-dashboard-preferences,
+  .pk-experiment-library .pk-inspector-tools {
+    display:none!important;
+  }
+  #pkExpReport {break-before:page}
+}
