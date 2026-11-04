@@ -93,6 +93,103 @@ def what_if_doses(data: WhatIfProtocol):
     return doses
 
 
+class MultiWhatIfInput(BaseModel):
+    """Independent hypothetical schedules on one timeline."""
+
+    schedules: list[WhatIfProtocol] = Field(
+        min_length=1, max_length=4
+    )
+
+    @model_validator(mode="after")
+    def validate_timeline(self):
+        if any(s.start_at.tzinfo is not None for s in self.schedules):
+            raise ValueError("Use local datetimes without timezone offsets")
+        start = min(s.start_at for s in self.schedules)
+        end = max(
+            s.start_at + timedelta(days=s.duration_days)
+            for s in self.schedules
+        )
+        if end <= start or end - start > timedelta(days=730):
+            raise ValueError("Combined timeline cannot exceed 730 days")
+        return self
+
+
+@router.post("/what-if/multi-preview")
+def preview_multi_what_if(
+    data: MultiWhatIfInput,
+    db: Session = Depends(get_db),
+):
+    """Calculate independent normalized exposure curves; no writes."""
+    start = min(s.start_at for s in data.schedules)
+    end = max(
+        s.start_at + timedelta(days=s.duration_days)
+        for s in data.schedules
+    )
+
+    hours = (end - start).total_seconds() / 3600
+    shortest = min(
+        min(s.half_life_hours, s.absorption_half_life_hours)
+        for s in data.schedules
+    )
+
+    # Cap chart resolution at approximately 2,001 points.
+    step = max(0.1, min(12.0, shortest / 3), hours / 1999)
+
+    times = None
+    output = []
+
+    for schedule in data.schedules:
+        verify_what_if_compound(db, schedule.compound_id)
+        compound = db.get(Compound, schedule.compound_id)
+        doses = what_if_doses(schedule)
+
+        if len(doses) > 1000:
+            raise HTTPException(
+                400, "Maximum 1,000 simulated administrations per schedule"
+            )
+
+        rows = pk.series(
+            start, end, [], doses,
+            schedule.half_life_hours,
+            schedule.absorption_half_life_hours,
+            step_hours=step,
+        )
+
+        current_times = [row["at"] for row in rows]
+        if times is None:
+            times = current_times
+        elif times != current_times:
+            raise HTTPException(400, "Inconsistent chart timeline")
+
+        values = [row["planned"] for row in rows]
+        peak = max(values, default=0.0)
+
+        output.append({
+            "name": schedule.name,
+            "compound_id": schedule.compound_id,
+            "compound_name": compound.name,
+            "model": pk.model_info(compound.name),
+            "dose_count": len(doses),
+            "peak_mg_equivalent": peak,
+            "values_percent": [
+                round(100.0 * value / peak, 4)
+                if peak > 0 else 0.0
+                for value in values
+            ],
+        })
+
+    return {
+        "at": times or [],
+        "series": output,
+        "units": "percentage of each curve's own peak",
+        "disclaimer": (
+            "Independent hypothetical exposure shapes, not measured "
+            "serum concentrations or comparable drug potency. "
+            "Nothing was saved."
+        ),
+    }
+
+
 def verify_what_if_compound(db: Session, compound_id: int):
     c = db.get(Compound, compound_id)
     if c is None or pk.profile(c.name) is None:

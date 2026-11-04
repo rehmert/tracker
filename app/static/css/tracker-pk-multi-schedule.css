@@ -1,0 +1,58 @@
+body:not(.pk-mode-multi) .pk-multi-section {
+  display: none;
+}
+
+body.pk-mode-multi #pkSetup,
+body.pk-mode-multi #whatIfCard,
+body.pk-mode-multi #pkResults,
+body.pk-mode-multi .pk-compare-section,
+body.pk-mode-multi .pk-custom-section {
+  display: none;
+}
+
+#pkMultiSchedules fieldset {
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: .65rem .75rem;
+  margin: .5rem 0;
+}
+
+#pkMultiSchedules legend {
+  font-weight: 700;
+  padding: 0 .35rem;
+}
+
+.pk-multi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: .5rem .7rem;
+}
+
+.pk-multi-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+
+.pk-multi-actions,
+#pkMultiLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem .75rem;
+  margin: .6rem 0;
+}
+
+.pk-multi-remove {
+  margin-top: .5rem;
+}
+
+:root[data-density="compact"] #pkMultiSchedules fieldset {
+  padding: .4rem .55rem;
+  margin: .3rem 0;
+}
+
+@media (max-width: 760px) {
+  .pk-multi-grid {
+    grid-template-columns: 1fr;
+  }
+}

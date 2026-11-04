@@ -49,10 +49,10 @@
     $('pkRatio').textContent=trough>0?(peak/trough).toFixed(2)+'×':'N/A';$('pkAverage').textContent=fmt(avg);
     $('summary').textContent=`${data.model?.level||'approximate'} model. ${data.actual_doses} historical administrations, ${data.planned_doses} planned administrations. Units: ${data.units}.`;
   }
-  const help={protocol:'Select a protocol and its compound, then Run simulation. The saved schedule is read-only.',custom:'Select a compound, enter an initial date, dose and interval (3.5 days is supported), then Preview what-if. Nothing is saved unless you choose Save.',compare:'Select a compound and up to four saved scenarios, then Compare scenarios. Overlay curves from different compounds are independently normalized.'};
+  const help={multi:'Compare independent hypothetical schedules on one timeline; nothing is saved.',protocol:'Select a protocol and its compound, then Run simulation. The saved schedule is read-only.',custom:'Select a compound, enter an initial date, dose and interval (3.5 days is supported), then Preview what-if. Nothing is saved unless you choose Save.',compare:'Select a compound and up to four saved scenarios, then Compare scenarios. Overlay curves from different compounds are independently normalized.'};
   function setMode(mode){
     if(!help[mode]) mode='protocol';
-    document.body.classList.remove('pk-mode-protocol','pk-mode-custom','pk-mode-compare');document.body.classList.add('pk-mode-'+mode);
+    document.body.classList.remove('pk-mode-protocol','pk-mode-custom','pk-mode-compare','pk-mode-multi');document.body.classList.add('pk-mode-'+mode);
     document.querySelectorAll('[data-pk-mode]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.pkMode===mode)));
     $('pkWorkflowHelp').textContent=help[mode];
     try{localStorage.setItem('tracker-pk-mode',mode);}catch(_e){}

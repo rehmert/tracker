@@ -7,6 +7,10 @@
 <button type="button" class="pk-tab" data-pk-mode="protocol" aria-selected="true">1 · Protocol</button>
 <button type="button" class="pk-tab" data-pk-mode="custom" aria-selected="false">2 · Custom</button>
 <button type="button" class="pk-tab" data-pk-mode="compare" aria-selected="false">3 · Compare</button>
+<button type="button" class="pk-tab"
+        data-pk-mode="multi" aria-selected="false">
+  4 · Multi-schedule
+</button>
 </div>
 <details class="card pk-help"><summary>How to use this simulator</summary><p id="pkWorkflowHelp">Choose an active protocol, select its compound, then Run simulation. The saved schedule is read-only.</p><p>Values are modeled exposure (mg-equivalent), not measured serum concentration, biological response, or dosing advice. A different compound's curve cannot be interpreted as equivalent potency.</p></details>
 <p>Exploratory modeled exposure only — not measured blood concentration, effectiveness, or a dosing recommendation. Testosterone depot and GLP-1 absorption parameters are approximations. Future plans never change your dose log or inventory.</p>
@@ -75,9 +79,44 @@
 <button id="add" type="button">Add planned dose</button>
 <table><thead><tr><th>Date/time</th><th>mg</th><th>Actions</th></tr></thead><tbody id="plannedRows"></tbody></table>
 </div>
+<section class="card pk-multi-section" id="pkMultiWorkspace"
+         aria-label="Hypothetical PK schedule comparison">
+  <h2>Multi-schedule comparison</h2>
+  <p class="note">Compare up to four independent hypothetical
+  schedules on the same timeline. Each curve is normalized
+  to its own modeled peak, not relative drug potency.</p>
+
+  <div id="pkMultiSchedules"></div>
+
+  <div class="pk-multi-actions">
+    <button type="button" id="pkMultiAdd">Add schedule</button>
+    <button type="button" id="pkMultiRun" class="primary">
+      Compare schedules
+    </button>
+  </div>
+
+  <p id="pkMultiStatus" role="status" aria-live="polite">
+    Configure schedules, then compare them.
+  </p>
+
+  <canvas id="pkMultiPlot" width="1000" height="380"
+          class="pk-chart" role="img"
+          aria-label="Normalized hypothetical exposure comparison">
+  </canvas>
+
+  <div id="pkMultiLegend" aria-label="Comparison legend"></div>
+
+  <p class="note">Exposure estimates are not measured serum
+  concentrations or dosing recommendations.
+  No records are saved.</p>
+</section>
 <p id="pkError" role="alert" style="color:#a22"></p>
 <style>
 .pk-tabs{display:flex;gap:.65rem;flex-wrap:wrap;margin:1rem 0}.pk-tab{padding:.7rem 1rem;border-radius:12px;border:1px solid var(--border,#d4ded8);background:var(--card,#fff);cursor:pointer}.pk-tab[aria-selected="true"]{outline:2px solid var(--accent,#387c69);font-weight:700}.pk-actions,.pk-quick-window,.pk-window{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.8rem 0}.pk-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin:1rem 0}.pk-metrics>div{border:1px solid var(--border,#d4ded8);border-radius:12px;padding:.85rem}.pk-metrics small{display:block;opacity:.8}.pk-metrics strong{font-size:1.4rem}.pk-chart{max-width:100%;height:auto}.pk-advanced,.pk-help{margin:.8rem 0}.pk-advanced summary,.pk-help summary{cursor:pointer;font-weight:600}.pk-add-compound{margin-top:1rem}.pk-add-compound[hidden]{display:none!important}.pk-mode-protocol .pk-custom-section,.pk-mode-protocol .pk-compare-section{display:none}.pk-mode-custom .pk-compare-section,.pk-mode-custom .pk-protocol-only{display:none}.pk-mode-compare .pk-custom-section{display:none}.pk-mode-compare #pkSetup{display:none}
 </style>
-<script src="/static/pk.js?v=pk-batch40-20261104" defer></script>
+<link rel="stylesheet"
+      href="/static/css/tracker-pk-multi-schedule.css?v=batch41">
+<script src="/static/pk.js?v=pk-batch41-20261104" defer></script>
+<script src="/static/js/tracker-pk-multi-schedule.js?v=batch41"
+        defer></script>
 {% endblock %}
