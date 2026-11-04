@@ -4,6 +4,7 @@
   function init(){
     if(!$('pkRevisionLoad'))return;
     let preview=null;
+    let requestGeneration=0;
     const status=$('pkRevisionStatus');
     const select=$('pkRevisionSelect');
     async function api(url,method='GET',body){
@@ -17,16 +18,21 @@
       if(!r.ok)throw Error('HTTP '+r.status+': '+(await r.text()).slice(0,120));
       return r.json();
     }
-    function invalidate(){preview=null;$('pkRevisionRestore').disabled=true;}
+    function invalidate(){
+      requestGeneration++;
+      preview=null;
+      $('pkRevisionRestore').disabled=true;
+    }
     $('scenario').addEventListener('change',()=>{invalidate();select.replaceChildren();});
     select.addEventListener('change',invalidate);
     $('pkRevisionLoad').onclick=async()=>{
       invalidate();select.replaceChildren();
+      const generation=requestGeneration;
       const sid=Number($('scenario').value);
       if(!sid)return;
       try{
         const list=await api('/pk/workspace/'+sid+'/revisions');
-        if(sid!==Number($('scenario').value))return;
+        if(generation!==requestGeneration||sid!==Number($('scenario').value))return;
         select.add(new Option('Choose revision',''));
         for(const item of list){
           const option=new Option('#'+item.id+' · '+item.action+(item.restorable?'':' (not restorable)'),String(item.id));
@@ -37,13 +43,19 @@
     };
     $('pkRevisionPreview').onclick=async()=>{
       invalidate();
+      const generation=requestGeneration;
       const sid=Number($('scenario').value),aid=Number(select.value);
       if(!sid||!aid)return;
       try{
         const data=await api('/pk/workspace/'+sid+'/revisions/'+aid+'/preview');
-        if(sid!==Number($('scenario').value)||aid!==Number(select.value))return;
+        if(generation!==requestGeneration||sid!==Number($('scenario').value)||aid!==Number(select.value))return;
         preview={sid,aid,data};$('pkRevisionRestore').disabled=false;
-        status.textContent='Restore '+data.dose_count+' hypothetical doses from #'+aid+'? Existing dose IDs will change. Nothing saved yet.';
+        status.textContent=
+          'Revision #'+aid+': '+data.dose_count+
+          ' doses; '+data.added+' added and '+
+          data.removed+' removed relative to current. '+
+          'Name changed: '+data.name_changed+
+          '. Preview only; nothing saved.';
       }catch(e){status.textContent=e.message;}
     };
     $('pkRevisionRestore').onclick=async()=>{

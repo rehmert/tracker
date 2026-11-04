@@ -4,6 +4,13 @@
   function init() {
     const bar=$('pkWorkspaceNav');
     if(!bar)return;
+
+    // The accessible panel controller supersedes the older
+    // shortcut bar; avoid displaying duplicate navigation.
+    if($('pkPanelControls')){
+      bar.hidden=true;
+      return;
+    }
     const targets=[
       ['Setup','pkSetup'],
       ['Exposure','pkResults'],
