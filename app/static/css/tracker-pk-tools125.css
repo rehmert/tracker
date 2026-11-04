@@ -53,3 +53,29 @@
     width:100%;
   }
 }
+.pk-dose-tools button:focus-visible,
+.pk-dose-tools select:focus-visible,
+.pk-dose-batch button:focus-visible,
+#plannedRows button:focus-visible {
+  outline:3px solid var(--accent,#387c69);
+  outline-offset:2px;
+}
+
+.pk-dose-tools button {
+  min-height:40px;
+}
+
+#plannedRows button {
+  min-height:36px;
+}
+
+@media(max-width:680px) {
+  .pk-dose-tools button {
+    min-height:44px;
+    width:100%;
+  }
+
+  #plannedRows button {
+    min-height:44px;
+  }
+}
