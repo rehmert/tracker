@@ -31,15 +31,14 @@ def test_lookup_is_scoped_to_edit_route():
 
     edit = source[start:end]
 
+    assert "all_supplies = list(db.scalars(" in edit
+    assert "select(Supply).order_by(Supply.name)" in edit
     assert (
-        "supplies = list(db.scalars("
-        "select(Supply).order_by(Supply.name)))"
+        "str(s.id): s.name for s in all_supplies"
         in edit
     )
-    assert (
-        "supply_names = {str(s.id): s.name for s in supplies}"
-        in edit
-    )
+    assert "_correction_available_supplies(" in edit
+    assert "all_supplies, used" in edit
     assert "supplies=supplies" in edit
     assert "supply_names=supply_names" in edit
 

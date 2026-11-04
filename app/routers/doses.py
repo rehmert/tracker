@@ -319,6 +319,15 @@ def delete_dose(did: int, db: Session = Depends(get_db)):
     return HTMLResponse("")
 
 
+def _correction_available_supplies(supplies, used):
+    """Keep stocked supplies and original usage, in existing order."""
+    return [
+        supply
+        for supply in supplies
+        if supply.remaining_qty > 0 or supply.id in used
+    ]
+
+
 @router.get("/doses/{did}/edit")
 def edit_page(did: int, request: Request, db: Session = Depends(get_db)):
     d = db.get(DoseLog, did)
@@ -329,10 +338,28 @@ def edit_page(did: int, request: Request, db: Session = Depends(get_db)):
         select(SupplyCategory.key).where(SupplyCategory.unit == "count")
     ))
 
-    supplies = list(db.scalars(select(Supply).order_by(Supply.name)))
-    supply_names = {str(s.id): s.name for s in supplies}
+    used = {
+        usage.supply_id: usage.amount
+        for usage in db.scalars(
+            select(SupplyUsage).where(SupplyUsage.dose_id == did)
+        )
+    }
 
-    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=supplies, used={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))},
+    # Keep all known names for historical audit records.
+    all_supplies = list(db.scalars(
+        select(Supply).order_by(Supply.name)
+    ))
+    supply_names = {
+        str(s.id): s.name for s in all_supplies
+    }
+
+    # Only supplies in stock or already used by this dose
+    # need to appear in the correction form.
+    supplies = _correction_available_supplies(
+        all_supplies, used
+    )
+
+    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=supplies, used=used,
                   history=list(db.scalars(select(ChangeAudit).where(ChangeAudit.entity_type == "dose", ChangeAudit.entity_id == did).order_by(ChangeAudit.id.desc()))),
                   counted_supply_kinds=counted_supply_kinds,
                   supply_names=supply_names)
