@@ -19,7 +19,7 @@ def stylesheet():
 def test_stylesheet_is_loaded_last():
     base = BASE.read_text()
 
-    link = "/static/css/tracker-compact-layout.css?v=batch38"
+    link = "/static/css/tracker-compact-layout.css?v=batch39"
 
     assert base.count(link) == 1
     assert base.index(link) > base.index("tracker-page-navigation.css")

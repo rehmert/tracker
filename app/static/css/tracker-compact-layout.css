@@ -233,3 +233,157 @@
     padding: .72rem;
   }
 }
+
+/*
+ * Batch 39: page-specific density.
+ *
+ * These selectors intentionally use #main-content so page-level CSS
+ * loaded inside content cannot accidentally override compact spacing.
+ * Only the Compact preference is affected.
+ */
+
+/* Long-page navigation consumes substantial space on report pages. */
+:root[data-density="compact"] #main-content .tracker-page-jump {
+  gap: .32rem .55rem;
+  margin: .28rem 0 .45rem;
+  padding: .35rem .5rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-page-jump label {
+  gap: .4rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-page-jump select {
+  padding: .3rem .5rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-copy-section-link {
+  padding: .3rem .5rem;
+}
+
+/* Protocol selection and schedule filters. */
+:root[data-density="compact"] #main-content .tracker-protocol-tools,
+:root[data-density="compact"] #main-content .tracker-schedule-tools {
+  gap: .42rem .6rem;
+  margin: .45rem 0 .55rem;
+  padding: .55rem .65rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-protocol-tools label,
+:root[data-density="compact"] #main-content .tracker-schedule-tools label {
+  gap: .15rem;
+}
+
+/* Lab trends: bring analytes and controls higher on the page. */
+:root[data-density="compact"] #main-content .labs-overview-counts {
+  gap: .4rem;
+  margin: .4rem 0 .6rem;
+}
+
+:root[data-density="compact"] #main-content .labs-overview-counts > div {
+  padding: .38rem .55rem;
+}
+
+:root[data-density="compact"] #main-content .labs-overview-counts strong {
+  line-height: 1.2;
+}
+
+:root[data-density="compact"] #main-content .labs-overview-controls,
+:root[data-density="compact"] #main-content .labs-reports-controls {
+  gap: .4rem .6rem;
+  margin: .4rem 0;
+}
+
+:root[data-density="compact"] #main-content #labs-trend-count,
+:root[data-density="compact"] #main-content #labs-reports-count {
+  margin: .25rem 0 .4rem;
+}
+
+:root[data-density="compact"] #main-content .labgrid {
+  gap: .55rem;
+}
+
+:root[data-density="compact"] #main-content .labcard {
+  padding: .6rem .7rem;
+}
+
+:root[data-density="compact"] #main-content .labcard h3 {
+  margin: 0 0 .2rem;
+}
+
+:root[data-density="compact"] #main-content .labcard .latest {
+  margin: 0 0 .25rem;
+}
+
+:root[data-density="compact"] #main-content .labcard .meta {
+  margin: .2rem 0 0;
+}
+
+/* Dashboard attention and overview: large legacy card rules. */
+:root[data-density="compact"] #main-content .tracker-attention {
+  margin: .5rem 0 .6rem;
+  padding: .55rem .68rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-attention-header {
+  gap: .3rem;
+  margin-bottom: .4rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-attention-list {
+  gap: .4rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-attention-link {
+  gap: .45rem;
+  min-height: 3rem;
+  padding: .45rem .6rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-attention-clear {
+  gap: .45rem;
+  padding: .45rem .6rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-attention-note {
+  margin: .4rem 0 0;
+}
+
+:root[data-density="compact"] #main-content .tracker-status-overview {
+  margin: .5rem 0 .65rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-status-heading {
+  gap: .4rem;
+  margin-bottom: .4rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-status-grid {
+  gap: .42rem;
+}
+
+:root[data-density="compact"] #main-content .tracker-status-card {
+  gap: .2rem;
+  padding: .58rem .7rem;
+}
+
+/* Dashboard quick actions remain accessible and readable. */
+:root[data-density="compact"] #main-content .dashboard-action {
+  padding: .43rem .7rem;
+}
+
+:root[data-density="compact"] #main-content .dashboard-hero .hero-actions {
+  gap: .4rem;
+}
+
+/* Keep narrow-screen navigation and form targets usable. */
+@media (max-width: 760px) {
+  :root[data-density="compact"] #main-content .tracker-page-jump {
+    padding: .5rem .6rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-attention-link,
+  :root[data-density="compact"] #main-content .tracker-status-card {
+    min-height: 2.75rem;
+  }
+}
