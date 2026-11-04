@@ -35,6 +35,7 @@ from .. import pk_mutation197
 from .. import pk_crosscheck205
 from .. import pk_diagnostics213
 from .. import pk_sensitivity217
+from .. import pk_operational221
 from .. import pk_health189
 from .. import pk_transform165 as transform165
 from .. import pk_sensitivity169 as sensitivity169
@@ -1530,3 +1531,9 @@ def pk_sensitivity_grid(
     db:Session=Depends(get_db)
 ):
     return pk_sensitivity217.analyze(db,sid,days)
+
+
+
+@router.get("/workspace/health/runtime")
+def pk_runtime_identity():
+    return pk_operational221.status()
