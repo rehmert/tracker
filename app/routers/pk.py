@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 import csv
 import io
-from fastapi.responses import Response
-from math import isfinite
+from fastapi.responses import Response, JSONResponse
+from math import ceil, isfinite
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..db import get_db
 from ..models import Compound, DoseLog, Vial, PkScenario, PkPlannedDose, Protocol
-from ..calendar import staged_occurrences
+from ..calendar import staged_occurrences, occurrence_time
 from ..templating import render
 from .. import pk
 
@@ -347,6 +347,188 @@ def protocol_planned_doses(db: Session, protocol_id: int, compound_id: int, star
             if start <= at <= end:
                 planned.append((at, item.amount_value * factor))
     return sorted(planned)
+
+
+
+@router.get("/protocol-exposure/{pid}")
+def saved_protocol_exposure(
+    pid: int, db: Session = Depends(get_db)
+):
+    """Read-only exposure of saved active or what-if protocols.
+
+    Uses the saved stage schedule. Does not load dose history,
+    change protocol status, record doses, or consume inventory.
+    """
+    protocol = db.get(Protocol, pid)
+    if protocol is None:
+        raise HTTPException(404, "Protocol not found")
+
+    anchor_date = protocol.start_date or date.today()
+    days = min(
+        365,
+        max(1, ceil(float(protocol.horizon_weeks or 12) * 7)),
+    )
+
+    if protocol.start_date and protocol.end_date:
+        days = min(
+            days,
+            max(
+                1,
+                (protocol.end_date - anchor_date).days + 1,
+            ),
+        )
+
+    grouped = {}
+    for item in protocol.items:
+        grouped.setdefault(item.compound_id, []).append(item)
+
+    graphs = []
+    skipped = []
+
+    for compound_id, items in grouped.items():
+        compound = db.get(Compound, compound_id)
+        name = compound.name if compound else str(compound_id)
+
+        parameters = pk.profile(name) if compound else None
+        if parameters is None:
+            skipped.append({
+                "compound": name,
+                "reason": "No supported PK model",
+            })
+            continue
+
+        model = pk.model_info(name)
+        if model["needs_assumptions"]:
+            skipped.append({
+                "compound": name,
+                "reason": "Manual half-life assumptions required",
+            })
+            continue
+
+        if not all(
+            isfinite(float(x)) and 0 < float(x) <= 10000
+            for x in parameters
+        ):
+            skipped.append({
+                "compound": name,
+                "reason": "Invalid model parameters",
+            })
+            continue
+
+        # Resolve the duration using the existing short-lived
+        # compound presentation policy.
+        short = (
+            parameters[0] <= 24
+            or model["level"] in (
+                "formulation-specific",
+                "experimental",
+                "illustrative",
+            )
+        )
+
+        visible_days = min(days, 7) if short else days
+        start_at = datetime.combine(anchor_date, time.min)
+        end_at = start_at + timedelta(days=visible_days)
+
+        planned = []
+        unsupported_units = set()
+
+        for item in items:
+            factor = {
+                "mg": 1.0,
+                "mcg": 0.001,
+                "g": 1000.0,
+            }.get(item.amount_unit)
+
+            if factor is None:
+                unsupported_units.add(item.amount_unit)
+                continue
+
+            amount = float(item.amount_value) * factor
+            if not isfinite(amount) or amount <= 0:
+                continue
+
+            for day in staged_occurrences(
+                item, anchor_date, visible_days
+            ):
+                wall_time = occurrence_time(
+                    item, anchor_date, day
+                )
+                try:
+                    hour, minute = map(
+                        int, (wall_time or "00:00").split(":")
+                    )
+                    at = datetime.combine(
+                        day, time(hour, minute)
+                    )
+                except (ValueError, TypeError):
+                    at = datetime.combine(day, time.min)
+
+                if start_at <= at <= end_at:
+                    planned.append((at, amount))
+
+        if unsupported_units:
+            skipped.append({
+                "compound": name,
+                "reason": (
+                    "Skipped non-mass doses in units: " +
+                    ", ".join(sorted(unsupported_units))
+                ),
+            })
+
+        if not planned:
+            skipped.append({
+                "compound": name,
+                "reason": "No modelable scheduled doses in window",
+            })
+            continue
+
+        step = (
+            0.25 if parameters[0] < 4
+            else 1 if short
+            else 12
+        )
+
+        rows = pk.series(
+            start_at,
+            end_at,
+            [],
+            sorted(planned),
+            *parameters,
+            step_hours=step,
+        )
+
+        graphs.append({
+            "compound": name,
+            "model": model,
+            "times": [row["at"] for row in rows],
+            "values": [row["planned"] for row in rows],
+            "dose_count": len(planned),
+            "duration_days": visible_days,
+            "short_window": visible_days < days,
+        })
+
+    result = {
+        "protocol": protocol.name,
+        "status": (
+            "Active" if protocol.is_active else "What-if"
+        ),
+        "assumed_start": protocol.start_date is None,
+        "start_date": anchor_date.isoformat(),
+        "horizon_days": days,
+        "graphs": graphs,
+        "skipped": skipped,
+        "disclaimer": (
+            "Hypothetical modeled mg-equivalent exposure, "
+            "not measured serum concentration or a "
+            "dosing recommendation. No records changed."
+        ),
+    }
+
+    return JSONResponse(
+        content=result,
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @router.get("/data")

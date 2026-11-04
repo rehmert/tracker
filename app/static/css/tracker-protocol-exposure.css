@@ -1,0 +1,29 @@
+/* Tracker Batch 52: embedded protocol exposure previews. */
+#protocolExposureSection {
+  margin-top: 1.25rem;
+}
+
+#protocolExposureResults[hidden] {
+  display: none !important;
+}
+
+.protocol-exposure-graph {
+  margin: 1rem 0;
+  padding: .8rem;
+  border: 1px solid var(--border, #d4ded8);
+  border-radius: 12px;
+}
+
+.protocol-exposure-graph canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.protocol-exposure-graph h3 {
+  margin-top: 0;
+}
+
+#protocolExposureStatus {
+  margin: .65rem 0;
+}

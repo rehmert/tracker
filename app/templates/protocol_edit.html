@@ -52,6 +52,29 @@
   <form method="post" action="/protocols/{{ p.id }}/delete" onsubmit="return confirm('Delete this protocol?')"><button class="link danger">Delete protocol</button></form>
 </section>
 
+
+<section class="card" id="protocolExposureSection"
+         data-protocol-id="{{ p.id }}">
+  <h2>Modeled exposure</h2>
+  <p class="note">Graph the saved protocol, active or what-if.
+  Unsaved edits above are not included. This preview does not
+  record doses or modify inventory.</p>
+  <button type="button" id="protocolExposureButton"
+          aria-expanded="false"
+          aria-controls="protocolExposureResults">
+    Show model exposure
+  </button>
+  <p id="protocolExposureStatus"
+     role="status" aria-live="polite"></p>
+  <div id="protocolExposureResults" hidden></div>
+</section>
+<link rel="stylesheet"
+      href="/static/css/tracker-protocol-exposure.css?v=batch52">
+<script src="/static/js/tracker-pk-axes.js?v=batch50"
+        defer></script>
+<script src="/static/js/tracker-protocol-exposure.js?v=batch52"
+        defer></script>
+
 <script>
 (function () {
   const form = document.getElementById('protoform');
