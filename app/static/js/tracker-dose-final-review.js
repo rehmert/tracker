@@ -66,19 +66,33 @@
           availableNumber !== null &&
           numeric > availableNumber;
 
-        return {name, quantity, invalid, input, exceeds, available};
+        // The server identifies count-based categories.
+        // Do not infer a category's unit from its name.
+        const counted = input?.dataset.counted === "true";
+        const fractionalCount = !invalid && counted &&
+          !Number.isInteger(numeric);
+
+        return {
+          name, quantity, invalid, input, exceeds, available,
+          fractionalCount
+        };
       });
 
       const invalidSupplies = supplies.filter(item => item.invalid);
       const overdrawnSupplies = supplies.filter(item => item.exceeds);
+      const fractionalSupplies = supplies.filter(
+        item => item.fractionalCount
+      );
       const supplyDescription = supplies.length
         ? supplies.map(item =>
             item.name + " × " +
             (item.invalid
               ? "(quantity required)"
-              : item.exceeds
-                ? item.quantity + " (only " + item.available + " available)"
-                : item.quantity)
+              : item.fractionalCount
+                ? item.quantity + " (whole number required)"
+                : item.exceeds
+                  ? item.quantity + " (only " + item.available + " available)"
+                  : item.quantity)
           ).join(" · ")
         : "None selected";
 
@@ -136,6 +150,15 @@
         );
       }
 
+      if (fractionalSupplies.length) {
+        missing.push(
+          fractionalSupplies.length + " counted supply " +
+          (fractionalSupplies.length === 1
+            ? "quantity must be whole"
+            : "quantities must be whole")
+        );
+      }
+
       if (!vialId) missing.push("vial");
       if (!when) missing.push("date/time");
       if (!useRemaining &&
@@ -149,6 +172,7 @@
       const issueTargets = [
         ...invalidSupplies.map(item => item.input),
         ...overdrawnSupplies.map(item => item.input),
+        ...fractionalSupplies.map(item => item.input),
         !vialId ? field("vial_id") : null,
         !when ? field("taken_at") : null,
         (!useRemaining &&

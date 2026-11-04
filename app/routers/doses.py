@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from .. import services, units as U, idempotency
 from ..db import get_db
-from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit
+from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, SupplyCategory
 from ..inventory_lock import reserve_inventory_write
 from .. import manual_supplies
 from ..templating import render
@@ -189,10 +189,15 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
             prefill_at = datetime.now().strftime("%Y-%m-%dT%H:%M")
     else:
         prefill_at = datetime.now().strftime("%Y-%m-%dT%H:%M")
+    # Read-only metadata: counted supplies require whole quantities.
+    counted_supply_kinds = set(db.scalars(
+        select(SupplyCategory.key).where(SupplyCategory.unit == "count")
+    ))
+
     return render(request, "doses.html", rows=_rows(db, compound_id), vials=vials, views=views,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
-                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else repeat_amount, planned_unit=planned_unit or repeat_unit, repeat_site=repeat_site, repeat_notice=repeat_notice, selected_compound_id=compound_id, selected_vial_id=selected_vial_id, calendar_vial_notice=calendar_vial_notice, supplies=manual_supplies.available(db))
+                  now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else repeat_amount, planned_unit=planned_unit or repeat_unit, repeat_site=repeat_site, repeat_notice=repeat_notice, selected_compound_id=compound_id, selected_vial_id=selected_vial_id, calendar_vial_notice=calendar_vial_notice, supplies=manual_supplies.available(db), counted_supply_kinds=counted_supply_kinds)
 
 
 @router.post("/doses/preview")

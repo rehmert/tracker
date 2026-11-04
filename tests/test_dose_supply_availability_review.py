@@ -58,7 +58,7 @@ def test_new_review_does_not_submit_or_mutate_inventory():
 def test_existing_backend_protections_and_template():
     html = HTML.read_text()
 
-    assert "tracker-dose-final-review.js?v=20261103d" in html
+    assert "tracker-dose-final-review.js?v=20261103e" in html
     assert 'name="supply_qty_{{ s.id }}"' in html
 
     Environment().parse(html)
