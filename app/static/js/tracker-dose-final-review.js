@@ -35,6 +35,30 @@
         ...form.querySelectorAll('input[name="supply_id_used"]:checked')
       ];
 
+      // Read selected supply names and their actual entered
+      // quantities. This is informational: the server remains
+      // authoritative for supply validation and deductions.
+      const supplies = supplyChecks.map(checkbox => {
+        const row = checkbox.closest("tr");
+        const name = row?.querySelectorAll("td")[1]
+          ?.textContent?.trim() || "Supply #" + checkbox.value;
+        const input = field("supply_qty_" + checkbox.value);
+        const quantity = String(input?.value ?? "").trim();
+        const numeric = Number(quantity);
+        const invalid = !quantity ||
+          !Number.isFinite(numeric) || numeric <= 0;
+
+        return {name, quantity, invalid};
+      });
+
+      const invalidSupplies = supplies.filter(item => item.invalid);
+      const supplyDescription = supplies.length
+        ? supplies.map(item =>
+            item.name + " × " +
+            (item.invalid ? "(quantity required)" : item.quantity)
+          ).join(" · ")
+        : "None selected";
+
       const isWaste = kind === "waste";
       const type = isWaste
         ? "Wasted or discarded"
@@ -52,9 +76,7 @@
         ["Amount", amountDescription],
         ["Recorded date and time", when ? when.replace("T", " ") : "Enter date and time"],
         ["Injection site", value("site") ? site : "Not recorded"],
-        ["Disposables", supplyChecks.length
-          ? supplyChecks.length + " selected — verify quantities above"
-          : "None selected"],
+        ["Disposables", supplyDescription],
       ];
 
       details.replaceChildren();
@@ -72,6 +94,15 @@
       }
 
       const missing = [];
+
+      if (invalidSupplies.length) {
+        missing.push(
+          invalidSupplies.length + " supply " +
+          (invalidSupplies.length === 1
+            ? "quantity"
+            : "quantities")
+        );
+      }
 
       if (!vialId) missing.push("vial");
       if (!when) missing.push("date/time");
@@ -97,6 +128,13 @@
     // htmx may reset the form after an accepted submission.
     // The panel always reflects the current form, never stale values.
     form.addEventListener("htmx:afterSettle", render);
+
+    // The existing sequential workflow resets the form and
+    // issues a new one-use token after a committed recording.
+    document.body.addEventListener(
+      "tracker:dose-saved",
+      () => queueMicrotask(render)
+    );
 
     render();
   }
