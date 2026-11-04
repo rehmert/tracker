@@ -24,6 +24,7 @@
           <th>Field</th>
           <th>Before</th>
           <th>After</th>
+          <th>Change</th>
         </tr>
       </thead>
       <tbody>
@@ -31,36 +32,43 @@
           <th scope="row">Vial ID</th>
           <td>{{ before.get('vial_id', '—') }}</td>
           <td>{{ after.get('vial_id', '—') }}</td>
+          <td class="dose-audit-change-status">{% if before.get('vial_id') != after.get('vial_id') %}<strong>Changed</strong>{% else %}Unchanged{% endif %}</td>
         </tr>
         <tr>
           <th scope="row">Recorded time</th>
           <td>{{ before.get('taken_at', '—') }}</td>
           <td>{{ after.get('taken_at', '—') }}</td>
+          <td class="dose-audit-change-status">{% if before.get('taken_at') != after.get('taken_at') %}<strong>Changed</strong>{% else %}Unchanged{% endif %}</td>
         </tr>
         <tr>
           <th scope="row">Entered amount</th>
           <td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td>
           <td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td>
+          <td class="dose-audit-change-status">{% if before.get('entered_value') != after.get('entered_value') or before.get('entered_unit') != after.get('entered_unit') %}<strong>Changed</strong>{% else %}Unchanged{% endif %}</td>
         </tr>
         <tr>
           <th scope="row">Counted amount (base unit)</th>
           <td>{{ before.get('amount_base', '—') }}</td>
           <td>{{ after.get('amount_base', '—') }}</td>
+          <td class="dose-audit-change-status">{% if before.get('amount_base') != after.get('amount_base') %}<strong>Changed</strong>{% else %}Unchanged{% endif %}</td>
         </tr>
         <tr>
           <th scope="row">Entry type</th>
           <td>{{ before.get('kind', '—') }}</td>
           <td>{{ after.get('kind', '—') }}</td>
+          <td class="dose-audit-change-status">{% if before.get('kind') != after.get('kind') %}<strong>Changed</strong>{% else %}Unchanged{% endif %}</td>
         </tr>
         <tr>
           <th scope="row">Injection site</th>
           <td>{{ before.get('site', '') or '—' }}</td>
           <td>{{ after.get('site', '') or '—' }}</td>
+          <td class="dose-audit-change-status">{% if before.get('site') != after.get('site') %}<strong>Changed</strong>{% else %}Unchanged{% endif %}</td>
         </tr>
         <tr>
           <th scope="row">Notes</th>
           <td>{{ before.get('notes', '') or '—' }}</td>
           <td>{{ after.get('notes', '') or '—' }}</td>
+          <td class="dose-audit-change-status">{% if before.get('notes') != after.get('notes') %}<strong>Changed</strong>{% else %}Unchanged{% endif %}</td>
         </tr>
         <tr>
           <th scope="row">Supply IDs and quantities</th>
@@ -92,6 +100,7 @@
   </ul>
   <code>{{ after.get('supplies', {}) | tojson }}</code>
 </td>
+          <td class="dose-audit-change-status">{% if before.get('supplies') != after.get('supplies') %}<strong>Changed</strong>{% else %}Unchanged{% endif %}</td>
         </tr>
       </tbody>
     </table>
