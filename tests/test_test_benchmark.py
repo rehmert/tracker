@@ -1,0 +1,88 @@
+"""Benchmark correctness and release-safety contracts."""
+
+import importlib.util
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+PATH = ROOT / "scripts/tracker-test-benchmark.py"
+
+spec = importlib.util.spec_from_file_location(
+    "tracker_test_benchmark", PATH
+)
+benchmark = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(benchmark)
+
+
+def test_worker_selection_validation():
+    assert benchmark.parse_workers(
+        "1,2,4"
+    ) == [1, 2, 4]
+
+    for invalid in (
+        "2,4",
+        "1,1",
+        "0,1",
+        "1,9",
+        "1,banana",
+        "",
+    ):
+        with pytest.raises(
+            benchmark.argparse.ArgumentTypeError
+        ):
+            benchmark.parse_workers(invalid)
+
+
+def test_parallel_recommended_only_with_meaningful_gain():
+    selected, gain = benchmark.recommendation(
+        {1: 40.0, 2: 34.0, 4: 28.0}
+    )
+
+    assert selected == 4
+    assert gain == pytest.approx(0.30)
+
+    selected, gain = benchmark.recommendation(
+        {1: 40.0, 2: 38.0, 4: 37.0}
+    )
+
+    assert selected == 1
+    assert gain == pytest.approx(0.075)
+
+
+def test_serial_is_kept_when_parallel_is_slower():
+    selected, gain = benchmark.recommendation(
+        {1: 30.0, 2: 31.0, 4: 33.0}
+    )
+
+    assert selected == 1
+    assert gain == 0.0
+
+
+def test_runner_uses_existing_isolated_test_modes():
+    source = PATH.read_text()
+
+    assert '"--full"' in source
+    assert '"--parallel-check"' in source
+    assert '"TRACKER_TEST_WORKERS"' in source
+    assert "run_one(" in source
+    assert "fully_qualified" in source
+    assert "report.json" in source
+
+
+def test_guarded_release_is_unchanged():
+    source = (
+        ROOT / "scripts/tracker-release.sh"
+    ).read_text()
+
+    assert 'timeout 1200 "$PY" -m pytest' in source
+    assert "--dist=loadfile" not in source
+
+    for marker in (
+        "tracker-restore-verify.py",
+        "tracker-deployment-guard.py",
+        "tracker-runtime-smoke.py",
+        "merge --ff-only",
+        "reset --hard",
+    ):
+        assert marker in source
