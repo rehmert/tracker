@@ -56,7 +56,7 @@ def test_review_remains_read_only():
 def test_template_and_backend_contracts():
     template = TEMPLATE.read_text()
 
-    assert "tracker-dose-final-review.js?v=20261103f" in template
+    assert "tracker-dose-final-review.js?v=20261103g" in template
     assert 'name="supply_id_used"' in template
     assert 'name="supply_qty_{{ s.id }}"' in template
 

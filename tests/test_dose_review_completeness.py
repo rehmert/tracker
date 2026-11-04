@@ -51,7 +51,7 @@ def test_existing_review_works_and_remains_read_only():
     script = JS.read_text()
     html = HTML.read_text()
 
-    assert "tracker-dose-final-review.js?v=20261103f" in html
+    assert "tracker-dose-final-review.js?v=20261103g" in html
     assert 'id="tracker-dose-review-first-issue"' in html
     assert "white-space: pre-wrap" in CSS.read_text()
 

@@ -36,6 +36,17 @@
       const amount = value("amount");
       const unit = value("unit");
       const when = value("taken_at");
+      // Compare only a valid local datetime field value.
+      // A future scheduled time is not proof of administration.
+      const validLocalTime =
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(when);
+      const parsedTime = validLocalTime ? new Date(when) : null;
+      const futureTime = Boolean(
+        parsedTime &&
+        Number.isFinite(parsedTime.getTime()) &&
+        parsedTime.getTime() > Date.now() + 60000
+      );
+
       const site = selectedLabel("site");
       const useRemaining = Boolean(field("use_remaining")?.checked);
       const supplyChecks = [
@@ -164,6 +175,9 @@
 
       if (!vialId) missing.push("vial");
       if (!when) missing.push("date/time");
+      if (futureTime) {
+        missing.push("timestamp is in the future — confirm actual time");
+      }
       if (!useRemaining &&
           (!Number.isFinite(Number(amount)) || Number(amount) <= 0)) {
         missing.push("positive amount");
@@ -178,6 +192,7 @@
         ...fractionalSupplies.map(item => item.input),
         !vialId ? field("vial_id") : null,
         !when ? field("taken_at") : null,
+        futureTime ? field("taken_at") : null,
         (!useRemaining &&
           (!Number.isFinite(Number(amount)) || Number(amount) <= 0))
           ? field("amount") : null
@@ -200,6 +215,10 @@
       panel.dataset.reviewState = missing.length
         ? "incomplete"
         : "ready";
+
+      panel.dataset.futureTimestamp = futureTime
+        ? "true"
+        : "false";
     }
 
     firstIssueButton.addEventListener("click", () => {

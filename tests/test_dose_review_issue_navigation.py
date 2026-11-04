@@ -20,7 +20,7 @@ def test_issue_navigation_button():
         'id="tracker-dose-review-first-issue"'
     ) < html.index('>Add to log</button>')
 
-    assert "tracker-dose-final-review.js?v=20261103f" in html
+    assert "tracker-dose-final-review.js?v=20261103g" in html
 
 
 def test_issue_targets():

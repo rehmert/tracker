@@ -74,3 +74,13 @@
 #tracker-dose-review-details dd {
   white-space: pre-wrap;
 }
+
+/* Advisory for a future administration timestamp. */
+#tracker-dose-final-review[data-future-timestamp="true"] {
+  border-left: 4px solid var(--warning, #b7791f);
+}
+
+#tracker-dose-final-review[data-future-timestamp="true"]
+#tracker-dose-review-summary {
+  font-weight: 700;
+}
