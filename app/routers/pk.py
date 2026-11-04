@@ -34,6 +34,7 @@ from .. import pk_write177
 from .. import pk_mutation197
 from .. import pk_crosscheck205
 from .. import pk_diagnostics213
+from .. import pk_sensitivity217
 from .. import pk_health189
 from .. import pk_transform165 as transform165
 from .. import pk_sensitivity169 as sensitivity169
@@ -1519,3 +1520,13 @@ def pk_fast_health_check(
             400,'Limit must be 1 to 200'
         )
     return pk_diagnostics213.inspect(db,limit)
+
+
+
+@router.get("/workspace/{sid}/sensitivity-grid")
+def pk_sensitivity_grid(
+    sid:int,
+    days:int=30,
+    db:Session=Depends(get_db)
+):
+    return pk_sensitivity217.analyze(db,sid,days)

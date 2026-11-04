@@ -95,6 +95,17 @@
     <input id="pkSensitivityDays" type="number"
            min="1" max="90" value="30">
   </label>
+  <button id="pkGrid217Run" type="button">
+    9-model assumption envelope
+  </button>
+  <p id="pkGrid217Status" role="status"></p>
+  <canvas
+    id="pkGrid217Plot"
+    width="1000"
+    height="230"
+    class="pk-chart"
+    aria-label="Modeled assumption sensitivity envelope"
+  ></canvas>
   <button id="pkSensitivityRun" type="button">
     Analyze sensitivity
   </button>
@@ -587,6 +598,8 @@
 <script src="/static/js/tracker-pk-transform165.js?v=bundle165"
         defer></script>
 <script src="/static/js/tracker-pk-sensitivity169.js?v=bundle169"
+        defer></script>
+<script src="/static/js/tracker-pk-grid217.js?v=bundle217"
         defer></script>
 <script src="/static/js/tracker-pk-report173.js?v=bundle173"
         defer></script>
