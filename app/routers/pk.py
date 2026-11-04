@@ -31,6 +31,7 @@ from .. import pk_template_import as pk_import
 
 from .. import pk_guarded_edit161 as guarded_edit
 from .. import pk_transform165 as transform165
+from .. import pk_sensitivity169 as sensitivity169
 
 router = APIRouter(prefix="/pk")
 
@@ -1442,3 +1443,12 @@ def pk_transform_apply(
     db:Session=Depends(get_db)
 ):
     return transform165.apply(db,sid,data)
+
+
+
+@router.get("/workspace/{sid}/sensitivity")
+def pk_workspace_sensitivity(
+    sid:int,days:int=30,
+    db:Session=Depends(get_db)
+):
+    return sensitivity169.analyze(db,sid,days)
