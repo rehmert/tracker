@@ -220,3 +220,111 @@ body.pk-mode-multi .pk-custom-section {
     min-width: 0;
   }
 }
+
+
+/* Batch 53: prevent interval presets overlapping stage actions */
+
+/* The standard what-if table needs the same horizontal
+   overflow protection as the multi-schedule editor. */
+.pk-stage-table-scroll,
+.pk-multi-stages {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Give the numeric interval + dropdown enough room.
+   Narrow screens scroll the table, not compress controls. */
+.pk-stage-table,
+.pk-multi-stages table {
+  width: 100%;
+  min-width: 790px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.pk-stage-table th,
+.pk-stage-table td,
+.pk-multi-stages th,
+.pk-multi-stages td {
+  padding: .4rem .5rem;
+  vertical-align: top;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.pk-stage-table th:nth-child(1),
+.pk-stage-table td:nth-child(1),
+.pk-multi-stages th:nth-child(1),
+.pk-multi-stages td:nth-child(1) {
+  width: 15%;
+}
+
+.pk-stage-table th:nth-child(2),
+.pk-stage-table td:nth-child(2),
+.pk-multi-stages th:nth-child(2),
+.pk-multi-stages td:nth-child(2) {
+  width: 18%;
+}
+
+.pk-stage-table th:nth-child(3),
+.pk-stage-table td:nth-child(3),
+.pk-multi-stages th:nth-child(3),
+.pk-multi-stages td:nth-child(3) {
+  width: 50%;
+}
+
+.pk-stage-table th:nth-child(4),
+.pk-stage-table td:nth-child(4),
+.pk-multi-stages th:nth-child(4),
+.pk-multi-stages td:nth-child(4) {
+  width: 17%;
+  white-space: nowrap;
+}
+
+/* Inputs and dropdowns fit within their own column. */
+.pk-stage-table input,
+.pk-multi-stages .pk-multi-stage-rows input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.pk-stage-table .pk-interval-preset,
+.pk-multi-stages .pk-interval-preset {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: .4rem 0 0;
+  box-sizing: border-box;
+}
+
+/* Action buttons stay entirely inside the final cell. */
+.pk-stage-table td:nth-child(4) button,
+.pk-multi-stages td:nth-child(4) button {
+  display: inline-block;
+  position: static;
+  width: auto;
+  max-width: 100%;
+  margin: .15rem 0;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+/* Preserve room for controls at compact density too. */
+:root[data-density="compact"] .pk-stage-table,
+:root[data-density="compact"] .pk-multi-stages table {
+  min-width: 790px;
+}
+
+@media (max-width: 760px) {
+  .pk-stage-table .pk-interval-preset,
+  .pk-multi-stages .pk-interval-preset {
+    width: 100%;
+    min-width: 0;
+  }
+}

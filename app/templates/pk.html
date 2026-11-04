@@ -41,7 +41,18 @@
     Stage overrides can inherit the schedule default.</p>
 <label>Duration (days) <input id="wiDuration" type="number" min="1" max="365" value="84"></label>
 <p class="note">Stages begin at week 1, counted from the first modeled dose. Each stage may override the default interval. The first-dose offset shifts the starting administration while keeping the selected timeline start. Enter doses in mg; this is a modeling tool, not dosing advice.</p>
-<table><thead><tr><th>Starting week</th><th>Dose (mg)</th><th>Interval (days; blank = default)</th><th></th></tr></thead><tbody id="wiStages"></tbody></table>
+<div class="pk-stage-table-scroll" role="region"
+     aria-label="What-if dose stages" tabindex="0">
+<table class="pk-stage-table">
+  <thead><tr>
+    <th>Starting week</th>
+    <th>Dose (mg)</th>
+    <th>Interval (days; blank = default)</th>
+    <th>Action</th>
+  </tr></thead>
+  <tbody id="wiStages"></tbody>
+</table>
+</div>
 <button id="wiAddStage" type="button">Add stage</button>
 <button id="wiPreview" type="button">Preview what-if</button>
 <button id="wiSave" type="button">Save as PK scenario</button>
@@ -170,7 +181,7 @@
 .pk-tabs{display:flex;gap:.65rem;flex-wrap:wrap;margin:1rem 0}.pk-tab{padding:.7rem 1rem;border-radius:12px;border:1px solid var(--border,#d4ded8);background:var(--card,#fff);cursor:pointer}.pk-tab[aria-selected="true"]{outline:2px solid var(--accent,#387c69);font-weight:700}.pk-actions,.pk-quick-window,.pk-window{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.8rem 0}.pk-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin:1rem 0}.pk-metrics>div{border:1px solid var(--border,#d4ded8);border-radius:12px;padding:.85rem}.pk-metrics small{display:block;opacity:.8}.pk-metrics strong{font-size:1.4rem}.pk-chart{max-width:100%;height:auto}.pk-advanced,.pk-help{margin:.8rem 0}.pk-advanced summary,.pk-help summary{cursor:pointer;font-weight:600}.pk-add-compound{margin-top:1rem}.pk-add-compound[hidden]{display:none!important}.pk-mode-protocol .pk-custom-section,.pk-mode-protocol .pk-compare-section{display:none}.pk-mode-custom .pk-compare-section,.pk-mode-custom .pk-protocol-only{display:none}.pk-mode-compare .pk-custom-section{display:none}.pk-mode-compare #pkSetup{display:none}
 </style>
 <link rel="stylesheet"
-      href="/static/css/tracker-pk-multi-schedule.css?v=batch51">
+      href="/static/css/tracker-pk-multi-schedule.css?v=batch53">
 <script src="/static/js/tracker-pk-axes.js?v=batch50" defer></script>
 <script src="/static/js/tracker-pk-interval-presets.js?v=batch51" defer></script>
 <script src="/static/pk.js?v=pk-batch51-20261104" defer></script>

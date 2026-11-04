@@ -275,7 +275,7 @@ def test_batch45_preset_source_contracts():
         'id="pkMultiImportPreset"',
         'id="pkMultiPresetFile"',
         "tracker-pk-multi-schedule.js?v=batch51",
-        "tracker-pk-multi-schedule.css?v=batch51",
+        "tracker-pk-multi-schedule.css?v=batch53",
     ):
         assert marker in html
 
@@ -338,7 +338,7 @@ def test_batch46_asset_and_read_only_contracts():
     router = (ROOT / "app/routers/pk.py").read_text()
 
     assert "tracker-pk-multi-schedule.js?v=batch51" in html
-    assert "tracker-pk-multi-schedule.css?v=batch51" in html
+    assert "tracker-pk-multi-schedule.css?v=batch53" in html
 
     section = router.split(
         '@router.post("/what-if/multi-preview")', 1
@@ -379,7 +379,7 @@ def test_batch47_preflight_and_asset_versions():
     assert "730 * 86400000" in js
     assert "Combined comparison timeline exceeds 730 days." in js
     assert "tracker-pk-multi-schedule.js?v=batch51" in html
-    assert "tracker-pk-multi-schedule.css?v=batch51" in html
+    assert "tracker-pk-multi-schedule.css?v=batch53" in html
 
 
 def test_batch47_multi_preview_remains_read_only():
@@ -417,7 +417,7 @@ def test_batch48_duplicate_name_and_asset_versions():
     assert 'copy.name = copy.name.slice(0, 112) + " (copy)"' in js
     assert "addSchedule(copy)" in js
     assert "tracker-pk-multi-schedule.js?v=batch51" in html
-    assert "tracker-pk-multi-schedule.css?v=batch51" in html
+    assert "tracker-pk-multi-schedule.css?v=batch53" in html
 
     Environment().parse(html)
 
@@ -468,7 +468,7 @@ def test_batch49_compact_schedule_controls():
         'id="pkMultiCollapseAll"',
         'id="pkMultiExpandAll"',
         "tracker-pk-multi-schedule.js?v=batch51",
-        "tracker-pk-multi-schedule.css?v=batch51",
+        "tracker-pk-multi-schedule.css?v=batch53",
     ):
         assert marker in html
 
@@ -567,7 +567,7 @@ def test_batch51_interval_presets():
     assert "tracker-pk-interval-presets.js?v=batch51" in html
     assert "pk.js?v=pk-batch51-20261104" in html
     assert "tracker-pk-multi-schedule.js?v=batch51" in html
-    assert "tracker-pk-multi-schedule.css?v=batch51" in html
+    assert "tracker-pk-multi-schedule.css?v=batch53" in html
 
     assert html.index(
         "tracker-pk-interval-presets.js?v=batch51"
@@ -607,3 +607,42 @@ def test_batch51_retains_numeric_dosing_contracts():
     assert "function readSchedule(box)" in multi
     assert "const interval = required(box, \"interval\");" in multi
     assert "interval_days: interval" in multi
+
+
+
+def test_batch53_stage_layout():
+    html = (ROOT / "app/templates/pk.html").read_text()
+    css = (
+        ROOT / "app/static/css/"
+        "tracker-pk-multi-schedule.css"
+    ).read_text()
+    main = (ROOT / "app/static/pk.js").read_text()
+    multi = (
+        ROOT / "app/static/js/tracker-pk-multi-schedule.js"
+    ).read_text()
+
+    # Standard and multi-schedule editors retain their rows.
+    assert 'id="wiStages"' in html
+    assert "pk-stage-table-scroll" in html
+    assert "pk-stage-table" in html
+    assert "pk-multi-stages" in multi
+
+    # Numeric fields still determine the simulation payload.
+    assert "Number($('wiInterval').value)" in main
+    assert "function readSchedule(box)" in multi
+
+    # Both tables have protected horizontal overflow and
+    # fixed dimensions for interval and action columns.
+    assert ".pk-stage-table-scroll," in css
+    assert ".pk-multi-stages {" in css
+    assert "overflow-x: auto;" in css
+    assert "min-width: 790px;" in css
+    assert "table-layout: fixed;" in css
+    assert ".pk-stage-table td:nth-child(4)" in css
+    assert ".pk-multi-stages td:nth-child(4)" in css
+    assert ".pk-stage-table .pk-interval-preset" in css
+    assert ".pk-multi-stages .pk-interval-preset" in css
+
+    assert "tracker-pk-multi-schedule.css?v=batch53" in html
+
+    Environment().parse(html)
