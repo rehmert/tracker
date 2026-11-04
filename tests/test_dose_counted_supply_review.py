@@ -27,7 +27,7 @@ def test_template_marks_counted_quantities():
         in html
     )
     assert 'data-counted="' in html
-    assert "tracker-dose-final-review.js?v=20261103e" in html
+    assert "tracker-dose-final-review.js?v=20261103f" in html
 
     Environment().parse(html)
 

@@ -69,3 +69,8 @@
   outline: 2px solid currentColor;
   outline-offset: 3px;
 }
+
+/* Preserve entered line breaks without interpreting note text as HTML. */
+#tracker-dose-review-details dd {
+  white-space: pre-wrap;
+}

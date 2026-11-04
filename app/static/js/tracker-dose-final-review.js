@@ -14,6 +14,8 @@
       "tracker-dose-review-first-issue"
     );
     let firstIssue = null;
+    let issueIndex = 0;
+    let outstandingIssues = [];
 
     if (!form || !panel || !summary || !details ||
         !firstIssueButton) return;
@@ -114,6 +116,7 @@
         ["Recorded date and time", when ? when.replace("T", " ") : "Enter date and time"],
         ["Injection site", value("site") ? site : "Not recorded"],
         ["Disposables", supplyDescription],
+        ["Notes", value("notes") || "No notes entered"],
       ];
 
       details.replaceChildren();
@@ -180,8 +183,13 @@
           ? field("amount") : null
       ];
 
-      firstIssue = issueTargets.find(Boolean) || null;
+      outstandingIssues = [...new Set(issueTargets.filter(Boolean))];
+      issueIndex = 0;
+      firstIssue = outstandingIssues[0] || null;
       firstIssueButton.disabled = !firstIssue;
+      firstIssueButton.textContent = outstandingIssues.length
+        ? "Go to issue 1 of " + outstandingIssues.length
+        : "No outstanding review issues";
 
       summary.textContent = missing.length
         ? "Review required: " + missing.join(", ")
@@ -208,6 +216,16 @@
       });
 
       firstIssue.focus({preventScroll:true});
+
+      // Move to the next problem on the next click.
+      // Focus/navigation alone never changes a form value.
+      if (outstandingIssues.length) {
+        issueIndex = (issueIndex + 1) % outstandingIssues.length;
+        firstIssue = outstandingIssues[issueIndex];
+        firstIssueButton.textContent =
+          "Go to issue " + (issueIndex + 1) +
+          " of " + outstandingIssues.length;
+      }
     });
 
     form.addEventListener("input", render);

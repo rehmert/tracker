@@ -70,7 +70,7 @@ def test_existing_review_is_preserved():
 
     assert 'id="tracker-dose-final-review"' in source
     assert 'id="tracker-dose-review-first-issue"' in source
-    assert "tracker-dose-final-review.js?v=20261103e" in source
+    assert "tracker-dose-final-review.js?v=20261103f" in source
     assert 'name="supply_id_used"' in source
 
     Environment().parse(source)
