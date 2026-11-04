@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from . import services
 from .models import Protocol, Vial
-from .pk_precision import schedule_doses
+from .pk_schedule_core import schedule_doses
 
 
 def allocate_events(vials, events, start, end):

@@ -107,7 +107,7 @@ def source_snapshot(protocol):
     }
 
 
-def revise(pid,identifier,protocol,entry):
+def revise(pid,identifier,protocol,entry,model_assumptions=None):
     def operation(rows):
         for row in rows:
             if row.get("id")!=identifier:
@@ -134,6 +134,7 @@ def revise(pid,identifier,protocol,entry):
                     if protocol.updated_at else None
                 ),
                 source_snapshot=source_snapshot(protocol),
+                model_assumptions=model_assumptions,
                 revisions=history,
             )
             return [
@@ -144,7 +145,7 @@ def revise(pid,identifier,protocol,entry):
     return _edit(pid,operation)
 
 
-def save(pid,protocol,entry):
+def save(pid,protocol,entry,model_assumptions=None):
     def operation(rows):
         row = {
             "id":uuid4().hex,
@@ -159,6 +160,7 @@ def save(pid,protocol,entry):
             ),
             "settings":entry.settings.model_dump(),
             "source_snapshot":source_snapshot(protocol),
+            "model_assumptions":model_assumptions,
             "revisions":[],
         }
         return rows+[row],row

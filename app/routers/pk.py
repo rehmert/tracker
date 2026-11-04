@@ -18,6 +18,7 @@ from ..pk_library import (
     revise as experiment_revise,
 )
 from ..pk_workbench import ExperimentInput, run_experiment
+from ..pk_model_history import capture as model_capture
 
 router = APIRouter(prefix="/pk")
 
@@ -785,7 +786,12 @@ def pk_library_save(
         raise HTTPException(
             400,"Selected compound not in source protocol"
         )
-    return experiment_save(pid,protocol,data)
+    return experiment_save(
+        pid, protocol, data,
+        model_assumptions=model_capture(
+            db.get(Compound, data.settings.compound_id)
+        ),
+    )
 
 
 @router.delete("/library/{pid}/{experiment_id}")
@@ -842,7 +848,8 @@ def pk_compare_experiments(
         )
         result=run_experiment(
             db,pid,settings,
-            source_snapshot=item.get("source_snapshot")
+            source_snapshot=item.get("source_snapshot"),
+            model_assumptions=item.get("model_assumptions"),
         )
         values=result["modified"]
         rows.append({
@@ -857,6 +864,9 @@ def pk_compare_experiments(
                 "selected_future_demand_mg"
             ),
             "snapshot":item.get("source_snapshot") is not None,
+            "model_source": result["model_source"],
+            "model_parameter_drift":
+                result["model_parameter_drift"],
         })
 
     return JSONResponse(
@@ -891,5 +901,8 @@ def pk_update_experiment(
         raise HTTPException(400,"Compound not in protocol")
 
     return experiment_revise(
-        pid,experiment_id,p,data
+        pid, experiment_id, p, data,
+        model_assumptions=model_capture(
+            db.get(Compound, data.settings.compound_id)
+        ),
     )

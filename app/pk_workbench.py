@@ -12,7 +12,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from . import pk, services
-from .pk_precision import schedule_doses as precise_schedule, interval_assessment
+from .pk_schedule_core import schedule_doses as precise_schedule
+from .pk_precision import interval_assessment
+from .pk_model_history import resolve as resolve_model
+from .pk_dose_matching import candidates as dose_candidates
 from .pk_inventory_events import forecast_inventory
 from .pk_release_quality import timing_check, recorded, reconcile
 from .models import (
@@ -189,7 +192,7 @@ def selected_labs(db, analyte, first, last):
 
 
 
-def run_experiment(db, protocol_id, settings, source_snapshot=None):
+def run_experiment(db, protocol_id, settings, source_snapshot=None, model_assumptions=None):
     protocol = db.get(Protocol, protocol_id)
     if protocol is None:
         raise HTTPException(404, "Protocol not found")
@@ -234,10 +237,34 @@ def run_experiment(db, protocol_id, settings, source_snapshot=None):
             400, "Compound is not in this protocol"
         )
 
-    parameters = pk.profile(compound.name)
-    info = pk.model_info(compound.name)
+    try:
+        model, model_source, model_drift = resolve_model(
+            compound, model_assumptions
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
-    if parameters is None or info["needs_assumptions"]:
+    parameters = (
+        (
+            model['half_life_hours'],
+            model['absorption_half_life_hours'],
+        )
+        if model else None
+    )
+
+    info = (
+        model['evidence']
+        if model and model_source == 'saved'
+        else pk.model_info(compound.name)
+    )
+
+    if (
+        parameters is None or
+        (
+            info.get("needs_assumptions")
+            and model_source != 'saved'
+        )
+    ):
         raise HTTPException(
             400,
             "This compound lacks usable default PK "
@@ -414,6 +441,13 @@ def run_experiment(db, protocol_id, settings, source_snapshot=None):
     first=today-timedelta(days=27)
     actual=recorded(db,compound.id,first,today)
     historical=reconcile(baseline,actual,first,today)
+    alignment = dose_candidates(
+        [
+            (at, mg) for at, mg in baseline
+            if first <= at.date() <= today
+        ],
+        actual,
+    )
     timing=timing_check(
         protocol,compound.id,baseline_start,
         effective_days(baseline_start)
@@ -454,6 +488,9 @@ def run_experiment(db, protocol_id, settings, source_snapshot=None):
         "protocol": protocol.name,
         "compound": compound.name,
         "model": info,
+        "model_assumptions": model,
+        "model_source": model_source,
+        "model_parameter_drift": model_drift,
         "assumed_start": protocol.start_date is None,
         "times": [
             row["at"] for row in baseline_rows
@@ -476,6 +513,7 @@ def run_experiment(db, protocol_id, settings, source_snapshot=None):
             interval_assessment(modified_rows, modified),
         "inventory": inventory,
         "recorded_reconciliation":historical,
+        "dose_candidate_alignment":alignment,
         "schedule_consistency":timing,
         "assumptions":assumptions,
         "using_source_snapshot":source_snapshot is not None,
