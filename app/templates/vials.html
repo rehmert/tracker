@@ -25,14 +25,84 @@
     </select>
   </label>
 </form>
-<div class="card" id="vial-saved-views" aria-label="Saved vial views">
-  <div class="inline" style="align-items:end;gap:.65rem;flex-wrap:wrap">
-    <label class="field"><span>Saved view</span><select id="vial-view-picker" aria-label="Choose saved vial view"><option value="">Choose a saved view…</option></select></label>
-    <button type="button" id="vial-view-save">Save current filters</button>
-    <button type="button" id="vial-view-delete" disabled>Delete selected view</button>
+<style>
+#vial-saved-views {
+  padding: .55rem .8rem;
+  margin: .45rem 0;
+}
+#vial-saved-views .vial-view-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .45rem .85rem;
+}
+#vial-saved-views .vial-view-compact > .field {
+  flex: 1 1 14rem;
+  margin: 0;
+}
+#vial-saved-views #vial-view-management {
+  flex: 0 1 auto;
+}
+#vial-saved-views #vial-view-management > summary {
+  cursor: pointer;
+  padding: .45rem .25rem;
+  font-weight: 650;
+}
+#vial-saved-views .vial-view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem;
+  padding: .55rem 0 .2rem;
+}
+#vial-saved-views #vial-view-message:empty {
+  display: none;
+}
+#vial-saved-views #vial-view-message {
+  margin: .4rem 0 0;
+}
+#vial-filter-form {
+  margin-bottom: .35rem;
+}
+#vial-saved-views summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+@media (max-width: 700px) {
+  #vial-saved-views #vial-view-management {
+    flex-basis: 100%;
+  }
+}
+</style>
+
+<div class="card" id="vial-saved-views"
+     aria-label="Saved vial views">
+  <div class="vial-view-compact">
+    <label class="field">
+      <span>Saved view</span>
+      <select id="vial-view-picker"
+              aria-label="Choose saved vial view">
+        <option value="">Choose a saved view…</option>
+      </select>
+    </label>
+    <details id="vial-view-management">
+      <summary>Manage views</summary>
+      <div class="vial-view-actions">
+        <button type="button" id="vial-view-save">
+          Save current filters
+        </button>
+        <button type="button" id="vial-view-delete" disabled>
+          Delete selected view
+        </button>
+      </div>
+      <p class="note">
+        Views save status and compound filters in this browser only.
+        They do not change inventory.
+      </p>
+    </details>
   </div>
-  <p class="note">Views save the selected status and compound in this browser only. They do not change inventory.</p>
-  <p id="vial-view-message" role="status" class="note" aria-live="polite"></p>
+  <p id="vial-view-message"
+     class="note" role="status" aria-live="polite"></p>
 </div>
 <p class="filters">
   {% for key, text in [('active', 'In stock'), ('sealed', 'Sealed'), ('in_use', 'In use'), ('finished', 'Finished'), ('discarded', 'Discarded'), ('all', 'All')] %}
