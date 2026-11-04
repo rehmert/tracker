@@ -1,0 +1,55 @@
+#tracker-dose-final-review {
+  padding: .8rem 1rem;
+  margin: .6rem 0;
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: .7rem;
+}
+
+#tracker-dose-final-review > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+#tracker-dose-review-summary {
+  margin: .7rem 0;
+  font-size: .88rem;
+}
+
+#tracker-dose-review-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem .9rem;
+  margin: .75rem 0;
+}
+
+#tracker-dose-review-details > div {
+  min-width: 0;
+}
+
+#tracker-dose-review-details dt {
+  font-size: .78rem;
+  color: var(--muted, #64748b);
+}
+
+#tracker-dose-review-details dd {
+  margin: .15rem 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+#tracker-dose-final-review[data-review-state="incomplete"]
+#tracker-dose-review-summary {
+  font-weight: 650;
+  color: var(--warning, #9a6700);
+}
+
+#tracker-dose-final-review > summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (max-width: 650px) {
+  #tracker-dose-review-details {
+    grid-template-columns: 1fr;
+  }
+}

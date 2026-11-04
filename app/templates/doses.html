@@ -12,6 +12,8 @@
 <script src="/static/js/tracker-dose-handoff-34101.js"
         defer></script>
 <script src="/static/js/tracker-dose-sequential-20261102.js" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-dose-final-review.css?v=20261103">
+<script defer src="/static/js/tracker-dose-final-review.js?v=20261103"></script>
 
 <h1>Dose log</h1>
 {% if repeat_notice %}<p class="note" role="status" id="dose-repeat-notice">{{ repeat_notice }}</p>{% endif %}{% if calendar_vial_notice %}<p class="note" role="status" id="dose-calendar-vial-notice">{{ calendar_vial_notice }}</p>{% endif %}<p class="note">Use “Prepare similar” in History to load previous recorded details for review. It never records an administration, and does not copy the previous time, notes, or supplies.</p><p class="note">Record an actual administration here. To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Recording a dose may update inventory; merely opening a planned entry does not.</p><nav class="ux-shortcuts"><a href="/calendar">Log from calendar</a><a href="#dose-history">View history ↓</a></nav>
@@ -161,6 +163,22 @@
 {% for s in supplies %}<tr><td><input aria-label="Supply used" type="checkbox" name="supply_id_used" value="{{ s.id }}"></td><td>{{ s.name }} ({{ s.kind|replace('_',' ') }})</td><td>{{ s.remaining_qty|num }}</td><td><input aria-label="Quantity of supply used" type="number" name="supply_qty_{{ s.id }}" min="0.001" step="any" value="1" style="width:6rem"></td></tr>{% else %}<tr><td colspan="4">No available supplies.</td></tr>{% endfor %}
 </tbody></table></div></details>
     <label class="field wide"><span>Notes</span><input name="notes"></label>
+    <details id="tracker-dose-final-review"
+             class="wide" open>
+      <summary>Review this entry before saving</summary>
+      <p id="tracker-dose-review-summary"
+         role="status" aria-live="polite">
+        Review recorded values before saving.
+      </p>
+      <dl id="tracker-dose-review-details"
+          aria-label="Current recording values"></dl>
+      <p class="note">
+        This is a read-only summary of the form.
+        Review the dose calculation above, actual vial,
+        time, and supplies. Saving still requires
+        selecting Add to log.
+      </p>
+    </details>
     <div id="form-msg" class="wide"></div>
     <p class="note wide" id="dose-sequential-status" role="status" aria-live="polite"></p>
     <div><button type="submit" class="primary">Add to log</button></div>
