@@ -31,6 +31,7 @@ from .. import pk_template_import as pk_import
 
 from .. import pk_guarded_edit161 as guarded_edit
 from .. import pk_write177
+from .. import pk_health189
 from .. import pk_transform165 as transform165
 from .. import pk_sensitivity169 as sensitivity169
 
@@ -1493,3 +1494,8 @@ def pk_workspace_report(
             'protocol or measured drug concentration.'
         )
     }
+
+
+@router.get("/workspace/quality-report")
+def pk_workspace_quality_report(db:Session=Depends(get_db)):
+    return pk_health189.inspect(db)
