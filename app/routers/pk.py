@@ -24,6 +24,7 @@ from ..pk_analysis_93 import metrics as exposure_metrics
 from .. import pk_scenario_ops as scenario_ops
 from .. import pk_scenario_version as scenario_version
 from .. import pk_scenario_integrity145 as integrity
+from .. import pk_calendar_schedule149 as calendar_rules
 from .. import pk_staged_schedule as staged
 from .. import pk_template_import as pk_import
 
@@ -1282,3 +1283,59 @@ def pk_create_batch_checked(
     integrity.changed(db,obj,"bulk_create",before)
     db.commit()
     return result
+
+
+
+@router.post("/scenarios/{sid}/calendar-preview")
+def pk_calendar_preview(
+    sid:int,
+    data:calendar_rules.CalendarRule,
+    db:Session=Depends(get_db)
+):
+    scenario_ops.scenario(db,sid)
+    return calendar_rules.project(data)
+
+
+@router.post("/scenarios/{sid}/calendar-replace")
+def pk_calendar_replace(
+    sid:int,
+    data:calendar_rules.CalendarRule,
+    db:Session=Depends(get_db)
+):
+    obj=scenario_ops.scenario(db,sid)
+    integrity.required(
+        db,obj,data.expected_version
+    )
+
+    projected=calendar_rules.project(data)
+
+    if projected['warnings']:
+        raise HTTPException(
+            409,
+            'Resolve DST warnings before replacing the schedule'
+        )
+
+    before=scenario_version.snapshot(db,obj)
+
+    for dose in list(obj.doses):
+        db.delete(dose)
+
+    db.flush()
+
+    for dose in projected['doses']:
+        db.add(PkPlannedDose(
+            scenario_id=sid,
+            planned_at=datetime.fromisoformat(
+                dose['planned_at']
+            ),
+            amount_mg=dose['amount_mg']
+        ))
+
+    integrity.changed(
+        db,obj,'calendar_replace',before
+    )
+    db.commit()
+
+    return {
+        'replaced':len(projected['doses'])
+    }

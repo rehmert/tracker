@@ -182,6 +182,10 @@
            min="0.125" step="any" value="7">
   </label>
 
+  <div id="pkAdditionalStages"></div>
+  <button type="button" id="pkAddStage">
+    Add stage (up to 8)
+  </button>
   <button type="button" id="pkStagePreview">
     Preview stages
   </button>
@@ -204,6 +208,62 @@
       <tbody id="pkStagePreviewRows"></tbody>
     </table>
   </div>
+</details>
+<details class="pk-calendar-rules">
+  <summary>Schedule by weekday and local time</summary>
+  <p class="note">
+    Preview weekday-based hypothetical doses.
+    DST gap and fold days are flagged.
+    Confirmation replaces the saved scenario schedule.
+  </p>
+  <label>Start
+    <input type="date" id="pkWeekStart">
+  </label>
+  <label>End
+    <input type="date" id="pkWeekEnd">
+  </label>
+  <label>Local time
+    <input type="time" id="pkWeekTime" value="08:00">
+  </label>
+  <label>Amount (mg)
+    <input type="number" id="pkWeekAmount"
+           min="0.001" step="any" value="1">
+  </label>
+  <label>Timezone
+    <input id="pkWeekTimezone"
+           value="America/New_York">
+  </label>
+  <fieldset id="pkWeekdays">
+    <legend>Weekdays</legend>
+    <label>
+      <input type="checkbox" value="0">Mon
+    </label>
+    <label>
+      <input type="checkbox" value="1">Tue
+    </label>
+    <label>
+      <input type="checkbox" value="2">Wed
+    </label>
+    <label>
+      <input type="checkbox" value="3">Thu
+    </label>
+    <label>
+      <input type="checkbox" value="4">Fri
+    </label>
+    <label>
+      <input type="checkbox" value="5">Sat
+    </label>
+    <label>
+      <input type="checkbox" value="6">Sun
+    </label>
+  </fieldset>
+  <button type="button" id="pkWeekPreview">
+    Preview weekday schedule
+  </button>
+  <button type="button" id="pkWeekReplace" disabled>
+    Replace scenario doses
+  </button>
+  <p id="pkWeekStatus" role="status"></p>
 </details>
 <h3>Future planned doses</h3>
 <div class="pk-dose-tools">
@@ -414,6 +474,8 @@
 <script src="/static/js/tracker-pk-graph137.js?v=bundle137"
         defer></script>
 <script src="/static/js/tracker-pk-library141.js?v=bundle141"
+        defer></script>
+<script src="/static/js/tracker-pk-calendar149.js?v=bundle149"
         defer></script>
 <link rel="stylesheet"
       href="/static/css/tracker-pk-bundle141.css?v=bundle141">

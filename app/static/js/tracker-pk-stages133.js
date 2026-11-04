@@ -27,7 +27,8 @@
               )
             }]
             :[]
-        )
+        ),
+        ...window.trackerPkExtraStages?.() || []
       ]
     });
 
