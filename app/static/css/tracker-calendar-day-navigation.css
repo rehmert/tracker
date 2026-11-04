@@ -1,0 +1,49 @@
+#calendar-matching-day-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem .8rem;
+  padding: .65rem .85rem;
+  margin: .65rem 0;
+  border: 1px solid var(--rule, #dce5ec);
+  background: var(--surface, #fff);
+  border-radius: .7rem;
+}
+
+#calendar-matching-day-navigation button {
+  width: auto;
+  margin: 0;
+}
+
+#calendar-matching-day-navigation button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+#calendar-matching-day-status {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-size: .86rem;
+}
+
+#calendar-matching-day-navigation button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+#calendar-grid .calendar-day:focus {
+  scroll-margin-top: 5rem;
+}
+
+@media (max-width: 600px) {
+  #calendar-matching-day-status {
+    order: -1;
+    flex-basis: 100%;
+  }
+}
+
+@media print {
+  #calendar-matching-day-navigation {
+    display: none !important;
+  }
+}
