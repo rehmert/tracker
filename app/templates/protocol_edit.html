@@ -201,6 +201,21 @@
             aria-label="Saved versus hypothetical exposure">
     </canvas>
     <p id="pkExpLegend" class="note"></p>
+    <section id="pkExpDoseEditor">
+      <h3>Individual hypothetical administrations</h3>
+      <p class="note">Edit one scheduled administration
+      without changing the saved protocol.
+      Rerun to apply changes.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Scheduled</th><th>Action</th>
+            <th>Delay (hours)</th><th>Amount (mg)</th>
+          </tr></thead>
+          <tbody id="pkExpDoseRows"></tbody>
+        </table>
+      </div>
+    </section>
     <div id="pkExpStatistics"
          class="pk-inspector-statistics"></div>
     <div id="pkExpInventory"></div>
@@ -211,7 +226,7 @@
 
 <link rel="stylesheet"
       href="/static/css/tracker-pk-workbench.css?v=bundle60">
-<script src="/static/js/tracker-pk-workbench.js?v=bundle60"
+<script src="/static/js/tracker-pk-workbench.js?v=bundle63"
         defer></script>
 
 <script>

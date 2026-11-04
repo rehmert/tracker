@@ -12,10 +12,19 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from . import pk, services
-from .calendar import staged_occurrences, occurrence_time
+from .pk_precision import schedule_doses as precise_schedule, interval_assessment
 from .models import (
     Protocol, Compound, Vial, LabReport, LabResult,
 )
+
+
+class DoseEdit(BaseModel):
+    index: int = Field(ge=0, le=999)
+    action: str = Field(pattern="^(keep|skip|delay|amount)$")
+    hours: float = Field(default=0, ge=0, le=168)
+    amount_mg: float | None = Field(
+        default=None, gt=0, le=100000
+    )
 
 
 class ExperimentInput(BaseModel):
@@ -37,6 +46,9 @@ class ExperimentInput(BaseModel):
         default=0, ge=0, le=168
     )
     lab_analyte: str = Field(default="", max_length=120)
+    dose_edits: list[DoseEdit] = Field(
+        default_factory=list, max_length=100
+    )
 
 
 UNITS = {"mg": 1.0, "mcg": 0.001, "g": 1000.0}
@@ -46,82 +58,12 @@ def schedule_doses(
     protocol, compound_id, anchor_date, days,
     dose_multiplier=1.0, interval_multiplier=1.0,
 ):
-    """Use existing staged calendar logic, without mutating rows."""
-    planned = []
+    return precise_schedule(
+        protocol, compound_id, anchor_date, days,
+        dose_multiplier=dose_multiplier,
+        interval_multiplier=interval_multiplier,
+    )
 
-    for item in protocol.items:
-        if item.compound_id != compound_id:
-            continue
-
-        factor = UNITS.get(item.amount_unit)
-        if factor is None:
-            raise ValueError(
-                "Selected compound includes non-mass units"
-            )
-
-        amount = (
-            float(item.amount_value) *
-            factor * dose_multiplier
-        )
-
-        if not isfinite(amount) or amount <= 0:
-            raise ValueError("Invalid modeled dose")
-
-        if (
-            item.dose_days and
-            interval_multiplier != 1
-        ):
-            raise ValueError(
-                "Interval adjustments are unavailable for "
-                "fixed-weekday schedules; use dose changes "
-                "or skip/delay experiments instead"
-            )
-
-        count = float(item.freq_count)
-        if not isfinite(count) or count <= 0:
-            raise ValueError("Invalid saved frequency")
-
-        if item.freq_period == "interval":
-            count *= interval_multiplier
-        else:
-            count /= interval_multiplier
-
-        proxy = SimpleNamespace(
-            freq_count=count,
-            freq_period=item.freq_period,
-            start_week=item.start_week,
-            end_week=item.end_week,
-            dose_days=item.dose_days,
-            dose_time=item.dose_time,
-        )
-
-        for day in staged_occurrences(
-            proxy, anchor_date, days
-        ):
-            wall = occurrence_time(
-                proxy, anchor_date, day
-            ) or "00:00"
-
-            try:
-                hour, minute = map(int, wall.split(":"))
-                when = datetime.combine(
-                    day, time(hour, minute)
-                )
-            except (ValueError, TypeError):
-                raise ValueError(
-                    "Invalid saved administration time"
-                )
-
-            planned.append((when, amount))
-
-    planned.sort(key=lambda row: row[0])
-
-    if len(planned) > 1000:
-        raise ValueError(
-            "Experiment exceeds 1,000 modeled doses"
-        )
-
-    return planned
 
 
 def summarize_stock(db, compound_id, baseline, modified):
@@ -303,29 +245,63 @@ def run_experiment(db, protocol_id, settings):
     except (ValueError, OverflowError) as exc:
         raise HTTPException(400, str(exc)) from exc
 
-    if (
-        settings.skip_dose_index is not None and
-        settings.skip_dose_index >= len(modified)
-    ):
-        raise HTTPException(
-            400,
-            "Skipped-dose number exceeds the experiment schedule"
-        )
+    editable = list(modified)
 
-    if settings.skip_dose_index is not None:
-        index = settings.skip_dose_index
-        if settings.delay_hours > 0:
-            at, amount = modified[index]
-            modified[index] = (
-                at + timedelta(hours=settings.delay_hours),
-                amount,
+    if settings.dose_edits:
+        if settings.skip_dose_index is not None:
+            raise HTTPException(
+                400, "Use either individual dose edits or "
+                "the legacy skip/delay control, not both"
             )
-        else:
-            modified.pop(index)
-    elif settings.delay_hours:
-        raise HTTPException(
-            400, "Select a dose before entering a delay"
-        )
+        indices = [edit.index for edit in settings.dose_edits]
+        if len(set(indices)) != len(indices):
+            raise HTTPException(400, "Duplicate dose edit")
+        for edit in settings.dose_edits:
+            if edit.index >= len(modified):
+                raise HTTPException(
+                    400, "Dose edit outside modeled schedule"
+                )
+            at, amount = modified[edit.index]
+            if edit.action == "skip":
+                modified[edit.index] = None
+            elif edit.action == "delay":
+                modified[edit.index] = (
+                    at + timedelta(hours=edit.hours), amount
+                )
+            elif edit.action == "amount":
+                if edit.amount_mg is None:
+                    raise HTTPException(
+                        400, "Enter an edited dose amount"
+                    )
+                modified[edit.index] = (
+                    at, edit.amount_mg
+                )
+        modified = [
+            row for row in modified if row is not None
+        ]
+    else:
+        if (
+            settings.skip_dose_index is not None and
+            settings.skip_dose_index >= len(modified)
+        ):
+            raise HTTPException(
+                400, "Skipped-dose number exceeds "
+                "the experiment schedule"
+            )
+        if settings.skip_dose_index is not None:
+            index = settings.skip_dose_index
+            if settings.delay_hours > 0:
+                at, amount = modified[index]
+                modified[index] = (
+                    at + timedelta(hours=settings.delay_hours),
+                    amount,
+                )
+            else:
+                modified.pop(index)
+        elif settings.delay_hours:
+            raise HTTPException(
+                400, "Select a dose before entering a delay"
+            )
 
     modified.sort(key=lambda pair: pair[0])
 
@@ -341,7 +317,11 @@ def run_experiment(db, protocol_id, settings):
             timedelta(days=effective_days(modified_start)),
         ),
         time.min
-    ) + timedelta(hours=settings.delay_hours)
+    ) + timedelta(hours=max(
+        settings.delay_hours,
+        *(edit.hours for edit in settings.dose_edits),
+        0,
+    ))
 
     shortest = min(parameters)
     hours = (end - start).total_seconds() / 3600
@@ -405,6 +385,14 @@ def run_experiment(db, protocol_id, settings):
         ],
         "baseline_doses": as_doses(baseline),
         "modified_doses": as_doses(modified),
+        "editable_doses": as_doses(editable),
+        "applied_edits": [
+            edit.model_dump() for edit in settings.dose_edits
+        ],
+        "baseline_interval_analysis":
+            interval_assessment(baseline_rows, baseline),
+        "modified_interval_analysis":
+            interval_assessment(modified_rows, modified),
         "inventory": inventory,
         "lab_options": names,
         "labs": labs,

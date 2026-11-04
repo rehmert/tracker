@@ -25,6 +25,80 @@
 
     const number = inspector.number;
 
+    function readDoseEdits() {
+      const body = $("pkExpDoseRows");
+      if (!body) return [];
+      return [...body.querySelectorAll("tr")]
+        .map(row => {
+          const action = row.querySelector(".pk-edit-action").value;
+          return {
+            index: Number(row.dataset.index),
+            action,
+            hours: Number(row.querySelector(".pk-edit-hours").value),
+            amount_mg: action === "amount"
+              ? Number(row.querySelector(".pk-edit-amount").value)
+              : null
+          };
+        }).filter(edit => edit.action !== "keep");
+    }
+
+    function renderDoseEditor(data) {
+      const body = $("pkExpDoseRows");
+      body.replaceChildren();
+      const applied = new Map(
+        (data.applied_edits || []).map(e => [e.index,e])
+      );
+      (data.editable_doses || []).forEach((dose,index) => {
+        const tr = document.createElement("tr");
+        tr.dataset.index = String(index);
+
+        function cell(text) {
+          const td = document.createElement("td");
+          td.textContent = text;
+          tr.append(td);
+          return td;
+        }
+        cell(String(index+1));
+        cell(dose.at.replace("T"," "));
+
+        const actionCell = cell("");
+        const action = document.createElement("select");
+        action.className = "pk-edit-action";
+        [
+          ["keep","As scheduled"],
+          ["skip","Skip"],
+          ["delay","Delay"],
+          ["amount","Change amount"]
+        ].forEach(([value,label]) => {
+          action.add(new Option(label,value));
+        });
+        action.value = applied.get(index)?.action || "keep";
+        actionCell.append(action);
+
+        const delayCell = cell("");
+        const hours = document.createElement("input");
+        hours.type = "number";
+        hours.min = "0";
+        hours.max = "168";
+        hours.step = "0.5";
+        hours.className = "pk-edit-hours";
+        hours.value = String(applied.get(index)?.hours || 0);
+        delayCell.append(hours);
+
+        const amountCell = cell("");
+        const amount = document.createElement("input");
+        amount.type = "number";
+        amount.min = "0.001";
+        amount.step = "any";
+        amount.className = "pk-edit-amount";
+        amount.value = String(
+          applied.get(index)?.amount_mg ?? dose.amount_mg
+        );
+        amountCell.append(amount);
+        body.append(tr);
+      });
+    }
+
     function parameters() {
       return {
         compound_id: Number($("pkExpCompound").value),
@@ -38,7 +112,8 @@
             ? Number($("pkExpDoseNumber").value)-1
             : null,
         delay_hours:Number($("pkExpDelay").value),
-        lab_analyte:$("pkExpLab").value.trim()
+        lab_analyte:$("pkExpLab").value.trim(),
+        dose_edits:readDoseEdits()
       };
     }
 
@@ -342,6 +417,27 @@
 
       renderGraph(data);
       analysisTable(data);
+      renderDoseEditor(data);
+      const initial = data.baseline_interval_analysis;
+      const changed = data.modified_interval_analysis;
+      const target = $("pkExpStatistics");
+      [
+        ["Saved interval analysis",initial],
+        ["Experimental interval analysis",changed]
+      ].forEach(([label,summary])=>{
+        target.append(card(
+          label,
+          summary.status+
+          (summary.interval_change_percent === null
+            ? ""
+            : " · "+number(summary.interval_change_percent)+
+              "% interval change")+
+          (summary.accumulation_ratio === null
+            ? ""
+            : " · "+number(summary.accumulation_ratio)+
+              "× accumulation vs early interval")
+        ));
+      });
       inventorySummary(data);
       labTable(data);
 
@@ -405,6 +501,7 @@
       $("pkExpHorizon").value="84";
       $("pkExpDoseNumber").value="";
       $("pkExpDelay").value="0";
+      $("pkExpDoseRows").replaceChildren();
       status.textContent=
         "Inputs restored to saved-schedule defaults. "+
         "Run the experiment to refresh the graph.";
