@@ -54,9 +54,12 @@
     }
 
     async function reload() {
-      $("scenario").dispatchEvent(
-        new Event("change")
-      );
+      if(
+        typeof window.trackerPkReloadScenario!=="function"
+      )
+        throw Error("Scenario reload unavailable");
+
+      await window.trackerPkReloadScenario();
     }
 
     function filter() {

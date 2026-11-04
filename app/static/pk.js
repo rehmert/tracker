@@ -248,6 +248,7 @@
     current=scenarios.find(s=>s.id===selected)||null;
     $('scenario').value=current?.id||'';renderRows();await refresh();
   }
+  window.trackerPkReloadScenario=load;
   function updateTestosteroneAction(){
     const protocol=$('protocol');
     const ids=(protocol.selectedOptions[0]?.dataset.compounds||'').split(',').filter(Boolean);

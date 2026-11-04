@@ -3,7 +3,7 @@ import csv
 import io
 from fastapi.responses import Response, JSONResponse
 from math import ceil, isfinite
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -22,6 +22,7 @@ from ..pk_model_history import capture as model_capture
 from ..pk_analysis_93 import metrics as exposure_metrics
 
 from .. import pk_scenario_ops as scenario_ops
+from .. import pk_scenario_version as scenario_version
 
 router = APIRouter(prefix="/pk")
 
@@ -286,45 +287,136 @@ def create_scenario(data: ScenarioInput, db: Session = Depends(get_db)):
     if c is None or pk.profile(c.name) is None:
         raise HTTPException(400, "Unsupported compound")
     s = PkScenario(**data.model_dump())
-    db.add(s); db.commit()
+    db.add(s)
+    db.flush()
+    scenario_version.audit(
+        db,s.id,"scenario_create",{},
+        scenario_version.snapshot(db,s)
+    )
+    db.commit()
     return {"id": s.id}
 
 @router.put("/scenarios/{sid}")
-def update_scenario(sid: int, data: ScenarioInput, db: Session = Depends(get_db)):
+def update_scenario(
+    sid:int,data:ScenarioInput,
+    db:Session=Depends(get_db),
+    expected:str|None=Header(
+        default=None,alias="X-PK-Expected-Version"
+    )
+):
     s = db.get(PkScenario, sid)
     if s is None: raise HTTPException(404)
     if s.compound_id != data.compound_id: raise HTTPException(400, "Cannot change scenario compound")
     if not all(isfinite(v) for v in (data.half_life_hours, data.absorption_half_life_hours)):
         raise HTTPException(400, "Invalid half-life")
+    scenario_version.check(db,s,expected)
+    before=scenario_version.snapshot(db,s)
     s.name = data.name
     s.half_life_hours = data.half_life_hours
     s.absorption_half_life_hours = data.absorption_half_life_hours
-    db.commit(); return {"ok": True}
+    scenario_version.audit(
+        db,s.id,"scenario_update",
+        before,scenario_version.snapshot(db,s)
+    )
+    db.commit()
+    return {"ok":True}
 
 @router.delete("/scenarios/{sid}")
 def delete_scenario(sid: int, db: Session = Depends(get_db)):
     s = db.get(PkScenario, sid)
     if s is None: raise HTTPException(404)
-    db.delete(s); db.commit(); return {"ok": True}
+    scenario_version.audit(
+        db,s.id,"scenario_delete",
+        scenario_version.snapshot(db,s),{}
+    )
+    db.delete(s)
+    db.commit()
+    return {"ok":True}
 
 @router.post("/scenarios/{sid}/doses", status_code=201)
-def add_dose(sid: int, data: PlannedInput, db: Session = Depends(get_db)):
+def add_dose(
+    sid:int,data:PlannedInput,
+    db:Session=Depends(get_db),
+    expected:str|None=Header(
+        default=None,alias="X-PK-Expected-Version"
+    )
+):
     if db.get(PkScenario, sid) is None: raise HTTPException(404)
-    d = PkPlannedDose(scenario_id=sid, **data.model_dump())
-    db.add(d); db.commit(); return {"id": d.id}
+    obj=scenario_ops.scenario(db,sid)
+    scenario_version.check(db,obj,expected)
+    d=PkPlannedDose(
+        scenario_id=sid,**data.model_dump()
+    )
+    db.add(d)
+    db.flush()
+    scenario_version.audit(
+        db,sid,"dose_add",{},
+        {
+            "id":d.id,
+            "at":d.planned_at.isoformat(),
+            "mg":d.amount_mg
+        }
+    )
+    db.commit()
+    return {"id":d.id}
 
 @router.put("/scenarios/{sid}/doses/{did}")
-def edit_dose(sid: int, did: int, data: PlannedInput, db: Session = Depends(get_db)):
+def edit_dose(
+    sid:int,did:int,data:PlannedInput,
+    db:Session=Depends(get_db),
+    expected:str|None=Header(
+        default=None,alias="X-PK-Expected-Version"
+    )
+):
     d = db.get(PkPlannedDose, did)
     if d is None or d.scenario_id != sid: raise HTTPException(404)
-    d.planned_at, d.amount_mg = data.planned_at, data.amount_mg
-    db.commit(); return {"ok": True}
+    scenario_version.check(
+        db,scenario_ops.scenario(db,sid),expected
+    )
+    before={
+        "id":d.id,
+        "at":d.planned_at.isoformat(),
+        "mg":d.amount_mg
+    }
+    d.planned_at,d.amount_mg=(
+        data.planned_at,data.amount_mg
+    )
+    scenario_version.audit(
+        db,sid,"dose_update",before,
+        {
+            "id":d.id,
+            "at":d.planned_at.isoformat(),
+            "mg":d.amount_mg
+        }
+    )
+    db.commit()
+    return {"ok":True}
 
 @router.delete("/scenarios/{sid}/doses/{did}")
-def delete_dose(sid: int, did: int, db: Session = Depends(get_db)):
+def delete_dose(
+    sid:int,did:int,
+    db:Session=Depends(get_db),
+    expected:str|None=Header(
+        default=None,alias="X-PK-Expected-Version"
+    )
+):
     d = db.get(PkPlannedDose, did)
     if d is None or d.scenario_id != sid: raise HTTPException(404)
-    db.delete(d); db.commit(); return {"ok": True}
+    scenario_version.check(
+        db,scenario_ops.scenario(db,sid),expected
+    )
+    scenario_version.audit(
+        db,sid,"dose_delete",
+        {
+            "id":d.id,
+            "at":d.planned_at.isoformat(),
+            "mg":d.amount_mg
+        },
+        {}
+    )
+    db.delete(d)
+    db.commit()
+    return {"ok":True}
 
 def protocol_planned_doses(db: Session, protocol_id: int, compound_id: int, start: datetime, end: datetime):
     """Read-only scheduled mg doses from a saved protocol, with escalation stages."""
@@ -1043,3 +1135,16 @@ def pk_scenario_changes(
         }
         for entry in entries
     ]
+
+
+
+@router.get("/scenarios/{sid}/revision")
+def pk_scenario_revision(
+    sid:int,db:Session=Depends(get_db)
+):
+    obj=scenario_ops.scenario(db,sid)
+    return {
+        "version":scenario_version.version(
+            scenario_version.snapshot(db,obj)
+        )
+    }
