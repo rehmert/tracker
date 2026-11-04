@@ -18,18 +18,70 @@ def bounded_step(hours, initial_step, administrations, variants=9, budget=180000
 
 
 def refined_peak(rows, doses, elimination_hours, absorption_hours):
-    """Bounded local refinement around the highest sampled modeled exposure."""
+    """Refine likely peak intervals across the full modeled window.
+
+    This is bounded numerical refinement, not an exact analytic maximum.
+    """
     if not rows:
         raise ValueError('No model samples')
-    values=[row['planned'] for row in rows]
-    top=max(range(len(values)),key=values.__getitem__)
-    best=values[top]
-    for index in (top-1,top):
-        if index<0 or index+1>=len(rows):
-            continue
-        start=datetime.fromisoformat(rows[index]['at'])
-        finish=datetime.fromisoformat(rows[index+1]['at'])
-        for fraction in (.125,.25,.375,.5,.625,.75,.875):
-            time=start+(finish-start)*fraction
-            best=max(best,pk.exposure_at(time,doses,elimination_hours,absorption_hours))
+
+    from bisect import bisect_right
+
+    times=[
+        datetime.fromisoformat(r['at'])
+        for r in rows
+    ]
+    values=[r['planned'] for r in rows]
+
+    if len(rows)==1:
+        return values[0]
+
+    # Prioritize intervals near sampled maxima and administration events.
+    indices=set()
+
+    for i in range(len(rows)-1):
+        left=values[max(0,i-1)]
+        right=values[min(len(values)-1,i+2)]
+        if max(values[i],values[i+1])>=max(left,right):
+            indices.add(i)
+
+    for at,_ in doses:
+        i=bisect_right(times,at)-1
+        for nearby in (i-1,i,i+1):
+            if 0<=nearby<len(times)-1:
+                indices.add(nearby)
+
+    # Fall back to intervals with the largest sampled values.
+    ranked=sorted(
+        range(len(times)-1),
+        key=lambda i:max(values[i],values[i+1]),
+        reverse=True
+    )
+
+    indices.update(ranked[:32])
+
+    candidates=sorted(
+        indices,
+        key=lambda i:max(values[i],values[i+1]),
+        reverse=True
+    )[:64]
+
+    best=max(values)
+
+    for i in candidates:
+        start=times[i]
+        end=times[i+1]
+        width=end-start
+
+        for part in range(1,16):
+            t=start+width*(part/16)
+            best=max(
+                best,
+                pk.exposure_at(
+                    t,doses,
+                    elimination_hours,
+                    absorption_hours
+                )
+            )
+
     return best
