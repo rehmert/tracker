@@ -12,6 +12,9 @@
     const run = $("pkMultiRun");
     const exportButton = $("pkMultiExportCsv");
     const exportPng = $("pkMultiExportPng");
+    const exportPreset = $("pkMultiExportPreset");
+    const importPreset = $("pkMultiImportPreset");
+    const presetFile = $("pkMultiPresetFile");
     let lastResult = null;
     let revision = 0;
 
@@ -417,6 +420,243 @@
       return {
         schedules: entries.map(box => readSchedule(box))
       };
+    }
+
+    // Batch 45: portable, read-only comparison presets.
+    const PRESET_FORMAT = "tracker-pk-multi";
+    const PRESET_VERSION = 1;
+    const MAX_PRESET_BYTES = 131072;
+
+    function validatePreset(raw) {
+      if (!raw || typeof raw !== "object" ||
+          Array.isArray(raw) ||
+          raw.format !== PRESET_FORMAT ||
+          raw.version !== PRESET_VERSION) {
+        throw new Error("Unsupported comparison preset format.");
+      }
+
+      const schedules = raw.schedules;
+
+      if (!Array.isArray(schedules) ||
+          schedules.length < 1 || schedules.length > 4) {
+        throw new Error("Preset must contain 1–4 schedules.");
+      }
+
+      const numbers = (value, min, max, integer = false) =>
+        typeof value === "number" &&
+        Number.isFinite(value) &&
+        value >= min && value <= max &&
+        (!integer || Number.isInteger(value));
+
+      const validStart = value => {
+        if (typeof value !== "string" ||
+            !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+          return false;
+        }
+        const timestamp = Date.parse(value);
+        if (!Number.isFinite(timestamp)) return false;
+        const date = new Date(timestamp);
+        const parts = [
+          date.getFullYear(),
+          String(date.getMonth() + 1).padStart(2, "0"),
+          String(date.getDate()).padStart(2, "0")
+        ];
+        return parts.join("-") === value.slice(0, 10);
+      };
+
+      const validated = schedules.map((schedule, index) => {
+        if (!schedule || typeof schedule !== "object" ||
+            Array.isArray(schedule)) {
+          throw new Error("Invalid schedule " + (index + 1));
+        }
+
+        const compound = choices.find(option =>
+          Number(option.value) === schedule.compound_id
+        );
+
+        if (!compound) {
+          throw new Error(
+            "Compound ID " + schedule.compound_id +
+            " is not available in Tracker."
+          );
+        }
+
+        if (typeof schedule.name !== "string" ||
+            !schedule.name.trim() ||
+            schedule.name.trim().length > 120 ||
+            !validStart(schedule.start_at) ||
+            !numbers(schedule.interval_days, 0.125, 90) ||
+            !numbers(schedule.duration_days, 1, 365, true) ||
+            !numbers(schedule.offset_days, 0, 90, true) ||
+            schedule.offset_days >= schedule.duration_days ||
+            !numbers(schedule.half_life_hours, 0.000001, 10000) ||
+            !numbers(
+              schedule.absorption_half_life_hours,
+              0.000001, 10000
+            )) {
+          throw new Error(
+            "Invalid parameters in schedule " + (index + 1)
+          );
+        }
+
+        if (!Array.isArray(schedule.stages) ||
+            schedule.stages.length < 1 ||
+            schedule.stages.length > 52) {
+          throw new Error(
+            "Invalid stage count in schedule " + (index + 1)
+          );
+        }
+
+        let previousWeek = 0;
+
+        const stages = schedule.stages.map((stage, stageIndex) => {
+          if (!stage || typeof stage !== "object" ||
+              Array.isArray(stage) ||
+              !numbers(stage.week, 1, 52, true) ||
+              stage.week <= previousWeek ||
+              !numbers(stage.amount_mg, 0.000001, 10000) ||
+              (stage.interval_days !== null &&
+               !numbers(stage.interval_days, 0.125, 90))) {
+            throw new Error(
+              "Invalid stage " + (stageIndex + 1) +
+              " in schedule " + (index + 1)
+            );
+          }
+
+          previousWeek = stage.week;
+
+          return {
+            week: stage.week,
+            amount_mg: stage.amount_mg,
+            interval_days: stage.interval_days
+          };
+        });
+
+        if (stages[0].week !== 1) {
+          throw new Error("Stages must begin at week 1.");
+        }
+
+        return {
+          compound_id: schedule.compound_id,
+          name: schedule.name.trim(),
+          start_at: schedule.start_at,
+          interval_days: schedule.interval_days,
+          duration_days: schedule.duration_days,
+          offset_days: schedule.offset_days,
+          half_life_hours: schedule.half_life_hours,
+          absorption_half_life_hours:
+            schedule.absorption_half_life_hours,
+          stages
+        };
+      });
+
+      const starts = validated.map(schedule =>
+        Date.parse(schedule.start_at)
+      );
+      const ends = validated.map((schedule, index) =>
+        starts[index] + schedule.duration_days * 86400000
+      );
+
+      if (Math.max(...ends) - Math.min(...starts) >
+          730 * 86400000) {
+        throw new Error(
+          "Combined comparison timeline exceeds 730 days."
+        );
+      }
+
+      return validated;
+    }
+
+    function downloadPreset() {
+      try {
+        const schedules = payload().schedules;
+        const preset = {
+          format: PRESET_FORMAT,
+          version: PRESET_VERSION,
+          schedules
+        };
+
+        const json = JSON.stringify(preset, null, 2);
+        const blob = new Blob([json], {
+          type: "application/json"
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "tracker-pk-comparison-preset.json";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        status.textContent =
+          "Comparison setup exported. No records saved.";
+      } catch (error) {
+        status.textContent = error.message || String(error);
+      }
+    }
+
+    async function loadPreset(file) {
+      if (!file) return;
+
+      if (file.size > MAX_PRESET_BYTES) {
+        throw new Error("Preset exceeds the 128 KB limit.");
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(await file.text());
+      } catch {
+        throw new Error("Preset is not valid JSON.");
+      }
+
+      // Validate every schedule before modifying the editor.
+      const schedules = validatePreset(parsed);
+
+      if (!window.confirm(
+        "Replace the current hypothetical schedules with " +
+        schedules.length + " schedules from this preset?"
+      )) {
+        status.textContent = "Preset import cancelled.";
+        return;
+      }
+
+      container.replaceChildren();
+
+      schedules.forEach(schedule => addSchedule(schedule));
+
+      add.disabled = container.children.length >= 4;
+      invalidate();
+
+      status.textContent =
+        schedules.length +
+        " hypothetical schedules restored. " +
+        "Select Compare schedules to recalculate.";
+    }
+
+    if (exportPreset) {
+      exportPreset.addEventListener("click", downloadPreset);
+    }
+
+    if (importPreset && presetFile) {
+      importPreset.addEventListener("click", () =>
+        presetFile.click()
+      );
+
+      presetFile.addEventListener("change", async () => {
+        try {
+          const file = presetFile.files?.[0];
+          if (file) await loadPreset(file);
+        } catch (error) {
+          status.textContent = error.message || String(error);
+        } finally {
+          presetFile.value = "";
+        }
+      });
     }
 
     function exposureStats(times, values) {

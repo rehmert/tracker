@@ -124,3 +124,21 @@ body.pk-mode-multi .pk-custom-section {
     display: none;
   }
 }
+
+
+/* Batch 45 portable comparison presets */
+#pkMultiImportPreset,
+#pkMultiExportPreset {
+  white-space: nowrap;
+}
+
+#pkMultiPresetFile[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  #pkMultiImportPreset,
+  #pkMultiExportPreset {
+    white-space: normal;
+  }
+}

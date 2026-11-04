@@ -142,7 +142,7 @@ def test_template_and_client_wiring():
     assert 'id="pkMultiWorkspace"' in html
     assert 'id="pkMultiPlot"' in html
     assert "pk.js?v=pk-batch41-20261104" in html
-    assert "tracker-pk-multi-schedule.js?v=batch44" in html
+    assert "tracker-pk-multi-schedule.js?v=batch45" in html
     assert "'pk-mode-multi'" in js
     assert '"/pk/what-if/multi-preview"' in multi
     assert "values_percent" in multi
@@ -182,7 +182,7 @@ def test_batch42_csv_export_and_current_cache():
     assert 'container.addEventListener("input", invalidate)' in js
     assert 'container.addEventListener("change", invalidate)' in js
     assert "lastResult = result" in js
-    assert "tracker-pk-multi-schedule.js?v=batch44" in html
+    assert "tracker-pk-multi-schedule.js?v=batch45" in html
 
 
 def test_batch43_custom_schedule_names():
@@ -210,7 +210,7 @@ def test_batch43_summary_and_result_invalidation():
     assert "revision !== requestedRevision" in js
     assert "lastResult = null" in js
     assert "ctx.clearRect(" in js
-    assert "tracker-pk-multi-schedule.js?v=batch44" in html
+    assert "tracker-pk-multi-schedule.js?v=batch45" in html
 
     Environment().parse(html)
 
@@ -240,7 +240,7 @@ def test_batch44_time_weighted_summary():
     assert "stats.range.toFixed(1)" in js
     assert "stats.mean.toFixed(1)" in js
     assert "Time-weighted mean (%)" in js
-    assert "tracker-pk-multi-schedule.js?v=batch44" in html
+    assert "tracker-pk-multi-schedule.js?v=batch45" in html
 
 
 def test_batch44_png_export_and_invalidation():
@@ -259,3 +259,48 @@ def test_batch44_png_export_and_invalidation():
     assert "tracker-pk-multi-comparison.png" in js
 
     Environment().parse(html)
+
+
+def test_batch45_preset_source_contracts():
+    js = (
+        ROOT / "app/static/js/tracker-pk-multi-schedule.js"
+    ).read_text()
+    html = (ROOT / "app/templates/pk.html").read_text()
+
+    for marker in (
+        'id="pkMultiExportPreset"',
+        'id="pkMultiImportPreset"',
+        'id="pkMultiPresetFile"',
+        "tracker-pk-multi-schedule.js?v=batch45",
+        "tracker-pk-multi-schedule.css?v=batch45",
+    ):
+        assert marker in html
+
+    for marker in (
+        "function validatePreset(raw)",
+        "function downloadPreset()",
+        "async function loadPreset(file)",
+        "JSON.parse(await file.text())",
+        "JSON.stringify(preset, null, 2)",
+        "window.confirm(",
+        "container.replaceChildren()",
+        "schedules.forEach(schedule => addSchedule(schedule))",
+        "MAX_PRESET_BYTES",
+        "PRESET_VERSION",
+        "schedule.offset_days >= schedule.duration_days",
+    ):
+        assert marker in js
+
+    Environment().parse(html)
+
+
+def test_batch45_presets_do_not_add_backend_write_routes():
+    router = (ROOT / "app/routers/pk.py").read_text()
+    section = router.split(
+        '@router.post("/what-if/multi-preview")', 1
+    )[1].split("def verify_what_if_compound", 1)[0]
+
+    assert "what_if_doses(schedule)" in section
+
+    for forbidden in ("db.add(", "db.commit(", "db.delete("):
+        assert forbidden not in section
