@@ -84,6 +84,66 @@ def listing(pid):
     return _edit(pid, lambda rows:(None,rows))
 
 
+def source_snapshot(protocol):
+    fields=(
+        "compound_id","amount_value","amount_unit",
+        "freq_count","freq_period","start_week",
+        "end_week","dose_days","dose_time",
+    )
+    return {
+        "name":protocol.name,
+        "start_date":(
+            protocol.start_date.isoformat()
+            if protocol.start_date else None
+        ),
+        "end_date":(
+            protocol.end_date.isoformat()
+            if protocol.end_date else None
+        ),
+        "items":[
+            {field:getattr(item,field) for field in fields}
+            for item in protocol.items
+        ],
+    }
+
+
+def revise(pid,identifier,protocol,entry):
+    def operation(rows):
+        for row in rows:
+            if row.get("id")!=identifier:
+                continue
+            before={
+                k:v for k,v in row.items()
+                if k!="revisions"
+            }
+            history=row.get("revisions",[])+[before]
+            if len(history)>20:
+                raise HTTPException(
+                    400,"Maximum 20 revisions per experiment"
+                )
+            new=dict(
+                row,
+                name=entry.name.strip(),
+                notes=entry.notes,
+                settings=entry.settings.model_dump(),
+                saved_at=datetime.now(
+                    timezone.utc
+                ).isoformat(),
+                source_updated_at=(
+                    protocol.updated_at.isoformat()
+                    if protocol.updated_at else None
+                ),
+                source_snapshot=source_snapshot(protocol),
+                revisions=history,
+            )
+            return [
+                new if x.get("id")==identifier else x
+                for x in rows
+            ],new
+        raise HTTPException(404,"Experiment not found")
+    return _edit(pid,operation)
+
+
 def save(pid,protocol,entry):
     def operation(rows):
         row = {
@@ -98,6 +158,8 @@ def save(pid,protocol,entry):
                 if protocol.updated_at else None
             ),
             "settings":entry.settings.model_dump(),
+            "source_snapshot":source_snapshot(protocol),
+            "revisions":[],
         }
         return rows+[row],row
     return _edit(pid,operation)

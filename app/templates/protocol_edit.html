@@ -228,7 +228,22 @@
       <button type="button" id="pkExpExport">
         Export definition
       </button>
+      <button type="button" id="pkExpRevise">
+        Save revision
+      </button>
     </div>
+    <label>Compare named experiments
+      <select id="pkExpCompare" multiple size="4"
+              aria-label="Choose two to four experiments">
+      </select>
+    </label>
+    <button type="button" id="pkExpCompareRun">
+      Compare selected
+    </button>
+    <button type="button" id="pkExpCompareExport"
+            disabled>Export comparison CSV</button>
+    <div id="pkExpCompareResults"
+         aria-live="polite"></div>
     <p id="pkExpLibraryStatus" role="status"></p>
   </section>
 
@@ -259,6 +274,10 @@
          class="pk-inspector-statistics"></div>
     <div id="pkExpInventory"></div>
     <div id="pkExpLabs"></div>
+    <section id="pkExpReport">
+      <h3>Analysis report</h3>
+      <pre id="pkExpReportText"></pre>
+    </section>
     <p id="pkExpDisclaimer" class="note"></p>
   </div>
 </section>
@@ -267,9 +286,11 @@
       href="/static/css/tracker-pk-workbench.css?v=bundle72">
 <script src="/static/js/tracker-pk-lab-trends.js?v=bundle72"
         defer></script>
-<script src="/static/js/tracker-pk-workbench.js?v=bundle76"
+<script src="/static/js/tracker-pk-workbench.js?v=bundle84"
         defer></script>
-<script src="/static/js/tracker-pk-library.js?v=bundle76"
+<script src="/static/js/tracker-pk-library.js?v=bundle84"
+        defer></script>
+<script src="/static/js/tracker-pk-experiment-compare.js?v=bundle84"
         defer></script>
 
 <script>

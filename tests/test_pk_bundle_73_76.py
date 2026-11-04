@@ -73,8 +73,8 @@ def test_workbench_asset_and_ui_contracts():
 
     assert 'id="pkExpSearch"' in html
     assert 'id="pkExpSort"' in html
-    assert "tracker-pk-library.js?v=bundle76" in html
-    assert "tracker-pk-workbench.js?v=bundle76" in html
+    assert "tracker-pk-library.js?v=bundle84" in html
+    assert "tracker-pk-workbench.js?v=bundle84" in html
     assert "function renderList(preferred)" in library
     assert "forecast_events" in js
     assert "days_since_scheduled_dose" in js

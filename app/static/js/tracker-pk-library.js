@@ -63,6 +63,16 @@
       });
 
       selected.replaceChildren();
+      const multiple = $("pkExpCompare");
+      const prior = new Set(
+        [...multiple.selectedOptions].map(o=>o.value)
+      );
+      multiple.replaceChildren();
+      rows.forEach(row => multiple.add(
+        new Option(
+          row.name,row.id,false,prior.has(row.id)
+        )
+      ));
       filtered.forEach(row=>{
         selected.add(new Option(
           row.name+" · "+row.saved_at.slice(0,10),
@@ -226,6 +236,28 @@
         loading=false;
       }
     });
+
+    $("pkExpRevise").addEventListener(
+      "click",async()=>{
+        const row=selectedRow();
+        if(!row) return;
+        try {
+          const edited=await request(
+            base+"/"+encodeURIComponent(row.id),
+            "PUT",{
+              name:$("pkExpName").value.trim(),
+              notes:$("pkExpNotes").value.trim(),
+              settings:currentSettings()
+            }
+          );
+          await refresh(edited.id);
+          status.textContent=
+            "Revision saved; prior version retained.";
+        } catch(error) {
+          status.textContent=error.message;
+        }
+      }
+    );
 
     $("pkExpLoad").addEventListener("click",()=>{
       const row=selectedRow();

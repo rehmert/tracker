@@ -15,6 +15,7 @@ from .. import pk
 from ..pk_library import (
     ExperimentSave, listing as experiment_list,
     save as experiment_save, delete as experiment_delete,
+    revise as experiment_revise,
 )
 from ..pk_workbench import ExperimentInput, run_experiment
 
@@ -799,3 +800,96 @@ def pk_library_delete(
     ):
         raise HTTPException(400,"Invalid experiment ID")
     return experiment_delete(pid,experiment_id)
+
+
+
+class ExperimentComparisonInput(BaseModel):
+    ids: list[str] = Field(min_length=2,max_length=4)
+
+
+@router.post("/library/{pid}/compare")
+def pk_compare_experiments(
+    pid:int,
+    data:ExperimentComparisonInput,
+    db:Session=Depends(get_db),
+):
+    if db.get(Protocol,pid) is None:
+        raise HTTPException(404,"Protocol not found")
+
+    if len(set(data.ids))!=len(data.ids):
+        raise HTTPException(400,"Duplicate experiments")
+
+    entries={
+        item["id"]:item
+        for item in experiment_list(pid)
+    }
+    if any(identifier not in entries for identifier in data.ids):
+        raise HTTPException(404,"Experiment not found")
+
+    chosen=[entries[i] for i in data.ids]
+    if len({
+        e["settings"]["compound_id"]
+        for e in chosen
+    })!=1:
+        raise HTTPException(
+            400,"Choose experiments for one compound"
+        )
+
+    rows=[]
+    for item in chosen:
+        settings=ExperimentInput.model_validate(
+            item["settings"]
+        )
+        result=run_experiment(
+            db,pid,settings,
+            source_snapshot=item.get("source_snapshot")
+        )
+        values=result["modified"]
+        rows.append({
+            "id":item["id"],
+            "name":item["name"],
+            "compound":result["compound"],
+            "times":result["times"],
+            "values":values,
+            "peak":max(values,default=0),
+            "trough":min(values,default=0),
+            "inventory_demand":result["inventory"].get(
+                "selected_future_demand_mg"
+            ),
+            "snapshot":item.get("source_snapshot") is not None,
+        })
+
+    return JSONResponse(
+        content={
+            "experiments":rows,
+            "disclaimer":(
+                "Exposure curves are hypothetical and "
+                "normalized independently. Inventory and "
+                "laboratory inputs use current data. Older "
+                "experiments without snapshots use the "
+                "current protocol."
+            ),
+        },
+        headers={"Cache-Control":"no-store"},
+    )
+
+
+@router.put("/library/{pid}/{experiment_id}")
+def pk_update_experiment(
+    pid:int,
+    experiment_id:str,
+    data:ExperimentSave,
+    db:Session=Depends(get_db),
+):
+    p=db.get(Protocol,pid)
+    if p is None:
+        raise HTTPException(404,"Protocol not found")
+    if not any(
+        item.compound_id==data.settings.compound_id
+        for item in p.items
+    ):
+        raise HTTPException(400,"Compound not in protocol")
+
+    return experiment_revise(
+        pid,experiment_id,p,data
+    )

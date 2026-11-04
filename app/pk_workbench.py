@@ -189,10 +189,38 @@ def selected_labs(db, analyte, first, last):
 
 
 
-def run_experiment(db, protocol_id, settings):
+def run_experiment(db, protocol_id, settings, source_snapshot=None):
     protocol = db.get(Protocol, protocol_id)
     if protocol is None:
         raise HTTPException(404, "Protocol not found")
+
+    if source_snapshot is not None:
+        try:
+            protocol=SimpleNamespace(
+                name=source_snapshot["name"],
+                start_date=(
+                    date.fromisoformat(
+                        source_snapshot["start_date"]
+                    )
+                    if source_snapshot.get("start_date")
+                    else None
+                ),
+                end_date=(
+                    date.fromisoformat(
+                        source_snapshot["end_date"]
+                    )
+                    if source_snapshot.get("end_date")
+                    else None
+                ),
+                items=[
+                    SimpleNamespace(**item)
+                    for item in source_snapshot["items"]
+                ],
+            )
+        except (KeyError,TypeError,ValueError) as exc:
+            raise HTTPException(
+                400,"Invalid saved source snapshot"
+            ) from exc
 
     compound = db.get(Compound, settings.compound_id)
     if compound is None:
@@ -450,6 +478,7 @@ def run_experiment(db, protocol_id, settings):
         "recorded_reconciliation":historical,
         "schedule_consistency":timing,
         "assumptions":assumptions,
+        "using_source_snapshot":source_snapshot is not None,
         "lab_options": names,
         "labs": labs,
         "disclaimer": (

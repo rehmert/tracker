@@ -87,7 +87,7 @@ def test_lab_and_library_assets():
     ).read_text()
 
     assert "tracker-pk-lab-trends.js?v=bundle72" in html
-    assert "tracker-pk-library.js?v=bundle76" in html
+    assert "tracker-pk-library.js?v=bundle84" in html
     assert 'id="pkExpNotes"' in html
     assert 'data-source-updated="' in html
     assert "No PK curve is fitted" in lab

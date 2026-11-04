@@ -217,7 +217,8 @@
       const head = document.createElement("tr");
 
       ["Drawn","Report ID","Analyte","Measured value",
-       "Reference","Days since scheduled dose"]
+       "Reference","Days since scheduled dose",
+       "Days since recorded dose"]
         .forEach(label=>{
           const th = document.createElement("th");
           th.textContent = label;
@@ -237,7 +238,10 @@
             (lab.ref_high ?? "—"),
           lab.days_since_scheduled_dose == null
             ? "Unknown" :
-              String(lab.days_since_scheduled_dose)
+              String(lab.days_since_scheduled_dose),
+          lab.days_since_recorded_dose == null
+            ? "Unknown" :
+              String(lab.days_since_recorded_dose)
         ];
         cells.forEach(value=>{
           const td = document.createElement("td");
@@ -548,6 +552,18 @@
           ? " The protocol had no saved start date; " +
             "today was used as the illustrative anchor."
           : "");
+
+      $("pkExpReportText").textContent=[
+        "Protocol: "+data.protocol,
+        "Compound: "+data.compound,
+        "Model assumptions: "+JSON.stringify(data.model),
+        "Hypothetical doses: "+data.modified_doses.length,
+        "Forecast: "+JSON.stringify(data.inventory),
+        "Actual-versus-planned: "+
+          JSON.stringify(data.recorded_reconciliation),
+        "Warnings: "+(data.assumptions||[]).join("; "),
+        data.disclaimer
+      ].join("\n");
 
       csv.disabled=false;
       document.dispatchEvent(new CustomEvent(
