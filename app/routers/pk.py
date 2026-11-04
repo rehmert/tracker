@@ -1452,3 +1452,42 @@ def pk_workspace_sensitivity(
     db:Session=Depends(get_db)
 ):
     return sensitivity169.analyze(db,sid,days)
+
+
+
+@router.get("/workspace/{sid}/report")
+def pk_workspace_report(
+    sid:int,db:Session=Depends(get_db)
+):
+    from ..models import ChangeAudit
+    obj=scenario_ops.scenario(db,sid)
+    snap=scenario_version.snapshot(db,obj)
+
+    audits=list(db.scalars(
+        select(ChangeAudit)
+        .where(
+            ChangeAudit.entity_type=='pk_scenario',
+            ChangeAudit.entity_id==sid
+        )
+        .order_by(ChangeAudit.id.desc())
+        .limit(20)
+    ))
+
+    return {
+        'format':'tracker-pk-report-v1',
+        'scenario':snap,
+        'scenario_version':
+            scenario_version.version(snap),
+        'recent_changes':[
+            {
+                'action':x.action,
+                'at':x.created_at.isoformat()
+                    if x.created_at else None
+            }
+            for x in audits
+        ],
+        'disclaimer':(
+            'Hypothetical scenario, not a clinical '
+            'protocol or measured drug concentration.'
+        )
+    }

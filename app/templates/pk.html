@@ -334,6 +334,21 @@
           disabled>Apply transformation</button>
   <p id="pkTransformStatus" role="status"></p>
 </details>
+<details class="pk-report-workspace">
+  <summary>Scenario report and revision</summary>
+  <p class="note">
+    Export the selected hypothetical scenario,
+    its saved doses, revision identifier and
+    recent audit entries.
+  </p>
+  <button id="pkReportDownload" type="button">
+    Export scenario report JSON
+  </button>
+  <button id="pkReportCopyRevision" type="button">
+    Copy revision hash
+  </button>
+  <p id="pkReportStatus" role="status"></p>
+</details>
 <h3>Future planned doses</h3>
 <div class="pk-dose-tools">
   <label>Filter
@@ -552,6 +567,10 @@
         defer></script>
 <script src="/static/js/tracker-pk-sensitivity169.js?v=bundle169"
         defer></script>
+<script src="/static/js/tracker-pk-report173.js?v=bundle173"
+        defer></script>
+<link rel="stylesheet"
+      href="/static/css/tracker-pk-bundle173.css?v=bundle173">
 <link rel="stylesheet"
       href="/static/css/tracker-pk-bundle157.css?v=bundle157">
 <link rel="stylesheet"

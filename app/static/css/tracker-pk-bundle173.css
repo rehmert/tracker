@@ -1,0 +1,36 @@
+.pk-transform-workspace,
+.pk-report-workspace {
+  margin:1rem 0;
+  padding:1rem;
+  border:1px solid var(--border,#aaa);
+  border-radius:10px;
+}
+.pk-transform-workspace label {
+  display:inline-flex;
+  flex-direction:column;
+  gap:.35rem;
+  margin:.4rem;
+}
+#pkSensitivityPlot {
+  display:block;
+  max-width:100%;
+  height:auto;
+  margin-top:1rem;
+}
+#pkSensitivityStatus,
+#pkTransformStatus,
+#pkReportStatus {
+  overflow-wrap:anywhere;
+}
+@media(max-width:700px) {
+  .pk-transform-workspace label {
+    display:flex;
+  }
+  .pk-transform-workspace input {
+    max-width:100%;
+  }
+  .pk-transform-workspace button,
+  .pk-report-workspace button {
+    min-height:44px;
+  }
+}
