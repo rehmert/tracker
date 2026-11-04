@@ -55,6 +55,7 @@
       gridColor:chartGrid
     });
     for (const [key,color] of [['actual',token('--chart-actual','#2563eb')],['planned',token('--chart-planned','#b45309')]]) {
+      if (document.getElementById(key==='actual'?'pkLayerRecorded':'pkLayerPlanned')?.checked===false) continue;
       ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;
       rows.forEach((r,i)=>i?ctx.lineTo(x(i),y(r[key])):ctx.moveTo(x(i),y(r[key])));ctx.stroke();
     }

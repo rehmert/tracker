@@ -43,7 +43,7 @@
       const width=canvas.width;
 
       for(const dose of (
-        original.planned_schedule||[]
+        $("pkLayerMarkers")?.checked===false ? [] : (original.planned_schedule||[])
       )) {
         const at=Date.parse(dose.at);
 

@@ -65,6 +65,11 @@
 <div style="overflow-x:auto;max-height:260px;overflow-y:auto"><table><thead><tr><th>Scheduled date/time</th><th>Dose (mg)</th></tr></thead><tbody id="wiSchedule"></tbody></table></div>
 </div>
 <div class="card" id="pkResults"><h2>2. Modeled exposure</h2>
+<div class="pk-dose-tools" id="pkGraphLayerControls" role="group" aria-label="Modeled exposure graph layers">
+  <label><input type="checkbox" id="pkLayerRecorded" checked>Recorded curve</label>
+  <label><input type="checkbox" id="pkLayerPlanned" checked>Planned curve</label>
+  <label><input type="checkbox" id="pkLayerMarkers" checked>Planned-dose markers</label>
+</div>
 <div class="pk-dose-tools">
   <button type="button" id="pkZoomIn">Zoom in</button>
   <button type="button" id="pkZoomOut">Zoom out</button>
@@ -617,6 +622,7 @@
 <script src="/static/js/tracker-pk-grid217.js?v=bundle217"
         defer></script>
 <script src="/static/js/tracker-pk-revisions229.js?v=bundle229" defer></script>
+<script src="/static/js/tracker-pk-layers233.js?v=bundle233" defer></script>
 <script src="/static/js/tracker-pk-runtime221.js?v=bundle221"
         defer></script>
 <script src="/static/js/tracker-pk-report173.js?v=bundle173"
