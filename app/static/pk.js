@@ -109,9 +109,60 @@
       })
     );
   }
+  let plannedPage = 0;
+  let lastRenderedScenarioId = null;
+
   function renderRows() {
-    const tbody=$('plannedRows');tbody.replaceChildren();
-    for(const d of (current?.doses||[])) {
+    const scenarioId = current?.id ?? null;
+
+    if (scenarioId !== lastRenderedScenarioId) {
+      plannedPage = 0;
+      lastRenderedScenarioId = scenarioId;
+    }
+
+    const all = current?.doses || [];
+    const pageSizeSelect = $('pkPlannedPageSize');
+
+    const maxOption = Math.max(
+      25, Math.ceil(all.length / 25) * 25
+    );
+
+    const selectedSize = Number(pageSizeSelect.value) || 5;
+
+    // Offer 5 by default, followed by increments of 25
+    // up to the number required to display all records.
+    pageSizeSelect.replaceChildren(
+      new Option('5', '5')
+    );
+
+    for (let size = 25; size <= maxOption; size += 25) {
+      pageSizeSelect.add(
+        new Option(String(size), String(size))
+      );
+    }
+
+    pageSizeSelect.value = String(selectedSize);
+
+    // If the selected size is unavailable, safely use 5.
+    if (!pageSizeSelect.value)
+      pageSizeSelect.value = '5';
+
+    const pageSize = Number(pageSizeSelect.value);
+    const pageCount = Math.max(
+      1, Math.ceil(all.length / pageSize)
+    );
+
+    plannedPage = Math.min(
+      Math.max(0, plannedPage), pageCount - 1
+    );
+
+    const offset = plannedPage * pageSize;
+    const shown = all.slice(offset, offset + pageSize);
+
+    const tbody = $('plannedRows');
+    tbody.replaceChildren();
+
+    for (const d of shown) {
       const tr=document.createElement('tr');
       for(const value of [d.planned_at.replace('T',' ').slice(0,16),String(d.amount_mg)]) {const td=document.createElement('td');td.textContent=value;tr.append(td);}
       const td=document.createElement('td');
@@ -123,7 +174,53 @@
       const del=document.createElement('button');del.textContent='Remove';del.type='button';del.onclick=async()=>{try{await request(`/pk/scenarios/${current.id}/doses/${d.id}`,'DELETE');await load();}catch(e){error(e);}};
       td.append(edit,del);tr.append(td);tbody.append(tr);
     }
+
+    const start = all.length ? offset + 1 : 0;
+    const end = Math.min(
+      offset + pageSize, all.length
+    );
+
+    $('pkPlannedPageStatus').textContent =
+      all.length
+        ? `Showing ${start}–${end} of ${all.length} doses`
+        : 'No planned doses in this scenario';
+
+    $('pkPlannedPageNumber').textContent =
+      `Page ${plannedPage + 1} of ${pageCount}`;
+
+    $('pkPlannedPrev').disabled =
+      plannedPage === 0;
+
+    $('pkPlannedNext').disabled =
+      plannedPage >= pageCount - 1;
+
+    // All rows remain in the saved scenario; only
+    // the currently visible slice is rendered.
   }
+
+  $('pkPlannedPageSize').addEventListener(
+    'change', () => {
+      plannedPage = 0;
+      renderRows();
+    }
+  );
+
+  $('pkPlannedPrev').addEventListener(
+    'click', () => {
+      if (plannedPage > 0) {
+        plannedPage--;
+        renderRows();
+      }
+    }
+  );
+
+  $('pkPlannedNext').addEventListener(
+    'click', () => {
+      plannedPage++;
+      renderRows();
+    }
+  );
+
   async function load() {
     if (!cid())return;
     const selected=current?.id;

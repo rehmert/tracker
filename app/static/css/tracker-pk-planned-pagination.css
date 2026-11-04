@@ -1,0 +1,73 @@
+/* Batch 109: Future planned doses pagination */
+
+.pk-planned-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .7rem 1rem;
+  padding: .8rem 0;
+}
+
+.pk-planned-pagination label {
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+}
+
+#pkPlannedPageSize {
+  min-height: 40px;
+  min-width: 80px;
+}
+
+#pkPlannedPageStatus {
+  margin: 0;
+  font-size: .9rem;
+  color: var(--muted, inherit);
+}
+
+.pk-planned-page-buttons {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+.pk-planned-page-buttons button {
+  min-height: 40px;
+}
+
+#pkPlannedPageNumber {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pk-planned-pagination button:focus-visible,
+.pk-planned-pagination select:focus-visible {
+  outline: 3px solid var(--accent, #387c69);
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .pk-planned-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pk-planned-pagination label {
+    justify-content: space-between;
+  }
+
+  .pk-planned-page-buttons {
+    justify-content: space-between;
+  }
+
+  .pk-planned-page-buttons button {
+    min-height: 44px;
+  }
+}
+
+@media print {
+  .pk-planned-pagination {
+    display: none;
+  }
+}
