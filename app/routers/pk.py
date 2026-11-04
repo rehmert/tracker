@@ -29,6 +29,8 @@ from .. import pk_delta153 as pk_delta
 from .. import pk_staged_schedule as staged
 from .. import pk_template_import as pk_import
 
+from .. import pk_guarded_edit161 as guarded_edit
+
 router = APIRouter(prefix="/pk")
 
 class ScenarioInput(BaseModel):
@@ -1403,3 +1405,13 @@ def pk_scenario_delta(
             'or relative clinical effect.'
         )
     }
+
+
+
+@router.post("/workspace/{sid}/edit-dose")
+def workspace_checked_dose_edit(
+    sid:int,
+    data:guarded_edit.CheckedEdit,
+    db:Session=Depends(get_db)
+):
+    return guarded_edit.update(db,sid,data)

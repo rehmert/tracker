@@ -181,11 +181,16 @@
               save.disabled=true;
 
               try {
+                const revision=await api(
+                  "/scenarios/"+sid+"/revision"
+                );
                 await api(
-                  "/scenarios/"+sid+"/doses/"+id,
-                  "PUT",{
+                  "/workspace/"+sid+"/edit-dose",
+                  "POST",{
+                    dose_id:id,
                     planned_at:time.value,
-                    amount_mg:Number(amount.value)
+                    amount_mg:Number(amount.value),
+                    expected_version:revision.version
                   }
                 );
                 await reload();
