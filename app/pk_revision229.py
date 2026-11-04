@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from math import isfinite
 from fastapi import HTTPException
-from pydantic import BaseModel,Field
+from pydantic import BaseModel,Field,ValidationError,model_validator
 from sqlalchemy import select,delete
 from .models import ChangeAudit,PkPlannedDose
 from .pk_scenario_ops import scenario
@@ -15,28 +15,53 @@ class RestoreRequest(BaseModel):
     expected_version:str=Field(min_length=64,max_length=64)
 
 
+class SnapshotDose(BaseModel):
+    id:int|None=None
+    planned_at:datetime
+    amount_mg:float=Field(gt=0,le=10000)
+
+
+class SnapshotPayload(BaseModel):
+    compound_id:int=Field(gt=0)
+    name:str=Field(min_length=1,max_length=160)
+    half_life_hours:float=Field(gt=0,le=10000)
+    absorption_half_life_hours:float=Field(gt=0,le=10000)
+    doses:list[SnapshotDose]=Field(max_length=300)
+
+    @model_validator(mode='after')
+    def unique_dates(self):
+        dates=[d.planned_at for d in self.doses]
+        if len(dates)!=len(set(dates)):
+            raise ValueError('Duplicate planned timestamps')
+        return self
+
+
 def parse_audit(db,sid,aid):
     audit=db.get(ChangeAudit,aid)
-    if not audit or audit.entity_type!='pk_scenario' or audit.entity_id!=sid:
+    if (
+        audit is None
+        or audit.entity_type!='pk_scenario'
+        or audit.entity_id!=sid
+    ):
         raise HTTPException(404,'Scenario revision unavailable')
+
     try:
-        value=json.loads(audit.after_json)
-        assert isinstance(value,dict)
-        assert isinstance(value.get('name'),str) and 1<=len(value['name'])<=160
-        assert isinstance(value.get('doses'),list) and len(value['doses'])<=300
-        assert int(value['compound_id'])==scenario(db,sid).compound_id
-        h=float(value['half_life_hours']);a=float(value['absorption_half_life_hours'])
-        assert all(isfinite(x) and 0<x<=10000 for x in (h,a))
-        doses=[]
-        for item in value['doses']:
-            at=datetime.fromisoformat(item['planned_at'])
-            amount=float(item['amount_mg'])
-            assert isfinite(amount) and 0<amount<=10000
-            doses.append((at,amount))
-        assert len(set(at for at,_ in doses))==len(doses)
-    except (ValueError,TypeError,KeyError,AssertionError,OverflowError):
-        raise HTTPException(409,'Audit entry is not a complete restorable snapshot')
-    return audit,value,doses
+        payload=SnapshotPayload.model_validate_json(
+            audit.after_json
+        )
+        if payload.compound_id!=scenario(db,sid).compound_id:
+            raise ValueError('Wrong compound')
+    except (ValidationError,ValueError,TypeError):
+        raise HTTPException(
+            409,'Audit entry is not a complete restorable snapshot'
+        )
+
+    data=payload.model_dump(mode='json')
+    doses=[
+        (d.planned_at,d.amount_mg)
+        for d in payload.doses
+    ]
+    return audit,data,doses
 
 
 def history(db,sid,limit=30):
@@ -59,10 +84,36 @@ def history(db,sid,limit=30):
 def preview(db,sid,aid):
     audit,value,doses=parse_audit(db,sid,aid)
     current=scenario(db,sid)
-    return {'audit_id':aid,'action':audit.action,'restorable':True,
-            'current_version':version(snapshot(db,current)),
-            'name':value['name'],'dose_count':len(doses),
-            'note':'Existing hypothetical dose IDs will be replaced upon restoration.'}
+    old=snapshot(db,current)
+
+    def dose_keys(items):
+        return {
+            (x['planned_at'],x['amount_mg'])
+            for x in items
+        }
+
+    before=dose_keys(old['doses'])
+    after=dose_keys(value['doses'])
+
+    return {
+        'audit_id':aid,
+        'action':audit.action,
+        'restorable':True,
+        'current_version':version(old),
+        'name':value['name'],
+        'dose_count':len(doses),
+        'added':len(after-before),
+        'removed':len(before-after),
+        'name_changed':old['name']!=value['name'],
+        'half_life_changed':(
+            old['half_life_hours']!=value['half_life_hours']
+        ),
+        'absorption_changed':(
+            old['absorption_half_life_hours']!=
+            value['absorption_half_life_hours']
+        ),
+        'note':'Historical restoration replaces hypothetical dose IDs.'
+    }
 
 
 def restore(db,sid,aid,expected):
