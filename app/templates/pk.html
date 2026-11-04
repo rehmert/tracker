@@ -78,6 +78,33 @@
    class="note"></p>
 <div id="pkGraphExtraStats"
      class="note" role="status"></div><div class="pk-quick-window">Window: <button type="button" data-pk-window="1">24h</button> <button type="button" data-pk-window="7">7d</button> <button type="button" data-pk-window="14">14d</button> <button type="button" data-pk-window="30">30d</button> <button type="button" data-pk-window="custom">Custom</button></div><canvas id="plot" width="1000" height="380" class="pk-chart" role="img" aria-label="Exposure graph"></canvas><p id="summary" role="status"></p><div class="pk-metrics" aria-label="Simulation metrics"><div><small>Peak</small><strong id="pkPeak">—</strong></div><div><small>Trough</small><strong id="pkTrough">—</strong></div><div><small>Peak / trough</small><strong id="pkRatio">—</strong></div><div><small>Mean exposure</small><strong id="pkAverage">—</strong></div></div><p class="note" id="pkMetricNote">Metrics cover the visible plotted window and use modeled mg-equivalent exposure, not blood concentration.</p><div class="pk-actions"><button type="button" id="pkExportPng">Export graph PNG</button><button type="button" id="pkExportCsv">Export graph CSV</button></div><p>Blue: historical doses and decay without future dosing. Orange: historical doses plus planned doses. Dashed vertical line: now.</p></div>
+<div class="card pk-compare-section"
+     id="pkDeltaCard">
+  <h2>Difference between two hypothetical scenarios</h2>
+  <p class="note">
+    Same-compound modeled exposure only.
+    B minus A on an identical timeline; not a
+    potency or clinical outcome comparison.
+  </p>
+  <label>Scenario A
+    <select id="pkDeltaA"></select>
+  </label>
+  <label>Scenario B
+    <select id="pkDeltaB"></select>
+  </label>
+  <button type="button" id="pkDeltaRun">
+    Compare difference
+  </button>
+  <button type="button" id="pkDeltaCsv" disabled>
+    Export difference CSV
+  </button>
+  <canvas id="pkDeltaPlot"
+          width="1000" height="280"
+          class="pk-chart"
+          aria-label="Modeled exposure difference B minus A"
+          role="img"></canvas>
+  <p id="pkDeltaMetrics" role="status"></p>
+</div>
 <div class="card pk-compare-section">
 <h2>Compare saved scenarios</h2>
 <p class="note">Select up to four scenarios for the chosen compound. The baseline shows recorded administrations and decay without future doses. Scenarios can have different half-lives.</p>
@@ -476,6 +503,8 @@
 <script src="/static/js/tracker-pk-library141.js?v=bundle141"
         defer></script>
 <script src="/static/js/tracker-pk-calendar149.js?v=bundle149"
+        defer></script>
+<script src="/static/js/tracker-pk-delta153.js?v=bundle153"
         defer></script>
 <link rel="stylesheet"
       href="/static/css/tracker-pk-bundle141.css?v=bundle141">

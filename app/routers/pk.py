@@ -25,6 +25,7 @@ from .. import pk_scenario_ops as scenario_ops
 from .. import pk_scenario_version as scenario_version
 from .. import pk_scenario_integrity145 as integrity
 from .. import pk_calendar_schedule149 as calendar_rules
+from .. import pk_delta153 as pk_delta
 from .. import pk_staged_schedule as staged
 from .. import pk_template_import as pk_import
 
@@ -1338,4 +1339,67 @@ def pk_calendar_replace(
 
     return {
         'replaced':len(projected['doses'])
+    }
+
+
+
+@router.get("/scenarios/delta")
+def pk_scenario_delta(
+    compound_id:int,
+    scenario_a:int,
+    scenario_b:int,
+    days_back:int=30,
+    days_forward:int=60,
+    db:Session=Depends(get_db)
+):
+    if scenario_a==scenario_b:
+        raise HTTPException(
+            400,'Choose different scenarios'
+        )
+
+    result=compare_scenarios(
+        compound_id,
+        f'{scenario_a},{scenario_b}',
+        days_back,
+        days_forward,
+        db
+    )
+
+    first=next(
+        (
+            s for s in result['series']
+            if s['id']==scenario_a
+        ),
+        None
+    )
+
+    second=next(
+        (
+            s for s in result['series']
+            if s['id']==scenario_b
+        ),
+        None
+    )
+
+    if first is None or second is None:
+        raise HTTPException(
+            400,
+            'Both scenarios must belong to the same compound'
+        )
+
+    summary=pk_delta.delta(
+        result['at'],
+        first['values'],
+        second['values']
+    )
+
+    return {
+        'at':result['at'],
+        'scenario_a':first['name'],
+        'scenario_b':second['name'],
+        **summary,
+        'disclaimer':(
+            'Model difference only; not measured levels '
+            'or relative clinical effect.'
+        )
     }
