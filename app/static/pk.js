@@ -30,10 +30,15 @@
     const token=(name, fallback)=>css.getPropertyValue(name).trim()||fallback;
     const chartText=token('--chart-text','#394a42'), chartGrid=token('--chart-grid','#c9d0c8');
     const chartNow=token('--chart-now','#53675e');
-    const left=58,right=20,top=20,bottom=45;
+    const left=84,right=24,top=34,bottom=66;
     const x=i=>left+(w-left-right)*i/Math.max(1,rows.length-1), y=v=>h-bottom-(h-top-bottom)*v/max;
     ctx.strokeStyle=chartGrid;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
-    ctx.fillStyle=chartText;ctx.font='14px sans-serif';ctx.fillText(max.toFixed(2)+' mg-eq',5,top+8);ctx.fillText('0',35,h-bottom);
+    window.trackerPkAxes.draw({
+      ctx,width:w,height:h,left,right,top,bottom,
+      times:rows.map(r=>r.at),maximum:max,
+      normalized:false,textColor:chartText,
+      gridColor:chartGrid
+    });
     for (const [key,color] of [['actual',token('--chart-actual','#2563eb')],['planned',token('--chart-planned','#b45309')]]) {
       ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;
       rows.forEach((r,i)=>i?ctx.lineTo(x(i),y(r[key])):ctx.moveTo(x(i),y(r[key])));ctx.stroke();
@@ -41,7 +46,7 @@
     const now=new Date(data.now).getTime(), t0=new Date(rows[0].at).getTime(),t1=new Date(rows[rows.length-1].at).getTime();
     const nx=left+(w-left-right)*(now-t0)/(t1-t0);
     ctx.setLineDash([5,5]);ctx.strokeStyle=chartNow;ctx.beginPath();ctx.moveTo(nx,top);ctx.lineTo(nx,h-bottom);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=chartText;ctx.fillText(rows[0].at.slice(0,10),left,h-13);ctx.fillText(rows[rows.length-1].at.slice(0,10),w-115,h-13);
+
     const vals=rows.map(r=>r.planned).filter(Number.isFinite);
     const peak=Math.max(...vals), trough=Math.min(...vals), avg=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
     const fmt=v=>Number.isFinite(v)?v.toPrecision(4)+' mg-eq':'—';
@@ -146,17 +151,19 @@
     const text=token('--chart-text','#394a42'),grid=token('--chart-grid','#c9d0c8');
     const colors=[token('--chart-actual','#2563eb'),token('--chart-planned','#b45309'),
       '#16a34a','#a855f7','#ef4444'];
-    const left=70,right=20,top=22,bottom=50;
+    const left=84,right=24,top=34,bottom=66;
     const max=Math.max(.001,...result.series.flatMap(s=>s.values));
     const x=i=>left+(w-left-right)*i/Math.max(1,result.at.length-1);
     const y=v=>h-bottom-(h-top-bottom)*v/max;
     ctx.strokeStyle=grid;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
-    ctx.fillStyle=text;ctx.font='14px sans-serif';ctx.fillText(max.toFixed(2)+' mg-eq',4,top+7);
+    window.trackerPkAxes.draw({
+      ctx,width:w,height:h,left,right,top,bottom,
+      times:result.at,maximum:max,
+      normalized:false,textColor:text,gridColor:grid
+    });
     result.series.forEach((line,j)=>{ctx.strokeStyle=colors[j];ctx.lineWidth=2.5;ctx.beginPath();
       line.values.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();});
-    ctx.fillStyle=text;
-    if(result.at.length){ctx.fillText(result.at[0].slice(0,10),left,h-12);
-      ctx.fillText(result.at[result.at.length-1].slice(0,10),w-120,h-12);}
+
     $('compareLegend').replaceChildren();
     result.series.forEach((line,j)=>{const span=document.createElement('span');
       span.textContent='● '+line.name+'  ';span.style.color=colors[j];$('compareLegend').append(span);});
@@ -173,15 +180,18 @@
     const token=(key,fallback)=>css.getPropertyValue(key).trim()||fallback;
     const ink=token('--chart-text','#394a42'),grid=token('--chart-grid','#c9d0c8');
     const colors=[token('--chart-actual','#2563eb'),token('--chart-planned','#b45309'),'#16a34a','#a855f7'];
-    const left=58,right=20,top=25,bottom=50;
+    const left=76,right=24,top=36,bottom=66;
     const x=i=>left+(w-left-right)*i/Math.max(1,data.at.length-1);
     const y=v=>h-bottom-(h-top-bottom)*v/100;
     ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left,h-bottom);ctx.lineTo(w-right,h-bottom);ctx.stroke();
-    ctx.fillStyle=ink;ctx.font='14px sans-serif';ctx.fillText('100%',5,top+5);ctx.fillText('0%',18,h-bottom);
+    window.trackerPkAxes.draw({
+      ctx,width:w,height:h,left,right,top,bottom,
+      times:data.at,maximum:100,
+      normalized:true,textColor:ink,gridColor:grid
+    });
     data.series.forEach((line,j)=>{ctx.strokeStyle=colors[j];ctx.lineWidth=2.5;ctx.beginPath();
       line.values_percent.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();});
-    if(data.at.length){ctx.fillStyle=ink;ctx.fillText(data.at[0].slice(0,10),left,h-12);
-      ctx.fillText(data.at[data.at.length-1].slice(0,10),w-120,h-12);
+    if(data.at.length){
       const start=new Date(data.at[0]).getTime(),end=new Date(data.at[data.at.length-1]).getTime();
       const nx=left+(w-left-right)*(new Date(data.now).getTime()-start)/(end-start);
       ctx.setLineDash([5,5]);ctx.strokeStyle=ink;ctx.beginPath();ctx.moveTo(nx,top);ctx.lineTo(nx,h-bottom);ctx.stroke();ctx.setLineDash([]);

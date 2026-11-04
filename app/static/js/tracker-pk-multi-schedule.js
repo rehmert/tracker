@@ -982,7 +982,7 @@
 
       const width = canvas.width;
       const height = canvas.height;
-      const left = 58, right = 18, top = 22, bottom = 48;
+      const left = 76, right = 24, top = 36, bottom = 66;
 
       const styles = getComputedStyle(document.documentElement);
       const token = (key, fallback) =>
@@ -1012,15 +1012,20 @@
       ctx.lineTo(width - right, height - bottom);
       ctx.stroke();
 
-      ctx.fillStyle = token("--chart-text", "#394a42");
-      ctx.font = "14px sans-serif";
-      ctx.fillText("100%", 8, top + 6);
-      ctx.fillText("0%", 18, height - bottom);
-      ctx.fillText(times[0].slice(0, 10), left, height - 12);
-      ctx.fillText(
-        times[times.length - 1].slice(0, 10),
-        width - 120, height - 12
-      );
+      window.trackerPkAxes.draw({
+        ctx,
+        width,
+        height,
+        left,
+        right,
+        top,
+        bottom,
+        times,
+        maximum: 100,
+        normalized: true,
+        textColor: token("--chart-text", "#394a42"),
+        gridColor: token("--chart-grid", "#c9d0c8")
+      });
 
       legend.replaceChildren();
 
