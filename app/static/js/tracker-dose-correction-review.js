@@ -80,6 +80,11 @@
       // Deselecting an originally used item returns its credit.
       // Do not display estimates while any quantity is invalid.
       const projections = [];
+      const movementCounts = {
+        returned: 0,
+        consumed: 0,
+        unchanged: 0
+      };
 
       if (!issues.length) {
         const allChecks = form.querySelectorAll(
@@ -130,6 +135,14 @@
             : delta < 0
               ? "-" + display(-delta) + " consumed"
               : "unchanged";
+
+          if (delta > 0) {
+            movementCounts.returned += 1;
+          } else if (delta < 0) {
+            movementCounts.consumed += 1;
+          } else {
+            movementCounts.unchanged += 1;
+          }
 
           projections.push(
             name + ": " +
@@ -188,7 +201,19 @@
           list.appendChild(item);
         }
 
+        const movementSummary = document.createElement("p");
+
+        movementSummary.textContent =
+          "Inventory impact: " +
+          movementCounts.returned +
+          " supply types returning stock · " +
+          movementCounts.consumed +
+          " consuming stock · " +
+          movementCounts.unchanged +
+          " unchanged.";
+
         panel.append(heading, list);
+        panel.insertBefore(movementSummary, heading);
       }
 
       panel.dataset.reviewState =

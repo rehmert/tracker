@@ -96,7 +96,7 @@ def test_previous_review_and_inventory_validation_remain():
     router = ROUTER.read_text()
     js = JS.read_text()
 
-    assert "?v=20261104d" in source
+    assert "?v=20261104e" in source
     assert 'id="tracker-dose-correction-review"' in source
     assert "qty > available + 1e-9" in js
     assert "Number.isInteger(qty)" in js
