@@ -138,49 +138,109 @@ def summarize_stock(db, compound_id, baseline, modified):
 
 
 def selected_labs(db, analyte, first, last):
+    """Up to three analytes; retain their distinct units."""
+    from sqlalchemy import func
+
     names = [
         row[0] for row in db.execute(
             select(LabResult.analyte).distinct()
         ).all()
     ]
-
-    names = sorted(
-        names, key=str.casefold
-    )[:200]
-
-    if not analyte.strip():
+    names = sorted(names,key=str.casefold)[:200]
+    selected = list(dict.fromkeys(
+        term.strip().casefold()
+        for term in analyte.split(",")
+        if term.strip()
+    ))
+    if len(selected)>3:
+        raise HTTPException(400,"Select at most three analytes")
+    if not selected:
         return names, []
 
-    chosen = analyte.strip().casefold()
     rows = db.execute(
-        select(LabResult, LabReport)
+        select(LabResult,LabReport)
         .join(
             LabReport,
-            LabResult.report_id == LabReport.id,
+            LabResult.report_id == LabReport.id
         )
         .where(
             LabReport.drawn_on >= first,
             LabReport.drawn_on <= last,
+            func.lower(LabResult.analyte).in_(selected),
         )
         .order_by(LabReport.drawn_on)
-        .limit(500)
+        .limit(300)
     ).all()
 
     observations = []
     for result, report in rows:
-        if result.analyte.casefold() != chosen:
-            continue
-
         observations.append({
-            "date": report.drawn_on.isoformat(),
-            "analyte": result.analyte,
-            "value": result.value,
-            "unit": result.unit,
-            "ref_low": result.ref_low,
-            "ref_high": result.ref_high,
+            "report_id":report.id,
+            "date":report.drawn_on.isoformat(),
+            "analyte":result.analyte,
+            "value":result.value,
+            "unit":result.unit,
+            "ref_low":result.ref_low,
+            "ref_high":result.ref_high,
         })
+    return names,observations
 
-    return names, observations[:100]
+
+def competing_demand(
+    db, selected_protocol_id, compound_id,
+    start_date, horizon_days, available_mg,
+    modified_doses,
+):
+    """Other active protocol demand; no inventory reservation."""
+    from sqlalchemy import select
+    competitors = list(db.scalars(
+        select(Protocol).where(
+            Protocol.is_active.is_(True),
+            Protocol.id != selected_protocol_id,
+        )
+    ))
+    events = []
+    for p in competitors:
+        anchor = p.start_date or start_date
+        if p.end_date and p.end_date < start_date:
+            continue
+        days = (start_date-anchor).days+horizon_days
+        if days < 1 or days > 730:
+            continue
+        try:
+            generated = schedule_doses(
+                p,compound_id,anchor,days
+            )
+        except ValueError:
+            continue
+        for at,amount in generated:
+            if (
+                start_date <= at.date() <
+                start_date+timedelta(days=horizon_days)
+                and (p.end_date is None or at.date()<=p.end_date)
+            ):
+                events.append((at,amount))
+
+    other_mg = sum(amount for _,amount in events)
+    all_events = sorted(events+[
+        (at,amount) for at,amount in modified_doses
+        if start_date <= at.date() <
+        start_date+timedelta(days=horizon_days)
+    ])
+    total = 0
+    shortage = None
+    for at,amount in all_events:
+        total += amount
+        if shortage is None and total>available_mg:
+            shortage=at.date().isoformat()
+    return {
+        "other_active_demand_mg":round(other_mg,5),
+        "projected_balance_mg":round(
+            available_mg-total,5
+        ),
+        "first_shortage_date":shortage,
+    }
+
 
 
 def run_experiment(db, protocol_id, settings):
@@ -359,6 +419,23 @@ def run_experiment(db, protocol_id, settings):
     inventory = summarize_stock(
         db, compound.id, baseline, modified
     )
+
+    inventory.update(competing_demand(
+        db, protocol_id, compound.id, date.today(),
+        settings.horizon_days,
+        inventory["available_mg"], modified
+    ))
+
+    for observation in labs:
+        at = observation["date"]
+        previous = [
+            dose_at.date() for dose_at, _ in baseline
+            if dose_at.date().isoformat() <= at
+        ]
+        observation["days_since_scheduled_dose"] = (
+            (date.fromisoformat(at)-max(previous)).days
+            if previous else None
+        )
 
     def as_doses(rows):
         return [

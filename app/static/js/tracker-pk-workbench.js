@@ -449,6 +449,10 @@
           : "");
 
       csv.disabled=false;
+      document.dispatchEvent(new CustomEvent(
+        "tracker:pk-workbench-ready",
+        {detail:{data,settings:parameters()}}
+      ));
     }
 
     async function runExperiment() {

@@ -163,7 +163,7 @@
       <input id="pkExpDelay" type="number"
              min="0" max="168" step="1" value="0">
     </label>
-    <label>Lab analyte (optional)
+    <label>Lab analytes (up to three, comma separated)
       <input id="pkExpLab" list="pkExpLabOptions"
              placeholder="e.g. Estradiol">
       <datalist id="pkExpLabOptions"></datalist>
@@ -192,6 +192,32 @@
       Print analysis
     </button>
   </div>
+
+  <section class="pk-experiment-library">
+    <h3>Named experiments</h3>
+    <p class="note">Saved separately from real protocols.
+    Experiment definitions are included in Tracker's
+    verified uploads backup.</p>
+    <div class="pk-inspector-tools">
+      <input id="pkExpName" maxlength="120"
+             placeholder="Experiment name">
+      <select id="pkExpSaved"
+              aria-label="Saved experiment"></select>
+      <button type="button" id="pkExpSave">
+        Save experiment
+      </button>
+      <button type="button" id="pkExpLoad">
+        Load
+      </button>
+      <button type="button" id="pkExpDelete">
+        Delete
+      </button>
+      <button type="button" id="pkExpExport">
+        Export definition
+      </button>
+    </div>
+    <p id="pkExpLibraryStatus" role="status"></p>
+  </section>
 
   <p id="pkExpStatus" role="status"
      aria-live="polite"></p>
@@ -226,7 +252,9 @@
 
 <link rel="stylesheet"
       href="/static/css/tracker-pk-workbench.css?v=bundle60">
-<script src="/static/js/tracker-pk-workbench.js?v=bundle63"
+<script src="/static/js/tracker-pk-workbench.js?v=bundle66"
+        defer></script>
+<script src="/static/js/tracker-pk-library.js?v=bundle66"
         defer></script>
 
 <script>

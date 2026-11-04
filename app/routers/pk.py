@@ -12,6 +12,10 @@ from ..models import Compound, DoseLog, Vial, PkScenario, PkPlannedDose, Protoco
 from ..calendar import staged_occurrences, occurrence_time
 from ..templating import render
 from .. import pk
+from ..pk_library import (
+    ExperimentSave, listing as experiment_list,
+    save as experiment_save, delete as experiment_delete,
+)
 from ..pk_workbench import ExperimentInput, run_experiment
 
 router = APIRouter(prefix="/pk")
@@ -728,3 +732,48 @@ def protocol_experiment(
         content=run_experiment(db, pid, settings),
         headers={"Cache-Control": "no-store"},
     )
+
+
+
+@router.get("/library/{pid}")
+def pk_library_list(
+    pid: int, db: Session = Depends(get_db)
+):
+    if db.get(Protocol,pid) is None:
+        raise HTTPException(404,"Protocol not found")
+    return JSONResponse(
+        content=experiment_list(pid),
+        headers={"Cache-Control":"no-store"}
+    )
+
+
+@router.post("/library/{pid}")
+def pk_library_save(
+    pid: int, data: ExperimentSave,
+    db: Session = Depends(get_db)
+):
+    protocol = db.get(Protocol,pid)
+    if protocol is None:
+        raise HTTPException(404,"Protocol not found")
+    if not any(
+        item.compound_id == data.settings.compound_id
+        for item in protocol.items
+    ):
+        raise HTTPException(
+            400,"Selected compound not in source protocol"
+        )
+    return experiment_save(pid,protocol,data)
+
+
+@router.delete("/library/{pid}/{experiment_id}")
+def pk_library_delete(
+    pid: int, experiment_id: str,
+    db: Session = Depends(get_db)
+):
+    if db.get(Protocol,pid) is None:
+        raise HTTPException(404,"Protocol not found")
+    if len(experiment_id)!=32 or not all(
+        c in "0123456789abcdef" for c in experiment_id
+    ):
+        raise HTTPException(400,"Invalid experiment ID")
+    return experiment_delete(pid,experiment_id)
