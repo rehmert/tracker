@@ -53,3 +53,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Navigation-only control for incomplete review fields. */
+#tracker-dose-review-first-issue {
+  margin: 0 0 .45rem;
+  width: auto;
+}
+
+#tracker-dose-review-first-issue:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+#tracker-dose-review-first-issue:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}

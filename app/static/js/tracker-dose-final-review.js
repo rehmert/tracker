@@ -10,8 +10,13 @@
     const panel = document.getElementById("tracker-dose-final-review");
     const summary = document.getElementById("tracker-dose-review-summary");
     const details = document.getElementById("tracker-dose-review-details");
+    const firstIssueButton = document.getElementById(
+      "tracker-dose-review-first-issue"
+    );
+    let firstIssue = null;
 
-    if (!form || !panel || !summary || !details) return;
+    if (!form || !panel || !summary || !details ||
+        !firstIssueButton) return;
 
     const field = name => form.elements.namedItem(name);
     const value = name => String(field(name)?.value ?? "").trim();
@@ -48,7 +53,7 @@
         const invalid = !quantity ||
           !Number.isFinite(numeric) || numeric <= 0;
 
-        return {name, quantity, invalid};
+        return {name, quantity, invalid, input};
       });
 
       const invalidSupplies = supplies.filter(item => item.invalid);
@@ -111,6 +116,21 @@
         missing.push("positive amount");
       }
 
+      // This navigation does not change the input or
+      // submit the form. It only identifies where
+      // the first review issue can be addressed.
+      const issueTargets = [
+        ...invalidSupplies.map(item => item.input),
+        !vialId ? field("vial_id") : null,
+        !when ? field("taken_at") : null,
+        (!useRemaining &&
+          (!Number.isFinite(Number(amount)) || Number(amount) <= 0))
+          ? field("amount") : null
+      ];
+
+      firstIssue = issueTargets.find(Boolean) || null;
+      firstIssueButton.disabled = !firstIssue;
+
       summary.textContent = missing.length
         ? "Review required: " + missing.join(", ")
         : isWaste
@@ -121,6 +141,22 @@
         ? "incomplete"
         : "ready";
     }
+
+    firstIssueButton.addEventListener("click", () => {
+      if (!firstIssue) return;
+
+      // An invalid supply quantity may be inside
+      // the collapsed disposables section.
+      const disclosure = firstIssue.closest("details");
+      if (disclosure) disclosure.open = true;
+
+      firstIssue.scrollIntoView({
+        behavior: "auto",
+        block: "center"
+      });
+
+      firstIssue.focus({preventScroll:true});
+    });
 
     form.addEventListener("input", render);
     form.addEventListener("change", render);
