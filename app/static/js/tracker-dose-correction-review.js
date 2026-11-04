@@ -76,6 +76,61 @@
         }
       }
 
+      // Estimate post-correction stock for every affected item.
+      // Deselecting an originally used item returns its credit.
+      // Do not display estimates while any quantity is invalid.
+      const projections = [];
+
+      if (!issues.length) {
+        const allChecks = form.querySelectorAll(
+          'input[name="supply_id_used"]'
+        );
+
+        for (const checkbox of allChecks) {
+          const input = form.elements.namedItem(
+            "supply_qty_" + checkbox.value
+          );
+
+          const availableRaw = input?.dataset.available;
+          const originalRaw = input?.dataset.original;
+          const available = Number(availableRaw);
+          const original = Number(originalRaw);
+          const corrected = checkbox.checked
+            ? Number(input?.value)
+            : 0;
+
+          if (
+            availableRaw === undefined ||
+            availableRaw === "" ||
+            originalRaw === undefined ||
+            originalRaw === "" ||
+            !Number.isFinite(available) ||
+            !Number.isFinite(original) ||
+            !Number.isFinite(corrected)
+          ) continue;
+
+          if (!checkbox.checked && original <= 0) continue;
+
+          const remaining = available - corrected;
+          const row = checkbox.closest("tr");
+          const name = row?.querySelectorAll("td")[1]
+            ?.textContent?.trim() ||
+            "Supply #" + checkbox.value;
+
+          // Limit floating-point display artifacts only.
+          const display = number =>
+            String(Number(number.toFixed(6)));
+
+          projections.push(
+            name + ": " +
+            display(remaining) + " remaining " +
+            "(" + display(available) +
+            " available - " + display(corrected) +
+            " corrected usage)"
+          );
+        }
+      }
+
       panel.replaceChildren();
 
       const summary = document.createElement("p");
@@ -107,6 +162,22 @@
       }
 
       panel.prepend(summary);
+
+      if (!issues.length && projections.length) {
+        const heading = document.createElement("p");
+        heading.textContent =
+          "Estimated stock after correction (before other activity):";
+
+        const list = document.createElement("ul");
+
+        for (const projection of projections) {
+          const item = document.createElement("li");
+          item.textContent = projection;
+          list.appendChild(item);
+        }
+
+        panel.append(heading, list);
+      }
 
       panel.dataset.reviewState =
         issues.length ? "incomplete" : "ready";
