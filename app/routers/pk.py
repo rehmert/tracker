@@ -978,3 +978,68 @@ def pk_dose_batch_undo(
     db:Session=Depends(get_db)
 ):
     return scenario_ops.restore(db,sid,data)
+
+
+
+@router.post("/scenarios/{sid}/duplicate",status_code=201)
+def pk_duplicate(
+    sid:int,
+    db:Session=Depends(get_db)
+):
+    original=scenario_ops.scenario(db,sid)
+
+    copy=PkScenario(
+        compound_id=original.compound_id,
+        name=(original.name+' (copy)')[:160],
+        half_life_hours=original.half_life_hours,
+        absorption_half_life_hours=
+            original.absorption_half_life_hours
+    )
+
+    db.add(copy)
+    db.flush()
+
+    for dose in sorted(
+        original.doses,
+        key=lambda x:(x.planned_at,x.id)
+    ):
+        db.add(PkPlannedDose(
+            scenario_id=copy.id,
+            planned_at=dose.planned_at,
+            amount_mg=dose.amount_mg
+        ))
+
+    db.commit()
+    return {'id':copy.id,'name':copy.name}
+
+
+@router.get("/scenarios/{sid}/change-history")
+def pk_scenario_changes(
+    sid:int,
+    db:Session=Depends(get_db)
+):
+    from ..models import ChangeAudit
+
+    scenario_ops.scenario(db,sid)
+
+    entries=list(db.scalars(
+        select(ChangeAudit)
+        .where(
+            ChangeAudit.entity_type=='pk_scenario',
+            ChangeAudit.entity_id==sid
+        )
+        .order_by(ChangeAudit.id.desc())
+        .limit(30)
+    ))
+
+    return [
+        {
+            'id':entry.id,
+            'action':entry.action,
+            'at':(
+                entry.created_at.isoformat()
+                if entry.created_at else None
+            )
+        }
+        for entry in entries
+    ]
