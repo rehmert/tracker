@@ -56,6 +56,9 @@ def allocate_events(vials, events, start, end):
     shortage=None
     total_demand=0.0
     ledger=[]
+    processed=0
+    allocated_total=0.0
+    unfilled_total=0.0
 
     for at,raw_amount in sorted(events):
         amount=float(raw_amount)
@@ -65,6 +68,7 @@ def allocate_events(vials, events, start, end):
         if not start<=at.date()<end:
             continue
 
+        processed+=1
         total_demand+=amount
         required=amount
         remaining_before=sum(
@@ -82,6 +86,8 @@ def allocate_events(vials, events, start, end):
             if required<=1e-9:
                 break
 
+        allocated_total+=max(0.0,amount-required)
+        unfilled_total+=max(0.0,required)
         if required>1e-9 and shortage is None:
             shortage=at.date().isoformat()
 
@@ -113,15 +119,29 @@ def allocate_events(vials, events, start, end):
         "remaining_after_allocation_mg":round(
             sum(x["remaining"] for x in stock),5
         ),
+        "remaining_usable_at_horizon_mg":round(
+            sum(
+                x["remaining"] for x in stock
+                if x["expiry"] is None or x["expiry"]>=end
+            ),5
+        ),
+        "remaining_expired_at_horizon_mg":round(
+            sum(
+                x["remaining"] for x in stock
+                if x["expiry"] is not None and x["expiry"]<end
+            ),5
+        ),
         "expiring_during_window_mg":round(expiring,5),
         "first_shortage_date":shortage,
         "allocation_method":"Approximate FEFO",
-        "event_count":len(ledger),
+        "event_count":processed,
         "forecast_events":ledger,
-        "total_unfilled_mg":round(
-            sum(item["unfilled_mg"] for item in ledger),5
-        ),
-        "forecast_truncated":len(ledger)>=1000,
+        "total_unfilled_mg":round(unfilled_total,5),
+        "total_allocated_mg":round(allocated_total,5),
+        "demand_reconciled":abs(
+            total_demand-allocated_total-unfilled_total
+        )<=max(1e-7,total_demand*1e-9),
+        "forecast_truncated":processed>len(ledger),
     }
 
 

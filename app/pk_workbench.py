@@ -14,6 +14,7 @@ from sqlalchemy import select
 from . import pk, services
 from .pk_precision import schedule_doses as precise_schedule, interval_assessment
 from .pk_inventory_events import forecast_inventory
+from .pk_release_quality import timing_check, recorded, reconcile
 from .models import (
     Protocol, Compound, Vial, LabReport, LabResult,
 )
@@ -381,6 +382,37 @@ def run_experiment(db, protocol_id, settings):
             if previous else None
         )
 
+    today=date.today()
+    first=today-timedelta(days=27)
+    actual=recorded(db,compound.id,first,today)
+    historical=reconcile(baseline,actual,first,today)
+    timing=timing_check(
+        protocol,compound.id,baseline_start,
+        effective_days(baseline_start)
+    )
+    assumptions=[]
+    if protocol.start_date is None:
+        assumptions.append("Assumed protocol start: today")
+    if inventory.get("unmodeled_active_protocols"):
+        assumptions.append(
+            "Some competing schedules not modeled"
+        )
+    if inventory.get("forecast_truncated"):
+        assumptions.append(
+            "Detailed ledger capped; aggregate totals complete"
+        )
+    assumptions.extend(timing["warnings"])
+
+    for observation in labs:
+        drawn=date.fromisoformat(observation["date"])
+        earlier=[
+            at.date() for at,_ in actual
+            if at.date()<=drawn
+        ]
+        observation["days_since_recorded_dose"]=(
+            (drawn-max(earlier)).days if earlier else None
+        )
+
     def as_doses(rows):
         return [
             {
@@ -415,6 +447,9 @@ def run_experiment(db, protocol_id, settings):
         "modified_interval_analysis":
             interval_assessment(modified_rows, modified),
         "inventory": inventory,
+        "recorded_reconciliation":historical,
+        "schedule_consistency":timing,
+        "assumptions":assumptions,
         "lab_options": names,
         "labs": labs,
         "disclaimer": (
