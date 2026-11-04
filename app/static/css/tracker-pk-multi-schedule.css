@@ -156,3 +156,16 @@ body.pk-mode-multi .pk-custom-section {
     white-space: normal;
   }
 }
+
+
+/* Batch 48 schedule ordering controls */
+.pk-multi-up,
+.pk-multi-down {
+  margin: .6rem .35rem .3rem 0;
+}
+
+.pk-multi-up:disabled,
+.pk-multi-down:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}

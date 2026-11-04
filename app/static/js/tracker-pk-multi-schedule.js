@@ -74,6 +74,24 @@
       return label;
     }
 
+    function refreshScheduleOrder() {
+      const entries = [...container.children];
+
+      entries.forEach((entry, index) => {
+        entry.querySelector("legend").textContent =
+          "Schedule " + (index + 1);
+
+        const up = entry.querySelector(".pk-multi-up");
+        const down = entry.querySelector(".pk-multi-down");
+
+        if (up) up.disabled = index === 0;
+        if (down) down.disabled =
+          index === entries.length - 1;
+      });
+
+      add.disabled = entries.length >= 4;
+    }
+
     function addSchedule(initial = null) {
       if (container.children.length >= 4) return;
 
@@ -229,12 +247,52 @@
       duplicate.addEventListener("click", () => {
         if (container.children.length >= 4) return;
         try {
-          addSchedule(readSchedule(box));
+          const copy = readSchedule(box);
+          copy.name = copy.name.slice(0, 112) + " (copy)";
+          addSchedule(copy);
         } catch (error) {
           status.textContent = error.message || String(error);
         }
       });
 
+
+      const up = document.createElement("button");
+      up.type = "button";
+      up.className = "pk-multi-up";
+      up.textContent = "Move up";
+
+      up.addEventListener("click", () => {
+        if (!box.previousElementSibling) return;
+
+        container.insertBefore(
+          box, box.previousElementSibling
+        );
+
+        refreshScheduleOrder();
+        invalidate();
+
+        status.textContent =
+          "Schedule moved up. Compare again to refresh.";
+      });
+
+      const down = document.createElement("button");
+      down.type = "button";
+      down.className = "pk-multi-down";
+      down.textContent = "Move down";
+
+      down.addEventListener("click", () => {
+        if (!box.nextElementSibling) return;
+
+        container.insertBefore(
+          box.nextElementSibling, box
+        );
+
+        refreshScheduleOrder();
+        invalidate();
+
+        status.textContent =
+          "Schedule moved down. Compare again to refresh.";
+      });
 
       const remove = document.createElement("button");
       remove.type = "button";
@@ -244,16 +302,13 @@
       remove.addEventListener("click", () => {
         box.remove();
 
-        [...container.children].forEach((entry, index) => {
-          entry.querySelector("legend").textContent =
-            "Schedule " + (index + 1);
-        });
-
-        add.disabled = false;
+        refreshScheduleOrder();
         invalidate();
       });
 
-      box.append(title, grid, stages, duplicate, remove);
+      box.append(
+        title, grid, stages, duplicate, up, down, remove
+      );
       container.appendChild(box);
       defaults();
 
@@ -280,7 +335,7 @@
         addStage({week:1, amount_mg:""});
       }
 
-      add.disabled = container.children.length >= 4;
+      refreshScheduleOrder();
       invalidate();
     }
 
