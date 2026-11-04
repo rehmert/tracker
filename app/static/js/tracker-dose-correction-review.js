@@ -121,12 +121,24 @@
           const display = number =>
             String(Number(number.toFixed(6)));
 
+          // Net change relative to inventory before correction:
+          // restore old usage, then deduct corrected usage.
+          const delta = original - corrected;
+          const current = available - original;
+          const movement = delta > 0
+            ? "+" + display(delta) + " returned"
+            : delta < 0
+              ? "-" + display(-delta) + " consumed"
+              : "unchanged";
+
           projections.push(
             name + ": " +
             display(remaining) + " remaining " +
             "(" + display(available) +
             " available - " + display(corrected) +
-            " corrected usage)"
+            " corrected usage)" +
+            " · " + movement +
+            " from " + display(current) + " current stock"
           );
         }
       }
