@@ -44,8 +44,10 @@ def allocate_events(vials, events, start, end):
         if expiry is not None and start<=expiry<end:
             expiring+=remaining
         stock.append({
-            "remaining":remaining,
-            "expiry":expiry,
+            "id": vial.get("id"),
+            "remaining": remaining,
+            "initial": remaining,
+            "expiry": expiry,
         })
 
     stock.sort(key=lambda entry:
@@ -71,6 +73,7 @@ def allocate_events(vials, events, start, end):
         processed+=1
         total_demand+=amount
         required=amount
+        allocation=[]
         remaining_before=sum(
             vial["remaining"] for vial in stock
             if vial["expiry"] is None or
@@ -83,6 +86,11 @@ def allocate_events(vials, events, start, end):
             used=min(required,vial["remaining"])
             vial["remaining"]-=used
             required-=used
+            if used > 0 and vial["id"] is not None:
+                allocation.append({
+                    "vial_id": vial["id"],
+                    "allocated_mg": round(used,5),
+                })
             if required<=1e-9:
                 break
 
@@ -104,6 +112,7 @@ def allocate_events(vials, events, start, end):
                 "eligible_before_mg":round(
                     remaining_before,5
                 ),
+                "vial_allocations": allocation,
                 "remaining_usable_mg":round(
                     sum(
                         vial["remaining"] for vial in stock
@@ -142,6 +151,21 @@ def allocate_events(vials, events, start, end):
             total_demand-allocated_total-unfilled_total
         )<=max(1e-7,total_demand*1e-9),
         "forecast_truncated":processed>len(ledger),
+        "vial_balances":[
+            {
+                "id":v["id"],
+                "initial_mg":round(v["initial"],5),
+                "allocated_mg":round(
+                    v["initial"]-v["remaining"],5
+                ),
+                "remaining_mg":round(v["remaining"],5),
+                "expiry":(
+                    v["expiry"].isoformat()
+                    if v["expiry"] else None
+                ),
+            }
+            for v in stock if v["id"] is not None
+        ],
     }
 
 
@@ -163,7 +187,29 @@ def forecast_inventory(
         if not view or view.dim!="mass":
             continue
 
+        factor = {
+            "mg":1, "mcg":0.001, "g":1000
+        }.get(vial.content_unit)
+
+        nominal = (
+            float(vial.content_value) * factor / vial.volume_ml
+            if (
+                factor is not None
+                and vial.volume_ml
+                and vial.volume_ml > 0
+            )
+            else None
+        )
+
         stock.append({
+            "id":vial.id,
+            "label":vial.label or f"Vial #{vial.id}",
+            "nominal_mg_per_ml":(
+                round(nominal,5)
+                if nominal is not None else None
+            ),
+            "historical_cents_per_mg":
+                view.cost_per_base*1000,
             "remaining_mg":view.remaining_base/1000,
             "expires_on":vial.expires_on,
             "beyond_use_on":vial.beyond_use_on,
@@ -216,8 +262,46 @@ def forecast_inventory(
         stock,selected_events+other,today,end
     )
 
+    lookup = {v["id"]:v for v in stock}
+    priced = [
+        v for v in stock
+        if (
+            v["historical_cents_per_mg"] > 0
+            and v["remaining_mg"] > 0
+        )
+    ]
+
+    cost_per_mg = (
+        sum(
+            v["historical_cents_per_mg"] * v["remaining_mg"]
+            for v in priced
+        ) / sum(v["remaining_mg"] for v in priced)
+        if priced else None
+    )
+
+    vial_estimates = [
+        {
+            **item,
+            "label":lookup[item["id"]]["label"],
+            "nominal_mg_per_ml":
+                lookup[item["id"]]["nominal_mg_per_ml"],
+        }
+        for item in rows["vial_balances"]
+        if item["id"] in lookup
+    ]
+
     return {
         **rows,
+        "vial_estimates":vial_estimates[:100],
+        "unfilled_replenishment_mg":
+            rows["total_unfilled_mg"],
+        "estimated_replenishment_cost":(
+            round(
+                rows["total_unfilled_mg"]*cost_per_mg/100,
+                2,
+            )
+            if cost_per_mg is not None else None
+        ),
         "selected_future_demand_mg":round(
             sum(mg for _,mg in selected_events),5
         ),
