@@ -11,6 +11,7 @@
     const add = $("pkMultiAdd");
     const run = $("pkMultiRun");
     const exportButton = $("pkMultiExportCsv");
+    const exportPng = $("pkMultiExportPng");
     let lastResult = null;
     let revision = 0;
 
@@ -18,6 +19,7 @@
       revision++;
       lastResult = null;
       if (exportButton) exportButton.disabled = true;
+      if (exportPng) exportPng.disabled = true;
 
       const metrics = $("pkMultiMetrics");
       if (metrics) metrics.replaceChildren();
@@ -417,6 +419,46 @@
       };
     }
 
+    function exposureStats(times, values) {
+      if (!values.length || values.length !== times.length) {
+        return null;
+      }
+
+      if (!values.every(Number.isFinite)) return null;
+
+      const peak = Math.max(...values);
+      const trough = Math.min(...values);
+      const peakIndex = values.indexOf(peak);
+
+      let area = 0;
+      let totalHours = 0;
+
+      for (let i = 1; i < values.length; i++) {
+        // Treat backend naive timestamps as a continuous
+        // simulation timeline, independent of browser DST.
+        const a = Date.parse(times[i - 1] + "Z");
+        const b = Date.parse(times[i] + "Z");
+        const hours = (b - a) / 3600000;
+
+        if (!Number.isFinite(hours) || hours <= 0) {
+          return null;
+        }
+
+        area += (values[i - 1] + values[i]) / 2 * hours;
+        totalHours += hours;
+      }
+
+      if (totalHours <= 0) return null;
+
+      return {
+        peak,
+        trough,
+        peakIndex,
+        mean: area / totalHours,
+        range: peak - trough
+      };
+    }
+
     function renderMetrics(data) {
       const target = $("pkMultiMetrics");
       if (!target) return;
@@ -431,7 +473,8 @@
       note.textContent =
         "Each schedule is normalized independently. " +
         "Values describe modeled exposure shape, not " +
-        "comparable potency or clinical effectiveness.";
+        "comparable potency or clinical effectiveness. " +
+        "Time-weighted means span the full shared timeline.";
 
       const table = document.createElement("table");
       table.className = "pk-multi-summary-table";
@@ -443,7 +486,9 @@
         "Compound",
         "Modeled doses",
         "Peak time",
-        "Mean (% of own peak)"
+        "Minimum (%)",
+        "Range (percentage points)",
+        "Time-weighted mean (%)"
       ].forEach(label => {
         const th = document.createElement("th");
         th.textContent = label;
@@ -456,13 +501,9 @@
       const tbody = document.createElement("tbody");
 
       data.series.forEach(series => {
-        const values = series.values_percent;
-        const peak = Math.max(...values);
-        const index = values.indexOf(peak);
-
-        const mean = values.reduce(
-          (sum, value) => sum + value, 0
-        ) / Math.max(values.length, 1);
+        const stats = exposureStats(
+          data.at, series.values_percent
+        );
 
         const row = document.createElement("tr");
 
@@ -470,8 +511,10 @@
           series.name,
           series.compound_name,
           String(series.dose_count),
-          data.at[index] || "—",
-          Number.isFinite(mean) ? mean.toFixed(1) : "—"
+          stats ? (data.at[stats.peakIndex] || "—") : "—",
+          stats ? stats.trough.toFixed(1) : "—",
+          stats ? stats.range.toFixed(1) : "—",
+          stats ? stats.mean.toFixed(1) : "—"
         ].forEach(value => {
           const td = document.createElement("td");
           td.textContent = value;
@@ -617,6 +660,39 @@
       exportButton.addEventListener("click", exportCsv);
     }
 
+    function exportChartPng() {
+      if (!lastResult) return;
+
+      const exportRevision = revision;
+
+      canvas.toBlob(blob => {
+        // Do not export a result invalidated while encoding.
+        if (revision !== exportRevision || !lastResult) return;
+
+        if (!blob) {
+          status.textContent = "Could not create chart image.";
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "tracker-pk-multi-comparison.png";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }, "image/png");
+    }
+
+    if (exportPng) {
+      exportPng.disabled = true;
+      exportPng.addEventListener("click", exportChartPng);
+    }
+
 
     run.addEventListener("click", async () => {
       run.disabled = true;
@@ -662,6 +738,7 @@
         lastResult = result;
 
         if (exportButton) exportButton.disabled = false;
+        if (exportPng) exportPng.disabled = false;
 
         status.textContent =
           result.series.length +

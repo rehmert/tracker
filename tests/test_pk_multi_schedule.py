@@ -142,7 +142,7 @@ def test_template_and_client_wiring():
     assert 'id="pkMultiWorkspace"' in html
     assert 'id="pkMultiPlot"' in html
     assert "pk.js?v=pk-batch41-20261104" in html
-    assert "tracker-pk-multi-schedule.js?v=batch43" in html
+    assert "tracker-pk-multi-schedule.js?v=batch44" in html
     assert "'pk-mode-multi'" in js
     assert '"/pk/what-if/multi-preview"' in multi
     assert "values_percent" in multi
@@ -182,7 +182,7 @@ def test_batch42_csv_export_and_current_cache():
     assert 'container.addEventListener("input", invalidate)' in js
     assert 'container.addEventListener("change", invalidate)' in js
     assert "lastResult = result" in js
-    assert "tracker-pk-multi-schedule.js?v=batch43" in html
+    assert "tracker-pk-multi-schedule.js?v=batch44" in html
 
 
 def test_batch43_custom_schedule_names():
@@ -210,7 +210,7 @@ def test_batch43_summary_and_result_invalidation():
     assert "revision !== requestedRevision" in js
     assert "lastResult = null" in js
     assert "ctx.clearRect(" in js
-    assert "tracker-pk-multi-schedule.js?v=batch43" in html
+    assert "tracker-pk-multi-schedule.js?v=batch44" in html
 
     Environment().parse(html)
 
@@ -225,3 +225,37 @@ def test_batch43_multi_preview_is_read_only():
         "db.add(", "db.commit(", "db.delete("
     ):
         assert forbidden not in section
+
+
+def test_batch44_time_weighted_summary():
+    js = (
+        ROOT / "app/static/js/tracker-pk-multi-schedule.js"
+    ).read_text()
+    html = (ROOT / "app/templates/pk.html").read_text()
+
+    assert "function exposureStats(times, values)" in js
+    assert "Date.parse(times[i - 1] + \"Z\")" in js
+    assert "area / totalHours" in js
+    assert "stats.trough.toFixed(1)" in js
+    assert "stats.range.toFixed(1)" in js
+    assert "stats.mean.toFixed(1)" in js
+    assert "Time-weighted mean (%)" in js
+    assert "tracker-pk-multi-schedule.js?v=batch44" in html
+
+
+def test_batch44_png_export_and_invalidation():
+    js = (
+        ROOT / "app/static/js/tracker-pk-multi-schedule.js"
+    ).read_text()
+    html = (ROOT / "app/templates/pk.html").read_text()
+
+    assert 'id="pkMultiExportPng" disabled' in html
+    assert "function exportChartPng()" in js
+    assert "canvas.toBlob(" in js
+    assert '"image/png"' in js
+    assert "revision !== exportRevision" in js
+    assert "exportPng.disabled = true" in js
+    assert "exportPng.disabled = false" in js
+    assert "tracker-pk-multi-comparison.png" in js
+
+    Environment().parse(html)

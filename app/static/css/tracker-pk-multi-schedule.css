@@ -107,3 +107,20 @@ body.pk-mode-multi .pk-custom-section {
   width: 100%;
   box-sizing: border-box;
 }
+
+
+/* Batch 44 export and comparison refinement */
+#pkMultiExportPng:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.pk-multi-summary-table {
+  min-width: 800px;
+}
+
+@media print {
+  .pk-multi-actions {
+    display: none;
+  }
+}
