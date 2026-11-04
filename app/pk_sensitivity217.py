@@ -8,6 +8,7 @@ from .models import DoseLog,Vial
 from .pk_scenario_ops import scenario
 from .pk_alignment193 import shared_step,validate_alignment
 from .pk_metrics181 import metrics
+from .pk_precision225 import bounded_step,refined_peak
 from . import pk
 
 FACTORS=(.75,1.,1.25)
@@ -55,8 +56,8 @@ def analyze(db,sid,days=30):
         shared_step(obj.absorption_half_life_hours)
     )
 
-    # Bound calculation cost at roughly 3,000 time samples.
-    step=max(step,days*24/3000)
+    # Include both recorded and hypothetical doses in the work budget.
+    step=bounded_step(days*24,step,len(recorded)+len(planned))
 
     variants=[]
     curves=[]
@@ -81,7 +82,12 @@ def analyze(db,sid,days=30):
                 ],
                 'auc':summary['auc'],
                 'mean':summary['mean'],
-                'sampled_peak':summary['peak']
+                'sampled_peak':summary['peak'],
+                'refined_peak':refined_peak(
+                    rows,recorded+planned,
+                    obj.half_life_hours*elim_factor,
+                    obj.absorption_half_life_hours*absorption_factor
+                )
             })
 
     times=validate_alignment(curves)
