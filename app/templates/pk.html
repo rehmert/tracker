@@ -292,6 +292,26 @@
   </button>
   <p id="pkWeekStatus" role="status"></p>
 </details>
+<details class="pk-transform-workspace">
+  <summary>Transform an existing hypothetical schedule</summary>
+  <p class="note">Shift every date and/or scale every
+    modeled amount. Preview before applying.</p>
+  <label>Shift in elapsed hours
+    <input id="pkTransformHours" type="number"
+           step="any" value="0">
+  </label>
+  <label>Amount multiplier
+    <input id="pkTransformScale" type="number"
+           min="0.001" max="10"
+           step="any" value="1">
+  </label>
+  <button id="pkTransformPreview" type="button">
+    Preview transformation
+  </button>
+  <button id="pkTransformApply" type="button"
+          disabled>Apply transformation</button>
+  <p id="pkTransformStatus" role="status"></p>
+</details>
 <h3>Future planned doses</h3>
 <div class="pk-dose-tools">
   <label>Filter
@@ -505,6 +525,8 @@
 <script src="/static/js/tracker-pk-calendar149.js?v=bundle149"
         defer></script>
 <script src="/static/js/tracker-pk-delta153.js?v=bundle153"
+        defer></script>
+<script src="/static/js/tracker-pk-transform165.js?v=bundle165"
         defer></script>
 <link rel="stylesheet"
       href="/static/css/tracker-pk-bundle157.css?v=bundle157">

@@ -30,6 +30,7 @@ from .. import pk_staged_schedule as staged
 from .. import pk_template_import as pk_import
 
 from .. import pk_guarded_edit161 as guarded_edit
+from .. import pk_transform165 as transform165
 
 router = APIRouter(prefix="/pk")
 
@@ -1415,3 +1416,29 @@ def workspace_checked_dose_edit(
     db:Session=Depends(get_db)
 ):
     return guarded_edit.update(db,sid,data)
+
+
+
+@router.post("/workspace/{sid}/transform-preview")
+def pk_transform_preview(
+    sid:int,data:transform165.Transform,
+    db:Session=Depends(get_db)
+):
+    obj=scenario_ops.scenario(db,sid)
+    scenario_version.check(
+        db,obj,data.expected_version
+    )
+    return {
+        'doses':transform165.projected(
+            scenario_ops.rows(db,sid),data
+        ),
+        'saved':False
+    }
+
+
+@router.post("/workspace/{sid}/transform-apply")
+def pk_transform_apply(
+    sid:int,data:transform165.Transform,
+    db:Session=Depends(get_db)
+):
+    return transform165.apply(db,sid,data)
