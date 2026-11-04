@@ -36,7 +36,7 @@ def test_review_panel_and_script_are_loaded():
 
     assert (
         "/static/js/tracker-dose-correction-review.js"
-        "?v=20261104e"
+        "?v=20261104f"
         in html
     )
 

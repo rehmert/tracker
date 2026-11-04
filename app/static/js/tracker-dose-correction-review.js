@@ -24,6 +24,7 @@
       ];
 
       const issues = [];
+      const issueControls = [];
 
       for (const checkbox of selected) {
         const row = checkbox.closest("tr");
@@ -46,6 +47,7 @@
           issues.push(
             name + ": enter a positive quantity"
           );
+          issueControls.push(input);
           continue;
         }
 
@@ -56,6 +58,7 @@
           issues.push(
             name + ": a whole-number quantity is required"
           );
+          issueControls.push(input);
         }
 
         // Raw total is provided by the server template.
@@ -73,6 +76,7 @@
             name + ": " + qty +
             " requested, " + available + " available"
           );
+          issueControls.push(input);
         }
       }
 
@@ -184,6 +188,22 @@
         }
 
         panel.appendChild(list);
+
+        const firstIssueControl = issueControls[0];
+
+        if (firstIssueControl) {
+          const jump = document.createElement("button");
+          jump.type = "button";
+          jump.textContent = "Go to first quantity issue";
+
+          jump.addEventListener("click", () => {
+            const section = firstIssueControl.closest("details");
+            if (section) section.open = true;
+            firstIssueControl.focus();
+          });
+
+          panel.appendChild(jump);
+        }
       }
 
       panel.prepend(summary);
