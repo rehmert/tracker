@@ -1,6 +1,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   let scenarios = [], current = null, lastGraph = null;
+  let graphRequestSequence = 0;
   const error = e => { $('pkError').textContent = e.message || String(e); };
   const request = async (url, method='GET', body) => {
     const headers = body ? {'Content-Type':'application/json'} : {};
@@ -88,13 +89,25 @@
   const scheme=window.matchMedia('(prefers-color-scheme: dark)');
   if (scheme.addEventListener) scheme.addEventListener('change', () => {refresh().catch(error); compare().catch(error);});
   async function refresh() {
+    const sequence = ++graphRequestSequence;
     if (!cid()) return;
     if(!($('half').value && $('abs').value)) throw new Error('Enter both hypothetical half-lives before graphing this compound.');
     $('pkError').textContent='';
     const q=new URLSearchParams({compound_id:cid(),half_life_hours:$('half').value,absorption_half_life_hours:$('abs').value,days_back:$('back').value,days_forward:$('forward').value});
     if($('protocol').value) q.set('protocol_id',$('protocol').value);
     else if(current) q.set('scenario_id',current.id);
-    draw(await request('/pk/data?'+q));
+    const data = await request('/pk/data?'+q);
+    if (sequence !== graphRequestSequence) return;
+    draw(data);
+    document.dispatchEvent(
+      new CustomEvent("tracker:pk-graph-updated", {
+        detail: {
+          scenarioId: current?.id ?? null,
+          compoundId: cid(),
+          sequence
+        }
+      })
+    );
   }
   function renderRows() {
     const tbody=$('plannedRows');tbody.replaceChildren();

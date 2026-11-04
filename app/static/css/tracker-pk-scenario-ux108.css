@@ -1,0 +1,96 @@
+/* Releases 105-108: Scenario-first PK layout. */
+
+.pk-scenario-primary {
+  margin-top: 1rem;
+  margin-bottom: .4rem;
+}
+
+.pk-scenario-primary h2 {
+  margin-bottom: .4rem;
+}
+
+.pk-scenario-selector {
+  display: block;
+  font-weight: 600;
+}
+
+.pk-scenario-selector select {
+  display: block;
+  width: 100%;
+  max-width: 660px;
+  min-height: 46px;
+  margin-top: .4rem;
+  box-sizing: border-box;
+}
+
+.pk-scenario-state {
+  padding: .7rem .85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border,#d4ded8);
+  margin: .8rem 0;
+  overflow-wrap: anywhere;
+}
+
+.pk-scenario-state[data-state="ready"] {
+  border-left: 4px solid #278056;
+}
+
+.pk-scenario-state[data-state="loading"] {
+  border-left: 4px solid #467eb1;
+}
+
+.pk-scenario-state[data-state="unsaved"] {
+  border-left: 4px solid #bb8a28;
+}
+
+.pk-scenario-state[data-state="warning"] {
+  border-left: 4px solid #b44b40;
+}
+
+.pk-scenario-primary button {
+  min-height: 40px;
+}
+
+.pk-scenario-primary select:focus-visible,
+.pk-scenario-primary button:focus-visible,
+.pk-scenario-primary input:focus-visible {
+  outline: 3px solid var(--accent,#387c69);
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .pk-scenario-primary {
+    padding: 1rem;
+  }
+
+  .pk-scenario-primary label,
+  .pk-scenario-primary select,
+  .pk-scenario-primary input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .pk-scenario-primary button {
+    width: 100%;
+    margin: .2rem 0;
+    min-height: 44px;
+  }
+
+  #pkResults {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  #pkResults canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@media print {
+  .pk-scenario-state {
+    display: none;
+  }
+}
