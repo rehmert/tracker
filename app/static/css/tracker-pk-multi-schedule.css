@@ -169,3 +169,31 @@ body.pk-mode-multi .pk-custom-section {
   opacity: .45;
   cursor: not-allowed;
 }
+
+
+/* Batch 49: compact multi-schedule workspace */
+.pk-multi-toggle {
+  margin: .3rem .5rem .45rem 0;
+}
+
+.pk-multi-compact-summary {
+  margin: .15rem 0 .5rem;
+  font-size: .9rem;
+  opacity: .8;
+  overflow-wrap: anywhere;
+}
+
+.pk-multi-entry:not(.pk-multi-collapsed)
+.pk-multi-compact-summary {
+  display: none;
+}
+
+.pk-multi-entry.pk-multi-collapsed .pk-multi-grid,
+.pk-multi-entry.pk-multi-collapsed .pk-multi-stages {
+  display: none;
+}
+
+#pkMultiCollapseAll,
+#pkMultiExpandAll {
+  white-space: nowrap;
+}

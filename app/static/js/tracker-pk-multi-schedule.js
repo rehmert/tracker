@@ -21,6 +21,13 @@
     function invalidate() {
       revision++;
       lastResult = null;
+
+      const schedules = $("pkMultiSchedules");
+      if (schedules) {
+        [...schedules.children].forEach(
+          refreshScheduleSummary
+        );
+      }
       if (exportButton) exportButton.disabled = true;
       if (exportPng) exportPng.disabled = true;
 
@@ -72,6 +79,50 @@
 
       label.appendChild(input);
       return label;
+    }
+
+    function refreshScheduleSummary(box) {
+      const summary = box.querySelector(
+        ".pk-multi-compact-summary"
+      );
+      if (!summary) return;
+
+      const name = box.querySelector(
+        ".pk-multi-name"
+      )?.value.trim() || "Unnamed schedule";
+
+      const compound = box.querySelector(
+        ".pk-multi-compound"
+      );
+
+      const compoundName = compound?.selectedOptions[0]
+        ?.textContent.split(" — ")[0].trim() ||
+        "Select compound";
+
+      const stageCount = box.querySelectorAll(
+        ".pk-multi-stage-rows tr"
+      ).length;
+
+      summary.textContent =
+        name + " · " + compoundName +
+        " · " + stageCount +
+        (stageCount === 1 ? " stage" : " stages");
+    }
+
+    function setScheduleCollapsed(box, collapsed) {
+      box.classList.toggle("pk-multi-collapsed", collapsed);
+
+      const toggle = box.querySelector(".pk-multi-toggle");
+
+      if (toggle) {
+        toggle.textContent = collapsed ?
+          "Show details" : "Hide details";
+        toggle.setAttribute(
+          "aria-expanded", String(!collapsed)
+        );
+      }
+
+      refreshScheduleSummary(box);
     }
 
     function refreshScheduleOrder() {
@@ -306,9 +357,26 @@
         invalidate();
       });
 
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "pk-multi-toggle";
+
+      const summary = document.createElement("p");
+      summary.className = "pk-multi-compact-summary";
+
+      toggle.addEventListener("click", () => {
+        setScheduleCollapsed(
+          box,
+          !box.classList.contains("pk-multi-collapsed")
+        );
+      });
+
       box.append(
-        title, grid, stages, duplicate, up, down, remove
+        title, toggle, summary, grid, stages,
+        duplicate, up, down, remove
       );
+
+      setScheduleCollapsed(box, false);
       container.appendChild(box);
       defaults();
 
@@ -980,6 +1048,25 @@
     container.addEventListener("change", invalidate);
 
     add.addEventListener("click", () => addSchedule());
+
+    const collapseAll = $("pkMultiCollapseAll");
+    const expandAll = $("pkMultiExpandAll");
+
+    if (collapseAll) {
+      collapseAll.addEventListener("click", () => {
+        [...container.children].forEach(box =>
+          setScheduleCollapsed(box, true)
+        );
+      });
+    }
+
+    if (expandAll) {
+      expandAll.addEventListener("click", () => {
+        [...container.children].forEach(box =>
+          setScheduleCollapsed(box, false)
+        );
+      });
+    }
 
     const alignStarts = $("pkMultiAlignStarts");
     const matchDurations = $("pkMultiMatchDurations");
