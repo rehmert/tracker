@@ -23,6 +23,7 @@ from ..pk_analysis_93 import metrics as exposure_metrics
 
 from .. import pk_scenario_ops as scenario_ops
 from .. import pk_scenario_version as scenario_version
+from .. import pk_scenario_integrity145 as integrity
 from .. import pk_staged_schedule as staged
 from .. import pk_template_import as pk_import
 
@@ -324,9 +325,17 @@ def update_scenario(
     return {"ok":True}
 
 @router.delete("/scenarios/{sid}")
-def delete_scenario(sid: int, db: Session = Depends(get_db)):
+def delete_scenario(
+    sid:int,
+    db:Session=Depends(get_db),
+    expected:str|None=Header(
+        default=None,
+        alias="X-PK-Expected-Version"
+    )
+):
     s = db.get(PkScenario, sid)
     if s is None: raise HTTPException(404)
+    scenario_version.check(db,s,expected)
     scenario_version.audit(
         db,s.id,"scenario_delete",
         scenario_version.snapshot(db,s),{}
@@ -1103,6 +1112,9 @@ def pk_duplicate(
             amount_mg=dose.amount_mg
         ))
 
+    integrity.changed(
+        db,copy,"scenario_duplicate",{}
+    )
     db.commit()
     return {'id':copy.id,'name':copy.name}
 
@@ -1248,3 +1260,25 @@ def pk_import_confirm(
     db:Session=Depends(get_db)
 ):
     return pk_import.create(db,data)
+
+
+
+@router.post("/scenarios/{sid}/doses/create-batch-checked")
+def pk_create_batch_checked(
+    sid:int,
+    data:scenario_ops.SequenceInput,
+    db:Session=Depends(get_db),
+    expected:str|None=Header(
+        default=None,
+        alias="X-PK-Expected-Version"
+    )
+):
+    obj=scenario_ops.scenario(db,sid)
+    integrity.required(db,obj,expected)
+    before=scenario_version.snapshot(db,obj)
+    result=scenario_ops.create_many(
+        db,sid,data,commit=False
+    )
+    integrity.changed(db,obj,"bulk_create",before)
+    db.commit()
+    return result

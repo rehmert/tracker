@@ -82,7 +82,7 @@ def preview(data):
     ]
 
 
-def create_many(db,sid,data):
+def create_many(db,sid,data,commit=True):
     scenario(db,sid)
     batch=preview(data)
 
@@ -110,7 +110,8 @@ def create_many(db,sid,data):
             amount_mg=entry['amount_mg']
         ))
 
-    db.commit()
+    if commit: db.commit()
+    else: db.flush()
     return {'created':len(batch)}
 
 

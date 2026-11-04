@@ -9,6 +9,19 @@
       const csrf = window.trackerCsrfToken?.();
       if (csrf) headers['X-Tracker-CSRF'] = csrf;
     }
+    const mutation=/^\/pk\/scenarios\/(\d+)(?:\/|$)/.exec(url);
+    if(method.toUpperCase()!=='GET' && mutation) {
+      const rev=await fetch(
+        '/pk/scenarios/'+mutation[1]+'/revision',
+        {cache:'no-store',credentials:'same-origin'}
+      );
+      if(!rev.ok)
+        throw new Error(
+          'Unable to verify current scenario revision'
+        );
+      headers['X-PK-Expected-Version']=
+        (await rev.json()).version;
+    }
     const r = await fetch(url, {method, headers, body: body ? JSON.stringify(body) : undefined});
     if (!r.ok) throw new Error(`${r.status}: ${await r.text()}`);
     return r.json();

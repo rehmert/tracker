@@ -88,6 +88,12 @@ def create(db,data):
             amount_mg=dose.amount_mg
         ))
 
+    from .pk_scenario_version import audit, snapshot
+    db.flush()
+    audit(
+        db,scenario.id,"scenario_import",
+        {},snapshot(db,scenario)
+    )
     db.commit()
 
     return {

@@ -23,6 +23,22 @@
         if(csrf) headers["X-Tracker-CSRF"]=csrf;
       }
 
+      const match=/^\/scenarios\/(\d+)\//.exec(path);
+      if(method!=="GET" && match) {
+        const revision=await fetch(
+          "/pk/scenarios/"+match[1]+"/revision",
+          {
+            cache:"no-store",
+            credentials:"same-origin"
+          }
+        );
+        if(!revision.ok)
+          throw Error(
+            "Cannot verify scenario revision"
+          );
+        headers["X-PK-Expected-Version"]=
+          (await revision.json()).version;
+      }
       const response=await fetch("/pk"+path,{
         method,
         headers,
@@ -339,7 +355,7 @@
 
       try {
         const result=await api(
-          "/scenarios/"+sid+"/doses/create-batch",
+          "/scenarios/"+sid+"/doses/create-batch-checked",
           "POST",preview.value
         );
 
