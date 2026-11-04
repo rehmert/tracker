@@ -10,6 +10,14 @@
     const container = $("pkMultiSchedules");
     const add = $("pkMultiAdd");
     const run = $("pkMultiRun");
+    const exportButton = $("pkMultiExportCsv");
+    let lastResult = null;
+
+    function invalidate() {
+      lastResult = null;
+      if (exportButton) exportButton.disabled = true;
+    }
+
     const status = $("pkMultiStatus");
     const canvas = $("pkMultiPlot");
     const legend = $("pkMultiLegend");
@@ -44,7 +52,7 @@
       return label;
     }
 
-    function addSchedule() {
+    function addSchedule(initial = null) {
       if (container.children.length >= 4) return;
 
       const box = document.createElement("fieldset");
@@ -70,8 +78,6 @@
       const items = [
         inputField("Timeline start", "start", localDateTime(),
           "datetime-local"),
-        inputField("Dose (mg)", "dose", "", "number",
-          {min:0.001,max:10000,step:"any"}),
         inputField("Interval (days)", "interval", 7, "number",
           {min:0.125,max:90,step:0.125}),
         inputField("Duration (days)", "duration", 84, "number",
@@ -100,6 +106,110 @@
 
       compound.addEventListener("change", defaults);
 
+      const stages = document.createElement("div");
+      stages.className = "pk-multi-stages";
+
+      const heading = document.createElement("h4");
+      heading.textContent = "Dose and interval stages";
+
+      const help = document.createElement("p");
+      help.className = "note";
+      help.textContent =
+        "Stages start at week 1, relative to the first " +
+        "modeled dose. Leave an interval blank to use " +
+        "the schedule default.";
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const header = document.createElement("tr");
+
+      ["Week", "Dose (mg)", "Interval (days)", "Action"]
+        .forEach(text => {
+          const th = document.createElement("th");
+          th.textContent = text;
+          header.appendChild(th);
+        });
+
+      thead.appendChild(header);
+
+      const tbody = document.createElement("tbody");
+      tbody.className = "pk-multi-stage-rows";
+      table.append(thead, tbody);
+
+      function addStage(data = {}) {
+        if (tbody.children.length >= 52) return;
+
+        const tr = document.createElement("tr");
+
+        [
+          ["week", data.week ?? 1, 1, 52, 1],
+          ["amount", data.amount_mg ?? "", 0.001, 10000, "any"],
+          ["cadence", data.interval_days ?? "", 0.125, 90, "any"]
+        ].forEach(([name, value, min, max, step]) => {
+          const td = document.createElement("td");
+          const input = document.createElement("input");
+          input.type = "number";
+          input.className = "pk-multi-stage-" + name;
+          input.value = String(value);
+          input.min = String(min);
+          input.max = String(max);
+          input.step = String(step);
+          input.setAttribute("aria-label", name);
+          td.appendChild(input);
+          tr.appendChild(td);
+        });
+
+        const td = document.createElement("td");
+        const removeStage = document.createElement("button");
+        removeStage.type = "button";
+        removeStage.textContent = "Remove";
+
+        removeStage.addEventListener("click", () => {
+          if (tbody.children.length <= 1) return;
+          tr.remove();
+          invalidate();
+        });
+
+        td.appendChild(removeStage);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        invalidate();
+      }
+
+      const stageButton = document.createElement("button");
+      stageButton.type = "button";
+      stageButton.textContent = "Add stage";
+
+      stageButton.addEventListener("click", () => {
+        const rows = [...tbody.children];
+        const last = rows.length
+          ? Number(rows[rows.length - 1]
+              .querySelector(".pk-multi-stage-week").value)
+          : 0;
+
+        addStage({
+          week: Math.min(last + 1, 52),
+          amount_mg: ""
+        });
+      });
+
+      stages.append(heading, help, table, stageButton);
+
+      const duplicate = document.createElement("button");
+      duplicate.type = "button";
+      duplicate.textContent = "Duplicate schedule";
+      duplicate.className = "pk-multi-duplicate";
+
+      duplicate.addEventListener("click", () => {
+        if (container.children.length >= 4) return;
+        try {
+          addSchedule(readSchedule(box));
+        } catch (error) {
+          status.textContent = error.message || String(error);
+        }
+      });
+
+
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "pk-multi-remove";
@@ -114,13 +224,37 @@
         });
 
         add.disabled = false;
+        invalidate();
       });
 
-      box.append(title, grid, remove);
+      box.append(title, grid, stages, duplicate, remove);
       container.appendChild(box);
       defaults();
 
+      if (initial) {
+        compound.value = String(initial.compound_id);
+
+        const values = {
+          start: initial.start_at,
+          interval: initial.interval_days,
+          duration: initial.duration_days,
+          offset: initial.offset_days,
+          half: initial.half_life_hours,
+          abs: initial.absorption_half_life_hours
+        };
+
+        Object.entries(values).forEach(([key, value]) => {
+          box.querySelector(".pk-multi-" + key).value =
+            String(value);
+        });
+
+        initial.stages.forEach(stage => addStage(stage));
+      } else {
+        addStage({week:1, amount_mg:""});
+      }
+
       add.disabled = container.children.length >= 4;
+      invalidate();
     }
 
     function required(box, key) {
@@ -139,6 +273,105 @@
       return value;
     }
 
+    function readSchedule(box) {
+      const compound = box.querySelector(".pk-multi-compound");
+
+      if (!compound.value) {
+        throw new Error("Select a compound.");
+      }
+
+      const rows = [...box.querySelectorAll(
+        ".pk-multi-stage-rows tr"
+      )];
+
+      if (!rows.length) {
+        throw new Error("At least one stage is required.");
+      }
+
+      const stages = rows.map(row => {
+        const weekField = row.querySelector(
+          ".pk-multi-stage-week"
+        );
+        const amountField = row.querySelector(
+          ".pk-multi-stage-amount"
+        );
+        const intervalField = row.querySelector(
+          ".pk-multi-stage-cadence"
+        );
+
+        if (!weekField.value.trim() ||
+            !amountField.value.trim()) {
+          throw new Error("Stage week and dose are required.");
+        }
+
+        const week = Number(weekField.value);
+        const amount = Number(amountField.value);
+        const interval = intervalField.value.trim()
+          ? Number(intervalField.value) : null;
+
+        if (!Number.isInteger(week) || week < 1 || week > 52 ||
+            !Number.isFinite(amount) ||
+            amount <= 0 || amount > 10000 ||
+            (interval !== null &&
+             (!Number.isFinite(interval) ||
+              interval < 0.125 || interval > 90))) {
+          throw new Error("Invalid stage values.");
+        }
+
+        return {
+          week,
+          amount_mg: amount,
+          interval_days: interval
+        };
+      });
+
+      const weeks = stages.map(stage => stage.week);
+
+      if (weeks[0] !== 1 ||
+          weeks.some((week, i) =>
+            i > 0 && week <= weeks[i - 1])) {
+        throw new Error(
+          "Stages must start at week 1 and increase uniquely."
+        );
+      }
+
+      const startAt = box.querySelector(
+        ".pk-multi-start"
+      ).value;
+
+      if (!startAt) {
+        throw new Error("Schedule start is required.");
+      }
+
+      const interval = required(box, "interval");
+      const duration = required(box, "duration");
+      const offset = required(box, "offset");
+      const half = required(box, "half");
+      const absorption = required(box, "abs");
+
+      if (interval < 0.125 || interval > 90 ||
+          !Number.isInteger(duration) ||
+          duration < 1 || duration > 365 ||
+          !Number.isInteger(offset) ||
+          offset < 0 || offset > 90 ||
+          offset >= duration ||
+          half <= 0 || half > 10000 ||
+          absorption <= 0 || absorption > 10000) {
+        throw new Error("Schedule parameters are out of range.");
+      }
+
+      return {
+        compound_id: Number(compound.value),
+        start_at: startAt,
+        interval_days: interval,
+        duration_days: duration,
+        offset_days: offset,
+        half_life_hours: half,
+        absorption_half_life_hours: absorption,
+        stages
+      };
+    }
+
     function payload() {
       const entries = [...container.children];
 
@@ -148,24 +381,16 @@
 
       return {
         schedules: entries.map((box, index) => {
-          const compound = box.querySelector(".pk-multi-compound");
+          const schedule = readSchedule(box);
+          const compound = box.querySelector(
+            ".pk-multi-compound"
+          );
           const selected = compound.selectedOptions[0];
 
-          return {
-            compound_id: Number(compound.value),
-            name: "Schedule " + (index + 1) +
-              " · " + selected.textContent.split(" — ")[0],
-            start_at: box.querySelector(".pk-multi-start").value,
-            interval_days: required(box, "interval"),
-            duration_days: required(box, "duration"),
-            offset_days: required(box, "offset"),
-            half_life_hours: required(box, "half"),
-            absorption_half_life_hours: required(box, "abs"),
-            stages: [{
-              week: 1,
-              amount_mg: required(box, "dose")
-            }]
-          };
+          schedule.name = "Schedule " + (index + 1) +
+            " · " + selected.textContent.split(" — ")[0];
+
+          return schedule;
         })
       };
     }
@@ -244,10 +469,68 @@
       });
     }
 
-    add.addEventListener("click", addSchedule);
+    container.addEventListener("input", invalidate);
+    container.addEventListener("change", invalidate);
+
+    add.addEventListener("click", () => addSchedule());
+
+    function csvCell(value) {
+      return '"' + String(value ?? "")
+        .replace(/"/g, '""') + '"';
+    }
+
+    function exportCsv() {
+      if (!lastResult) return;
+
+      const header = [
+        "timestamp",
+        ...lastResult.series.map((series, index) =>
+          "schedule_" + (index + 1) +
+          "_percent_" + series.name
+        )
+      ];
+
+      const rows = [header];
+
+      lastResult.at.forEach((at, index) => {
+        rows.push([
+          at,
+          ...lastResult.series.map(series =>
+            series.values_percent[index]
+          )
+        ]);
+      });
+
+      const csv = "\uFEFF" + rows.map(row =>
+        row.map(csvCell).join(",")
+      ).join("\r\n");
+
+      const blob = new Blob([csv], {
+        type: "text/csv;charset=utf-8"
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "tracker-pk-multi-comparison.csv";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(url);
+    }
+
+    if (exportButton) {
+      exportButton.disabled = true;
+      exportButton.addEventListener("click", exportCsv);
+    }
+
 
     run.addEventListener("click", async () => {
       run.disabled = true;
+      invalidate();
 
       try {
         const body = payload();
@@ -275,7 +558,17 @@
         }
 
         const result = await response.json();
+
+        if (JSON.stringify(payload()) !== JSON.stringify(body)) {
+          throw new Error(
+            "Schedule changed during calculation. Compare again."
+          );
+        }
+
         plot(result);
+        lastResult = result;
+
+        if (exportButton) exportButton.disabled = false;
 
         status.textContent =
           result.series.length +

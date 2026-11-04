@@ -142,7 +142,7 @@ def test_template_and_client_wiring():
     assert 'id="pkMultiWorkspace"' in html
     assert 'id="pkMultiPlot"' in html
     assert "pk.js?v=pk-batch41-20261104" in html
-    assert "tracker-pk-multi-schedule.js?v=batch41" in html
+    assert "tracker-pk-multi-schedule.js?v=batch42" in html
     assert "'pk-mode-multi'" in js
     assert '"/pk/what-if/multi-preview"' in multi
     assert "values_percent" in multi
@@ -155,3 +155,31 @@ def test_prior_pk_cache_assertion_is_updated():
         ROOT / "tests/test_pk_variable_schedule.py"
     ).read_text()
     assert '"pk.js?v=pk-batch41-20261104"' in legacy
+
+
+def test_batch42_staged_editor_and_duplicate():
+    js = (
+        ROOT / "app/static/js/tracker-pk-multi-schedule.js"
+    ).read_text()
+
+    assert "function addSchedule(initial = null)" in js
+    assert "function readSchedule(box)" in js
+    assert "initial.stages.forEach(stage => addStage(stage))" in js
+    assert "addSchedule(readSchedule(box))" in js
+    assert "interval_days: interval" in js
+    assert "weeks[0] !== 1" in js
+
+
+def test_batch42_csv_export_and_cache():
+    html = (ROOT / "app/templates/pk.html").read_text()
+    js = (
+        ROOT / "app/static/js/tracker-pk-multi-schedule.js"
+    ).read_text()
+
+    assert 'id="pkMultiExportCsv" disabled' in html
+    assert "function exportCsv()" in js
+    assert "values_percent[index]" in js
+    assert 'container.addEventListener("input", invalidate)' in js
+    assert 'container.addEventListener("change", invalidate)' in js
+    assert "lastResult = result" in js
+    assert "tracker-pk-multi-schedule.js?v=batch42" in html

@@ -56,3 +56,25 @@ body.pk-mode-multi .pk-custom-section {
     grid-template-columns: 1fr;
   }
 }
+
+/* Batch 42 staged schedule editor */
+.pk-multi-stages {
+  margin: .85rem 0;
+  overflow-x: auto;
+}
+.pk-multi-stages table {
+  width: 100%;
+  min-width: 480px;
+}
+.pk-multi-stages input {
+  width: 100%;
+  min-width: 5rem;
+  box-sizing: border-box;
+}
+.pk-multi-duplicate {
+  margin: .6rem .65rem .3rem 0;
+}
+#pkMultiExportCsv:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
