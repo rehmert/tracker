@@ -24,6 +24,7 @@ from ..pk_analysis_93 import metrics as exposure_metrics
 from .. import pk_scenario_ops as scenario_ops
 from .. import pk_scenario_version as scenario_version
 from .. import pk_staged_schedule as staged
+from .. import pk_template_import as pk_import
 
 router = APIRouter(prefix="/pk")
 
@@ -1207,3 +1208,43 @@ def pk_staged_replace(
     db.commit()
 
     return {"replaced":len(generated)}
+
+
+
+@router.post("/scenarios/import-preview")
+def pk_import_preview(
+    data:pk_import.Template,
+    db:Session=Depends(get_db)
+):
+    pk_import.validate(db,data)
+
+    return {
+        "name":data.name,
+        "count":len(data.doses),
+        "compound":data.compound_name,
+        "first":min(
+            (
+                dose.planned_at.isoformat()
+                for dose in data.doses
+            ),
+            default=None
+        ),
+        "last":max(
+            (
+                dose.planned_at.isoformat()
+                for dose in data.doses
+            ),
+            default=None
+        )
+    }
+
+
+@router.post(
+    "/scenarios/import-confirm",
+    status_code=201
+)
+def pk_import_confirm(
+    data:pk_import.Template,
+    db:Session=Depends(get_db)
+):
+    return pk_import.create(db,data)

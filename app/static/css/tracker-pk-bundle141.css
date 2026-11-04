@@ -1,0 +1,44 @@
+.pk-staged-plan,
+.pk-scenario-organize {
+  margin:.8rem 0;
+  padding:.8rem;
+  border:1px solid var(--border,#ccc);
+  border-radius:9px;
+}
+
+.pk-staged-plan label,
+.pk-scenario-organize label {
+  display:inline-flex;
+  flex-direction:column;
+  gap:.3rem;
+  margin:.35rem;
+}
+
+.pk-dose-focused {
+  outline:3px solid var(--accent,#387c69);
+  outline-offset:-3px;
+}
+
+#pkGraphViewport {
+  overflow-wrap:anywhere;
+}
+
+@media(max-width:700px) {
+  .pk-staged-plan label,
+  .pk-scenario-organize label {
+    display:flex;
+    margin:.5rem 0;
+  }
+
+  .pk-staged-plan input,
+  .pk-scenario-organize input {
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  .pk-scenario-organize button,
+  .pk-staged-plan button {
+    min-height:44px;
+    margin:.3rem;
+  }
+}

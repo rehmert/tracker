@@ -100,6 +100,41 @@
 <div class="card pk-custom-section">
 <h2>Saved scenarios</h2>
 <label>Scenario <select id="scenario"><option value="">Unsaved / no future doses</option></select></label>
+<div class="pk-scenario-organize">
+  <label>Find scenario
+    <input type="search" id="pkScenarioSearch"
+           placeholder="Search saved names">
+  </label>
+
+  <label>
+    <input type="checkbox" id="pkShowArchived">
+    Show locally archived
+  </label>
+
+  <button type="button" id="pkFavorite">
+    Favorite
+  </button>
+
+  <button type="button" id="pkArchive">
+    Archive locally
+  </button>
+
+  <label>Import scenario JSON
+    <input id="pkImportFile" type="file"
+           accept=".json,application/json">
+  </label>
+
+  <button type="button" id="pkImportConfirm"
+          disabled>Confirm import</button>
+
+  <p class="note">
+    Favorites and archives are browser-only
+    preferences. Import always creates a new
+    hypothetical scenario.
+  </p>
+
+  <p id="pkLibraryStatus" role="status"></p>
+</div>
 <label>Name <input id="scenarioName" value="My scenario" maxlength="160"></label>
 <button id="save" type="button">Save new scenario</button>
 <button id="update" type="button">Update name and half-lives</button>
@@ -378,6 +413,10 @@
         defer></script>
 <script src="/static/js/tracker-pk-graph137.js?v=bundle137"
         defer></script>
+<script src="/static/js/tracker-pk-library141.js?v=bundle141"
+        defer></script>
+<link rel="stylesheet"
+      href="/static/css/tracker-pk-bundle141.css?v=bundle141">
 <link rel="stylesheet"
       href="/static/css/tracker-pk-tools125.css?v=bundle125">
 {% endblock %}
