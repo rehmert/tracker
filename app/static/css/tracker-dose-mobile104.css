@@ -1,0 +1,34 @@
+/* Visual-only improvements. Dose POST validation unchanged. */
+@media (max-width: 680px) {
+  form[hx-post="/doses"] {
+    min-width: 0;
+  }
+
+  form[hx-post="/doses"] .inner.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .7rem;
+  }
+
+  form[hx-post="/doses"] .field {
+    min-width: 0;
+  }
+
+  form[hx-post="/doses"] .field select,
+  form[hx-post="/doses"] .field input {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  #dose-preview,
+  #form-msg {
+    overflow-wrap: anywhere;
+  }
+
+  .tracker-planned-navigation {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+}

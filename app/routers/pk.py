@@ -740,9 +740,16 @@ def pk_workspace(
         ).limit(5)
     ))
     stock=build_rows(db)
+    recent_doses=list(db.scalars(
+        select(DoseLog)
+        .where(DoseLog.kind=='dose')
+        .order_by(DoseLog.taken_at.desc())
+        .limit(12)
+    ))
     return render(
         request,"pk_workspace.html",
-        protocols=protocols,labs=labs,stock=stock
+        protocols=protocols,labs=labs,stock=stock,
+        recent_doses=recent_doses
     )
 
 

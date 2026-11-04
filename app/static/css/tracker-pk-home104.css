@@ -1,0 +1,34 @@
+/* Compact, accessible PK workspace. */
+#pkHomeSearch {
+  max-width: 28rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+[data-pk-protocol][hidden] {
+  display: none !important;
+}
+
+[data-pk-panel="activity"] .scroll {
+  overflow-x: auto;
+}
+
+@media (max-width: 680px) {
+  .pk-dashboard-preferences {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #pkExpVialEstimates .scroll,
+  #pkExpCompareResults .scroll {
+    max-width: 100%;
+    overflow: auto;
+  }
+}
+
+@media print {
+  #pkHomeSearch,
+  #pkHomeCount {
+    display: none !important;
+  }
+}

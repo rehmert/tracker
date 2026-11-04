@@ -7,6 +7,10 @@
   <label><input type="checkbox"
     data-pk-toggle="protocols" checked>Protocols</label>
   <label><input type="checkbox"
+    data-pk-toggle="activity" checked>
+    Recorded activity
+  </label>
+  <label><input type="checkbox"
     data-pk-toggle="labs" checked>Labs</label>
   <label><input type="checkbox"
     data-pk-toggle="inventory" checked>Inventory</label>
@@ -14,6 +18,10 @@
 <link rel="stylesheet"
  href="/static/css/tracker-pk-bundle88.css?v=bundle88">
 <script src="/static/js/tracker-pk-dashboard.js?v=bundle88"
+ defer></script>
+<link rel="stylesheet"
+ href="/static/css/tracker-pk-home104.css?v=bundle104">
+<script src="/static/js/tracker-pk-home104.js?v=bundle104"
  defer></script>
 <p class="note">Read-only overview. Exposure models are
 hypothetical and not measured drug concentrations.</p>
@@ -24,6 +32,11 @@ hypothetical and not measured drug concentrations.</p>
   <a href="/inventory-forecast">Inventory forecast</a>
 </nav>
 
+<label>Find protocol
+  <input type="search" id="pkHomeSearch"
+         placeholder="Search protocols">
+</label>
+<p id="pkHomeCount" role="status"></p>
 <section data-pk-panel="protocols">
   <h2>Protocols and experiments</h2>
   <div class="scroll">
@@ -34,7 +47,7 @@ hypothetical and not measured drug concentrations.</p>
       </tr></thead>
       <tbody>
       {% for p in protocols %}
-      <tr>
+      <tr data-pk-protocol="{{ p.name|lower }}">
         <td>{{ p.name }}</td>
         <td>{{ "Active" if p.is_active else "What-if" }}</td>
         <td>{{ p.start_date or "Not dated" }}</td>
@@ -49,6 +62,43 @@ hypothetical and not measured drug concentrations.</p>
   </div>
 </section>
 
+<section data-pk-panel="activity">
+  <h2>Recent recorded administrations</h2>
+  <p>
+    <a href="/doses#quick-dose-entry">
+      Log an actual dose
+    </a>
+  </p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Recorded at</th>
+          <th>Compound</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dose in recent_doses %}
+        <tr>
+          <td>{{ dose.taken_at }}</td>
+          <td>{{ dose.vial.compound.name }}</td>
+          <td>
+            {{ dose.entered_value }}
+            {{ dose.entered_unit }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3">
+            No administrations recorded.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 <section data-pk-panel="labs">
   <h2>Recent laboratory reports</h2>
   <ul>
