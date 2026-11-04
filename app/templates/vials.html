@@ -264,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <input
       id="tracker-vial-quick-find"
       type="search"
-      placeholder="Compound, vial, lot, status..."
+      placeholder="Compound, vial, lot, status… (press /)"
       autocomplete="off"
       aria-controls="tracker-vials-sortable">
   </label>
@@ -417,25 +417,36 @@ document.addEventListener("DOMContentLoaded", () => {
     next.addEventListener("click", nextMatch);
 
     selectMatching.addEventListener("click", () => {
-      let selectedCount = 0;
+      // Batch selection changes into a single notification.
+      // The central cross-view manager enforces the 1,000-vial
+      // limit and synchronizes persisted selections.
+      const unchecked = matches
+        .map(row => row.querySelector("input.bulk-vial-check"))
+        .filter(checkbox => checkbox && !checkbox.checked);
 
-      matches.forEach(row => {
-        const checkbox = row.querySelector(
-          "input.bulk-vial-check"
-        );
+      if (!unchecked.length) {
+        count.textContent = "All matching vials are already selected.";
+        return;
+      }
 
-        if (!checkbox || checkbox.checked) return;
-
+      for (const checkbox of unchecked) {
         checkbox.checked = true;
-        checkbox.dispatchEvent(
-          new Event("change", {bubbles:true})
-        );
-        selectedCount += 1;
-      });
+      }
+
+      // One captured change event reconciles all displayed rows.
+      unchecked[0].dispatchEvent(
+        new Event("change", {bubbles:true})
+      );
+
+      // If the selection exceeds the manager's maximum, that
+      // manager rejects the change and restores checkbox state.
+      const selectedNow = unchecked.filter(
+        checkbox => checkbox.checked
+      ).length;
 
       count.textContent =
-        selectedCount.toLocaleString() +
-        (selectedCount === 1
+        selectedNow.toLocaleString() +
+        (selectedNow === 1
           ? " matching vial added to selection"
           : " matching vials added to selection");
     });
@@ -446,6 +457,34 @@ document.addEventListener("DOMContentLoaded", () => {
       input.focus();
     });
 
+    input.addEventListener("keydown", event => {
+      if (event.key === "Escape" && input.value) {
+        event.preventDefault();
+        input.value = "";
+        update();
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key !== "/" ||
+          event.ctrlKey || event.metaKey ||
+          event.altKey || event.shiftKey ||
+          event.defaultPrevented) {
+        return;
+      }
+
+      const target = event.target;
+      const tag = target?.tagName;
+
+      if (target?.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(tag)) {
+        return;
+      }
+
+      event.preventDefault();
+      input.focus();
+      input.select();
+    });
     update();
   }
 
