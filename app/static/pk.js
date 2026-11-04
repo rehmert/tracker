@@ -26,6 +26,7 @@
     const c=$('plot'), ctx=c.getContext('2d'), w=c.width,h=c.height;
     ctx.clearRect(0,0,w,h);
     lastGraph=data;
+    window.trackerPkLastGraph=data;
     const rows=data.rows, max=Math.max(0.001,...rows.map(r=>Math.max(r.actual,r.planned)));
     const css=getComputedStyle(document.documentElement);
     const token=(name, fallback)=>css.getPropertyValue(name).trim()||fallback;
