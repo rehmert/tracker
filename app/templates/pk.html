@@ -96,6 +96,72 @@
 <button id="save" type="button">Save new scenario</button>
 <button id="update" type="button">Update name and half-lives</button>
 <button id="remove" type="button">Delete scenario</button>
+<details class="pk-staged-plan">
+  <summary>Build staged hypothetical schedule</summary>
+  <p class="note">
+    Preview before saving. Confirming replaces all
+    planned doses in the selected scenario.
+    Day intervals preserve the entered wall-clock
+    time; timezone and DST transitions are not converted.
+  </p>
+
+  <label>Start
+    <input type="datetime-local" id="pkStageStart">
+  </label>
+
+  <label>Stage 1 amount (mg)
+    <input type="number" id="pkStageA"
+           min="0.001" step="any" value="1">
+  </label>
+
+  <label>Count
+    <input type="number" id="pkStageCountA"
+           min="1" max="100" value="8">
+  </label>
+
+  <label>Interval (days)
+    <input type="number" id="pkStageIntervalA"
+           min="0.125" step="any" value="7">
+  </label>
+
+  <label>Stage 2 amount (mg)
+    <input type="number" id="pkStageB"
+           min="0.001" step="any" value="1">
+  </label>
+
+  <label>Stage 2 count (blank to omit)
+    <input type="number" id="pkStageCountB"
+           min="1" max="100">
+  </label>
+
+  <label>Stage 2 interval (days)
+    <input type="number" id="pkStageIntervalB"
+           min="0.125" step="any" value="7">
+  </label>
+
+  <button type="button" id="pkStagePreview">
+    Preview stages
+  </button>
+
+  <button type="button" id="pkStageReplace" disabled>
+    Replace scenario doses
+  </button>
+
+  <p id="pkStageStatus" role="status"></p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Date/time</th>
+          <th>mg</th>
+        </tr>
+      </thead>
+      <tbody id="pkStagePreviewRows"></tbody>
+    </table>
+  </div>
+</details>
 <h3>Future planned doses</h3>
 <div class="pk-dose-tools">
   <label>Filter
@@ -299,6 +365,8 @@
 <script src="/static/js/tracker-pk-extras117.js?v=bundle117"
         defer></script>
 <script src="/static/js/tracker-pk-graph121.js?v=bundle121"
+        defer></script>
+<script src="/static/js/tracker-pk-stages133.js?v=bundle133"
         defer></script>
 <link rel="stylesheet"
       href="/static/css/tracker-pk-tools125.css?v=bundle125">

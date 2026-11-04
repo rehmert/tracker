@@ -23,6 +23,7 @@ from ..pk_analysis_93 import metrics as exposure_metrics
 
 from .. import pk_scenario_ops as scenario_ops
 from .. import pk_scenario_version as scenario_version
+from .. import pk_staged_schedule as staged
 
 router = APIRouter(prefix="/pk")
 
@@ -1148,3 +1149,61 @@ def pk_scenario_revision(
             scenario_version.snapshot(db,obj)
         )
     }
+
+
+
+@router.post("/scenarios/{sid}/staged-preview")
+def pk_staged_preview(
+    sid:int,
+    data:staged.StagedInput,
+    db:Session=Depends(get_db)
+):
+    scenario_ops.scenario(db,sid)
+    return {
+        "doses":staged.project(data),
+        "caveat":"Elapsed wall-clock days; timezone and DST not interpreted"
+    }
+
+
+@router.post("/scenarios/{sid}/staged-replace")
+def pk_staged_replace(
+    sid:int,
+    data:staged.StagedInput,
+    db:Session=Depends(get_db)
+):
+    obj=scenario_ops.scenario(db,sid)
+
+    if not data.expected_version:
+        raise HTTPException(
+            400,"Revision required; preview again"
+        )
+
+    scenario_version.check(
+        db,obj,data.expected_version
+    )
+
+    generated=staged.project(data)
+    before=scenario_version.snapshot(db,obj)
+
+    for dose in list(obj.doses):
+        db.delete(dose)
+
+    db.flush()
+
+    for dose in generated:
+        db.add(PkPlannedDose(
+            scenario_id=sid,
+            planned_at=datetime.fromisoformat(
+                dose["planned_at"]
+            ),
+            amount_mg=dose["amount_mg"]
+        ))
+
+    scenario_version.audit(
+        db,sid,"staged_replace",
+        before,{"doses":generated}
+    )
+
+    db.commit()
+
+    return {"replaced":len(generated)}
