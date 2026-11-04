@@ -193,13 +193,14 @@
     $('overlayEvents').textContent=data.series.map(line=>line.name+': '+line.administrations.length+' recorded administrations in window').join(' · ');
   }
   // Recurring what-if protocols: independent from real protocols and dose logs.
-  const addStage=(week='',amount='')=>{
+  const addStage=(week='',amount='',interval='')=>{
     const tr=document.createElement('tr');
-    const weekTd=document.createElement('td'), doseTd=document.createElement('td'), actionTd=document.createElement('td');
+    const weekTd=document.createElement('td'), doseTd=document.createElement('td'), cadenceTd=document.createElement('td'), actionTd=document.createElement('td');
     const w=document.createElement('input');w.type='number';w.min='1';w.max='52';w.step='1';w.value=week;w.className='wiWeek';
     const a=document.createElement('input');a.type='number';a.min='0.001';a.step='any';a.value=amount;a.className='wiAmount';
+    const cadence=document.createElement('input');cadence.type='number';cadence.min='0.125';cadence.max='90';cadence.step='0.125';cadence.value=interval;cadence.placeholder='Default';cadence.className='wiCadence';cadence.setAttribute('aria-label','Interval override in days');
     const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.onclick=()=>tr.remove();
-    weekTd.append(w);doseTd.append(a);actionTd.append(remove);tr.append(weekTd,doseTd,actionTd);$('wiStages').append(tr);
+    weekTd.append(w);doseTd.append(a);cadenceTd.append(cadence);actionTd.append(remove);tr.append(weekTd,doseTd,cadenceTd,actionTd);$('wiStages').append(tr);
   };
   addStage('1','');
   $('wiAddStage').onclick=()=>addStage();
@@ -208,12 +209,25 @@
   const wiParams=()=>{
     if(!cid())throw new Error('Select a compound.');
     const stages=[...$('wiStages').querySelectorAll('tr')].map(tr=>({
-      week:Number(tr.querySelector('.wiWeek').value),amount_mg:Number(tr.querySelector('.wiAmount').value)}));
-    if(!stages.length || stages.some(s=>!Number.isInteger(s.week)||s.week<1||!(s.amount_mg>0)))
-      throw new Error('Enter a valid week and positive dose for each stage.');
+      week:Number(tr.querySelector('.wiWeek').value),
+      amount_mg:Number(tr.querySelector('.wiAmount').value),
+      interval_days:tr.querySelector('.wiCadence').value.trim()
+        ? Number(tr.querySelector('.wiCadence').value) : null
+    }));
+    if(!stages.length || stages.some(s=>
+      !Number.isInteger(s.week)||s.week<1||!(s.amount_mg>0)||
+      (s.interval_days!==null &&
+        (!Number.isFinite(s.interval_days)||
+          s.interval_days<0.125||s.interval_days>90))))
+      throw new Error('Enter a valid week, positive dose, and optional interval between 0.125 and 90 days.');
+    const offset=Number($('wiOffset').value);
+    const duration=Number($('wiDuration').value);
+    if(!Number.isInteger(offset)||offset<0||offset>90||offset>=duration)
+      throw new Error('First-dose offset must be a whole number from 0 to 90, less than duration.');
     stages.sort((a,b)=>a.week-b.week);
     return {compound_id:cid(),name:$('wiName').value,start_at:$('wiStart').value,
-      interval_days:Number($('wiInterval').value),duration_days:Number($('wiDuration').value),
+      interval_days:Number($('wiInterval').value),duration_days:duration,
+      offset_days:offset,
       half_life_hours:Number($('half').value),absorption_half_life_hours:Number($('abs').value),stages};
   };
   $('wiPreview').onclick=async()=>{try{

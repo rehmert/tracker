@@ -30,6 +30,7 @@ class PlannedInput(BaseModel):
 class WhatIfStage(BaseModel):
     week: int = Field(ge=1, le=52)
     amount_mg: float = Field(gt=0, le=10000)
+    interval_days: float | None = Field(default=None, ge=0.125, le=90)
 
 class WhatIfProtocol(BaseModel):
     compound_id: int
@@ -37,6 +38,7 @@ class WhatIfProtocol(BaseModel):
     start_at: datetime
     interval_days: float = Field(ge=0.125, le=90)
     duration_days: int = Field(ge=1, le=365)
+    offset_days: int = Field(default=0, ge=0, le=90)
     stages: list[WhatIfStage] = Field(min_length=1, max_length=52)
     half_life_hours: float = Field(gt=0, le=10000)
     absorption_half_life_hours: float = Field(gt=0, le=10000)
@@ -45,6 +47,16 @@ class WhatIfProtocol(BaseModel):
     def validate_stages(self):
         if not all(isfinite(x.amount_mg) for x in self.stages):
             raise ValueError("Invalid stage amount")
+        if not isfinite(self.interval_days):
+            raise ValueError("Invalid default interval")
+        if any(
+            x.interval_days is not None and
+            not isfinite(x.interval_days)
+            for x in self.stages
+        ):
+            raise ValueError("Invalid stage interval")
+        if self.offset_days >= self.duration_days:
+            raise ValueError("Starting offset must be less than duration")
         weeks = [x.week for x in self.stages]
         if weeks[0] != 1 or weeks != sorted(set(weeks)):
             raise ValueError("Stages must start at week 1 and have unique ascending weeks")
@@ -52,14 +64,32 @@ class WhatIfProtocol(BaseModel):
 
 
 def what_if_doses(data: WhatIfProtocol):
+    """Build a hypothetical schedule with stage-specific cadence.
+
+    Stage weeks are relative to the first modeled administration.
+    An interval change begins with the first dose in that stage.
+    No actual doses or inventory are modified.
+    """
     stages = data.stages
     doses = []
-    for index in range(int(data.duration_days / data.interval_days) + 1):
-        offset = index * data.interval_days
-        if offset >= data.duration_days: break
-        week = int(offset // 7) + 1
-        amount = next(stage.amount_mg for stage in reversed(stages) if stage.week <= week)
-        doses.append((data.start_at + timedelta(days=offset), amount))
+    offset = float(data.offset_days)
+    while offset < data.duration_days:
+        elapsed = offset - data.offset_days
+        week = int(elapsed // 7) + 1
+        stage = next(
+            stage for stage in reversed(stages)
+            if stage.week <= week
+        )
+        doses.append((
+            data.start_at + timedelta(days=offset),
+            stage.amount_mg,
+        ))
+        interval = (
+            stage.interval_days
+            if stage.interval_days is not None
+            else data.interval_days
+        )
+        offset += interval
     return doses
 
 
