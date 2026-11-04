@@ -60,4 +60,4 @@ def test_workspace_and_templates():
     html=(ROOT/"app/templates/protocol_edit.html").read_text()
     assert 'id="pkExpDoseRows"' in html
     assert 'id="pkExpSaved"' in html
-    assert "tracker-pk-library.js?v=bundle66" in html
+    assert "tracker-pk-library.js?v=bundle72" in html

@@ -1,155 +1,257 @@
-/* Named experiment definitions. No administration writes. */
+/*
+ * Tracker Batch 71: named experiment library.
+ * Save the actual current inputs and dose-row edits.
+ * Distinct from actual protocols and administrations.
+ */
 (() => {
   "use strict";
+
   function init() {
-    const root=document.getElementById("pkExperimentWorkbench");
+    const root=document.getElementById(
+      "pkExperimentWorkbench"
+    );
     if(!root) return;
+
     const $=id=>document.getElementById(id);
-    const id=root.dataset.protocolId;
     const status=$("pkExpLibraryStatus");
     const selected=$("pkExpSaved");
-    let rows=[];
-    let latest=null;
-    let pendingEdits=null;
+    const base="/pk/library/"+
+      encodeURIComponent(root.dataset.protocolId);
 
-    async function request(path,method="GET",body=null) {
+    let rows=[];
+    let pending=null;
+    let loading=false;
+
+    async function request(path,method="GET",body) {
       const headers={};
-      if(body) headers["Content-Type"]="application/json";
+      if(body!==undefined)
+        headers["Content-Type"]="application/json";
+
       const csrf=window.trackerCsrfToken?.();
-      if(csrf && method!=="GET") headers["X-Tracker-CSRF"]=csrf;
+      if(csrf && method!=="GET")
+        headers["X-Tracker-CSRF"]=csrf;
+
       const response=await fetch(path,{
-        method,credentials:"same-origin",headers,
-        body:body?JSON.stringify(body):undefined,
-        cache:"no-store"
+        method,credentials:"same-origin",
+        cache:"no-store",headers,
+        body:body===undefined
+          ? undefined : JSON.stringify(body)
       });
+
       if(!response.ok) throw new Error(
-        "Experiment library error: HTTP "+response.status
+        "Experiment library HTTP "+response.status
       );
       return response.json();
     }
-    const url="/pk/library/"+encodeURIComponent(id);
 
-    async function refresh() {
-      rows=await request(url);
+    async function refresh(preferred) {
+      rows=await request(base);
       selected.replaceChildren();
+
       rows.forEach(row=>{
         selected.add(new Option(
           row.name+" · "+row.saved_at.slice(0,10),
           row.id
         ));
       });
-      status.textContent=rows.length+
-        " named experiment(s) stored.";
+
+      if(preferred && rows.some(r=>r.id===preferred))
+        selected.value=preferred;
+
+      status.textContent=
+        rows.length+" saved experiment(s).";
     }
 
-    function controls() {
+    function doseEdits() {
+      return [...$("pkExpDoseRows").querySelectorAll("tr")]
+        .map(row=>{
+          const action=row.querySelector(
+            ".pk-edit-action"
+          ).value;
+          return {
+            index:Number(row.dataset.index),
+            action,
+            hours:Number(row.querySelector(
+              ".pk-edit-hours"
+            ).value),
+            amount_mg:action==="amount"
+              ? Number(row.querySelector(
+                  ".pk-edit-amount"
+                ).value)
+              : null
+          };
+        })
+        .filter(edit=>edit.action!=="keep");
+    }
+
+    function currentSettings() {
       return {
         compound_id:Number($("pkExpCompound").value),
         dose_multiplier:Number($("pkExpDose").value)/100,
-        interval_multiplier:Number($("pkExpInterval").value)/100,
+        interval_multiplier:
+          Number($("pkExpInterval").value)/100,
         start_shift_days:Number($("pkExpShift").value),
         horizon_days:Number($("pkExpHorizon").value),
-        skip_dose_index:$("pkExpDoseNumber").value
-          ? Number($("pkExpDoseNumber").value)-1:null,
+        skip_dose_index:$("pkExpDoseNumber").value.trim()
+          ? Number($("pkExpDoseNumber").value)-1
+          : null,
         delay_hours:Number($("pkExpDelay").value),
-        lab_analyte:$("pkExpLab").value,
-        dose_edits:latest?.settings?.dose_edits || []
+        lab_analyte:$("pkExpLab").value.trim(),
+        dose_edits:doseEdits()
       };
     }
 
-    function apply(settings) {
-      $("pkExpCompound").value=String(settings.compound_id);
-      $("pkExpDose").value=String(settings.dose_multiplier*100);
-      $("pkExpInterval").value=String(
-        settings.interval_multiplier*100
+    function selectedRow() {
+      return rows.find(r=>r.id===selected.value);
+    }
+
+    function apply(row) {
+      const s=row.settings;
+      $("pkExpCompound").value=String(s.compound_id);
+      $("pkExpDose").value=String(
+        s.dose_multiplier*100
       );
-      $("pkExpShift").value=String(settings.start_shift_days);
-      $("pkExpHorizon").value=String(settings.horizon_days);
-      $("pkExpDoseNumber").value=settings.skip_dose_index==null
-        ? "" : String(settings.skip_dose_index+1);
-      $("pkExpDelay").value=String(settings.delay_hours);
-      $("pkExpLab").value=settings.lab_analyte||"";
-      pendingEdits=settings.dose_edits||[];
+      $("pkExpInterval").value=String(
+        s.interval_multiplier*100
+      );
+      $("pkExpShift").value=String(s.start_shift_days);
+      $("pkExpHorizon").value=String(s.horizon_days);
+      $("pkExpDoseNumber").value=
+        s.skip_dose_index==null
+          ? "" : String(s.skip_dose_index+1);
+      $("pkExpDelay").value=String(s.delay_hours);
+      $("pkExpLab").value=s.lab_analyte || "";
+      $("pkExpName").value=row.name;
+      $("pkExpNotes").value=row.notes || "";
+
+      pending=s.dose_edits || [];
       $("pkExpDoseRows").replaceChildren();
+
+      const oldVersion=row.source_updated_at;
+      const nowVersion=root.dataset.sourceUpdated;
+
+      if(oldVersion && nowVersion &&
+          oldVersion!==nowVersion) {
+        status.textContent=
+          "Warning: source protocol changed since "+
+          "this experiment was saved. Review it before use.";
+      } else {
+        status.textContent=
+          "Experiment loaded; recalculating from current "+
+          "saved protocol.";
+      }
+
       $("pkExpRun").click();
     }
 
     document.addEventListener(
       "tracker:pk-workbench-ready",()=>{
-        if(!pendingEdits) return;
-        const edits=pendingEdits;
-        pendingEdits=null;
-        for(const edit of edits) {
+        if(pending===null) return;
+        const edits=pending;
+        pending=null;
+
+        for(const edit of edits){
           const row=$("pkExpDoseRows").querySelector(
             'tr[data-index="'+edit.index+'"]'
           );
           if(!row) continue;
-          row.querySelector(".pk-edit-action").value=edit.action;
-          row.querySelector(".pk-edit-hours").value=String(edit.hours);
+
+          row.querySelector(
+            ".pk-edit-action"
+          ).value=edit.action;
+
+          row.querySelector(
+            ".pk-edit-hours"
+          ).value=String(edit.hours||0);
+
           if(edit.amount_mg!=null)
-            row.querySelector(".pk-edit-amount").value=
-              String(edit.amount_mg);
+            row.querySelector(
+              ".pk-edit-amount"
+            ).value=String(edit.amount_mg);
         }
-        if(edits.length) $("pkExpRun").click();
+
+        if(edits.length)
+          $("pkExpRun").click();
       }
     );
 
     $("pkExpSave").addEventListener("click",async()=>{
+      if(loading) return;
+      loading=true;
+
       try {
         const name=$("pkExpName").value.trim();
-        if(!name) throw new Error("Enter an experiment name");
-        const settings=controls();
-        settings.dose_edits=[...$("pkExpDoseRows").querySelectorAll("tr")]
-          .map(row=>({
-            index:Number(row.dataset.index),
-            action:row.querySelector(".pk-edit-action").value,
-            hours:Number(row.querySelector(".pk-edit-hours").value),
-            amount_mg:Number(row.querySelector(".pk-edit-amount").value)
-          })).filter(edit=>edit.action!=="keep");
-        latest={settings};
-        await request(url,"POST",{name,settings,notes:""});
-        await refresh();
-        status.textContent="Named experiment saved.";
-      } catch(e) {status.textContent=e.message;}
+        if(!name)
+          throw new Error("Enter an experiment name");
+
+        if(pending!==null)
+          throw new Error(
+            "Finish loading the selected experiment first"
+          );
+
+        const saved=await request(
+          base,"POST",{
+            name,
+            notes:$("pkExpNotes").value.trim(),
+            settings:currentSettings()
+          }
+        );
+
+        await refresh(saved.id);
+        status.textContent="Experiment saved.";
+      } catch(error) {
+        status.textContent=error.message;
+      } finally {
+        loading=false;
+      }
     });
 
     $("pkExpLoad").addEventListener("click",()=>{
-      const row=rows.find(r=>r.id===selected.value);
-      if(!row) return;
-      latest=row;
-      $("pkExpName").value=row.name;
-      apply(row.settings);
-      status.textContent="Experiment loaded for preview.";
+      const row=selectedRow();
+      if(row) apply(row);
     });
 
     $("pkExpDelete").addEventListener("click",async()=>{
-      if(!selected.value ||
-         !window.confirm("Delete selected experiment?")) return;
+      const row=selectedRow();
+      if(!row) return;
+      if(!window.confirm(
+        "Delete experiment '"+row.name+"'?"
+      )) return;
+
       try {
         await request(
-          url+"/"+encodeURIComponent(selected.value),"DELETE"
+          base+"/"+encodeURIComponent(row.id),
+          "DELETE"
         );
         await refresh();
-      } catch(e) {status.textContent=e.message;}
+      } catch(error) {
+        status.textContent=error.message;
+      }
     });
 
     $("pkExpExport").addEventListener("click",()=>{
-      const row=rows.find(r=>r.id===selected.value);
+      const row=selectedRow();
       if(!row) return;
+
       const blob=new Blob(
         [JSON.stringify(row,null,2)],
         {type:"application/json"}
       );
-      const link=URL.createObjectURL(blob);
-      const a=document.createElement("a");
-      a.href=link;
-      a.download="tracker-pk-experiment.json";
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(link),1000);
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement("a");
+      link.href=url;
+      link.download="tracker-pk-experiment.json";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
     });
 
-    refresh().catch(e=>status.textContent=e.message);
+    refresh().catch(
+      error=>status.textContent=error.message
+    );
   }
+
   if(document.readyState==="loading")
     document.addEventListener(
       "DOMContentLoaded",init,{once:true}

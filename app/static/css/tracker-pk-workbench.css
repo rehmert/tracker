@@ -62,3 +62,36 @@
     break-before: page;
   }
 }
+
+/* Batch 69-72: observed lab trends and experiment library */
+.pk-lab-trends {
+  margin: 1rem 0;
+}
+.pk-lab-trend-card {
+  margin: .75rem 0;
+  padding: .85rem;
+  border: 1px solid var(--border,#d4ded8);
+  border-radius: 12px;
+}
+.pk-lab-trend-card h4 {
+  margin: 0 0 .5rem;
+}
+.pk-lab-trend-card canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+.pk-experiment-library .pk-inspector-tools input,
+.pk-experiment-library .pk-inspector-tools select {
+  min-width: 160px;
+  max-width: 100%;
+}
+.pk-experiment-library #pkExpNotes {
+  flex: 1 1 210px;
+}
+@media print {
+  .pk-lab-trend-card {
+    break-inside: avoid;
+  }
+}

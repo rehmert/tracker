@@ -13,6 +13,7 @@ from sqlalchemy import select
 
 from . import pk, services
 from .pk_precision import schedule_doses as precise_schedule, interval_assessment
+from .pk_inventory_events import forecast_inventory
 from .models import (
     Protocol, Compound, Vial, LabReport, LabResult,
 )
@@ -184,62 +185,6 @@ def selected_labs(db, analyte, first, last):
             "ref_high":result.ref_high,
         })
     return names,observations
-
-
-def competing_demand(
-    db, selected_protocol_id, compound_id,
-    start_date, horizon_days, available_mg,
-    modified_doses,
-):
-    """Other active protocol demand; no inventory reservation."""
-    from sqlalchemy import select
-    competitors = list(db.scalars(
-        select(Protocol).where(
-            Protocol.is_active.is_(True),
-            Protocol.id != selected_protocol_id,
-        )
-    ))
-    events = []
-    for p in competitors:
-        anchor = p.start_date or start_date
-        if p.end_date and p.end_date < start_date:
-            continue
-        days = (start_date-anchor).days+horizon_days
-        if days < 1 or days > 730:
-            continue
-        try:
-            generated = schedule_doses(
-                p,compound_id,anchor,days
-            )
-        except ValueError:
-            continue
-        for at,amount in generated:
-            if (
-                start_date <= at.date() <
-                start_date+timedelta(days=horizon_days)
-                and (p.end_date is None or at.date()<=p.end_date)
-            ):
-                events.append((at,amount))
-
-    other_mg = sum(amount for _,amount in events)
-    all_events = sorted(events+[
-        (at,amount) for at,amount in modified_doses
-        if start_date <= at.date() <
-        start_date+timedelta(days=horizon_days)
-    ])
-    total = 0
-    shortage = None
-    for at,amount in all_events:
-        total += amount
-        if shortage is None and total>available_mg:
-            shortage=at.date().isoformat()
-    return {
-        "other_active_demand_mg":round(other_mg,5),
-        "projected_balance_mg":round(
-            available_mg-total,5
-        ),
-        "first_shortage_date":shortage,
-    }
 
 
 
@@ -420,10 +365,9 @@ def run_experiment(db, protocol_id, settings):
         db, compound.id, baseline, modified
     )
 
-    inventory.update(competing_demand(
-        db, protocol_id, compound.id, date.today(),
-        settings.horizon_days,
-        inventory["available_mg"], modified
+    inventory.update(forecast_inventory(
+        db, protocol_id, compound.id,
+        settings.horizon_days, modified
     ))
 
     for observation in labs:

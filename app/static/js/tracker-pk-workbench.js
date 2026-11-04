@@ -180,6 +180,10 @@
       }
     }
 
+    function labTrends(data,target) {
+      window.trackerPkLabTrends?.render(data,target);
+    }
+
     function labTable(data) {
       const host = $("pkExpLabs");
       host.replaceChildren();
@@ -247,6 +251,7 @@
         "They are not modeled concentrations and should " +
         "not be interpreted as validation of the curve.";
       host.append(caution);
+      labTrends(data,host);
     }
 
     function inventorySummary(data) {
@@ -284,9 +289,40 @@
         )
       );
 
+      const forecast = document.createElement("div");
+      forecast.className = "pk-inspector-statistics";
+
+      const shortage = inventory.first_shortage_date ||
+        "None projected in window";
+
+      forecast.append(
+        card(
+          "Hypothetical future demand",
+          number(inventory.selected_future_demand_mg)+" mg"
+        ),
+        card(
+          "Other active protocol demand",
+          number(inventory.other_active_demand_mg)+" mg"
+        ),
+        card(
+          "First potential shortage",
+          shortage
+        ),
+        card(
+          "Recorded stock expiring in window",
+          number(inventory.expiring_during_window_mg)+" mg"
+        ),
+        card(
+          "Unmodeled active protocols",
+          String(inventory.unmodeled_active_protocols)
+        )
+      );
+      target.append(forecast);
+
       const note = document.createElement("p");
       note.className = "note";
-      note.textContent = inventory.caveat;
+      note.textContent =
+        inventory.caveat+" "+inventory.forecast_caveat;
 
       target.append(summary,note);
     }

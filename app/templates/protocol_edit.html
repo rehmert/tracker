@@ -118,7 +118,8 @@
 
 <section class="card pk-experiment-workbench"
          id="pkExperimentWorkbench"
-         data-protocol-id="{{ p.id }}">
+         data-protocol-id="{{ p.id }}"
+         data-source-updated="{{ p.updated_at.isoformat() if p.updated_at else '' }}">
   <h2>Protocol Experiment Workbench</h2>
   <p><a href="/pk/workspace">Open unified PK workspace</a></p>
   <p class="note">Compare a saved schedule with a hypothetical
@@ -202,6 +203,8 @@
     <div class="pk-inspector-tools">
       <input id="pkExpName" maxlength="120"
              placeholder="Experiment name">
+      <input id="pkExpNotes" maxlength="1000"
+             placeholder="Experiment notes (optional)">
       <select id="pkExpSaved"
               aria-label="Saved experiment"></select>
       <button type="button" id="pkExpSave">
@@ -252,10 +255,12 @@
 </section>
 
 <link rel="stylesheet"
-      href="/static/css/tracker-pk-workbench.css?v=bundle60">
-<script src="/static/js/tracker-pk-workbench.js?v=bundle66"
+      href="/static/css/tracker-pk-workbench.css?v=bundle72">
+<script src="/static/js/tracker-pk-lab-trends.js?v=bundle72"
         defer></script>
-<script src="/static/js/tracker-pk-library.js?v=bundle66"
+<script src="/static/js/tracker-pk-workbench.js?v=bundle72"
+        defer></script>
+<script src="/static/js/tracker-pk-library.js?v=bundle72"
         defer></script>
 
 <script>
