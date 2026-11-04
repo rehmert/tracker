@@ -32,7 +32,11 @@
     };
 
     function visibleRows() {
-      return rows.filter(row => !row.hidden);
+      // Export in the same current DOM order shown to the
+      // user, including active sort and filter settings.
+      return [...body.querySelectorAll(
+        '[data-lab-compare-row]'
+      )].filter(row => !row.hidden);
     }
 
     function matches(row, query, mode) {

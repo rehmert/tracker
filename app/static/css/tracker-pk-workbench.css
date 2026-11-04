@@ -1,0 +1,64 @@
+/* Tracker Batches 57-60 */
+.pk-experiment-workbench {
+  margin-top: 1.25rem;
+}
+.pk-experiment-fields {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(190px,1fr));
+  gap: .75rem;
+}
+.pk-experiment-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  min-width: 0;
+}
+.pk-experiment-fields input,
+.pk-experiment-fields select {
+  width: 100%;
+  box-sizing: border-box;
+}
+#pkExpResults[hidden] {
+  display: none !important;
+}
+#pkExpPlot {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+#pkExpLabs {
+  overflow-x: auto;
+}
+#pkExpLabs table {
+  width: 100%;
+  min-width: 460px;
+}
+#pkExpLabs th,
+#pkExpLabs td {
+  text-align: left;
+  padding: .45rem .6rem;
+  border-bottom: 1px solid var(--border,#d4ded8);
+}
+.pk-exp-lab-dot {
+  position: absolute;
+  top: 14%;
+  height: 12px;
+  width: 3px;
+  background: #9b65ce;
+  pointer-events: auto;
+  border-radius: 2px;
+}
+@media print {
+  .pk-experiment-fields,
+  #pkExpRun,
+  #pkExpReset,
+  #pkExpCsv,
+  #pkExpPrint {
+    display: none !important;
+  }
+  .pk-experiment-workbench {
+    break-before: page;
+  }
+}

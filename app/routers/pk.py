@@ -12,6 +12,7 @@ from ..models import Compound, DoseLog, Vial, PkScenario, PkPlannedDose, Protoco
 from ..calendar import staged_occurrences, occurrence_time
 from ..templating import render
 from .. import pk
+from ..pk_workbench import ExperimentInput, run_experiment
 
 router = APIRouter(prefix="/pk")
 
@@ -713,3 +714,17 @@ def multi_compound_overlay(compound_ids: str, days_back: int = 30,
         'units': 'percent of each compound’s own peak in the displayed window',
         'disclaimer': 'Normalized shapes only; percentages are NOT cross-compound potency, blood levels, or dosing advice.'
     }
+
+
+
+@router.post("/workbench/{pid}")
+def protocol_experiment(
+    pid: int,
+    settings: ExperimentInput,
+    db: Session = Depends(get_db),
+):
+    """Stateless read-only saved-protocol experiment."""
+    return JSONResponse(
+        content=run_experiment(db, pid, settings),
+        headers={"Cache-Control": "no-store"},
+    )

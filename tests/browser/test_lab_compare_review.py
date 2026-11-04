@@ -161,3 +161,16 @@ def test_empty_comparison_disables_export():
         assert page.locator("#lab-compare-empty").is_visible()
         assert not errors, errors
         browser.close()
+
+
+
+def test_csv_export_reads_current_table_order():
+    """The exporter must follow the currently sorted DOM."""
+    js = (
+        ROOT / "app/static/js/tracker-lab-compare-review.js"
+    ).read_text()
+
+    assert "function visibleRows()" in js
+    assert "body.querySelectorAll(" in js
+    assert "'[data-lab-compare-row]'" in js
+    assert "return rows.filter(row => !row.hidden)" not in js

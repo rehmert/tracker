@@ -115,6 +115,105 @@
   <div id="protocolCompareResults"></div>
 </section>
 
+
+<section class="card pk-experiment-workbench"
+         id="pkExperimentWorkbench"
+         data-protocol-id="{{ p.id }}">
+  <h2>Protocol Experiment Workbench</h2>
+  <p class="note">Compare a saved schedule with a hypothetical
+  modification. Experiments never change real protocols,
+  dose logs, inventory, or laboratory records.</p>
+
+  <div class="pk-experiment-fields">
+    <label>Compound
+      <select id="pkExpCompound">
+        {% set seen = namespace(ids=[]) %}
+        {% for item in p.items %}
+          {% if item.compound_id not in seen.ids %}
+            {% set seen.ids = seen.ids + [item.compound_id] %}
+            <option value="{{ item.compound_id }}">
+              {{ item.compound.name }}
+            </option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </label>
+    <label>Dose (% of saved)
+      <input id="pkExpDose" type="number"
+             min="25" max="300" step="5" value="100">
+    </label>
+    <label>Interval (% of saved)
+      <input id="pkExpInterval" type="number"
+             min="50" max="200" step="5" value="100">
+    </label>
+    <label>Shift schedule start (days)
+      <input id="pkExpShift" type="number"
+             min="-30" max="30" step="1" value="0">
+    </label>
+    <label>Horizon (days)
+      <input id="pkExpHorizon" type="number"
+             min="7" max="180" step="1" value="84">
+    </label>
+    <label>Skip or delay dose number (optional)
+      <input id="pkExpDoseNumber" type="number"
+             min="1" step="1"
+             placeholder="e.g. 4">
+    </label>
+    <label>Delay selected dose (hours)
+      <input id="pkExpDelay" type="number"
+             min="0" max="168" step="1" value="0">
+    </label>
+    <label>Lab analyte (optional)
+      <input id="pkExpLab" list="pkExpLabOptions"
+             placeholder="e.g. Estradiol">
+      <datalist id="pkExpLabOptions"></datalist>
+    </label>
+  </div>
+
+  <div class="pk-inspector-tools">
+    <button type="button" id="pkExpRun" class="primary">
+      Run experiment
+    </button>
+    <button type="button" id="pkExpReset">
+      Reset to saved
+    </button>
+    <label>
+      <input type="checkbox" id="pkExpNormalize">
+      Normalize curves to own peaks
+    </label>
+    <label>
+      <input type="checkbox" id="pkExpMarkers" checked>
+      Show dose markers
+    </label>
+    <button type="button" id="pkExpCsv" disabled>
+      Export CSV
+    </button>
+    <button type="button" id="pkExpPrint">
+      Print analysis
+    </button>
+  </div>
+
+  <p id="pkExpStatus" role="status"
+     aria-live="polite"></p>
+  <div id="pkExpResults" hidden>
+    <canvas id="pkExpPlot" width="1000" height="380"
+            class="pk-chart" role="img"
+            aria-label="Saved versus hypothetical exposure">
+    </canvas>
+    <p id="pkExpLegend" class="note"></p>
+    <div id="pkExpStatistics"
+         class="pk-inspector-statistics"></div>
+    <div id="pkExpInventory"></div>
+    <div id="pkExpLabs"></div>
+    <p id="pkExpDisclaimer" class="note"></p>
+  </div>
+</section>
+
+<link rel="stylesheet"
+      href="/static/css/tracker-pk-workbench.css?v=bundle60">
+<script src="/static/js/tracker-pk-workbench.js?v=bundle60"
+        defer></script>
+
 <script>
 (function () {
   const form = document.getElementById('protoform');
