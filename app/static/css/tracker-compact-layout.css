@@ -1,0 +1,235 @@
+/*
+ * Tracker Batch 38
+ * Vertical-density refinement.
+ *
+ * Only applies to the explicit Compact preference.
+ * No content hiding, no behavioral changes.
+ * Loaded after previous styles to consolidate spacing overrides.
+ */
+
+:root[data-density="compact"] {
+  --density-main-top: .55rem;
+  --density-main-bottom: 1.1rem;
+  --density-section-gap: .65rem;
+  --density-card-pad: .55rem;
+  --density-card-pad-x: .72rem;
+  --density-grid-gap: .42rem;
+  --density-cell-y: .25rem;
+  --density-form-gap: .36rem;
+  --density-heading-gap: .28rem;
+}
+
+/* Page chrome: reclaim space before useful page content. */
+:root[data-density="compact"] #main-content {
+  padding-top: var(--density-main-top);
+  padding-bottom: var(--density-main-bottom);
+}
+
+:root[data-density="compact"] #main-content > .workspace-toolbar {
+  margin-top: 0;
+  margin-bottom: .5rem;
+  padding-top: .15rem;
+  padding-bottom: .4rem;
+  gap: .4rem;
+}
+
+:root[data-density="compact"] #main-content > .ux-breadcrumbs {
+  margin-top: 0;
+  margin-bottom: .32rem;
+}
+
+:root[data-density="compact"] #tracker-page-jump-slot:not(:empty) {
+  margin-bottom: .35rem;
+}
+
+/* Titles and content paragraphs. */
+:root[data-density="compact"] #main-content > h1 {
+  margin-top: 0;
+  margin-bottom: .25rem;
+  line-height: 1.14;
+}
+
+:root[data-density="compact"] #main-content h2 {
+  margin-top: .75rem;
+  margin-bottom: .35rem;
+  line-height: 1.2;
+}
+
+:root[data-density="compact"] #main-content h3 {
+  margin-top: .55rem;
+  margin-bottom: .28rem;
+}
+
+:root[data-density="compact"] #main-content > h1 + p,
+:root[data-density="compact"] #main-content > h1 + .note {
+  margin-top: .15rem;
+  margin-bottom: .45rem;
+}
+
+:root[data-density="compact"] #main-content .section-intro {
+  margin-bottom: .4rem;
+}
+
+/* Horizontal shortcuts should not consume a full extra row
+   of whitespace above and below the controls. */
+:root[data-density="compact"] #main-content .ux-shortcuts {
+  gap: .32rem;
+  margin-top: .3rem;
+  margin-bottom: .5rem;
+}
+
+:root[data-density="compact"] #main-content .ux-shortcuts a {
+  padding: .24rem .53rem;
+  line-height: 1.35;
+}
+
+/* Common controls and form groups. */
+:root[data-density="compact"] #main-content .grid {
+  row-gap: .36rem;
+  column-gap: .55rem;
+  margin-top: .32rem;
+  margin-bottom: .65rem;
+}
+
+:root[data-density="compact"] #main-content .inline {
+  gap: .4rem;
+  margin-top: .28rem;
+  margin-bottom: .55rem;
+}
+
+:root[data-density="compact"] #main-content .field {
+  gap: .12rem;
+}
+
+:root[data-density="compact"] #main-content fieldset.field {
+  padding: .35rem .55rem;
+}
+
+/* Inventory and report tables. Preserve horizontal scrolling,
+   readable type, and existing input control sizing. */
+:root[data-density="compact"] #main-content th,
+:root[data-density="compact"] #main-content td {
+  padding-top: .24rem;
+  padding-bottom: .24rem;
+  line-height: 1.28;
+}
+
+:root[data-density="compact"] #main-content .items td {
+  padding-top: .28rem;
+  padding-bottom: .28rem;
+}
+
+/* Dashboard: older component rules have larger independent padding. */
+:root[data-density="compact"] #main-content .dashboard-hero {
+  gap: .6rem;
+  padding-top: 0;
+  padding-bottom: .45rem;
+}
+
+:root[data-density="compact"] #main-content .dashboard-hero h1 {
+  margin-top: 0;
+  margin-bottom: .2rem;
+}
+
+:root[data-density="compact"] #main-content .dashboard-metrics {
+  gap: .45rem;
+  margin-bottom: .6rem;
+}
+
+:root[data-density="compact"] #main-content .dashboard-metrics > div {
+  padding: .6rem .75rem;
+}
+
+:root[data-density="compact"] #main-content .dashboard-metrics dd {
+  margin-top: .2rem;
+}
+
+:root[data-density="compact"] #main-content .dashboard-panel {
+  padding: .7rem .82rem;
+  margin-top: .6rem;
+  margin-bottom: .65rem;
+}
+
+:root[data-density="compact"] #main-content .panel-heading {
+  gap: .45rem;
+}
+
+:root[data-density="compact"] #main-content .dashboard-search {
+  gap: .45rem;
+  margin-top: .35rem;
+  margin-bottom: .45rem;
+}
+
+/* Cards used on workflow, dose, inventory and protocol pages. */
+:root[data-density="compact"] #main-content .today-card,
+:root[data-density="compact"] #main-content .protocol-card,
+:root[data-density="compact"] #main-content .inventory-card,
+:root[data-density="compact"] #main-content .insight-card,
+:root[data-density="compact"] #main-content .export-card,
+:root[data-density="compact"] #main-content .cards li {
+  padding: .58rem .72rem;
+}
+
+:root[data-density="compact"] #main-content .today-card h3,
+:root[data-density="compact"] #main-content .protocol-card h3 {
+  margin-top: 0;
+  margin-bottom: .32rem;
+}
+
+:root[data-density="compact"] #main-content .today-card li {
+  margin-top: .2rem;
+  margin-bottom: .2rem;
+}
+
+:root[data-density="compact"] #main-content .protocol-card-list,
+:root[data-density="compact"] #main-content .today-cards {
+  gap: .5rem;
+}
+
+:root[data-density="compact"] #main-content .cards {
+  gap: .45rem;
+  margin-top: .55rem;
+  margin-bottom: .55rem;
+}
+
+:root[data-density="compact"] #main-content .stats {
+  margin-bottom: .6rem;
+}
+
+:root[data-density="compact"] #main-content .stats > div {
+  padding: .5rem .65rem;
+}
+
+/* Small section and report spacing reductions. */
+:root[data-density="compact"] #main-content .chartbox {
+  padding: .48rem;
+}
+
+:root[data-density="compact"] #main-content .ux-callout {
+  margin-top: .5rem;
+  margin-bottom: .5rem;
+  padding: .5rem .7rem;
+}
+
+:root[data-density="compact"] #main-content .meta {
+  margin-top: .15rem;
+  margin-bottom: .5rem;
+}
+
+/* Maintain usable controls on narrow screens.
+   Desktop receives the more aggressive space savings. */
+@media (max-width: 760px) {
+  :root[data-density="compact"] #main-content {
+    padding-top: .7rem;
+  }
+
+  :root[data-density="compact"] #main-content input:not([type="checkbox"]),
+  :root[data-density="compact"] #main-content select,
+  :root[data-density="compact"] #main-content button {
+    min-height: 2.5rem;
+  }
+
+  :root[data-density="compact"] #main-content .dashboard-panel {
+    padding: .72rem;
+  }
+}
