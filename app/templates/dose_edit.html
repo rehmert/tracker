@@ -10,7 +10,68 @@
 {% if history %}
 <div class="scroll"><table><thead><tr><th>When</th><th>Action</th><th>Previous amount</th><th>Updated amount</th><th>Previous type</th><th>Updated type</th></tr></thead><tbody>
 {% for event in history %}{% set before = event.before_json | from_json %}{% set after = event.after_json | from_json %}
-<tr><td>{{ event.created_at | utc_dt }}</td><td>{{ event.action }}</td><td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td><td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td><td>{{ before.get('kind', '—') }}</td><td>{{ after.get('kind', '—') }}</td></tr>
+<tr><td>{{ event.created_at | utc_dt }}</td><td>{{ event.action }}
+<details class="dose-audit-details">
+  <summary>View recorded changes</summary>
+  <p class="note">
+    Complete values captured at the time of this audit event.
+    Supply IDs and recorded quantities are shown as stored.
+  </p>
+  <div class="scroll">
+    <table aria-label="Before and after dose correction values">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Before</th>
+          <th>After</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Vial ID</th>
+          <td>{{ before.get('vial_id', '—') }}</td>
+          <td>{{ after.get('vial_id', '—') }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Recorded time</th>
+          <td>{{ before.get('taken_at', '—') }}</td>
+          <td>{{ after.get('taken_at', '—') }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Entered amount</th>
+          <td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td>
+          <td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Counted amount (base unit)</th>
+          <td>{{ before.get('amount_base', '—') }}</td>
+          <td>{{ after.get('amount_base', '—') }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Entry type</th>
+          <td>{{ before.get('kind', '—') }}</td>
+          <td>{{ after.get('kind', '—') }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Injection site</th>
+          <td>{{ before.get('site', '') or '—' }}</td>
+          <td>{{ after.get('site', '') or '—' }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Notes</th>
+          <td>{{ before.get('notes', '') or '—' }}</td>
+          <td>{{ after.get('notes', '') or '—' }}</td>
+        </tr>
+        <tr>
+          <th scope="row">Supply IDs and quantities</th>
+          <td><code>{{ before.get('supplies', {}) | tojson }}</code></td>
+          <td><code>{{ after.get('supplies', {}) | tojson }}</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+</td><td>{{ before.get('entered_value', '—') }} {{ before.get('entered_unit', '') }}</td><td>{{ after.get('entered_value', '—') }} {{ after.get('entered_unit', '') }}</td><td>{{ before.get('kind', '—') }}</td><td>{{ after.get('kind', '—') }}</td></tr>
 {% endfor %}</tbody></table></div>
 {% else %}<p>No corrections recorded.</p>{% endif %}
 </section>{% endblock %}
