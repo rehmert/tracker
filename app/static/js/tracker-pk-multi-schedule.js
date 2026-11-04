@@ -187,6 +187,10 @@
 
       items.forEach(item => grid.appendChild(item));
 
+      window.trackerPkIntervalPresets.attach(
+        box.querySelector(".pk-multi-interval")
+      );
+
       function defaults() {
         const option = compound.selectedOptions[0];
         const illustrative =
@@ -268,6 +272,10 @@
         td.appendChild(removeStage);
         tr.appendChild(td);
         tbody.appendChild(tr);
+        window.trackerPkIntervalPresets.attach(
+          tr.querySelector(".pk-multi-stage-cadence"),
+          {inherit:true}
+        );
         invalidate();
       }
 

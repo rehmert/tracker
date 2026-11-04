@@ -211,7 +211,13 @@
     const cadence=document.createElement('input');cadence.type='number';cadence.min='0.125';cadence.max='90';cadence.step='0.125';cadence.value=interval;cadence.placeholder='Default';cadence.className='wiCadence';cadence.setAttribute('aria-label','Interval override in days');
     const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.onclick=()=>tr.remove();
     weekTd.append(w);doseTd.append(a);cadenceTd.append(cadence);actionTd.append(remove);tr.append(weekTd,doseTd,cadenceTd,actionTd);$('wiStages').append(tr);
+    window.trackerPkIntervalPresets.attach(
+      cadence, {inherit:true}
+    );
   };
+  window.trackerPkIntervalPresets.attach(
+    $('wiInterval')
+  );
   addStage('1','');
   $('wiAddStage').onclick=()=>addStage();
   const localDateTime=(date)=>{const d=new Date(date.getTime()-date.getTimezoneOffset()*60000);return d.toISOString().slice(0,16);};

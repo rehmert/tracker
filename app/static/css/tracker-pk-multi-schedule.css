@@ -197,3 +197,26 @@ body.pk-mode-multi .pk-custom-section {
 #pkMultiExpandAll {
   white-space: nowrap;
 }
+
+
+/* Batch 51: dosing interval presets */
+.pk-interval-preset {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  min-width: 12rem;
+  margin: .3rem .4rem .3rem 0;
+  padding: .35rem .5rem;
+  font: inherit;
+}
+
+.pk-multi-stage-rows .pk-interval-preset {
+  min-width: 11rem;
+}
+
+@media (max-width: 760px) {
+  .pk-interval-preset {
+    width: 100%;
+    min-width: 0;
+  }
+}
