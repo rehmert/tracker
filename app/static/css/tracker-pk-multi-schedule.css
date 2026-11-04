@@ -78,3 +78,32 @@ body.pk-mode-multi .pk-custom-section {
   opacity: .5;
   cursor: not-allowed;
 }
+
+
+/* Batch 43 comparison summary */
+.pk-multi-metrics {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.pk-multi-summary-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.pk-multi-summary-table th,
+.pk-multi-summary-table td {
+  padding: .55rem .65rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rule, #d4ded8);
+}
+
+.pk-multi-summary-table th {
+  font-weight: 700;
+}
+
+.pk-multi-name {
+  width: 100%;
+  box-sizing: border-box;
+}

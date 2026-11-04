@@ -12,10 +12,26 @@
     const run = $("pkMultiRun");
     const exportButton = $("pkMultiExportCsv");
     let lastResult = null;
+    let revision = 0;
 
     function invalidate() {
+      revision++;
       lastResult = null;
       if (exportButton) exportButton.disabled = true;
+
+      const metrics = $("pkMultiMetrics");
+      if (metrics) metrics.replaceChildren();
+
+      const legend = $("pkMultiLegend");
+      if (legend) legend.replaceChildren();
+
+      const canvas = $("pkMultiPlot");
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
     }
 
     const status = $("pkMultiStatus");
@@ -43,6 +59,7 @@
       input.className = "pk-multi-" + key;
       input.type = type;
       input.value = String(value);
+      if (key === "name") input.maxLength = 120;
 
       if (config.min !== undefined) input.min = config.min;
       if (config.max !== undefined) input.max = config.max;
@@ -76,6 +93,10 @@
       grid.appendChild(label);
 
       const items = [
+        inputField("Schedule name", "name",
+          initial?.name ||
+          "Schedule " + (container.children.length + 1),
+          "text"),
         inputField("Timeline start", "start", localDateTime(),
           "datetime-local"),
         inputField("Interval (days)", "interval", 7, "number",
@@ -235,6 +256,7 @@
         compound.value = String(initial.compound_id);
 
         const values = {
+          name: initial.name,
           start: initial.start_at,
           interval: initial.interval_days,
           duration: initial.duration_days,
@@ -360,8 +382,19 @@
         throw new Error("Schedule parameters are out of range.");
       }
 
+      const name = box.querySelector(
+        ".pk-multi-name"
+      ).value.trim();
+
+      if (!name || name.length > 120) {
+        throw new Error(
+          "Schedule names must contain 1–120 characters."
+        );
+      }
+
       return {
         compound_id: Number(compound.value),
+        name,
         start_at: startAt,
         interval_days: interval,
         duration_days: duration,
@@ -380,19 +413,76 @@
       }
 
       return {
-        schedules: entries.map((box, index) => {
-          const schedule = readSchedule(box);
-          const compound = box.querySelector(
-            ".pk-multi-compound"
-          );
-          const selected = compound.selectedOptions[0];
-
-          schedule.name = "Schedule " + (index + 1) +
-            " · " + selected.textContent.split(" — ")[0];
-
-          return schedule;
-        })
+        schedules: entries.map(box => readSchedule(box))
       };
+    }
+
+    function renderMetrics(data) {
+      const target = $("pkMultiMetrics");
+      if (!target) return;
+
+      target.replaceChildren();
+
+      const heading = document.createElement("h3");
+      heading.textContent = "Comparison summary";
+
+      const note = document.createElement("p");
+      note.className = "note";
+      note.textContent =
+        "Each schedule is normalized independently. " +
+        "Values describe modeled exposure shape, not " +
+        "comparable potency or clinical effectiveness.";
+
+      const table = document.createElement("table");
+      table.className = "pk-multi-summary-table";
+
+      const header = document.createElement("tr");
+
+      [
+        "Schedule",
+        "Compound",
+        "Modeled doses",
+        "Peak time",
+        "Mean (% of own peak)"
+      ].forEach(label => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        header.appendChild(th);
+      });
+
+      const thead = document.createElement("thead");
+      thead.appendChild(header);
+
+      const tbody = document.createElement("tbody");
+
+      data.series.forEach(series => {
+        const values = series.values_percent;
+        const peak = Math.max(...values);
+        const index = values.indexOf(peak);
+
+        const mean = values.reduce(
+          (sum, value) => sum + value, 0
+        ) / Math.max(values.length, 1);
+
+        const row = document.createElement("tr");
+
+        [
+          series.name,
+          series.compound_name,
+          String(series.dose_count),
+          data.at[index] || "—",
+          Number.isFinite(mean) ? mean.toFixed(1) : "—"
+        ].forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          row.appendChild(td);
+        });
+
+        tbody.appendChild(row);
+      });
+
+      table.append(thead, tbody);
+      target.append(heading, note, table);
     }
 
     function plot(data) {
@@ -534,6 +624,7 @@
 
       try {
         const body = payload();
+        const requestedRevision = revision;
         status.textContent = "Calculating hypothetical exposure…";
 
         const headers = {"Content-Type":"application/json"};
@@ -559,13 +650,15 @@
 
         const result = await response.json();
 
-        if (JSON.stringify(payload()) !== JSON.stringify(body)) {
+        if (revision !== requestedRevision ||
+            JSON.stringify(payload()) !== JSON.stringify(body)) {
           throw new Error(
             "Schedule changed during calculation. Compare again."
           );
         }
 
         plot(result);
+        renderMetrics(result);
         lastResult = result;
 
         if (exportButton) exportButton.disabled = false;
