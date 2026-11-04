@@ -37,7 +37,11 @@
               credentials: "same-origin",
               cache: "no-store",
               headers,
-              body: JSON.stringify({ids})
+              body: JSON.stringify({
+                ids,
+                include_previous:
+                  $("pkExpComparePrevious").checked
+              })
             }
           );
 
@@ -54,7 +58,7 @@
 
           [
             "Experiment","Peak mg-eq","Trough mg-eq",
-            "Future demand mg","Original snapshot"
+            "Future demand mg","Original snapshot","AUC (mg-eq·h)"
           ].forEach(label => {
             const th = document.createElement("th");
             th.textContent = label;
@@ -66,7 +70,8 @@
             const tr = document.createElement("tr");
             [
               e.name,e.peak,e.trough,e.inventory_demand,
-              e.snapshot ? "Yes" : "No"
+              e.snapshot ? "Yes" : "No",
+              e.statistics?.auc_mg_equivalent_hours ?? "—"
             ].forEach(value => {
               const td = document.createElement("td");
               td.textContent = String(value ?? "—");

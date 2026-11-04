@@ -237,6 +237,10 @@
               aria-label="Choose two to four experiments">
       </select>
     </label>
+    <label>
+      <input type="checkbox" id="pkExpComparePrevious">
+      Include previous revisions
+    </label>
     <button type="button" id="pkExpCompareRun">
       Compare selected
     </button>
@@ -276,6 +280,9 @@
     <div id="pkExpLabs"></div>
     <section id="pkExpReport">
       <h3>Analysis report</h3>
+      <button type="button" id="pkExpReportJson" disabled>
+        Export complete analysis JSON
+      </button>
       <pre id="pkExpReportText"></pre>
     </section>
     <p id="pkExpDisclaimer" class="note"></p>
@@ -293,6 +300,8 @@
 <script src="/static/js/tracker-pk-library.js?v=bundle84"
         defer></script>
 <script src="/static/js/tracker-pk-experiment-compare.js?v=bundle84"
+        defer></script>
+<script src="/static/js/tracker-pk-report96.js?v=bundle96"
         defer></script>
 
 <script>

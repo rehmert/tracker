@@ -19,6 +19,7 @@ from ..pk_library import (
 )
 from ..pk_workbench import ExperimentInput, run_experiment
 from ..pk_model_history import capture as model_capture
+from ..pk_analysis_93 import metrics as exposure_metrics
 
 router = APIRouter(prefix="/pk")
 
@@ -811,6 +812,7 @@ def pk_library_delete(
 
 class ExperimentComparisonInput(BaseModel):
     ids: list[str] = Field(min_length=2,max_length=4)
+    include_previous: bool = False
 
 
 @router.post("/library/{pid}/compare")
@@ -841,6 +843,19 @@ def pk_compare_experiments(
             400,"Choose experiments for one compound"
         )
 
+    if data.include_previous:
+        augmented = list(chosen)
+        for item in chosen:
+            revisions = item.get('revisions') or []
+            if revisions:
+                older = dict(revisions[-1])
+                older['name'] = (
+                    str(older['name'])
+                    + ' (previous revision)'
+                )
+                augmented.append(older)
+        chosen = augmented
+
     rows=[]
     for item in chosen:
         settings=ExperimentInput.model_validate(
@@ -864,6 +879,9 @@ def pk_compare_experiments(
                 "selected_future_demand_mg"
             ),
             "snapshot":item.get("source_snapshot") is not None,
+            "statistics": exposure_metrics(
+                result["times"], values
+            ),
             "model_source": result["model_source"],
             "model_parameter_drift":
                 result["model_parameter_drift"],
