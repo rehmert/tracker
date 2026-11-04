@@ -16,14 +16,7 @@ class CheckedEdit(BaseModel):
     )
 
 
-def lock_sqlite(db):
-    # Acquire SQLite's writer reservation before reading
-    # the revision and before making any changes.
-    if db.bind.dialect.name!='sqlite':
-        raise HTTPException(
-            501,'Guarded editing requires SQLite'
-        )
-    db.connection().exec_driver_sql('BEGIN IMMEDIATE')
+from .pk_write177 import begin as lock_sqlite
 
 
 def update(db,sid,data):

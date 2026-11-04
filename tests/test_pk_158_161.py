@@ -17,6 +17,6 @@ def test_invalid_edit_rejected():
 
 def test_lock_and_audit_contract():
     s=Path('app/pk_guarded_edit161.py').read_text()
-    assert 'BEGIN IMMEDIATE' in s
+    assert 'from .pk_write177 import begin as lock_sqlite' in s
     assert 'guarded_dose_update' in s
     assert 'ver.check(db,obj,data.expected_version)' in s

@@ -30,6 +30,7 @@ from .. import pk_staged_schedule as staged
 from .. import pk_template_import as pk_import
 
 from .. import pk_guarded_edit161 as guarded_edit
+from .. import pk_write177
 from .. import pk_transform165 as transform165
 from .. import pk_sensitivity169 as sensitivity169
 
@@ -1279,6 +1280,7 @@ def pk_create_batch_checked(
         alias="X-PK-Expected-Version"
     )
 ):
+    pk_write177.begin(db)
     obj=scenario_ops.scenario(db,sid)
     integrity.required(db,obj,expected)
     before=scenario_version.snapshot(db,obj)
