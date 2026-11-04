@@ -53,14 +53,32 @@
         const invalid = !quantity ||
           !Number.isFinite(numeric) || numeric <= 0;
 
-        return {name, quantity, invalid, input};
+        // Availability is shown in the table's third cell.
+        // Compare only recognizable numeric values.
+        const available = row?.querySelectorAll("td")[2]
+          ?.textContent?.trim() || "";
+        const normalizedAvailable = available.replaceAll(",", "");
+        const availableNumber =
+          /^(?:\d+)(?:\.\d+)?$/.test(normalizedAvailable)
+            ? Number(normalizedAvailable)
+            : null;
+        const exceeds = !invalid &&
+          availableNumber !== null &&
+          numeric > availableNumber;
+
+        return {name, quantity, invalid, input, exceeds, available};
       });
 
       const invalidSupplies = supplies.filter(item => item.invalid);
+      const overdrawnSupplies = supplies.filter(item => item.exceeds);
       const supplyDescription = supplies.length
         ? supplies.map(item =>
             item.name + " × " +
-            (item.invalid ? "(quantity required)" : item.quantity)
+            (item.invalid
+              ? "(quantity required)"
+              : item.exceeds
+                ? item.quantity + " (only " + item.available + " available)"
+                : item.quantity)
           ).join(" · ")
         : "None selected";
 
@@ -109,6 +127,15 @@
         );
       }
 
+      if (overdrawnSupplies.length) {
+        missing.push(
+          overdrawnSupplies.length + " supply " +
+          (overdrawnSupplies.length === 1
+            ? "quantity exceeds available inventory"
+            : "quantities exceed available inventory")
+        );
+      }
+
       if (!vialId) missing.push("vial");
       if (!when) missing.push("date/time");
       if (!useRemaining &&
@@ -121,6 +148,7 @@
       // the first review issue can be addressed.
       const issueTargets = [
         ...invalidSupplies.map(item => item.input),
+        ...overdrawnSupplies.map(item => item.input),
         !vialId ? field("vial_id") : null,
         !when ? field("taken_at") : null,
         (!useRemaining &&
