@@ -205,6 +205,15 @@
              placeholder="Experiment name">
       <input id="pkExpNotes" maxlength="1000"
              placeholder="Experiment notes (optional)">
+      <input id="pkExpSearch" type="search"
+             placeholder="Find saved experiments"
+             aria-label="Find saved experiments">
+      <select id="pkExpSort"
+              aria-label="Sort saved experiments">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="name">Name A–Z</option>
+      </select>
       <select id="pkExpSaved"
               aria-label="Saved experiment"></select>
       <button type="button" id="pkExpSave">
@@ -258,9 +267,9 @@
       href="/static/css/tracker-pk-workbench.css?v=bundle72">
 <script src="/static/js/tracker-pk-lab-trends.js?v=bundle72"
         defer></script>
-<script src="/static/js/tracker-pk-workbench.js?v=bundle72"
+<script src="/static/js/tracker-pk-workbench.js?v=bundle76"
         defer></script>
-<script src="/static/js/tracker-pk-library.js?v=bundle72"
+<script src="/static/js/tracker-pk-library.js?v=bundle76"
         defer></script>
 
 <script>

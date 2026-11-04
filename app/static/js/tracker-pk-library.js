@@ -44,22 +44,43 @@
       return response.json();
     }
 
-    async function refresh(preferred) {
-      rows=await request(base);
-      selected.replaceChildren();
+    function renderList(preferred) {
+      const previous=preferred || selected.value;
+      const query=$("pkExpSearch").value.trim().toLowerCase();
+      const sort=$("pkExpSort").value;
 
-      rows.forEach(row=>{
+      const filtered=rows.filter(row=>
+        (row.name+" "+(row.notes||""))
+          .toLowerCase().includes(query)
+      );
+
+      filtered.sort((a,b)=>{
+        if(sort==="name")
+          return a.name.localeCompare(b.name);
+        if(sort==="oldest")
+          return a.saved_at.localeCompare(b.saved_at);
+        return b.saved_at.localeCompare(a.saved_at);
+      });
+
+      selected.replaceChildren();
+      filtered.forEach(row=>{
         selected.add(new Option(
           row.name+" · "+row.saved_at.slice(0,10),
           row.id
         ));
       });
 
-      if(preferred && rows.some(r=>r.id===preferred))
-        selected.value=preferred;
+      if(filtered.some(row=>row.id===previous))
+        selected.value=previous;
 
       status.textContent=
-        rows.length+" saved experiment(s).";
+        filtered.length+" of "+rows.length+
+        " saved experiment(s) shown.";
+    }
+
+    async function refresh(preferred) {
+      rows=await request(base);
+      renderList(preferred);
     }
 
     function doseEdits() {
@@ -246,6 +267,13 @@
       link.remove();
       setTimeout(()=>URL.revokeObjectURL(url),1000);
     });
+
+    $("pkExpSearch").addEventListener(
+      "input",()=>renderList()
+    );
+    $("pkExpSort").addEventListener(
+      "change",()=>renderList()
+    );
 
     refresh().catch(
       error=>status.textContent=error.message

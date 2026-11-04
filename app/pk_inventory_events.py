@@ -55,6 +55,7 @@ def allocate_events(vials, events, start, end):
     available=sum(x["remaining"] for x in stock)
     shortage=None
     total_demand=0.0
+    ledger=[]
 
     for at,raw_amount in sorted(events):
         amount=float(raw_amount)
@@ -66,6 +67,11 @@ def allocate_events(vials, events, start, end):
 
         total_demand+=amount
         required=amount
+        remaining_before=sum(
+            vial["remaining"] for vial in stock
+            if vial["expiry"] is None or
+            vial["expiry"]>=at.date()
+        )
         for vial in stock:
             if vial["expiry"] is not None and \
                     vial["expiry"]<at.date():
@@ -79,6 +85,28 @@ def allocate_events(vials, events, start, end):
         if required>1e-9 and shortage is None:
             shortage=at.date().isoformat()
 
+        if len(ledger)<1000:
+            ledger.append({
+                "at":at.isoformat(),
+                "demand_mg":round(amount,5),
+                "allocated_mg":round(
+                    max(0.0,amount-required),5
+                ),
+                "unfilled_mg":round(
+                    max(0.0,required),5
+                ),
+                "eligible_before_mg":round(
+                    remaining_before,5
+                ),
+                "remaining_usable_mg":round(
+                    sum(
+                        vial["remaining"] for vial in stock
+                        if vial["expiry"] is None or
+                        vial["expiry"]>=at.date()
+                    ),5
+                ),
+            })
+
     return {
         "starting_usable_mg":round(available,5),
         "demand_mg":round(total_demand,5),
@@ -88,6 +116,12 @@ def allocate_events(vials, events, start, end):
         "expiring_during_window_mg":round(expiring,5),
         "first_shortage_date":shortage,
         "allocation_method":"Approximate FEFO",
+        "event_count":len(ledger),
+        "forecast_events":ledger,
+        "total_unfilled_mg":round(
+            sum(item["unfilled_mg"] for item in ledger),5
+        ),
+        "forecast_truncated":len(ledger)>=1000,
     }
 
 

@@ -216,7 +216,8 @@
       const table = document.createElement("table");
       const head = document.createElement("tr");
 
-      ["Drawn","Analyte","Measured value","Reference"]
+      ["Drawn","Report ID","Analyte","Measured value",
+       "Reference","Days since scheduled dose"]
         .forEach(label=>{
           const th = document.createElement("th");
           th.textContent = label;
@@ -229,10 +230,14 @@
         const tr = document.createElement("tr");
         const cells = [
           lab.date,
+          String(lab.report_id ?? "—"),
           lab.analyte,
           number(lab.value)+" "+lab.unit,
           (lab.ref_low ?? "—")+" – "+
-            (lab.ref_high ?? "—")
+            (lab.ref_high ?? "—"),
+          lab.days_since_scheduled_dose == null
+            ? "Unknown" :
+              String(lab.days_since_scheduled_dose)
         ];
         cells.forEach(value=>{
           const td = document.createElement("td");
@@ -325,6 +330,66 @@
         inventory.caveat+" "+inventory.forecast_caveat;
 
       target.append(summary,note);
+
+      const rows=inventory.forecast_events || [];
+      if(rows.length) {
+        const heading=document.createElement("h4");
+        heading.textContent=
+          "Projected administration demand ledger";
+        target.append(heading);
+
+        const description=document.createElement("p");
+        description.className="note";
+        description.textContent=
+          "Pooled demand from this experiment and other "+
+          "active protocols, in chronological order. "+
+          "The ledger does not assign a dose to an actual vial.";
+        target.append(description);
+
+        const scroll=document.createElement("div");
+        scroll.className="scroll";
+        const table=document.createElement("table");
+
+        const headings=[
+          "Date/time","Demand (mg)","Allocated (mg)",
+          "Unfilled (mg)","Usable remaining (mg)"
+        ];
+        const tr=document.createElement("tr");
+        headings.forEach(value=>{
+          const th=document.createElement("th");
+          th.textContent=value;
+          tr.append(th);
+        });
+        table.append(tr);
+
+        rows.slice(0,100).forEach(entry=>{
+          const line=document.createElement("tr");
+          [
+            entry.at.replace("T"," "),
+            number(entry.demand_mg),
+            number(entry.allocated_mg),
+            number(entry.unfilled_mg),
+            number(entry.remaining_usable_mg)
+          ].forEach(value=>{
+            const td=document.createElement("td");
+            td.textContent=value;
+            line.append(td);
+          });
+          table.append(line);
+        });
+        scroll.append(table);
+        target.append(scroll);
+
+        if(rows.length>100 || inventory.forecast_truncated){
+          const limit=document.createElement("p");
+          limit.className="note";
+          limit.textContent=
+            "Displaying the first 100 forecast events. "+
+            "Aggregate summary includes all events "+
+            "processed within the safety limit.";
+          target.append(limit);
+        }
+      }
     }
 
     function renderGraph(data) {
