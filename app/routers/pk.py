@@ -31,6 +31,7 @@ from .. import pk_template_import as pk_import
 
 from .. import pk_guarded_edit161 as guarded_edit
 from .. import pk_write177
+from .. import pk_mutation197
 from .. import pk_health189
 from .. import pk_transform165 as transform165
 from .. import pk_sensitivity169 as sensitivity169
@@ -1281,15 +1282,15 @@ def pk_create_batch_checked(
         alias="X-PK-Expected-Version"
     )
 ):
-    pk_write177.begin(db)
-    obj=scenario_ops.scenario(db,sid)
-    integrity.required(db,obj,expected)
-    before=scenario_version.snapshot(db,obj)
+    obj,before=pk_mutation197.prepare(
+        db,sid,expected
+    )
     result=scenario_ops.create_many(
         db,sid,data,commit=False
     )
-    integrity.changed(db,obj,"bulk_create",before)
-    db.commit()
+    result['version']=pk_mutation197.finish(
+        db,obj,'bulk_create',before
+    )
     return result
 
 
@@ -1310,9 +1311,8 @@ def pk_calendar_replace(
     data:calendar_rules.CalendarRule,
     db:Session=Depends(get_db)
 ):
-    obj=scenario_ops.scenario(db,sid)
-    integrity.required(
-        db,obj,data.expected_version
+    obj,before=pk_mutation197.prepare(
+        db,sid,data.expected_version
     )
 
     projected=calendar_rules.project(data)
@@ -1322,8 +1322,6 @@ def pk_calendar_replace(
             409,
             'Resolve DST warnings before replacing the schedule'
         )
-
-    before=scenario_version.snapshot(db,obj)
 
     for dose in list(obj.doses):
         db.delete(dose)
@@ -1339,10 +1337,9 @@ def pk_calendar_replace(
             amount_mg=dose['amount_mg']
         ))
 
-    integrity.changed(
+    pk_mutation197.finish(
         db,obj,'calendar_replace',before
     )
-    db.commit()
 
     return {
         'replaced':len(projected['doses'])
