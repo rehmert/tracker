@@ -1,0 +1,41 @@
+#bulk-editor-panel .bulk-field-finder {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: .55rem .8rem;
+  padding: .7rem .8rem;
+  margin: .75rem 0;
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: .65rem;
+  background: var(--wash, transparent);
+}
+
+#bulk-editor-panel .bulk-field-finder .field {
+  flex: 1 1 17rem;
+  min-width: 12rem;
+}
+
+#bulk-editor-panel #bulk-field-search {
+  width: 100%;
+}
+
+#bulk-editor-panel #bulk-field-search-status {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: .84rem;
+}
+
+#bulk-editor-panel .bulk-edit-field[hidden],
+#bulk-editor-panel .bulk-edit-group[hidden] {
+  display: none !important;
+}
+
+#bulk-editor-panel #bulk-field-search-clear:disabled {
+  opacity: .5;
+}
+
+@media (max-width: 700px) {
+  #bulk-editor-panel .bulk-field-finder .field {
+    flex-basis: 100%;
+  }
+}

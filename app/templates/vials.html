@@ -7,6 +7,8 @@
 <script defer src="/static/js/tracker-bulk-editor-guided.js?v=20261103b"></script>
 <link rel="stylesheet" href="/static/css/tracker-bulk-review-shortcuts.css?v=20261103">
 <script defer src="/static/js/tracker-bulk-review-shortcuts.js?v=20261103"></script>
+<link rel="stylesheet" href="/static/css/tracker-bulk-field-finder.css?v=20261103">
+<script defer src="/static/js/tracker-bulk-field-finder.js?v=20261103"></script>
 <!-- TRACKER_BULK_CONSOLIDATED -->
 <h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
 <form method="get" class="inline" id="vial-filter-form">
@@ -615,6 +617,26 @@ document.addEventListener("DOMContentLoaded", () => {
   <div class="bulk-edit-review-tools">
     <p id="bulk-edit-impact" class="note" role="status" aria-live="polite">Select vials and edit fields to preview impact.</p>
     <label class="check" for="bulk-show-edited-only"><input type="checkbox" id="bulk-show-edited-only" disabled> Show only fields being updated</label>
+  </div>
+  <div class="bulk-field-finder" role="search"
+       aria-label="Find bulk-edit fields">
+    <label class="field" for="bulk-field-search">
+      <span>Find a field to edit</span>
+      <input id="bulk-field-search"
+             type="search"
+             placeholder="Lot, expiration, notes, COA…"
+             autocomplete="off"
+             aria-controls="bulk-edit-field-groups">
+    </label>
+    <button type="button"
+            id="bulk-field-search-clear"
+            disabled>Clear search</button>
+    <p id="bulk-field-search-status"
+       class="note"
+       role="status"
+       aria-live="polite">
+      Search field names; requested changes remain visible.
+    </p>
   </div>
   <div id="bulk-edit-field-groups">
   {% set field_groups = [
