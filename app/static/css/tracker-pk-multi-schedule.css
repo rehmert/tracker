@@ -142,3 +142,17 @@ body.pk-mode-multi .pk-custom-section {
     white-space: normal;
   }
 }
+
+
+/* Batch 47 timeline alignment controls */
+#pkMultiAlignStarts,
+#pkMultiMatchDurations {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  #pkMultiAlignStarts,
+  #pkMultiMatchDurations {
+    white-space: normal;
+  }
+}

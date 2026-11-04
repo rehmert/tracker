@@ -410,6 +410,29 @@
       };
     }
 
+    function validateCommonTimeline(schedules) {
+      const starts = schedules.map(schedule =>
+        Date.parse(schedule.start_at + ":00Z")
+      );
+
+      if (starts.some(value => !Number.isFinite(value))) {
+        throw new Error("Invalid comparison start time.");
+      }
+
+      const ends = schedules.map((schedule, index) =>
+        starts[index] + schedule.duration_days * 86400000
+      );
+
+      const earliest = Math.min(...starts);
+      const latest = Math.max(...ends);
+
+      if (latest - earliest > 730 * 86400000) {
+        throw new Error(
+          "Combined comparison timeline exceeds 730 days."
+        );
+      }
+    }
+
     function payload() {
       const entries = [...container.children];
 
@@ -417,9 +440,10 @@
         throw new Error("Add at least one schedule.");
       }
 
-      return {
-        schedules: entries.map(box => readSchedule(box))
-      };
+      const schedules = entries.map(box => readSchedule(box));
+      validateCommonTimeline(schedules);
+
+      return {schedules};
     }
 
     // Batch 45: portable, read-only comparison presets.
@@ -901,6 +925,95 @@
     container.addEventListener("change", invalidate);
 
     add.addEventListener("click", () => addSchedule());
+
+    const alignStarts = $("pkMultiAlignStarts");
+    const matchDurations = $("pkMultiMatchDurations");
+
+    function alignScheduleStarts() {
+      const entries = [...container.children];
+      if (entries.length < 2) {
+        status.textContent =
+          "Add another schedule before aligning starts.";
+        return;
+      }
+
+      const start = entries[0].querySelector(
+        ".pk-multi-start"
+      ).value;
+
+      if (!start || !Number.isFinite(
+        Date.parse(start + ":00Z")
+      )) {
+        status.textContent =
+          "Set a valid start time in the first schedule.";
+        return;
+      }
+
+      entries.slice(1).forEach(entry => {
+        entry.querySelector(".pk-multi-start").value = start;
+      });
+
+      invalidate();
+      status.textContent =
+        "Start times aligned. Compare again to refresh.";
+    }
+
+    function matchScheduleDurations() {
+      const entries = [...container.children];
+      if (entries.length < 2) {
+        status.textContent =
+          "Add another schedule before matching durations.";
+        return;
+      }
+
+      const duration = Number(
+        entries[0].querySelector(".pk-multi-duration").value
+      );
+
+      if (!Number.isInteger(duration) ||
+          duration < 1 || duration > 365) {
+        status.textContent =
+          "Set a valid duration in the first schedule.";
+        return;
+      }
+
+      // Validate everything before changing any inputs.
+      const incompatible = entries.slice(1).some(entry => {
+        const offset = Number(
+          entry.querySelector(".pk-multi-offset").value
+        );
+        return !Number.isInteger(offset) ||
+          offset < 0 || offset >= duration;
+      });
+
+      if (incompatible) {
+        status.textContent =
+          "Cannot match durations: one or more first-dose " +
+          "offsets are outside the new duration.";
+        return;
+      }
+
+      entries.slice(1).forEach(entry => {
+        entry.querySelector(".pk-multi-duration").value =
+          String(duration);
+      });
+
+      invalidate();
+      status.textContent =
+        "Durations matched. Compare again to refresh.";
+    }
+
+    if (alignStarts) {
+      alignStarts.addEventListener(
+        "click", alignScheduleStarts
+      );
+    }
+
+    if (matchDurations) {
+      matchDurations.addEventListener(
+        "click", matchScheduleDurations
+      );
+    }
 
     function csvCell(value) {
       return '"' + String(value ?? "")
