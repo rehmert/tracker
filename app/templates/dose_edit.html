@@ -64,8 +64,34 @@
         </tr>
         <tr>
           <th scope="row">Supply IDs and quantities</th>
-          <td><code>{{ before.get('supplies', {}) | tojson }}</code></td>
-          <td><code>{{ after.get('supplies', {}) | tojson }}</code></td>
+          <td>
+  <ul class="dose-audit-supply-list">
+    {% for supply_id, quantity in before.get('supplies', {}).items() %}
+    <li>
+      {{ (supply_names|default({})).get(supply_id|string, 'Supply #' ~ supply_id) }}
+      — {{ quantity }}
+      <small>(ID {{ supply_id }})</small>
+    </li>
+    {% else %}
+    <li>None recorded</li>
+    {% endfor %}
+  </ul>
+  <code>{{ before.get('supplies', {}) | tojson }}</code>
+</td>
+          <td>
+  <ul class="dose-audit-supply-list">
+    {% for supply_id, quantity in after.get('supplies', {}).items() %}
+    <li>
+      {{ (supply_names|default({})).get(supply_id|string, 'Supply #' ~ supply_id) }}
+      — {{ quantity }}
+      <small>(ID {{ supply_id }})</small>
+    </li>
+    {% else %}
+    <li>None recorded</li>
+    {% endfor %}
+  </ul>
+  <code>{{ after.get('supplies', {}) | tojson }}</code>
+</td>
         </tr>
       </tbody>
     </table>

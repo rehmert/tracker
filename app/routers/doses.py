@@ -329,9 +329,13 @@ def edit_page(did: int, request: Request, db: Session = Depends(get_db)):
         select(SupplyCategory.key).where(SupplyCategory.unit == "count")
     ))
 
-    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=list(db.scalars(select(Supply).order_by(Supply.name))), used={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))},
+    supplies = list(db.scalars(select(Supply).order_by(Supply.name)))
+    supply_names = {str(s.id): s.name for s in supplies}
+
+    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=supplies, used={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))},
                   history=list(db.scalars(select(ChangeAudit).where(ChangeAudit.entity_type == "dose", ChangeAudit.entity_id == did).order_by(ChangeAudit.id.desc()))),
-                  counted_supply_kinds=counted_supply_kinds)
+                  counted_supply_kinds=counted_supply_kinds,
+                  supply_names=supply_names)
 
 @router.post("/doses/{did}/edit")
 async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amount: float = Form(...),
