@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}PK Analysis Workspace{% endblock %}
+{% block content %}
+<h1>PK Analysis Workspace</h1>
+<p class="note">Read-only overview. Exposure models are
+hypothetical and not measured drug concentrations.</p>
+<nav class="ux-shortcuts">
+  <a href="/pk">PK Simulator</a>
+  <a href="/protocols">All protocols</a>
+  <a href="/labs">Laboratory results</a>
+  <a href="/inventory-forecast">Inventory forecast</a>
+</nav>
+
+<section>
+  <h2>Protocols and experiments</h2>
+  <div class="scroll">
+    <table class="items">
+      <thead><tr>
+        <th>Protocol</th><th>Status</th>
+        <th>Start</th><th>Explore</th>
+      </tr></thead>
+      <tbody>
+      {% for p in protocols %}
+      <tr>
+        <td>{{ p.name }}</td>
+        <td>{{ "Active" if p.is_active else "What-if" }}</td>
+        <td>{{ p.start_date or "Not dated" }}</td>
+        <td><a href="/protocols/{{ p.id }}#pkExperimentWorkbench">
+          Open workbench</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">No protocols saved.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Recent laboratory reports</h2>
+  <ul>
+    {% for lab in labs %}
+    <li>{{ lab.drawn_on }} — {{ lab.lab_name or "Lab report" }}
+      <a href="/labs">Review labs</a></li>
+    {% else %}
+    <li>No laboratory reports.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section>
+  <h2>Active-protocol inventory planning</h2>
+  <p class="note">Approximate demand from the existing
+  inventory forecast; not a reservation of stock.</p>
+  <div class="scroll">
+    <table class="items">
+      <thead><tr>
+        <th>Protocol</th><th>Compound</th>
+        <th>Status</th><th>Remaining</th>
+      </tr></thead>
+      <tbody>
+      {% for item in stock[:30] %}
+      <tr>
+        <td>{{ item.protocol }}</td>
+        <td>{{ item.compound }}</td>
+        <td>{{ item.status }}</td>
+        <td>{{ item.available|round(3) }} {{ item.unit }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">No active inventory forecast rows.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

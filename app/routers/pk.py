@@ -721,6 +721,28 @@ def multi_compound_overlay(compound_ids: str, days_back: int = 30,
 
 
 
+@router.get("/workspace")
+def pk_workspace(
+    request:Request, db:Session=Depends(get_db)
+):
+    from ..models import LabReport
+    from ..routers.inventory_forecast import build_rows
+
+    protocols=list(db.scalars(
+        select(Protocol).order_by(Protocol.name)
+    ))
+    labs=list(db.scalars(
+        select(LabReport).order_by(
+            LabReport.drawn_on.desc()
+        ).limit(5)
+    ))
+    stock=build_rows(db)
+    return render(
+        request,"pk_workspace.html",
+        protocols=protocols,labs=labs,stock=stock
+    )
+
+
 @router.post("/workbench/{pid}")
 def protocol_experiment(
     pid: int,
