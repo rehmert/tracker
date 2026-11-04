@@ -7,7 +7,7 @@ def test_sensitivity_uses_existing_pk_model():
     ).read_text()
     assert 'pk.series(' in source
     assert '(.75,1.0,1.25)' in source
-    assert 'step_hours=12' in source
+    assert 'step_hours=resolution(' in source
 
 
 def test_sensitivity_ui_present():
