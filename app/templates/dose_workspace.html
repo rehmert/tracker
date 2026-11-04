@@ -120,7 +120,7 @@
 </p>
 
 <nav class="ux-shortcuts" aria-label="Dose workspace actions">
-  <a href="/calendar">Calendar</a>
+  <a href="/calendar" data-workspace-calendar-shortcut>Calendar</a>
   <a href="/protocols">Protocols</a>
   <a href="/doses?{% if compound_id %}compound_id={{ compound_id }}{% endif %}{% for key, value in planned_params.items() %}{% if compound_id or not loop.first %}&amp;{% endif %}{{ key }}={{ value|urlencode }}{% endfor %}">
     Record a dose

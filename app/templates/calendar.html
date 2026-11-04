@@ -3,6 +3,8 @@
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-calendar-workbench.css?v=20261103c">
 <script src="/static/js/tracker-calendar-workbench.js?v=20261103c" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-calendar-day-context.css?v=20261103">
+<script src="/static/js/tracker-calendar-day-context.js?v=20261103" defer></script>
 <h1>Protocol calendar</h1>
 <p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
 {% if missing_start %}<section><h2>Start dates needed</h2><p class="note">These active protocols have no start date, so no doses are projected for them:</p>

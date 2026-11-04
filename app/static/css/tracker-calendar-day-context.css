@@ -1,0 +1,39 @@
+/* Visible day summaries: informational, never approval states. */
+.calendar-day .tracker-day-event-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+  margin: .3rem 0 .4rem;
+  font-size: .72rem;
+}
+
+.calendar-day .tracker-day-event-summary[hidden] {
+  display: none !important;
+}
+
+.calendar-day .tracker-day-event-summary span {
+  padding: .15rem .35rem;
+  border-radius: .35rem;
+  background: var(--wash, #edf2f6);
+  color: var(--text, #28323b);
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar-day .tracker-day-event-summary
+.tracker-day-recorded {
+  border: 1px solid var(--teal, #247c83);
+}
+
+#calendar-grid .calendar-day.tracker-calendar-return-day,
+#calendar-grid .calendar-day:target {
+  outline: 3px solid var(--accent, #2563eb);
+  outline-offset: -3px;
+  scroll-margin-top: 5rem;
+}
+
+@media print {
+  #calendar-grid .calendar-day.tracker-calendar-return-day,
+  #calendar-grid .calendar-day:target {
+    outline: 0;
+  }
+}

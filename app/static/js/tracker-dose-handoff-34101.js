@@ -88,7 +88,9 @@
 
     calendar.href =
       '/calendar?month=' +
-      encodeURIComponent(plannedDate.slice(0, 7));
+      encodeURIComponent(plannedDate.slice(0, 7)) +
+      '#calendar-day-' +
+      encodeURIComponent(plannedDate);
 
     const workspace = panel.querySelector(
       '[data-planned-workspace]'

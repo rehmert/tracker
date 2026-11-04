@@ -189,11 +189,20 @@
       '[data-workspace-calendar]'
     );
 
-    calendarLink.href =
+    const calendarReturn =
       '/calendar?month=' +
-      encodeURIComponent(
-        context.plannedDate.slice(0, 7)
-      );
+      encodeURIComponent(context.plannedDate.slice(0, 7)) +
+      '#calendar-day-' +
+      encodeURIComponent(context.plannedDate);
+
+    calendarLink.href = calendarReturn;
+
+    const calendarShortcut = document.querySelector(
+      '[data-workspace-calendar-shortcut]'
+    );
+    if (calendarShortcut) {
+      calendarShortcut.href = calendarReturn;
+    }
 
     const doseLink = panel.querySelector(
       '[data-workspace-dose]'
