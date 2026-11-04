@@ -100,9 +100,9 @@
         const payload={
           format:"tracker-pk-scenario-template-v1",
           name:item.name,
-          compound:document.getElementById(
+          compound_name:document.getElementById(
             "compound"
-          ).selectedOptions[0]?.textContent.trim(),
+          ).selectedOptions[0]?.textContent.split(" — ")[0].trim(),
           half_life_hours:item.half_life_hours,
           absorption_half_life_hours:
             item.absorption_half_life_hours,

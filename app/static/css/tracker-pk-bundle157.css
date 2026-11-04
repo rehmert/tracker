@@ -1,0 +1,48 @@
+.pk-calendar-rules,
+.pk-extra-stage,
+#pkDeltaCard {
+  margin:1rem 0;
+  padding:.8rem;
+  border:1px solid var(--border,#ccc);
+  border-radius:10px;
+}
+
+.pk-calendar-rules label,
+.pk-extra-stage label {
+  display:inline-flex;
+  gap:.4rem;
+  align-items:center;
+  margin:.3rem;
+}
+
+#pkDeltaPlot {
+  max-width:100%;
+  height:auto;
+  touch-action:pan-y;
+}
+
+#pkDeltaMetrics,
+#pkWeekStatus {
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
+@media(max-width:700px) {
+  .pk-calendar-rules label,
+  .pk-extra-stage label {
+    display:flex;
+    justify-content:space-between;
+  }
+
+  .pk-calendar-rules button,
+  .pk-extra-stage button,
+  #pkDeltaCard button {
+    min-height:44px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .pk-dose-focused {
+    scroll-behavior:auto;
+  }
+}

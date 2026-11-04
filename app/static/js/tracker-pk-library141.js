@@ -153,7 +153,7 @@
 
         const obj={
           format:raw.format,
-          compound_id:Number(selected.value),
+          compound_id:Number(raw.compound_id)||null,
           compound_name:String(
             raw.compound_name||raw.compound||""
           ).split(" — ")[0].trim(),
@@ -168,6 +168,21 @@
           "/pk/scenarios/import-preview",
           obj
         );
+
+        const currentName=String(
+          selected.textContent
+        ).split(" — ")[0].trim();
+
+        if(
+          currentName.toLowerCase()
+          !==result.compound.toLowerCase()
+        ) {
+          throw Error(
+            "Switch to compound "+
+            result.compound+
+            " before importing"
+          );
+        }
 
         staged=obj;
         $("pkImportConfirm").disabled=false;

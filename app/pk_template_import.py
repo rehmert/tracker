@@ -15,7 +15,7 @@ class TemplateDose(BaseModel):
 
 class Template(BaseModel):
     format:str
-    compound_id:int=Field(gt=0)
+    compound_id:int|None=Field(default=None,gt=0)
     compound_name:str=Field(
         min_length=1,max_length=120
     )
@@ -50,28 +50,40 @@ class Template(BaseModel):
 
 
 def validate(db,data):
-    compound=db.get(
-        Compound,data.compound_id
+    from sqlalchemy import select
+
+    clean=data.compound_name.strip().casefold()
+
+    candidate=(
+        db.get(Compound,data.compound_id)
+        if data.compound_id else None
     )
 
     if (
-        compound is None
-        or compound.name.strip().casefold()
-        !=data.compound_name.strip().casefold()
+        candidate is not None
+        and candidate.name.strip().casefold()==clean
     ):
+        return candidate
+
+    matches=[
+        c for c in db.scalars(select(Compound))
+        if c.name.strip().casefold()==clean
+    ]
+
+    if len(matches)!=1:
         raise HTTPException(
             400,
-            'Compound name/ID mismatch'
+            'Compound name must match exactly one installed compound'
         )
 
-    return compound
+    return matches[0]
 
 
 def create(db,data):
-    validate(db,data)
+    compound=validate(db,data)
 
     scenario=PkScenario(
-        compound_id=data.compound_id,
+        compound_id=compound.id,
         name=data.name,
         half_life_hours=data.half_life_hours,
         absorption_half_life_hours=
