@@ -193,6 +193,10 @@ def protocol_editor(pid: int, request: Request, db: Session = Depends(get_db)):
         raise HTTPException(404, "Protocol not found")
     compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
     return render(request, "protocol_edit.html", p=p, compounds=compounds,
+                  other_protocols=list(db.scalars(
+                      select(Protocol).where(Protocol.id != pid)
+                      .order_by(Protocol.name)
+                  )),
                   blank_item=dict(BLANK, compound_id=None))
 
 

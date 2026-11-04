@@ -170,6 +170,10 @@ def preview_multi_what_if(
             "compound_name": compound.name,
             "model": pk.model_info(compound.name),
             "dose_count": len(doses),
+            "doses": [
+                {"at": at.isoformat(), "amount_mg": amount}
+                for at, amount in doses
+            ],
             "peak_mg_equivalent": peak,
             "values_percent": [
                 round(100.0 * value / peak, 4)
@@ -504,6 +508,10 @@ def saved_protocol_exposure(
             "times": [row["at"] for row in rows],
             "values": [row["planned"] for row in rows],
             "dose_count": len(planned),
+            "doses": [
+                {"at": at.isoformat(), "amount_mg": amount}
+                for at, amount in sorted(planned)
+            ],
             "duration_days": visible_days,
             "short_window": visible_days < days,
         })
@@ -579,7 +587,12 @@ def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
     else:
         step = 12
     rows = pk.series(start, end, actual, planned, hl, ahl, step_hours=step)
-    return {"model": pk.model_info(c.name), "rows": rows, "now": now.isoformat(), "actual_doses": len(actual),
+    return {"model": pk.model_info(c.name), "rows": rows, "now": now.isoformat(),
+            "planned_schedule": [
+                {"at": at.isoformat(), "amount_mg": amount}
+                for at, amount in planned
+            ],
+            "actual_doses": len(actual),
             "planned_doses": len(planned), "units": "modeled mg-equivalent exposure",
             "disclaimer": "Exploratory model, not measured blood concentration or clinical effectiveness."}
 

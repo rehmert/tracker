@@ -53,6 +53,16 @@
     $('pkPeak').textContent=fmt(peak);$('pkTrough').textContent=fmt(trough);
     $('pkRatio').textContent=trough>0?(peak/trough).toFixed(2)+'×':'N/A';$('pkAverage').textContent=fmt(avg);
     $('summary').textContent=`${data.model?.level||'approximate'} model. ${data.actual_doses} historical administrations, ${data.planned_doses} planned administrations. Units: ${data.units}.`;
+    window.trackerPkInspector.attach(c,{
+      times:rows.map(r=>r.at),
+      series:[
+        {name:"Recorded",values:rows.map(r=>r.actual)},
+        {name:"Recorded + planned",
+         values:rows.map(r=>r.planned)}
+      ],
+      doses:data.planned_schedule || [],
+      left,right,normalized:false
+    });
   }
   const help={multi:'Compare independent hypothetical schedules on one timeline; nothing is saved.',protocol:'Select a protocol and its compound, then Run simulation. The saved schedule is read-only.',custom:'Select a compound, enter an initial date, dose and interval (3.5 days is supported), then Preview what-if. Nothing is saved unless you choose Save.',compare:'Select a compound and up to four saved scenarios, then Compare scenarios. Overlay curves from different compounds are independently normalized.'};
   function setMode(mode){
@@ -164,6 +174,13 @@
     result.series.forEach((line,j)=>{ctx.strokeStyle=colors[j];ctx.lineWidth=2.5;ctx.beginPath();
       line.values.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();});
 
+    window.trackerPkInspector.attach(canvas,{
+      times:result.at,
+      series:result.series.map(line=>({
+        name:line.name,values:line.values
+      })),
+      left,right,normalized:false
+    });
     $('compareLegend').replaceChildren();
     result.series.forEach((line,j)=>{const span=document.createElement('span');
       span.textContent='● '+line.name+'  ';span.style.color=colors[j];$('compareLegend').append(span);});
@@ -196,6 +213,13 @@
       const nx=left+(w-left-right)*(new Date(data.now).getTime()-start)/(end-start);
       ctx.setLineDash([5,5]);ctx.strokeStyle=ink;ctx.beginPath();ctx.moveTo(nx,top);ctx.lineTo(nx,h-bottom);ctx.stroke();ctx.setLineDash([]);
     }
+    window.trackerPkInspector.attach(canvas,{
+      times:data.at,
+      series:data.series.map(line=>({
+        name:line.name,values:line.values_percent
+      })),
+      left,right,normalized:true
+    });
     $('overlayLegend').replaceChildren();
     data.series.forEach((line,j)=>{const span=document.createElement('span');
       span.textContent='● '+line.name+' ('+line.display_peak_mg_equivalent.toFixed(3)+' modeled mg-eq peak)  ';

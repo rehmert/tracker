@@ -70,10 +70,50 @@
 </section>
 <link rel="stylesheet"
       href="/static/css/tracker-protocol-exposure.css?v=batch52">
+<link rel="stylesheet"
+      href="/static/css/tracker-pk-inspector.css?v=bundle56">
 <script src="/static/js/tracker-pk-axes.js?v=batch50"
         defer></script>
-<script src="/static/js/tracker-protocol-exposure.js?v=batch52"
+<script src="/static/js/tracker-pk-inspector.js?v=bundle56"
         defer></script>
+<script src="/static/js/tracker-protocol-exposure.js?v=bundle56"
+        defer></script>
+<script src="/static/js/tracker-protocol-compare.js?v=bundle56"
+        defer></script>
+
+
+<section class="pk-protocol-compare"
+         id="protocolCompareWorkspace"
+         data-protocol-id="{{ p.id }}">
+  <h2>Compare saved protocols</h2>
+  <p class="note">Compare supported compounds shared by
+  both saved protocols. Curves are normalized to their
+  own modeled peaks, not comparable drug potency.
+  Nothing is modified or recorded.</p>
+  <div class="pk-inspector-tools">
+    <label>Compare with
+      <select id="protocolCompareTarget">
+        <option value="">Choose another protocol</option>
+        {% for other in other_protocols %}
+        <option value="{{ other.id }}">
+          {{ other.name }}
+          ({{ "Active" if other.is_active else "What-if" }})
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="button" id="protocolCompareButton">
+      Compare protocols
+    </button>
+    <button type="button" id="protocolCompareCsv"
+            disabled>Export comparison CSV</button>
+    <button type="button" id="protocolComparePrint">
+      Print analysis
+    </button>
+  </div>
+  <p id="protocolCompareStatus" role="status"></p>
+  <div id="protocolCompareResults"></div>
+</section>
 
 <script>
 (function () {

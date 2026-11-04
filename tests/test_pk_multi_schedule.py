@@ -141,8 +141,8 @@ def test_template_and_client_wiring():
     assert 'data-pk-mode="multi"' in html
     assert 'id="pkMultiWorkspace"' in html
     assert 'id="pkMultiPlot"' in html
-    assert "pk.js?v=pk-batch51-20261104" in html
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "pk.js?v=pk-bundle54-56-20261104" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
     assert "'pk-mode-multi'" in js
     assert '"/pk/what-if/multi-preview"' in multi
     assert "values_percent" in multi
@@ -154,7 +154,7 @@ def test_prior_pk_cache_assertion_is_updated():
     legacy = (
         ROOT / "tests/test_pk_variable_schedule.py"
     ).read_text()
-    assert '"pk.js?v=pk-batch51-20261104"' in legacy
+    assert '"pk.js?v=pk-bundle54-56-20261104"' in legacy
 
 
 def test_batch42_staged_editor_and_duplicate():
@@ -184,7 +184,7 @@ def test_batch42_csv_export_and_current_cache():
     assert 'container.addEventListener("input", invalidate)' in js
     assert 'container.addEventListener("change", invalidate)' in js
     assert "lastResult = result" in js
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
 
 
 def test_batch43_custom_schedule_names():
@@ -213,7 +213,7 @@ def test_batch43_summary_and_result_invalidation():
     assert "revision !== requestedRevision" in js
     assert "lastResult = null" in js
     assert "ctx.clearRect(" in js
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
 
     Environment().parse(html)
 
@@ -243,7 +243,7 @@ def test_batch44_time_weighted_summary():
     assert "stats.range.toFixed(1)" in js
     assert "stats.mean.toFixed(1)" in js
     assert "Time-weighted mean (%)" in js
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
 
 
 def test_batch44_png_export_and_invalidation():
@@ -274,7 +274,7 @@ def test_batch45_preset_source_contracts():
         'id="pkMultiExportPreset"',
         'id="pkMultiImportPreset"',
         'id="pkMultiPresetFile"',
-        "tracker-pk-multi-schedule.js?v=batch51",
+        "tracker-pk-multi-schedule.js?v=bundle56",
         "tracker-pk-multi-schedule.css?v=batch53",
     ):
         assert marker in html
@@ -337,7 +337,7 @@ def test_batch46_asset_and_read_only_contracts():
     html = (ROOT / "app/templates/pk.html").read_text()
     router = (ROOT / "app/routers/pk.py").read_text()
 
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
     assert "tracker-pk-multi-schedule.css?v=batch53" in html
 
     section = router.split(
@@ -378,7 +378,7 @@ def test_batch47_preflight_and_asset_versions():
     assert "validateCommonTimeline(schedules);" in js
     assert "730 * 86400000" in js
     assert "Combined comparison timeline exceeds 730 days." in js
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
     assert "tracker-pk-multi-schedule.css?v=batch53" in html
 
 
@@ -416,7 +416,7 @@ def test_batch48_duplicate_name_and_asset_versions():
 
     assert 'copy.name = copy.name.slice(0, 112) + " (copy)"' in js
     assert "addSchedule(copy)" in js
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
     assert "tracker-pk-multi-schedule.css?v=batch53" in html
 
     Environment().parse(html)
@@ -467,7 +467,7 @@ def test_batch49_compact_schedule_controls():
     for marker in (
         'id="pkMultiCollapseAll"',
         'id="pkMultiExpandAll"',
-        "tracker-pk-multi-schedule.js?v=batch51",
+        "tracker-pk-multi-schedule.js?v=bundle56",
         "tracker-pk-multi-schedule.css?v=batch53",
     ):
         assert marker in html
@@ -514,11 +514,11 @@ def test_batch50_shared_chart_axes_and_cache():
     ).read_text()
 
     assert "tracker-pk-axes.js?v=batch50" in html
-    assert "pk.js?v=pk-batch51-20261104" in html
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "pk.js?v=pk-bundle54-56-20261104" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
 
     assert html.index("tracker-pk-axes.js?v=batch50") < (
-        html.index("pk.js?v=pk-batch51-20261104")
+        html.index("pk.js?v=pk-bundle54-56-20261104")
     )
 
     assert main.count("window.trackerPkAxes.draw({") == 3
@@ -565,13 +565,13 @@ def test_batch51_interval_presets():
     ).read_text()
 
     assert "tracker-pk-interval-presets.js?v=batch51" in html
-    assert "pk.js?v=pk-batch51-20261104" in html
-    assert "tracker-pk-multi-schedule.js?v=batch51" in html
+    assert "pk.js?v=pk-bundle54-56-20261104" in html
+    assert "tracker-pk-multi-schedule.js?v=bundle56" in html
     assert "tracker-pk-multi-schedule.css?v=batch53" in html
 
     assert html.index(
         "tracker-pk-interval-presets.js?v=batch51"
-    ) < html.index("pk.js?v=pk-batch51-20261104")
+    ) < html.index("pk.js?v=pk-bundle54-56-20261104")
 
     assert main.count(
         "window.trackerPkIntervalPresets.attach("

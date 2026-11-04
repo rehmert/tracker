@@ -116,7 +116,7 @@ def test_template_and_client_are_wired():
     for marker in (
         'id="wiOffset"',
         "Interval (days; blank = default)",
-        "pk.js?v=pk-batch51-20261104",
+        "pk.js?v=pk-bundle54-56-20261104",
     ):
         assert marker in html
 

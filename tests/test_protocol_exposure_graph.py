@@ -140,7 +140,7 @@ def test_protocol_detail_exposes_read_only_button():
 
     assert 'id="protocolExposureButton"' in html
     assert 'id="protocolExposureResults"' in html
-    assert "tracker-protocol-exposure.js?v=batch52" in html
+    assert "tracker-protocol-exposure.js?v=bundle56" in html
     assert "tracker-pk-axes.js?v=batch50" in html
     assert 'window.trackerPkAxes.draw({' in js
     assert 'method:"POST"' not in js

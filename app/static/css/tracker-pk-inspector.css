@@ -1,0 +1,93 @@
+/* Releases 54–56: PK inspection and printable analysis. */
+.pk-inspector-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+.pk-inspector-wrap canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.pk-inspector-cursor {
+  position: absolute;
+  top: 8%;
+  bottom: 16%;
+  border-left: 1px dashed var(--chart-text,#394a42);
+  pointer-events: none;
+  z-index: 2;
+}
+.pk-inspector-tooltip {
+  position: absolute;
+  top: 4%;
+  transform: translateX(-50%);
+  max-width: min(360px,90%);
+  min-width: 150px;
+  padding: .45rem .65rem;
+  border-radius: 8px;
+  color: var(--text,#222);
+  background: var(--card,#fff);
+  border: 1px solid var(--border,#d4ded8);
+  box-shadow: 0 2px 12px #0002;
+  font: 12px/1.4 sans-serif;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  z-index: 3;
+}
+.pk-inspector-markers {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 15%;
+  height: 10px;
+  pointer-events: none;
+}
+.pk-inspector-dose {
+  position: absolute;
+  width: 3px;
+  height: 9px;
+  background: var(--chart-now,#a76c30);
+  border-radius: 2px;
+}
+.pk-inspector-tools {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: .7rem 0;
+}
+.pk-inspector-statistics {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(155px,1fr));
+  gap: .5rem;
+  margin: .75rem 0;
+}
+.pk-inspector-statistics > div {
+  border: 1px solid var(--border,#d4ded8);
+  border-radius: 8px;
+  padding: .6rem;
+}
+.pk-inspector-statistics strong {
+  display: block;
+}
+.pk-protocol-compare {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border,#d4ded8);
+  border-radius: 12px;
+}
+@media print {
+  .pk-inspector-tools,
+  #protocolExposureButton,
+  #protocolCompareButton {
+    display: none !important;
+  }
+  .pk-inspector-tooltip,
+  .pk-inspector-cursor {
+    display: none !important;
+  }
+  .protocol-exposure-graph {
+    break-inside: avoid;
+  }
+}

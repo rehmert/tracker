@@ -125,6 +125,129 @@
       });
 
       ctx.stroke();
+
+      const inspector = window.trackerPkInspector;
+      const stats = inspector.analysis(
+        times,values,series.doses || []
+      );
+
+      const statistics = document.createElement("div");
+      statistics.className = "pk-inspector-statistics";
+
+      if (stats) {
+        const entries = [
+          ["Modeled peak", inspector.number(stats.peak)+" mg-eq"],
+          ["Modeled trough", inspector.number(stats.trough)+" mg-eq"],
+          ["Time-weighted mean",
+            inspector.number(stats.mean)+" mg-eq"],
+          ["Peak-to-trough fluctuation",
+            stats.fluctuation === null ? "N/A" :
+            inspector.number(stats.fluctuation)+"% of mean"],
+          ["Interval stability", stats.stability],
+          ["Latest complete interval mean",
+            stats.lastIntervalMean === null ? "N/A" :
+            inspector.number(stats.lastIntervalMean)+" mg-eq"]
+        ];
+
+        entries.forEach(([label,value]) => {
+          const cell = document.createElement("div");
+          const small = document.createElement("small");
+          small.textContent = label;
+          const strong = document.createElement("strong");
+          strong.textContent = value;
+          cell.append(small,strong);
+          statistics.append(cell);
+        });
+      }
+
+      const tools = document.createElement("div");
+      tools.className = "pk-inspector-tools";
+
+      const range = document.createElement("select");
+      range.setAttribute("aria-label","Graph duration");
+
+      [["all","Entire window"],["7","First 7 days"],
+       ["14","First 14 days"],["30","First 30 days"],
+       ["90","First 90 days"]].forEach(([value,label])=>{
+        const option = new Option(label,value);
+        range.add(option);
+      });
+
+      const csv = document.createElement("button");
+      csv.type = "button";
+      csv.textContent = "Export graph CSV";
+
+      const print = document.createElement("button");
+      print.type = "button";
+      print.textContent = "Print analysis";
+
+      tools.append(range,csv,print);
+      card.append(tools,statistics);
+
+      const allTimes = times;
+      const allValues = values;
+
+      function updateRange() {
+        const days = range.value === "all"
+          ? Infinity : Number(range.value);
+        const first = inspector.stamp(allTimes[0]);
+
+        const indices = allTimes.map((at,i)=>i).filter(i =>
+          inspector.stamp(allTimes[i])-first <=
+          days*86400000
+        );
+
+        if (indices.length < 2) return;
+
+        const subsetTimes = indices.map(i => allTimes[i]);
+        const subsetValues = indices.map(i => allValues[i]);
+        const peak = Math.max(0.001,...subsetValues);
+
+        ctx.clearRect(0,0,width,height);
+
+        window.trackerPkAxes.draw({
+          ctx,width,height,left,right,top,bottom,
+          times:subsetTimes,maximum:peak,
+          normalized:false,
+          textColor:ink,gridColor:grid
+        });
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        subsetValues.forEach((value,i) => {
+          const px = left+(width-left-right)*
+            i/(subsetValues.length-1);
+          const py = height-bottom-
+            (height-top-bottom)*value/peak;
+          if (i) ctx.lineTo(px,py);
+          else ctx.moveTo(px,py);
+        });
+        ctx.stroke();
+
+        inspector.attach(canvas,{
+          times:subsetTimes,
+          series:[{
+            name:series.compound,
+            values:subsetValues
+          }],
+          doses:series.doses || [],
+          left,right,normalized:false
+        });
+
+        csv.onclick = () => inspector.download(
+          "tracker-protocol-"+series.compound
+            .replace(/[^a-z0-9]+/gi,"-")+".csv",
+          inspector.csv(subsetTimes,[{
+            name:series.compound+" (mg-eq)",
+            values:subsetValues
+          }])
+        );
+      }
+
+      range.addEventListener("change",updateRange);
+      print.addEventListener("click",()=>window.print());
+      updateRange();
       return card;
     }
 

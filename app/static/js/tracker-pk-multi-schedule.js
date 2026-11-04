@@ -1037,6 +1037,16 @@
 
       legend.replaceChildren();
 
+      window.trackerPkInspector.attach(canvas,{
+        times,
+        series:data.series.map(series=>({
+          name:series.name,
+          values:series.values_percent
+        })),
+        doses:data.series.flatMap(series=>series.doses || []),
+        left,right,normalized:true
+      });
+
       data.series.forEach((series, index) => {
         ctx.strokeStyle = colors[index];
         ctx.lineWidth = 2.5;
