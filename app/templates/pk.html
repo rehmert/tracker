@@ -360,6 +360,16 @@
   <p id="pkQualityStatus" role="status"></p>
   <ul id="pkQualityFindings"></ul>
 </details>
+<details class="pk-crosscheck">
+  <summary>
+    Read-only dose, vial and protocol diagnostics
+  </summary>
+  <button id="pkCrosscheckRun" type="button">
+    Run cross-module checks
+  </button>
+  <p id="pkCrosscheckStatus" role="status"></p>
+  <ul id="pkCrosscheckFindings"></ul>
+</details>
 <h3>Future planned doses</h3>
 <div class="pk-dose-tools">
   <label>Filter
@@ -582,6 +592,8 @@
         defer></script>
 <script src="/static/js/tracker-pk-workspace185.js?v=bundle185" defer></script>
 <script src="/static/js/tracker-pk-panels201.js?v=bundle201"
+        defer></script>
+<script src="/static/js/tracker-pk-crosscheck205.js?v=bundle205"
         defer></script>
 <link rel="stylesheet"
       href="/static/css/tracker-pk-panels201.css?v=bundle201">
