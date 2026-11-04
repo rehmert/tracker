@@ -1,0 +1,28 @@
+.pk-panel-controls {
+  display:flex;
+  gap:.5rem;
+  flex-wrap:wrap;
+  margin:.6rem 0;
+}
+
+.pk-panel-controls button {
+  min-height:40px;
+  padding:.35rem .65rem;
+}
+
+.pk-panel-controls button[aria-pressed="true"] {
+  font-weight:700;
+  text-decoration:underline;
+}
+
+.pk-panel-controls button:focus-visible {
+  outline:3px solid var(--accent,#387c69);
+  outline-offset:2px;
+}
+
+@media(max-width:700px) {
+  .pk-panel-controls button {
+    min-height:44px;
+    flex:1 0 auto;
+  }
+}

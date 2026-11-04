@@ -15,6 +15,9 @@
 <details class="card pk-help"><summary>How to use this simulator</summary><p id="pkWorkflowHelp">Choose an active protocol, select its compound, then Run simulation. The saved schedule is read-only.</p><p>Values are modeled exposure (mg-equivalent), not measured serum concentration, biological response, or dosing advice. A different compound's curve cannot be interpreted as equivalent potency.</p></details>
 <p>Exploratory modeled exposure only — not measured blood concentration, effectiveness, or a dosing recommendation. Testosterone depot and GLP-1 absorption parameters are approximations. Future plans never change your dose log or inventory.</p>
 <nav class="pk-workspace-nav" id="pkWorkspaceNav" aria-label="PK workspace shortcuts"></nav>
+<div id="pkPanelControls" class="pk-panel-controls"
+     role="group" aria-label="PK workspace panels"></div>
+<p id="pkPanelStatus" class="note" role="status"></p>
 <p id="pkWorkspaceStatus" role="status" class="note"></p>
 <div class="card pk-protocol-setup" id="pkSetup">
 <h2>1. Configure simulation</h2>
@@ -578,6 +581,10 @@
 <script src="/static/js/tracker-pk-report173.js?v=bundle173"
         defer></script>
 <script src="/static/js/tracker-pk-workspace185.js?v=bundle185" defer></script>
+<script src="/static/js/tracker-pk-panels201.js?v=bundle201"
+        defer></script>
+<link rel="stylesheet"
+      href="/static/css/tracker-pk-panels201.css?v=bundle201">
 <script src="/static/js/tracker-pk-health189.js?v=bundle189" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-pk-workspace185.css?v=bundle185">
 <link rel="stylesheet"
