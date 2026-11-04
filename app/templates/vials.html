@@ -54,6 +54,32 @@
   font-weight:700;
   margin-right:auto;
 }
+#bulk-advanced-selection > summary {
+  cursor:pointer;
+  padding:.35rem .15rem;
+  line-height:1.5;
+}
+#bulk-advanced-selection > summary .note {
+  font-size:.85rem;
+  font-weight:400;
+}
+#bulk-advanced-selection[open] > summary {
+  margin-bottom:.7rem;
+}
+#bulk-advanced-selection .inline {
+  padding:.25rem 0 .6rem;
+}
+#bulk-advanced-selection button:focus-visible,
+#bulk-advanced-selection summary:focus-visible {
+  outline:2px solid currentColor;
+  outline-offset:3px;
+}
+@media(max-width:700px) {
+  #bulk-advanced-selection > summary .note {
+    display:block;
+  }
+}
+
 #bulk-editor-panel {
   scroll-margin-top:1rem;
 }
@@ -182,6 +208,16 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <!-- TRACKER_BULK_STAGE7 -->
 <div class="card" id="bulk-selection-tools">
+  <details id="bulk-advanced-selection">
+    <summary>
+      <strong>Advanced selection &amp; CSV export</strong>
+      <span class="note"> — match by compound/status,
+      invert or remove selections, export CSV</span>
+    </summary>
+    <p class="note">
+      These actions affect your selected vials, not inventory.
+      Selection is preserved across filtered views.
+    </p>
   <div class="inline" style="gap:.65rem;flex-wrap:wrap;align-items:end">
 
     <label class="field">
@@ -227,6 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
      role="status" aria-live="polite">
     0 vials selected.
   </p>
+  </details>
 </div>
 
 
