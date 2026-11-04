@@ -470,14 +470,45 @@
           throw new Error("Invalid schedule " + (index + 1));
         }
 
-        const compound = choices.find(option =>
-          Number(option.value) === schedule.compound_id
-        );
+        let compound;
+
+        if (schedule.compound_name !== undefined) {
+          if (typeof schedule.compound_name !== "string" ||
+              !schedule.compound_name.trim()) {
+            throw new Error(
+              "Invalid compound name in schedule " + (index + 1)
+            );
+          }
+
+          const requestedName =
+            schedule.compound_name.trim().toLowerCase();
+
+          const matches = choices.filter(option =>
+            option.textContent.split(" — ")[0]
+              .trim().toLowerCase() === requestedName
+          );
+
+          if (matches.length !== 1) {
+            throw new Error(
+              "Compound '" + schedule.compound_name +
+              "' is missing or ambiguous in this Tracker. " +
+              "Import cancelled without changing schedules."
+            );
+          }
+
+          compound = matches[0];
+        } else {
+          // Legacy Batch 45 presets only have local IDs.
+          compound = choices.find(option =>
+            Number(option.value) === schedule.compound_id
+          );
+        }
 
         if (!compound) {
           throw new Error(
             "Compound ID " + schedule.compound_id +
-            " is not available in Tracker."
+            " is unavailable. Legacy presets require " +
+            "matching database compound IDs."
           );
         }
 
@@ -537,7 +568,7 @@
         }
 
         return {
-          compound_id: schedule.compound_id,
+          compound_id: Number(compound.value),
           name: schedule.name.trim(),
           start_at: schedule.start_at,
           interval_days: schedule.interval_days,
@@ -569,7 +600,31 @@
 
     function downloadPreset() {
       try {
-        const schedules = payload().schedules;
+        const schedules = payload().schedules.map(schedule => {
+          const compound = choices.find(option =>
+            Number(option.value) === schedule.compound_id
+          );
+
+          if (!compound) {
+            throw new Error(
+              "Cannot export a schedule with an unknown compound."
+            );
+          }
+
+          return {
+            ...schedule,
+            compound_name:
+              compound.textContent.split(" — ")[0].trim()
+          };
+        });
+
+        // Validate the exported format before writing the file.
+        validatePreset({
+          format: PRESET_FORMAT,
+          version: PRESET_VERSION,
+          schedules
+        });
+
         const preset = {
           format: PRESET_FORMAT,
           version: PRESET_VERSION,
@@ -634,8 +689,8 @@
 
       status.textContent =
         schedules.length +
-        " hypothetical schedules restored. " +
-        "Select Compare schedules to recalculate.";
+        " hypothetical schedules restored using local " +
+        "compound IDs. Select Compare schedules to recalculate.";
     }
 
     if (exportPreset) {
