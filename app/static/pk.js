@@ -99,6 +99,7 @@
     else if(current) q.set('scenario_id',current.id);
     const data = await request('/pk/data?'+q);
     if (sequence !== graphRequestSequence) return;
+    window.trackerPkFullGraph=data;
     draw(data);
     document.dispatchEvent(
       new CustomEvent("tracker:pk-graph-updated", {
@@ -249,6 +250,52 @@
     $('scenario').value=current?.id||'';renderRows();await refresh();
   }
   window.trackerPkReloadScenario=load;
+  window.trackerPkDrawWindow=draw;
+
+  window.trackerPkRevealDoseAt=at=>{
+    if(!current)return;
+
+    const found=(current.doses||[]).find(
+      dose=>dose.planned_at===at
+    );
+
+    if(!found)return;
+
+    $('pkDoseFilter').value='all';
+    window.trackerPkDoseFilter=null;
+
+    $('pkDoseSort').value='asc';
+    window.trackerPkDoseSort='asc';
+
+    const sorted=[...(current.doses||[])].sort(
+      (a,b)=>a.planned_at.localeCompare(
+        b.planned_at
+      )
+    );
+
+    const index=sorted.findIndex(
+      dose=>dose.id===found.id
+    );
+
+    const pageSize=Number(
+      $('pkPlannedPageSize').value
+    )||5;
+
+    plannedPage=Math.floor(index/pageSize);
+    renderRows();
+
+    const row=$('plannedRows').querySelector(
+      'tr[data-dose-id="'+found.id+'"]'
+    );
+
+    if(row) {
+      row.classList.add('pk-dose-focused');
+      row.scrollIntoView({
+        behavior:'smooth',
+        block:'center'
+      });
+    }
+  };
   function updateTestosteroneAction(){
     const protocol=$('protocol');
     const ids=(protocol.selectedOptions[0]?.dataset.compounds||'').split(',').filter(Boolean);
