@@ -1,4 +1,6 @@
-{% extends "base.html" %}{% block title %}Edit dose{% endblock %}{% block content %}<h1>Edit dose #{{ dose.id }}</h1><p>{{ dose.vial.compound.name }} · vial #{{ dose.vial_id }}</p>
+{% extends "base.html" %}{% block title %}Edit dose{% endblock %}{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-mobile-log373.css?v=373">
+<script src="/static/js/tracker-time24-371.js?v=371" defer></script><h1>Edit dose #{{ dose.id }}</h1><p>{{ dose.vial.compound.name }} · vial #{{ dose.vial_id }}</p>
 <form method="post" action="/doses/{{ dose.id }}/edit" id="tracker-dose-correction-form" class="grid"><label class="field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ dose.taken_at.strftime('%Y-%m-%dT%H:%M') }}"></label>
 <label class="field"><span>Amount</span><input name="amount" type="number" step="any" min="0" value="{{ dose.entered_value }}" required></label>
 <label class="field"><span>Unit</span><select name="unit">{% for u in DOSE_UNITS %}<option value="{{ u }}" {% if u == dose.entered_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>

@@ -1,0 +1,120 @@
+/* Mobile-first logging; no automatic record submission. */
+
+.tracker-mobile-log-links {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: .65rem 0 1rem;
+}
+
+.tracker-mobile-log-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border, #b8c3d1);
+  border-radius: 9px;
+  padding: .55rem .7rem;
+  min-height: 44px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.tracker-time24-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(96px, .65fr) auto;
+  gap: .5rem;
+  width: 100%;
+  align-items: center;
+}
+
+.tracker-time24-controls input,
+.tracker-time24-controls button {
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+
+.tracker-time24-clock {
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  letter-spacing: .02em;
+}
+
+.tracker-time24-hint {
+  display: block;
+  margin-top: .3rem;
+  opacity: .8;
+}
+
+.tracker-time24-now {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .tracker-mobile-log-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tracker-mobile-log-links a {
+    min-height: 48px;
+    padding: .6rem;
+  }
+
+  form[data-tracker-vitals-entry] input,
+  form[data-tracker-vitals-entry] select,
+  form[data-tracker-vitals-entry] textarea,
+  form[hx-post="/doses"] input,
+  form[hx-post="/doses"] select,
+  form#tracker-dose-correction-form input,
+  form#tracker-dose-correction-form select {
+    max-width: 100%;
+    min-height: 48px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  form[data-tracker-vitals-entry] input[type="checkbox"],
+  form[hx-post="/doses"] input[type="checkbox"],
+  form#tracker-dose-correction-form input[type="checkbox"] {
+    min-height: 22px;
+  }
+
+  .tracker-time24-controls {
+    grid-template-columns:
+      minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .tracker-time24-controls button {
+    grid-column: 1 / -1;
+    min-height: 48px;
+  }
+
+  form[data-tracker-vitals-entry] button.primary[type="submit"],
+  form[hx-post="/doses"] button.primary[type="submit"],
+  form#tracker-dose-correction-form button.primary[type="submit"] {
+    width: 100%;
+    min-height: 56px;
+    font-size: 1.05rem;
+  }
+
+  form[data-tracker-vitals-entry] > div:has(>button.primary),
+  form[hx-post="/doses"] > div:has(>button.primary) {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  #quick-vitals-entry,
+  #quick-dose-entry,
+  #tracker-dose-final-review {
+    scroll-margin-top: 1.25rem;
+  }
+}
+
+@media print {
+  .tracker-mobile-log-links,
+  .tracker-time24-now {
+    display: none !important;
+  }
+}
