@@ -12,6 +12,7 @@ from ..inventory_lock import reserve_inventory_write
 from ..models import Compound, Purchase, Vial, Supply, SupplyUsage, SupplyCategory, SupplyProduct
 from ..supply_categories import ensure_categories, validate_supply
 from ..templating import render
+from ..list_queries297 import purchase_listing
 from ..audit_helpers import record, snapshot
 
 PURCHASE_FIELDS = ("vendor", "purchased_on", "order_ref", "shipping_cents", "tax_cents", "discount_cents", "notes")
@@ -22,7 +23,7 @@ router = APIRouter()
 @router.get("/purchases")
 def purchases_page(request: Request, db: Session = Depends(get_db)):
     rows = []
-    for p in db.scalars(select(Purchase).order_by(Purchase.purchased_on.desc(), Purchase.id.desc())):
+    for p in db.scalars(purchase_listing()):
         landed = services.purchase_landed(p)
         rows.append({"p": p, "n": len(p.vials), "supply_count": len(p.supplies),
                      "total": sum(landed.values())})

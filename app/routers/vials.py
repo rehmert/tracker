@@ -15,6 +15,7 @@ from ..db import get_db
 from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply, ChangeAudit, BlendComponent, SupplyCategory
 from .. import manual_supplies
 from ..templating import render
+from ..list_queries297 import vial_listing
 
 router = APIRouter()
 
@@ -31,14 +32,12 @@ def vials_page(request: Request, status: str = "active", compound_id: str | None
     # Convert compound_id to integer, treating empty strings as None
     compound_id = int(compound_id) if compound_id and compound_id.isdigit() else None
 
-    vials = list(db.scalars(select(Vial).order_by(Vial.id.desc())))
+    vials = list(
+        db.scalars(
+            vial_listing(status,compound_id)
+        )
+    )
 
-    if compound_id is not None:
-        vials = [v for v in vials if v.compound_id == compound_id]
-    if status == "active":
-        vials = [v for v in vials if v.status in ("sealed", "in_use")]
-    elif status in VIAL_STATUSES:
-        vials = [v for v in vials if v.status == status]
     return render(request, "vials.html", vials=vials, views=services.vial_views(db, vials),
                   status=status, statuses=VIAL_STATUSES, compound_id=compound_id, compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
 
