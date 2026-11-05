@@ -298,6 +298,7 @@ def main():
             "report",
             "snapshot",
             "selftest",
+            "context-check",
         ),
     )
 
@@ -312,6 +313,45 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if args.command == "context-check":
+        # Read-only preflight for configured administrator storage.
+        # Existing check/report/snapshot behavior is unchanged.
+        if args.output:
+            parser.error(
+                "--output is not supported for context-check"
+            )
+
+        # Standalone invocation must work without PYTHONPATH.
+        project_root = str(
+            Path(__file__).resolve().parents[1]
+        )
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+
+        from app.background_storage410 import (
+            administrator_context410,
+        )
+
+        context = administrator_context410()
+
+        if (
+            args.database is not None
+            and Path(args.database).absolute()
+            != context.database
+        ):
+            raise ValueError(
+                "Database does not match administrator storage"
+            )
+
+        print(
+            "PASS: Administrator maintenance context valid"
+        )
+        print("Scope:", context.scope)
+        print("Database:", context.database)
+        print("Data directory:", context.data_dir)
+        print("Backup directory:", context.backup_dir)
+        return 0
 
     if args.command == "selftest":
         selftest()
