@@ -13,6 +13,7 @@ from . import food
 from .food_quick375 import selected_day, food_redirect, MEALS
 
 from ..food_storage_guard391 import require_food_storage391
+from ..food_engine392 import get_food_engine392
 
 router = APIRouter(
     dependencies=[Depends(require_food_storage391)]
@@ -148,11 +149,14 @@ def safe_csv_cell(value):
 
 
 @router.get("/food/export.csv")
-def export_food_csv(day: str):
+def export_food_csv(
+    day: str,
+    db_engine=Depends(get_food_engine392),
+):
     day = selected_day(day)
     food.init_food_schema()
 
-    with food.engine.connect() as db:
+    with db_engine.connect() as db:
         records = db.execute(text("""
             SELECT e.id, e.eaten_on, e.meal, e.servings,
                    p.name, p.barcode, p.serving_description,

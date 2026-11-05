@@ -14,20 +14,24 @@ from .food_quick375 import selected_day
 from .food_review378 import safe_csv_cell
 
 from ..food_storage_guard391 import require_food_storage391
+from ..food_engine392 import get_food_engine392
 
 router = APIRouter(
     dependencies=[Depends(require_food_storage391)]
 )
 
 
-def week_details(day):
+def week_details(day, db_engine=None):
     """Seven calendar days, retaining missing nutrient information."""
     end = date.fromisoformat(selected_day(day))
     start = end - timedelta(days=6)
 
     food.init_food_schema()
 
-    with food.engine.connect() as db:
+    selected_engine = (
+        db_engine if db_engine is not None else food.engine
+    )
+    with selected_engine.connect() as db:
         entries = db.execute(text("""
             SELECT e.eaten_on, e.servings, p.nutrients
             FROM tracker_food_entries e
@@ -142,8 +146,11 @@ def week_details(day):
 
 
 @router.get("/food/weekly.csv")
-def weekly_csv(day: str):
-    review = week_details(day)
+def weekly_csv(
+    day: str,
+    db_engine=Depends(get_food_engine392),
+):
+    review = week_details(day, db_engine=db_engine)
 
     output = io.StringIO(newline="")
     writer = csv.writer(output)
