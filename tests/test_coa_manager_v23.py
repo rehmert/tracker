@@ -3,6 +3,19 @@ from app.main import app
 from app.db import SessionLocal
 from app.models import Coa, Vial
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _coa_test_lifespan():
+    """Initialize the actual application schema in isolated pytest data.
+
+    Constructing TestClient without a context does not run lifespan.
+    """
+    with TestClient(app):
+        yield
+
+
 
 def test_coa_manager_pages_and_metadata_edit():
     client = TestClient(app)

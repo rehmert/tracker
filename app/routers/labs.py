@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import charts, config, labs, services
+from ..attachment_integrity337 import uploaded_transaction, delete_after_commit
 from ..db import get_db
 from ..models import LabReport, LabResult
 from ..templating import render
@@ -296,10 +297,11 @@ async def create_report(request: Request, drawn_on: str = Form(""), lab_name: st
             error = str(exc)
     if error:
         return _form(request, db, rows=echo or None, values=values, error=error)
-    report = LabReport(drawn_on=when, lab_name=lab_name.strip(), notes=notes.strip(), **stored)
-    report.results = results
-    db.add(report)
-    db.commit()
+    with uploaded_transaction(db, stored, config.LAB_DIR, services.delete_stored_file):
+        report = LabReport(drawn_on=when, lab_name=lab_name.strip(), notes=notes.strip(), **stored)
+        report.results = results
+        db.add(report)
+        db.commit()
     return services.flash_redirect(f"/labs/{report.id}", msg=f"Saved {len(results)} result(s).")
 
 
@@ -487,10 +489,10 @@ def delete_result(xid: int, db: Session = Depends(get_db)):
 @router.post("/labs/{rid}/delete")
 def delete_report(rid: int, db: Session = Depends(get_db)):
     rep = _report(db, rid)
-    if rep.stored_name:
-        services.delete_stored_file(rep.stored_name, config.LAB_DIR)
+    stored_name = rep.stored_name
     db.delete(rep)
     db.commit()
+    delete_after_commit(stored_name, config.LAB_DIR, services.delete_stored_file)
     return services.flash_redirect("/labs", msg="Report deleted.")
 
 @router.get("/labs/trends/{analyte_key}")

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import json
 
 from .. import config, services, units as U
+from ..attachment_integrity337 import uploaded_transaction, delete_after_commit
 from ..templating import render
 from fastapi import Request
 from ..db import get_db
@@ -94,7 +95,8 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
     v.linked_coas.append(new_coa)
     if v.coa_id is None:
         v.coa_id = coa_id
-    db.commit()
+    with uploaded_transaction(db, stored, config.UPLOAD_DIR, services.delete_stored_file):
+        db.commit()
     return services.flash_redirect(back, msg="COA uploaded.")
 
 
@@ -127,8 +129,7 @@ def delete_coa(cid: int, db: Session = Depends(get_db)):
     db.flush()
     db.delete(c)
     db.commit()
-    if stored_name:
-        services.delete_stored_file(stored_name)
+    delete_after_commit(stored_name, config.UPLOAD_DIR, services.delete_stored_file)
     return services.flash_redirect(f"/vials/{vid}" if vid else "/coas", msg="COA deleted.")
 
 
