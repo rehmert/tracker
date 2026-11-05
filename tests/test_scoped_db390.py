@@ -133,17 +133,29 @@ def test_legacy_mode_preserves_injected_db(monkeypatch):
 def test_session_mode_validates_before_yield(
     dev_auth, monkeypatch,
 ):
+    from app import workspace_engine401
+
     sentinel = object()
     calls = []
 
     def fake_resolver(request):
-        calls.append(request)
+        calls.append(("session", request))
+        return object()
+
+    def fake_engine(request):
+        calls.append(("engine", request))
         return object()
 
     monkeypatch.setattr(
         scoped_db390,
         "resolve_authenticated_storage",
         fake_resolver,
+    )
+
+    monkeypatch.setattr(
+        workspace_engine401,
+        "resolve_live_engine401",
+        fake_engine,
     )
 
     request = make_request()
@@ -158,7 +170,11 @@ def test_session_mode_validates_before_yield(
     with pytest.raises(StopIteration):
         next(generator)
 
-    assert calls == [request]
+    assert calls == [
+        ("session", request),
+        ("engine", request),
+    ]
+
 
 
 def test_failed_guard_never_exposes_session(

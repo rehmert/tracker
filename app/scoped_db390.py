@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from . import session_auth385
 from .db import get_db
 from .user_db389 import resolve_authenticated_storage
+from .workspace_engine401 import get_workspace_db401
 
 
 def get_scoped_db390(
@@ -21,6 +22,10 @@ def get_scoped_db390(
     """Preserve FastAPI's overrideable get_db subdependency."""
 
     if session_auth385.enabled():
+        # Preserve the established server-side session check.
         resolve_authenticated_storage(request)
 
-    yield db
+    # Release 401 independently validates the authorized
+    # SQLAlchemy engine before exposing the session.
+    # The original get_db subdependency remains overrideable.
+    yield from get_workspace_db401(request, db)
