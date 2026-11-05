@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const days=Array.from(grid.querySelectorAll('.calendar-day[data-calendar-date]'));if(!days.length)return;
  const bar=document.createElement('div');bar.className='tracker-calendar-views';bar.setAttribute('aria-label','Calendar display range');
  const modes=[['day','Day',1],['week','Week',7],['two-weeks','2 weeks',14],['month','Month',0]];
- const today=new Date().toISOString().slice(0,10),current=days.some(x=>x.dataset.calendarDate===today)?today:(days.find(x=>!x.classList.contains('outside'))||days[0]).dataset.calendarDate;
+ const today=[new Date().getFullYear(),String(new Date().getMonth()+1).padStart(2,'0'),String(new Date().getDate()).padStart(2,'0')].join('-'),current=days.some(x=>x.dataset.calendarDate===today)?today:(days.find(x=>!x.classList.contains('outside'))||days[0]).dataset.calendarDate;
  let anchor=current;let mode=localStorage.getItem('tracker.calendar.view')|| (matchMedia('(max-width:760px)').matches?'week':'month');
  if(!modes.some(x=>x[0]===mode))mode='month';
  const label=document.createElement('p');label.setAttribute('role','status');label.setAttribute('aria-live','polite');
