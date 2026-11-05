@@ -71,21 +71,82 @@ def test_cli_isolated_restore_creates_real_receipt(tmp_path, monkeypatch):
     assert "RESTORE CHECK PASSED" in response.text
 
 
-def test_scheduled_backup_refuses_prune_when_restore_fails(monkeypatch, tmp_path):
-    from scripts import tracker_backup
-    archive = tmp_path / "tracker-20261102T000000000000Z.zip"
-    archive.write_bytes(b"fixture")
-    monkeypatch.setattr(tracker_backup, "create_backup", lambda: archive)
-    actions = []
-    monkeypatch.setattr(
-        tracker_backup, "prune_backups", lambda: actions.append("PRUNE")
-    )
-    def fail_restore(_archive):
-        raise RuntimeError("simulated restore failure")
-    monkeypatch.setattr(tracker_backup, "verify_restorable", fail_restore)
-    monkeypatch.setattr(sys, "argv", ["tracker_backup", "create"])
+def test_scheduled_backup_refuses_prune_when_restore_fails(
+    monkeypatch, tmp_path
+):
+    """Failed restoration must not prune existing archives."""
+    from types import SimpleNamespace
     import pytest
+    from scripts import tracker_backup
+
+    data = tmp_path / "data"
+    data.mkdir()
+    database = data / "tracker.db"
+    database.write_bytes(b"test-fixture")
+
+    archives = tmp_path / "archives"
+    archives.mkdir()
+
+    existing = archives / "tracker-existing.zip"
+    existing.write_bytes(b"preserve-existing")
+
+    created = archives / "tracker-20261102T000000000000Z.zip"
+    created.write_bytes(b"created-fixture")
+
+    context = SimpleNamespace(
+        user_id=1,
+        scope="legacy-admin-instance",
+        data_dir=data,
+        database=database,
+        backup_dir=archives,
+    )
+
+    calls = []
+
+    def selected_context():
+        calls.append("context")
+        return context
+
+    def create_scoped(*, data_dir, backup_dir):
+        assert data_dir == context.data_dir
+        assert backup_dir == context.backup_dir
+        calls.append("create")
+        return created
+
+    def failed_restore(archive):
+        assert archive == created
+        calls.append("restore")
+        raise RuntimeError("simulated restore failure")
+
+    def forbidden_prune(*, backup_dir):
+        calls.append("prune")
+        raise AssertionError(
+            "Pruning after failed restore is forbidden"
+        )
+
+    monkeypatch.setattr(
+        tracker_backup, "administrator_context410",
+        selected_context,
+    )
+    monkeypatch.setattr(
+        tracker_backup, "create_backup",
+        create_scoped,
+    )
+    monkeypatch.setattr(
+        tracker_backup, "verify_restorable",
+        failed_restore,
+    )
+    monkeypatch.setattr(
+        tracker_backup, "prune_backups",
+        forbidden_prune,
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["tracker_backup", "create"]
+    )
+
     with pytest.raises(RuntimeError, match="simulated"):
         tracker_backup.main()
-    assert actions == []
-    assert archive.exists()
+
+    assert calls == ["context", "create", "restore"]
+    assert created.read_bytes() == b"created-fixture"
+    assert existing.read_bytes() == b"preserve-existing"
