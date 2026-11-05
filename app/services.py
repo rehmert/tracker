@@ -86,12 +86,26 @@ def purchase_landed(p):
 def vial_views(db: Session, vials: list[Vial] | None = None) -> dict[int, calc.VialData]:
     if vials is None:
         vials = list(db.scalars(select(Vial).order_by(Vial.id.desc())))
-    consumed = dict(db.execute(
-        select(DoseLog.vial_id, func.sum(DoseLog.amount_base)).group_by(DoseLog.vial_id)).all())
+    if not vials:
+        return {}
+    scoped_ids=[v.id for v in vials]
+    dose_query=select(
+        DoseLog.vial_id,func.sum(DoseLog.amount_base)
+    ).group_by(DoseLog.vial_id)
     from .models import BlendComponent
-    transferred = dict(db.execute(
-        select(BlendComponent.source_vial_id, func.sum(BlendComponent.transferred_base))
-        .group_by(BlendComponent.source_vial_id)).all())
+    transfer_query=select(
+        BlendComponent.source_vial_id,
+        func.sum(BlendComponent.transferred_base)
+    ).group_by(BlendComponent.source_vial_id)
+    if len(scoped_ids)<=300:
+        dose_query=dose_query.where(
+            DoseLog.vial_id.in_(scoped_ids)
+        )
+        transfer_query=transfer_query.where(
+            BlendComponent.source_vial_id.in_(scoped_ids)
+        )
+    consumed=dict(db.execute(dose_query).all())
+    transferred=dict(db.execute(transfer_query).all())
     landed_cache: dict[int, dict[int, float]] = {}
     out: dict[int, calc.VialData] = {}
     for v in vials:

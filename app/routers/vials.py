@@ -16,6 +16,7 @@ from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage
 from .. import manual_supplies
 from ..templating import render
 from ..list_queries297 import vial_listing
+from ..preparation_reads345 import load_preparations
 
 router = APIRouter()
 
@@ -565,6 +566,7 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_db)):
     doses = list(db.scalars(select(DoseLog).where(DoseLog.vial_id == vid)
                             .order_by(DoseLog.taken_at.desc())))
     rows = [{"dose": d, "cost": vd.cost_per_base * d.amount_base} for d in doses]
+    prep_events, prep_usage = load_preparations(db, vid)
 
     # Read-only category metadata, matching the Dose log.
     counted_supply_kinds = set(db.scalars(
@@ -578,7 +580,7 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_db)):
                   all_coas=list(db.scalars(select(Coa).order_by(Coa.id.desc()))),
                   disposable_supplies=manual_supplies.available(db),
                   counted_supply_kinds=counted_supply_kinds,
-                  prep_events=list(db.scalars(select(PreparationEvent).where(PreparationEvent.vial_id == vid).order_by(PreparationEvent.id.desc()))), prep_usage={e.id: [(db.get(SupplyUsage, link.usage_id), db.get(Supply, db.get(SupplyUsage, link.usage_id).supply_id)) for link in db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == e.id))] for e in db.scalars(select(PreparationEvent).where(PreparationEvent.vial_id == vid))})
+                  prep_events=prep_events, prep_usage=prep_usage)
 
 
 @router.post("/vials/{vid}")
