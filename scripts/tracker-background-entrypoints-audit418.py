@@ -56,10 +56,11 @@ TARGETS = {
     ),
     "database_health_sweep": (
         "scripts/check_database_health.py",
-        "broad_discovery_read_only",
+        "admin_default_broad_opt_in",
         (
-            "SEARCH_PATHS",
-            'directory.rglob("*.db")',
+            "administrator_context410()",
+            "choice.add_argument(",
+            "for directory in SEARCH_PATHS:",
             "sqlite3.connect(",
         ),
     ),
@@ -129,7 +130,7 @@ TARGETS = {
 REVIEW_REQUIRED = {
     "validated_default_manual_override",
     "opt_in_scoped_legacy_available",
-    "broad_discovery_read_only",
+    "admin_default_broad_opt_in",
     "unscoped_migration_write",
     "read_only_optional_receipt_write",
     "source_snapshot_optional_write",
@@ -237,9 +238,14 @@ def validate(report):
             "Retired legacy backup must not be queued for review"
         )
 
-    if "database_health_sweep" not in report["review_queue"]:
+    health = report["entrypoints"]["database_health_sweep"]
+    if (
+        health["classification"] != "admin_default_broad_opt_in"
+        or not health["requires_review"]
+        or "database_health_sweep" not in report["review_queue"]
+    ):
         raise RuntimeError(
-            "Database sweep review was lost"
+            "Database health override review was lost"
         )
 
 

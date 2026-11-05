@@ -49,7 +49,7 @@ def test_legacy_bypass_paths_are_not_classified_as_protected():
 
     assert (
         items["database_health_sweep"]["classification"]
-        == "broad_discovery_read_only"
+        == "admin_default_broad_opt_in"
     )
 
     assert (
