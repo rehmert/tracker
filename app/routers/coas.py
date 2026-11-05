@@ -249,29 +249,24 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
             new_file = await services.save_upload(file)
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
-    old_name = coa.stored_name if coa.original_name else None
-    _revision(db, coa, "edit")
-    coa.lab_name = lab_name.strip()
-    coa.tested_on = tested
-    coa.purity_pct = purity
-    coa.endotoxin_pct = endotoxin
-    coa.reported_content_value = content
-    coa.reported_content_unit = unit
-    coa.job_id = job_id.strip()
-    coa.verify_code = verify_code.strip()
-    coa.notes = notes.strip()
-    if new_file:
-        for key, value in new_file.items():
-            setattr(coa, key, value)
-    try:
-        db.commit()
-    except Exception:
-        db.rollback()
+    with uploaded_transaction(db, new_file, config.UPLOAD_DIR, services.delete_stored_file):
+        old_name = coa.stored_name if coa.original_name else None
+        _revision(db, coa, "edit")
+        coa.lab_name = lab_name.strip()
+        coa.tested_on = tested
+        coa.purity_pct = purity
+        coa.endotoxin_pct = endotoxin
+        coa.reported_content_value = content
+        coa.reported_content_unit = unit
+        coa.job_id = job_id.strip()
+        coa.verify_code = verify_code.strip()
+        coa.notes = notes.strip()
         if new_file:
-            services.delete_stored_file(new_file["stored_name"])
-        raise
+            for key, value in new_file.items():
+                setattr(coa, key, value)
+        db.commit()
     if new_file and old_name:
-        services.delete_stored_file(old_name)
+        delete_after_commit(old_name, config.UPLOAD_DIR, services.delete_stored_file)
     return services.flash_redirect(back, msg="COA updated.")
 
 
