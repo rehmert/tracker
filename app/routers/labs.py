@@ -16,9 +16,17 @@ from ..models import LabReport, LabResult
 from ..templating import render
 
 from ..attachment_scope396 import require_attachment_scope396
+from ..attachment_files400 import (
+    require_attachment_workspace400,
+    attachment_directory400,
+    attachment_file400,
+)
 
 router = APIRouter(
-    dependencies=[Depends(require_attachment_scope396)]
+    dependencies=[
+        Depends(require_attachment_scope396),
+        Depends(require_attachment_workspace400),
+    ]
 )
 RANGES = {365: "1 year", 1095: "3 years", 3650: "All"}
 BLANK_ROW = {"analyte": "", "value": "", "unit": "", "ref_low": "", "ref_high": ""}
@@ -296,12 +304,12 @@ async def create_report(request: Request, drawn_on: str = Form(""), lab_name: st
     stored = {}
     if not error and file is not None and file.filename:
         try:
-            stored = await services.save_upload(file, config.LAB_DIR)
+            stored = await services.save_upload(file, attachment_directory400("labs"))
         except ValueError as exc:
             error = str(exc)
     if error:
         return _form(request, db, rows=echo or None, values=values, error=error)
-    with uploaded_transaction(db, stored, config.LAB_DIR, services.delete_stored_file):
+    with uploaded_transaction(db, stored, attachment_directory400("labs"), services.delete_stored_file):
         report = LabReport(drawn_on=when, lab_name=lab_name.strip(), notes=notes.strip(), **stored)
         report.results = results
         db.add(report)
@@ -457,7 +465,7 @@ def report_page(rid: int, request: Request, sort: str = "analyte", direction: st
 @router.get("/labs/{rid}/file")
 def report_file(rid: int, db: Session = Depends(get_scoped_db390)):
     rep = _report(db, rid)
-    path = config.LAB_DIR / rep.stored_name if rep.stored_name else None
+    path = attachment_file400("labs", rep.stored_name) if rep.stored_name else None
     if path is None or not path.exists():
         raise HTTPException(404, "No file for this report")
     return FileResponse(path, media_type=rep.content_type, filename=rep.original_name,
@@ -496,7 +504,7 @@ def delete_report(rid: int, db: Session = Depends(get_scoped_db390)):
     stored_name = rep.stored_name
     db.delete(rep)
     db.commit()
-    delete_after_commit(stored_name, config.LAB_DIR, services.delete_stored_file)
+    delete_after_commit(stored_name, attachment_directory400("labs"), services.delete_stored_file)
     return services.flash_redirect("/labs", msg="Report deleted.")
 
 @router.get("/labs/trends/{analyte_key}")

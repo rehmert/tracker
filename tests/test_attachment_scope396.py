@@ -240,7 +240,11 @@ def test_untrusted_future_account_fails_closed(monkeypatch):
     assert error.value.status_code == 403
 
 
-def test_existing_attachment_paths_are_not_changed():
+def test_attachment_paths_use_verified_workspace_boundary():
+    """Existing attachment locations are preserved by the resolver.
+
+    Routers must no longer reference process-wide paths directly.
+    """
     labs_source = (
         ROOT / "app/routers/labs.py"
     ).read_text()
@@ -249,10 +253,39 @@ def test_existing_attachment_paths_are_not_changed():
         ROOT / "app/routers/coas.py"
     ).read_text()
 
-    assert "config.LAB_DIR" in labs_source
-    assert "config.UPLOAD_DIR" in coa_source
-    assert "uploaded_transaction" in labs_source
-    assert "uploaded_transaction" in coa_source
+    assert "config.LAB_DIR" not in labs_source
+    assert "config.UPLOAD_DIR" not in coa_source
+
+    assert (
+        'attachment_directory400("labs")'
+        in labs_source
+    )
+    assert (
+        'attachment_directory400("coa")'
+        in coa_source
+    )
+
+    assert (
+        'attachment_file400("labs", rep.stored_name)'
+        in labs_source
+    )
+    assert (
+        'attachment_file400("coa", c.stored_name)'
+        in coa_source
+    )
+
+    # Preserve commit/rollback cleanup of uploaded files.
+    for source in (labs_source, coa_source):
+        assert "uploaded_transaction" in source
+        assert "delete_after_commit" in source
+
+    # Legacy paths are now owned by the central resolver.
+    helper = (
+        ROOT / "app/attachment_files400.py"
+    ).read_text()
+
+    assert "config.LAB_DIR" in helper
+    assert "config.UPLOAD_DIR" in helper
 
 
 def test_additional_accounts_still_disabled():

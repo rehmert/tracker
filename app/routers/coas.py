@@ -13,9 +13,17 @@ from ..scoped_db390 import get_scoped_db390
 from ..models import Coa, CoaRevision, Vial, Compound
 
 from ..attachment_scope396 import require_attachment_scope396
+from ..attachment_files400 import (
+    require_attachment_workspace400,
+    attachment_directory400,
+    attachment_file400,
+)
 
 router = APIRouter(
-    dependencies=[Depends(require_attachment_scope396)]
+    dependencies=[
+        Depends(require_attachment_scope396),
+        Depends(require_attachment_workspace400),
+    ]
 )
 
 COA_STATUSES = ("unreviewed", "verified", "rejected", "needs_review")
@@ -71,14 +79,14 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
         if endotoxin is not None and not 0 <= endotoxin <= 100:
             raise ValueError("Endotoxin percentage must be 0-100.")
         if file and file.filename:
-            stored = await services.save_upload(file)
+            stored = await services.save_upload(file, attachment_directory400("coa"))
         else:
             import uuid
             stored = dict(original_name="", stored_name="metadata-" + uuid.uuid4().hex,
                           content_type="", size_bytes=0, sha256="")
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
-    with uploaded_transaction(db, stored, config.UPLOAD_DIR, services.delete_stored_file):
+    with uploaded_transaction(db, stored, attachment_directory400("coa"), services.delete_stored_file):
         fields = dict(lab_name=lab_name.strip(), tested_on=tested, purity_pct=purity,
                       reported_content_value=reported, reported_content_unit=unit,
                       notes=notes.strip(), endotoxin_pct=endotoxin, job_id=job_id.strip(),
@@ -107,7 +115,7 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
 @router.get("/coas/{cid}/file")
 def coa_file(cid: int, db: Session = Depends(get_scoped_db390)):
     c = db.get(Coa, cid)
-    path = config.UPLOAD_DIR / c.stored_name if c else None
+    path = attachment_file400("coa", c.stored_name) if c and c.stored_name else None
     if c is None or not c.original_name or not path.exists():
         raise HTTPException(404, "File not found")
     return FileResponse(path, media_type=c.content_type, filename=c.original_name,
@@ -133,7 +141,7 @@ def delete_coa(cid: int, db: Session = Depends(get_scoped_db390)):
     db.flush()
     db.delete(c)
     db.commit()
-    delete_after_commit(stored_name, config.UPLOAD_DIR, services.delete_stored_file)
+    delete_after_commit(stored_name, attachment_directory400("coa"), services.delete_stored_file)
     return services.flash_redirect(f"/vials/{vid}" if vid else "/coas", msg="COA deleted.")
 
 
@@ -250,10 +258,10 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
             raise ValueError("Reported content unit must match linked vials.")
         tested = services.parse_date(tested_on)
         if file and file.filename:
-            new_file = await services.save_upload(file)
+            new_file = await services.save_upload(file, attachment_directory400("coa"))
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
-    with uploaded_transaction(db, new_file, config.UPLOAD_DIR, services.delete_stored_file):
+    with uploaded_transaction(db, new_file, attachment_directory400("coa"), services.delete_stored_file):
         old_name = coa.stored_name if coa.original_name else None
         _revision(db, coa, "edit")
         coa.lab_name = lab_name.strip()
@@ -270,7 +278,7 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
                 setattr(coa, key, value)
         db.commit()
     if new_file and old_name:
-        delete_after_commit(old_name, config.UPLOAD_DIR, services.delete_stored_file)
+        delete_after_commit(old_name, attachment_directory400("coa"), services.delete_stored_file)
     return services.flash_redirect(back, msg="COA updated.")
 
 
