@@ -53,12 +53,16 @@ def require_food_storage391(request: Request):
 
     # Most existing food operations still access food.engine.
     # Protect that direct engine reference until migration.
-    from .routers import food
+    from .routers import food, food_quick375
 
-    if food.engine is not administrator_engine:
-        from fastapi import HTTPException
-        raise HTTPException(
-            503, "Food journal engine substitution denied"
-        )
+    # Both modules import their own process-wide engine
+    # references. Check every independently imported alias
+    # before any database-backed food endpoint executes.
+    for selected in (food.engine, food_quick375.engine):
+        if selected is not administrator_engine:
+            from fastapi import HTTPException
+            raise HTTPException(
+                503, "Food journal engine substitution denied"
+            )
 
     return None
