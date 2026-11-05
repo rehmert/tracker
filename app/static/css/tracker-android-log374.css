@@ -1,0 +1,39 @@
+
+/* Android-first quick logging: keeps the existing validated server forms. */
+@media(max-width:760px){
+ body:has(form[data-tracker-vitals-entry]) #main-content,
+ body:has(form[hx-post="/doses"]) #main-content {padding: .65rem!important;}
+ form[data-tracker-vitals-entry],form[hx-post="/doses"]{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:.55rem!important;width:100%;}
+ form[data-tracker-vitals-entry] .field,form[hx-post="/doses"] .field{min-width:0;}
+ form[data-tracker-vitals-entry] .field:has([name="measured_at"]),form[data-tracker-vitals-entry] .field:has([name="context"]),
+ form[data-tracker-vitals-entry] .field:has([name="notes"]),form[data-tracker-vitals-entry] .field:has([name="weight"]),
+ form[hx-post="/doses"] .inner,form[hx-post="/doses"] .field:has([name="taken_at"]),
+ form[hx-post="/doses"] .field:has([name="notes"]),form[hx-post="/doses"] #dose-preview,
+ form[hx-post="/doses"] #dose-context,form[hx-post="/doses"] #tracker-dose-final-review,
+ form[data-tracker-vitals-entry] .wide,form[hx-post="/doses"] .wide
+ {grid-column:1/-1!important;}
+ form[data-tracker-vitals-entry] input,form[data-tracker-vitals-entry] select,
+ form[hx-post="/doses"] input,form[hx-post="/doses"] select{
+  width:100%;max-width:100%;box-sizing:border-box;min-height:48px;font-size:16px!important;
+ }
+ form[data-tracker-vitals-entry] button[type="submit"],form[hx-post="/doses"] button[type="submit"]{min-height:54px;width:100%;}
+ form[data-tracker-vitals-entry] .field span,form[hx-post="/doses"] .field span{font-size:.85rem;line-height:1.2;display:block;}
+ form[data-tracker-vitals-entry] label:has([name="weight_unit"]){align-self:end}
+ #dose-context{display:none}
+ #dose-context.tracker-mobile-expanded{display:block}
+ .tracker-mobile-log-links{position:sticky;top:0;z-index:5;background:var(--surface,#fff);padding:.25rem 0;}
+ .tracker-mobile-quick-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem;position:sticky;top:0;z-index:9;background:var(--surface,#fff);padding:.35rem 0;}
+ .tracker-mobile-quick-tabs button{min-height:44px;padding:.25rem;border:1px solid var(--border,#bbb);border-radius:10px;font-weight:650}
+ .tracker-mobile-quick-tabs button[aria-pressed="true"]{background:var(--accent,#183d63);color:#fff}
+ form[data-tracker-vitals-entry][data-mobile-mode="weight"] .field:has([name="systolic"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="weight"] .field:has([name="diastolic"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="weight"] .field:has([name="pulse"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="bp"] .field:has([name="weight"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="bp"] .field:has([name="weight_unit"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="bp"] .field:has([name="pulse"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="pulse"] .field:has([name="weight"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="pulse"] .field:has([name="weight_unit"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="pulse"] .field:has([name="systolic"]),
+ form[data-tracker-vitals-entry][data-mobile-mode="pulse"] .field:has([name="diastolic"]){display:none!important;}
+ .tracker-mobile-quick-tabs button:focus-visible{outline:3px solid #497cb4}
+}
