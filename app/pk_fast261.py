@@ -33,6 +33,14 @@ def series_fast(
     ka=pk.LN2/absorption_half_life_hours
     near=abs(ka-ke)<1e-10
 
+    # The direct model avoids cancellation when rates nearly match.
+    if abs(ka-ke)<1e-7:
+        return pk.series(
+            start,end,actual,planned,
+            half_life_hours,absorption_half_life_hours,
+            step_hours=step_hours
+        )
+
     def prepare(doses):
         ordered=sorted(
             doses,key=lambda d:d[0]
