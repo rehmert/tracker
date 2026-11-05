@@ -1,0 +1,82 @@
+/* Release 380: mobile-first external food-name lookup. */
+
+.food380-panel {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: .75rem;
+  margin: .8rem 0;
+}
+
+.food380-search {
+  display: grid;
+  gap: .5rem;
+}
+
+.food380-search label {
+  display: grid;
+  gap: .3rem;
+  min-width: 0;
+}
+
+.food380-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 50px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+.food380-search button {
+  min-height: 50px;
+}
+
+.food380-results {
+  display: grid;
+  gap: .5rem;
+  margin-top: .6rem;
+}
+
+.food380-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .6rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 10px;
+  padding: .7rem;
+}
+
+.food380-result-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.food380-result-info strong,
+.food380-result-info small {
+  display: block;
+}
+
+.food380-result-info small {
+  opacity: .8;
+  margin-top: .25rem;
+}
+
+.food380-result button {
+  min-height: 46px;
+}
+
+@media(max-width: 520px) {
+  .food380-panel {
+    padding: .55rem;
+  }
+
+  .food380-result {
+    grid-template-columns: 1fr;
+    padding: .6rem;
+  }
+
+  .food380-result button {
+    width: 100%;
+    min-height: 48px;
+  }
+}

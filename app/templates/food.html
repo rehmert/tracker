@@ -7,6 +7,8 @@
 <link rel="stylesheet" href="/static/css/tracker-food377.css?v=377">
 <link rel="stylesheet" href="/static/css/tracker-food378.css?v=378">
 <link rel="stylesheet" href="/static/css/tracker-food379.css?v=379">
+<link rel="stylesheet" href="/static/css/tracker-food380.css?v=380">
+<script src="/static/js/tracker-food380.js?v=380" defer></script>
 <script src="/static/js/tracker-food374.js?v=376" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
@@ -44,7 +46,8 @@
 <p class="note">Barcode product data provided by <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" target="_blank">Open Food Facts</a> and may be incomplete. Check serving basis and package values.</p>
 <nav class="food376-nav" aria-label="Food Journal sections">
 <a href="#food-quick-log">Quick Log</a>
-<a href="#food-search">Search</a>
+<a href="#food-search">Saved Foods</a>
+<a href="#food-name-search">Find New Food</a>
 <a href="#food-templates">Meals</a>
 <a href="#food-add">Scan / Add</a>
 <a href="#food-week">Trends</a>
@@ -342,6 +345,50 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 {% endfor %}
 </div>
 </details>
+</section>
+
+<section id="food-name-search" class="food380-panel">
+<h2>Search Food Database by Name</h2>
+<p class="note">
+Find packaged foods you have not logged before.
+Search by product or brand name, then select a match
+to review its nutrition information before saving.
+</p>
+<form id="food380-search-form" class="food380-search">
+<label for="food380-query">Food or Brand Name
+<input id="food380-query"
+ name="q"
+ type="search"
+ minlength="2"
+ maxlength="80"
+ autocomplete="off"
+ placeholder="e.g. Greek yogurt, protein bar"
+ required>
+</label>
+<button type="submit" class="primary"
+ id="food380-search-button">Search Foods</button>
+</form>
+
+<p id="food380-status"
+ role="status"
+ aria-live="polite"
+ class="note">
+Search Open Food Facts. Results may have incomplete nutrition data.
+</p>
+
+<div id="food380-results"
+ class="food380-results"
+ aria-label="Food database search results">
+</div>
+
+<p class="note">
+Product data provided by
+<a href="https://world.openfoodfacts.org/"
+ rel="noopener noreferrer" target="_blank">
+Open Food Facts</a>.
+Confirm the product, serving size and nutrition label
+before recording your food.
+</p>
 </section>
 <section id="food-add">
 <h2>Add Food or Drink</h2>
