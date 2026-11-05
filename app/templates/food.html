@@ -9,10 +9,14 @@
 <link rel="stylesheet" href="/static/css/tracker-food379.css?v=379">
 <link rel="stylesheet" href="/static/css/tracker-food380.css?v=380">
 <link rel="stylesheet" href="/static/css/tracker-food381.css?v=381">
+<link rel="stylesheet" href="/static/css/tracker-food382.css?v=382">
+<script src="/static/js/tracker-food382.js?v=382" defer></script>
 <script src="/static/js/tracker-food380.js?v=381" defer></script>
 <script src="/static/js/tracker-food374.js?v=376" defer></script>
 <h1>Food Journal</h1>
-<p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
+<p class="note">Tap a section below to expand it.
+Daily totals remain visible; nutrient values can be incomplete.
+Confirm package-label values before saving.</p>
 <nav class="food377-days" aria-label="Food Journal dates">
 <a href="/food?day={{ previous_day }}">← Previous</a>
 <a href="/food?day={{ today }}">Today</a>
@@ -54,9 +58,12 @@
 <a href="#food-week">Trends</a>
 <a href="#food-meal-totals">Meal Totals</a>
 <a href="#food-nutrient-week">Nutrients</a>
+<a href="#food-recorded">Recorded Meals</a>
 </nav>
 
-<section id="food-search" class="food376-panel">
+<details id="food-search" class="food376-panel food382-accordion" data-food382-section="food-search">
+<summary>Search Saved Foods<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
 <h2>Find Saved Food</h2>
 <form method="get" action="/food" class="food376-search">
 <input type="hidden" name="day" value="{{ day }}">
@@ -93,9 +100,12 @@
 {% endfor %}
 </div>
 {% endif %}
-</section>
+</div>
+</details>
 
-<section id="food-templates" class="food376-panel">
+<details id="food-templates" class="food376-panel food382-accordion" data-food382-section="food-templates">
+<summary>Meal Templates<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
 <h2>Meal Templates</h2>
 <details>
 <summary>Save a Meal From This Day</summary>
@@ -151,9 +161,12 @@ do not change the template's food list or portions.</p>
 {% else %}
 <p class="note">No meal templates saved yet.</p>
 {% endif %}
-</section>
+</div>
+</details>
 
-<section id="food-week" class="food376-panel">
+<details id="food-week" class="food376-panel food382-accordion" data-food382-section="food-week">
+<summary>Seven-Day Trends<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
 <h2>Last Seven Days</h2>
 <p class="note">Days without entries are unlogged, not confirmed
 zero intake. Trends reflect reported values only.</p>
@@ -191,10 +204,13 @@ F {{ item.totals.fat }}g
 </div>
 <p class="note">* Calorie value is incomplete because at least one
 food has no calorie data. Partial macros are also marked.</p>
-</section>
+</div>
+</details>
 
 
-<section id="food-meal-totals" class="food378-panel">
+<details id="food-meal-totals" class="food378-panel food382-accordion" data-food382-section="food-meal-totals">
+<summary>Meal Totals<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
 <h2>Meal Totals</h2>
 <p class="note">Totals represent reported food information only.
 Unknown nutrients are excluded from sums, not assumed to be zero.</p>
@@ -228,9 +244,12 @@ Unknown nutrients are excluded from sums, not assumed to be zero.</p>
  href="/food/export.csv?day={{ day }}">
 Download This Day as CSV
 </a>
-</section>
+</div>
+</details>
 
-<section id="food-nutrient-week" class="food379-panel">
+<details id="food-nutrient-week" class="food379-panel food382-accordion" data-food382-section="food-nutrient-week">
+<summary>Weekly Nutrient Review<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
 <h2>Weekly Nutrient Review</h2>
 <p class="note">
 {{ nutrient_week.start }} through {{ nutrient_week.end }}.
@@ -287,8 +306,11 @@ clinical deficiency or toxicity determinations. Incomplete
 labels, missing meals and unlogged supplements can affect
 the reported totals.
 </p>
-</section>
-<section id="food-quick-log" class="food375-section">
+</div>
+</details>
+<details id="food-quick-log" class="food375-section food382-accordion" data-food382-section="food-quick-log">
+<summary>Quick Log / Favorites<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
 <h2>Quick Log</h2>
 <p class="note">Reuse a saved food with its original nutrient values.
 Adjust the quantity and meal before adding it to the selected day.</p>
@@ -346,9 +368,12 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 {% endfor %}
 </div>
 </details>
-</section>
+</div>
+</details>
 
-<section id="food-name-search" class="food380-panel">
+<details id="food-name-search" class="food380-panel food382-accordion" data-food382-section="food-name-search">
+<summary>Search Food Database<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
 <h2>Search Food Database by Name</h2>
 <p class="note">
 Find packaged foods you have not logged before.
@@ -395,8 +420,11 @@ Confirm the product, serving size and nutrition label
 before recording your food. A missing macro value means
 unknown, not zero.
 </p>
-</section>
-<section id="food-add">
+</div>
+</details>
+<details id="food-add" class="food382-accordion" data-food382-section="food-add">
+<summary>Scan Barcode / Add Food<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
 <h2>Add Food or Drink</h2>
 <div class="food-scan">
  <button type="button" id="food-start-scan">Scan Barcode</button>
@@ -436,8 +464,11 @@ unknown, not zero.
 <p class="note" id="food-review-warning">Only confirmed numbers should be entered. Leave unknown nutrients blank. Newly recorded unknown values remain distinct from confirmed zero values.</p>
 <button class="primary food-save" type="submit">Save Food Entry</button>
 </form>
-</section>
-<section><h2>Recorded Meals</h2>
+</div>
+</details>
+<details id="food-recorded" class="food382-accordion" data-food382-section="food-recorded">
+<summary>Recorded Meals<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content"><h2>Recorded Meals</h2>
 {% for e in entries %}
 <article class="food-log-row food375-record">
 <div><strong>{{ e.name }}</strong>
@@ -542,7 +573,8 @@ Save Nutrition Correction
 </div>
 </article>
 {% else %}<p>No food logged on this day.</p>{% endfor %}
-</section>
+</div>
+</details>
 <details><summary>Set Your Own Daily Nutrition Targets</summary>
 <p class="note">Enter personal tracking targets, not clinical recommendations. Leave blank to remove a target. Invalid values are rejected without changing existing targets.</p>
 <form method="post" action="/food/targets"><input type="hidden" name="day" value="{{ day }}">

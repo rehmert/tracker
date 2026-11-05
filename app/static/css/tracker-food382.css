@@ -1,0 +1,129 @@
+/* Release 382: native touch-friendly Food Journal accordions. */
+
+.food382-accordion {
+  display: block;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 12px;
+  padding: 0;
+  margin: .55rem 0;
+  overflow: clip;
+  scroll-margin-top: 12px;
+}
+
+.food382-accordion > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .7rem;
+  min-height: 55px;
+  box-sizing: border-box;
+  padding: .8rem .9rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  list-style: none;
+  user-select: none;
+}
+
+.food382-accordion > summary::-webkit-details-marker {
+  display: none;
+}
+
+.food382-accordion > summary:focus-visible {
+  outline: 2px solid var(--accent, #4285c5);
+  outline-offset: -3px;
+}
+
+.food382-accordion[open] > summary {
+  border-bottom: 1px solid var(--border, #ddd);
+}
+
+.food382-chevron {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .15s ease;
+  margin-right: .25rem;
+}
+
+.food382-accordion[open] .food382-chevron {
+  transform: rotate(225deg);
+}
+
+.food382-content {
+  padding: .7rem .85rem .85rem;
+  min-width: 0;
+}
+
+.food382-content > h2:first-child {
+  display: none;
+}
+
+.food382-accordion .food382-content > .note:first-of-type {
+  margin-top: .25rem;
+}
+
+/* Preserve the original section CSS while removing
+   padding from closed accordion containers. */
+.food382-accordion.food375-section,
+.food382-accordion.food376-panel,
+.food382-accordion.food378-panel,
+.food382-accordion.food379-panel,
+.food382-accordion.food380-panel {
+  padding: 0;
+}
+
+/* Compact horizontal shortcuts; they open the selected section. */
+.food376-nav {
+  gap: .35rem;
+  margin: .4rem 0;
+  padding-bottom: .35rem;
+}
+
+.food376-nav a {
+  padding: .52rem .7rem;
+  font-size: .82rem;
+}
+
+/* The daily macro dashboard stays on screen. */
+.food-dashboard {
+  margin-bottom: .6rem;
+}
+
+/* Existing nested details (macros, entry editing, template
+   management) continue functioning independently. */
+.food382-accordion details:not(.food382-accordion) {
+  scroll-margin-top: 12px;
+}
+
+@media (max-width: 600px) {
+  .food382-accordion {
+    margin: .4rem 0;
+    border-radius: 10px;
+  }
+
+  .food382-accordion > summary {
+    min-height: 56px;
+    padding: .75rem;
+  }
+
+  .food382-content {
+    padding: .5rem .6rem .7rem;
+  }
+
+  .food382-accordion input,
+  .food382-accordion select,
+  .food382-accordion textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food382-chevron {
+    transition: none;
+  }
+}
