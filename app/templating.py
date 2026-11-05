@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 from fastapi.templating import Jinja2Templates
 
 from . import calc, config, units as U
+from .session_auth385 import enabled as tracker_session_login_enabled
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "templates"))
 
@@ -93,7 +94,8 @@ templates.env.filters.update(money=money, money_precise=money_precise, amt=amt, 
 templates.env.globals.update(
     DOSE_UNITS=U.DOSE_UNITS, CONTENT_UNITS=U.CONTENT_UNITS,
     PERIOD_LABELS=calc.PERIOD_LABELS, currency=config.CURRENCY,
-    tracker_instance_label=config.instance_label)
+    tracker_instance_label=config.instance_label,
+tracker_session_login_enabled=tracker_session_login_enabled)
 
 
 templates.env.filters["nav_title"] = nav_title

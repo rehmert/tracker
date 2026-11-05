@@ -28,6 +28,7 @@ from .db import Base, engine
 from .routers import (coas, compounds, dashboard, doses, labs, pages, protocols, purchases, supplies,
                       vials, vitals, pk, calendar, backups, search, inventory_intelligence, health_timeline, health_insights, exports, reliability, blends, vendor_prices)
 from .security import require_auth
+from . import session_auth385
 from .routers import food
 from .routers import food_quick375
 from .routers import food_bundle376
@@ -35,6 +36,7 @@ from .routers import food_manage377
 from .routers import food_review378
 from .routers import food_week379
 from .routers import food_search380
+from .routers import session_login385
 from .routers import inventory_timeline
 
 
@@ -72,8 +74,17 @@ async def tracker_response_protection(request, call_next):
         # request body; multipart and streaming bodies are
         # left untouched for the original endpoint.
         csrf_report = await report_status(request)
-        if reject_write(request.method, csrf_report,
-                        os.environ.get("TRACKER_CSRF_ENFORCE", "0")):
+        if (
+            not (
+                request.url.path == "/login"
+                and session_auth385.enabled()
+            )
+            and reject_write(
+                request.method,
+                csrf_report,
+                os.environ.get("TRACKER_CSRF_ENFORCE", "0"),
+            )
+        ):
             response = PlainTextResponse(
                 "CSRF token required.", status_code=403
             )
@@ -120,6 +131,7 @@ app.include_router(food_manage377.router)
 app.include_router(food_review378.router)
 app.include_router(food_week379.router)
 app.include_router(food_search380.router)
+app.include_router(session_login385.router)
 app.include_router(inventory_timeline.router)
 
 from .routers import consolidated_reports
