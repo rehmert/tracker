@@ -8,6 +8,7 @@ from ..user_db389 import (
     get_user_db,
     resolve_authenticated_storage,
 )
+from ..request_scope393 import verified_request_scope
 
 router = APIRouter()
 
@@ -35,5 +36,25 @@ def storage_status(
         "application_table_count": table_count,
         "additional_users_enabled": False,
         "per_user_routing_active_globally": False,
+        "records_migrated": False,
+    }
+
+
+
+@router.get("/account/isolation-status")
+def isolation_status(request: Request):
+    """Safe account isolation metadata; no filesystem paths."""
+    scope = verified_request_scope(request)
+
+    return {
+        "authenticated_user_id": scope.user_id,
+        "authentication_mode": scope.authentication_mode,
+        "storage_mode": scope.storage.mode,
+        "database_scope": "legacy-administrator",
+        "user_specific_databases_enabled": False,
+        "additional_accounts_enabled": False,
+        "all_application_routes_migrated": False,
+        "attachments_fully_isolated": False,
+        "backups_fully_isolated": False,
         "records_migrated": False,
     }

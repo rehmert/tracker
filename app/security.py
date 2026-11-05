@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from . import config, session_auth385
+from .request_scope393 import establish_request_scope
 
 _basic = HTTPBasic(auto_error=False)
 
@@ -19,7 +20,7 @@ def require_auth(
         token = request.cookies.get(session_auth385.COOKIE)
 
         if session_auth385.session_user(token) == 1:
-            request.state.tracker_user_id = 1
+            establish_request_scope(request, 1)
             return None
 
         if request.method == "GET":
