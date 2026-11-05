@@ -2,6 +2,7 @@
 {% block title %}Food Journal{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-food374.css?v=374">
+<link rel="stylesheet" href="/static/css/tracker-food375.css?v=375">
 <script src="/static/js/tracker-food374.js?v=374" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
@@ -16,8 +17,14 @@
   <details><summary>All Nutrients &amp; Daily Targets</summary>
     <div class="food-nutrients">
       {% for key, info in nutrients.items() %}
-      <div><strong>{{ info[0] }}</strong><span>{{ totals[key] }} {{ info[1] }}</span>
+      <div><strong>{{ info[0] }}</strong>
+        <span>{{ totals[key] }} {{ info[1] }}
+        {% if food_count and coverage[key] < food_count %}(partial){% endif %}
+        </span>
         {% if key in targets %}
+        {% if coverage[key] < food_count %}
+        <small>Partial data: {{ coverage[key] }} of {{ food_count }} foods reported this nutrient</small>
+        {% endif %}
         <small>Target {{ targets[key] }} {{ info[1] }} · {% if totals[key] < targets[key] %}below{% elif totals[key] > targets[key] %}above{% else %}at{% endif %} entered target</small>
         {% else %}<small>No personal target set</small>{% endif %}
       </div>
@@ -26,6 +33,65 @@
   </details>
 </section>
 <p class="note">Barcode product data provided by <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" target="_blank">Open Food Facts</a> and may be incomplete. Check serving basis and package values.</p>
+<section id="food-quick-log" class="food375-section">
+<h2>Quick Log</h2>
+<p class="note">Reuse a saved food with its original nutrient values.
+Adjust the quantity and meal before adding it to the selected day.</p>
+{% if favorites %}
+<h3>Favorites</h3>
+<div class="food375-list">
+{% for item in favorites %}
+<article class="food375-item">
+ <div class="food375-name"><strong>{{ item.name }}</strong>
+ <small>{{ item.serving_description }}</small></div>
+ <form method="post" action="/food/quick/{{ item.id }}" class="food375-quick-form">
+  <input type="hidden" name="day" value="{{ day }}">
+  <label>Servings
+   <input type="number" name="servings" inputmode="decimal"
+     step="0.01" min="0.01" max="100" value="{{ item.servings }}" required>
+  </label>
+  <label>Meal
+   <select name="meal">
+   {% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
+   <option value="{{ meal }}" {% if item.meal == meal %}selected{% endif %}>{{ meal }}</option>
+   {% endfor %}
+   </select>
+  </label>
+  <button class="primary" type="submit">Add</button>
+ </form>
+</article>
+{% endfor %}
+</div>
+{% endif %}
+<details {% if not favorites %}open{% endif %}>
+<summary>Recent Foods</summary>
+<div class="food375-list">
+{% for item in recent %}
+<article class="food375-item">
+ <div class="food375-name"><strong>{{ item.name }}</strong>
+ <small>{{ item.serving_description }}</small></div>
+ <form method="post" action="/food/quick/{{ item.id }}" class="food375-quick-form">
+  <input type="hidden" name="day" value="{{ day }}">
+  <label>Servings
+   <input type="number" name="servings" inputmode="decimal"
+     step="0.01" min="0.01" max="100" value="{{ item.servings }}" required>
+  </label>
+  <label>Meal
+   <select name="meal">
+   {% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
+   <option value="{{ meal }}" {% if item.meal == meal %}selected{% endif %}>{{ meal }}</option>
+   {% endfor %}
+   </select>
+  </label>
+  <button class="primary" type="submit">Add</button>
+ </form>
+</article>
+{% else %}
+<p class="note">Your recently recorded foods will appear here.</p>
+{% endfor %}
+</div>
+</details>
+</section>
 <section id="food-add">
 <h2>Add Food or Drink</h2>
 <div class="food-scan">
@@ -63,14 +129,33 @@
  {% endfor %}
  </div>
 </details>
-<p class="note" id="food-review-warning">Only confirmed numbers should be entered. Blank nutrient values are currently treated as zero; this does not imply the product contains none.</p>
+<p class="note" id="food-review-warning">Only confirmed numbers should be entered. Leave unknown nutrients blank. Newly recorded unknown values remain distinct from confirmed zero values.</p>
 <button class="primary food-save" type="submit">Save Food Entry</button>
 </form>
 </section>
 <section><h2>Recorded Meals</h2>
 {% for e in entries %}
-<article class="food-log-row"><div><strong>{{ e.name }}</strong><small>{{ e.meal }} · {{ e.servings }} × {{ e.serving_description }}</small><small>{{ e.source }}</small></div>
-<form method="post" action="/food/entry/{{ e.id }}/delete" onsubmit="return confirm('Delete this food entry?')"><button type="submit">Delete</button></form></article>
+<article class="food-log-row food375-record">
+<div><strong>{{ e.name }}</strong>
+<small>{{ e.meal }} · {{ e.servings }} × {{ e.serving_description }}</small>
+<small>{{ e.source }}</small></div>
+<div class="food375-actions">
+ <form method="post" action="/food/quick/{{ e.product_id }}">
+  <input type="hidden" name="day" value="{{ day }}">
+  <input type="hidden" name="meal" value="{{ e.meal }}">
+  <input type="hidden" name="servings" value="{{ e.servings }}">
+  <button type="submit">Repeat</button>
+ </form>
+ <form method="post" action="/food/favorite/{{ e.product_id }}">
+  <input type="hidden" name="day" value="{{ day }}">
+  <button type="submit">{% if e.product_id in favorite_ids %}★ Saved{% else %}☆ Favorite{% endif %}</button>
+ </form>
+ <form method="post" action="/food/entry/{{ e.id }}/delete"
+   onsubmit="return confirm('Delete this food entry?')">
+  <button type="submit">Delete</button>
+ </form>
+</div>
+</article>
 {% else %}<p>No food logged on this day.</p>{% endfor %}
 </section>
 <details><summary>Set Your Own Daily Nutrition Targets</summary>

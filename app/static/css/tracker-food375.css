@@ -1,0 +1,54 @@
+/* Release 375: compact touch-friendly quick logging. */
+.food375-section {
+  border: 1px solid var(--border, #ccc);
+  border-radius: 12px;
+  padding: .75rem;
+  margin: .8rem 0;
+}
+.food375-list {
+  display: grid;
+  gap: .55rem;
+}
+.food375-item {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 10px;
+  padding: .65rem;
+  min-width: 0;
+}
+.food375-name { margin-bottom: .45rem; }
+.food375-name small { display: block; opacity: .75; }
+.food375-quick-form {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(120px, 1.4fr) auto;
+  gap: .5rem;
+  align-items: end;
+}
+.food375-quick-form label { min-width: 0; font-size: .8rem; }
+.food375-quick-form input,
+.food375-quick-form select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+.food375-quick-form button { min-height: 44px; }
+.food375-record { flex-wrap: wrap; }
+.food375-actions {
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+}
+.food375-actions button { min-height: 44px; }
+@media (max-width: 460px) {
+  .food375-quick-form {
+    grid-template-columns: minmax(75px, 1fr) minmax(95px, 1.3fr);
+  }
+  .food375-quick-form button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .food375-record { display: block; }
+  .food375-actions { margin-top: .5rem; }
+  .food375-actions form { flex: 1; }
+  .food375-actions button { width: 100%; }
+}

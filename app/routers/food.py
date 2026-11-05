@@ -43,6 +43,40 @@ def init_food_schema():
         db.exec_driver_sql("""CREATE TABLE IF NOT EXISTS tracker_food_targets (
             nutrient TEXT PRIMARY KEY, value REAL NOT NULL)""")
 
+        db.exec_driver_sql("""CREATE TABLE IF NOT EXISTS tracker_food_favorites (
+            product_id INTEGER PRIMARY KEY,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(product_id) REFERENCES tracker_food_products(id))""")
+
+def optional_nutrient(raw):
+    """Preserve unknown separately from a confirmed numeric zero."""
+    if raw is None or str(raw).strip() == "":
+        return None
+    try:
+        from math import isfinite
+        value = float(raw)
+    except (ValueError, TypeError, OverflowError):
+        raise HTTPException(422, "Invalid nutrient value")
+    if not isfinite(value) or value < 0 or value > 100000:
+        raise HTTPException(422, "Nutrient value is out of range")
+    return value
+
+def nutrient_coverage(day):
+    """Count foods with reported values, independently per nutrient."""
+    with engine.connect() as db:
+        records = db.execute(text("""
+            SELECT p.nutrients FROM tracker_food_entries e
+            JOIN tracker_food_products p ON p.id=e.product_id
+            WHERE e.eaten_on=:day
+        """), {"day": day}).all()
+    counts = {key: 0 for key in NUTRIENTS}
+    for (raw,) in records:
+        values = json.loads(raw)
+        for key in NUTRIENTS:
+            if values.get(key) is not None:
+                counts[key] += 1
+    return counts, len(records)
+
 def to_float(raw):
     try:
         val = float(raw or 0)
@@ -65,14 +99,23 @@ def food_page(request: Request, day: str = ""):
         chosen = date.today()
     day = chosen.isoformat()
     with engine.connect() as db:
-        records = db.execute(text("""SELECT e.id, p.name,p.serving_description,p.nutrients,
+        records = db.execute(text("""SELECT e.id, p.id AS product_id, p.name,p.serving_description,p.nutrients,
             e.servings,e.meal,p.source FROM tracker_food_entries e JOIN tracker_food_products p
             ON p.id=e.product_id WHERE e.eaten_on=:d ORDER BY e.id DESC"""),{"d":day}).mappings().all()
         targets = dict(db.execute(text("SELECT nutrient,value FROM tracker_food_targets")).all())
     rows = [dict(r) for r in records]
     total = totals_for(day)
-    return render(request,"food.html",day=day,entries=rows,nutrients=NUTRIENTS,
-                  totals=total,targets=targets)
+    coverage, food_count = nutrient_coverage(day)
+    from .food_quick375 import saved_foods
+    favorites, recent = saved_foods()
+    favorite_ids = {item["id"] for item in favorites}
+    return render(
+        request, "food.html", day=day, entries=rows,
+        nutrients=NUTRIENTS, totals=total, targets=targets,
+        coverage=coverage, food_count=food_count,
+        favorites=favorites, recent=recent,
+        favorite_ids=favorite_ids,
+    )
 
 @router.get("/food/barcode/{barcode}")
 def barcode_lookup(barcode: str):
@@ -169,7 +212,7 @@ async def create_food_entry(request: Request):
         raise HTTPException(422,"Servings must be greater than zero and at most 100.")
     meal=str(form.get("meal","Snack"))
     if meal not in ("Breakfast","Lunch","Dinner","Snack"): meal="Snack"
-    info={key:to_float(form.get(key)) for key in NUTRIENTS}
+    info={key:optional_nutrient(form.get(key)) for key in NUTRIENTS}
     barcode=str(form.get("barcode","")).strip()
     if barcode and not re.fullmatch(r"\d{8,14}",barcode): barcode=""
     desc=str(form.get("serving_description","1 serving")).strip()[:80] or "1 serving"
