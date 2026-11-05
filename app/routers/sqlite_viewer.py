@@ -5,13 +5,17 @@ import sqlite3
 from pathlib import Path
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import Depends, APIRouter, HTTPException, Request
 from sqlalchemy.engine import make_url
 
 from .. import config
 from ..templating import render
 
-router = APIRouter()
+from ..direct_storage_guard397 import require_direct_storage397
+
+router = APIRouter(
+    dependencies=[Depends(require_direct_storage397)]
+)
 
 PAGE_SIZES = (25, 50, 100)
 MAX_SEARCH_LENGTH = 200

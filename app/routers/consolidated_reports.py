@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import (
     Compound,
     Vial,
@@ -150,7 +150,7 @@ def reports(
     request: Request,
     start_date: date | None = None,
     end_date: date | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     _validate(start_date, end_date)
 
@@ -184,7 +184,7 @@ def export_report(
     dataset: str,
     start_date: date | None = None,
     end_date: date | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     _validate(start_date, end_date)
 

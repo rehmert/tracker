@@ -4,7 +4,7 @@ import subprocess
 import zipfile
 from urllib.parse import quote
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
 from .. import backup
@@ -14,7 +14,11 @@ from ..storage_health import backup_storage_status
 from ..templating import render
 from scripts.tracker_backup import verify_restorable
 
-router = APIRouter()
+from ..direct_storage_guard397 import require_backup_storage397
+
+router = APIRouter(
+    dependencies=[Depends(require_backup_storage397)]
+)
 
 ARCHIVE_ERRORS = (OSError, ValueError, KeyError, TypeError,
                   zipfile.BadZipFile, sqlite3.DatabaseError)

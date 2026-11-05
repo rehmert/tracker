@@ -7,14 +7,19 @@ import sqlite3
 from datetime import date
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import Depends, APIRouter, HTTPException, Query
 from fastapi.responses import HTMLResponse
 from sqlalchemy.engine import make_url
 
 from .. import config
 from ..read_only_policy305 import VIEWER_COLUMNS
 
-router = APIRouter(prefix="/record-explorer")
+from ..direct_storage_guard397 import require_direct_storage397
+
+router = APIRouter(
+    prefix="/record-explorer",
+    dependencies=[Depends(require_direct_storage397)],
+)
 
 SENSITIVE = (
     "password", "secret", "token", "credential",
