@@ -8,7 +8,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from .. import session_auth385 as auth
 from ..csrf_runtime import COOKIE_NAME, load_key
 from ..csrf_tokens import issue_token, verify_pair
-from ..login_origin3852 import reject_login_origin
 
 router = APIRouter()
 LOGIN_CSRF = "tracker_login_csrf"
@@ -121,10 +120,13 @@ async def login_submit(request: Request):
     if not auth.enabled():
         raise HTTPException(404, "Login unavailable")
 
-    if reject_login_origin(
-        request.method, request.headers
-    ):
-        raise HTTPException(403, "Invalid login origin")
+    # Explicitly reject cross-site browser submissions.
+    # Public HTTPS Origin may differ from the reverse proxy's
+    # internal Host and is not used as the authorization proof.
+    if request.headers.get(
+        "sec-fetch-site", ""
+    ).strip().lower() == "cross-site":
+        raise HTTPException(403, "Cross-site login denied")
 
     form = await request.form()
 
@@ -183,6 +185,11 @@ async def login_submit(request: Request):
 async def logout(request: Request):
     if not auth.enabled():
         raise HTTPException(404, "Logout unavailable")
+
+    if request.headers.get(
+        "sec-fetch-site", ""
+    ).strip().lower() == "cross-site":
+        raise HTTPException(403, "Cross-site logout denied")
 
     form = await request.form()
 

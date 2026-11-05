@@ -19,7 +19,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import PlainTextResponse
 
 from .request_origin import reject_cross_origin_write
-from .login_origin3852 import reject_write_with_login_exception
 from .csrf_runtime import prepare_html_cookie
 from .csrf_reporting import report_status, REPORT_HEADER
 from .csrf_policy289 import reject_write
@@ -63,12 +62,26 @@ app = FastAPI(title="Tracker", dependencies=[Depends(require_auth)],
 @app.middleware("http")
 async def tracker_response_protection(request, call_next):
     """Set browser protections and reject foreign browser writes."""
-    if (os.environ.get("TRACKER_ORIGIN_GUARD", "1") != "0"
-            and reject_write_with_login_exception(
-                request.method,
-                request.url.path,
-                request.headers,
-            )):
+    # Session login and logout have their own mandatory,
+    # signed double-submit CSRF validation. Reverse proxies
+    # may rewrite Host, so these two routes do not use the
+    # generic Origin-to-Host comparison.
+    #
+    # All other application writes retain the original guard.
+    session_auth_post = (
+        session_auth385.enabled()
+        and request.method.upper() == "POST"
+        and request.url.path in ("/login", "/logout")
+    )
+
+    if (
+        os.environ.get("TRACKER_ORIGIN_GUARD", "1") != "0"
+        and not session_auth_post
+        and reject_cross_origin_write(
+            request.method,
+            request.headers,
+        )
+    ):
         response = PlainTextResponse(
             "Cross-origin write request denied.",
             status_code=403,
