@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Compound, DoseLog, Purchase, Supply, Vial, VitalReading
 from ..templating import render
 
@@ -65,6 +65,6 @@ def index(request: Request):
     return render(request,'exports.html',datasets=DATASETS)
 
 @router.get('/exports/{dataset}.csv')
-def download(dataset: str,db: Session=Depends(get_db)):
+def download(dataset: str,db: Session=Depends(get_scoped_db390)):
     if dataset not in DATASETS: raise HTTPException(404,'Unknown export')
     return StreamingResponse(csv_lines(db,dataset),media_type='text/csv; charset=utf-8',headers={'Content-Disposition':f'attachment; filename="tracker-{dataset}.csv"','Cache-Control':'no-store'})

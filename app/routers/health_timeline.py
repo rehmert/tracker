@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import config, metrics
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import VitalReading, DoseLog, LabReport, Protocol
 from ..templating import render
 
@@ -165,7 +165,7 @@ def timeline(
     end_date: date | None = None,
     page: int = 1,
     page_size: int = 50,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     context = _timeline_context(
         db, days=days, event_type=event_type, q=q,
@@ -210,7 +210,7 @@ def export_timeline_csv(
     q: str = "",
     start_date: date | None = None,
     end_date: date | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """Download exactly the entries shown by the selected timeline filters."""
     context = _timeline_context(

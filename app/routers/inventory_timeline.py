@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import (
     Compound,
     Vial,
@@ -486,7 +486,7 @@ def inventory_timeline(
     end_date: date | None = None,
     page: int = 1,
     page_size: int = 50,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     if page < 1:
         raise HTTPException(

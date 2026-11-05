@@ -9,7 +9,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import VendorPriceSheet, VendorPriceEntry, VendorShippingRule, VendorPriceAttachment
 from ..templating import render
 from .. import services
@@ -92,7 +92,7 @@ ARCHIVE_TYPES = {
 
 @router.post('/vendor-prices/attachments/upload')
 async def upload_attachment(request: Request, vendor: str = Form(''), title: str = Form(''),
-                            upload: UploadFile = File(...), db: Session = Depends(get_db)):
+                            upload: UploadFile = File(...), db: Session = Depends(get_scoped_db390)):
     vendor = vendor.strip()
     title = title.strip()
     filename = Path((upload.filename or '').replace('\\', '/')).name
@@ -112,7 +112,7 @@ async def upload_attachment(request: Request, vendor: str = Form(''), title: str
 
 
 @router.get('/vendor-prices/attachments/{attachment_id}/download')
-def download_attachment(attachment_id: int, db: Session = Depends(get_db)):
+def download_attachment(attachment_id: int, db: Session = Depends(get_scoped_db390)):
     attachment = db.get(VendorPriceAttachment, attachment_id)
     if attachment is None:
         from fastapi import HTTPException
@@ -127,7 +127,7 @@ def download_attachment(attachment_id: int, db: Session = Depends(get_db)):
 
 
 @router.post('/vendor-prices/attachments/{attachment_id}/delete')
-def delete_attachment(attachment_id: int, db: Session = Depends(get_db)):
+def delete_attachment(attachment_id: int, db: Session = Depends(get_scoped_db390)):
     attachment = db.get(VendorPriceAttachment, attachment_id)
     if attachment is None:
         return services.flash_redirect('/vendor-prices', err='Price list not found.')
@@ -155,7 +155,7 @@ def page(request, db, **kwargs):
 
 @router.post('/vendor-prices/shipping/save')
 def save_shipping(request: Request, vendor: str = Form(''), flat_shipping: str = Form(''),
-                  free_shipping_threshold: str = Form(''), db: Session = Depends(get_db)):
+                  free_shipping_threshold: str = Form(''), db: Session = Depends(get_scoped_db390)):
     vendor = vendor.strip()
     if not vendor or len(vendor) > 160:
         return page(request, db, err='Enter a vendor name (maximum 160 characters).')
@@ -179,7 +179,7 @@ def save_shipping(request: Request, vendor: str = Form(''), flat_shipping: str =
 
 
 @router.post('/vendor-prices/shipping/{rule_id}/delete')
-def delete_shipping(rule_id: int, db: Session = Depends(get_db)):
+def delete_shipping(rule_id: int, db: Session = Depends(get_scoped_db390)):
     rule = db.get(VendorShippingRule, rule_id)
     if rule is None:
         return services.flash_redirect('/vendor-prices', err='Shipping policy not found.')
@@ -189,7 +189,7 @@ def delete_shipping(rule_id: int, db: Session = Depends(get_db)):
 
 
 @router.get('/vendor-prices')
-def index(request: Request, db: Session = Depends(get_db)):
+def index(request: Request, db: Session = Depends(get_scoped_db390)):
     return page(request, db)
 
 # Structured CSV importer: each row can have its own vendor and product link.
@@ -242,7 +242,7 @@ def csv_review_text(items):
     return buf.getvalue()
 
 @router.post('/vendor-prices/items-csv/preview')
-async def preview_items_csv(request: Request, upload: UploadFile=File(...), db: Session=Depends(get_db)):
+async def preview_items_csv(request: Request, upload: UploadFile=File(...), db: Session=Depends(get_scoped_db390)):
     if not (upload.filename or '').lower().endswith('.csv'):
         return page(request,db,err='Select a CSV file.')
     data=await upload.read(MAX_UPLOAD+1)
@@ -252,7 +252,7 @@ async def preview_items_csv(request: Request, upload: UploadFile=File(...), db: 
     return page(request,db,csv_review=csv_review_text(items),csv_count=len(items))
 
 @router.post('/vendor-prices/items-csv/save')
-def save_items_csv(request: Request, review_text: str=Form(...), db: Session=Depends(get_db)):
+def save_items_csv(request: Request, review_text: str=Form(...), db: Session=Depends(get_scoped_db390)):
     try:
         rows=list(csv.reader(io.StringIO(review_text),delimiter='\t'))
         if not rows or tuple(rows[0])!=CSV_COLUMNS:raise ValueError('Keep the seven-column header unchanged.')
@@ -295,7 +295,7 @@ def bulk_export_csv(db):
 
 
 @router.get('/vendor-prices/bulk/export')
-def bulk_export(db: Session = Depends(get_db)):
+def bulk_export(db: Session = Depends(get_scoped_db390)):
     return Response(content='\ufeff' + bulk_export_csv(db), media_type='text/csv; charset=utf-8', headers={
         'Content-Disposition': 'attachment; filename="tracker-vendor-prices.csv"',
         'Cache-Control': 'no-store',
@@ -375,7 +375,7 @@ def validate_bulk_ids(db, rows):
 
 
 @router.post('/vendor-prices/bulk/preview')
-async def bulk_preview(request: Request, upload: UploadFile = File(...), db: Session = Depends(get_db)):
+async def bulk_preview(request: Request, upload: UploadFile = File(...), db: Session = Depends(get_scoped_db390)):
     if not (upload.filename or '').lower().endswith('.csv'):
         return page(request, db, err='Choose a CSV file exported from Tracker.')
     data = await upload.read(MAX_UPLOAD + 1)
@@ -392,7 +392,7 @@ async def bulk_preview(request: Request, upload: UploadFile = File(...), db: Ses
 
 
 @router.post('/vendor-prices/bulk/save')
-def bulk_save(request: Request, review_text: str = Form(...), db: Session = Depends(get_db)):
+def bulk_save(request: Request, review_text: str = Form(...), db: Session = Depends(get_scoped_db390)):
     try:
         rows = parse_bulk_csv(review_text.encode('utf-8'))
         existing = validate_bulk_ids(db, rows)
@@ -438,7 +438,7 @@ def bulk_save(request: Request, review_text: str = Form(...), db: Session = Depe
 
 
 @router.post('/vendor-prices/preview')
-async def preview(request: Request, vendor: str = Form(''), sheet_name: str = Form(''), upload: UploadFile = File(...), db: Session = Depends(get_db)):
+async def preview(request: Request, vendor: str = Form(''), sheet_name: str = Form(''), upload: UploadFile = File(...), db: Session = Depends(get_scoped_db390)):
     vendor = vendor.strip()[:160]
     if not vendor: return page(request, db, err='Vendor name is required.')
     filename = (upload.filename or '').lower()
@@ -472,7 +472,7 @@ async def preview(request: Request, vendor: str = Form(''), sheet_name: str = Fo
     return page(request, db, vendor=vendor, sheet_name=sheet_name[:160] or upload.filename, review_text=rows_text(parsed), preview_count=len(parsed), raw_text=raw[:8000])
 
 @router.post('/vendor-prices/save')
-def save(request: Request, vendor: str = Form(...), sheet_name: str = Form(''), review_text: str = Form(...), db: Session = Depends(get_db)):
+def save(request: Request, vendor: str = Form(...), sheet_name: str = Form(''), review_text: str = Form(...), db: Session = Depends(get_scoped_db390)):
     vendor = vendor.strip()[:160]
     if not vendor: return page(request, db, err='Vendor name is required.', review_text=review_text)
     try: rows = parse_review(review_text)
@@ -497,7 +497,7 @@ def manual_add(
     package_type: str = Form('vial'),
     package_price: str = Form(''),
     product_url: str = Form(''),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """Save one vendor offer, normalizing package price to a vial count."""
     vendor = vendor.strip()[:160]
@@ -542,7 +542,7 @@ def manual_add(
     return services.flash_redirect('/vendor-prices', msg=f'Added {item_name} ({strength}) for {vendor}.')
 
 @router.get('/vendor-prices/entries/{entry_id}/edit')
-def edit_offer(request: Request, entry_id: int, db: Session = Depends(get_db)):
+def edit_offer(request: Request, entry_id: int, db: Session = Depends(get_scoped_db390)):
     entry = db.get(VendorPriceEntry, entry_id)
     if entry is None:
         return services.flash_redirect('/vendor-prices', err='Vendor offer not found.')
@@ -554,7 +554,7 @@ def update_offer(
     item_name: str = Form(''), content_amount: str = Form(''), content_unit: str = Form('mg'),
     package: str = Form(''), vial_count: str = Form(''),
     total_price: str = Form(''), product_url: str = Form(''),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     entry = db.get(VendorPriceEntry, entry_id)
     if entry is None:
@@ -601,7 +601,7 @@ def update_offer(
     return services.flash_redirect('/vendor-prices', msg='Vendor offer updated.')
 
 @router.post('/vendor-prices/entries/{entry_id}/delete')
-def delete_offer(entry_id: int, db: Session = Depends(get_db)):
+def delete_offer(entry_id: int, db: Session = Depends(get_scoped_db390)):
     """Delete exactly one vendor price entry, leaving its sheet and other offers intact."""
     entry = db.get(VendorPriceEntry, entry_id)
     if entry is None:
@@ -611,7 +611,7 @@ def delete_offer(entry_id: int, db: Session = Depends(get_db)):
     return services.flash_redirect('/vendor-prices', msg='Vendor offer deleted.')
 
 @router.post('/vendor-prices/{sheet_id}/delete')
-def delete(sheet_id: int, db: Session = Depends(get_db)):
+def delete(sheet_id: int, db: Session = Depends(get_scoped_db390)):
     sheet = db.get(VendorPriceSheet, sheet_id)
     if sheet:
         db.delete(sheet); db.commit()

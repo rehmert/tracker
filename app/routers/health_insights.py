@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import charts, config, labs, metrics, services
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import LabReport, LabResult, VitalReading
 from ..templating import render
 
@@ -24,7 +24,7 @@ def _lab_choices(db: Session):
 
 @router.get('/health-insights')
 def health_insights(request: Request, days: int = 90, analyte: str = '', events: int = 1,
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_scoped_db390)):
     days = days if days in RANGES else 90
     now = datetime.now()
     since = now - timedelta(days=days)

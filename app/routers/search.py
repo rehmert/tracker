@@ -2,13 +2,13 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Compound, Vial, Protocol, Purchase, LabReport, Supply
 
 router = APIRouter()
 
 @router.get('/search', include_in_schema=False)
-def search(q: str = '', db: Session = Depends(get_db)):
+def search(q: str = '', db: Session = Depends(get_scoped_db390)):
     term = q.strip()[:100]
     if len(term) < 2:
         return {'results': []}

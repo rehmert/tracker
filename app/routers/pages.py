@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import markup, services
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import SOURCE_KINDS, Compound, Page, PageRevision, Source
 from ..templating import render
 
@@ -43,7 +43,7 @@ def _matches(p: Page, q: str) -> bool:
 
 @router.get("/pages")
 def pages_list(request: Request, q: str = "", tag: str = "", compound_id: int | None = None,
-               db: Session = Depends(get_db)):
+               db: Session = Depends(get_scoped_db390)):
     all_pages = list(db.scalars(select(Page).order_by(Page.updated_at.desc(), Page.id.desc())))
     pages = all_pages
     if q.strip():
@@ -60,14 +60,14 @@ def pages_list(request: Request, q: str = "", tag: str = "", compound_id: int | 
 
 
 @router.get("/pages/new")
-def new_page(request: Request, title: str = "", db: Session = Depends(get_db)):
+def new_page(request: Request, title: str = "", db: Session = Depends(get_scoped_db390)):
     return render(request, "page_edit.html", p=None, title=title[:200],
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   selected=set())
 
 
 @router.post("/pages/preview")
-def preview(body: str = Form(""), db: Session = Depends(get_db)):
+def preview(body: str = Form(""), db: Session = Depends(get_scoped_db390)):
     return HTMLResponse(markup.render(body[:MAX_BODY], _titles(db)))
 
 
@@ -85,7 +85,7 @@ def _validate(db: Session, title: str, body: str, exclude_id: int | None) -> str
 
 @router.post("/pages")
 def create_page(title: str = Form(""), body: str = Form(""), tags: str = Form(""),
-                compound_ids: list[int] = Form(default=[]), db: Session = Depends(get_db)):
+                compound_ids: list[int] = Form(default=[]), db: Session = Depends(get_scoped_db390)):
     err = _validate(db, title, body, None)
     if err:
         return services.flash_redirect(f"/pages/new?title={quote(title.strip()[:200])}", err=err)
@@ -105,7 +105,7 @@ def _get(db: Session, pid: int) -> Page:
 
 
 @router.get("/pages/{pid}")
-def view_page(pid: int, request: Request, db: Session = Depends(get_db)):
+def view_page(pid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     p = _get(db, pid)
     me = p.title.lower()
     backlinks = [o for o in db.scalars(select(Page)) if o.id != pid
@@ -115,7 +115,7 @@ def view_page(pid: int, request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/pages/{pid}/edit")
-def edit_page(pid: int, request: Request, db: Session = Depends(get_db)):
+def edit_page(pid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     p = _get(db, pid)
     return render(request, "page_edit.html", p=p, title=p.title,
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
@@ -124,7 +124,7 @@ def edit_page(pid: int, request: Request, db: Session = Depends(get_db)):
 
 @router.post("/pages/{pid}")
 def update_page(pid: int, title: str = Form(""), body: str = Form(""), tags: str = Form(""),
-                compound_ids: list[int] = Form(default=[]), db: Session = Depends(get_db)):
+                compound_ids: list[int] = Form(default=[]), db: Session = Depends(get_scoped_db390)):
     p = _get(db, pid)
     err = _validate(db, title, body, pid)
     if err:
@@ -153,7 +153,7 @@ def update_page(pid: int, title: str = Form(""), body: str = Form(""), tags: str
 def page_history(
     pid: int,
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     p = _get(db, pid)
 
@@ -175,7 +175,7 @@ def page_history(
 def restore_page(
     pid: int,
     revision_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     p = _get(db, pid)
 
@@ -217,7 +217,7 @@ def restore_page(
 
 
 @router.post("/pages/{pid}/delete")
-def delete_page(pid: int, db: Session = Depends(get_db)):
+def delete_page(pid: int, db: Session = Depends(get_scoped_db390)):
     db.delete(_get(db, pid))
     db.commit()
     return services.flash_redirect("/pages", msg="Page deleted.")
@@ -226,7 +226,7 @@ def delete_page(pid: int, db: Session = Depends(get_db)):
 @router.post("/pages/{pid}/sources")
 def add_source(pid: int, kind: str = Form("web"), title: str = Form(""), url: str = Form(""),
                author: str = Form(""), publication: str = Form(""), location: str = Form(""),
-               accessed_on: str = Form(""), note: str = Form(""), db: Session = Depends(get_db)):
+               accessed_on: str = Form(""), note: str = Form(""), db: Session = Depends(get_scoped_db390)):
     _get(db, pid)
     back = f"/pages/{pid}"
     url = url.strip()
@@ -247,7 +247,7 @@ def add_source(pid: int, kind: str = Form("web"), title: str = Form(""), url: st
 
 
 @router.post("/sources/{sid}/delete")
-def delete_source(sid: int, db: Session = Depends(get_db)):
+def delete_source(sid: int, db: Session = Depends(get_scoped_db390)):
     s = db.get(Source, sid)
     if s is None:
         raise HTTPException(404, "Source not found")

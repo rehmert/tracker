@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, Request, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Vial, DoseLog
 from ..services import vial_views
 from ..templating import render
@@ -53,7 +53,7 @@ def inventory_summary(db: Session, today: date | None = None):
 
 
 @router.get("/inventory-intelligence")
-def inventory_intelligence(request: Request, days: int = Query(90, ge=30, le=180), db: Session = Depends(get_db)):
+def inventory_intelligence(request: Request, days: int = Query(90, ge=30, le=180), db: Session = Depends(get_scoped_db390)):
     rows, totals = inventory_summary(db)
     window = days if days in (30, 90, 180) else 90
     forecasts, supply_forecasts = forecast_inventory(db, window_days=window)
@@ -63,7 +63,7 @@ def inventory_intelligence(request: Request, days: int = Query(90, ge=30, le=180
 
 
 @router.get("/inventory-alerts")
-def inventory_alerts(request: Request, days: int = Query(90, ge=30, le=180), horizon: int = Query(21, ge=1, le=365), db: Session = Depends(get_db)):
+def inventory_alerts(request: Request, days: int = Query(90, ge=30, le=180), horizon: int = Query(21, ge=1, le=365), db: Session = Depends(get_scoped_db390)):
     from ..inventory_alerts import collect_inventory_alerts
     window = days if days in (30, 90, 180) else 90
     alerts = collect_inventory_alerts(db, window_days=window, horizon_days=horizon)

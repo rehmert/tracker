@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from .. import services, units as U, idempotency
 from ..audit_helpers import record
 from ..inventory_lock import reserve_inventory_write
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Blend, BlendComponent, BlendDose, Vial
 from ..templating import render
 
@@ -41,7 +41,7 @@ def component_rows(blend):
 
 
 @router.get('/blends')
-def blends_page(request: Request, db: Session = Depends(get_db)):
+def blends_page(request: Request, db: Session = Depends(get_scoped_db390)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(['sealed', 'in_use'])).order_by(Vial.id)))
     views = services.vial_views(db, vials)
     blends = list(db.scalars(select(Blend).order_by(Blend.id.desc())))
@@ -231,7 +231,7 @@ def calculate_reconstitution_plan(form, db: Session):
 
 
 @router.post('/blends/reconstitution-preview')
-async def preview_reconstitution(request: Request, db: Session = Depends(get_db)):
+async def preview_reconstitution(request: Request, db: Session = Depends(get_scoped_db390)):
     """Read-only planner; intentionally does not call the blend creation route."""
     from fastapi.responses import HTMLResponse
     from html import escape
@@ -269,7 +269,7 @@ async def preview_reconstitution(request: Request, db: Session = Depends(get_db)
 
 
 @router.post('/blends/preview')
-async def preview_blend(request: Request, db: Session = Depends(get_db)):
+async def preview_blend(request: Request, db: Session = Depends(get_scoped_db390)):
     """What-if calculations only: no INSERT, UPDATE, or inventory transfer."""
     from fastapi.responses import HTMLResponse
     from html import escape
@@ -308,7 +308,7 @@ async def preview_blend(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post('/blends')
-async def create_blend(request: Request, db: Session = Depends(get_db)):
+async def create_blend(request: Request, db: Session = Depends(get_scoped_db390)):
     form = await request.form()
     if not reserve_inventory_write(db):
         return services.flash_redirect('/blends', err='Inventory is busy. Please wait and retry.')
@@ -350,7 +350,7 @@ async def create_blend(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get('/blends/{blend_id}')
-def blend_detail(blend_id: int, request: Request, db: Session = Depends(get_db)):
+def blend_detail(blend_id: int, request: Request, db: Session = Depends(get_scoped_db390)):
     blend = db.get(Blend, blend_id)
     if blend is None:
         return services.flash_redirect('/blends', err='Blend not found.')
@@ -367,7 +367,7 @@ def blend_detail(blend_id: int, request: Request, db: Session = Depends(get_db))
 
 
 @router.post('/blends/{blend_id}/doses')
-async def record_blend_dose(blend_id: int, request: Request, db: Session = Depends(get_db)):
+async def record_blend_dose(blend_id: int, request: Request, db: Session = Depends(get_scoped_db390)):
     form = await request.form()
     if not reserve_inventory_write(db):
         return services.flash_redirect(f'/blends/{blend_id}', err='Inventory is busy. Please wait and retry.')

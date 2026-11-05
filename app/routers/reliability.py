@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Depends, Form, Request, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..inventory_lock import reserve_inventory_write
 from ..models import Supply, SupplyUsage, InventoryAdjustment, ChangeAudit, Vial, DoseLog, Purchase
 from .. import services, idempotency
@@ -16,14 +16,14 @@ from ..inventory_consistency import inspect_inventory
 router = APIRouter()
 
 @router.get("/reconciliation")
-def reconciliation(request: Request, db: Session = Depends(get_db)):
+def reconciliation(request: Request, db: Session = Depends(get_scoped_db390)):
     supplies = list(db.scalars(select(Supply).order_by(Supply.name,Supply.id)))
     history = list(db.scalars(select(InventoryAdjustment).order_by(InventoryAdjustment.id.desc()).limit(100)))
     return render(request,"reconciliation.html",supplies=supplies,history=history,
                   supply_names={s.id:s.name for s in supplies}, submission_tokens={s.id:idempotency.new_token() for s in supplies})
 
 @router.post("/reconciliation/{sid}")
-def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:float=Form(...), confirmed:str=Form(""), submission_token:str=Form(""), db:Session=Depends(get_db)):
+def reconcile(sid:int, counted:float=Form(...), reason:str=Form(...), expected:float=Form(...), confirmed:str=Form(""), submission_token:str=Form(""), db:Session=Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect('/reconciliation',err='Inventory is busy. Please wait and retry.')
     state, digest = idempotency.check(db, submission_token, 'reconcile', {'sid':sid,'counted':counted,'reason':reason,'expected':expected,'confirmed':confirmed})
@@ -83,7 +83,7 @@ def collect_integrity_issues(db:Session):
     return issues
 
 @router.get('/inventory-health')
-def inventory_health(request:Request, db:Session=Depends(get_db)):
+def inventory_health(request:Request, db:Session=Depends(get_scoped_db390)):
     
     issues = collect_integrity_issues(db) + collect_inventory_health(db)
 
@@ -126,12 +126,12 @@ def inventory_health(request:Request, db:Session=Depends(get_db)):
     return render(request,'inventory_health.html',issues=issues,errors=errors,warnings=warnings)
 
 @router.get('/data-integrity')
-def integrity(request:Request,db:Session=Depends(get_db)):
+def integrity(request:Request,db:Session=Depends(get_scoped_db390)):
     issues=collect_integrity_issues(db)
     return render(request,'data_integrity.html',issues=issues)
 
 @router.get('/consumption')
-def consumption(request:Request,days:int=90,db:Session=Depends(get_db)):
+def consumption(request:Request,days:int=90,db:Session=Depends(get_scoped_db390)):
     days=max(7,min(days,3650))
     since=__import__('datetime').datetime.now()-timedelta(days=days)
     supplies=list(db.scalars(select(Supply).order_by(Supply.name)))
@@ -148,7 +148,7 @@ def quick_entry(request:Request):
 
 
 @router.get('/release-info')
-def release_info(request:Request,db:Session=Depends(get_db)):
+def release_info(request:Request,db:Session=Depends(get_scoped_db390)):
     from sqlalchemy import inspect
     return render(request,'release_info.html',version='2.1.0',tables=len(inspect(db.bind).get_table_names()))
 
@@ -176,7 +176,7 @@ def audit_history(
     action: str = '',
     page: int = 1,
     page_size: int = 50,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     from urllib.parse import urlencode
 

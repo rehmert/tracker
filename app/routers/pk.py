@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Compound, DoseLog, Vial, PkScenario, PkPlannedDose, Protocol
 from ..calendar import staged_occurrences, occurrence_time
 from ..templating import render
@@ -146,7 +146,7 @@ class MultiWhatIfInput(BaseModel):
 @router.post("/what-if/multi-preview")
 def preview_multi_what_if(
     data: MultiWhatIfInput,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """Calculate independent normalized exposure curves; no writes."""
     start = min(s.start_at for s in data.schedules)
@@ -230,7 +230,7 @@ def verify_what_if_compound(db: Session, compound_id: int):
 
 
 @router.post("/what-if/preview")
-def preview_what_if(data: WhatIfProtocol, db: Session = Depends(get_db)):
+def preview_what_if(data: WhatIfProtocol, db: Session = Depends(get_scoped_db390)):
     """Preview hypothetical recurring doses without writing anything to the database."""
     verify_what_if_compound(db, data.compound_id)
     now = datetime.now()
@@ -253,7 +253,7 @@ def preview_what_if(data: WhatIfProtocol, db: Session = Depends(get_db)):
 
 
 @router.post("/what-if/save", status_code=201)
-def save_what_if(data: WhatIfProtocol, db: Session = Depends(get_db)):
+def save_what_if(data: WhatIfProtocol, db: Session = Depends(get_scoped_db390)):
     """Save recurring what-if doses as an existing PK scenario, not an actual protocol."""
     verify_what_if_compound(db, data.compound_id)
     doses = [(at, amount) for at, amount in what_if_doses(data) if at >= datetime.now()]
@@ -272,11 +272,11 @@ def supported(db):
     return [c for c in db.scalars(select(Compound).order_by(Compound.name)) if pk.profile(c.name)]
 
 @router.get("")
-def page(request: Request, db: Session = Depends(get_db)):
+def page(request: Request, db: Session = Depends(get_scoped_db390)):
     return render(request, "pk.html", compounds=supported(db), protocols=list(db.scalars(select(Protocol).order_by(Protocol.name))), profile=pk.profile, model_info=pk.model_info)
 
 @router.post("/compounds", status_code=201)
-def add_supported_compound(data: dict, db: Session = Depends(get_db)):
+def add_supported_compound(data: dict, db: Session = Depends(get_scoped_db390)):
     """Explicitly add a PK-capable compound even before any dose/vial exists."""
     name = str(data.get("name", "")).strip()
     allowed = {"Testosterone Cypionate"}
@@ -292,7 +292,7 @@ def add_supported_compound(data: dict, db: Session = Depends(get_db)):
     return {"id": c.id, "name": c.name}
 
 @router.get("/scenarios")
-def scenarios(compound_id: int, db: Session = Depends(get_db)):
+def scenarios(compound_id: int, db: Session = Depends(get_scoped_db390)):
     return [{"id": s.id, "name": s.name, "half_life_hours": s.half_life_hours,
              "absorption_half_life_hours": s.absorption_half_life_hours,
              "doses": [{"id": d.id, "planned_at": d.planned_at.isoformat(), "amount_mg": d.amount_mg}
@@ -300,7 +300,7 @@ def scenarios(compound_id: int, db: Session = Depends(get_db)):
             for s in db.scalars(select(PkScenario).where(PkScenario.compound_id == compound_id).order_by(PkScenario.id))]
 
 @router.post("/scenarios", status_code=201)
-def create_scenario(data: ScenarioInput, db: Session = Depends(get_db)):
+def create_scenario(data: ScenarioInput, db: Session = Depends(get_scoped_db390)):
     c = db.get(Compound, data.compound_id)
     if c is None or pk.profile(c.name) is None:
         raise HTTPException(400, "Unsupported compound")
@@ -317,7 +317,7 @@ def create_scenario(data: ScenarioInput, db: Session = Depends(get_db)):
 @router.put("/scenarios/{sid}")
 def update_scenario(
     sid:int,data:ScenarioInput,
-    db:Session=Depends(get_db),
+    db:Session=Depends(get_scoped_db390),
     expected:str|None=Header(
         default=None,alias="X-PK-Expected-Version"
     )
@@ -342,7 +342,7 @@ def update_scenario(
 @router.delete("/scenarios/{sid}")
 def delete_scenario(
     sid:int,
-    db:Session=Depends(get_db),
+    db:Session=Depends(get_scoped_db390),
     expected:str|None=Header(
         default=None,
         alias="X-PK-Expected-Version"
@@ -362,7 +362,7 @@ def delete_scenario(
 @router.post("/scenarios/{sid}/doses", status_code=201)
 def add_dose(
     sid:int,data:PlannedInput,
-    db:Session=Depends(get_db),
+    db:Session=Depends(get_scoped_db390),
     expected:str|None=Header(
         default=None,alias="X-PK-Expected-Version"
     )
@@ -389,7 +389,7 @@ def add_dose(
 @router.put("/scenarios/{sid}/doses/{did}")
 def edit_dose(
     sid:int,did:int,data:PlannedInput,
-    db:Session=Depends(get_db),
+    db:Session=Depends(get_scoped_db390),
     expected:str|None=Header(
         default=None,alias="X-PK-Expected-Version"
     )
@@ -421,7 +421,7 @@ def edit_dose(
 @router.delete("/scenarios/{sid}/doses/{did}")
 def delete_dose(
     sid:int,did:int,
-    db:Session=Depends(get_db),
+    db:Session=Depends(get_scoped_db390),
     expected:str|None=Header(
         default=None,alias="X-PK-Expected-Version"
     )
@@ -484,7 +484,7 @@ def protocol_planned_doses(db: Session, protocol_id: int, compound_id: int, star
 
 @router.get("/protocol-exposure/{pid}")
 def saved_protocol_exposure(
-    pid: int, db: Session = Depends(get_db)
+    pid: int, db: Session = Depends(get_scoped_db390)
 ):
     """Read-only exposure of saved active or what-if protocols.
 
@@ -670,7 +670,7 @@ def saved_protocol_exposure(
 @router.get("/data")
 def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
                half_life_hours: float | None = None, absorption_half_life_hours: float | None = None,
-               scenario_id: int | None = None, protocol_id: int | None = None, db: Session = Depends(get_db)):
+               scenario_id: int | None = None, protocol_id: int | None = None, db: Session = Depends(get_scoped_db390)):
     c = db.get(Compound, compound_id)
     defaults = pk.profile(c.name) if c else None
     if defaults is None: raise HTTPException(400, "Unsupported compound")
@@ -727,7 +727,7 @@ def chart_data(compound_id: int, days_back: int = 60, days_forward: int = 45,
 
 @router.get('/compare')
 def compare_scenarios(compound_id: int, scenario_ids: str = '', days_back: int = 30,
-                      days_forward: int = 60, db: Session = Depends(get_db)):
+                      days_forward: int = 60, db: Session = Depends(get_scoped_db390)):
     """Return a common timeline for baseline and up to four hypothetical scenarios."""
     c = db.get(Compound, compound_id)
     defaults = pk.profile(c.name) if c else None
@@ -768,7 +768,7 @@ def compare_scenarios(compound_id: int, scenario_ids: str = '', days_back: int =
 @router.get('/compare.csv')
 def export_scenario_comparison_csv(compound_id: int, scenario_ids: str = '',
                                    days_back: int = 30, days_forward: int = 60,
-                                   db: Session = Depends(get_db)):
+                                   db: Session = Depends(get_scoped_db390)):
     """Export the exact PK comparison timeline as a spreadsheet-friendly CSV.
 
     Uses the same validation and model as /pk/compare; does not persist data.
@@ -791,7 +791,7 @@ def export_scenario_comparison_csv(compound_id: int, scenario_ids: str = '',
 
 @router.get('/overlay')
 def multi_compound_overlay(compound_ids: str, days_back: int = 30,
-                           days_forward: int = 60, db: Session = Depends(get_db)):
+                           days_forward: int = 60, db: Session = Depends(get_scoped_db390)):
     """Compare distinct compounds as percent of each compound's displayed peak.
 
     Values across different compounds are *not* comparable concentrations.
@@ -846,7 +846,7 @@ def multi_compound_overlay(compound_ids: str, days_back: int = 30,
 
 @router.get("/workspace")
 def pk_workspace(
-    request:Request, db:Session=Depends(get_db)
+    request:Request, db:Session=Depends(get_scoped_db390)
 ):
     from ..models import LabReport
     from ..routers.inventory_forecast import build_rows
@@ -877,7 +877,7 @@ def pk_workspace(
 def protocol_experiment(
     pid: int,
     settings: ExperimentInput,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """Stateless read-only saved-protocol experiment."""
     return JSONResponse(
@@ -889,7 +889,7 @@ def protocol_experiment(
 
 @router.get("/library/{pid}")
 def pk_library_list(
-    pid: int, db: Session = Depends(get_db)
+    pid: int, db: Session = Depends(get_scoped_db390)
 ):
     if db.get(Protocol,pid) is None:
         raise HTTPException(404,"Protocol not found")
@@ -902,7 +902,7 @@ def pk_library_list(
 @router.post("/library/{pid}")
 def pk_library_save(
     pid: int, data: ExperimentSave,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_scoped_db390)
 ):
     protocol = db.get(Protocol,pid)
     if protocol is None:
@@ -925,7 +925,7 @@ def pk_library_save(
 @router.delete("/library/{pid}/{experiment_id}")
 def pk_library_delete(
     pid: int, experiment_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_scoped_db390)
 ):
     if db.get(Protocol,pid) is None:
         raise HTTPException(404,"Protocol not found")
@@ -946,7 +946,7 @@ class ExperimentComparisonInput(BaseModel):
 def pk_compare_experiments(
     pid:int,
     data:ExperimentComparisonInput,
-    db:Session=Depends(get_db),
+    db:Session=Depends(get_scoped_db390),
 ):
     if db.get(Protocol,pid) is None:
         raise HTTPException(404,"Protocol not found")
@@ -1034,7 +1034,7 @@ def pk_update_experiment(
     pid:int,
     experiment_id:str,
     data:ExperimentSave,
-    db:Session=Depends(get_db),
+    db:Session=Depends(get_scoped_db390),
 ):
     p=db.get(Protocol,pid)
     if p is None:
@@ -1056,7 +1056,7 @@ def pk_update_experiment(
 
 @router.get("/scenarios/{sid}/dose-state")
 def pk_dose_state(
-    sid:int,db:Session=Depends(get_db)
+    sid:int,db:Session=Depends(get_scoped_db390)
 ):
     return scenario_ops.state(db,sid)
 
@@ -1065,7 +1065,7 @@ def pk_dose_state(
 def pk_dose_preview(
     sid:int,
     data:scenario_ops.SequenceInput,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     scenario_ops.scenario(db,sid)
     return {"doses":scenario_ops.preview(data)}
@@ -1075,7 +1075,7 @@ def pk_dose_preview(
 def pk_dose_batch_create(
     sid:int,
     data:scenario_ops.SequenceInput,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return scenario_ops.create_many(db,sid,data)
 
@@ -1084,7 +1084,7 @@ def pk_dose_batch_create(
 def pk_dose_batch_delete(
     sid:int,
     data:scenario_ops.DeleteInput,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return scenario_ops.delete_many(db,sid,data)
 
@@ -1093,7 +1093,7 @@ def pk_dose_batch_delete(
 def pk_dose_batch_undo(
     sid:int,
     data:scenario_ops.RestoreInput,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return scenario_ops.restore(db,sid,data)
 
@@ -1102,7 +1102,7 @@ def pk_dose_batch_undo(
 @router.post("/scenarios/{sid}/duplicate",status_code=201)
 def pk_duplicate(
     sid:int,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     original=scenario_ops.scenario(db,sid)
 
@@ -1137,7 +1137,7 @@ def pk_duplicate(
 @router.get("/scenarios/{sid}/change-history")
 def pk_scenario_changes(
     sid:int,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     from ..models import ChangeAudit
 
@@ -1169,7 +1169,7 @@ def pk_scenario_changes(
 
 @router.get("/scenarios/{sid}/revision")
 def pk_scenario_revision(
-    sid:int,db:Session=Depends(get_db)
+    sid:int,db:Session=Depends(get_scoped_db390)
 ):
     obj=scenario_ops.scenario(db,sid)
     return {
@@ -1184,7 +1184,7 @@ def pk_scenario_revision(
 def pk_staged_preview(
     sid:int,
     data:staged.StagedInput,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     scenario_ops.scenario(db,sid)
     return {
@@ -1197,7 +1197,7 @@ def pk_staged_preview(
 def pk_staged_replace(
     sid:int,
     data:staged.StagedInput,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     obj=scenario_ops.scenario(db,sid)
 
@@ -1241,7 +1241,7 @@ def pk_staged_replace(
 @router.post("/scenarios/import-preview")
 def pk_import_preview(
     data:pk_import.Template,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     pk_import.validate(db,data)
 
@@ -1272,7 +1272,7 @@ def pk_import_preview(
 )
 def pk_import_confirm(
     data:pk_import.Template,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return pk_import.create(db,data)
 
@@ -1282,7 +1282,7 @@ def pk_import_confirm(
 def pk_create_batch_checked(
     sid:int,
     data:scenario_ops.SequenceInput,
-    db:Session=Depends(get_db),
+    db:Session=Depends(get_scoped_db390),
     expected:str|None=Header(
         default=None,
         alias="X-PK-Expected-Version"
@@ -1305,7 +1305,7 @@ def pk_create_batch_checked(
 def pk_calendar_preview(
     sid:int,
     data:calendar_rules.CalendarRule,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     scenario_ops.scenario(db,sid)
     return calendar_rules.project(data)
@@ -1315,7 +1315,7 @@ def pk_calendar_preview(
 def pk_calendar_replace(
     sid:int,
     data:calendar_rules.CalendarRule,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     obj,before=pk_mutation197.prepare(
         db,sid,data.expected_version
@@ -1360,7 +1360,7 @@ def pk_scenario_delta(
     scenario_b:int,
     days_back:int=30,
     days_forward:int=60,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     if scenario_a==scenario_b:
         raise HTTPException(
@@ -1420,7 +1420,7 @@ def pk_scenario_delta(
 def workspace_checked_dose_edit(
     sid:int,
     data:guarded_edit.CheckedEdit,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return guarded_edit.update(db,sid,data)
 
@@ -1429,7 +1429,7 @@ def workspace_checked_dose_edit(
 @router.post("/workspace/{sid}/transform-preview")
 def pk_transform_preview(
     sid:int,data:transform165.Transform,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     obj=scenario_ops.scenario(db,sid)
     scenario_version.check(
@@ -1446,7 +1446,7 @@ def pk_transform_preview(
 @router.post("/workspace/{sid}/transform-apply")
 def pk_transform_apply(
     sid:int,data:transform165.Transform,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return transform165.apply(db,sid,data)
 
@@ -1455,7 +1455,7 @@ def pk_transform_apply(
 @router.get("/workspace/{sid}/sensitivity")
 def pk_workspace_sensitivity(
     sid:int,days:int=30,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return sensitivity169.analyze(db,sid,days)
 
@@ -1463,7 +1463,7 @@ def pk_workspace_sensitivity(
 
 @router.get("/workspace/{sid}/report")
 def pk_workspace_report(
-    sid:int,db:Session=Depends(get_db)
+    sid:int,db:Session=Depends(get_scoped_db390)
 ):
     from ..models import ChangeAudit
     obj=scenario_ops.scenario(db,sid)
@@ -1500,14 +1500,14 @@ def pk_workspace_report(
 
 
 @router.get("/workspace/quality-report")
-def pk_workspace_quality_report(db:Session=Depends(get_db)):
+def pk_workspace_quality_report(db:Session=Depends(get_scoped_db390)):
     return pk_health189.inspect(db)
 
 
 
 @router.get("/workspace/health/cross-module")
 def pk_workspace_cross_module(
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return pk_crosscheck205.inspect(db)
 
@@ -1516,7 +1516,7 @@ def pk_workspace_cross_module(
 @router.get("/workspace/health/fast-check")
 def pk_fast_health_check(
     limit:int=100,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     if not 1<=limit<=200:
         raise HTTPException(
@@ -1530,7 +1530,7 @@ def pk_fast_health_check(
 def pk_sensitivity_grid(
     sid:int,
     days:int=30,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_scoped_db390)
 ):
     return pk_sensitivity217.analyze(db,sid,days)
 
@@ -1542,18 +1542,18 @@ def pk_runtime_identity():
 
 
 @router.get("/workspace/{sid}/revisions")
-def pk_workspace_revisions(sid:int,db:Session=Depends(get_db)):
+def pk_workspace_revisions(sid:int,db:Session=Depends(get_scoped_db390)):
     return pk_revision229.history(db,sid)
 
 @router.get("/workspace/{sid}/revisions/{audit_id}/preview")
-def pk_workspace_revision_preview(sid:int,audit_id:int,db:Session=Depends(get_db)):
+def pk_workspace_revision_preview(sid:int,audit_id:int,db:Session=Depends(get_scoped_db390)):
     return pk_revision229.preview(db,sid,audit_id)
 
 @router.post("/workspace/{sid}/revisions/{audit_id}/restore")
-def pk_workspace_revision_restore(sid:int,audit_id:int,data:pk_revision229.RestoreRequest,db:Session=Depends(get_db)):
+def pk_workspace_revision_restore(sid:int,audit_id:int,data:pk_revision229.RestoreRequest,db:Session=Depends(get_scoped_db390)):
     return pk_revision229.restore(db,sid,audit_id,data.expected_version)
 
 
 @router.get("/workspace/health/operations")
-def pk_workspace_operations(db:Session=Depends(get_db)):
+def pk_workspace_operations(db:Session=Depends(get_scoped_db390)):
     return pk_operations237.health(db)
