@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from sqlalchemy import select
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Protocol, ProtocolItem, ProjectionExclusion, DoseLog, Vial
 from ..projection_exclusions import exclusions_for, excluded
 from ..templating import render
@@ -141,7 +141,7 @@ def _month_events(shown: date, db: Session):
 
 
 @router.get('/calendar')
-def calendar_page(request: Request, month: str = '', db: Session = Depends(get_db)):
+def calendar_page(request: Request, month: str = '', db: Session = Depends(get_scoped_db390)):
     shown = _parse_month(month)
     first, end, events, missing_start = _month_events(shown, db)
     grid_start = first - timedelta(days=(first.weekday() + 1) % 7)
@@ -165,7 +165,7 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_d
 
 
 @router.get('/calendar/review.csv')
-def export_calendar_review_csv(month: str = '', db: Session = Depends(get_db)):
+def export_calendar_review_csv(month: str = '', db: Session = Depends(get_scoped_db390)):
     """Export only projected review entries; never changes protocols or logs."""
     shown = _parse_month(month)
     first, end, events, _ = _month_events(shown, db)
@@ -205,7 +205,7 @@ def export_calendar_review_csv(month: str = '', db: Session = Depends(get_db)):
 @router.post('/calendar/exclude')
 def exclude_projection(protocol_item_id: int = Form(...), scheduled_on: date = Form(...),
                        scope: str = Form('once'), reason: str = Form(''),
-                       db: Session = Depends(get_db)):
+                       db: Session = Depends(get_scoped_db390)):
     if scope not in ('once', 'onward'):
         raise HTTPException(400, 'Invalid exclusion scope')
     item = db.get(ProtocolItem, protocol_item_id)
@@ -229,7 +229,7 @@ def exclude_projection(protocol_item_id: int = Form(...), scheduled_on: date = F
 
 
 @router.post('/calendar/exclusions/{exclusion_id}/restore')
-def restore_projection(exclusion_id: int, db: Session = Depends(get_db)):
+def restore_projection(exclusion_id: int, db: Session = Depends(get_scoped_db390)):
     rule = db.get(ProjectionExclusion, exclusion_id)
     if rule is None:
         raise HTTPException(404, 'Exclusion not found')
@@ -259,7 +259,7 @@ def _ical_line(value: str) -> str:
 
 
 @router.get('/calendar/export.ics')
-def export_calendar_ics(month: str = '', db: Session = Depends(get_db)):
+def export_calendar_ics(month: str = '', db: Session = Depends(get_scoped_db390)):
     """Download a snapshot of the displayed month's calendar events; no writes."""
     shown = _parse_month(month)
     first, end, events, _ = _month_events(shown, db)

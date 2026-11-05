@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import calc, services, units as U, idempotency
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..inventory_lock import reserve_inventory_write
 from ..models import Compound, Purchase, Vial, Supply, SupplyUsage, SupplyCategory, SupplyProduct
 from ..supply_categories import ensure_categories, validate_supply
@@ -21,7 +21,7 @@ router = APIRouter()
 
 
 @router.get("/purchases")
-def purchases_page(request: Request, db: Session = Depends(get_db)):
+def purchases_page(request: Request, db: Session = Depends(get_scoped_db390)):
     rows = []
     for p in db.scalars(purchase_listing()):
         landed = services.purchase_landed(p)
@@ -34,7 +34,7 @@ def purchases_page(request: Request, db: Session = Depends(get_db)):
 def create_purchase(vendor: str = Form(...), purchased_on: str = Form(""),
                     order_ref: str = Form(""), shipping: str = Form("0"), tax: str = Form("0"),
                     discount: str = Form("0"), notes: str = Form(""), submission_token: str = Form(""),
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect("/purchases", err="Inventory is busy. Please retry.")
     payload = dict(vendor=vendor, purchased_on=purchased_on, order_ref=order_ref, shipping=shipping, tax=tax, discount=discount, notes=notes)
@@ -61,7 +61,7 @@ def create_purchase(vendor: str = Form(...), purchased_on: str = Form(""),
 
 
 @router.get("/purchases/{pid}")
-def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
+def purchase_detail(pid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     p = db.get(Purchase, pid)
     if p is None:
         raise HTTPException(404, "Purchase not found")
@@ -90,7 +90,7 @@ def purchase_detail(pid: int, request: Request, db: Session = Depends(get_db)):
 def update_purchase(pid: int, vendor: str = Form(...), purchased_on: str = Form(""),
                     order_ref: str = Form(""), shipping: str = Form("0"), tax: str = Form("0"),
                     discount: str = Form("0"), notes: str = Form(""), submission_token: str = Form(""),
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_scoped_db390)):
     p = db.get(Purchase, pid)
     if p is None:
         raise HTTPException(404, "Purchase not found")
@@ -121,7 +121,7 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
               price_amount: str = Form(""), label: str = Form(""), lot: str = Form(""),
               expires_on: str = Form(""), notes: str = Form(""),
               kit_size: int = Form(1), kit_count: int = Form(1), cap_color: str = Form(""),
-              submission_token: str = Form(""), db: Session = Depends(get_db)):
+              submission_token: str = Form(""), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/purchases/{pid}", err="Inventory is busy. Please retry.")
     submission_token = submission_token if isinstance(submission_token, str) else ""
@@ -231,7 +231,7 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
 
 
 @router.post("/purchases/{pid}/delete")
-def delete_purchase(pid: int, db: Session = Depends(get_db)):
+def delete_purchase(pid: int, db: Session = Depends(get_scoped_db390)):
     p = db.get(Purchase, pid)
     if p is None:
         return services.flash_redirect("/purchases", err="Purchase not found.")
@@ -271,7 +271,7 @@ def parse_bulk(db, kind, quantity, pack_count, units_per_pack, package_price):
 @router.post("/purchases/{pid}/bac-water")
 def add_bac_water_vials(pid: int, vial_count: int = Form(...), ml_per_vial: float = Form(...),
                         name: str = Form(""), price_per_vial: str = Form(""), total_line_cost: str = Form(""), notes: str = Form(""),
-                        submission_token: str = Form(""), db: Session = Depends(get_db)):
+                        submission_token: str = Form(""), db: Session = Depends(get_scoped_db390)):
     """Add ingredient-free BAC water vials, tracked in total mL."""
     from ..bac_water import make_bac_water_supply
     if not reserve_inventory_write(db):
@@ -311,7 +311,7 @@ def add_bac_water_vials(pid: int, vial_count: int = Form(...), ml_per_vial: floa
 def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
                         quantity: float = Form(1), unit_price: str = Form("0"),
                         compound_id: str = Form(""), notes: str = Form(""),
-                        db: Session = Depends(get_db), pack_count: str = Form(""),
+                        db: Session = Depends(get_scoped_db390), pack_count: str = Form(""),
                         units_per_pack: str = Form(""), package_price: str = Form(""),
                         package_type: str = Form("box"), submission_token: str = Form("")):
     if not reserve_inventory_write(db):
@@ -368,7 +368,7 @@ def add_purchase_supply(pid: int, name: str = Form(...), kind: str = Form(...),
 def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
                          kind: str = Form(...), quantity: float = Form(...),
                          unit_price: str = Form("0"), compound_id: str = Form(""),
-                         notes: str = Form(""), db: Session = Depends(get_db),
+                         notes: str = Form(""), db: Session = Depends(get_scoped_db390),
                          pack_count: str = Form(""), units_per_pack: str = Form(""),
                          package_price: str = Form("")):
     """Edit a purchased supply/pill without resetting its usage history."""
@@ -431,7 +431,7 @@ def edit_purchase_supply(pid: int, sid: int, name: str = Form(...),
 
 
 @router.post("/purchases/{pid}/supplies/{sid}/delete")
-def delete_purchase_supply(pid: int, sid: int, db: Session = Depends(get_db)):
+def delete_purchase_supply(pid: int, sid: int, db: Session = Depends(get_scoped_db390)):
     back = f"/purchases/{pid}"
     s = db.get(Supply, sid)
     if s is None or s.purchase_id != pid:
@@ -447,7 +447,7 @@ def delete_purchase_supply(pid: int, sid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/purchases/{pid}/vials/{vid}/delete")
-def delete_purchase_vial(pid: int, vid: int, db: Session = Depends(get_db)):
+def delete_purchase_vial(pid: int, vid: int, db: Session = Depends(get_scoped_db390)):
     back = f"/purchases/{pid}"
     v = db.get(Vial, vid)
     if v is None or v.purchase_id != pid:

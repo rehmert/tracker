@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from .. import services, units as U
 from ..inventory_lock import reserve_inventory_write
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import VIAL_STATUSES, DoseLog, Vial, Compound, Supply, SupplyUsage, Coa, PreparationEvent, PreparationSupply, ChangeAudit, BlendComponent, SupplyCategory
 from .. import manual_supplies
 from ..templating import render
@@ -29,7 +29,7 @@ def _get(db: Session, vid: int) -> Vial:
 
 
 @router.get("/vials")
-def vials_page(request: Request, status: str = "active", compound_id: str | None = None, db: Session = Depends(get_db)):
+def vials_page(request: Request, status: str = "active", compound_id: str | None = None, db: Session = Depends(get_scoped_db390)):
     # Convert compound_id to integer, treating empty strings as None
     compound_id = int(compound_id) if compound_id and compound_id.isdigit() else None
 
@@ -245,7 +245,7 @@ def _bulk_rows(vials, changes):
 @router.post("/vials/bulk/preview")
 async def bulk_preview_vials(
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """
     Read-only preview using current database values.
@@ -277,7 +277,7 @@ async def bulk_preview_vials(
 @router.post("/vials/bulk/validate-selection")
 async def validate_bulk_selection(
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """Read-only validation of browser-persisted vial selections."""
     form = await request.form()
@@ -381,7 +381,7 @@ def _bulk_delete_snapshot(ids: list[int], rows: list[dict], missing: list[int]) 
 
 
 @router.post("/vials/bulk/delete-preview")
-async def bulk_delete_preview(request: Request, db: Session = Depends(get_db)):
+async def bulk_delete_preview(request: Request, db: Session = Depends(get_scoped_db390)):
     form = await request.form()
     try:
         ids = sorted({int(value) for value in form.getlist("vial_ids")})
@@ -401,7 +401,7 @@ async def bulk_delete_preview(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/vials/bulk/delete")
-async def bulk_delete_vials(request: Request, db: Session = Depends(get_db)):
+async def bulk_delete_vials(request: Request, db: Session = Depends(get_scoped_db390)):
     form = await request.form()
     try:
         ids = sorted({int(value) for value in form.getlist("vial_ids")})
@@ -459,7 +459,7 @@ async def bulk_delete_vials(request: Request, db: Session = Depends(get_db)):
 @router.post("/vials/bulk")
 async def bulk_update_vials(
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """
     Apply validated bulk changes atomically.
@@ -548,7 +548,7 @@ async def bulk_update_vials(
 
 
 @router.get("/vials/{vid}")
-def vial_detail(vid: int, request: Request, db: Session = Depends(get_db)):
+def vial_detail(vid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     v = _get(db, vid)
     vd = services.vial_views(db, [v])[v.id]
     label_base, _ = U.to_base(v.content_value, v.content_unit)
@@ -592,7 +592,7 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
                 first_dosed_on: str = Form(""), beyond_use_on: str = Form(""),
                 closed_on: str = Form(""), storage_notes: str = Form(""),
                 use_coa_content: str = Form(""), notes: str = Form(""), cap_color: str = Form(""),
-                db: Session = Depends(get_db)):
+                db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
@@ -645,7 +645,7 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
 
 
 @router.post("/vials/{vid}/reconstitute")
-async def reconstitute(vid: int, request: Request, volume_ml: float = Form(...), supply_id: str = Form(""), db: Session = Depends(get_db)):
+async def reconstitute(vid: int, request: Request, volume_ml: float = Form(...), supply_id: str = Form(""), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
@@ -684,7 +684,7 @@ async def reconstitute(vid: int, request: Request, volume_ml: float = Form(...),
 
 
 @router.post("/vials/{vid}/delete")
-def delete_vial(vid: int, db: Session = Depends(get_db)):
+def delete_vial(vid: int, db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
@@ -705,7 +705,7 @@ def delete_vial(vid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/vials/{vid}/filter")
-async def record_filtering(vid: int, request: Request, notes: str = Form(""), db: Session = Depends(get_db)):
+async def record_filtering(vid: int, request: Request, notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     _get(db, vid)
@@ -726,7 +726,7 @@ async def record_filtering(vid: int, request: Request, notes: str = Form(""), db
 
 
 @router.get("/vials/{vid}/preparations/{eid}/edit")
-def edit_preparation_page(vid: int, eid: int, request: Request, db: Session = Depends(get_db)):
+def edit_preparation_page(vid: int, eid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     event = db.get(PreparationEvent, eid)
     if not event or event.vial_id != vid: raise HTTPException(404)
     links = list(db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == eid)))
@@ -735,7 +735,7 @@ def edit_preparation_page(vid: int, eid: int, request: Request, db: Session = De
 
 
 @router.post("/vials/{vid}/preparations/{eid}/edit")
-async def edit_preparation(vid: int, eid: int, request: Request, notes: str = Form(""), occurred_at: str = Form(""), db: Session = Depends(get_db)):
+async def edit_preparation(vid: int, eid: int, request: Request, notes: str = Form(""), occurred_at: str = Form(""), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     event = db.get(PreparationEvent, eid)
@@ -773,7 +773,7 @@ async def edit_preparation(vid: int, eid: int, request: Request, notes: str = Fo
 
 
 @router.post("/vials/{vid}/preparations/{eid}/delete")
-def delete_preparation(vid: int, eid: int, db: Session = Depends(get_db)):
+def delete_preparation(vid: int, eid: int, db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     event = db.get(PreparationEvent,eid)

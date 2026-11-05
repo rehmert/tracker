@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import services, units as U
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import CATEGORIES, Compound, ProtocolItem, Vial, page_compounds
 from ..templating import render
 
@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("/compounds")
 def compounds_page(request: Request, q: str = Query("", max_length=120),
                    category_filter: str = Query(""), sort: str = Query("name"),
-                   direction: str = Query("asc"), db: Session = Depends(get_db)):
+                   direction: str = Query("asc"), db: Session = Depends(get_scoped_db390)):
     """Search and sort on the server, with an allowlist for ordering."""
     q = q.strip()
     if category_filter not in CATEGORIES:
@@ -42,7 +42,7 @@ def compounds_page(request: Request, q: str = Query("", max_length=120),
 
 @router.post("/compounds")
 def create_compound(name: str = Form(...), category: str = Form("peptide"),
-                    notes: str = Form(""), primary_unit: str = Form("mg"), db: Session = Depends(get_db)):
+                    notes: str = Form(""), primary_unit: str = Form("mg"), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect("/compounds", err="Database is busy. Please retry.")
     name = name.strip()
@@ -62,7 +62,7 @@ def create_compound(name: str = Form(...), category: str = Form("peptide"),
 
 
 @router.post("/compounds/{cid}/delete")
-def delete_compound(cid: int, db: Session = Depends(get_db)):
+def delete_compound(cid: int, db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect("/compounds", err="Database is busy. Please retry.")
     c = db.get(Compound, cid)
@@ -80,7 +80,7 @@ def delete_compound(cid: int, db: Session = Depends(get_db)):
 
 
 @router.get("/compounds/{cid}/edit")
-def edit_compound_page(cid: int, request: Request, db: Session = Depends(get_db)):
+def edit_compound_page(cid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     compound = db.get(Compound, cid)
     if compound is None:
         return services.flash_redirect("/compounds", err="Compound not found.")
@@ -92,7 +92,7 @@ def edit_compound_page(cid: int, request: Request, db: Session = Depends(get_db)
 @router.post("/compounds/{cid}/edit")
 def update_compound(cid: int, name: str = Form(...), category: str = Form("peptide"),
                     notes: str = Form(""), primary_unit: str = Form("mg"),
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect("/compounds", err="Database is busy. Please retry.")
     compound = db.get(Compound, cid)

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import calc, services
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Compound, Protocol, ProtocolItem, ProtocolRevision, Vial
 from ..templating import render
 from ..audit_helpers import record, snapshot
@@ -138,7 +138,7 @@ def _horizon(text: str) -> float:
 
 
 @router.get("/protocols")
-def protocols_page(request: Request, db: Session = Depends(get_db)):
+def protocols_page(request: Request, db: Session = Depends(get_scoped_db390)):
     refs = services.compound_refs(db)
     protocols = list(db.scalars(
         select(Protocol).order_by(Protocol.updated_at.desc())
@@ -170,7 +170,7 @@ def protocols_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/protocols")
-def create_protocol(name: str = Form("New plan"), db: Session = Depends(get_db)):
+def create_protocol(name: str = Form("New plan"), db: Session = Depends(get_scoped_db390)):
     p = Protocol(name=name.strip() or "New plan")
     db.add(p)
     db.flush()
@@ -180,14 +180,14 @@ def create_protocol(name: str = Form("New plan"), db: Session = Depends(get_db))
 
 
 @router.get("/protocols/row")
-def blank_row(request: Request, db: Session = Depends(get_db)):
+def blank_row(request: Request, db: Session = Depends(get_scoped_db390)):
     compounds = list(db.scalars(select(Compound).order_by(Compound.name)))
     return render(request, "_protocol_row.html", item=dict(BLANK, compound_id=None),
                   compounds=compounds)
 
 
 @router.get("/protocols/{pid}")
-def protocol_editor(pid: int, request: Request, db: Session = Depends(get_db)):
+def protocol_editor(pid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
@@ -208,7 +208,7 @@ def protocol_calc(pid: int, request: Request, horizon_weeks: str = Form("12"),
                   start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
                   dose_days: list[str] = Form(default=[]), dose_time: list[str] = Form(default=[]),
                   fasting_hours: list[str] = Form(default=[]),
-                  db: Session = Depends(get_db)):
+                  db: Session = Depends(get_scoped_db390)):
     """Stateless what-if: recalculates from the form as it currently stands."""
     p = db.get(Protocol, pid)
     if p is None:
@@ -239,7 +239,7 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
                   start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
                   dose_days: list[str] = Form(default=[]), dose_time: list[str] = Form(default=[]),
                   fasting_hours: list[str] = Form(default=[]),
-                  db: Session = Depends(get_db)):
+                  db: Session = Depends(get_scoped_db390)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
@@ -282,7 +282,7 @@ def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
                       start_week: list[str] = Form(default=[]), end_week: list[str] = Form(default=[]),
                   dose_days: list[str] = Form(default=[]), dose_time: list[str] = Form(default=[]),
                   fasting_hours: list[str] = Form(default=[]),
-                      db: Session = Depends(get_db)):
+                      db: Session = Depends(get_scoped_db390)):
     """Persist the completed rows, then open a new editable row.
 
     Uses an ordinary HTML form submission; works even if HTMX or JS fails.
@@ -313,7 +313,7 @@ def _parse_protocol_dates(start_date: str, end_date: str):
 
 @router.post("/protocols/{pid}/dates")
 def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = Form(""),
-                       db: Session = Depends(get_db)):
+                       db: Session = Depends(get_scoped_db390)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
@@ -327,7 +327,7 @@ def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = For
 
 
 @router.post("/protocols/{pid}/active")
-def toggle_active(pid: int, db: Session = Depends(get_db)):
+def toggle_active(pid: int, db: Session = Depends(get_scoped_db390)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
@@ -340,7 +340,7 @@ def toggle_active(pid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/protocols/{pid}/duplicate")
-def protocol_duplicate(pid: int, db: Session = Depends(get_db)):
+def protocol_duplicate(pid: int, db: Session = Depends(get_scoped_db390)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
@@ -359,7 +359,7 @@ def protocol_duplicate(pid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/protocols/{pid}/delete")
-def protocol_delete(pid: int, db: Session = Depends(get_db)):
+def protocol_delete(pid: int, db: Session = Depends(get_scoped_db390)):
     p = db.get(Protocol, pid)
     if p is not None:
         record(db, "protocol", pid, "delete", before=protocol_snapshot(p))
@@ -385,7 +385,7 @@ def _revision(db: Session, p: Protocol):
 
 
 @router.get('/protocols/{pid}/history')
-def history(pid:int,request:Request,db:Session=Depends(get_db)):
+def history(pid:int,request:Request,db:Session=Depends(get_scoped_db390)):
     p=db.get(Protocol,pid)
     if not p: raise HTTPException(404)
     versions=list(db.scalars(select(ProtocolRevision).where(ProtocolRevision.protocol_id==pid).order_by(ProtocolRevision.revision.desc())))

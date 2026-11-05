@@ -2,7 +2,7 @@ import math
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Purchase, Supply, SupplyUsage, Compound, SupplyCategory
 from ..supply_categories import ensure_categories, validate_supply
 from .. import services, idempotency
@@ -11,14 +11,14 @@ from ..templating import render
 router = APIRouter()
 
 @router.get("/supplies")
-def index(request: Request, db: Session = Depends(get_db)):
+def index(request: Request, db: Session = Depends(get_scoped_db390)):
     categories = ensure_categories(db)
     supplies = list(db.scalars(select(Supply).order_by(Supply.id.desc())))
     return render(request, "supplies.html", categories=categories, category_map={c.key: c for c in categories}, supplies=supplies, submission_tokens={s.id: idempotency.new_token() for s in supplies}, purchases=list(db.scalars(select(Purchase).order_by(Purchase.id.desc()))), compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
 
 @router.post("/supplies")
 def add(purchase_id: int = Form(...), name: str = Form(...), kind: str = Form(...), quantity: float = Form(...), unit_price: str = Form("0"), pack_count: str = Form(""),
-        units_per_pack: str = Form(""), package_price: str = Form(""), compound_id: str = Form(""), db: Session = Depends(get_db)):
+        units_per_pack: str = Form(""), package_price: str = Form(""), compound_id: str = Form(""), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect("/supplies", err="Inventory is busy. Please retry.")
     ensure_categories(db)
@@ -40,7 +40,7 @@ def add(purchase_id: int = Form(...), name: str = Form(...), kind: str = Form(..
     return services.flash_redirect("/supplies", msg="Supply added.")
 
 @router.post("/supplies/{sid}/use")
-def use(sid: int, quantity: float = Form(...), submission_token: str = Form(""), db: Session = Depends(get_db)):
+def use(sid: int, quantity: float = Form(...), submission_token: str = Form(""), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect("/supplies", err="Inventory is busy. Please retry.")
     state, digest = idempotency.check(db, submission_token, "supply_use", {"sid": sid, "quantity": quantity})
@@ -62,7 +62,7 @@ def use(sid: int, quantity: float = Form(...), submission_token: str = Form(""),
 
 @router.post('/supplies/{sid}/dose')
 def log_pill(sid: int, quantity: int = Form(...), taken_at: str = Form(''), notes: str = Form(''),
-             submission_token: str = Form(''), db: Session = Depends(get_db)):
+             submission_token: str = Form(''), db: Session = Depends(get_scoped_db390)):
     # Reserve the SQLite write transaction BEFORE reading remaining stock.
     if not reserve_inventory_write(db):
         return services.flash_redirect('/supplies', err='Inventory is busy. Please retry.')
@@ -88,7 +88,7 @@ def log_pill(sid: int, quantity: int = Form(...), taken_at: str = Form(''), note
     return services.flash_redirect('/supplies', msg=f'Recorded {quantity} pill(s) used.')
 
 @router.post("/supplies/categories")
-def create_category(label: str = Form(...), unit: str = Form("count"), db: Session = Depends(get_db)):
+def create_category(label: str = Form(...), unit: str = Form("count"), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect("/supplies", err="Inventory is busy. Please retry.")
     import re
