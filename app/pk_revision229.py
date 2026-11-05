@@ -9,6 +9,7 @@ from .models import ChangeAudit,PkPlannedDose
 from .pk_scenario_ops import scenario
 from .pk_mutation197 import prepare,finish
 from .pk_scenario_version import snapshot,version
+from .pk_revision_delta257 import Snapshot,changes,equivalent
 
 
 class RestoreRequest(BaseModel):
@@ -46,7 +47,7 @@ def parse_audit(db,sid,aid):
         raise HTTPException(404,'Scenario revision unavailable')
 
     try:
-        payload=SnapshotPayload.model_validate_json(
+        payload=Snapshot.model_validate_json(
             audit.after_json
         )
         if payload.compound_id!=scenario(db,sid).compound_id:
@@ -85,15 +86,7 @@ def preview(db,sid,aid):
     audit,value,doses=parse_audit(db,sid,aid)
     current=scenario(db,sid)
     old=snapshot(db,current)
-
-    def dose_keys(items):
-        return {
-            (x['planned_at'],x['amount_mg'])
-            for x in items
-        }
-
-    before=dose_keys(old['doses'])
-    after=dose_keys(value['doses'])
+    diff=changes(old,value)
 
     return {
         'audit_id':aid,
@@ -102,16 +95,7 @@ def preview(db,sid,aid):
         'current_version':version(old),
         'name':value['name'],
         'dose_count':len(doses),
-        'added':len(after-before),
-        'removed':len(before-after),
-        'name_changed':old['name']!=value['name'],
-        'half_life_changed':(
-            old['half_life_hours']!=value['half_life_hours']
-        ),
-        'absorption_changed':(
-            old['absorption_half_life_hours']!=
-            value['absorption_half_life_hours']
-        ),
+        **diff,
         'note':'Historical restoration replaces hypothetical dose IDs.'
     }
 
@@ -119,6 +103,16 @@ def preview(db,sid,aid):
 def restore(db,sid,aid,expected):
     obj,before=prepare(db,sid,expected)
     _,value,doses=parse_audit(db,sid,aid)
+
+    if equivalent(before,value):
+        db.rollback()
+        return {
+            'restored':0,
+            'version':version(before),
+            'audit_source':aid,
+            'unchanged':True
+        }
+
     db.execute(delete(PkPlannedDose).where(PkPlannedDose.scenario_id==sid))
     db.expire(obj,['doses'])
     obj.name=value['name']
