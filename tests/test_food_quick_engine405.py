@@ -197,11 +197,39 @@ def test_denied_engine_dependency_prevents_writes(
 
 
 def test_saved_food_helper_retains_existing_signature():
+    """Release 406 adds an optional argument without breaking callers."""
     signature = inspect.signature(
         food_quick375.saved_foods
     )
 
-    assert len(signature.parameters) == 0
+    assert list(signature.parameters) == ["db_engine"]
+    assert signature.parameters["db_engine"].default is None
+
+
+def test_saved_food_helper_accepts_no_argument(monkeypatch):
+    """Existing call sites still work without passing an engine."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.pool import StaticPool
+
+    database = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+    try:
+        monkeypatch.setattr(
+            food_quick375,
+            "engine",
+            database,
+        )
+
+        assert food_quick375.saved_foods() == ([], [])
+        assert food_quick375.saved_foods(
+            db_engine=database
+        ) == ([], [])
+    finally:
+        database.dispose()
 
 
 def test_secondary_user_storage_still_disabled():

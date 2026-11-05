@@ -45,9 +45,10 @@ def food_redirect(day, section=None):
     return RedirectResponse(location, status_code=303)
 
 
-def saved_foods():
-    init_food_schema()
-    with engine.connect() as db:
+def saved_foods(db_engine=None):
+    selected_engine = engine if db_engine is None else db_engine
+    init_food_schema(selected_engine)
+    with selected_engine.connect() as db:
         favorites = db.execute(text("""
             SELECT p.id, p.name, p.serving_description, p.nutrients,
                 COALESCE(

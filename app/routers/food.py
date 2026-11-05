@@ -13,6 +13,7 @@ from ..db import engine
 from ..templating import render
 
 from ..food_storage_guard391 import require_food_storage391
+from ..food_read_engine406 import get_food_read_engine406
 
 router = APIRouter(
     dependencies=[Depends(require_food_storage391)]
@@ -33,8 +34,9 @@ NUTRIENTS = {
 OFF_MG = {"sodium", "potassium", "calcium", "iron", "magnesium", "vitamin-c", "cholesterol"}
 OFF_MCG = {"vitamin-d", "vitamin-b12"}
 
-def init_food_schema():
-    with engine.begin() as db:
+def init_food_schema(db_engine=None):
+    selected_engine = engine if db_engine is None else db_engine
+    with selected_engine.begin() as db:
         db.exec_driver_sql("""CREATE TABLE IF NOT EXISTS tracker_food_products (
             id INTEGER PRIMARY KEY AUTOINCREMENT, barcode TEXT,
             name TEXT NOT NULL, serving_description TEXT NOT NULL,
@@ -65,9 +67,10 @@ def optional_nutrient(raw):
         raise HTTPException(422, "Nutrient value is out of range")
     return value
 
-def nutrient_coverage(day):
+def nutrient_coverage(day, db_engine=None):
     """Count foods with reported values, independently per nutrient."""
-    with engine.connect() as db:
+    selected_engine = engine if db_engine is None else db_engine
+    with selected_engine.connect() as db:
         records = db.execute(text("""
             SELECT p.nutrients FROM tracker_food_entries e
             JOIN tracker_food_products p ON p.id=e.product_id
@@ -88,30 +91,40 @@ def to_float(raw):
     except (TypeError, ValueError, OverflowError):
         return 0.0
 
-def totals_for(day):
-    with engine.connect() as db:
+def totals_for(day, db_engine=None):
+    selected_engine = engine if db_engine is None else db_engine
+    with selected_engine.connect() as db:
         records = db.execute(text("""SELECT p.nutrients,e.servings FROM tracker_food_entries e
            JOIN tracker_food_products p ON p.id=e.product_id WHERE e.eaten_on=:day"""), {"day":day}).all()
     return {k: round(sum(to_float(json.loads(n).get(k))*s for n,s in records),2) for k in NUTRIENTS}
 
 @router.get("/food")
-def food_page(request: Request, day: str = "", q: str = ""):
-    init_food_schema()
+def food_page(
+    request: Request,
+    day: str = "",
+    q: str = "",
+    db_engine=Depends(get_food_read_engine406),
+):
+    init_food_schema(db_engine)
     try:
         chosen = date.fromisoformat(day) if day else date.today()
     except ValueError:
         chosen = date.today()
     day = chosen.isoformat()
-    with engine.connect() as db:
+    with db_engine.connect() as db:
         records = db.execute(text("""SELECT e.id, p.id AS product_id, p.name,p.serving_description,p.nutrients,
             e.servings,e.meal,p.source FROM tracker_food_entries e JOIN tracker_food_products p
             ON p.id=e.product_id WHERE e.eaten_on=:d ORDER BY e.id DESC"""),{"d":day}).mappings().all()
         targets = dict(db.execute(text("SELECT nutrient,value FROM tracker_food_targets")).all())
     rows = [dict(r) for r in records]
-    total = totals_for(day)
-    coverage, food_count = nutrient_coverage(day)
+    total = totals_for(day, db_engine=db_engine)
+    coverage, food_count = nutrient_coverage(
+        day, db_engine=db_engine
+    )
     from .food_quick375 import saved_foods
-    favorites, recent = saved_foods()
+    favorites, recent = saved_foods(
+        db_engine=db_engine
+    )
     favorite_ids = {item["id"] for item in favorites}
     from .food_bundle376 import (
         search_products, weekly_summary, meal_templates
