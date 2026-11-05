@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Food Journal{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-food374.css?v=374">
+<script src="/static/js/tracker-food374.js?v=374" defer></script>
+<h1>Food Journal</h1>
+<p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
+<form method="get" action="/food" class="food-date"><label>Day <input type="date" name="day" value="{{ day }}"></label><button>Show</button></form>
+<section class="food-dashboard">
+  <h2>Daily Totals</h2>
+  <div class="food-macro-grid">
+    {% for key in ('energy','proteins','carbohydrates','fat') %}
+      <div><strong>{{ totals[key] | round(1) }}</strong><span>{{ nutrients[key][0] }} ({{ nutrients[key][1] }})</span></div>
+    {% endfor %}
+  </div>
+  <details><summary>All Nutrients &amp; Daily Targets</summary>
+    <div class="food-nutrients">
+      {% for key, info in nutrients.items() %}
+      <div><strong>{{ info[0] }}</strong><span>{{ totals[key] }} {{ info[1] }}</span>
+        {% if key in targets %}
+        <small>Target {{ targets[key] }} {{ info[1] }} · {% if totals[key] < targets[key] %}below{% elif totals[key] > targets[key] %}above{% else %}at{% endif %} entered target</small>
+        {% else %}<small>No personal target set</small>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </details>
+</section>
+<section id="food-add">
+<h2>Add Food or Drink</h2>
+<div class="food-scan">
+ <button type="button" id="food-start-scan">Scan Barcode</button>
+ <label class="food-camera-label">Barcode Photo <input type="file" id="food-barcode-photo" accept="image/*" capture="environment"></label>
+ <label class="food-camera-label">Nutrition Label Photo <input type="file" id="food-label-photo" accept="image/*" capture="environment"></label>
+</div>
+<video id="food-camera" playsinline muted hidden></video>
+<button type="button" id="food-stop-scan" hidden>Stop Camera</button>
+<p id="food-scan-status" class="note" role="status" aria-live="polite">Barcode scan requires HTTPS and camera access. Manual entry always works.</p>
+<form id="food-entry-form" action="/food/entry" method="post">
+<input type="hidden" name="day" value="{{ day }}">
+<input type="hidden" name="source" id="food-source" value="manual">
+<div class="food-row">
+ <label>Barcode (optional)<input type="text" id="food-barcode" name="barcode" inputmode="numeric" pattern="[0-9]{8,14}" placeholder="UPC / EAN"></label>
+ <button type="button" id="food-lookup">Find Barcode</button>
+</div>
+<label>Product / Food Name<input name="name" id="food-name" required maxlength="160" placeholder="e.g. plain Greek yogurt"></label>
+<div class="food-row">
+ <label>Serving Size / Basis<input name="serving_description" id="food-serving" required value="1 serving" placeholder="1 cup / 100 g / package"></label>
+ <label>Servings Eaten<input name="servings" type="number" inputmode="decimal" min="0.01" max="100" step="0.01" value="1" required></label>
+</div>
+<label>Meal<select name="meal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option selected>Snack</option></select></label>
+<details open><summary>Macros (per serving listed above)</summary>
+ <div class="food-nutrient-inputs">
+ {% for key in ('energy','proteins','carbohydrates','fat','fiber','sugars','saturated-fat') %}
+ <label>{{ nutrients[key][0] }} ({{ nutrients[key][1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" placeholder="Unknown"></label>
+ {% endfor %}
+ </div>
+</details>
+<details><summary>Micronutrients (per serving)</summary>
+ <div class="food-nutrient-inputs">
+ {% for key, info in nutrients.items() if key not in ('energy','proteins','carbohydrates','fat','fiber','sugars','saturated-fat') %}
+ <label>{{ info[0] }} ({{ info[1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" placeholder="Unknown"></label>
+ {% endfor %}
+ </div>
+</details>
+<p class="note" id="food-review-warning">Only confirmed numbers should be entered. Blank nutrient values are currently treated as zero; this does not imply the product contains none.</p>
+<button class="primary food-save" type="submit">Save Food Entry</button>
+</form>
+</section>
+<section><h2>Recorded Meals</h2>
+{% for e in entries %}
+<article class="food-log-row"><div><strong>{{ e.name }}</strong><small>{{ e.meal }} · {{ e.servings }} × {{ e.serving_description }}</small><small>{{ e.source }}</small></div>
+<form method="post" action="/food/entry/{{ e.id }}/delete" onsubmit="return confirm('Delete this food entry?')"><button type="submit">Delete</button></form></article>
+{% else %}<p>No food logged on this day.</p>{% endfor %}
+</section>
+<details><summary>Set Your Own Daily Nutrition Targets</summary>
+<p class="note">Enter personal tracking targets, not clinical recommendations. Leave blank to remove a target.</p>
+<form method="post" action="/food/targets"><input type="hidden" name="day" value="{{ day }}">
+<div class="food-nutrient-inputs">
+{% for key, info in nutrients.items() %}
+<label>{{ info[0] }} ({{ info[1] }})<input type="number" step="any" min="0" name="{{ key }}" value="{{ targets[key] if key in targets else '' }}"></label>
+{% endfor %}
+</div><button type="submit">Save Targets</button></form></details>
+{% endblock %}
