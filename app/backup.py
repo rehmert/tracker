@@ -14,6 +14,7 @@ from pathlib import Path
 from . import config
 from .backup_consistency309 import upload_inventory
 from .upload_coordination325 import upload_guard
+from .backup_references341 import assert_complete
 
 BACKUP_DIR = Path(os.getenv('TRACKER_BACKUP_DIR', str(config.DATA_DIR.parent / 'backups'))).resolve()
 
@@ -60,6 +61,11 @@ def create_backup(data_dir: Path | None = None, backup_dir: Path | None = None) 
                         raise ValueError(f'Uploads must not contain symlinks: {path}')
                     if path.is_file():
                         entries.append(path)
+            names = {'tracker.db'} | {
+                path.relative_to(data).as_posix()
+                for path in entries if path != snapshot
+            }
+            assert_complete(snapshot, names)
             manifest = {'version': 1, 'created_utc': datetime.now(timezone.utc).isoformat(), 'files': {}}
             partial = work / 'backup.zip'
             with zipfile.ZipFile(partial, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
