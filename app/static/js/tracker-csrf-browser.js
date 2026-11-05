@@ -32,6 +32,42 @@
     }
   }
 
+  // Include same-origin fetch writes, including multipart FormData.
+  // Do not mutate cross-origin requests or overwrite an explicit header.
+  const nativeFetch = window.fetch.bind(window);
+
+  window.fetch = (input, init) => {
+    const options = init || {};
+    const isRequest =
+      typeof Request !== 'undefined' && input instanceof Request;
+
+    const method = String(
+      options.method || (isRequest ? input.method : 'GET')
+    ).toUpperCase();
+
+    const target = isRequest ? input.url : input;
+
+    if (
+      !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+      || !localTarget(target)
+    ) {
+      return nativeFetch(input, init);
+    }
+
+    const value = token();
+    if (!value) return nativeFetch(input, init);
+
+    const headers = new Headers(
+      options.headers || (isRequest ? input.headers : undefined)
+    );
+
+    if (!headers.has(HEADER)) {
+      headers.set(HEADER, value);
+    }
+
+    return nativeFetch(input, {...options, headers});
+  };
+
   function enhanceForm(form) {
     if (!(form instanceof HTMLFormElement)) return;
     if (!localTarget(form.action)) return;
