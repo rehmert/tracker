@@ -1,0 +1,73 @@
+/* Calendar-first recording: mobile tap targets and clear vial choice.
+   Styling only; existing recording and review safeguards remain. */
+
+.calendar-dose-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin: .75rem 0 1rem;
+  padding: .8rem;
+  border: 1px solid var(--border, #b9c2cf);
+  border-radius: 12px;
+}
+
+.calendar-dose-shortcut a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: .3rem .8rem;
+  border-radius: 8px;
+  border: 1px solid currentColor;
+  font-weight: 600;
+  text-align: center;
+}
+
+#calendar-vial-picker {
+  scroll-margin-top: 1.5rem;
+}
+
+@media (max-width: 680px) {
+  .calendar-review-actions a.tag[href^="/doses?"],
+  .calendar-activity a.tag[href^="/doses?"] {
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    padding: .4rem .85rem;
+    box-sizing: border-box;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .calendar-dose-shortcut {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-dose-shortcut a {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  form[hx-post="/doses"] select[name="vial_id"],
+  form[hx-post="/doses"] input[name="amount"],
+  form[hx-post="/doses"] input[name="taken_at"] {
+    width: 100%;
+    min-height: 50px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  form[hx-post="/doses"] button.primary[type="submit"] {
+    width: 100%;
+    min-height: 54px;
+    font-size: 1.05rem;
+  }
+
+  #dose-calendar-vial-notice {
+    margin: .6rem 0;
+  }
+}

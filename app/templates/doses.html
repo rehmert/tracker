@@ -17,7 +17,14 @@
 
 <link rel="stylesheet"
  href="/static/css/tracker-dose-mobile104.css?v=bundle104">
+<link rel="stylesheet" href="/static/css/tracker-calendar-dose-mobile369.css?v=366">
 <h1>Dose log</h1>
+{% if planned_handoff %}
+<nav class="calendar-dose-shortcut" aria-label="Calendar dose entry">
+  <strong>From Calendar: {{ planned_compound_name }}</strong>
+  <a href="#calendar-vial-picker">Confirm vial and record ↓</a>
+</nav>
+{% endif %}
 {% if repeat_notice %}<p class="note" role="status" id="dose-repeat-notice">{{ repeat_notice }}</p>{% endif %}{% if calendar_vial_notice %}<p class="note" role="status" id="dose-calendar-vial-notice">{{ calendar_vial_notice }}</p>{% endif %}<p class="note">Use “Prepare similar” in History to load previous recorded details for review. It never records an administration, and does not copy the previous time, notes, or supplies.</p><p class="note">Record an actual administration here. To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Recording a dose may update inventory; merely opening a planned entry does not.</p><nav class="ux-shortcuts"><a href="/calendar">Log from calendar</a><a href="#dose-history">View history ↓</a></nav>
 
 <section>
@@ -101,8 +108,9 @@
         hx-on::after-request="this.dataset.saving='';this.querySelector('button[type=submit]').disabled=false;if(event.detail.successful&&event.detail.xhr.getResponseHeader('HX-Trigger-After-Settle')&&!event.detail.xhr.getResponseHeader('HX-Retarget')){this.reset();document.getElementById('form-msg').innerHTML='';document.getElementById('dose-preview').innerHTML='';}"
         hx-on::response-error="this.dataset.saving='';this.querySelector('button[type=submit]').disabled=false;">
     <input type="hidden" name="submission_token" value="{{ submission_token }}">
+    {% if planned_handoff %}<input type="hidden" name="planned_compound_id" value="{{ selected_compound_id }}">{% endif %}
     <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="load, input delay:200ms, change" hx-target="#dose-preview">
-      <label class="field"><span>Vial</span>
+      <label class="field" id="calendar-vial-picker"><span>{% if planned_handoff %}Confirm vial for {{ planned_compound_name }}{% else %}Vial{% endif %}</span>
         <select name="vial_id" required>
           {% if selected_compound_id is not none and selected_vial_id is none %}
           <option value="" selected disabled>Select a vial for this compound</option>
@@ -191,7 +199,11 @@
     <div><button type="submit" class="primary">Add to log</button></div>
   </form>
   {% else %}
+  {% if planned_handoff %}
+  <p class="empty">No stocked vial is available for {{ planned_compound_name }}. <a href="/dose-workspace?compound_id={{ selected_compound_id }}">Review vial inventory</a> before recording.</p>
+  {% else %}
   <p class="empty">No vials in stock to log against. Add one from a <a href="/purchases">purchase</a>.</p>
+  {% endif %}
   {% endif %}
 </section>
 

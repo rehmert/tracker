@@ -55,7 +55,7 @@ def _error(msg: str) -> HTMLResponse:
 
 
 def _select_dose_vial(vials, views, compound_id, vial_id, planned_date,
-                      planned_amount, planned_unit):
+                      planned_amount, planned_unit, recent_vial_ids=()):
     """Choose one vial for a dose form; read only, never administers anything.
 
     The oldest *usable* in-use vial means lowest inventory ID. A planned
@@ -101,6 +101,15 @@ def _select_dose_vial(vials, views, compound_id, vial_id, planned_date,
                 usable.append(v)
         opened = usable
 
+    if opened and scheduled:
+        by_id = {v.id: v for v in opened}
+        for recent_id in recent_vial_ids:
+            if recent_id in by_id:
+                return recent_id, (
+                    "Most recently logged eligible in-use vial preselected. "
+                    "Confirm the physical vial before recording."
+                )
+
     if opened:
         if scheduled and not warning:
             warning = ("First eligible in-use vial selected automatically. "
@@ -129,10 +138,30 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
+    planned_handoff = bool(planned_date) and compound_id is not None
+    recent_vial_ids = []
+    if planned_handoff:
+        in_use_ids = [
+            v.id for v in vials
+            if v.compound_id == compound_id and v.status == "in_use"
+        ]
+        if in_use_ids:
+            recent_vial_ids = list(db.scalars(
+                select(DoseLog.vial_id)
+                .where(DoseLog.kind == "dose", DoseLog.vial_id.in_(in_use_ids))
+                .order_by(DoseLog.taken_at.desc(), DoseLog.id.desc())
+                .limit(250)
+            ))
     selected_vial_id, calendar_vial_notice = _select_dose_vial(
         vials, views, compound_id, vial_id, planned_date,
-        planned_amount, planned_unit,
+        planned_amount, planned_unit, recent_vial_ids,
     )
+    # A calendar handoff must not offer another compound's vial.
+    form_vials = (
+        [v for v in vials if v.compound_id == compound_id]
+        if planned_handoff else vials
+    )
+    planned_compound = db.get(Compound, compound_id) if planned_handoff else None
 
     # Historical entries can prefill a NEW record only after explicit selection.
     # Never reuse the historical timestamp, supplies, notes, or submission token.
@@ -194,7 +223,9 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         select(SupplyCategory.key).where(SupplyCategory.unit == "count")
     ))
 
-    return render(request, "doses.html", rows=_rows(db, compound_id), vials=vials, views=views,
+    return render(request, "doses.html", rows=_rows(db, compound_id), vials=form_vials, views=views,
+                  planned_handoff=planned_handoff,
+                  planned_compound_name=planned_compound.name if planned_compound else "Planned compound",
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
                   now=prefill_at, submission_token=idempotency.new_token(), planned_amount=planned_amount if planned_amount is not None and planned_amount > 0 else repeat_amount, planned_unit=planned_unit or repeat_unit, repeat_site=repeat_site, repeat_notice=repeat_notice, selected_compound_id=compound_id, selected_vial_id=selected_vial_id, calendar_vial_notice=calendar_vial_notice, supplies=manual_supplies.available(db), counted_supply_kinds=counted_supply_kinds)
@@ -227,7 +258,7 @@ def preview(request: Request, vial_id: str = Form(""), amount: str = Form(""),
 async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str = Form(""),
                 amount: float = Form(...), unit: str = Form(...), kind: str = Form("dose"),
                 site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""), submission_token: str = Form(""),
-                db: Session = Depends(get_db)):
+                db: Session = Depends(get_db), planned_compound_id: int | None = Form(None)):
     def reject_dose(message: str):
         """Release the inventory reservation before returning an error."""
         db.rollback()
@@ -245,6 +276,8 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     supply_payload = sorted((k, str(v)) for k, v in submitted_form.multi_items()
                             if k == "supply_id_used" or k.startswith("supply_qty_"))
     payload = {"supplies": supply_payload, "vial_id": vial_id, "taken_at": taken_at, "amount": amount, "unit": unit, "kind": kind, "site": site, "notes": notes, "use_remaining": use_remaining}
+    if planned_compound_id is not None:
+        payload["planned_compound_id"] = planned_compound_id
     state, digest = idempotency.check(db, submission_token, "dose_create", payload)
     if submission_token and state == "replay":
         db.rollback()
@@ -255,6 +288,11 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     vial = db.get(Vial, vial_id)
     if vial is None:
         return reject_dose("Choose a vial.")
+    if planned_compound_id is not None and vial.compound_id != planned_compound_id:
+        return reject_dose(
+            "Selected vial belongs to a different compound than the calendar entry. "
+            "Choose a vial for the planned compound."
+        )
     if site and site not in INJECTION_SITES:
         return reject_dose("Unknown injection site.")
     if vial.status == "discarded":
