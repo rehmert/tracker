@@ -10,8 +10,11 @@ def test_upload_cleanup_after_failure_before_commit(monkeypatch,tmp_path):
     path=tmp_path/'new.pdf'
     calls=[]
 
-    async def save_file(_file):
-        path.write_bytes(b'%PDF-test')
+    async def save_file(_file, directory):
+        # Release 400 requires an explicitly authorized
+        # attachment directory, including during rollback.
+        assert directory == tmp_path
+        (directory / 'new.pdf').write_bytes(b'%PDF-test')
         return dict(original_name='new.pdf',stored_name='new.pdf',
                     content_type='application/pdf',size_bytes=9,sha256='x')
 

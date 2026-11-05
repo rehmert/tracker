@@ -17,8 +17,11 @@ def exercise_edit(monkeypatch,tmp_path,fail):
         def commit(self):
             if fail: raise RuntimeError('injected commit failure')
         def rollback(self): deleted.append('rollback')
-    async def save(_file):
-        new.write_bytes(b'new attachment')
+    async def save(_file, directory):
+        # Explicit directory routing must remain active
+        # for both successful and failed replacements.
+        assert directory == tmp_path
+        (directory / 'new.pdf').write_bytes(b'new attachment')
         return dict(original_name='new.pdf',stored_name='new.pdf',
                     content_type='application/pdf',size_bytes=14,sha256='new')
     def delete(name,directory):
