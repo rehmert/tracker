@@ -5,7 +5,7 @@ from pydantic import BaseModel,ConfigDict,Field,model_validator
 
 
 class Dose(BaseModel):
-    model_config=ConfigDict(extra='ignore')
+    model_config=ConfigDict(extra='forbid')
     id:int|None=None
     planned_at:datetime
     amount_mg:float=Field(
@@ -14,7 +14,7 @@ class Dose(BaseModel):
 
 
 class Snapshot(BaseModel):
-    model_config=ConfigDict(extra='ignore')
+    model_config=ConfigDict(extra='forbid')
     format_version:int=Field(default=1,ge=1,le=1)
     compound_id:int=Field(gt=0)
     name:str=Field(min_length=1,max_length=160)

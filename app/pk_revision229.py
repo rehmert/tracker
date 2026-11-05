@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel,Field,ValidationError,model_validator
 from sqlalchemy import select,delete
 from .models import ChangeAudit,PkPlannedDose
-from .pk_scenario_ops import scenario
+from .pk_scenario_ops import scenario,rows
 from .pk_mutation197 import prepare,finish
 from .pk_scenario_version import snapshot,version
 from .pk_revision_delta257 import Snapshot,changes,equivalent
@@ -113,12 +113,44 @@ def restore(db,sid,aid,expected):
             'unchanged':True
         }
 
-    db.execute(delete(PkPlannedDose).where(PkPlannedDose.scenario_id==sid))
-    db.expire(obj,['doses'])
+    # Reconcile the hypothetical schedule in place.
+    # Matching timestamps retain their original database IDs.
+    existing=rows(db,sid)
+    by_time={item.planned_at:item for item in existing}
+    desired={at:amount for at,amount in doses}
+
+    removed=0
+    inserted=0
+    modified=0
+
+    for item in existing:
+        if item.planned_at not in desired:
+            db.delete(item)
+            removed+=1
+        elif item.amount_mg!=desired[item.planned_at]:
+            item.amount_mg=desired[item.planned_at]
+            modified+=1
+
+    for at,amount in doses:
+        if at not in by_time:
+            db.add(PkPlannedDose(
+                scenario_id=sid,
+                planned_at=at,
+                amount_mg=amount
+            ))
+            inserted+=1
+
     obj.name=value['name']
     obj.half_life_hours=float(value['half_life_hours'])
-    obj.absorption_half_life_hours=float(value['absorption_half_life_hours'])
-    for at,amount in doses:
-        db.add(PkPlannedDose(scenario_id=sid,planned_at=at,amount_mg=amount))
+    obj.absorption_half_life_hours=float(
+        value['absorption_half_life_hours']
+    )
     new_version=finish(db,obj,'revision_restore',before)
-    return {'restored':len(doses),'version':new_version,'audit_source':aid}
+    return {
+        'restored':len(doses),
+        'inserted':inserted,
+        'removed':removed,
+        'modified':modified,
+        'version':new_version,
+        'audit_source':aid
+    }
