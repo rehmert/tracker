@@ -10,6 +10,7 @@ import subprocess
 import sys
 
 from app.backup import create_backup, list_backups, prune_backups, verify_backup
+from app.background_storage410 import administrator_context410
 
 
 def verify_restorable(archive: Path) -> None:
@@ -26,10 +27,17 @@ def verify_restorable(archive: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["create", "verify", "list"])
+    parser.add_argument("action", choices=["create", "verify", "list", "context-check"])
     parser.add_argument("archive", nargs="?")
     args = parser.parse_args()
-    if args.action == "create":
+    if args.action == "context-check":
+        context = administrator_context410()
+        print("PASS: Administrator storage context valid")
+        print("Scope:", context.scope)
+        print("Database:", context.database)
+        print("Data directory:", context.data_dir)
+        print("Archive directory:", context.backup_dir)
+    elif args.action == "create":
         archive = create_backup()
         print(f"Created and verified {archive}", flush=True)
         verify_restorable(archive)
