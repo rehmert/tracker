@@ -53,261 +53,14 @@ Confirm package-label values before saving.</p>
 <a href="#food-quick-log">Quick Log</a>
 <a href="#food-search">Saved Foods</a>
 <a href="#food-name-search">Find New Food</a>
-<a href="#food-templates">Meals</a>
 <a href="#food-add">Scan / Add</a>
-<a href="#food-week">Trends</a>
-<a href="#food-meal-totals">Meal Totals</a>
-<a href="#food-nutrient-week">Nutrients</a>
 <a href="#food-recorded">Recorded Meals</a>
+<a href="#food-templates">Meal Templates</a>
+<a href="#food-meal-totals">Meal Totals</a>
+<a href="#food-week">Trends</a>
+<a href="#food-nutrient-week">Nutrients</a>
 </nav>
 
-<details id="food-search" class="food376-panel food382-accordion" data-food382-section="food-search">
-<summary>Search Saved Foods<span class="food382-chevron" aria-hidden="true"></span></summary>
-<div class="food382-content">
-<h2>Find Saved Food</h2>
-<form method="get" action="/food" class="food376-search">
-<input type="hidden" name="day" value="{{ day }}">
-<label>Food name or barcode
-<input type="search" name="q" value="{{ search_query }}"
- maxlength="100" placeholder="Search previously logged food">
-</label>
-<button type="submit">Search</button>
-</form>
-{% if search_query %}
-<p class="note">{{ search_results|length }} matches shown
-(maximum 30). Search uses your saved records, not the public database.</p>
-<div class="food375-list">
-{% for item in search_results %}
-<article class="food375-item">
-<strong>{{ item.name }}</strong>
-<small>{{ item.serving_description }}</small>
-<form method="post" action="/food/quick/{{ item.id }}"
- class="food375-quick-form">
-<input type="hidden" name="day" value="{{ day }}">
-<label>Servings<input type="number" name="servings"
- value="{{ item.servings }}" min="0.01" max="100"
- step="0.01" required></label>
-<label>Meal<select name="meal">
-{% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
-<option {% if item.meal == meal %}selected{% endif %}>{{ meal }}</option>
-{% endfor %}
-</select></label>
-<button type="submit">Add</button>
-</form>
-</article>
-{% else %}
-<p>No matching saved foods. Use the barcode scanner or manual entry.</p>
-{% endfor %}
-</div>
-{% endif %}
-</div>
-</details>
-
-<details id="food-templates" class="food376-panel food382-accordion" data-food382-section="food-templates">
-<summary>Meal Templates<span class="food382-chevron" aria-hidden="true"></span></summary>
-<div class="food382-content">
-<h2>Meal Templates</h2>
-<details>
-<summary>Save a Meal From This Day</summary>
-<p class="note">Copies all foods, portions and nutrients logged
-under the selected meal. Later changes to the original log
-do not change the template's food list or portions.</p>
-<form method="post" action="/food/template/save"
- class="food376-template-form">
-<input type="hidden" name="day" value="{{ day }}">
-<label>Template Name
-<input name="name" maxlength="80" required
- placeholder="Usual breakfast"></label>
-<label>Meal
-<select name="meal">
-{% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
-<option>{{ meal }}</option>
-{% endfor %}
-</select></label>
-<button type="submit">Save Template</button>
-</form>
-</details>
-{% if templates %}
-<div class="food376-templates">
-{% for item in templates %}
-<article>
-<div><strong>{{ item.name }}</strong>
-<small>{{ item.item_count }} food entries</small></div>
-<form method="post" action="/food/template/{{ item.id }}/log">
-<input type="hidden" name="day" value="{{ day }}">
-<button type="submit">Log Meal</button>
-</form>
-<details class="food377-template-edit">
-<summary>Manage</summary>
-<form method="post"
- action="/food/template/{{ item.id }}/rename">
-<input type="hidden" name="day" value="{{ day }}">
-<label>Template Name
-<input type="text" name="name"
- maxlength="80" value="{{ item.name }}" required>
-</label>
-<button type="submit">Rename</button>
-</form>
-<form method="post"
- action="/food/template/{{ item.id }}/delete"
- onsubmit="return confirm('Delete this meal template? Logged foods will remain unchanged.')">
-<input type="hidden" name="day" value="{{ day }}">
-<button type="submit">Delete Template</button>
-</form>
-</details>
-</article>
-{% endfor %}
-</div>
-{% else %}
-<p class="note">No meal templates saved yet.</p>
-{% endif %}
-</div>
-</details>
-
-<details id="food-week" class="food376-panel food382-accordion" data-food382-section="food-week">
-<summary>Seven-Day Trends<span class="food382-chevron" aria-hidden="true"></span></summary>
-<div class="food382-content">
-<h2>Last Seven Days</h2>
-<p class="note">Days without entries are unlogged, not confirmed
-zero intake. Trends reflect reported values only.</p>
-<div class="food376-week">
-{% for item in week %}
-<article class="food376-day">
-<div class="food376-day-head">
-<strong>{{ item.label }}</strong>
-<small>{{ item.date[5:] }}</small>
-<span>
-{% if item.foods %}
-{{ item.totals.energy }} kcal
-{% if item.reported.energy < item.foods %}*{% endif %}
-{% else %}
-Not logged
-{% endif %}
-</span>
-</div>
-<div class="food376-track">
-<div style="width: {{ item.calorie_width }}%"></div>
-</div>
-<small>
-P {{ item.totals.proteins }}g ·
-C {{ item.totals.carbohydrates }}g ·
-F {{ item.totals.fat }}g
-{% if item.foods and
-(item.reported.proteins < item.foods or
- item.reported.carbohydrates < item.foods or
- item.reported.fat < item.foods) %}
-· partial
-{% endif %}
-</small>
-</article>
-{% endfor %}
-</div>
-<p class="note">* Calorie value is incomplete because at least one
-food has no calorie data. Partial macros are also marked.</p>
-</div>
-</details>
-
-
-<details id="food-meal-totals" class="food378-panel food382-accordion" data-food382-section="food-meal-totals">
-<summary>Meal Totals<span class="food382-chevron" aria-hidden="true"></span></summary>
-<div class="food382-content">
-<h2>Meal Totals</h2>
-<p class="note">Totals represent reported food information only.
-Unknown nutrients are excluded from sums, not assumed to be zero.</p>
-<div class="food378-meals">
-{% for item in meals %}
-<article class="food378-meal">
-<div class="food378-meal-head">
-<strong>{{ item.name }}</strong>
-<small>{{ item.count }} foods</small>
-</div>
-{% if item.count %}
-<div class="food378-macros">
-<span>{{ item.totals.energy }} kcal</span>
-<span>P {{ item.totals.proteins }}g</span>
-<span>C {{ item.totals.carbohydrates }}g</span>
-<span>F {{ item.totals.fat }}g</span>
-</div>
-{% if item.reported.energy < item.count or
-      item.reported.proteins < item.count or
-      item.reported.carbohydrates < item.count or
-      item.reported.fat < item.count %}
-<small>Partial data: some foods have unknown macro values</small>
-{% endif %}
-{% else %}
-<small>No entries logged</small>
-{% endif %}
-</article>
-{% endfor %}
-</div>
-<a class="food378-export"
- href="/food/export.csv?day={{ day }}">
-Download This Day as CSV
-</a>
-</div>
-</details>
-
-<details id="food-nutrient-week" class="food379-panel food382-accordion" data-food382-section="food-nutrient-week">
-<summary>Weekly Nutrient Review<span class="food382-chevron" aria-hidden="true"></span></summary>
-<div class="food382-content">
-<h2>Weekly Nutrient Review</h2>
-<p class="note">
-{{ nutrient_week.start }} through {{ nutrient_week.end }}.
-A complete day means every logged food had a reported value
-for that particular nutrient. Days without food entries are
-excluded from averages and target comparisons.
-</p>
-<a href="/food/weekly.csv?day={{ day }}"
- class="food378-export">Download Seven-Day CSV</a>
-<div class="food379-grid">
-{% for item in nutrient_week.nutrients %}
-<article class="food379-item">
-<div class="food379-title">
-<strong>{{ item.label }}</strong>
-<small>{{ item.unit }}</small>
-</div>
-{% if item.complete_average is not none %}
-<div class="food379-value">
-{{ item.complete_average }} {{ item.unit }}
-</div>
-<small>Average on {{ item.complete_days }}
-complete day{% if item.complete_days != 1 %}s{% endif %}</small>
-{% elif item.observed_average is not none %}
-<div class="food379-value">
-{{ item.observed_average }} {{ item.unit }}
-</div>
-<small>Partial-data average; not a complete intake estimate</small>
-{% else %}
-<div class="food379-value">Unknown</div>
-<small>No reported values</small>
-{% endif %}
-<small class="food379-coverage">
-{{ item.complete_days }}/{{ item.logged_days }} logged
-days have complete data
-</small>
-{% if item.target is not none %}
-<div class="food379-target">
-Target: {{ item.target }} {{ item.unit }}/day
-</div>
-<small>
-{{ item.below }} below · {{ item.at }} at ·
-{{ item.above }} above target
-(complete days only)
-</small>
-{% else %}
-<small>No personal target configured</small>
-{% endif %}
-</article>
-{% endfor %}
-</div>
-<p class="note">
-These are comparisons with targets you entered, not
-clinical deficiency or toxicity determinations. Incomplete
-labels, missing meals and unlogged supplements can affect
-the reported totals.
-</p>
-</div>
-</details>
 <details id="food-quick-log" class="food375-section food382-accordion" data-food382-section="food-quick-log">
 <summary>Quick Log / Favorites<span class="food382-chevron" aria-hidden="true"></span></summary>
 <div class="food382-content">
@@ -371,6 +124,48 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 </div>
 </details>
 
+<details id="food-search" class="food376-panel food382-accordion" data-food382-section="food-search">
+<summary>Search Saved Foods<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
+<h2>Find Saved Food</h2>
+<form method="get" action="/food" class="food376-search">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Food name or barcode
+<input type="search" name="q" value="{{ search_query }}"
+ maxlength="100" placeholder="Search previously logged food">
+</label>
+<button type="submit">Search</button>
+</form>
+{% if search_query %}
+<p class="note">{{ search_results|length }} matches shown
+(maximum 30). Search uses your saved records, not the public database.</p>
+<div class="food375-list">
+{% for item in search_results %}
+<article class="food375-item">
+<strong>{{ item.name }}</strong>
+<small>{{ item.serving_description }}</small>
+<form method="post" action="/food/quick/{{ item.id }}"
+ class="food375-quick-form">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Servings<input type="number" name="servings"
+ value="{{ item.servings }}" min="0.01" max="100"
+ step="0.01" required></label>
+<label>Meal<select name="meal">
+{% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
+<option {% if item.meal == meal %}selected{% endif %}>{{ meal }}</option>
+{% endfor %}
+</select></label>
+<button type="submit">Add</button>
+</form>
+</article>
+{% else %}
+<p>No matching saved foods. Use the barcode scanner or manual entry.</p>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+</details>
+
 <details id="food-name-search" class="food380-panel food382-accordion" data-food382-section="food-name-search">
 <summary>Search Food Database<span class="food382-chevron" aria-hidden="true"></span></summary>
 <div class="food382-content">
@@ -422,6 +217,7 @@ unknown, not zero.
 </p>
 </div>
 </details>
+
 <details id="food-add" class="food382-accordion" data-food382-section="food-add">
 <summary>Scan Barcode / Add Food<span class="food382-chevron" aria-hidden="true"></span></summary>
 <div class="food382-content">
@@ -466,6 +262,7 @@ unknown, not zero.
 </form>
 </div>
 </details>
+
 <details id="food-recorded" class="food382-accordion" data-food382-section="food-recorded">
 <summary>Recorded Meals<span class="food382-chevron" aria-hidden="true"></span></summary>
 <div class="food382-content"><h2>Recorded Meals</h2>
@@ -573,6 +370,211 @@ Save Nutrition Correction
 </div>
 </article>
 {% else %}<p>No food logged on this day.</p>{% endfor %}
+</div>
+</details>
+
+<details id="food-templates" class="food376-panel food382-accordion" data-food382-section="food-templates">
+<summary>Meal Templates<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
+<h2>Meal Templates</h2>
+<details>
+<summary>Save a Meal From This Day</summary>
+<p class="note">Copies all foods, portions and nutrients logged
+under the selected meal. Later changes to the original log
+do not change the template's food list or portions.</p>
+<form method="post" action="/food/template/save"
+ class="food376-template-form">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Template Name
+<input name="name" maxlength="80" required
+ placeholder="Usual breakfast"></label>
+<label>Meal
+<select name="meal">
+{% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
+<option>{{ meal }}</option>
+{% endfor %}
+</select></label>
+<button type="submit">Save Template</button>
+</form>
+</details>
+{% if templates %}
+<div class="food376-templates">
+{% for item in templates %}
+<article>
+<div><strong>{{ item.name }}</strong>
+<small>{{ item.item_count }} food entries</small></div>
+<form method="post" action="/food/template/{{ item.id }}/log">
+<input type="hidden" name="day" value="{{ day }}">
+<button type="submit">Log Meal</button>
+</form>
+<details class="food377-template-edit">
+<summary>Manage</summary>
+<form method="post"
+ action="/food/template/{{ item.id }}/rename">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Template Name
+<input type="text" name="name"
+ maxlength="80" value="{{ item.name }}" required>
+</label>
+<button type="submit">Rename</button>
+</form>
+<form method="post"
+ action="/food/template/{{ item.id }}/delete"
+ onsubmit="return confirm('Delete this meal template? Logged foods will remain unchanged.')">
+<input type="hidden" name="day" value="{{ day }}">
+<button type="submit">Delete Template</button>
+</form>
+</details>
+</article>
+{% endfor %}
+</div>
+{% else %}
+<p class="note">No meal templates saved yet.</p>
+{% endif %}
+</div>
+</details>
+
+<details id="food-meal-totals" class="food378-panel food382-accordion" data-food382-section="food-meal-totals">
+<summary>Meal Totals<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
+<h2>Meal Totals</h2>
+<p class="note">Totals represent reported food information only.
+Unknown nutrients are excluded from sums, not assumed to be zero.</p>
+<div class="food378-meals">
+{% for item in meals %}
+<article class="food378-meal">
+<div class="food378-meal-head">
+<strong>{{ item.name }}</strong>
+<small>{{ item.count }} foods</small>
+</div>
+{% if item.count %}
+<div class="food378-macros">
+<span>{{ item.totals.energy }} kcal</span>
+<span>P {{ item.totals.proteins }}g</span>
+<span>C {{ item.totals.carbohydrates }}g</span>
+<span>F {{ item.totals.fat }}g</span>
+</div>
+{% if item.reported.energy < item.count or
+      item.reported.proteins < item.count or
+      item.reported.carbohydrates < item.count or
+      item.reported.fat < item.count %}
+<small>Partial data: some foods have unknown macro values</small>
+{% endif %}
+{% else %}
+<small>No entries logged</small>
+{% endif %}
+</article>
+{% endfor %}
+</div>
+<a class="food378-export"
+ href="/food/export.csv?day={{ day }}">
+Download This Day as CSV
+</a>
+</div>
+</details>
+
+<details id="food-week" class="food376-panel food382-accordion" data-food382-section="food-week">
+<summary>Seven-Day Trends<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
+<h2>Last Seven Days</h2>
+<p class="note">Days without entries are unlogged, not confirmed
+zero intake. Trends reflect reported values only.</p>
+<div class="food376-week">
+{% for item in week %}
+<article class="food376-day">
+<div class="food376-day-head">
+<strong>{{ item.label }}</strong>
+<small>{{ item.date[5:] }}</small>
+<span>
+{% if item.foods %}
+{{ item.totals.energy }} kcal
+{% if item.reported.energy < item.foods %}*{% endif %}
+{% else %}
+Not logged
+{% endif %}
+</span>
+</div>
+<div class="food376-track">
+<div style="width: {{ item.calorie_width }}%"></div>
+</div>
+<small>
+P {{ item.totals.proteins }}g ·
+C {{ item.totals.carbohydrates }}g ·
+F {{ item.totals.fat }}g
+{% if item.foods and
+(item.reported.proteins < item.foods or
+ item.reported.carbohydrates < item.foods or
+ item.reported.fat < item.foods) %}
+· partial
+{% endif %}
+</small>
+</article>
+{% endfor %}
+</div>
+<p class="note">* Calorie value is incomplete because at least one
+food has no calorie data. Partial macros are also marked.</p>
+</div>
+</details>
+
+<details id="food-nutrient-week" class="food379-panel food382-accordion" data-food382-section="food-nutrient-week">
+<summary>Weekly Nutrient Review<span class="food382-chevron" aria-hidden="true"></span></summary>
+<div class="food382-content">
+<h2>Weekly Nutrient Review</h2>
+<p class="note">
+{{ nutrient_week.start }} through {{ nutrient_week.end }}.
+A complete day means every logged food had a reported value
+for that particular nutrient. Days without food entries are
+excluded from averages and target comparisons.
+</p>
+<a href="/food/weekly.csv?day={{ day }}"
+ class="food378-export">Download Seven-Day CSV</a>
+<div class="food379-grid">
+{% for item in nutrient_week.nutrients %}
+<article class="food379-item">
+<div class="food379-title">
+<strong>{{ item.label }}</strong>
+<small>{{ item.unit }}</small>
+</div>
+{% if item.complete_average is not none %}
+<div class="food379-value">
+{{ item.complete_average }} {{ item.unit }}
+</div>
+<small>Average on {{ item.complete_days }}
+complete day{% if item.complete_days != 1 %}s{% endif %}</small>
+{% elif item.observed_average is not none %}
+<div class="food379-value">
+{{ item.observed_average }} {{ item.unit }}
+</div>
+<small>Partial-data average; not a complete intake estimate</small>
+{% else %}
+<div class="food379-value">Unknown</div>
+<small>No reported values</small>
+{% endif %}
+<small class="food379-coverage">
+{{ item.complete_days }}/{{ item.logged_days }} logged
+days have complete data
+</small>
+{% if item.target is not none %}
+<div class="food379-target">
+Target: {{ item.target }} {{ item.unit }}/day
+</div>
+<small>
+{{ item.below }} below · {{ item.at }} at ·
+{{ item.above }} above target
+(complete days only)
+</small>
+{% else %}
+<small>No personal target configured</small>
+{% endif %}
+</article>
+{% endfor %}
+</div>
+<p class="note">
+These are comparisons with targets you entered, not
+clinical deficiency or toxicity determinations. Incomplete
+labels, missing meals and unlogged supplements can affect
+the reported totals.
+</p>
 </div>
 </details>
 <details><summary>Set Your Own Daily Nutrition Targets</summary>
