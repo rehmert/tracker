@@ -9,10 +9,14 @@ from .. import config, services, units as U
 from ..attachment_integrity337 import uploaded_transaction, delete_after_commit
 from ..templating import render
 from fastapi import Request
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Coa, CoaRevision, Vial, Compound
 
-router = APIRouter()
+from ..attachment_scope396 import require_attachment_scope396
+
+router = APIRouter(
+    dependencies=[Depends(require_attachment_scope396)]
+)
 
 COA_STATUSES = ("unreviewed", "verified", "rejected", "needs_review")
 
@@ -43,7 +47,7 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
                      reported_content: str = Form(""), reported_unit: str = Form("mg"),
                      notes: str = Form(""), endotoxin_pct: str = Form(""),
                      job_id: str = Form(""), verify_code: str = Form(""),
-                     db: Session = Depends(get_db)):
+                     db: Session = Depends(get_scoped_db390)):
     v = db.get(Vial, vid)
     if v is None:
         raise HTTPException(404, "Vial not found")
@@ -101,7 +105,7 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
 
 
 @router.get("/coas/{cid}/file")
-def coa_file(cid: int, db: Session = Depends(get_db)):
+def coa_file(cid: int, db: Session = Depends(get_scoped_db390)):
     c = db.get(Coa, cid)
     path = config.UPLOAD_DIR / c.stored_name if c else None
     if c is None or not c.original_name or not path.exists():
@@ -112,7 +116,7 @@ def coa_file(cid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/coas/{cid}/delete")
-def delete_coa(cid: int, db: Session = Depends(get_db)):
+def delete_coa(cid: int, db: Session = Depends(get_scoped_db390)):
     c = db.get(Coa, cid)
     if c is None:
         raise HTTPException(404, "COA not found")
@@ -134,7 +138,7 @@ def delete_coa(cid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/coas/{cid}/assign")
-def assign_coa(cid: int, vial_ids: list[int] = Form([]), db: Session = Depends(get_db)):
+def assign_coa(cid: int, vial_ids: list[int] = Form([]), db: Session = Depends(get_scoped_db390)):
     coa = db.get(Coa, cid)
     if not coa: raise HTTPException(404)
     if not vial_ids:
@@ -158,7 +162,7 @@ def assign_coa(cid: int, vial_ids: list[int] = Form([]), db: Session = Depends(g
     return services.flash_redirect(f"/coas/{cid}", msg="COA assigned to selected vials.")
 
 @router.get("/coas")
-def coa_index(request: Request, compound_id: str | None = None, db: Session = Depends(get_db)):
+def coa_index(request: Request, compound_id: str | None = None, db: Session = Depends(get_scoped_db390)):
     # Convert compound_id to integer, treating empty strings as None
     compound_id = int(compound_id) if compound_id and compound_id.isdigit() else None
 
@@ -174,13 +178,13 @@ def coa_index(request: Request, compound_id: str | None = None, db: Session = De
 
 
 @router.get("/coas/new")
-def coa_new(request: Request, db: Session = Depends(get_db)):
+def coa_new(request: Request, db: Session = Depends(get_scoped_db390)):
     vials = list(db.scalars(select(Vial).order_by(Vial.id)))
     return render(request, "coa_edit.html", coa=None, vials=vials, selected_vial=None)
 
 
 @router.get("/coas/{cid}")
-def coa_detail(cid: int, request: Request, db: Session = Depends(get_db)):
+def coa_detail(cid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     coa = db.get(Coa, cid)
     if coa is None:
         raise HTTPException(404, "COA not found")
@@ -205,7 +209,7 @@ async def coa_create(vial_id: int = Form(...), file: UploadFile | None = File(No
                      purity_pct: str = Form(""), endotoxin_pct: str = Form(""),
                      reported_content: str = Form(""), reported_unit: str = Form("mg"),
                      job_id: str = Form(""), verify_code: str = Form(""),
-                     notes: str = Form(""), db: Session = Depends(get_db)):
+                     notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
     # Use the same validation, legacy schema compatibility, and upload logic
     # as the existing vial COA creation endpoint.
     response = await upload_coa(vial_id, file, lab_name, tested_on, purity_pct,
@@ -225,7 +229,7 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
                    purity_pct: str = Form(""), endotoxin_pct: str = Form(""),
                    reported_content: str = Form(""), reported_unit: str = Form("mg"),
                    job_id: str = Form(""), verify_code: str = Form(""),
-                   notes: str = Form(""), db: Session = Depends(get_db)):
+                   notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
     coa = db.get(Coa, cid)
     if coa is None:
         raise HTTPException(404, "COA not found")
@@ -271,7 +275,7 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
 
 
 @router.post("/coas/{cid}/unlink/{vid}")
-def coa_unlink(cid: int, vid: int, db: Session = Depends(get_db)):
+def coa_unlink(cid: int, vid: int, db: Session = Depends(get_scoped_db390)):
     vial = db.get(Vial, vid)
     if vial is None or cid not in [c.id for c in vial.all_coas]:
         raise HTTPException(404, "COA assignment not found")
@@ -289,7 +293,7 @@ def coa_unlink(cid: int, vid: int, db: Session = Depends(get_db)):
 
 @router.post("/coas/{cid}/verify")
 def coa_verify(cid: int, status: str = Form(...), verification_notes: str = Form(""),
-               db: Session = Depends(get_db)):
+               db: Session = Depends(get_scoped_db390)):
     coa = db.get(Coa, cid)
     if coa is None:
         raise HTTPException(404, "COA not found")
@@ -307,7 +311,7 @@ def coa_verify(cid: int, status: str = Form(...), verification_notes: str = Form
 
 @router.post("/vials/{vid}/coas/assign-group")
 def assign_group_coa(vid: int, coa_id: int = Form(...), scope: str = Form("vial"),
-                     db: Session = Depends(get_db)):
+                     db: Session = Depends(get_scoped_db390)):
     vial = db.get(Vial, vid)
     coa = db.get(Coa, coa_id)
     if not vial or not coa:

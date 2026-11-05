@@ -11,11 +11,15 @@ from sqlalchemy.orm import Session
 
 from .. import charts, config, labs, services
 from ..attachment_integrity337 import uploaded_transaction, delete_after_commit
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import LabReport, LabResult
 from ..templating import render
 
-router = APIRouter()
+from ..attachment_scope396 import require_attachment_scope396
+
+router = APIRouter(
+    dependencies=[Depends(require_attachment_scope396)]
+)
 RANGES = {365: "1 year", 1095: "3 years", 3650: "All"}
 BLANK_ROW = {"analyte": "", "value": "", "unit": "", "ref_low": "", "ref_high": ""}
 
@@ -41,7 +45,7 @@ def _name_options(db: Session) -> list[str]:
 
 
 @router.get("/labs")
-def labs_index(request: Request, db: Session = Depends(get_db)):
+def labs_index(request: Request, db: Session = Depends(get_scoped_db390)):
     cards = []
     for key, items in _groups(db).items():
         res, rep = max(items, key=lambda it: (it[1].drawn_on, it[0].id))
@@ -74,7 +78,7 @@ def _form(request: Request, db: Session, rows=None, values=None, error=None, cop
 
 @router.get('/labs/compare')
 def compare_reports(request: Request, first_id: int | None = None, second_id: int | None = None,
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_scoped_db390)):
     reports = list(db.scalars(select(LabReport).order_by(LabReport.drawn_on.desc(), LabReport.id.desc())))
     left = db.get(LabReport, first_id) if first_id else None
     right = db.get(LabReport, second_id) if second_id else None
@@ -95,7 +99,7 @@ def compare_reports(request: Request, first_id: int | None = None, second_id: in
 
 @router.get("/labs/new")
 def new_report(request: Request, copy_from: int | None = None,
-               db: Session = Depends(get_db)):
+               db: Session = Depends(get_scoped_db390)):
     if copy_from is None:
         return _form(request, db)
 
@@ -125,7 +129,7 @@ def new_report(request: Request, copy_from: int | None = None,
 
 
 @router.get("/labs/row")
-def blank_row(request: Request, db: Session = Depends(get_db)):
+def blank_row(request: Request, db: Session = Depends(get_scoped_db390)):
     return render(request, "_lab_row.html", row=dict(BLANK_ROW))
 
 
@@ -246,7 +250,7 @@ def csv_template():
 @router.post("/labs/import-csv")
 async def import_new_csv(request: Request, csv_file: UploadFile = File(...),
                          drawn_on: str = Form(""), lab_name: str = Form(""),
-                         notes: str = Form(""), db: Session = Depends(get_db)):
+                         notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
     values = {"drawn_on": drawn_on, "lab_name": lab_name, "notes": notes}
     try:
         when = services.parse_date(drawn_on)
@@ -264,7 +268,7 @@ async def import_new_csv(request: Request, csv_file: UploadFile = File(...),
 
 @router.post("/labs/{rid}/import-csv")
 async def import_existing_csv(rid: int, csv_file: UploadFile = File(...),
-                              db: Session = Depends(get_db)):
+                              db: Session = Depends(get_scoped_db390)):
     rep = _report(db, rid)
     try:
         results = await _read_csv_upload(csv_file)
@@ -280,7 +284,7 @@ async def create_report(request: Request, drawn_on: str = Form(""), lab_name: st
                         notes: str = Form(""), analyte: list[str] = Form(default=[]),
                         value: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
                         ref_low: list[str] = Form(default=[]), ref_high: list[str] = Form(default=[]),
-                        file: UploadFile | None = File(None), db: Session = Depends(get_db)):
+                        file: UploadFile | None = File(None), db: Session = Depends(get_scoped_db390)):
     values = {"drawn_on": drawn_on, "lab_name": lab_name, "notes": notes}
     results, echo, error = _parse_rows(analyte, value, unit, ref_low, ref_high)
     when = None
@@ -307,7 +311,7 @@ async def create_report(request: Request, drawn_on: str = Form(""), lab_name: st
 
 @router.get("/labs/analyte")
 def analyte_page(request: Request, name: str, days: int = 3650, events: int = 1,
-                 db: Session = Depends(get_db)):
+                 db: Session = Depends(get_scoped_db390)):
     items = _groups(db).get(labs.analyte_key(name))
     if not items:
         raise HTTPException(404, "No results for that analyte")
@@ -367,7 +371,7 @@ def _lab_csv_response(rows, filename: str):
 
 
 @router.get("/labs/{rid}/export.csv")
-def export_lab_report_csv(rid: int, db: Session = Depends(get_db)):
+def export_lab_report_csv(rid: int, db: Session = Depends(get_scoped_db390)):
     """Download original recorded measurements without display rounding."""
     report = _report(db, rid)
     rows = [[
@@ -393,7 +397,7 @@ def export_lab_report_csv(rid: int, db: Session = Depends(get_db)):
 
 
 @router.get("/labs/{rid}/template.csv")
-def lab_report_template_csv(rid: int, db: Session = Depends(get_db)):
+def lab_report_template_csv(rid: int, db: Session = Depends(get_scoped_db390)):
     """Blank template with names and units but no previous results."""
     report = _report(db, rid)
     rows = [[
@@ -441,7 +445,7 @@ def _sort_report_rows(rows, sort: str, direction: str):
 
 @router.get("/labs/{rid}")
 def report_page(rid: int, request: Request, sort: str = "analyte", direction: str = "asc",
-                db: Session = Depends(get_db)):
+                db: Session = Depends(get_scoped_db390)):
     rep = _report(db, rid)
     rows = [{"res": r, "status": labs.range_status(r.value, r.ref_low, r.ref_high)} for r in rep.results]
     sort = sort if sort in REPORT_SORT_COLUMNS else "analyte"
@@ -451,7 +455,7 @@ def report_page(rid: int, request: Request, sort: str = "analyte", direction: st
 
 
 @router.get("/labs/{rid}/file")
-def report_file(rid: int, db: Session = Depends(get_db)):
+def report_file(rid: int, db: Session = Depends(get_scoped_db390)):
     rep = _report(db, rid)
     path = config.LAB_DIR / rep.stored_name if rep.stored_name else None
     if path is None or not path.exists():
@@ -464,7 +468,7 @@ def report_file(rid: int, db: Session = Depends(get_db)):
 @router.post("/labs/{rid}/results")
 def add_result(rid: int, analyte: str = Form(""), value: str = Form(""), unit: str = Form(""),
                ref_low: str = Form(""), ref_high: str = Form(""), note: str = Form(""),
-               db: Session = Depends(get_db)):
+               db: Session = Depends(get_scoped_db390)):
     rep = _report(db, rid)
     results, _, error = _parse_rows([analyte], [value], [unit], [ref_low], [ref_high])
     if error:
@@ -476,7 +480,7 @@ def add_result(rid: int, analyte: str = Form(""), value: str = Form(""), unit: s
 
 
 @router.post("/lab-results/{xid}/delete")
-def delete_result(xid: int, db: Session = Depends(get_db)):
+def delete_result(xid: int, db: Session = Depends(get_scoped_db390)):
     res = db.get(LabResult, xid)
     if res is None:
         raise HTTPException(404, "Result not found")
@@ -487,7 +491,7 @@ def delete_result(xid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/labs/{rid}/delete")
-def delete_report(rid: int, db: Session = Depends(get_db)):
+def delete_report(rid: int, db: Session = Depends(get_scoped_db390)):
     rep = _report(db, rid)
     stored_name = rep.stored_name
     db.delete(rep)
@@ -496,7 +500,7 @@ def delete_report(rid: int, db: Session = Depends(get_db)):
     return services.flash_redirect("/labs", msg="Report deleted.")
 
 @router.get("/labs/trends/{analyte_key}")
-def analyte_trend(analyte_key: str, request: Request, db: Session = Depends(get_db)):
+def analyte_trend(analyte_key: str, request: Request, db: Session = Depends(get_scoped_db390)):
     from urllib.parse import unquote
     key = unquote(analyte_key)
     items = _groups(db).get(key)
