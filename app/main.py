@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import PlainTextResponse
 
 from .request_origin import reject_cross_origin_write
+from .login_origin3852 import reject_write_with_login_exception
 from .csrf_runtime import prepare_html_cookie
 from .csrf_reporting import report_status, REPORT_HEADER
 from .csrf_policy289 import reject_write
@@ -63,7 +64,11 @@ app = FastAPI(title="Tracker", dependencies=[Depends(require_auth)],
 async def tracker_response_protection(request, call_next):
     """Set browser protections and reject foreign browser writes."""
     if (os.environ.get("TRACKER_ORIGIN_GUARD", "1") != "0"
-            and reject_cross_origin_write(request.method, request.headers)):
+            and reject_write_with_login_exception(
+                request.method,
+                request.url.path,
+                request.headers,
+            )):
         response = PlainTextResponse(
             "Cross-origin write request denied.",
             status_code=403,

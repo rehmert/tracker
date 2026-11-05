@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from .. import session_auth385 as auth
 from ..csrf_runtime import COOKIE_NAME, load_key
 from ..csrf_tokens import issue_token, verify_pair
-from ..request_origin import reject_cross_origin_write
+from ..login_origin3852 import reject_login_origin
 
 router = APIRouter()
 LOGIN_CSRF = "tracker_login_csrf"
@@ -121,7 +121,7 @@ async def login_submit(request: Request):
     if not auth.enabled():
         raise HTTPException(404, "Login unavailable")
 
-    if reject_cross_origin_write(
+    if reject_login_origin(
         request.method, request.headers
     ):
         raise HTTPException(403, "Invalid login origin")
