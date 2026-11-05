@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import config
+from .backup_consistency309 import upload_inventory
 
 BACKUP_DIR = Path(os.getenv('TRACKER_BACKUP_DIR', str(config.DATA_DIR.parent / 'backups'))).resolve()
 
@@ -36,6 +37,8 @@ def create_backup(data_dir: Path | None = None, backup_dir: Path | None = None) 
     if not (data / 'tracker.db').is_file():
         raise FileNotFoundError(f'Missing database: {data / "tracker.db"}')
     target.mkdir(parents=True, exist_ok=True)
+    uploads = data / 'uploads'
+    upload_before = upload_inventory(uploads)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     final = target / f'tracker-{stamp}.zip'
     with tempfile.TemporaryDirectory(prefix='.tracker-backup-', dir=target) as temp:
@@ -64,6 +67,10 @@ def create_backup(data_dir: Path | None = None, backup_dir: Path | None = None) 
                 z.write(path, name)
             z.writestr('manifest.json', json.dumps(manifest, indent=2))
         verify_backup(partial)
+        if upload_inventory(uploads) != upload_before:
+            raise ValueError(
+                'Uploads changed during backup; archive withheld'
+            )
         os.replace(partial, final)
     return final
 
