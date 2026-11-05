@@ -1,28 +1,26 @@
-"""Release 390: gradual conversion to authenticated DB access.
+"""Authenticated DB dependency with FastAPI override compatibility.
 
-With DEV session authentication enabled, only a verified
-administrator session can open the existing SQLite database.
+DEV: check server-side administrator session before exposing DB.
+Legacy mode: preserve existing FastAPI get_db behavior.
 
-With session authentication disabled, preserve the existing
-legacy dependency for compatibility with PROD.
-
-This does not enable other users or per-user engines.
+No additional users or per-user engines are enabled.
 """
 
-from fastapi import Request
+from fastapi import Depends, Request
+from sqlalchemy.orm import Session
 
 from . import session_auth385
 from .db import get_db
-from .user_db389 import get_user_db
+from .user_db389 import resolve_authenticated_storage
 
 
-def get_scoped_db390(request: Request):
-    """Yield a session from the appropriate guarded dependency."""
+def get_scoped_db390(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Preserve FastAPI's overrideable get_db subdependency."""
 
-    dependency = (
-        get_user_db
-        if session_auth385.enabled()
-        else get_db
-    )
+    if session_auth385.enabled():
+        resolve_authenticated_storage(request)
 
-    yield from dependency(request) if dependency is get_user_db else dependency()
+    yield db
