@@ -312,7 +312,15 @@ def main():
         help="Output JSON or snapshot filename",
     )
 
+    parser.add_argument(
+        "--admin-scoped", action="store_true",
+        help="Validate administrator database and output paths before operations",
+    )
+
     args = parser.parse_args()
+
+    if args.admin_scoped and args.command not in ("check", "report", "snapshot"):
+        parser.error("--admin-scoped is only for check/report/snapshot")
 
     if args.command == "context-check":
         # Read-only preflight for configured administrator storage.
@@ -357,6 +365,30 @@ def main():
         selftest()
         return 0
 
+    if args.admin_scoped:
+        if args.command == "check" and args.output is not None:
+            parser.error("--output is not supported for scoped check")
+
+        # Standalone python -I must also find the project package.
+        root = str(Path(__file__).resolve().parents[1])
+        if root not in sys.path:
+            sys.path.insert(0, root)
+
+        from app.maintenance_storage416 import scoped_paths416
+
+        database, destination = scoped_paths416(
+            requested_database=args.database,
+            output_path=(
+                args.output
+                if args.command in ("report", "snapshot")
+                else None
+            ),
+        )
+
+        args.database = str(database)
+        if destination is not None:
+            args.output = str(destination)
+
     if not args.database:
         parser.error(
             "--database is required"
@@ -387,11 +419,16 @@ def main():
 
     if args.command == "report" and args.output:
         destination = Path(args.output)
-        destination.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-        destination.write_text(output + "\n")
+        if args.admin_scoped:
+            # Exclusive creation refuses an existing output file.
+            with destination.open("x", encoding="utf-8") as stream:
+                stream.write(output + chr(10))
+        else:
+            destination.parent.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+            destination.write_text(output + chr(10))
         print(f"Report written to {destination}")
     else:
         print(output)
