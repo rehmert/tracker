@@ -10,6 +10,7 @@ from .pk_alignment193 import shared_step,validate_alignment
 from .pk_metrics181 import metrics
 from .pk_precision225 import bounded_step,refined_peak
 from . import pk
+from .pk_fast261 import series_fast
 
 FACTORS=(.75,1.,1.25)
 
@@ -64,7 +65,7 @@ def analyze(db,sid,days=30):
 
     for elim_factor in FACTORS:
         for absorption_factor in FACTORS:
-            rows=pk.series(
+            rows=series_fast(
                 start,end,recorded,planned,
                 obj.half_life_hours*elim_factor,
                 obj.absorption_half_life_hours*absorption_factor,
