@@ -118,6 +118,8 @@ def food_page(request: Request, day: str = "", q: str = ""):
     templates = meal_templates()
     from .food_review378 import meal_summary
     meals = meal_summary(day)
+    from .food_week379 import week_details
+    nutrient_week = week_details(day)
     for row in rows:
         row["parsed_nutrients"] = json.loads(row["nutrients"])
     return render(
@@ -128,7 +130,7 @@ def food_page(request: Request, day: str = "", q: str = ""):
         favorite_ids=favorite_ids,
         search_query=query, search_results=search_results,
         week=week, templates=templates,
-        meals=meals,
+        meals=meals, nutrient_week=nutrient_week,
         previous_day=(chosen - timedelta(days=1)).isoformat(),
         next_day=(chosen + timedelta(days=1)).isoformat(),
         today=date.today().isoformat(),
@@ -286,13 +288,30 @@ async def save_food_targets(request: Request):
     init_food_schema()
     form=await request.form()
     day=str(form.get("day",date.today().isoformat()))
+    from .food_quick375 import selected_day
+    day = selected_day(day)
+
+    validated = {}
+    for key in NUTRIENTS:
+        raw = str(form.get(key, "")).strip()
+        validated[key] = (
+            optional_nutrient(raw) if raw else None
+        )
+
     with engine.begin() as db:
-        for key in NUTRIENTS:
-            raw=str(form.get(key,"")).strip()
-            if not raw: db.execute(text("DELETE FROM tracker_food_targets WHERE nutrient=:k"),{"k":key})
-            else: db.execute(text("""INSERT INTO tracker_food_targets(nutrient,value) VALUES (:k,:v)
-                ON CONFLICT(nutrient) DO UPDATE SET value=excluded.value"""),
-                {"k":key,"v":to_float(raw)})
+        for key, value in validated.items():
+            if value is None:
+                db.execute(text("""
+                    DELETE FROM tracker_food_targets
+                    WHERE nutrient=:key
+                """), {"key": key})
+            else:
+                db.execute(text("""
+                    INSERT INTO tracker_food_targets(nutrient,value)
+                    VALUES (:key,:value)
+                    ON CONFLICT(nutrient)
+                    DO UPDATE SET value=excluded.value
+                """), {"key": key, "value": value})
     return RedirectResponse("/food?day="+day,status_code=303)
 
 @router.post("/food/entry/{entry_id}/delete")

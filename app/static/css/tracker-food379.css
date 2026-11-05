@@ -1,0 +1,69 @@
+/* Release 379: mobile-first nutrient coverage review. */
+
+.food379-panel {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: .75rem;
+  margin: .8rem 0;
+}
+
+.food379-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+  margin: .8rem 0;
+}
+
+.food379-item {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 10px;
+  padding: .7rem;
+  min-width: 0;
+}
+
+.food379-title {
+  display: flex;
+  gap: .4rem;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.food379-title small {
+  white-space: nowrap;
+}
+
+.food379-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: .45rem 0 .2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.food379-item small {
+  display: block;
+  opacity: .8;
+}
+
+.food379-coverage {
+  margin-top: .45rem;
+}
+
+.food379-target {
+  margin-top: .55rem;
+  font-weight: 600;
+  font-size: .88rem;
+}
+
+@media(max-width: 540px) {
+  .food379-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .food379-panel {
+    padding: .55rem;
+  }
+
+  .food379-item {
+    padding: .6rem;
+  }
+}

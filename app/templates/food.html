@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="/static/css/tracker-food376.css?v=376">
 <link rel="stylesheet" href="/static/css/tracker-food377.css?v=377">
 <link rel="stylesheet" href="/static/css/tracker-food378.css?v=378">
+<link rel="stylesheet" href="/static/css/tracker-food379.css?v=379">
 <script src="/static/js/tracker-food374.js?v=376" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
@@ -48,6 +49,7 @@
 <a href="#food-add">Scan / Add</a>
 <a href="#food-week">Trends</a>
 <a href="#food-meal-totals">Meal Totals</a>
+<a href="#food-nutrient-week">Nutrients</a>
 </nav>
 
 <section id="food-search" class="food376-panel">
@@ -222,6 +224,65 @@ Unknown nutrients are excluded from sums, not assumed to be zero.</p>
  href="/food/export.csv?day={{ day }}">
 Download This Day as CSV
 </a>
+</section>
+
+<section id="food-nutrient-week" class="food379-panel">
+<h2>Weekly Nutrient Review</h2>
+<p class="note">
+{{ nutrient_week.start }} through {{ nutrient_week.end }}.
+A complete day means every logged food had a reported value
+for that particular nutrient. Days without food entries are
+excluded from averages and target comparisons.
+</p>
+<a href="/food/weekly.csv?day={{ day }}"
+ class="food378-export">Download Seven-Day CSV</a>
+<div class="food379-grid">
+{% for item in nutrient_week.nutrients %}
+<article class="food379-item">
+<div class="food379-title">
+<strong>{{ item.label }}</strong>
+<small>{{ item.unit }}</small>
+</div>
+{% if item.complete_average is not none %}
+<div class="food379-value">
+{{ item.complete_average }} {{ item.unit }}
+</div>
+<small>Average on {{ item.complete_days }}
+complete day{% if item.complete_days != 1 %}s{% endif %}</small>
+{% elif item.observed_average is not none %}
+<div class="food379-value">
+{{ item.observed_average }} {{ item.unit }}
+</div>
+<small>Partial-data average; not a complete intake estimate</small>
+{% else %}
+<div class="food379-value">Unknown</div>
+<small>No reported values</small>
+{% endif %}
+<small class="food379-coverage">
+{{ item.complete_days }}/{{ item.logged_days }} logged
+days have complete data
+</small>
+{% if item.target is not none %}
+<div class="food379-target">
+Target: {{ item.target }} {{ item.unit }}/day
+</div>
+<small>
+{{ item.below }} below · {{ item.at }} at ·
+{{ item.above }} above target
+(complete days only)
+</small>
+{% else %}
+<small>No personal target configured</small>
+{% endif %}
+</article>
+{% endfor %}
+</div>
+<p class="note">
+These are comparisons with targets you entered, not
+clinical deficiency or toxicity determinations. Incomplete
+labels, missing meals and unlogged supplements can affect
+the reported totals.
+</p>
 </section>
 <section id="food-quick-log" class="food375-section">
 <h2>Quick Log</h2>
@@ -430,7 +491,7 @@ Save Nutrition Correction
 {% else %}<p>No food logged on this day.</p>{% endfor %}
 </section>
 <details><summary>Set Your Own Daily Nutrition Targets</summary>
-<p class="note">Enter personal tracking targets, not clinical recommendations. Leave blank to remove a target.</p>
+<p class="note">Enter personal tracking targets, not clinical recommendations. Leave blank to remove a target. Invalid values are rejected without changing existing targets.</p>
 <form method="post" action="/food/targets"><input type="hidden" name="day" value="{{ day }}">
 <div class="food-nutrient-inputs">
 {% for key, info in nutrients.items() %}
