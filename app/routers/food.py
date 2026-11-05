@@ -130,13 +130,16 @@ def food_page(
         search_products, weekly_summary, meal_templates
     )
     query = q.strip()[:100]
-    search_results = search_products(query) if query else []
-    week = weekly_summary(day)
-    templates = meal_templates()
+    search_results = (
+        search_products(query, db_engine=db_engine)
+        if query else []
+    )
+    week = weekly_summary(day, db_engine=db_engine)
+    templates = meal_templates(db_engine=db_engine)
     from .food_review378 import meal_summary
-    meals = meal_summary(day)
+    meals = meal_summary(day, db_engine=db_engine)
     from .food_week379 import week_details
-    nutrient_week = week_details(day)
+    nutrient_week = week_details(day, db_engine=db_engine)
     for row in rows:
         row["parsed_nutrients"] = json.loads(row["nutrients"])
 

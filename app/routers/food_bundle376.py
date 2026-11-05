@@ -16,9 +16,12 @@ router = APIRouter(
 )
 
 
-def init_schema():
-    food.init_food_schema()
-    with food.engine.begin() as db:
+def init_schema(db_engine=None):
+    selected_engine = (
+        food.engine if db_engine is None else db_engine
+    )
+    food.init_food_schema(selected_engine)
+    with selected_engine.begin() as db:
         db.exec_driver_sql("""
             CREATE TABLE IF NOT EXISTS tracker_food_meal_templates (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,14 +44,17 @@ def init_schema():
         """)
 
 
-def search_products(query):
+def search_products(query, db_engine=None):
     """Read-only saved-product search; latest matching records first."""
     value = str(query or "").strip()[:100]
     if not value:
         return []
 
-    init_schema()
-    with food.engine.connect() as db:
+    selected_engine = (
+        food.engine if db_engine is None else db_engine
+    )
+    init_schema(selected_engine)
+    with selected_engine.connect() as db:
         rows = db.execute(text("""
             SELECT p.id, p.name, p.barcode,
                    p.serving_description, p.nutrients,
@@ -74,12 +80,15 @@ def search_products(query):
     return [dict(item) for item in rows]
 
 
-def weekly_summary(day):
+def weekly_summary(day, db_engine=None):
     """Seven days of logged totals, ending on selected day."""
     end = date.fromisoformat(day)
     start = end - timedelta(days=6)
 
-    with food.engine.connect() as db:
+    selected_engine = (
+        food.engine if db_engine is None else db_engine
+    )
+    with selected_engine.connect() as db:
         rows = db.execute(text("""
             SELECT e.eaten_on, e.servings, p.nutrients
             FROM tracker_food_entries e
@@ -133,9 +142,12 @@ def weekly_summary(day):
     return result
 
 
-def meal_templates():
-    init_schema()
-    with food.engine.connect() as db:
+def meal_templates(db_engine=None):
+    selected_engine = (
+        food.engine if db_engine is None else db_engine
+    )
+    init_schema(selected_engine)
+    with selected_engine.connect() as db:
         records = db.execute(text("""
             SELECT t.id, t.name,
                    COUNT(i.id) AS item_count

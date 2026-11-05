@@ -26,11 +26,10 @@ def week_details(day, db_engine=None):
     end = date.fromisoformat(selected_day(day))
     start = end - timedelta(days=6)
 
-    food.init_food_schema()
-
     selected_engine = (
         db_engine if db_engine is not None else food.engine
     )
+    food.init_food_schema(selected_engine)
     with selected_engine.connect() as db:
         entries = db.execute(text("""
             SELECT e.eaten_on, e.servings, p.nutrients
