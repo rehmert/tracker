@@ -107,6 +107,7 @@ def verify_backup(path: Path) -> dict:
             with z.open('tracker.db') as source, db.open('wb') as dest:
                 shutil.copyfileobj(source, dest)
             _verify_db(db)
+            assert_complete(db, manifest['files'])
     return manifest
 
 
