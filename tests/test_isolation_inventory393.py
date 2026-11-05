@@ -67,7 +67,7 @@ def test_all_major_modules_are_inventory_candidates():
         assert path in paths
 
 
-def test_direct_food_engine_is_still_reported():
+def test_food_engine_migration_is_reported_accurately():
     audit = load_inventory()
 
     findings = audit.scan_module(
@@ -75,10 +75,53 @@ def test_direct_food_engine_is_still_reported():
     )
 
     assert "global_engine_import" in findings["signals"]
-    assert (
-        "global_engine_operation"
-        in findings["signals"]
-    )
+    assert "selected_engine_operation" in findings["signals"]
+    assert "global_engine_operation" not in findings["signals"]
+
+
+def test_inventory_still_detects_direct_global_engine_operations():
+    """Exercise the scanner with valid multiline Python source."""
+    from unittest.mock import patch
+
+    audit = load_inventory()
+    sample_path = ROOT / "scripts" / "_inventory_fixture4082.py"
+
+    # Actual line breaks, not escaped backslash-n characters.
+    sample = """from app.db import engine
+
+def legacy_write():
+    with engine.begin() as db:
+        pass
+
+def authorized_write(db_engine):
+    with db_engine.begin() as db:
+        pass
+"""
+
+    # Confirm that the fixture itself is valid Python
+    # before passing it to the inventory scanner.
+    compile(sample, str(sample_path), "exec")
+
+    original = type(sample_path).read_text
+
+    def fixture_read_text(self, *args, **kwargs):
+        if self == sample_path:
+            return sample
+        return original(self, *args, **kwargs)
+
+    # The fixture is entirely in memory. No source
+    # file is created or modified.
+    with patch.object(
+        type(sample_path),
+        "read_text",
+        fixture_read_text,
+    ):
+        findings = audit.scan_module(sample_path)
+
+    assert "global_engine_operation" in findings["signals"]
+    assert "selected_engine_operation" in findings["signals"]
+
+
 
 
 def test_existing_database_implementation_preserved():

@@ -186,6 +186,17 @@ def scan_module(path):
             ):
                 tags.add("global_engine_operation")
 
+            # Newer food routes explicitly select an engine.
+            # This is an inventory signal, not proof that
+            # authorization or multi-user isolation is complete.
+            if target in (
+                "db_engine.begin",
+                "db_engine.connect",
+                "selected_engine.begin",
+                "selected_engine.connect",
+            ):
+                tags.add("selected_engine_operation")
+
             if name in FILESYSTEM_FUNCTIONS:
                 tags.add("filesystem_operation_candidate")
 
