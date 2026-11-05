@@ -13,6 +13,7 @@ from pathlib import Path
 
 from . import config
 from .backup_consistency309 import upload_inventory
+from .upload_coordination325 import upload_guard
 
 BACKUP_DIR = Path(os.getenv('TRACKER_BACKUP_DIR', str(config.DATA_DIR.parent / 'backups'))).resolve()
 
@@ -37,42 +38,43 @@ def create_backup(data_dir: Path | None = None, backup_dir: Path | None = None) 
     if not (data / 'tracker.db').is_file():
         raise FileNotFoundError(f'Missing database: {data / "tracker.db"}')
     target.mkdir(parents=True, exist_ok=True)
-    uploads = data / 'uploads'
-    upload_before = upload_inventory(uploads)
-    stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
-    final = target / f'tracker-{stamp}.zip'
-    with tempfile.TemporaryDirectory(prefix='.tracker-backup-', dir=target) as temp:
-        work = Path(temp)
-        snapshot = work / 'tracker.db'
-        with sqlite3.connect(f'file:{data / "tracker.db"}?mode=ro', uri=True) as source:
-            with sqlite3.connect(snapshot) as dest:
-                source.backup(dest)
-        _verify_db(snapshot)
-        entries = [snapshot]
+    with upload_guard(data):
         uploads = data / 'uploads'
-        if uploads.exists():
-            if uploads.is_symlink():
-                raise ValueError('Uploads directory must not be a symlink')
-            for path in sorted(uploads.rglob('*')):
-                if path.is_symlink():
-                    raise ValueError(f'Uploads must not contain symlinks: {path}')
-                if path.is_file():
-                    entries.append(path)
-        manifest = {'version': 1, 'created_utc': datetime.now(timezone.utc).isoformat(), 'files': {}}
-        partial = work / 'backup.zip'
-        with zipfile.ZipFile(partial, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
-            for path in entries:
-                name = 'tracker.db' if path == snapshot else path.relative_to(data).as_posix()
-                manifest['files'][name] = {'sha256': _digest(path), 'bytes': path.stat().st_size}
-                z.write(path, name)
-            z.writestr('manifest.json', json.dumps(manifest, indent=2))
-        verify_backup(partial)
-        if upload_inventory(uploads) != upload_before:
-            raise ValueError(
-                'Uploads changed during backup; archive withheld'
-            )
-        os.replace(partial, final)
-    return final
+        upload_before = upload_inventory(uploads)
+        stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+        final = target / f'tracker-{stamp}.zip'
+        with tempfile.TemporaryDirectory(prefix='.tracker-backup-', dir=target) as temp:
+            work = Path(temp)
+            snapshot = work / 'tracker.db'
+            with sqlite3.connect(f'file:{data / "tracker.db"}?mode=ro', uri=True) as source:
+                with sqlite3.connect(snapshot) as dest:
+                    source.backup(dest)
+            _verify_db(snapshot)
+            entries = [snapshot]
+            uploads = data / 'uploads'
+            if uploads.exists():
+                if uploads.is_symlink():
+                    raise ValueError('Uploads directory must not be a symlink')
+                for path in sorted(uploads.rglob('*')):
+                    if path.is_symlink():
+                        raise ValueError(f'Uploads must not contain symlinks: {path}')
+                    if path.is_file():
+                        entries.append(path)
+            manifest = {'version': 1, 'created_utc': datetime.now(timezone.utc).isoformat(), 'files': {}}
+            partial = work / 'backup.zip'
+            with zipfile.ZipFile(partial, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+                for path in entries:
+                    name = 'tracker.db' if path == snapshot else path.relative_to(data).as_posix()
+                    manifest['files'][name] = {'sha256': _digest(path), 'bytes': path.stat().st_size}
+                    z.write(path, name)
+                z.writestr('manifest.json', json.dumps(manifest, indent=2))
+            verify_backup(partial)
+            if upload_inventory(uploads) != upload_before:
+                raise ValueError(
+                    'Uploads changed during backup; archive withheld'
+                )
+            os.replace(partial, final)
+        return final
 
 
 def verify_backup(path: Path) -> dict:

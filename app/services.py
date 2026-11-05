@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from . import calc, charts, config, units as U
+from .upload_coordination325 import upload_guard, async_upload_guard
 from .models import Compound, DoseLog, LabReport, Purchase, Vial
 
 
@@ -154,29 +155,31 @@ async def save_upload(file: UploadFile, directory: Path | None = None) -> dict:
     stored = f"{uuid4().hex}{ext}"
     path = (directory or config.UPLOAD_DIR) / stored
     digest, size, head = hashlib.sha256(), 0, b""
-    try:
-        with path.open("wb") as out:
-            while chunk := await file.read(1024 * 1024):
-                size += len(chunk)
-                if size > config.MAX_UPLOAD_BYTES:
-                    raise ValueError(f"File is larger than {config.MAX_UPLOAD_BYTES // 2**20} MB.")
-                if not head:
-                    head = chunk[:16]
-                digest.update(chunk)
-                out.write(chunk)
-        if size == 0:
-            raise ValueError("The file is empty.")
-        if not _magic_ok(ext, head):
-            raise ValueError("The file's contents don't match its extension.")
-    except Exception:
-        path.unlink(missing_ok=True)
-        raise
+    async with async_upload_guard(config.DATA_DIR):
+        try:
+            with path.open("wb") as out:
+                while chunk := await file.read(1024 * 1024):
+                    size += len(chunk)
+                    if size > config.MAX_UPLOAD_BYTES:
+                        raise ValueError(f"File is larger than {config.MAX_UPLOAD_BYTES // 2**20} MB.")
+                    if not head:
+                        head = chunk[:16]
+                    digest.update(chunk)
+                    out.write(chunk)
+            if size == 0:
+                raise ValueError("The file is empty.")
+            if not _magic_ok(ext, head):
+                raise ValueError("The file's contents don't match its extension.")
+        except Exception:
+            path.unlink(missing_ok=True)
+            raise
     return {"original_name": original or stored, "stored_name": stored,
             "content_type": _MIME[ext], "size_bytes": size, "sha256": digest.hexdigest()}
 
 
 def delete_stored_file(stored_name: str, directory: Path | None = None) -> None:
-    ((directory or config.UPLOAD_DIR) / stored_name).unlink(missing_ok=True)
+    with upload_guard(config.DATA_DIR):
+        ((directory or config.UPLOAD_DIR) / stored_name).unlink(missing_ok=True)
 
 
 # ------------------------------------------------------------------- events
