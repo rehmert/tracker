@@ -3,6 +3,7 @@
 {% block title %}{{ v.compound.name }} {{ v.label }}{% endblock %}
 {% block content %}
 <h1>{{ v.compound.name }} <small class="sub">{{ v.label or ('vial #' ~ v.id) }}</small></h1>
+<p><a href="/vials/{{ v.id }}/labels">Print vial/cap labels (203 DPI) →</a></p>
 
 <dl class="stats">
   <div><dt>Remaining</dt><dd>{{ vd.remaining_base|amt(vd.dim) }}</dd><dd class="sm">{{ gauge(vd.pct_remaining, v.status) }}</dd></div>

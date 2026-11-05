@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/static/css/tracker-food381.css?v=381">
 <link rel="stylesheet" href="/static/css/tracker-food382.css?v=382">
 <link rel="stylesheet" href="/static/css/tracker-food384.css?v=384">
+<link rel="stylesheet" href="/static/css/tracker-food423.css?v=423">
 <script src="/static/js/tracker-food384.js?v=384" defer></script>
 <script src="/static/js/tracker-food382.js?v=382" defer></script>
 <script src="/static/js/tracker-food380.js?v=381" defer></script>
@@ -27,9 +28,69 @@ Confirm package-label values before saving.</p>
 <form method="get" action="/food" class="food-date"><label>Day <input type="date" name="day" value="{{ day }}"></label><button>Show</button></form>
 <section class="food-dashboard">
   <h2>Daily Totals</h2>
-  <div class="food-macro-grid">
+  <div class="food423-macros" aria-label="Macro target progress">
     {% for key in ('energy','proteins','carbohydrates','fat') %}
-      <div><strong>{{ totals[key] | round(1) }}</strong><span>{{ nutrients[key][0] }} ({{ nutrients[key][1] }})</span></div>
+    {% set target = targets.get(key) %}
+    {% set consumed = totals[key] %}
+    {% set complete = (food_count == 0 or coverage[key] == food_count) %}
+    <article class="food423-macro">
+      <div class="food423-heading">
+        <span>{{ nutrients[key][0] }}</span>
+        <span>{{ nutrients[key][1] }}</span>
+      </div>
+
+      <div class="food423-values">
+        <div>
+          <small>Consumed</small>
+          <strong>{{ consumed|round(1) }}</strong>
+        </div>
+        <div>
+          <small>Target</small>
+          <strong>{{ target|round(1) if target is not none else '—' }}</strong>
+        </div>
+        <div>
+          <small>{{ 'Remaining' if complete and target is not none and consumed <= target else 'Over / status' }}</small>
+          <strong>
+            {% if target is none %}
+              Not set
+            {% elif not complete %}
+              Unknown
+            {% elif consumed > target %}
+              {{ (consumed-target)|round(1) }} over
+            {% else %}
+              {{ (target-consumed)|round(1) }}
+            {% endif %}
+          </strong>
+        </div>
+      </div>
+
+      {% if target is not none and complete %}
+        {% set percent = ((consumed / target) * 100) if target > 0 else (100 if consumed > 0 else 0) %}
+        <div
+          class="food423-track"
+          role="progressbar"
+          aria-label="{{ nutrients[key][0] }} target progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="{{ [percent, 100]|min|round(0)|int }}">
+          <div
+            class="food423-fill"
+            style="width:{{ [percent, 100]|min|round(1) }}%">
+          </div>
+        </div>
+      {% else %}
+        <p class="food423-note">
+          {{ 'Target not set' if target is none else 'Comparison unavailable: incomplete food data' }}
+        </p>
+      {% endif %}
+
+      {% if food_count and not complete %}
+        <p class="food423-note">
+          Partial data: {{ coverage[key] }} of {{ food_count }}
+          foods reported this nutrient.
+        </p>
+      {% endif %}
+    </article>
     {% endfor %}
   </div>
   <details><summary>All Nutrients &amp; Daily Targets</summary>

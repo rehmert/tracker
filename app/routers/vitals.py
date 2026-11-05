@@ -88,7 +88,7 @@ def vitals_page(request: Request, days: int = 90, events: int = 1,
 
 
 @router.post("/vitals")
-def add_reading(measured_at: str = Form(""), weight: str = Form(""), weight_unit: str = Form("kg"),
+def add_reading(measured_at: str = Form(""), weight: str = Form(""), weight_unit: str = Form(config.WEIGHT_UNIT),
                 systolic: str = Form(""), diastolic: str = Form(""), pulse: str = Form(""),
                 context: str = Form(""), notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
     try:
@@ -148,7 +148,7 @@ def update_reading(
     rid: int,
     measured_at: str = Form(""),
     weight: str = Form(""),
-    weight_unit: str = Form("kg"),
+    weight_unit: str = Form(config.WEIGHT_UNIT),
     systolic: str = Form(""),
     diastolic: str = Form(""),
     pulse: str = Form(""),

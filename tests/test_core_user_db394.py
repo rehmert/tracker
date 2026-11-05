@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CORE = {
     "compounds": 5,
     "protocols": 12,
-    "vials": 14,
+    "vials": 16,
     "purchases": 11,
     "supplies": 5,
     "calendar": 5,
@@ -77,7 +77,7 @@ def test_every_core_dependency_is_scoped(name, count):
 
 
 def test_total_conversion_count():
-    assert sum(CORE.values()) == 52
+    assert sum(CORE.values()) == 54
 
 
 def test_scoped_dependency_preserves_fastapi_override():

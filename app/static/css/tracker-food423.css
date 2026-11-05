@@ -1,0 +1,81 @@
+/* Release 423: target/remaining overview optimized for narrow phones. */
+
+.food423-macros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+  margin: .75rem 0;
+}
+
+.food423-macro {
+  min-width: 0;
+  padding: .65rem;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 10px;
+}
+
+.food423-heading {
+  font-weight: 700;
+  font-size: .9rem;
+  display: flex;
+  justify-content: space-between;
+  gap: .4rem;
+}
+
+.food423-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .2rem;
+  margin: .35rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.food423-values div {
+  min-width: 0;
+  font-size: .85rem;
+  overflow-wrap: anywhere;
+}
+
+.food423-values small {
+  display: block;
+  opacity: .8;
+  font-size: .72rem;
+}
+
+.food423-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--border, #ddd);
+}
+
+.food423-fill {
+  height: 100%;
+  background: var(--accent, #3878aa);
+  max-width: 100%;
+}
+
+.food423-note {
+  font-size: .76rem;
+  margin: .4rem 0 0;
+  line-height: 1.3;
+}
+
+@media (max-width: 520px) {
+  .food423-macros {
+    grid-template-columns: 1fr;
+    gap: .4rem;
+  }
+
+  .food423-macro {
+    padding: .55rem;
+  }
+
+  .food423-heading {
+    font-size: .88rem;
+  }
+
+  .food423-values div {
+    font-size: .84rem;
+  }
+}

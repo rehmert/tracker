@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Vial Labels — {{ v.compound.name }}{% endblock %}
+{% block content %}
+
+<h1>Vial Labels <small class="sub">{{ v.compound.name }} #{{ v.id }}</small></h1>
+
+<p class="note">
+203 DPI exports for NIIMBOT B1. Download SVG or PNG, then print using
+compatible label software. No direct Bluetooth printing. Double-check
+dimensions in the printer driver before printing.
+</p>
+
+<form method="get" action="/vials/{{ v.id }}/labels" class="grid">
+  <label class="field">
+    <span>Sheet layout</span>
+    <select name="layout">
+      <option value="40x20" {% if layout == '40x20' %}selected{% endif %}>
+        40 × 20 mm (one)
+      </option>
+      <option value="30x15x2" {% if layout == '30x15x2' %}selected{% endif %}>
+        30 × 15 mm (two along feed)
+      </option>
+      <option value="10x20x4" {% if layout == '10x20x4' %}selected{% endif %}>
+        10 × 20 mm (four across)
+      </option>
+    </select>
+  </label>
+
+  <label class="field">
+    <span>Label phase</span>
+    <select name="phase">
+      <option value="pre" {% if phase == 'pre' %}selected{% endif %}>
+        Unreconstituted (cap/stock)
+      </option>
+      <option value="post" {% if phase == 'post' %}selected{% endif %}>
+        Reconstituted (side)
+      </option>
+    </select>
+  </label>
+
+  <div><button class="primary">Preview</button></div>
+</form>
+
+{% if phase == 'post' and not v.reconstituted_on %}
+  <p class="flash error">
+    Record the reconstitution date on this vial before exporting its mixed label.
+  </p>
+{% else %}
+  <div class="scroll" style="padding:1rem;background:#fff;max-width:100%">
+    <img
+      style="max-width:100%;height:auto"
+      alt="Vial label preview"
+      src="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}">
+  </div>
+
+  <p>
+    <a href="/vials/{{ v.id }}/labels/export?fmt=png&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;download=1">
+      Download 203 DPI PNG
+    </a>
+    ·
+    <a href="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;download=1">
+      Download SVG
+    </a>
+  </p>
+{% endif %}
+
+<p class="note">
+Only recorded expiry and beyond-use dates are printed. An absent BUD is
+explicitly identified, never calculated or inferred.
+</p>
+
+<p><a href="/vials/{{ v.id }}">← Back to vial</a></p>
+
+{% endblock %}

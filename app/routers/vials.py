@@ -3,7 +3,7 @@ import math
 import json
 import hashlib
 
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
@@ -581,6 +581,81 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_scoped_db3
                   disposable_supplies=manual_supplies.available(db),
                   counted_supply_kinds=counted_supply_kinds,
                   prep_events=prep_events, prep_usage=prep_usage)
+
+
+@router.get("/vials/{vid}/labels")
+def vial_labels423(
+    vid: int,
+    request: Request,
+    layout: str = "40x20",
+    phase: str = "pre",
+    db: Session = Depends(get_scoped_db390),
+):
+    from ..vial_labels423 import LAYOUTS
+
+    if layout not in LAYOUTS or phase not in ("pre", "post"):
+        raise HTTPException(422, "Unsupported label selection")
+
+    v = _get(db, vid)
+    return render(
+        request,
+        "vial_labels423.html",
+        v=v,
+        layout=layout,
+        phase=phase,
+    )
+
+
+@router.get("/vials/{vid}/labels/export")
+def vial_labels423_export(
+    vid: int,
+    layout: str = "40x20",
+    phase: str = "pre",
+    fmt: str = "png",
+    download: int = 0,
+    db: Session = Depends(get_scoped_db390),
+):
+    from ..vial_labels423 import (
+        LAYOUTS,
+        label_lines,
+        svg_bytes,
+        png_bytes,
+    )
+
+    if (
+        layout not in LAYOUTS
+        or phase not in ("pre", "post")
+        or fmt not in ("svg", "png")
+    ):
+        raise HTTPException(422, "Unsupported label selection")
+
+    v = _get(db, vid)
+
+    try:
+        lines = label_lines(v, phase)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    output = (
+        svg_bytes(lines, layout)
+        if fmt == "svg"
+        else png_bytes(lines, layout)
+    )
+
+    media = "image/svg+xml" if fmt == "svg" else "image/png"
+    disposition = "attachment" if download else "inline"
+
+    return Response(
+        content=output,
+        media_type=media,
+        headers={
+            "Content-Disposition": (
+                f'{disposition}; filename="vial-{vid}-{phase}-{layout}.{fmt}"'
+            ),
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.post("/vials/{vid}")
