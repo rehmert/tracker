@@ -3,7 +3,8 @@
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-food374.css?v=374">
 <link rel="stylesheet" href="/static/css/tracker-food375.css?v=375">
-<script src="/static/js/tracker-food374.js?v=374" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-food376.css?v=376">
+<script src="/static/js/tracker-food374.js?v=376" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
 <form method="get" action="/food" class="food-date"><label>Day <input type="date" name="day" value="{{ day }}"></label><button>Show</button></form>
@@ -33,6 +34,133 @@
   </details>
 </section>
 <p class="note">Barcode product data provided by <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" target="_blank">Open Food Facts</a> and may be incomplete. Check serving basis and package values.</p>
+<nav class="food376-nav" aria-label="Food Journal sections">
+<a href="#food-quick-log">Quick Log</a>
+<a href="#food-search">Search</a>
+<a href="#food-templates">Meals</a>
+<a href="#food-add">Scan / Add</a>
+<a href="#food-week">Trends</a>
+</nav>
+
+<section id="food-search" class="food376-panel">
+<h2>Find Saved Food</h2>
+<form method="get" action="/food" class="food376-search">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Food name or barcode
+<input type="search" name="q" value="{{ search_query }}"
+ maxlength="100" placeholder="Search previously logged food">
+</label>
+<button type="submit">Search</button>
+</form>
+{% if search_query %}
+<p class="note">{{ search_results|length }} matches shown
+(maximum 30). Search uses your saved records, not the public database.</p>
+<div class="food375-list">
+{% for item in search_results %}
+<article class="food375-item">
+<strong>{{ item.name }}</strong>
+<small>{{ item.serving_description }}</small>
+<form method="post" action="/food/quick/{{ item.id }}"
+ class="food375-quick-form">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Servings<input type="number" name="servings"
+ value="{{ item.servings }}" min="0.01" max="100"
+ step="0.01" required></label>
+<label>Meal<select name="meal">
+{% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
+<option {% if item.meal == meal %}selected{% endif %}>{{ meal }}</option>
+{% endfor %}
+</select></label>
+<button type="submit">Add</button>
+</form>
+</article>
+{% else %}
+<p>No matching saved foods. Use the barcode scanner or manual entry.</p>
+{% endfor %}
+</div>
+{% endif %}
+</section>
+
+<section id="food-templates" class="food376-panel">
+<h2>Meal Templates</h2>
+<details>
+<summary>Save a Meal From This Day</summary>
+<p class="note">Copies all foods, portions and nutrients logged
+under the selected meal. Later changes to the original log
+do not change the template's food list or portions.</p>
+<form method="post" action="/food/template/save"
+ class="food376-template-form">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Template Name
+<input name="name" maxlength="80" required
+ placeholder="Usual breakfast"></label>
+<label>Meal
+<select name="meal">
+{% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
+<option>{{ meal }}</option>
+{% endfor %}
+</select></label>
+<button type="submit">Save Template</button>
+</form>
+</details>
+{% if templates %}
+<div class="food376-templates">
+{% for item in templates %}
+<article>
+<div><strong>{{ item.name }}</strong>
+<small>{{ item.item_count }} food entries</small></div>
+<form method="post" action="/food/template/{{ item.id }}/log">
+<input type="hidden" name="day" value="{{ day }}">
+<button type="submit">Log Meal</button>
+</form>
+</article>
+{% endfor %}
+</div>
+{% else %}
+<p class="note">No meal templates saved yet.</p>
+{% endif %}
+</section>
+
+<section id="food-week" class="food376-panel">
+<h2>Last Seven Days</h2>
+<p class="note">Days without entries are unlogged, not confirmed
+zero intake. Trends reflect reported values only.</p>
+<div class="food376-week">
+{% for item in week %}
+<article class="food376-day">
+<div class="food376-day-head">
+<strong>{{ item.label }}</strong>
+<small>{{ item.date[5:] }}</small>
+<span>
+{% if item.foods %}
+{{ item.totals.energy }} kcal
+{% if item.reported.energy < item.foods %}*{% endif %}
+{% else %}
+Not logged
+{% endif %}
+</span>
+</div>
+<div class="food376-track">
+<div style="width: {{ item.calorie_width }}%"></div>
+</div>
+<small>
+P {{ item.totals.proteins }}g ·
+C {{ item.totals.carbohydrates }}g ·
+F {{ item.totals.fat }}g
+{% if item.foods and
+(item.reported.proteins < item.foods or
+ item.reported.carbohydrates < item.foods or
+ item.reported.fat < item.foods) %}
+· partial
+{% endif %}
+</small>
+</article>
+{% endfor %}
+</div>
+<p class="note">* Calorie value is incomplete because at least one
+food has no calorie data. Partial macros are also marked.</p>
+</section>
+
 <section id="food-quick-log" class="food375-section">
 <h2>Quick Log</h2>
 <p class="note">Reuse a saved food with its original nutrient values.

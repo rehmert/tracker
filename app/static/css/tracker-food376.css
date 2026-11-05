@@ -1,0 +1,125 @@
+/* Release 376: compact Android-first navigation and nutrition. */
+.food376-nav {
+  display: flex;
+  gap: .45rem;
+  overflow-x: auto;
+  padding: .35rem 0 .65rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.food376-nav a {
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid var(--border, #aaa);
+  border-radius: 999px;
+  padding: .55rem .8rem;
+  font-size: .88rem;
+  font-weight: 600;
+}
+.food376-panel {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: .75rem;
+  margin: .8rem 0;
+}
+.food376-panel h2 {
+  margin-top: .15rem;
+}
+.food376-search,
+.food376-template-form {
+  display: flex;
+  align-items: end;
+  gap: .55rem;
+  flex-wrap: wrap;
+}
+.food376-search label,
+.food376-template-form label {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.food376-search input,
+.food376-template-form input,
+.food376-template-form select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font-size: 16px;
+  min-height: 46px;
+}
+.food376-search button,
+.food376-template-form button {
+  min-height: 46px;
+}
+.food376-templates {
+  display: grid;
+  gap: .5rem;
+  margin-top: .7rem;
+}
+.food376-templates article {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .65rem;
+  padding: .55rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 9px;
+}
+.food376-templates small {
+  display: block;
+  opacity: .75;
+}
+.food376-templates button {
+  min-height: 44px;
+}
+.food376-week {
+  display: grid;
+  gap: .4rem;
+}
+.food376-day {
+  border-bottom: 1px solid var(--border, #ddd);
+  padding: .4rem 0;
+}
+.food376-day-head {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+.food376-day-head span {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.food376-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--border, #ddd);
+  margin: .35rem 0;
+}
+.food376-track div {
+  height: 100%;
+  background: var(--accent, #4285c5);
+  border-radius: 10px;
+}
+.food376-day small {
+  opacity: .8;
+}
+@media(max-width: 600px) {
+  .food376-panel {
+    padding: .6rem;
+  }
+  .food376-search button {
+    flex: 1 1 100%;
+  }
+  .food376-templates article {
+    flex-wrap: wrap;
+  }
+  .food376-templates form {
+    flex: 1 1 100%;
+  }
+  .food376-templates button {
+    width: 100%;
+  }
+  .food376-nav {
+    position: relative;
+  }
+}

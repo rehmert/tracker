@@ -1,7 +1,12 @@
 document.addEventListener('DOMContentLoaded',()=>{
  const $=id=>document.getElementById(id), status=$('food-scan-status'),barcode=$('food-barcode');
  const fields=['energy','proteins','carbohydrates','fat','fiber','sugars','saturated-fat','sodium','potassium','calcium','iron','magnesium','vitamin-c','vitamin-d','vitamin-b12','cholesterol'];
- function populate(data){if(data.name)$('food-name').value=data.name;if(data.serving_description)$('food-serving').value=data.serving_description;
+ function populate(data){
+  for(const k of fields){
+   const input=$('food-nutrient-'+k);
+   if(input)input.value='';
+  }
+  if(data.name)$('food-name').value=data.name;if(data.serving_description)$('food-serving').value=data.serving_description;
   for(const [k,v] of Object.entries(data.nutrients||{})){let e=$('food-nutrient-'+k);if(e&&v!==null&&Number.isFinite(Number(v)))e.value=v;}
   if(data.source)$('food-source').value=data.source;
  }

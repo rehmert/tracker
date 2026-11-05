@@ -30,6 +30,7 @@ from .routers import (coas, compounds, dashboard, doses, labs, pages, protocols,
 from .security import require_auth
 from .routers import food
 from .routers import food_quick375
+from .routers import food_bundle376
 from .routers import inventory_timeline
 
 
@@ -110,6 +111,7 @@ for module in (dashboard, compounds, purchases, vials, coas, doses, supplies, vi
 
 app.include_router(food.router)
 app.include_router(food_quick375.router)
+app.include_router(food_bundle376.router)
 app.include_router(inventory_timeline.router)
 
 from .routers import consolidated_reports

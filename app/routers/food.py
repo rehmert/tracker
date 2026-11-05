@@ -91,7 +91,7 @@ def totals_for(day):
     return {k: round(sum(to_float(json.loads(n).get(k))*s for n,s in records),2) for k in NUTRIENTS}
 
 @router.get("/food")
-def food_page(request: Request, day: str = ""):
+def food_page(request: Request, day: str = "", q: str = ""):
     init_food_schema()
     try:
         chosen = date.fromisoformat(day) if day else date.today()
@@ -109,12 +109,21 @@ def food_page(request: Request, day: str = ""):
     from .food_quick375 import saved_foods
     favorites, recent = saved_foods()
     favorite_ids = {item["id"] for item in favorites}
+    from .food_bundle376 import (
+        search_products, weekly_summary, meal_templates
+    )
+    query = q.strip()[:100]
+    search_results = search_products(query) if query else []
+    week = weekly_summary(day)
+    templates = meal_templates()
     return render(
         request, "food.html", day=day, entries=rows,
         nutrients=NUTRIENTS, totals=total, targets=targets,
         coverage=coverage, food_count=food_count,
         favorites=favorites, recent=recent,
         favorite_ids=favorite_ids,
+        search_query=query, search_results=search_results,
+        week=week, templates=templates,
     )
 
 @router.get("/food/barcode/{barcode}")
@@ -137,10 +146,21 @@ def barcode_lookup(barcode: str):
     # silently treat 100g data as package serving.
     use_serving=bool(info.get("energy-kcal_serving") is not None or info.get("proteins_serving") is not None)
     suffix="_serving" if use_serving else "_100g"
+    serving_grams = None
+    match = re.fullmatch(
+        r"\s*(\d+(?:\.\d+)?)\s*g\s*",
+        str(serving), re.I
+    )
+    if match:
+        serving_grams = float(match.group(1))
     amounts={}
     for key in NUTRIENTS:
         offkey="energy-kcal" if key=="energy" else key
         raw=info.get(offkey+suffix)
+        if raw is None and use_serving and serving_grams is not None:
+            per_100g = info.get(offkey+"_100g")
+            if per_100g is not None:
+                raw = to_float(per_100g) * serving_grams / 100
         if raw is None: continue
         multiplier=1000 if key in OFF_MG else 1000000 if key in OFF_MCG else 1
         amounts[key]=round(to_float(raw)*multiplier,3)
@@ -217,14 +237,40 @@ async def create_food_entry(request: Request):
     if barcode and not re.fullmatch(r"\d{8,14}",barcode): barcode=""
     desc=str(form.get("serving_description","1 serving")).strip()[:80] or "1 serving"
     source=str(form.get("source","manual")).strip()[:80]
+    nutrient_json = json.dumps(info)
+    params = {
+        "barcode": barcode, "name": name, "desc": desc,
+        "nutrients": nutrient_json, "source": source
+    }
     with engine.begin() as db:
-        result=db.execute(text("""INSERT INTO tracker_food_products
-            (barcode,name,serving_description,nutrients,source)
-            VALUES (:barcode,:name,:desc,:nutrients,:source)"""),
-            {"barcode":barcode,"name":name,"desc":desc,
-             "nutrients":json.dumps(info),"source":source})
-        db.execute(text("""INSERT INTO tracker_food_entries(product_id,eaten_on,meal,servings)
-             VALUES (:p,:d,:m,:s)"""),{"p":result.lastrowid,"d":eaten,"m":meal,"s":quantity})
+        existing = db.execute(text("""
+            SELECT id FROM tracker_food_products
+            WHERE lower(name)=lower(:name)
+              AND COALESCE(barcode,'')=:barcode
+              AND serving_description=:desc
+              AND source=:source
+              AND nutrients=:nutrients
+            ORDER BY id DESC LIMIT 1
+        """), params).first()
+
+        if existing:
+            product_id = existing[0]
+        else:
+            result = db.execute(text("""
+                INSERT INTO tracker_food_products
+                    (barcode,name,serving_description,nutrients,source)
+                VALUES (:barcode,:name,:desc,:nutrients,:source)
+            """), params)
+            product_id = result.lastrowid
+
+        db.execute(text("""
+            INSERT INTO tracker_food_entries
+                (product_id,eaten_on,meal,servings)
+            VALUES (:p,:d,:m,:s)
+        """), {
+            "p": product_id, "d": eaten,
+            "m": meal, "s": quantity
+        })
     return RedirectResponse("/food?day="+eaten,status_code=303)
 
 @router.post("/food/targets")
