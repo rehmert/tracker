@@ -2,6 +2,9 @@
 """Authenticated, read-only live HTTP smoke of Tracker sidebar destinations."""
 import argparse
 import base64
+import os
+import sys
+from contextlib import contextmanager
 from html.parser import HTMLParser
 from pathlib import Path
 import re
@@ -44,7 +47,12 @@ def read_env(path):
             continue
         name, raw = line.split("=", 1)
         name = name.strip()
-        if name in ("TRACKER_INSTANCE", "TRACKER_USER", "TRACKER_PASS"):
+        if name in (
+            "TRACKER_INSTANCE",
+            "TRACKER_USER",
+            "TRACKER_PASS",
+            "TRACKER_DATA_DIR",
+        ):
             fields = shlex.split(raw.strip(), comments=False)
             if len(fields) != 1:
                 raise ValueError(f"Invalid {name} in local environment")
@@ -66,63 +74,143 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+
+@contextmanager
+def release_auth_headers(instance, settings):
+    """Use a revocable session for local DEV smoke verification.
+
+    The release process invokes this script as root. No HTTP
+    authentication bypass is installed in the application.
+    """
+    headers = {
+        "User-Agent": "Tracker-Release-Smoke/1.0",
+    }
+
+    if instance == "DEV":
+        directory = Path(
+            settings.get("TRACKER_DATA_DIR")
+            or "/opt/tracker/data"
+        ).resolve()
+
+        flag = directory / ".tracker-session-auth-dev"
+
+        if flag.is_file():
+            # Load the application from the installed source.
+            root = str(Path(__file__).resolve().parents[1])
+            if root not in sys.path:
+                sys.path.insert(0, root)
+
+            os.environ["TRACKER_INSTANCE"] = "DEV"
+            os.environ["TRACKER_DATA_DIR"] = str(directory)
+
+            from app import session_auth385 as auth
+
+            if not auth.enabled():
+                raise ValueError(
+                    "DEV session auth is configured but unavailable"
+                )
+
+            token, _ = auth.create_session(False)
+
+            # Shorten this diagnostic session to two minutes.
+            # The finally block also revokes it immediately.
+            import hashlib
+
+            hashed = hashlib.sha256(
+                token.encode()
+            ).hexdigest()
+
+            with auth.connect() as db:
+                db.execute("""
+                    UPDATE sessions
+                    SET expires_at=?
+                    WHERE token_hash=? AND user_id=1
+                """, (int(time.time()) + 120, hashed))
+
+            headers["Cookie"] = (
+                auth.COOKIE + "=" + token
+            )
+
+            try:
+                yield headers
+            finally:
+                auth.revoke(token)
+
+            return
+
+    # Original Basic Auth behavior for PROD, and for
+    # installations where session mode is disabled.
+    if (
+        settings.get("TRACKER_USER")
+        and settings.get("TRACKER_PASS")
+    ):
+        token = (
+            settings["TRACKER_USER"]
+            + ":"
+            + settings["TRACKER_PASS"]
+        ).encode()
+
+        headers["Authorization"] = (
+            "Basic "
+            + base64.b64encode(token).decode()
+        )
+
+    yield headers
+
 def run(instance, envfile):
     settings = read_env(envfile)
     if settings.get("TRACKER_INSTANCE", "").upper() != instance:
         raise ValueError("Instance mismatch")
-    headers = {"User-Agent": "Tracker-Release-Smoke/1.0"}
-    if settings.get("TRACKER_USER") and settings.get("TRACKER_PASS"):
-        token = (settings["TRACKER_USER"] + ":" + settings["TRACKER_PASS"]).encode()
-        headers["Authorization"] = "Basic " + base64.b64encode(token).decode()
-    opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), NoRedirect()
-    )
-    origin = f"http://127.0.0.1:{port_from_service()}"
-
-    def get(path, startup=False):
-        deadline = time.monotonic() + (30 if startup else 0)
-        while True:
-            status = 0
-            try:
-                request = urllib.request.Request(origin + path, headers=headers)
-                with opener.open(request, timeout=6) as result:
-                    status = result.status
-                    body = result.read(3 * 1024 * 1024)
-                if status == 200:
-                    return body
-            except urllib.error.HTTPError as error:
-                status = error.code
-            except OSError:
-                pass
-            if time.monotonic() >= deadline:
-                raise ValueError(f"{path}: HTTP {status}")
-            time.sleep(1)
-
-    health = get("/healthz", startup=True)
-    if b'"ok":true' not in health.replace(b" ", b""):
-        raise ValueError("Health check content invalid")
-    dashboard = get("/")
-    parser = Links()
-    parser.feed(dashboard.decode("utf-8", errors="replace"))
-    paths = list(dict.fromkeys(parser.paths))
-    if len(paths) < 35:
-        raise ValueError(f"Sidebar unexpectedly contains {len(paths)} paths")
-    failures = []
-    for path in paths:
-        try:
-            body = dashboard if path == "/" else get(path)
-            if b"<title>" not in body or (
-                f"tracker-instance--{instance.lower()}".encode() not in body
-            ):
-                failures.append(f"{path}: missing title/instance badge")
-        except (OSError, ValueError) as error:
-            failures.append(f"{path}: {str(error)[:120]}")
-    if failures:
-        raise ValueError(
-            f"{len(failures)}/{len(paths)} pages failed: "
-            + "; ".join(failures[:12])
+    with release_auth_headers(instance, settings) as headers:
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}), NoRedirect()
         )
-    print(f"PASS: /healthz and {len(paths)} sidebar pages HTTP 200; {instance} identity")
+        origin = f"http://127.0.0.1:{port_from_service()}"
+
+        def get(path, startup=False):
+            deadline = time.monotonic() + (30 if startup else 0)
+            while True:
+                status = 0
+                try:
+                    request = urllib.request.Request(origin + path, headers=headers)
+                    with opener.open(request, timeout=6) as result:
+                        status = result.status
+                        body = result.read(3 * 1024 * 1024)
+                    if status == 200:
+                        return body
+                except urllib.error.HTTPError as error:
+                    status = error.code
+                except OSError:
+                    pass
+                if time.monotonic() >= deadline:
+                    raise ValueError(f"{path}: HTTP {status}")
+                time.sleep(1)
+
+        health = get("/healthz", startup=True)
+        if b'"ok":true' not in health.replace(b" ", b""):
+            raise ValueError("Health check content invalid")
+        dashboard = get("/")
+        parser = Links()
+        parser.feed(dashboard.decode("utf-8", errors="replace"))
+        paths = list(dict.fromkeys(parser.paths))
+        if len(paths) < 35:
+            raise ValueError(f"Sidebar unexpectedly contains {len(paths)} paths")
+        failures = []
+        for path in paths:
+            try:
+                body = dashboard if path == "/" else get(path)
+                if b"<title>" not in body or (
+                    f"tracker-instance--{instance.lower()}".encode() not in body
+                ):
+                    failures.append(f"{path}: missing title/instance badge")
+            except (OSError, ValueError) as error:
+                failures.append(f"{path}: {str(error)[:120]}")
+        if failures:
+            raise ValueError(
+                f"{len(failures)}/{len(paths)} pages failed: "
+                + "; ".join(failures[:12])
+            )
+        print(f"PASS: /healthz and {len(paths)} sidebar pages HTTP 200; {instance} identity")
 
 
 def main() -> int:

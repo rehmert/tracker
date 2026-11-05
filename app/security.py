@@ -22,38 +22,6 @@ def require_auth(
             request.state.tracker_user_id = 1
             return None
 
-        # Temporary compatibility for the local release
-        # smoke tester, not a general Basic Auth bypass.
-        host = request.client.host if request.client else ""
-
-        smoke = (
-            host in ("127.0.0.1", "::1")
-            and request.headers.get("user-agent", "")
-                == "Tracker-Release-Smoke/1.0"
-        )
-
-        if smoke:
-            if not config.AUTH_USER or not config.AUTH_PASS:
-                raise HTTPException(
-                    503, "Authentication configuration incomplete"
-                )
-
-            valid = (
-                creds is not None
-                and secrets.compare_digest(
-                    creds.username.encode(),
-                    config.AUTH_USER.encode(),
-                )
-                and secrets.compare_digest(
-                    creds.password.encode(),
-                    config.AUTH_PASS.encode(),
-                )
-            )
-
-            if valid:
-                request.state.tracker_user_id = 1
-                return None
-
         if request.method == "GET":
             from urllib.parse import quote
 
