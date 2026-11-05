@@ -6,13 +6,17 @@ import subprocess
 from datetime import date, timedelta
 from urllib.request import Request as URLRequest, urlopen
 from urllib.error import URLError
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
+from fastapi import Depends, APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import text
 from ..db import engine
 from ..templating import render
 
-router = APIRouter()
+from ..food_storage_guard391 import require_food_storage391
+
+router = APIRouter(
+    dependencies=[Depends(require_food_storage391)]
+)
 # Units are intentionally explicit. Sodium, potassium and calcium are mg; iron is mg.
 NUTRIENTS = {
     "energy": ("Calories", "kcal"), "proteins": ("Protein", "g"),

@@ -5,14 +5,18 @@ import json
 import re
 from collections import OrderedDict
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import Depends, APIRouter, HTTPException, Request
 from fastapi.responses import Response
 from sqlalchemy import text
 
 from . import food
 from .food_quick375 import selected_day, food_redirect, MEALS
 
-router = APIRouter()
+from ..food_storage_guard391 import require_food_storage391
+
+router = APIRouter(
+    dependencies=[Depends(require_food_storage391)]
+)
 
 MACROS = ("energy", "proteins", "carbohydrates", "fat")
 MEAL_ORDER = ("Breakfast", "Lunch", "Dinner", "Snack")

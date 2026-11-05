@@ -2,14 +2,18 @@
 import json
 from datetime import date, timedelta
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import Depends, APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 
 from . import food
 from .food_quick375 import selected_day, food_redirect, MEALS
 
-router = APIRouter()
+from ..food_storage_guard391 import require_food_storage391
+
+router = APIRouter(
+    dependencies=[Depends(require_food_storage391)]
+)
 
 
 def init_schema():

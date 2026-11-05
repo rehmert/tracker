@@ -1,0 +1,42 @@
+"""Release 391: mandatory storage authorization for food routes.
+
+The existing food modules still use the process-wide SQLAlchemy
+engine. Until they are migrated to per-user engines, allow
+access only to the authenticated legacy administrator.
+
+This is a route-level authorization gate. It must execute
+before a food endpoint performs any database operation.
+
+Legacy Basic Auth mode remains supported for compatibility.
+Additional users remain disabled.
+"""
+
+from fastapi import Request
+
+from . import session_auth385
+from .user_db389 import resolve_authenticated_storage
+
+
+def require_food_storage391(request: Request):
+    """Verify the current user's permitted storage boundary.
+
+    In DEV session mode, use the existing strict database
+    resolver. That resolver verifies the server-side session,
+    request identity, and configured SQLite engine.
+
+    With DEV session mode disabled, retain the application's
+    existing authentication behavior. In that configuration,
+    the application's global auth dependency remains
+    responsible for Basic Auth.
+    """
+    if not session_auth385.enabled():
+        return None
+
+    storage = resolve_authenticated_storage(request)
+
+    if storage.user_id != 1 or storage.mode != "legacy-admin":
+        raise PermissionError(
+            "Food storage is unavailable to this user"
+        )
+
+    return None

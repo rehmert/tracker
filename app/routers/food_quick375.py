@@ -2,14 +2,18 @@
 from datetime import date
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import Depends, APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 
 from ..db import engine
 from .food import init_food_schema, to_float
 
-router = APIRouter()
+from ..food_storage_guard391 import require_food_storage391
+
+router = APIRouter(
+    dependencies=[Depends(require_food_storage391)]
+)
 
 MEALS = frozenset(("Breakfast", "Lunch", "Dinner", "Snack"))
 

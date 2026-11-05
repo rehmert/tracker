@@ -1,6 +1,6 @@
 """Release 377: safe food-entry edits and meal-template management."""
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import Depends, APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 
@@ -12,7 +12,11 @@ from .food_quick375 import (
 )
 from .food_bundle376 import init_schema
 
-router = APIRouter()
+from ..food_storage_guard391 import require_food_storage391
+
+router = APIRouter(
+    dependencies=[Depends(require_food_storage391)]
+)
 
 
 def valid_quantity(raw):

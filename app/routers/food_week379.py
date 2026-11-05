@@ -5,7 +5,7 @@ import io
 import json
 from datetime import date, timedelta
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import Depends, APIRouter, HTTPException, Request
 from fastapi.responses import Response, RedirectResponse
 from sqlalchemy import text
 
@@ -13,7 +13,11 @@ from . import food
 from .food_quick375 import selected_day
 from .food_review378 import safe_csv_cell
 
-router = APIRouter()
+from ..food_storage_guard391 import require_food_storage391
+
+router = APIRouter(
+    dependencies=[Depends(require_food_storage391)]
+)
 
 
 def week_details(day):
