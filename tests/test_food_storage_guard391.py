@@ -129,10 +129,23 @@ def test_guard_accepts_verified_admin(monkeypatch):
         authorized,
     )
 
+    engine_calls = []
+
+    def verified_engine(value):
+        engine_calls.append(value)
+        return guard.administrator_engine
+
+    monkeypatch.setattr(
+        guard,
+        "resolve_live_engine401",
+        verified_engine,
+    )
+
     current = request()
 
     assert guard.require_food_storage391(current) is None
     assert calls == [current]
+    assert engine_calls == [current]
 
 
 def test_guard_rejects_future_user(monkeypatch):

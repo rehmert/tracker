@@ -15,6 +15,8 @@ from fastapi import Request
 
 from . import session_auth385
 from .user_db389 import resolve_authenticated_storage
+from .workspace_engine401 import resolve_live_engine401
+from .db import engine as administrator_engine
 
 
 def require_food_storage391(request: Request):
@@ -37,6 +39,26 @@ def require_food_storage391(request: Request):
     if storage.user_id != 1 or storage.mode != "legacy-admin":
         raise PermissionError(
             "Food storage is unavailable to this user"
+        )
+
+    # The route-level guard runs before food journal endpoints.
+    # Verify the configured SQLAlchemy engine independently.
+    authorized_engine = resolve_live_engine401(request)
+
+    if authorized_engine is not administrator_engine:
+        from fastapi import HTTPException
+        raise HTTPException(
+            503, "Food workspace engine mismatch"
+        )
+
+    # Most existing food operations still access food.engine.
+    # Protect that direct engine reference until migration.
+    from .routers import food
+
+    if food.engine is not administrator_engine:
+        from fastapi import HTTPException
+        raise HTTPException(
+            503, "Food journal engine substitution denied"
         )
 
     return None
