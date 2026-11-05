@@ -13,6 +13,7 @@ from . import food
 from .food_quick375 import selected_day, food_redirect, MEALS
 
 from ..food_storage_guard391 import require_food_storage391
+from ..food_read_engine406 import get_food_read_engine406
 from ..food_engine392 import get_food_engine392
 
 router = APIRouter(
@@ -71,9 +72,9 @@ def meal_summary(day, db_engine=None):
 
 
 @router.post("/food/entry/{entry_id}/nutrition")
-async def correct_nutrition(entry_id: int, request: Request):
+async def correct_nutrition(entry_id: int, request: Request, db_engine=Depends(get_food_read_engine406)):
     """Copy-on-write: only this logged entry uses the corrected product."""
-    food.init_food_schema()
+    food.init_food_schema(db_engine)
     form = await request.form()
 
     day = selected_day(form.get("day"))
@@ -93,7 +94,7 @@ async def correct_nutrition(entry_id: int, request: Request):
         for key in food.NUTRIENTS
     }
 
-    with food.engine.begin() as db:
+    with db_engine.begin() as db:
         entry = db.execute(text("""
             SELECT e.product_id, p.barcode, p.source
             FROM tracker_food_entries e
@@ -157,7 +158,7 @@ def export_food_csv(
     db_engine=Depends(get_food_engine392),
 ):
     day = selected_day(day)
-    food.init_food_schema()
+    food.init_food_schema(db_engine)
 
     with db_engine.connect() as db:
         records = db.execute(text("""

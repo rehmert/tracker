@@ -255,8 +255,8 @@ async def label_photo(photo: UploadFile=File(...)):
             "warning":"OCR is tentative; check the serving size, units and every value before saving."}
 
 @router.post("/food/entry")
-async def create_food_entry(request: Request):
-    init_food_schema()
+async def create_food_entry(request: Request, db_engine=Depends(get_food_read_engine406)):
+    init_food_schema(db_engine)
     form=await request.form()
     name=str(form.get("name","")).strip()[:160]
     if not name:
@@ -279,7 +279,7 @@ async def create_food_entry(request: Request):
         "barcode": barcode, "name": name, "desc": desc,
         "nutrients": nutrient_json, "source": source
     }
-    with engine.begin() as db:
+    with db_engine.begin() as db:
         existing = db.execute(text("""
             SELECT id FROM tracker_food_products
             WHERE lower(name)=lower(:name)
@@ -314,8 +314,8 @@ async def create_food_entry(request: Request):
     )
 
 @router.post("/food/targets")
-async def save_food_targets(request: Request):
-    init_food_schema()
+async def save_food_targets(request: Request, db_engine=Depends(get_food_read_engine406)):
+    init_food_schema(db_engine)
     form=await request.form()
     day=str(form.get("day",date.today().isoformat()))
     from .food_quick375 import selected_day
@@ -328,7 +328,7 @@ async def save_food_targets(request: Request):
             optional_nutrient(raw) if raw else None
         )
 
-    with engine.begin() as db:
+    with db_engine.begin() as db:
         for key, value in validated.items():
             if value is None:
                 db.execute(text("""
@@ -345,14 +345,14 @@ async def save_food_targets(request: Request):
     return RedirectResponse("/food?day="+day,status_code=303)
 
 @router.post("/food/entry/{entry_id}/delete")
-async def delete_food_entry(entry_id: int, request: Request):
-    init_food_schema()
+async def delete_food_entry(entry_id: int, request: Request, db_engine=Depends(get_food_read_engine406)):
+    init_food_schema(db_engine)
     form = await request.form()
 
     from .food_quick375 import selected_day, food_redirect
     day = selected_day(form.get("day"))
 
-    with engine.begin() as db:
+    with db_engine.begin() as db:
         result = db.execute(text("""
             DELETE FROM tracker_food_entries
             WHERE id=:id AND eaten_on=:day

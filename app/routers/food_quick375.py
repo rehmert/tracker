@@ -91,7 +91,7 @@ async def quick_log(
     request: Request,
     db_engine=Depends(get_food_engine392),
 ):
-    init_food_schema()
+    init_food_schema(db_engine)
     form = await request.form()
     day = selected_day(form.get("day"))
     servings = to_float(form.get("servings"))
@@ -126,7 +126,7 @@ async def toggle_favorite(
     request: Request,
     db_engine=Depends(get_food_engine392),
 ):
-    init_food_schema()
+    init_food_schema(db_engine)
     form = await request.form()
     day = selected_day(form.get("day"))
 

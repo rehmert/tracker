@@ -10,6 +10,7 @@ from . import food
 from .food_quick375 import selected_day, food_redirect, MEALS
 
 from ..food_storage_guard391 import require_food_storage391
+from ..food_read_engine406 import get_food_read_engine406
 
 router = APIRouter(
     dependencies=[Depends(require_food_storage391)]
@@ -162,8 +163,8 @@ def meal_templates(db_engine=None):
 
 
 @router.post("/food/template/save")
-async def save_meal_template(request: Request):
-    init_schema()
+async def save_meal_template(request: Request, db_engine=Depends(get_food_read_engine406)):
+    init_schema(db_engine)
     form = await request.form()
 
     day = selected_day(form.get("day"))
@@ -175,7 +176,7 @@ async def save_meal_template(request: Request):
     if not name:
         raise HTTPException(422, "Template name required")
 
-    with food.engine.begin() as db:
+    with db_engine.begin() as db:
         entries = db.execute(text("""
             SELECT e.product_id, e.servings, e.meal
             FROM tracker_food_entries e
@@ -219,12 +220,12 @@ async def save_meal_template(request: Request):
 
 
 @router.post("/food/template/{template_id}/log")
-async def log_meal_template(template_id: int, request: Request):
-    init_schema()
+async def log_meal_template(template_id: int, request: Request, db_engine=Depends(get_food_read_engine406)):
+    init_schema(db_engine)
     form = await request.form()
     day = selected_day(form.get("day"))
 
-    with food.engine.begin() as db:
+    with db_engine.begin() as db:
         template = db.execute(text("""
             SELECT id FROM tracker_food_meal_templates
             WHERE id=:id

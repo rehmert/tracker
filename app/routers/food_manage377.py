@@ -13,6 +13,7 @@ from .food_quick375 import (
 from .food_bundle376 import init_schema
 
 from ..food_storage_guard391 import require_food_storage391
+from ..food_read_engine406 import get_food_read_engine406
 
 router = APIRouter(
     dependencies=[Depends(require_food_storage391)]
@@ -34,9 +35,9 @@ def valid_quantity(raw):
 
 
 @router.post("/food/entry/{entry_id}/edit")
-async def edit_food_entry(entry_id: int, request: Request):
+async def edit_food_entry(entry_id: int, request: Request, db_engine=Depends(get_food_read_engine406)):
     """Update only date, meal and quantity; never product nutrients."""
-    food.init_food_schema()
+    food.init_food_schema(db_engine)
     form = await request.form()
 
     day = selected_day(form.get("day"))
@@ -47,7 +48,7 @@ async def edit_food_entry(entry_id: int, request: Request):
     if meal not in MEALS:
         raise HTTPException(422, "Invalid meal")
 
-    with food.engine.begin() as db:
+    with db_engine.begin() as db:
         result = db.execute(text("""
             UPDATE tracker_food_entries
             SET eaten_on=:day, meal=:meal, servings=:servings
@@ -72,8 +73,9 @@ async def edit_food_entry(entry_id: int, request: Request):
 async def rename_meal_template(
     template_id: int,
     request: Request,
+    db_engine=Depends(get_food_read_engine406),
 ):
-    init_schema()
+    init_schema(db_engine)
     form = await request.form()
 
     day = selected_day(form.get("day"))
@@ -84,7 +86,7 @@ async def rename_meal_template(
             422, "Template name must contain 1–80 characters"
         )
 
-    with food.engine.begin() as db:
+    with db_engine.begin() as db:
         result = db.execute(text("""
             UPDATE tracker_food_meal_templates
             SET name=:name
@@ -106,14 +108,15 @@ async def rename_meal_template(
 async def delete_meal_template(
     template_id: int,
     request: Request,
+    db_engine=Depends(get_food_read_engine406),
 ):
     """Delete the template only; historical food entries are preserved."""
-    init_schema()
+    init_schema(db_engine)
     form = await request.form()
 
     day = selected_day(form.get("day"))
 
-    with food.engine.begin() as db:
+    with db_engine.begin() as db:
         exists = db.execute(text("""
             SELECT id FROM tracker_food_meal_templates
             WHERE id=:id
