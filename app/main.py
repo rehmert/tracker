@@ -54,7 +54,8 @@ app = FastAPI(title="Tracker", dependencies=[Depends(require_auth)],
 @app.middleware("http")
 async def tracker_response_protection(request, call_next):
     """Set browser protections and reject foreign browser writes."""
-    if reject_cross_origin_write(request.method, request.headers):
+    if (os.environ.get("TRACKER_ORIGIN_GUARD", "1") != "0"
+            and reject_cross_origin_write(request.method, request.headers)):
         response = PlainTextResponse(
             "Cross-origin write request denied.",
             status_code=403,
