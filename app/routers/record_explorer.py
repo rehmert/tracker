@@ -204,7 +204,7 @@ def notes_compare(
         revisions = db.execute(
             "SELECT id,title,body,created_at "
             "FROM page_revisions WHERE page_id=? "
-            "ORDER BY id DESC",
+            "ORDER BY id DESC LIMIT 200",
             (pid,),
         ).fetchall()
 
@@ -230,6 +230,19 @@ def notes_compare(
         versions[right]["body"] or ""
         if right else page["body"] or ""
     )
+
+    # Bound expensive text diff generation.
+    if (
+        max(len(before), len(after)) > 50000
+        or max(
+            len(before.splitlines()),
+            len(after.splitlines())
+        ) > 900
+    ):
+        raise HTTPException(
+            413,
+            "Note comparison exceeds safe display limit"
+        )
 
     import difflib
 
