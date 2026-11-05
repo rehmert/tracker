@@ -1,0 +1,110 @@
+/* Release 377: day navigation and compact editing. */
+
+.food377-days {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  margin: .65rem 0;
+}
+
+.food377-days a {
+  display: grid;
+  place-items: center;
+  padding: .7rem .35rem;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 10px;
+  text-align: center;
+  text-decoration: none;
+  min-height: 44px;
+  box-sizing: border-box;
+  font-weight: 600;
+}
+
+.food377-edit {
+  width: 100%;
+  margin: .55rem 0;
+  padding: .5rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 9px;
+}
+
+.food377-edit summary,
+.food377-template-edit summary {
+  cursor: pointer;
+  min-height: 38px;
+}
+
+.food377-edit-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  align-items: end;
+  margin-top: .55rem;
+}
+
+.food377-edit-form label,
+.food377-template-edit label {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+}
+
+.food377-edit-form input,
+.food377-edit-form select,
+.food377-template-edit input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.food377-edit-form button {
+  grid-column: 1 / -1;
+  min-height: 48px;
+}
+
+.food377-template-edit {
+  flex-basis: 100%;
+  width: 100%;
+  border-top: 1px solid var(--border, #ddd);
+  padding-top: .4rem;
+}
+
+.food377-template-edit form {
+  display: flex;
+  gap: .45rem;
+  align-items: end;
+  margin-top: .45rem;
+  flex-wrap: wrap;
+}
+
+.food377-template-edit label {
+  flex: 1;
+}
+
+.food377-template-edit button {
+  min-height: 44px;
+}
+
+@media (max-width: 600px) {
+  .food377-edit-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .food377-edit-form label:first-of-type {
+    grid-column: 1 / -1;
+  }
+
+  .food377-days a {
+    font-size: .85rem;
+  }
+
+  .food377-template-edit form {
+    display: grid;
+  }
+
+  .food377-template-edit button {
+    width: 100%;
+  }
+}

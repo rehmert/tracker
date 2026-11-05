@@ -3,7 +3,7 @@ import json
 import re
 import shutil
 import subprocess
-from datetime import date
+from datetime import date, timedelta
 from urllib.request import Request as URLRequest, urlopen
 from urllib.error import URLError
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
@@ -124,6 +124,9 @@ def food_page(request: Request, day: str = "", q: str = ""):
         favorite_ids=favorite_ids,
         search_query=query, search_results=search_results,
         week=week, templates=templates,
+        previous_day=(chosen - timedelta(days=1)).isoformat(),
+        next_day=(chosen + timedelta(days=1)).isoformat(),
+        today=date.today().isoformat(),
     )
 
 @router.get("/food/barcode/{barcode}")

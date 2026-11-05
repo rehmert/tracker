@@ -4,9 +4,15 @@
 <link rel="stylesheet" href="/static/css/tracker-food374.css?v=374">
 <link rel="stylesheet" href="/static/css/tracker-food375.css?v=375">
 <link rel="stylesheet" href="/static/css/tracker-food376.css?v=376">
+<link rel="stylesheet" href="/static/css/tracker-food377.css?v=377">
 <script src="/static/js/tracker-food374.js?v=376" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
+<nav class="food377-days" aria-label="Food Journal dates">
+<a href="/food?day={{ previous_day }}">← Previous</a>
+<a href="/food?day={{ today }}">Today</a>
+<a href="/food?day={{ next_day }}">Next →</a>
+</nav>
 <form method="get" action="/food" class="food-date"><label>Day <input type="date" name="day" value="{{ day }}"></label><button>Show</button></form>
 <section class="food-dashboard">
   <h2>Daily Totals</h2>
@@ -113,6 +119,24 @@ do not change the template's food list or portions.</p>
 <input type="hidden" name="day" value="{{ day }}">
 <button type="submit">Log Meal</button>
 </form>
+<details class="food377-template-edit">
+<summary>Manage</summary>
+<form method="post"
+ action="/food/template/{{ item.id }}/rename">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Template Name
+<input type="text" name="name"
+ maxlength="80" value="{{ item.name }}" required>
+</label>
+<button type="submit">Rename</button>
+</form>
+<form method="post"
+ action="/food/template/{{ item.id }}/delete"
+ onsubmit="return confirm('Delete this meal template? Logged foods will remain unchanged.')">
+<input type="hidden" name="day" value="{{ day }}">
+<button type="submit">Delete Template</button>
+</form>
+</details>
 </article>
 {% endfor %}
 </div>
@@ -267,6 +291,32 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 <div><strong>{{ e.name }}</strong>
 <small>{{ e.meal }} · {{ e.servings }} × {{ e.serving_description }}</small>
 <small>{{ e.source }}</small></div>
+<details class="food377-edit">
+<summary>Edit Entry</summary>
+<form method="post" action="/food/entry/{{ e.id }}/edit"
+ class="food377-edit-form">
+<input type="hidden" name="original_day" value="{{ day }}">
+<label>Date
+<input type="date" name="day" value="{{ day }}" required>
+</label>
+<label>Servings
+<input type="number" name="servings"
+ value="{{ e.servings }}" min="0.01" max="100"
+ step="0.01" inputmode="decimal" required>
+</label>
+<label>Meal
+<select name="meal">
+{% for meal in ('Breakfast','Lunch','Dinner','Snack') %}
+<option value="{{ meal }}"
+ {% if e.meal == meal %}selected{% endif %}>
+{{ meal }}
+</option>
+{% endfor %}
+</select>
+</label>
+<button class="primary" type="submit">Save Changes</button>
+</form>
+</details>
 <div class="food375-actions">
  <form method="post" action="/food/quick/{{ e.product_id }}">
   <input type="hidden" name="day" value="{{ day }}">
