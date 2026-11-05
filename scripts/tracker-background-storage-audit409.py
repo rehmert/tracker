@@ -257,6 +257,10 @@ def build_report():
             "calls_archive_cli": (
                 "tar " in content
             ),
+            "retired_entrypoint": (
+                "BLOCKED: scripts/backup.sh has been retired." in content
+                and "exit 2" in content
+            ),
             "executes_python": (
                 ".venv/bin/python" in content
             ),
@@ -293,7 +297,7 @@ def build_report():
         "app/backup.py: backup archives default to BACKUP_DIR",
         "scripts/tracker_backup.py: scheduled create uses defaults",
         "scripts/tracker_replica.py: replication uses configured roots",
-        "scripts/backup.sh: legacy shell backup uses TRACKER_DATA_DIR",
+        "scripts/backup.sh: retired; direct SQLite/tar backup disabled",
     ]
 
     return {
@@ -345,11 +349,14 @@ def validate(report):
             "Direct backup SQLite calls were not detected"
         )
 
-    if not report["shell_targets"][
-        "legacy_shell_backup"
-    ]["calls_sqlite3_cli"]:
+    legacy = report["shell_targets"]["legacy_shell_backup"]
+    if (
+        legacy["calls_sqlite3_cli"]
+        or legacy["calls_archive_cli"]
+        or not legacy["retired_entrypoint"]
+    ):
         raise RuntimeError(
-            "Legacy shell SQLite backup not detected"
+            "Legacy shell backup must remain retired"
         )
 
     if (
@@ -415,7 +422,7 @@ def main():
     print("MULTI-USER ISOLATION: INCOMPLETE")
     print("BACKGROUND-JOB ISOLATION: INCOMPLETE")
     print("ADDITIONAL ACCOUNTS: DISABLED")
-    print("EXISTING BACKUP OPERATIONS: UNCHANGED")
+    print("VERIFIED BACKUP OPERATIONS: UNCHANGED")
     print("PASS: Release 409 read-only audit")
 
 

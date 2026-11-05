@@ -72,8 +72,10 @@ def test_legacy_shell_backup_is_not_misclassified(report):
         "legacy_shell_backup"
     ]
 
-    assert item["calls_sqlite3_cli"]
-    assert item["uses_tracker_data_dir"]
+    assert item["retired_entrypoint"]
+    assert not item["calls_sqlite3_cli"]
+    assert not item["calls_archive_cli"]
+    assert not item["uses_tracker_data_dir"]
 
 
 def test_background_isolation_is_not_claimed_complete(report):

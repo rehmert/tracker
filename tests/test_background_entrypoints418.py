@@ -44,7 +44,7 @@ def test_legacy_bypass_paths_are_not_classified_as_protected():
 
     assert (
         items["legacy_shell_backup"]["classification"]
-        == "legacy_unscoped_write"
+        == "retired_fail_closed"
     )
 
     assert (
@@ -60,10 +60,9 @@ def test_legacy_bypass_paths_are_not_classified_as_protected():
     assert items["maintenance_cli"]["requires_review"]
     assert items["replication_cli"]["requires_review"]
 
-    assert {
-        "legacy_shell_backup",
-        "database_health_sweep",
-    } <= set(report["review_queue"])
+    assert "database_health_sweep" in report["review_queue"]
+    assert "legacy_shell_backup" not in report["review_queue"]
+    assert not items["legacy_shell_backup"]["requires_review"]
 
 
 def test_validated_default_and_opt_in_paths_are_distinguished():
@@ -136,12 +135,12 @@ def test_source_drift_fails_closed(tmp_path):
     legacy = tmp_path / "scripts/backup.sh"
     before = legacy.read_text()
 
-    assert "tar -czf" in before
+    assert "exit 2" in before
 
     legacy.write_text(
         before.replace(
-            "tar -czf",
-            "tar -xzf",
+            "exit 2",
+            "exit 0",
             1,
         )
     )

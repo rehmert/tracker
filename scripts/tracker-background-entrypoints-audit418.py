@@ -48,12 +48,10 @@ TARGETS = {
     ),
     "legacy_shell_backup": (
         "scripts/backup.sh",
-        "legacy_unscoped_write",
+        "retired_fail_closed",
         (
-            "TRACKER_DATA_DIR",
-            'sqlite3 "$DATA/tracker.db"',
-            "tar -czf",
-            'mkdir -p "$OUT"',
+            "BLOCKED: scripts/backup.sh has been retired.",
+            "exit 2",
         ),
     ),
     "database_health_sweep": (
@@ -131,7 +129,6 @@ TARGETS = {
 REVIEW_REQUIRED = {
     "validated_default_manual_override",
     "opt_in_scoped_legacy_available",
-    "legacy_unscoped_write",
     "broad_discovery_read_only",
     "unscoped_migration_write",
     "read_only_optional_receipt_write",
@@ -195,8 +192,8 @@ def build_report(root=ROOT):
             if item["requires_review"]
         ),
         "next_action": (
-            "Audit whether legacy shell backup, broad database sweep, "
-            "and unscoped CLI modes are scheduled or callable in production"
+            "Review broad database sweep and unscoped CLI modes; "
+            "confirm retired backup remains unscheduled"
         ),
     }
 
@@ -230,9 +227,14 @@ def validate(report):
             "Review queue does not match source inventory"
         )
 
-    if "legacy_shell_backup" not in report["review_queue"]:
+    legacy = report["entrypoints"]["legacy_shell_backup"]
+    if (
+        legacy["classification"] != "retired_fail_closed"
+        or legacy["requires_review"]
+        or "legacy_shell_backup" in report["review_queue"]
+    ):
         raise RuntimeError(
-            "Legacy backup review was lost"
+            "Retired legacy backup must not be queued for review"
         )
 
     if "database_health_sweep" not in report["review_queue"]:
