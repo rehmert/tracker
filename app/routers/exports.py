@@ -20,21 +20,45 @@ DATASETS = {
     'compounds': (Compound, ('id','name','category','notes')),
 }
 
-def csv_text(db: Session, dataset: str) -> str:
-    if dataset not in DATASETS: raise ValueError('Unknown dataset')
+def csv_lines(db: Session, dataset: str):
+    """Yield bounded CSV chunks without holding the entire export in memory."""
+    if dataset not in DATASETS:
+        raise ValueError('Unknown dataset')
+
     model, fields = DATASETS[dataset]
-    stream=io.StringIO(newline='')
-    writer=csv.writer(stream)
-    writer.writerow(fields)
+    stream = io.StringIO(newline='')
+    writer = csv.writer(stream)
+
+    def line(values):
+        stream.seek(0)
+        stream.truncate(0)
+        writer.writerow(values)
+        return stream.getvalue()
+
+    yield line(fields)
+
     for obj in db.scalars(select(model).order_by(model.id)):
         values=[]
         for field in fields:
             value=getattr(obj,field)
-            if isinstance(value,(date,datetime)): value=value.isoformat()
-            if isinstance(value,str) and value.lstrip().startswith(('=','+','-','@','\t','\r')): value="'"+value
+
+            if isinstance(value,(date,datetime)):
+                value=value.isoformat()
+
+            if isinstance(value,str) and value.lstrip().startswith(
+                ('=', '+', '-', '@', '\t', '\r')
+            ):
+                value="'"+value
+
             values.append(value)
-        writer.writerow(values)
-    return stream.getvalue()
+
+        yield line(values)
+
+
+def csv_text(db: Session, dataset: str) -> str:
+    """Preserve the existing materialized CSV API for existing callers."""
+    return ''.join(csv_lines(db,dataset))
+
 
 @router.get('/exports')
 def index(request: Request):
@@ -43,5 +67,4 @@ def index(request: Request):
 @router.get('/exports/{dataset}.csv')
 def download(dataset: str,db: Session=Depends(get_db)):
     if dataset not in DATASETS: raise HTTPException(404,'Unknown export')
-    content=csv_text(db,dataset)
-    return StreamingResponse(iter([content]),media_type='text/csv; charset=utf-8',headers={'Content-Disposition':f'attachment; filename="tracker-{dataset}.csv"','Cache-Control':'no-store'})
+    return StreamingResponse(csv_lines(db,dataset),media_type='text/csv; charset=utf-8',headers={'Content-Disposition':f'attachment; filename="tracker-{dataset}.csv"','Cache-Control':'no-store'})
