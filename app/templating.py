@@ -48,7 +48,7 @@ def eastern_dt(x, source="local") -> str:
         return dt(x)
     if x.tzinfo is None:
         x = x.replace(tzinfo=timezone.utc if source == "utc" else EASTERN)
-    return x.astimezone(EASTERN).strftime("%Y-%m-%d %I:%M %p %Z")
+    return x.astimezone(EASTERN).strftime("%Y-%m-%d %H:%M %Z")
 
 
 def utc_dt(x) -> str:
