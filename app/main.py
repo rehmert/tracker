@@ -21,6 +21,7 @@ from fastapi.responses import PlainTextResponse
 from .request_origin import reject_cross_origin_write
 from .csrf_runtime import prepare_html_cookie
 from .csrf_reporting import report_status, REPORT_HEADER
+from .csrf_policy289 import reject_write
 
 from . import config, models  # noqa: F401  (models import registers tables)
 from .db import Base, engine
@@ -63,7 +64,13 @@ async def tracker_response_protection(request, call_next):
         # request body; multipart and streaming bodies are
         # left untouched for the original endpoint.
         csrf_report = await report_status(request)
-        response = await call_next(request)
+        if reject_write(request.method, csrf_report,
+                        os.environ.get("TRACKER_CSRF_ENFORCE", "0")):
+            response = PlainTextResponse(
+                "CSRF token required.", status_code=403
+            )
+        else:
+            response = await call_next(request)
 
     if csrf_report is not None:
         response.headers[REPORT_HEADER] = csrf_report

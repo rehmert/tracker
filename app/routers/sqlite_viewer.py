@@ -16,7 +16,15 @@ router = APIRouter()
 PAGE_SIZES = (25, 50, 100)
 MAX_SEARCH_LENGTH = 200
 
-HIDDEN_TABLES = {"vendor_site_credentials"}
+# Explicit non-sensitive views. Do not expose arbitrary future tables.
+VIEWER_COLUMNS = {
+    "compounds": ("id", "name", "category", "primary_unit"),
+    "vials": ("id", "compound_id", "purchase_id", "label", "lot", "form", "content_value", "content_unit", "status", "expires_on"),
+    "purchases": ("id", "vendor", "purchased_on", "shipping_cents", "tax_cents", "discount_cents"),
+    "supplies": ("id", "purchase_id", "name", "kind", "purchased_qty", "remaining_qty"),
+    "dose_logs": ("id", "vial_id", "taken_at", "amount_base", "kind"),
+    "protocols": ("id", "name", "is_active", "start_date", "end_date"),
+}
 
 SENSITIVE_TERMS = (
     "password",
@@ -29,15 +37,9 @@ SENSITIVE_TERMS = (
 )
 
 
-def _safe_columns(names):
-    return [
-        name for name in names
-        if not any(
-            term in name.lower()
-            for term in SENSITIVE_TERMS
-        )
-    ]
-
+def _safe_columns(table, names):
+    allowed=set(VIEWER_COLUMNS.get(table, ()))
+    return [name for name in names if name in allowed]
 
 
 def _database_path():
@@ -109,7 +111,7 @@ def _tables(connection):
 
     return [
         row["name"] for row in rows
-        if row["name"] not in HIDDEN_TABLES
+        if row["name"] in VIEWER_COLUMNS
     ]
 
 
@@ -184,9 +186,12 @@ def sqlite_viewer(
             if table else []
         )
 
-        names = _safe_columns([
-            column["name"]
-            for column in columns
+        columns = [
+            column for column in columns
+            if column["name"] in VIEWER_COLUMNS.get(table, ())
+        ]
+        names = _safe_columns(table, [
+            column["name"] for column in columns
         ])
 
         records = []
@@ -344,7 +349,7 @@ def sqlite_viewer_export(table: str, q: str = ""):
         if table not in _tables(db):
             raise HTTPException(404, "Unknown table")
 
-        names = _safe_columns([
+        names = _safe_columns(table, [
             column["name"]
             for column in _columns(db, table)
         ])
