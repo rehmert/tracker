@@ -406,10 +406,20 @@ def main():
                 "--output is required for snapshot"
             )
 
-        result = snapshot(
-            args.database,
-            args.output,
-        )
+        if args.admin_scoped:
+            from app.maintenance_storage417 import (
+                publish_verified_snapshot417,
+            )
+            result = publish_verified_snapshot417(
+                args.database,
+                args.output,
+                snapshot,
+            )
+        else:
+            result = snapshot(
+                args.database,
+                args.output,
+            )
 
     output = json.dumps(
         result,
