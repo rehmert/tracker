@@ -32,6 +32,7 @@ from .routers import food
 from .routers import food_quick375
 from .routers import food_bundle376
 from .routers import food_manage377
+from .routers import food_review378
 from .routers import inventory_timeline
 
 
@@ -114,6 +115,7 @@ app.include_router(food.router)
 app.include_router(food_quick375.router)
 app.include_router(food_bundle376.router)
 app.include_router(food_manage377.router)
+app.include_router(food_review378.router)
 app.include_router(inventory_timeline.router)
 
 from .routers import consolidated_reports

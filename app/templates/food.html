@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="/static/css/tracker-food375.css?v=375">
 <link rel="stylesheet" href="/static/css/tracker-food376.css?v=376">
 <link rel="stylesheet" href="/static/css/tracker-food377.css?v=377">
+<link rel="stylesheet" href="/static/css/tracker-food378.css?v=378">
 <script src="/static/js/tracker-food374.js?v=376" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
@@ -46,6 +47,7 @@
 <a href="#food-templates">Meals</a>
 <a href="#food-add">Scan / Add</a>
 <a href="#food-week">Trends</a>
+<a href="#food-meal-totals">Meal Totals</a>
 </nav>
 
 <section id="food-search" class="food376-panel">
@@ -185,6 +187,42 @@ F {{ item.totals.fat }}g
 food has no calorie data. Partial macros are also marked.</p>
 </section>
 
+
+<section id="food-meal-totals" class="food378-panel">
+<h2>Meal Totals</h2>
+<p class="note">Totals represent reported food information only.
+Unknown nutrients are excluded from sums, not assumed to be zero.</p>
+<div class="food378-meals">
+{% for item in meals %}
+<article class="food378-meal">
+<div class="food378-meal-head">
+<strong>{{ item.name }}</strong>
+<small>{{ item.count }} foods</small>
+</div>
+{% if item.count %}
+<div class="food378-macros">
+<span>{{ item.totals.energy }} kcal</span>
+<span>P {{ item.totals.proteins }}g</span>
+<span>C {{ item.totals.carbohydrates }}g</span>
+<span>F {{ item.totals.fat }}g</span>
+</div>
+{% if item.reported.energy < item.count or
+      item.reported.proteins < item.count or
+      item.reported.carbohydrates < item.count or
+      item.reported.fat < item.count %}
+<small>Partial data: some foods have unknown macro values</small>
+{% endif %}
+{% else %}
+<small>No entries logged</small>
+{% endif %}
+</article>
+{% endfor %}
+</div>
+<a class="food378-export"
+ href="/food/export.csv?day={{ day }}">
+Download This Day as CSV
+</a>
+</section>
 <section id="food-quick-log" class="food375-section">
 <h2>Quick Log</h2>
 <p class="note">Reuse a saved food with its original nutrient values.
@@ -291,6 +329,61 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 <div><strong>{{ e.name }}</strong>
 <small>{{ e.meal }} · {{ e.servings }} × {{ e.serving_description }}</small>
 <small>{{ e.source }}</small></div>
+
+<details class="food378-correction">
+<summary>Correct Nutrition / Food Details</summary>
+<p class="note">This correction applies only to this logged entry.
+Other entries, favorites, and meal templates retain their
+previous product information.</p>
+<form method="post"
+ action="/food/entry/{{ e.id }}/nutrition">
+<input type="hidden" name="day" value="{{ day }}">
+<label>Food Name
+<input name="name" value="{{ e.name }}"
+ maxlength="160" required>
+</label>
+<label>Serving Size / Basis
+<input name="serving_description"
+ value="{{ e.serving_description }}"
+ maxlength="80" required>
+</label>
+<details open>
+<summary>Calories and Macros (per serving)</summary>
+<div class="food-nutrient-inputs">
+{% for key in ('energy','proteins','carbohydrates','fat',
+                'fiber','sugars','saturated-fat') %}
+<label>{{ nutrients[key][0] }}
+({{ nutrients[key][1] }})
+<input type="number" name="{{ key }}"
+ step="any" min="0" inputmode="decimal"
+ value="{{ e.parsed_nutrients[key] if
+ e.parsed_nutrients.get(key) is not none else '' }}"
+ placeholder="Unknown">
+</label>
+{% endfor %}
+</div>
+</details>
+<details>
+<summary>Micronutrients (per serving)</summary>
+<div class="food-nutrient-inputs">
+{% for key, info in nutrients.items() if key not in
+('energy','proteins','carbohydrates','fat',
+ 'fiber','sugars','saturated-fat') %}
+<label>{{ info[0] }} ({{ info[1] }})
+<input type="number" name="{{ key }}"
+ step="any" min="0" inputmode="decimal"
+ value="{{ e.parsed_nutrients[key] if
+ e.parsed_nutrients.get(key) is not none else '' }}"
+ placeholder="Unknown">
+</label>
+{% endfor %}
+</div>
+</details>
+<button type="submit" class="primary">
+Save Nutrition Correction
+</button>
+</form>
+</details>
 <details class="food377-edit">
 <summary>Edit Entry</summary>
 <form method="post" action="/food/entry/{{ e.id }}/edit"

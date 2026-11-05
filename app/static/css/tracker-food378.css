@@ -1,0 +1,98 @@
+/* Release 378: compact meal totals and per-entry nutrient correction. */
+.food378-panel,
+.food378-correction {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: .7rem;
+  margin: .65rem 0;
+}
+
+.food378-meals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+
+.food378-meal {
+  background: var(--panel, #f2f5f7);
+  padding: .7rem;
+  border-radius: 9px;
+}
+
+.food378-meal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: .4rem;
+}
+
+.food378-meal small {
+  opacity: .8;
+}
+
+.food378-macros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.food378-macros span {
+  font-size: .85rem;
+}
+
+.food378-export {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: .8rem;
+  margin-top: .7rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  border: 1px solid var(--border, #aaa);
+  font-weight: 650;
+}
+
+.food378-correction {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.food378-correction form > label {
+  display: block;
+  margin: .5rem 0;
+}
+
+.food378-correction form > label input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 46px;
+  font-size: 16px;
+}
+
+.food378-correction summary {
+  cursor: pointer;
+  min-height: 40px;
+  padding: .4rem 0;
+}
+
+.food378-correction form > button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: .65rem;
+}
+
+@media (max-width: 560px) {
+  .food378-meals {
+    grid-template-columns: 1fr;
+  }
+  .food378-meal {
+    padding: .55rem;
+  }
+  .food378-correction {
+    padding: .55rem;
+  }
+}

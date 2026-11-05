@@ -116,6 +116,10 @@ def food_page(request: Request, day: str = "", q: str = ""):
     search_results = search_products(query) if query else []
     week = weekly_summary(day)
     templates = meal_templates()
+    from .food_review378 import meal_summary
+    meals = meal_summary(day)
+    for row in rows:
+        row["parsed_nutrients"] = json.loads(row["nutrients"])
     return render(
         request, "food.html", day=day, entries=rows,
         nutrients=NUTRIENTS, totals=total, targets=targets,
@@ -124,6 +128,7 @@ def food_page(request: Request, day: str = "", q: str = ""):
         favorite_ids=favorite_ids,
         search_query=query, search_results=search_results,
         week=week, templates=templates,
+        meals=meals,
         previous_day=(chosen - timedelta(days=1)).isoformat(),
         next_day=(chosen + timedelta(days=1)).isoformat(),
         today=date.today().isoformat(),
