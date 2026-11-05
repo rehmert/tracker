@@ -13,7 +13,7 @@ def check(db: Session, token: str, operation: str, payload) -> tuple[str, str]:
         canonical = str(uuid.UUID(str(token)))
     except (ValueError, TypeError, AttributeError):
         return "invalid", ""
-    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str, separators=(",", ":")).encode()).hexdigest()
+    digest = payload_hash(payload)
     prior = db.get(InventorySubmission, canonical)
     if prior is None:
         return "new", digest
@@ -23,3 +23,17 @@ def check(db: Session, token: str, operation: str, payload) -> tuple[str, str]:
 
 def record(db: Session, token: str, operation: str, digest: str):
     db.add(InventorySubmission(token=str(uuid.UUID(token)), operation=operation, payload_hash=digest))
+
+
+def payload_hash(payload):
+    """Stable fingerprint shared by transaction replay checks."""
+    canonical=json.dumps(
+        payload,
+        sort_keys=True,
+        default=str,
+        separators=(",", ":")
+    )
+
+    return hashlib.sha256(
+        canonical.encode()
+    ).hexdigest()

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from .. import services, units as U, idempotency
 from ..db import get_db
 from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, SupplyCategory
-from ..inventory_lock import reserve_inventory_write
+from ..inventory_lock import reserve_inventory_write, require_inventory_write
 from .. import manual_supplies
 from ..templating import render
 
@@ -305,8 +305,7 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
 
 @router.delete("/doses/{did}")
 def delete_dose(did: int, db: Session = Depends(get_db)):
-    if not reserve_inventory_write(db):
-        raise HTTPException(409, "Inventory is busy. Please retry.")
+    require_inventory_write(db)
     d = db.get(DoseLog, did)
     if d is None:
         raise HTTPException(404, "Entry not found")
