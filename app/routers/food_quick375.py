@@ -21,17 +21,30 @@ def selected_day(raw):
         raise HTTPException(422, "Invalid food journal date")
 
 
-def food_redirect(day):
-    return RedirectResponse(
-        "/food?" + urlencode({"day": day}), status_code=303
-    )
+def food_redirect(day, section=None):
+    from urllib.parse import quote
+
+    location = "/food?" + urlencode({"day": day})
+    allowed = {
+        "food-quick-log",
+        "food-search",
+        "food-name-search",
+        "food-add",
+        "food-recorded",
+        "food-templates",
+    }
+
+    if section in allowed:
+        location += "#" + quote(section)
+
+    return RedirectResponse(location, status_code=303)
 
 
 def saved_foods():
     init_food_schema()
     with engine.connect() as db:
         favorites = db.execute(text("""
-            SELECT p.id, p.name, p.serving_description,
+            SELECT p.id, p.name, p.serving_description, p.nutrients,
                 COALESCE(
                     (SELECT e.meal FROM tracker_food_entries e
                      WHERE e.product_id=p.id
@@ -51,7 +64,7 @@ def saved_foods():
         """)).mappings().all()
 
         recent = db.execute(text("""
-            SELECT p.id, p.name, p.serving_description,
+            SELECT p.id, p.name, p.serving_description, p.nutrients,
                    e.meal, e.servings
             FROM tracker_food_entries e
             JOIN tracker_food_products p ON p.id=e.product_id
@@ -94,7 +107,7 @@ async def quick_log(product_id: int, request: Request):
             "meal": meal, "servings": servings,
         })
 
-    return food_redirect(day)
+    return food_redirect(day, "food-recorded")
 
 
 @router.post("/food/favorite/{product_id}")
@@ -127,4 +140,4 @@ async def toggle_favorite(product_id: int, request: Request):
                 VALUES (:id)
             """), {"id": product_id})
 
-    return food_redirect(day)
+    return food_redirect(day, "food-quick-log")

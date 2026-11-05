@@ -10,6 +10,8 @@
 <link rel="stylesheet" href="/static/css/tracker-food380.css?v=380">
 <link rel="stylesheet" href="/static/css/tracker-food381.css?v=381">
 <link rel="stylesheet" href="/static/css/tracker-food382.css?v=382">
+<link rel="stylesheet" href="/static/css/tracker-food384.css?v=384">
+<script src="/static/js/tracker-food384.js?v=384" defer></script>
 <script src="/static/js/tracker-food382.js?v=382" defer></script>
 <script src="/static/js/tracker-food380.js?v=381" defer></script>
 <script src="/static/js/tracker-food374.js?v=376" defer></script>
@@ -74,6 +76,25 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 <article class="food375-item">
  <div class="food375-name"><strong>{{ item.name }}</strong>
  <small>{{ item.serving_description }}</small></div>
+
+<div class="food384-preview"
+ data-food384-preview
+ aria-label="Nutrition for selected quantity">
+{% for key, label in
+(('energy','Cal'),('proteins','P'),
+ ('carbohydrates','C'),('fat','F')) %}
+<span data-food384-value
+ data-per-serving="{{ item.macro_per_serving[key]
+ if item.macro_per_serving[key] is not none else '' }}"
+ data-label="{{ label }}">
+{{ label }}
+{% if item.macro_per_serving[key] is not none %}
+{{ (item.macro_per_serving[key] * item.servings)|round(1) }}
+{% else %}?{% endif %}
+</span>
+{% endfor %}
+</div>
+
  <form method="post" action="/food/quick/{{ item.id }}" class="food375-quick-form">
   <input type="hidden" name="day" value="{{ day }}">
   <label>Servings
@@ -100,6 +121,25 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 <article class="food375-item">
  <div class="food375-name"><strong>{{ item.name }}</strong>
  <small>{{ item.serving_description }}</small></div>
+
+<div class="food384-preview"
+ data-food384-preview
+ aria-label="Nutrition for selected quantity">
+{% for key, label in
+(('energy','Cal'),('proteins','P'),
+ ('carbohydrates','C'),('fat','F')) %}
+<span data-food384-value
+ data-per-serving="{{ item.macro_per_serving[key]
+ if item.macro_per_serving[key] is not none else '' }}"
+ data-label="{{ label }}">
+{{ label }}
+{% if item.macro_per_serving[key] is not none %}
+{{ (item.macro_per_serving[key] * item.servings)|round(1) }}
+{% else %}?{% endif %}
+</span>
+{% endfor %}
+</div>
+
  <form method="post" action="/food/quick/{{ item.id }}" class="food375-quick-form">
   <input type="hidden" name="day" value="{{ day }}">
   <label>Servings
@@ -144,6 +184,25 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 <article class="food375-item">
 <strong>{{ item.name }}</strong>
 <small>{{ item.serving_description }}</small>
+
+<div class="food384-preview"
+ data-food384-preview
+ aria-label="Nutrition for selected quantity">
+{% for key, label in
+(('energy','Cal'),('proteins','P'),
+ ('carbohydrates','C'),('fat','F')) %}
+<span data-food384-value
+ data-per-serving="{{ item.macro_per_serving[key]
+ if item.macro_per_serving[key] is not none else '' }}"
+ data-label="{{ label }}">
+{{ label }}
+{% if item.macro_per_serving[key] is not none %}
+{{ (item.macro_per_serving[key] * item.servings)|round(1) }}
+{% else %}?{% endif %}
+</span>
+{% endfor %}
+</div>
+
 <form method="post" action="/food/quick/{{ item.id }}"
  class="food375-quick-form">
 <input type="hidden" name="day" value="{{ day }}">
@@ -272,6 +331,21 @@ unknown, not zero.
 <small>{{ e.meal }} · {{ e.servings }} × {{ e.serving_description }}</small>
 <small>{{ e.source }}</small></div>
 
+<div class="food384-preview food384-record-preview"
+ aria-label="Logged calories and macros">
+{% for key, label in
+(('energy','Cal'),('proteins','P'),
+ ('carbohydrates','C'),('fat','F')) %}
+<span>
+{{ label }}
+{% if e.macro_per_serving[key] is not none %}
+{{ (e.macro_per_serving[key] * e.servings)|round(1) }}
+{% else %}?{% endif %}
+</span>
+{% endfor %}
+</div>
+
+
 <details class="food378-correction">
 <summary>Correct Nutrition / Food Details</summary>
 <p class="note">This correction applies only to this logged entry.
@@ -365,6 +439,7 @@ Save Nutrition Correction
  </form>
  <form method="post" action="/food/entry/{{ e.id }}/delete"
    onsubmit="return confirm('Delete this food entry?')">
+  <input type="hidden" name="day" value="{{ day }}">
   <button type="submit">Delete</button>
  </form>
 </div>

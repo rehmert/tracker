@@ -47,7 +47,7 @@ def search_products(query):
     with food.engine.connect() as db:
         rows = db.execute(text("""
             SELECT p.id, p.name, p.barcode,
-                   p.serving_description,
+                   p.serving_description, p.nutrients,
                    COALESCE(
                        (SELECT e.meal FROM tracker_food_entries e
                         WHERE e.product_id=p.id
@@ -199,7 +199,7 @@ async def save_meal_template(request: Request):
                 "meal": stored_meal,
             })
 
-    return food_redirect(day)
+    return food_redirect(day, "food-templates")
 
 
 @router.post("/food/template/{template_id}/log")
@@ -245,4 +245,4 @@ async def log_meal_template(template_id: int, request: Request):
                 "servings": servings,
             })
 
-    return food_redirect(day)
+    return food_redirect(day, "food-recorded")

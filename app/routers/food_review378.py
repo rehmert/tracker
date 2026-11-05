@@ -130,7 +130,7 @@ async def correct_nutrition(entry_id: int, request: Request):
                 409, "Food entry changed; reload and retry"
             )
 
-    return food_redirect(day)
+    return food_redirect(day, "food-recorded")
 
 
 def safe_csv_cell(value):

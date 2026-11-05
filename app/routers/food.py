@@ -122,6 +122,13 @@ def food_page(request: Request, day: str = "", q: str = ""):
     nutrient_week = week_details(day)
     for row in rows:
         row["parsed_nutrients"] = json.loads(row["nutrients"])
+
+    from .food_preview384 import attach_previews
+    attach_previews(rows)
+    attach_previews(favorites)
+    attach_previews(recent)
+    attach_previews(search_results)
+
     return render(
         request, "food.html", day=day, entries=rows,
         nutrients=NUTRIENTS, totals=total, targets=targets,
@@ -281,7 +288,10 @@ async def create_food_entry(request: Request):
             "p": product_id, "d": eaten,
             "m": meal, "s": quantity
         })
-    return RedirectResponse("/food?day="+eaten,status_code=303)
+    return RedirectResponse(
+        "/food?day=" + eaten + "#food-recorded",
+        status_code=303,
+    )
 
 @router.post("/food/targets")
 async def save_food_targets(request: Request):
@@ -315,8 +325,20 @@ async def save_food_targets(request: Request):
     return RedirectResponse("/food?day="+day,status_code=303)
 
 @router.post("/food/entry/{entry_id}/delete")
-def delete_food_entry(entry_id:int):
+async def delete_food_entry(entry_id: int, request: Request):
     init_food_schema()
+    form = await request.form()
+
+    from .food_quick375 import selected_day, food_redirect
+    day = selected_day(form.get("day"))
+
     with engine.begin() as db:
-        db.execute(text("DELETE FROM tracker_food_entries WHERE id=:id"),{"id":entry_id})
-    return RedirectResponse("/food",status_code=303)
+        result = db.execute(text("""
+            DELETE FROM tracker_food_entries
+            WHERE id=:id AND eaten_on=:day
+        """), {"id": entry_id, "day": day})
+
+        if result.rowcount != 1:
+            raise HTTPException(404, "Food entry not found")
+
+    return food_redirect(day, "food-recorded")

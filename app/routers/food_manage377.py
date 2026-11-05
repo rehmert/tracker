@@ -61,7 +61,7 @@ async def edit_food_entry(entry_id: int, request: Request):
                 404, "Food entry no longer exists on that day"
             )
 
-    return food_redirect(day)
+    return food_redirect(day, "food-recorded")
 
 
 @router.post("/food/template/{template_id}/rename")
@@ -95,7 +95,7 @@ async def rename_meal_template(
                 404, "Meal template not found"
             )
 
-    return food_redirect(day)
+    return food_redirect(day, "food-templates")
 
 
 @router.post("/food/template/{template_id}/delete")
@@ -130,4 +130,4 @@ async def delete_meal_template(
             WHERE id=:id
         """), {"id": template_id})
 
-    return food_redirect(day)
+    return food_redirect(day, "food-templates")

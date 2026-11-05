@@ -1,0 +1,39 @@
+/* Release 384: compact, responsive macro previews. */
+
+.food384-preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .25rem;
+  margin: .4rem 0 .55rem;
+}
+
+.food384-preview span {
+  min-width: 0;
+  padding: .3rem .2rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 7px;
+  text-align: center;
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.food384-record-preview {
+  width: 100%;
+  margin: .3rem 0;
+}
+
+.food384-record-preview span {
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .food384-preview {
+    gap: .18rem;
+  }
+
+  .food384-preview span {
+    font-size: .73rem;
+    padding: .32rem .1rem;
+  }
+}
