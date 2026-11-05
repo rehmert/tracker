@@ -10,6 +10,7 @@ from ..db import engine
 from .food import init_food_schema, to_float
 
 from ..food_storage_guard391 import require_food_storage391
+from ..food_engine392 import get_food_engine392
 
 router = APIRouter(
     dependencies=[Depends(require_food_storage391)]
@@ -84,7 +85,11 @@ def saved_foods():
 
 
 @router.post("/food/quick/{product_id}")
-async def quick_log(product_id: int, request: Request):
+async def quick_log(
+    product_id: int,
+    request: Request,
+    db_engine=Depends(get_food_engine392),
+):
     init_food_schema()
     form = await request.form()
     day = selected_day(form.get("day"))
@@ -95,7 +100,7 @@ async def quick_log(product_id: int, request: Request):
     if meal not in MEALS:
         raise HTTPException(422, "Invalid meal")
 
-    with engine.begin() as db:
+    with db_engine.begin() as db:
         product = db.execute(
             text("SELECT id FROM tracker_food_products WHERE id=:id"),
             {"id": product_id},
@@ -115,12 +120,16 @@ async def quick_log(product_id: int, request: Request):
 
 
 @router.post("/food/favorite/{product_id}")
-async def toggle_favorite(product_id: int, request: Request):
+async def toggle_favorite(
+    product_id: int,
+    request: Request,
+    db_engine=Depends(get_food_engine392),
+):
     init_food_schema()
     form = await request.form()
     day = selected_day(form.get("day"))
 
-    with engine.begin() as db:
+    with db_engine.begin() as db:
         exists = db.execute(
             text("SELECT id FROM tracker_food_products WHERE id=:id"),
             {"id": product_id},
