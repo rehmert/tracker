@@ -7,17 +7,14 @@
     let requestGeneration=0;
     const status=$('pkRevisionStatus');
     const select=$('pkRevisionSelect');
-    async function api(url,method='GET',body){
-      const headers={};
-      if(body)headers['Content-Type']='application/json';
-      if(method!=='GET'){
-        const token=window.trackerCsrfToken?.();
-        if(token)headers['X-Tracker-CSRF']=token;
-      }
-      const r=await fetch(url,{method,credentials:'same-origin',cache:'no-store',headers,body:body?JSON.stringify(body):undefined});
-      if(!r.ok)throw Error('HTTP '+r.status+': '+(await r.text()).slice(0,120));
-      return r.json();
-    }
+    const api=(url,method='GET',body)=>
+      window.trackerPkClient265.request(
+        url,{
+          method,
+          ...(body===undefined?{}:{body})
+        }
+      );
+
     function invalidate(){
       requestGeneration++;
       preview=null;
