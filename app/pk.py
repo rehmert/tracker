@@ -1,6 +1,7 @@
 """Exploratory one-compartment exposure model. NOT a serum assay or dose advice."""
 from datetime import datetime, timedelta
 from math import exp, log, isfinite
+from .pk_budget329 import validate_series_budget
 import re
 
 LN2 = log(2)
@@ -70,6 +71,7 @@ def series(start: datetime, end: datetime, actual: list[tuple[datetime, float]],
         raise ValueError("Choose a date range of at most 730 days")
     if not (isfinite(step_hours) and 0.01 <= step_hours <= 168):
         raise ValueError("Invalid graph resolution")
+    validate_series_budget(start,end,actual,planned,step_hours)
     rows = []
     t = start
     while t <= end:

@@ -6,6 +6,7 @@ reference implementation.
 from datetime import timedelta
 from math import exp,isfinite
 from . import pk
+from .pk_budget329 import validate_series_budget
 
 
 def series_fast(
@@ -19,6 +20,7 @@ def series_fast(
 
     if not isfinite(step_hours) or not .01<=step_hours<=168:
         raise ValueError('Invalid step')
+    validate_series_budget(start,end,actual,planned,step_hours)
 
     if not all(
         isfinite(x) and x>0
