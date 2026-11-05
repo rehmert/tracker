@@ -25,6 +25,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.backup import verify_backup
+from app.replication_storage413 import administrator_replication_context413
 
 NAME = re.compile(r"tracker-[A-Za-z0-9-]+\.zip\Z")
 RECEIPT = ".tracker-replica-receipt.json"
@@ -183,8 +184,27 @@ def main() -> int:
     parser.add_argument("--dest", type=Path, default=Path(
         os.getenv("TRACKER_BACKUP_REPLICA_DIR", "/tracker-backups")))
     parser.add_argument("--keep", type=int, default=90)
+    parser.add_argument(
+        "--context-check",
+        action="store_true",
+        help="Validate configured administrator replica paths without writes",
+    )
     args = parser.parse_args()
     try:
+        if args.context_check:
+            context = administrator_replication_context413(
+                destination=args.dest,
+            )
+            if Path(args.source).absolute() != context.primary:
+                raise ValueError(
+                    "Replica source does not match administrator backup root"
+                )
+            print("PASS: Administrator replication context valid")
+            print("Scope:", context.scope)
+            print("Primary:", context.primary)
+            print("Secondary:", context.secondary)
+            print("Database:", context.database)
+            return 0
         result = replicate(args.source, args.dest, args.keep)
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
         print(f"FAIL: Local replica verification: {error}", file=sys.stderr)
