@@ -8,6 +8,11 @@ import sqlite3
 import sys
 from pathlib import Path
 
+# Permit direct execution without a caller-supplied PYTHONPATH.
+APP_ROOT = Path(__file__).resolve().parents[1]
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
+
 
 def read_environment(path):
     values = {}

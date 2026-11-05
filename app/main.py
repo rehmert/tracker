@@ -38,6 +38,7 @@ from .routers import food_week379
 from .routers import food_search380
 from .routers import session_login385
 from .routers import account_security386
+from .routers import user_db_status389
 from .routers import inventory_timeline
 
 
@@ -161,6 +162,7 @@ app.include_router(food_week379.router)
 app.include_router(food_search380.router)
 app.include_router(session_login385.router)
 app.include_router(account_security386.router)
+app.include_router(user_db_status389.router)
 app.include_router(inventory_timeline.router)
 
 from .routers import consolidated_reports
