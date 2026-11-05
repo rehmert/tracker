@@ -1,0 +1,51 @@
+/* Release 381: compact nutrition previews for Android food search. */
+
+.food381-filter {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  cursor: pointer;
+  font-size: .9rem;
+  min-height: 44px;
+}
+
+.food381-filter input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex: 0 0 auto;
+}
+
+.food381-macro-preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .3rem;
+  margin-top: .5rem;
+}
+
+.food381-macro-preview span {
+  background: var(--panel, #f2f5f7);
+  border-radius: 6px;
+  padding: .35rem .2rem;
+  text-align: center;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.food381-basis {
+  display: block;
+  margin-top: .3rem;
+  opacity: .7;
+  font-size: .75rem;
+}
+
+@media (max-width: 520px) {
+  .food381-macro-preview {
+    gap: .2rem;
+  }
+
+  .food381-macro-preview span {
+    font-size: .75rem;
+    padding: .4rem .1rem;
+  }
+}

@@ -8,7 +8,8 @@
 <link rel="stylesheet" href="/static/css/tracker-food378.css?v=378">
 <link rel="stylesheet" href="/static/css/tracker-food379.css?v=379">
 <link rel="stylesheet" href="/static/css/tracker-food380.css?v=380">
-<script src="/static/js/tracker-food380.js?v=380" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-food381.css?v=381">
+<script src="/static/js/tracker-food380.js?v=381" defer></script>
 <script src="/static/js/tracker-food374.js?v=376" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Android-first food logging. Values from public databases and photos require package-label confirmation. Daily comparisons reflect only foods you log; a low total does not establish a nutrient deficiency.</p>
@@ -36,7 +37,7 @@
         {% if coverage[key] < food_count %}
         <small>Partial data: {{ coverage[key] }} of {{ food_count }} foods reported this nutrient</small>
         {% endif %}
-        <small>Target {{ targets[key] }} {{ info[1] }} · {% if totals[key] < targets[key] %}below{% elif totals[key] > targets[key] %}above{% else %}at{% endif %} entered target</small>
+        <small>Target {{ targets[key] }} {{ info[1] }} · {% if food_count == 0 or coverage[key] < food_count %}comparison unavailable (incomplete data){% elif totals[key] < targets[key] %}below{% elif totals[key] > targets[key] %}above{% else %}at{% endif %} entered target</small>
         {% else %}<small>No personal target set</small>{% endif %}
       </div>
       {% endfor %}
@@ -351,8 +352,8 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 <h2>Search Food Database by Name</h2>
 <p class="note">
 Find packaged foods you have not logged before.
-Search by product or brand name, then select a match
-to review its nutrition information before saving.
+Results display reported macros per 100 g, when available.
+Select a match to review its nutrition per serving before saving.
 </p>
 <form id="food380-search-form" class="food380-search">
 <label for="food380-query">Food or Brand Name
@@ -364,6 +365,10 @@ to review its nutrition information before saving.
  autocomplete="off"
  placeholder="e.g. Greek yogurt, protein bar"
  required>
+</label>
+<label class="food381-filter">
+<input type="checkbox" id="food381-nutrition-only">
+Show only products with reported macro data
 </label>
 <button type="submit" class="primary"
  id="food380-search-button">Search Foods</button>
@@ -387,7 +392,8 @@ Product data provided by
  rel="noopener noreferrer" target="_blank">
 Open Food Facts</a>.
 Confirm the product, serving size and nutrition label
-before recording your food.
+before recording your food. A missing macro value means
+unknown, not zero.
 </p>
 </section>
 <section id="food-add">

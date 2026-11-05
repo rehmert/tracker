@@ -9,6 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!form || !input || !status || !results || !button) return;
 
+  const nutritionOnly =
+    document.getElementById('food381-nutrition-only');
+
+  let lastProducts = [];
+  let searchVersion = 0;
+
   const nutrientKeys = [
     'energy', 'proteins', 'carbohydrates', 'fat',
     'fiber', 'sugars', 'saturated-fat', 'sodium',
@@ -107,7 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderProducts(products) {
     results.replaceChildren();
 
-    if (!products.length) {
+    const shown = nutritionOnly?.checked
+      ? products.filter(product => product.nutrition_available)
+      : products;
+
+    if (!shown.length) {
       status.textContent =
         'No matching products with usable barcodes were found. ' +
         'Try a more specific name or use manual entry.';
@@ -115,10 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     status.textContent =
-      'Found ' + products.length +
-      ' matching products. Choose the correct product.';
+      'Showing ' + shown.length + ' of ' + products.length +
+      ' matching products. Confirm the correct product.';
 
-    for (const product of products) {
+    for (const product of shown) {
       const card = document.createElement('article');
       card.className = 'food380-result';
 
@@ -144,9 +154,45 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       info.append(title, details);
+
+      const macro = product.macro_100g || {};
+      const preview = document.createElement('div');
+      preview.className = 'food381-macro-preview';
+
+      const labels = [
+        ['energy', 'kcal'],
+        ['proteins', 'P'],
+        ['carbohydrates', 'C'],
+        ['fat', 'F']
+      ];
+
+      for (const [key, label] of labels) {
+        const item = document.createElement('span');
+        const value = macro[key];
+
+        item.textContent =
+          label + ' ' +
+          (typeof value === 'number' ? value : '?');
+
+        preview.append(item);
+      }
+
+      const basis = document.createElement('small');
+      basis.className = 'food381-basis';
+      basis.textContent = product.nutrition_available
+        ? 'Reported per 100 g; ? = unknown'
+        : 'Nutrition not reported';
+
+      info.append(preview, basis);
       card.append(info, choose);
       results.append(card);
     }
+  }
+
+  if (nutritionOnly) {
+    nutritionOnly.addEventListener('change', () => {
+      if (lastProducts.length) renderProducts(lastProducts);
+    });
   }
 
   form.addEventListener('submit', async event => {
@@ -159,7 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const version = ++searchVersion;
     button.disabled = true;
+    lastProducts = [];
     results.replaceChildren();
     status.textContent = 'Searching foods…';
 
@@ -175,13 +223,20 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(payload.detail || 'Search failed');
       }
 
-      renderProducts(payload.products || []);
+      if (version !== searchVersion) return;
+
+      lastProducts = payload.products || [];
+      renderProducts(lastProducts);
     } catch (error) {
-      status.textContent =
-        (error.message || 'Search unavailable') +
-        '. You can still use barcode scanning or manual entry.';
+      if (version === searchVersion) {
+        status.textContent =
+          (error.message || 'Search unavailable') +
+          '. You can still use barcode scanning or manual entry.';
+      }
     } finally {
-      button.disabled = false;
+      if (version === searchVersion) {
+        button.disabled = false;
+      }
     }
   });
 });

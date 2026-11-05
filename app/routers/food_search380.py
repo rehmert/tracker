@@ -2,6 +2,7 @@
 
 import json
 import re
+from math import isfinite
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request as URLRequest, urlopen
@@ -13,6 +14,39 @@ router = APIRouter()
 BASE_URL = "https://world.openfoodfacts.org/cgi/search.pl"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_RESULTS = 15
+
+
+def macro_preview(nutriments):
+    """Only report reliable, explicitly labeled per-100g macro data."""
+    if not isinstance(nutriments, dict):
+        return {}
+
+    mapping = {
+        "energy": "energy-kcal_100g",
+        "proteins": "proteins_100g",
+        "carbohydrates": "carbohydrates_100g",
+        "fat": "fat_100g",
+    }
+
+    preview = {}
+
+    for key, upstream_key in mapping.items():
+        raw = nutriments.get(upstream_key)
+
+        if raw is None or isinstance(raw, bool):
+            continue
+
+        try:
+            number = float(raw)
+        except (ValueError, TypeError, OverflowError):
+            continue
+
+        if not isfinite(number) or not 0 <= number <= 100000:
+            continue
+
+        preview[key] = round(number, 2)
+
+    return preview
 
 
 def normalize_results(payload):
@@ -49,11 +83,16 @@ def normalize_results(payload):
             product.get("serving_size") or ""
         ).strip()
 
+        macro = macro_preview(product.get("nutriments"))
+
         result.append({
             "barcode": code,
             "name": name[:160],
             "brand": brand[:100],
             "serving": serving[:80],
+            "macro_100g": macro,
+            "nutrition_available": bool(macro),
+            "nutrition_basis": "per 100 g",
         })
 
         if len(result) >= MAX_RESULTS:
@@ -80,7 +119,7 @@ def search_food_name(query):
         "page": "1",
         "fields": (
             "code,product_name,product_name_en,"
-            "brands,serving_size"
+            "brands,serving_size,nutriments"
         ),
     })
 
