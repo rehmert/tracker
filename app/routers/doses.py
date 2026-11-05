@@ -10,7 +10,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from .. import services, units as U, idempotency
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, SupplyCategory
 from ..inventory_lock import reserve_inventory_write, require_inventory_write
 from .. import manual_supplies
@@ -134,7 +134,7 @@ def _select_dose_vial(vials, views, compound_id, vial_id, planned_date,
 
 
 @router.get("/doses")
-def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, db: Session = Depends(get_db)):
+def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, db: Session = Depends(get_scoped_db390)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
@@ -233,7 +233,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
 
 @router.post("/doses/preview")
 def preview(request: Request, vial_id: str = Form(""), amount: str = Form(""),
-            unit: str = Form("mg"), db: Session = Depends(get_db)):
+            unit: str = Form("mg"), db: Session = Depends(get_scoped_db390)):
     """Live conversion for the log form. Arithmetic on what was typed; nothing is saved."""
     try:
         vid, value = int(vial_id), float(amount)
@@ -258,7 +258,7 @@ def preview(request: Request, vial_id: str = Form(""), amount: str = Form(""),
 async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str = Form(""),
                 amount: float = Form(...), unit: str = Form(...), kind: str = Form("dose"),
                 site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""), submission_token: str = Form(""),
-                db: Session = Depends(get_db), planned_compound_id: int | None = Form(None)):
+                db: Session = Depends(get_scoped_db390), planned_compound_id: int | None = Form(None)):
     def reject_dose(message: str):
         """Release the inventory reservation before returning an error."""
         db.rollback()
@@ -342,7 +342,7 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
 
 
 @router.delete("/doses/{did}")
-def delete_dose(did: int, db: Session = Depends(get_db)):
+def delete_dose(did: int, db: Session = Depends(get_scoped_db390)):
     require_inventory_write(db)
     d = db.get(DoseLog, did)
     if d is None:
@@ -374,7 +374,7 @@ def _correction_available_supplies(supplies, used):
 
 
 @router.get("/doses/{did}/edit")
-def edit_page(did: int, request: Request, db: Session = Depends(get_db)):
+def edit_page(did: int, request: Request, db: Session = Depends(get_scoped_db390)):
     d = db.get(DoseLog, did)
     if not d: raise HTTPException(404)
     # Match the existing server-side count-category rule.
@@ -412,7 +412,7 @@ def edit_page(did: int, request: Request, db: Session = Depends(get_db)):
 @router.post("/doses/{did}/edit")
 async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amount: float = Form(...),
                unit: str = Form(...), kind: str = Form("dose"), site: str = Form(""),
-               notes: str = Form(""), db: Session = Depends(get_db)):
+               notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         raise HTTPException(409, "Inventory is busy. Please retry.")
     d = db.get(DoseLog, did)
@@ -460,7 +460,7 @@ def dose_workspace(
     planned_time: str = "",
     planned_amount: float | None = None,
     planned_unit: str = "",
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """Read-only overview; recording uses the existing /doses route."""
 

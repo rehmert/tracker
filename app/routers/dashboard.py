@@ -10,7 +10,7 @@ from .. import config, metrics, services, charts
 from ..sparklines import sparkline
 from ..today import schedule_summary
 from ..projection_exclusions import exclusions_for
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import DoseLog, Vial, VitalReading, Protocol
 from ..templating import render
 from ..units import to_base, parse_unit, UnitError
@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.get("/")
-def home(request: Request, db: Session = Depends(get_db)):
+def home(request: Request, db: Session = Depends(get_scoped_db390)):
     protocols = list(db.scalars(select(Protocol).order_by(Protocol.name)))
     inventory_by_compound = defaultdict(float)
     vials = list(db.scalars(select(Vial).order_by(Vial.id.desc())))

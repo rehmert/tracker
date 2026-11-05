@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import charts, config, metrics, services
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import VitalReading
 from ..templating import render
 
@@ -26,7 +26,7 @@ def _opt(text: str, cast):
 
 @router.get("/vitals")
 def vitals_page(request: Request, days: int = 90, events: int = 1,
-                db: Session = Depends(get_db)):
+                db: Session = Depends(get_scoped_db390)):
     days = days if days in RANGES else 90
     now = datetime.now()
     readings_query = select(VitalReading)
@@ -90,7 +90,7 @@ def vitals_page(request: Request, days: int = 90, events: int = 1,
 @router.post("/vitals")
 def add_reading(measured_at: str = Form(""), weight: str = Form(""), weight_unit: str = Form("kg"),
                 systolic: str = Form(""), diastolic: str = Form(""), pulse: str = Form(""),
-                context: str = Form(""), notes: str = Form(""), db: Session = Depends(get_db)):
+                context: str = Form(""), notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
     try:
         w = _opt(weight, float)
         kg = metrics.weight_to_kg(w, weight_unit) if w is not None else None
@@ -116,7 +116,7 @@ def edit_reading_page(
     request: Request,
     days: int = 90,
     events: int = 1,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     reading = db.get(VitalReading, rid)
     if reading is None:
@@ -156,7 +156,7 @@ def update_reading(
     notes: str = Form(""),
     days: int = Form(90),
     events: int = Form(1),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     reading = db.get(VitalReading, rid)
     if reading is None:
@@ -216,7 +216,7 @@ def update_reading(
 
 
 @router.delete("/vitals/{rid}")
-def delete_reading(rid: int, db: Session = Depends(get_db)):
+def delete_reading(rid: int, db: Session = Depends(get_scoped_db390)):
     r = db.get(VitalReading, rid)
     if r is None:
         raise HTTPException(404, "Reading not found")
