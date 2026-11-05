@@ -43,6 +43,7 @@
       <span>Weight</span>
       <input type="number"
              name="weight"
+             inputmode="decimal"
              step="any"
              min="0"
              value="{{ weight if weight is not none else '' }}">
@@ -62,6 +63,7 @@
       <span>Systolic BP</span>
       <input type="number"
              name="systolic"
+             inputmode="numeric"
              step="1"
              value="{{ reading.systolic if reading.systolic is not none else '' }}">
     </label>
@@ -70,6 +72,7 @@
       <span>Diastolic BP</span>
       <input type="number"
              name="diastolic"
+             inputmode="numeric"
              step="1"
              value="{{ reading.diastolic if reading.diastolic is not none else '' }}">
     </label>
@@ -78,6 +81,7 @@
       <span>Pulse (BPM)</span>
       <input type="number"
              name="pulse"
+             inputmode="numeric"
              step="1"
              value="{{ reading.pulse_bpm if reading.pulse_bpm is not none else '' }}">
     </label>
