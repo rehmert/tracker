@@ -179,8 +179,9 @@ def replicate(primary: Path, secondary: Path, keep: int = 90) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=Path(
-        os.getenv("TRACKER_BACKUP_DIR", "/opt/tracker/backups")))
+    # No explicit --source means scheduled administrator replication.
+    # Manual --source runs retain their existing independent behavior.
+    parser.add_argument("--source", type=Path, default=None)
     parser.add_argument("--dest", type=Path, default=Path(
         os.getenv("TRACKER_BACKUP_REPLICA_DIR", "/tracker-backups")))
     parser.add_argument("--keep", type=int, default=90)
@@ -195,7 +196,10 @@ def main() -> int:
             context = administrator_replication_context413(
                 destination=args.dest,
             )
-            if Path(args.source).absolute() != context.primary:
+            if (
+                args.source is not None
+                and Path(args.source).absolute() != context.primary
+            ):
                 raise ValueError(
                     "Replica source does not match administrator backup root"
                 )
@@ -205,7 +209,25 @@ def main() -> int:
             print("Secondary:", context.secondary)
             print("Database:", context.database)
             return 0
-        result = replicate(args.source, args.dest, args.keep)
+
+        if args.source is None:
+            # Scheduled/default operation uses validated admin roots.
+            # No archive is copied or pruned if preflight fails.
+            context = administrator_replication_context413(
+                destination=args.dest,
+            )
+            result = replicate(
+                context.primary,
+                context.secondary,
+                args.keep,
+            )
+        else:
+            # Explicit manual/fixture source retains legacy semantics.
+            result = replicate(
+                args.source,
+                args.dest,
+                args.keep,
+            )
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
         print(f"FAIL: Local replica verification: {error}", file=sys.stderr)
         return 1
