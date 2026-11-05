@@ -139,7 +139,13 @@ def verify_admin(username, password):
                 WHERE username=? AND occurred_at>=?
             """, (username, now - 900)).fetchone()[0]
 
-            if count >= 8:
+            # Bound attacks against alternate usernames too.
+            global_attempts = db.execute("""
+                SELECT COUNT(*) FROM failures
+                WHERE occurred_at>=?
+            """, (now - 900,)).fetchone()[0]
+
+            if count >= 8 or global_attempts >= 40:
                 return False
 
             record = db.execute("""
@@ -248,3 +254,130 @@ def safe_next(value):
         return "/"
 
     return value
+
+
+def current_admin(token):
+    """Return admin identity only for a valid current session."""
+    if session_user(token) != 1:
+        return None
+
+    with connect() as db:
+        row = db.execute("""
+            SELECT username FROM users
+            WHERE id=1 AND enabled=1
+        """).fetchone()
+    return row[0] if row else None
+
+
+def session_overview(token):
+    """Return count and expiry of this administrator's sessions."""
+    if session_user(token) != 1:
+        raise PermissionError("Valid session required")
+
+    now = int(time.time())
+    current = hashlib.sha256(token.encode()).hexdigest()
+
+    with connect() as db:
+        rows = db.execute("""
+            SELECT token_hash, expires_at
+            FROM sessions
+            WHERE user_id=1 AND expires_at>?
+            ORDER BY expires_at DESC
+        """, (now,)).fetchall()
+
+    return [
+        {
+            "current": hmac.compare_digest(row[0], current),
+            "expires_at": row[1],
+        }
+        for row in rows
+    ]
+
+
+def revoke_other_sessions(token):
+    if session_user(token) != 1:
+        raise PermissionError("Valid session required")
+
+    current = hashlib.sha256(token.encode()).hexdigest()
+
+    with connect() as db:
+        result = db.execute("""
+            DELETE FROM sessions
+            WHERE user_id=1 AND token_hash<>?
+        """, (current,))
+
+    return result.rowcount
+
+
+def change_password(token, current_password, new_password):
+    """Atomically change credentials and revoke all sessions."""
+    if session_user(token) != 1:
+        raise PermissionError("Valid session required")
+
+    if (
+        not isinstance(new_password, str)
+        or not 12 <= len(new_password) <= 1024
+        or not isinstance(current_password, str)
+        or len(current_password) > 1024
+        or hmac.compare_digest(
+            current_password.encode(), new_password.encode()
+        )
+    ):
+        return False
+
+    with connect() as db:
+        db.execute("BEGIN IMMEDIATE")
+        row = db.execute("""
+            SELECT salt, password_hash FROM users
+            WHERE id=1 AND enabled=1
+        """).fetchone()
+
+        if not row:
+            return False
+
+        supplied = password_digest(current_password, row[0])
+        if not hmac.compare_digest(supplied, row[1]):
+            return False
+
+        salt = secrets.token_bytes(16)
+        replacement = password_digest(new_password, salt)
+
+        db.execute("""
+            UPDATE users
+            SET salt=?, password_hash=?
+            WHERE id=1 AND enabled=1
+        """, (salt, replacement))
+
+        db.execute("DELETE FROM sessions WHERE user_id=1")
+        db.execute("DELETE FROM failures")
+        db.commit()
+
+    return True
+
+
+def recover_admin(new_password):
+    """Local privileged recovery; revoke all sessions."""
+    if not isinstance(new_password, str) or not 12 <= len(new_password) <= 1024:
+        raise ValueError("New password must be 12–1024 characters")
+
+    with connect() as db:
+        db.execute("BEGIN IMMEDIATE")
+        row = db.execute(
+            "SELECT id FROM users WHERE id=1"
+        ).fetchone()
+
+        if not row:
+            raise RuntimeError("Administrator account missing")
+
+        salt = secrets.token_bytes(16)
+        hashed = password_digest(new_password, salt)
+
+        db.execute("""
+            UPDATE users
+            SET salt=?, password_hash=?, enabled=1
+            WHERE id=1
+        """, (salt, hashed))
+
+        db.execute("DELETE FROM sessions")
+        db.execute("DELETE FROM failures")
+        db.commit()

@@ -37,6 +37,7 @@ from .routers import food_review378
 from .routers import food_week379
 from .routers import food_search380
 from .routers import session_login385
+from .routers import account_security386
 from .routers import inventory_timeline
 
 
@@ -71,7 +72,12 @@ async def tracker_response_protection(request, call_next):
     session_auth_post = (
         session_auth385.enabled()
         and request.method.upper() == "POST"
-        and request.url.path in ("/login", "/logout")
+        and request.url.path in (
+            "/login",
+            "/logout",
+            "/account/password",
+            "/account/sessions/revoke-others",
+        )
     )
 
     if (
@@ -94,7 +100,11 @@ async def tracker_response_protection(request, call_next):
         csrf_report = await report_status(request)
         if (
             not (
-                request.url.path == "/login"
+                request.url.path in (
+                    "/login",
+                    "/account/password",
+                    "/account/sessions/revoke-others",
+                )
                 and session_auth385.enabled()
             )
             and reject_write(
@@ -150,6 +160,7 @@ app.include_router(food_review378.router)
 app.include_router(food_week379.router)
 app.include_router(food_search380.router)
 app.include_router(session_login385.router)
+app.include_router(account_security386.router)
 app.include_router(inventory_timeline.router)
 
 from .routers import consolidated_reports

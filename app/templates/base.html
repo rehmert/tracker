@@ -122,6 +122,11 @@
     <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</span><a href="/" aria-label="Overview">Overview</a></div>
     <div class="workspace-toolbar" aria-label="Workspace tools">
       {% if tracker_session_login_enabled() %}
+      <a href="/account/security"
+         style="display:inline-flex;align-items:center;
+                min-height:40px;padding:0 10px">
+        Account Security
+      </a>
       <form method="post" action="/logout"
             style="display:inline-flex;align-items:center">
         <button type="submit" style="min-height:40px">
