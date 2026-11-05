@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run from project root: python -m scripts.tracker_backup [create|verify|list].
+"""Run from project root: python -m scripts.tracker_backup [create|verify|list|context-check].
 
 Scheduled 'create' now requires a full isolated restore before pruning and
 records a private, point-in-time recovery receipt for the newest archive.
@@ -38,11 +38,36 @@ def main():
         print("Data directory:", context.data_dir)
         print("Archive directory:", context.backup_dir)
     elif args.action == "create":
-        archive = create_backup()
+        # Validate all storage roots before any write begins.
+        context = administrator_context410()
+
+        archive = Path(create_backup(
+            data_dir=context.data_dir,
+            backup_dir=context.backup_dir,
+        )).absolute()
+
+        # Do not verify or prune a backup located outside the
+        # administrator archive directory. Never follow an
+        # unexpected archive symlink.
+        if (
+            archive.parent != context.backup_dir
+            or archive.is_symlink()
+            or not archive.is_file()
+        ):
+            raise ValueError(
+                "Backup result is outside authorized archive storage"
+            )
+
         print(f"Created and verified {archive}", flush=True)
         verify_restorable(archive)
-        print("PASS: Scheduled backup passed isolated restore", flush=True)
-        print(f"Pruned {len(prune_backups())} old backups")
+        print(
+            "PASS: Scheduled backup passed isolated restore",
+            flush=True,
+        )
+        removed = prune_backups(
+            backup_dir=context.backup_dir,
+        )
+        print(f"Pruned {len(removed)} old backups")
     elif args.action == "verify":
         if not args.archive:
             parser.error("verify requires archive path")

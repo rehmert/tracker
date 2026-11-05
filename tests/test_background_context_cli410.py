@@ -28,9 +28,11 @@ def test_existing_create_restore_gate_remains():
         ROOT / "scripts" / "tracker_backup.py"
     ).read_text()
 
-    assert "archive = create_backup()" in source
+    assert "context = administrator_context410()" in source
+    assert "data_dir=context.data_dir" in source
+    assert "backup_dir=context.backup_dir" in source
     assert "verify_restorable(archive)" in source
-    assert "prune_backups()" in source
+    assert "removed = prune_backups(" in source
 
 
 def test_cli_does_not_enable_secondary_users():
