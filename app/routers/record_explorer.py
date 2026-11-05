@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.engine import make_url
 
 from .. import config
+from ..read_only_policy305 import VIEWER_COLUMNS
 
 router = APIRouter(prefix="/record-explorer")
 
@@ -282,7 +283,7 @@ def database_explorer(
     from urllib.parse import urlencode
 
     with database() as db:
-        available = tables(db)
+        available = tables(db) & set(VIEWER_COLUMNS)
 
         if not table:
             links = [
@@ -303,7 +304,10 @@ def database_explorer(
         if table not in available:
             raise HTTPException(404, "Table unavailable")
 
-        fields = columns(db, table)
+        fields = [
+            name for name in columns(db, table)
+            if name in VIEWER_COLUMNS[table]
+        ]
 
         if not fields:
             raise HTTPException(400, "No viewable columns")
