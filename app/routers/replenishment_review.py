@@ -10,7 +10,7 @@ from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..forecasting import forecast_inventory
 from ..models import Compound
 from ..templating import render
@@ -224,7 +224,7 @@ def replenishment_review(
     history: int = Query(90),
     category: str = Query("attention"),
     q: str = Query("", max_length=120),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     horizon, history, category = parameters(
         horizon, history, category
@@ -252,7 +252,7 @@ def replenishment_csv(
     history: int = Query(90),
     category: str = Query("attention"),
     q: str = Query("", max_length=120),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     horizon, history, category = parameters(
         horizon, history, category

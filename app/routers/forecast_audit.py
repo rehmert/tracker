@@ -6,7 +6,7 @@ from collections import defaultdict
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from .inventory_forecast import build_rows
 
@@ -59,11 +59,11 @@ def audit_rows(db, days=28):
     return sorted(output, key=lambda r: (r['flag'] == 'Roughly covered', r['compound'].casefold(), r['unit']))
 
 @router.get('/forecast-audit')
-def forecast_audit(request: Request, db: Session = Depends(get_db)):
+def forecast_audit(request: Request, db: Session = Depends(get_scoped_db390)):
     return render(request, 'forecast_audit.html', rows=audit_rows(db), days=28)
 
 @router.get('/forecast-audit.csv')
-def forecast_audit_csv(db: Session = Depends(get_db)):
+def forecast_audit_csv(db: Session = Depends(get_scoped_db390)):
     stream = io.StringIO()
     writer = csv.writer(stream)
     writer.writerow(['Compound', 'Unit', 'Active protocols', 'Protocol items',

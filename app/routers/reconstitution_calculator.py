@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Vial
 from .. import services, units as U
 from ..reconstitution_math import calculate
@@ -20,7 +20,7 @@ router = APIRouter()
 def calculator_page(
     request: Request,
     vial_id: int | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     initial = None
 

@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import (
     Protocol,
     ProtocolRevision,
@@ -82,7 +82,7 @@ def flatten(value, prefix=""):
 
 
 @router.get("/protocol-tools")
-def protocol_tools(db: Session = Depends(get_db)):
+def protocol_tools(db: Session = Depends(get_scoped_db390)):
     protocols = list(db.scalars(
         select(Protocol).order_by(Protocol.name)
     ))
@@ -149,7 +149,7 @@ def compare_protocol(
     pid: int,
     left: int = 0,
     right: int = 0,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     protocol = db.get(Protocol, pid)
 
@@ -266,7 +266,7 @@ def compare_protocol(
 @router.get("/protocol-tools/{pid}/template.json")
 def export_protocol_template(
     pid: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     protocol = db.get(Protocol, pid)
 
@@ -310,7 +310,7 @@ def money(cents):
 
 
 @router.get("/purchase-analysis")
-def purchase_analysis(db: Session = Depends(get_db)):
+def purchase_analysis(db: Session = Depends(get_scoped_db390)):
     purchases = list(db.scalars(
         select(Purchase).order_by(
             Purchase.purchased_on.desc(),

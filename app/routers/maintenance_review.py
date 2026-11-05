@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.engine import make_url
 
 from .. import config, backup
@@ -14,7 +14,11 @@ from ..replica_health import replica_health
 from ..storage_health import backup_storage_status
 from app.templating import render
 
-router = APIRouter()
+from ..direct_storage_guard397 import require_direct_storage397
+
+router = APIRouter(
+    dependencies=[Depends(require_direct_storage397)]
+)
 
 
 def _database_path():

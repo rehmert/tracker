@@ -12,7 +12,7 @@ from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Compound, Protocol, Vial
 from ..services import vial_views
 from ..templating import render
@@ -387,7 +387,7 @@ def build_fefo(db, today=None):
 @router.get("/fefo-forecast")
 def fefo_forecast(
     request: Request,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     rows, warnings = build_fefo(db)
 
@@ -402,7 +402,7 @@ def fefo_forecast(
 
 @router.get("/fefo-forecast.csv")
 def fefo_forecast_csv(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     rows, warnings = build_fefo(db)
 

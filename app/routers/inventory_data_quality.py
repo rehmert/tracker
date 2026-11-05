@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Vial
 from ..services import vial_views
 from ..templating import render
@@ -319,7 +319,7 @@ def inventory_data_quality(
     issue: str = Query("all"),
     overdue: str = Query("all"),
     sort: str = Query("oldest"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     if issue not in ("all", "undated", "expired"):
         issue = "all"
@@ -383,7 +383,7 @@ def inventory_data_quality_csv(
     issue: str = Query("all"),
     overdue: str = Query("all"),
     sort: str = Query("oldest"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     vials = list(
         db.scalars(
@@ -459,7 +459,7 @@ def inventory_data_quality_csv(
 def inventory_compound_review(
     request: Request,
     compound_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     """Read-only review of affected vials for one compound."""
     from fastapi import HTTPException

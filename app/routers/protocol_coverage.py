@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 import csv
 import io
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Protocol, ProtocolItem, Compound, Vial
 
 router = APIRouter()
@@ -52,12 +52,12 @@ def coverage_rows(db):
     return rows
 
 @router.get('/protocol-coverage')
-def protocol_coverage(request:Request, db:Session=Depends(get_db)):
+def protocol_coverage(request:Request, db:Session=Depends(get_scoped_db390)):
     rows=coverage_rows(db)
     return render(request, 'protocol_coverage.html', rows=rows, protocol_count=len(set(r['protocol_id'] for r in rows)))
 
 @router.get('/protocol-coverage.csv')
-def protocol_coverage_csv(db:Session=Depends(get_db)):
+def protocol_coverage_csv(db:Session=Depends(get_scoped_db390)):
     rows=coverage_rows(db)
     fields=['protocol','compound','planned','frequency','available','excluded_expired','excluded_closed','next_date','flag']
     buffer=io.StringIO()

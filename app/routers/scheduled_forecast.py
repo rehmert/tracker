@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Protocol
 from ..templating import render
 from .. import calendar as cal
@@ -84,12 +84,12 @@ def build_schedule(db, today=None):
     return rows,warnings
 
 @router.get('/scheduled-forecast')
-def scheduled_forecast(request:Request,db:Session=Depends(get_db)):
+def scheduled_forecast(request:Request,db:Session=Depends(get_scoped_db390)):
     rows,warnings=build_schedule(db)
     return render(request,'scheduled_forecast.html',rows=rows,warnings=warnings,horizons=HORIZONS)
 
 @router.get('/scheduled-forecast.csv')
-def scheduled_forecast_csv(db:Session=Depends(get_db)):
+def scheduled_forecast_csv(db:Session=Depends(get_scoped_db390)):
     rows,warnings=build_schedule(db)
     stream=io.StringIO()
     writer=csv.writer(stream)

@@ -4,7 +4,7 @@ import io
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from .scheduled_forecast import build_schedule, HORIZONS
 from .forecast_audit import audit_rows
@@ -164,7 +164,7 @@ def _planning_expiry_comparison(db, scheduled_rows, horizons):
 from .fefo_forecast import build_fefo
 
 @router.get("/planning-hub")
-def planning_hub(request: Request, db: Session = Depends(get_db)):
+def planning_hub(request: Request, db: Session = Depends(get_scoped_db390)):
     rows, warnings, unmatched = build_planning(db)
     expiry_comparisons, unmatched_expiry = _planning_expiry_comparison(db, rows, HORIZONS)
     fefo_rows, fefo_warnings = build_fefo(db)
@@ -172,7 +172,7 @@ def planning_hub(request: Request, db: Session = Depends(get_db)):
                   unmatched=unmatched, horizons=HORIZONS, expiry_comparisons=expiry_comparisons, unmatched_expiry=unmatched_expiry, fefo_rows=fefo_rows, fefo_warnings=fefo_warnings)
 
 @router.get("/planning-hub.csv")
-def planning_hub_csv(db: Session = Depends(get_db)):
+def planning_hub_csv(db: Session = Depends(get_scoped_db390)):
     rows, warnings, unmatched = build_planning(db)
     stream = io.StringIO()
     writer = csv.writer(stream)

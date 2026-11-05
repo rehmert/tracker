@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Vial, DoseLog, BlendComponent, Compound
 from ..templating import render
 from .inventory_forecast import normalized
@@ -76,11 +76,11 @@ def exposure_rows(db, today=None):
     return sorted(rows, key=lambda r:(-r["expiring"].get(28,0),r["compound"].casefold(),r["unit"]))
 
 @router.get("/expiry-exposure")
-def expiry_exposure(request:Request, db:Session=Depends(get_db)):
+def expiry_exposure(request:Request, db:Session=Depends(get_scoped_db390)):
     return render(request,"expiry_exposure.html",rows=exposure_rows(db),horizons=HORIZONS)
 
 @router.get("/expiry-exposure.csv")
-def expiry_exposure_csv(db:Session=Depends(get_db)):
+def expiry_exposure_csv(db:Session=Depends(get_scoped_db390)):
     stream=io.StringIO()
     writer=csv.writer(stream)
     writer.writerow(["Compound","Unit","Currently eligible vials","Current stock estimate",

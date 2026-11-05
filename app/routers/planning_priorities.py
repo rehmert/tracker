@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from .fefo_forecast import build_fefo, HORIZONS
 
@@ -214,7 +214,7 @@ def planning_priorities(
     horizon: int = Query(28),
     compound: str = Query("", max_length=120),
     category: str = Query("all"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     if horizon not in HORIZONS:
         horizon = 28
@@ -255,7 +255,7 @@ def planning_priorities_csv(
     horizon: int = Query(28),
     compound: str = Query("", max_length=120),
     category: str = Query("all"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_scoped_db390),
 ):
     if horizon not in HORIZONS:
         horizon = 28

@@ -4,7 +4,7 @@ import io
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from .inventory_forecast import build_rows
 
@@ -28,11 +28,11 @@ def compare_horizons(db):
     return sorted(result.values(), key=lambda r:(r['compound'].lower(),r['protocol'].lower()))
 
 @router.get('/forecast-horizons')
-def forecast_horizons(request: Request, db: Session = Depends(get_db)):
+def forecast_horizons(request: Request, db: Session = Depends(get_scoped_db390)):
     return render(request, 'forecast_horizons.html', rows=compare_horizons(db), horizons=HORIZONS)
 
 @router.get('/forecast-horizons.csv')
-def forecast_horizons_csv(db: Session = Depends(get_db)):
+def forecast_horizons_csv(db: Session = Depends(get_scoped_db390)):
     output=io.StringIO(); writer=csv.writer(output)
     writer.writerow(['Protocol','Compound','Unit','Eligible vials','Approx remaining',
         'Multiple items warning']+[f'Approx demand {d}d' for d in HORIZONS]+

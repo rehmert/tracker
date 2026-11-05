@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from ..db import get_db
+from ..scoped_db390 import get_scoped_db390
 from ..models import Protocol, ProtocolItem, Compound, Vial, DoseLog, BlendComponent
 from ..templating import render
 
@@ -102,11 +102,11 @@ def build_rows(db, days=28):
     return sorted(rows,key=lambda r:(r['status']!='No matching inventory',r['status']!='Below rough demand',r['compound'].lower(),r['protocol'].lower()))
 
 @router.get('/inventory-forecast')
-def inventory_forecast(request:Request, db:Session=Depends(get_db)):
+def inventory_forecast(request:Request, db:Session=Depends(get_scoped_db390)):
     return render(request,'inventory_forecast.html',rows=build_rows(db),horizon=28)
 
 @router.get('/inventory-forecast.csv')
-def inventory_forecast_csv(db:Session=Depends(get_db)):
+def inventory_forecast_csv(db:Session=Depends(get_scoped_db390)):
     buffer=io.StringIO(); writer=csv.writer(buffer)
     writer.writerow(['Protocol','Compound','Eligible vials','Excluded vials','Remaining (approx)','28-day demand (approx)','Unit','Weeks at average rate','Status','Caveat'])
     for r in build_rows(db):
