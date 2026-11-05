@@ -4,6 +4,7 @@ The supply ledger is only conclusive when all historical stock movements are
 represented by SupplyUsage and InventoryAdjustment rows. Historical manual edits,
 imports and deleted events may cause false discrepancies.
 """
+from collections import defaultdict
 from dataclasses import dataclass
 from math import isfinite
 from sqlalchemy import select
@@ -25,6 +26,31 @@ class Finding:
 def inspect_inventory(db: Session) -> list[Finding]:
     """Return findings without issuing any INSERT, UPDATE or DELETE."""
     findings: list[Finding] = []
+    # Bulk read each ledger once. Preserve existing Python arithmetic
+    # and Finding classification without changing inventory records.
+    usages_by_supply = defaultdict(list)
+    for usage in db.scalars(
+        select(SupplyUsage).order_by(SupplyUsage.id)
+    ):
+        usages_by_supply[usage.supply_id].append(usage)
+
+    adjustments_by_supply = defaultdict(list)
+    for adjustment in db.scalars(
+        select(InventoryAdjustment).order_by(InventoryAdjustment.id)
+    ):
+        adjustments_by_supply[adjustment.supply_id].append(adjustment)
+
+    doses_by_vial = defaultdict(list)
+    for dose in db.scalars(
+        select(DoseLog).order_by(DoseLog.id)
+    ):
+        doses_by_vial[dose.vial_id].append(dose)
+
+    transfers_by_vial = defaultdict(list)
+    for transfer in db.scalars(
+        select(BlendComponent).order_by(BlendComponent.id)
+    ):
+        transfers_by_vial[transfer.source_vial_id].append(transfer)
     for supply in db.scalars(select(Supply).order_by(Supply.id)):
         qty = float(supply.remaining_qty)
         purchased = float(supply.purchased_qty)
@@ -33,8 +59,8 @@ def inspect_inventory(db: Session) -> list[Finding]:
             continue
         if qty < -TOLERANCE or purchased < -TOLERANCE:
             findings.append(Finding('supply', supply.id, 'negative', 'Negative supply quantity', qty))
-        usages = list(db.scalars(select(SupplyUsage).where(SupplyUsage.supply_id == supply.id)))
-        adjustments = list(db.scalars(select(InventoryAdjustment).where(InventoryAdjustment.supply_id == supply.id).order_by(InventoryAdjustment.id)))
+        usages = usages_by_supply[supply.id]
+        adjustments = adjustments_by_supply[supply.id]
         if any(not isfinite(float(u.amount)) or float(u.amount) < 0 for u in usages):
             findings.append(Finding('supply', supply.id, 'invalid_usage', 'Invalid supply usage amount'))
             continue
@@ -47,8 +73,8 @@ def inspect_inventory(db: Session) -> list[Finding]:
                                     'Stored balance differs from available transaction history; review historical edits/imports',
                                     qty, expected))
     for vial in db.scalars(select(Vial).order_by(Vial.id)):
-        doses = db.scalars(select(DoseLog).where(DoseLog.vial_id == vial.id))
-        transfers = db.scalars(select(BlendComponent).where(BlendComponent.source_vial_id == vial.id))
+        doses = doses_by_vial[vial.id]
+        transfers = transfers_by_vial[vial.id]
         consumed = sum(float(d.amount_base) for d in doses) + sum(float(t.transferred_base) for t in transfers)
         if not isfinite(consumed):
             findings.append(Finding('vial', vial.id, 'nonfinite_consumption', 'Non-finite vial consumption'))
