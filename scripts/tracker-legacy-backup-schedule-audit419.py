@@ -175,6 +175,31 @@ def build_report(project=PROJECT, host=Path('/'), runner=subprocess.run, runtime
     else:
         units = {'is-active': 'not-queried', 'is-enabled': 'not-queried'}
 
+    # Unit alias symlinks are common in systemd installations. We do not
+    # follow them, and count them separately rather than hiding incomplete
+    # coverage among actionable inspection warnings.
+    def unit_alias_notice(message):
+        return (
+            message.startswith('Skipped symlink: ')
+            and any(
+                '/' + name + '/' in message
+                for name in (
+                    'etc/systemd/system',
+                    'run/systemd/system',
+                    'usr/lib/systemd/system',
+                    'lib/systemd/system',
+                )
+            )
+        )
+
+    skipped_unit_symlinks = sum(
+        unit_alias_notice(message) for message in warnings
+    )
+    warnings = [
+        message for message in warnings
+        if not unit_alias_notice(message)
+    ]
+
     entries.sort(key=lambda item: (item['scope'], item['location'], item['line']))
     return {
         'release': 419,
@@ -182,6 +207,7 @@ def build_report(project=PROJECT, host=Path('/'), runner=subprocess.run, runtime
         'legacy_references': [r for r in entries if r['kind'] == 'legacy_backup'],
         'verified_references': [r for r in entries if r['kind'] == 'verified_backup'],
         'files_inspected': counts,
+        'systemd_symlinks_skipped': skipped_unit_symlinks,
         'timer': units,
         'warnings': warnings,
         'coverage_complete': False,
@@ -207,7 +233,8 @@ def main():
         print('tracker-backup.timer: active=', report['timer']['is-active'],
               'enabled=', report['timer']['is-enabled'])
         print('Inspected files:', report['files_inspected'])
-        print('Inspection warnings:', len(report['warnings']))
+        print('Systemd unit symlinks skipped:', report['systemd_symlinks_skipped'])
+        print('Actionable inspection warnings:', len(report['warnings']))
         for warning in report['warnings'][:20]:
             print('WARNING:', warning)
         print('Coverage: LIMITED; no conclusion of legacy retirement')

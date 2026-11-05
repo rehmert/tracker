@@ -1,10 +1,8 @@
 #!/usr/bin/env sh
-# Run on the VM from an account with sudo. Adjust the user, backup dir and service name if yours differ.
+# Release 420: retired unsafe update entry point. No side effects.
 set -eu
-cd /opt/tracker
-sudo sh scripts/backup.sh "/mnt/backups"
-sudo -u tracker git pull --ff-only
-sudo -u tracker .venv/bin/pip install -q -r requirements.txt
-sudo systemctl restart tracker
-sleep 2
-curl -fsS http://127.0.0.1:8000/healthz && echo " ok"
+printf '%s\n' \
+  'BLOCKED: scripts/update.sh has been retired.' \
+  'Use the guarded scripts/tracker-release.sh workflow with pinned commits.' \
+  'This command has not changed code, dependencies, services, or data.' >&2
+exit 2
