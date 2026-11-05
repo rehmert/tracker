@@ -31,6 +31,12 @@
 
 <section>
   <h2 id="quick-dose-entry">Add an entry</h2>
+<nav class="tracker-mobile-log-links" aria-label="Quick dose logging">
+  <a href="#calendar-vial-picker">Confirm vial</a>
+  <a href="#tracker-dose-final-review">Review entry</a>
+  <a href="#tracker-dose-submit-373">Save dose</a>
+  <a href="/vitals#quick-vitals-entry">Log vitals</a>
+</nav>
 
 <div id="tracker-planned-handoff"
      class="tracker-planned-handoff"
@@ -121,7 +127,7 @@
           <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" data-vial-status="{{ v.status }}" {% if selected_vial_id is not none and v.id == selected_vial_id %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ v.status|replace('_',' ') }} · {{ d.remaining_base|amt(d.dim) }} left</option>
           {% endfor %}
         </select></label>
-      <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}"></label>
+      <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}" inputmode="decimal"></label>
       <label class="field"><span>Unit</span>
         <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == (planned_unit if planned_unit in DOSE_UNITS else 'mg') %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
     </div>
@@ -198,7 +204,7 @@
     </details>
     <div id="form-msg" class="wide"></div>
     <p class="note wide" id="dose-sequential-status" role="status" aria-live="polite"></p>
-    <div><button type="submit" class="primary">Add to log</button></div>
+    <div><button type="submit" class="primary" id="tracker-dose-submit-373">Add to log</button></div>
   </form>
   {% else %}
   {% if planned_handoff %}
