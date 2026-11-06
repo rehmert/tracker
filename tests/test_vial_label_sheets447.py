@@ -309,12 +309,13 @@ def test_download_requires_supported_format_and_has_safe_headers(monkeypatch):
         ids="1,2", layout="30x15x2", phase="auto",
         rotation=90, copies=1, fmt="png", db=object(),
     )
-    assert result.media_type == "application/zip"
+    assert result.media_type == "image/png"
     assert result.headers["cache-control"] == "private, no-store"
     assert result.headers["x-content-type-options"] == "nosniff"
     assert "attachment" in result.headers["content-disposition"]
-    with zipfile.ZipFile(io.BytesIO(result.body)) as archive:
-        assert archive.namelist() == ["vial-sheet-001.png"]
+    assert result.headers["content-disposition"].endswith('.png"')
+    assert result.body.startswith(bytes((137, 80, 78, 71, 13, 10, 26, 10)))
+    assert not zipfile.is_zipfile(io.BytesIO(result.body))
 
     with pytest.raises(HTTPException) as exc:
         vials.vial_label_sheets447_download(
@@ -333,8 +334,8 @@ def test_page_template_uses_exact_physical_print_sizes_and_selection_controls():
     assert 'name="phase"' in template
     assert 'name="rotation"' in template
     assert 'name="copies"' in template
-    assert "Download All PNG Sheets (ZIP)" in template
-    assert "Download All SVG Sheets (ZIP)" in template
+    assert "Download All PNG Sheets (one file)" in template
+    assert "Download All SVG Sheets (one file)" in template
     assert 'id="bulk-print-labels447"' in vial_page
     assert "tracker-vial-label-sheets447.js?v=447" in vial_page
     assert "tracker:bulk-selection-changed" in script
