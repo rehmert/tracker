@@ -919,6 +919,7 @@ button{{font-weight:700}}
 <body><main>
 <h1>My Inventory</h1>
 <p>Private workspace {uid} · DEV preview</p>
+<p><a href="/secondary/reconcile">Reconcile Vial Inventory</a></p>
 {reconstitution_link}
 <nav><a href="/secondary/overview">Overview</a>
 <a href="/secondary/vitals">Vitals</a>
@@ -1094,6 +1095,234 @@ async def private_reconstitution_submit436(request: Request):
         raise HTTPException(422, result["error"])
     return RedirectResponse(
         "/secondary/inventory",
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+# Release 437: read-only vial reconciliation and gated audited corrections.
+from .worker_reconciliation437 import (
+    request_reconciliation437, form_correction437,
+)
+
+
+def corrections_enabled437():
+    return (
+        preview_enabled()
+        and os.getenv("TRACKER_SECONDARY_VIAL_CORRECTIONS437", "0") == "1"
+    )
+
+
+def _reconciliation_number437(value, unit):
+    return escape(f"{float(value):g} {unit}")
+
+
+@preview_app.get("/reconcile")
+def reconcile_page437(request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+    try:
+        report = request_reconciliation437(uid, "report")
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private reconciliation unavailable") from None
+
+    results = []
+    for item in report["items"]:
+        ref = f'/secondary/reconcile/vials/{item["id"]}'
+        header = escape(item["compound"]) + " · " + escape(
+            item["label"] or f'Vial #{item["id"]}'
+        )
+        warning = "".join(
+            "<li>" + escape(value) + "</li>"
+            for value in item["warnings"]
+        )
+        results.append(
+            '<section><h2><a href="' + ref + '">' + header + '</a></h2>'
+            + "<p>Status: " + escape(item["status"])
+            + " · On-hand: " + _reconciliation_number437(
+                item["remaining"], item["unit"],
+            )
+            + " · Consumed: " + _reconciliation_number437(
+                item["used"], item["unit"],
+            )
+            + " · Original: " + _reconciliation_number437(
+                item["total"], item["unit"],
+            ) + "</p>"
+            + ("<ul>" + warning + "</ul>" if warning else "")
+            + "</section>"
+        )
+    listing = "".join(results) or "<p>No vials recorded.</p>"
+
+    html = f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Inventory Reconciliation · Tracker DEV</title>
+<style>
+body{{font:16px system-ui,sans-serif;max-width:700px;margin:auto;padding:16px}}
+section{{border:1px solid #9995;border-radius:10px;padding:12px;margin:12px 0}}
+h2{{font-size:1.1rem;margin:0}}
+p{{line-height:1.5}}
+</style></head><body><main>
+<h1>Vial Inventory Reconciliation</h1>
+<p>Private workspace {uid} · Read-only stock accounting</p>
+<p><a href="/secondary/inventory">My Inventory</a></p>
+<p>Tracked quantity reflects vial contents minus recorded administrations,
+waste, and blend transfers. It does not verify physical stock.</p>
+{listing}
+<p>Showing up to 100 most recent vials.</p>
+</main></body></html>'''
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+
+@preview_app.get("/reconcile/vials/{vial_id}")
+def reconcile_vial_detail437(vial_id: int, request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+    if not 1 <= vial_id <= 2147483647:
+        raise HTTPException(404, "Vial not found")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+    try:
+        report = request_reconciliation437(uid, "detail", vial_id=vial_id)
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private vial detail unavailable") from None
+    if report["status"] == "missing":
+        raise HTTPException(404, "Vial not found")
+
+    item = report["item"]
+    audits = report["audit"]
+    warnings = "".join(
+        "<li>" + escape(warning) + "</li>"
+        for warning in item["warnings"]
+    ) or "<li>No reconciliation warnings.</li>"
+    audit_html = ""
+    for event in audits:
+        changes = []
+        for field in ("label", "lot", "cap_color", "status"):
+            prior = event["before"].get(field, "")
+            later = event["after"].get(field, "")
+            if prior != later:
+                changes.append(
+                    "<li>" + escape(field.replace("_", " ").title())
+                    + ": " + escape(str(prior)) + " → "
+                    + escape(str(later)) + "</li>"
+                )
+        audit_html += (
+            '<section><strong>' + escape(event["at"])
+            + " · " + escape(event["action"])
+            + '</strong><p>' + escape(event["reason"])
+            + '</p><ul>' + "".join(changes) + "</ul></section>"
+        )
+    audit_html = audit_html or "<p>No vial correction history recorded.</p>"
+
+    edit = ""
+    token = None
+    if corrections_enabled437():
+        token = issue_token(load_key())
+        nonce = str(uuid4())
+        if item["status"] == "sealed":
+            statuses = ("sealed", "discarded")
+        elif item["status"] == "in_use":
+            statuses = ("in_use", "finished", "discarded")
+        else:
+            statuses = (item["status"],)
+        choices = "".join(
+            '<option value="' + state + '"'
+            + (" selected" if state == item["status"] else "")
+            + ">" + state.replace("_", " ").title() + "</option>"
+            for state in statuses
+        )
+        edit = f'''<section><h2>Audited Vial Correction</h2>
+<p>Only metadata and one-way lifecycle closures can change here.
+Contents, concentration, and dose history cannot be edited.</p>
+<form method="post" action="/secondary/reconcile/correct">
+<input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
+<input type="hidden" name="submission_token" value="{nonce}">
+<input type="hidden" name="vial_id" value="{item["id"]}">
+<input type="hidden" name="snapshot" value="{item["snapshot"]}">
+<label>Label<input name="label" maxlength="160"
+value="{escape(item["label"], quote=True)}"></label>
+<label>Lot<input name="lot" maxlength="80"
+value="{escape(item["lot"], quote=True)}"></label>
+<label>Cap Color<input name="cap_color" maxlength="60"
+value="{escape(item["cap_color"], quote=True)}"></label>
+<label>Status<select name="status">{choices}</select></label>
+<label>Reason for correction (required, 8–400 characters)
+<textarea name="reason" minlength="8" maxlength="400"
+rows="3" required></textarea></label>
+<button type="submit">Save Audited Correction</button>
+</form></section>'''
+
+    html = f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Vial Reconciliation · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:630px;margin:auto;padding:16px}}
+section{{border:1px solid #9995;border-radius:12px;padding:14px;margin:14px 0}}
+label{{display:block;margin:12px 0}}
+input,select,textarea,button{{font:inherit;width:100%;min-height:46px;padding:10px}}
+button{{font-weight:700}}li{{overflow-wrap:anywhere}}
+</style></head><body><main>
+<h1>{escape(item["compound"])} · {escape(item["label"] or f'Vial #{vial_id}')}</h1>
+<p><a href="/secondary/reconcile">Back to Reconciliation</a></p>
+<p>Current status: <strong>{escape(item["status"])}</strong></p>
+<p>Original: {_reconciliation_number437(item["total"], item["unit"])}</p>
+<p>Recorded use: {_reconciliation_number437(item["used"], item["unit"])}</p>
+<p>Remaining: {_reconciliation_number437(item["remaining"], item["unit"])}</p>
+<p>Doses: {item["dose_count"]} · Reconstitutions: {item["reconstitution_count"]}</p>
+<section><h2>Reconciliation Warnings</h2><ul>{warnings}</ul></section>
+{edit}
+<section><h2>Recent Audit History</h2>{audit_html}</section>
+</main></body></html>'''
+    response = HTMLResponse(html, headers={"Cache-Control": "no-store"})
+    return _csrf_response(response, token) if token is not None else response
+
+
+@preview_app.post("/reconcile/correct")
+async def reconcile_vial_post437(request: Request):
+    require_preview()
+    if not corrections_enabled437():
+        raise HTTPException(404, "Vial corrections unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary sign-in required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+    try:
+        payload = form_correction437(form)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    try:
+        report = request_reconciliation437(uid, "correct", payload=payload)
+    except (RuntimeError, OSError, PermissionError, ValueError):
+        raise HTTPException(503, "Private vial correction unavailable") from None
+
+    if report["status"] == "duplicate":
+        raise HTTPException(409, "This correction submission was already used")
+    if report["status"] == "stale":
+        raise HTTPException(409, "Vial changed; refresh before correcting it")
+    if report["status"] == "rejected":
+        raise HTTPException(422, report["error"])
+
+    return RedirectResponse(
+        f'/secondary/reconcile/vials/{payload["vial_id"]}',
         status_code=303,
         headers={"Cache-Control": "no-store"},
     )
