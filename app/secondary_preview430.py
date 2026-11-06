@@ -1,4 +1,4 @@
-"""DEV-only, explicitly enabled secondary-user preview and vitals pilot.
+"""DEV-only, explicitly enabled secondary-user gateway and controls.
 
 This is not an application router or a general HTTP proxy.
 Staged user credentials remain disabled for normal Tracker login.
@@ -44,6 +44,7 @@ def preview_enabled():
         config.instance_label() == "DEV"
         and auth.enabled()
         and os.getenv("TRACKER_SECONDARY_PREVIEW430", "0") == "1"
+        and os.getenv("TRACKER_SECONDARY_LOCKDOWN440", "0") != "1"
     )
 
 
@@ -238,7 +239,7 @@ input,button{{display:block;width:100%;padding:12px;margin:10px 0;font:inherit}}
 <body>
 <main>
 <h1>Private Workspace Preview</h1>
-<p>DEV only · Read-only overview</p>
+<p>DEV only · Private workspace pilot</p>
 {warning}
 <form method="post" action="/secondary/login">
 <input type="hidden" name="csrf_token" value="{token}">
@@ -340,10 +341,11 @@ def overview_get(request: Request):
 <body>
 <main>
 <h1>Private Workspace Overview</h1>
-<p>DEV-only read-only preview. Account {uid}.</p>
+<p>DEV-only private workspace pilot. Account {uid}.</p>
 <p><a href="/secondary/vitals">Recent Vitals</a> ·
 <a href="/secondary/doses">Recent Doses</a> ·
-<a href="/secondary/inventory">My Inventory</a></p>
+<a href="/secondary/inventory">My Inventory</a> ·
+<a href="/secondary/readiness">Workspace Readiness</a></p>
 <table>{rows}</table>
 <form method="post" action="/secondary/logout">
 <input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
@@ -1579,4 +1581,97 @@ async def secondary_supply_use_submit439(request: Request):
     return RedirectResponse(
         "/secondary/supplies/use", status_code=303,
         headers={"Cache-Control": "no-store"},
+    )
+
+
+# Release 440: private capability readiness, without enabling new features.
+# TRACKER_SECONDARY_LOCKDOWN440=1 is a gateway-level emergency denial.
+# It does not erase credentials or private data.
+@preview_app.get("/readiness")
+def secondary_readiness440(request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        report = read_workspace_overview429(uid)
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(
+            503, "Private workspace readiness unavailable"
+        ) from None
+    if report.get("user_id") != uid:
+        raise HTTPException(503, "Workspace identity mismatch")
+
+    capabilities = (
+        ("vitals", "Log Vitals", vital_writes_enabled433(),
+         "/secondary/vitals/new"),
+        ("doses", "Log Doses", dose_writes_enabled434(),
+         "/secondary/doses/new"),
+        ("inventory", "Create Compounds and Vials", inventory_writes_enabled435(),
+         "/secondary/inventory"),
+        ("reconstitution", "Record Reconstitution", reconstitution_enabled436(),
+         "/secondary/reconstitution"),
+        ("vial_corrections", "Correct Vial Metadata", corrections_enabled437(),
+         "/secondary/reconcile"),
+        ("supply_intake", "Add Supply Inventory", supply_writes_enabled438(),
+         "/secondary/supplies"),
+        ("supply_use", "Record Supply Use", supply_use_enabled439(),
+         "/secondary/supplies/use"),
+    )
+    capabilities_html = "".join(
+        '<tr data-feature="' + key + '"><th scope="row">'
+        + escape(title) + "</th><td>"
+        + ("Enabled (DEV)" if enabled else "Disabled")
+        + "</td><td>"
+        + (
+            '<a href="' + escape(destination, quote=True)
+            + '">Open</a>'
+            if enabled else "—"
+        )
+        + "</td></tr>"
+        for key, title, enabled, destination in capabilities
+    )
+
+    counts = report["counts"]
+    counts_html = "".join(
+        "<tr><th scope=\"row\">"
+        + escape(key.replace("_", " ").title())
+        + "</th><td>" + str(int(value)) + "</td></tr>"
+        for key, value in counts.items()
+    )
+    html = f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Workspace Readiness · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:650px;margin:auto;padding:16px}}
+table{{border-collapse:collapse;width:100%;font-size:.92rem}}
+th,td{{border-bottom:1px solid #9995;padding:10px 6px;text-align:left}}
+.scroll{{overflow-x:auto}} p{{line-height:1.5}}
+</style></head><body><main>
+<h1>Workspace Readiness</h1>
+<p>DEV-only secondary workspace {uid} · Isolated data and login preview</p>
+<p><a href="/secondary/overview">Overview</a> ·
+<a href="/secondary/inventory">Inventory</a></p>
+<p>These controls do not activate normal Tracker multi-user login.
+Only the enabled pilot operations below permit writes.</p>
+<h2>Workspace Records</h2>
+<div class="scroll"><table>{counts_html}</table></div>
+<h2>Write Permissions</h2>
+<div class="scroll"><table>
+<thead><tr><th>Operation</th><th>Status</th><th>Page</th></tr></thead>
+<tbody>{capabilities_html}</tbody>
+</table></div>
+<p>Operators can suspend all secondary gateway access by setting
+<code>TRACKER_SECONDARY_LOCKDOWN440=1</code> in the DEV service environment.
+Production remains unavailable.</p>
+</main></body></html>'''
+    return HTMLResponse(
+        html, headers={"Cache-Control": "no-store"}
     )
