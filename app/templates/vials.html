@@ -3,6 +3,7 @@
 {% block title %}Vials{% endblock %}
 {% block content %}
 <script defer src="/static/js/tracker-bulk-selection.js?v=bulk-selection-batch-20261101"></script>
+<script defer src="/static/js/tracker-vial-label-sheets447.js?v=447"></script>
 <link rel="stylesheet" href="/static/css/tracker-bulk-editor-guided.css?v=20261103b">
 <script defer src="/static/js/tracker-bulk-editor-guided.js?v=20261104-b37"></script>
 <link rel="stylesheet" href="/static/css/tracker-bulk-review-shortcuts.css?v=20261103">
@@ -195,11 +196,16 @@
   <button type="button" id="bulk-select-all">Select all displayed</button>
   <button type="button" id="bulk-select-none">Clear all selected</button>
   <button type="button" id="bulk-undo-selection" disabled>Undo selection</button>
+  <button type="button" id="bulk-print-labels447" class="primary"
+          disabled>Print Selected Labels</button>
   <button type="button" id="bulk-open-editor" class="primary"
           disabled>Bulk edit selected</button>
   <button type="button" id="bulk-delete-selected" class="danger"
           disabled>Delete selected</button>
 </div>
+<p class="note" id="bulk-print-labels-help447" role="status" aria-live="polite">
+  Select vials across filters, then preview printable strips.
+</p>
 <script>
 /* TRACKER_BULK_VIAL_DELETE */
 document.addEventListener("DOMContentLoaded", () => {
