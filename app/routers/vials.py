@@ -44,6 +44,112 @@ def vials_page(request: Request, status: str = "active", compound_id: str | None
 
 
 
+
+# Release 447: distinct-vial multi-label print sheets, read-only.
+# Static /vials/labels paths must precede /vials/{vid}.
+def _label_job447(db, ids, layout, phase, rotation, copies):
+    from sqlalchemy.orm import joinedload
+    from ..vial_label_sheets447 import (
+        parse_vial_ids447, validate_options447,
+        label_panels447, paginate447,
+    )
+    try:
+        selected_ids = parse_vial_ids447(ids)
+        validate_options447(layout, phase, rotation, copies)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    selected = list(db.scalars(
+        select(Vial)
+        .options(joinedload(Vial.compound))
+        .where(Vial.id.in_(selected_ids))
+    ))
+    lookup = {vial.id: vial for vial in selected}
+    if len(lookup) != len(selected_ids) or any(
+        ident not in lookup for ident in selected_ids
+    ):
+        raise HTTPException(404, "One or more selected vials no longer exist")
+    ordered = [lookup[ident] for ident in selected_ids]
+    try:
+        panels = label_panels447(ordered, phase, copies)
+        pages = paginate447(panels, layout)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return selected_ids, pages
+
+
+@router.get("/vials/labels/sheets")
+def vial_label_sheets447_page(
+    request: Request,
+    ids: str = "",
+    layout: str = "10x20x4",
+    phase: str = "auto",
+    rotation: int = 90,
+    copies: int = 1,
+    db: Session = Depends(get_scoped_db390),
+):
+    from markupsafe import Markup
+    from ..vial_label_sheets447 import (
+        svg_sheet447, physical_size447,
+    )
+
+    selected_ids, pages = _label_job447(
+        db, ids, layout, phase, rotation, copies,
+    )
+    width_mm, height_mm = physical_size447(layout)
+    sheet_views = [
+        {
+            "number": index + 1,
+            "svg": Markup(svg_sheet447(lines, layout, rotation).decode("utf-8")),
+        }
+        for index, lines in enumerate(pages)
+    ]
+    response = render(
+        request, "vial_label_sheets447.html",
+        selected_ids=",".join(map(str, selected_ids)),
+        selected_count=len(selected_ids),
+        label_count=sum(map(len, pages)),
+        sheets=sheet_views,
+        layout=layout, phase=phase,
+        rotation=rotation, copies=copies,
+        width_mm=width_mm, height_mm=height_mm,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@router.get("/vials/labels/sheets/download")
+def vial_label_sheets447_download(
+    ids: str = "",
+    layout: str = "10x20x4",
+    phase: str = "auto",
+    rotation: int = 90,
+    copies: int = 1,
+    fmt: str = "png",
+    db: Session = Depends(get_scoped_db390),
+):
+    from ..vial_label_sheets447 import FORMATS, zip_sheets447
+    if fmt not in FORMATS:
+        raise HTTPException(422, "Choose SVG or PNG sheet exports")
+    _, pages = _label_job447(
+        db, ids, layout, phase, rotation, copies,
+    )
+    result = zip_sheets447(pages, layout, rotation, fmt)
+    return Response(
+        content=result, media_type="application/zip",
+        headers={
+            "Content-Disposition": (
+                'attachment; filename="vial-label-sheets-'
+                f'{layout}-{phase}-r{rotation}.{fmt}.zip"'
+            ),
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+            "Referrer-Policy": "no-referrer",
+        },
+    )
+
+
 # TRACKER_BULK_STAGE4
 
 BULK_FIELDS = {
