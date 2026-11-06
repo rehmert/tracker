@@ -1694,6 +1694,12 @@ using a recipient public key and the external <code>age</code> program.
 There is no automatic upload or deletion of plaintext backups.
 Operators must transport encrypted files and independently rehearse
 decryption using an identity kept off this server.
+Release 445 provides an offline disposable-environment rehearsal:
+<code>python scripts/tracker-secondary-rehearsal445.py zip --archive PATH</code>
+or an encrypted rehearsal with a separately supplied identity.
+It invalidates restored sessions and rotates the copied signing key,
+without touching live data or starting an HTTP service.
+A full service-start and live restore procedure are still separate release gates.
 Recovery readiness requires an actual verified archive.</p></section>
 </main></body></html>'''
     return HTMLResponse(
