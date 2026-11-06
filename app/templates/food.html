@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="/static/css/tracker-food382.css?v=382">
 <link rel="stylesheet" href="/static/css/tracker-food384.css?v=384">
 <link rel="stylesheet" href="/static/css/tracker-food423.css?v=423">
+<link rel="stylesheet" href="/static/css/tracker-food424.css?v=424">
+<script src="/static/js/tracker-food424.js?v=424" defer></script>
 <script src="/static/js/tracker-food384.js?v=384" defer></script>
 <script src="/static/js/tracker-food382.js?v=382" defer></script>
 <script src="/static/js/tracker-food380.js?v=381" defer></script>
@@ -26,13 +28,19 @@ Confirm package-label values before saving.</p>
 <a href="/food?day={{ next_day }}">Next →</a>
 </nav>
 <form method="get" action="/food" class="food-date"><label>Day <input type="date" name="day" value="{{ day }}"></label><button>Show</button></form>
+<nav class="food424-actions" aria-label="Fast food logging actions">
+<a href="#food-quick-log">Log Favorite</a>
+<a href="#food-add">Scan / Add</a>
+<a href="#food-search">Saved Foods</a>
+<a href="#food-targets">Daily Targets</a>
+</nav>
 <section class="food-dashboard">
   <h2>Daily Totals</h2>
   <div class="food423-macros" aria-label="Macro target progress">
     {% for key in ('energy','proteins','carbohydrates','fat') %}
     {% set target = targets.get(key) %}
     {% set consumed = totals[key] %}
-    {% set complete = (food_count == 0 or coverage[key] == food_count) %}
+    {% set complete = (food_count > 0 and coverage[key] == food_count) %}
     <article class="food423-macro">
       <div class="food423-heading">
         <span>{{ nutrients[key][0] }}</span>
@@ -49,9 +57,11 @@ Confirm package-label values before saving.</p>
           <strong>{{ target|round(1) if target is not none else '—' }}</strong>
         </div>
         <div>
-          <small>{{ 'Remaining' if complete and target is not none and consumed <= target else 'Over / status' }}</small>
+          <small>{% if food_count == 0 %}Status{% elif target is none %}Target{% elif not complete %}Coverage{% elif consumed > target %}Above target{% else %}Remaining{% endif %}</small>
           <strong>
-            {% if target is none %}
+            {% if food_count == 0 %}
+              Not logged
+            {% elif target is none %}
               Not set
             {% elif not complete %}
               Unknown
@@ -78,7 +88,7 @@ Confirm package-label values before saving.</p>
             style="width:{{ [percent, 100]|min|round(1) }}%">
           </div>
         </div>
-      {% else %}
+      {% elif food_count > 0 %}
         <p class="food423-note">
           {{ 'Target not set' if target is none else 'Comparison unavailable: incomplete food data' }}
         </p>
@@ -93,6 +103,12 @@ Confirm package-label values before saving.</p>
     </article>
     {% endfor %}
   </div>
+  {% if food_count == 0 %}
+  <p class="note food424-unlogged" role="status">
+    No food has been logged for this day. The zero totals are
+    placeholders, not confirmation of zero intake.
+  </p>
+  {% endif %}
   <details><summary>All Nutrients &amp; Daily Targets</summary>
     <div class="food-nutrients">
       {% for key, info in nutrients.items() %}
@@ -111,6 +127,50 @@ Confirm package-label values before saving.</p>
     </div>
   </details>
 </section>
+<details id="food-targets" class="food424-targets">
+<summary>Set / Edit Daily Nutrition Targets</summary>
+<div class="food424-target-body">
+<p class="note">
+Personal tracking targets, not medical recommendations.
+Leave a field blank to remove its target.
+Saved targets apply across all days.
+</p>
+
+<form method="post" action="/food/targets">
+<input type="hidden" name="day" value="{{ day }}">
+
+<div class="food424-target-grid">
+{% for key in ('energy','proteins','carbohydrates','fat') %}
+<label>
+{{ nutrients[key][0] }} ({{ nutrients[key][1] }})
+<input type="number" name="{{ key }}"
+  inputmode="decimal" min="0" step="any"
+  value="{{ targets[key] if key in targets else '' }}">
+</label>
+{% endfor %}
+</div>
+
+<details class="food424-micro-targets">
+<summary>Micronutrients, Fiber &amp; Cholesterol</summary>
+<div class="food424-micro-grid">
+{% for key, info in nutrients.items()
+   if key not in ('energy','proteins','carbohydrates','fat') %}
+<label>
+{{ info[0] }} ({{ info[1] }})
+<input type="number" name="{{ key }}"
+  inputmode="decimal" min="0" step="any"
+  value="{{ targets[key] if key in targets else '' }}">
+</label>
+{% endfor %}
+</div>
+</details>
+
+<button class="primary" type="submit">
+Save Daily Targets
+</button>
+</form>
+</div>
+</details>
 <p class="note">Barcode product data provided by <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" target="_blank">Open Food Facts</a> and may be incomplete. Check serving basis and package values.</p>
 <nav class="food376-nav" aria-label="Food Journal sections">
 <a href="#food-quick-log">Quick Log</a>
@@ -713,12 +773,4 @@ the reported totals.
 </p>
 </div>
 </details>
-<details><summary>Set Your Own Daily Nutrition Targets</summary>
-<p class="note">Enter personal tracking targets, not clinical recommendations. Leave blank to remove a target. Invalid values are rejected without changing existing targets.</p>
-<form method="post" action="/food/targets"><input type="hidden" name="day" value="{{ day }}">
-<div class="food-nutrient-inputs">
-{% for key, info in nutrients.items() %}
-<label>{{ info[0] }} ({{ info[1] }})<input type="number" step="any" min="0" name="{{ key }}" value="{{ targets[key] if key in targets else '' }}"></label>
-{% endfor %}
-</div><button type="submit">Save Targets</button></form></details>
 {% endblock %}
