@@ -1682,12 +1682,18 @@ backup as evidence of recovery for secondary accounts.</p>
 <p>A separate DEV-only root-operated recovery command is available:
 <code>python scripts/tracker-secondary-backup442.py create</code>.
 It captures individually consistent SQLite snapshots and private uploads,
-then verifies an isolated restore without touching live records. It does not provide an atomic snapshot across users,
-off-host encryption, or a live restore function. An optional nightly
-systemd timer can be installed separately after Release 443;
+then verifies an isolated restore without touching live records.
+No atomic snapshot across users or live restore function is provided.
+An optional nightly systemd timer can be installed separately after Release 443;
 it is never enabled by deployment. Root operators can use
 <code>python scripts/tracker-secondary-ops443.py status</code>
 to independently verify the newest archive and detect stale backups.
+Release 444 adds manual off-host encryption preparation via
+<code>python scripts/tracker-secondary-encrypted444.py export</code>
+using a recipient public key and the external <code>age</code> program.
+There is no automatic upload or deletion of plaintext backups.
+Operators must transport encrypted files and independently rehearse
+decryption using an identity kept off this server.
 Recovery readiness requires an actual verified archive.</p></section>
 </main></body></html>'''
     return HTMLResponse(
