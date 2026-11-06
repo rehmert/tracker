@@ -589,11 +589,17 @@ def vial_labels423(
     request: Request,
     layout: str = "40x20",
     phase: str = "pre",
+    rotation: int = 0,
     db: Session = Depends(get_scoped_db390),
 ):
     from ..vial_labels423 import LAYOUTS
+    from ..vial_label_rotation431 import ROTATIONS
 
-    if layout not in LAYOUTS or phase not in ("pre", "post"):
+    if (
+        layout not in LAYOUTS
+        or phase not in ("pre", "post")
+        or rotation not in ROTATIONS
+    ):
         raise HTTPException(422, "Unsupported label selection")
 
     v = _get(db, vid)
@@ -603,6 +609,7 @@ def vial_labels423(
         v=v,
         layout=layout,
         phase=phase,
+        rotation=rotation,
     )
 
 
@@ -611,6 +618,7 @@ def vial_labels423_export(
     vid: int,
     layout: str = "40x20",
     phase: str = "pre",
+    rotation: int = 0,
     fmt: str = "png",
     download: int = 0,
     db: Session = Depends(get_scoped_db390),
@@ -618,14 +626,14 @@ def vial_labels423_export(
     from ..vial_labels423 import (
         LAYOUTS,
         label_lines,
-        svg_bytes,
-        png_bytes,
     )
+    from ..vial_label_rotation431 import ROTATIONS, svg_bytes, png_bytes
 
     if (
         layout not in LAYOUTS
         or phase not in ("pre", "post")
         or fmt not in ("svg", "png")
+        or rotation not in ROTATIONS
     ):
         raise HTTPException(422, "Unsupported label selection")
 
@@ -637,9 +645,9 @@ def vial_labels423_export(
         raise HTTPException(422, str(exc)) from exc
 
     output = (
-        svg_bytes(lines, layout)
+        svg_bytes(lines, layout, rotation)
         if fmt == "svg"
-        else png_bytes(lines, layout)
+        else png_bytes(lines, layout, rotation)
     )
 
     media = "image/svg+xml" if fmt == "svg" else "image/png"
@@ -650,7 +658,8 @@ def vial_labels423_export(
         media_type=media,
         headers={
             "Content-Disposition": (
-                f'{disposition}; filename="vial-{vid}-{phase}-{layout}.{fmt}"'
+                f'{disposition}; filename="vial-{vid}-{phase}-{layout}'
+                f'{("-r" + str(rotation)) if rotation else ""}.{fmt}"'
             ),
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "private, no-store",
