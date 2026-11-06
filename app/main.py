@@ -112,6 +112,10 @@ async def tracker_response_protection(request, call_next):
                 secondary_preview430.corrections_enabled437()
                 and request.url.path == "/secondary/reconcile/correct"
             )
+            or (
+                secondary_preview430.supply_writes_enabled438()
+                and request.url.path == "/secondary/supplies"
+            )
         )
     )
     if secondary_form_post433:

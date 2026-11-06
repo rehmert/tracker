@@ -919,7 +919,8 @@ button{{font-weight:700}}
 <body><main>
 <h1>My Inventory</h1>
 <p>Private workspace {uid} · DEV preview</p>
-<p><a href="/secondary/reconcile">Reconcile Vial Inventory</a></p>
+<p><a href="/secondary/supplies">My Supplies</a> ·
+<a href="/secondary/reconcile">Reconcile Vial Inventory</a></p>
 {reconstitution_link}
 <nav><a href="/secondary/overview">Overview</a>
 <a href="/secondary/vitals">Vitals</a>
@@ -1324,5 +1325,116 @@ async def reconcile_vial_post437(request: Request):
     return RedirectResponse(
         f'/secondary/reconcile/vials/{payload["vial_id"]}',
         status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+# Release 438: private read-only supply inventory and gated supply intake.
+from .worker_supply438 import request_supply438, form_create438, KINDS
+
+
+def supply_writes_enabled438():
+    return (
+        preview_enabled()
+        and os.getenv("TRACKER_SECONDARY_SUPPLY_WRITES438", "0") == "1"
+    )
+
+
+@preview_app.get("/supplies")
+def secondary_supplies438(request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+    try:
+        report = request_supply438(uid, "list")
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private supply inventory unavailable") from None
+
+    rows = "".join(
+        '<li><strong>' + escape(item["name"]) + '</strong> · '
+        + escape(item["kind"].replace("_", " ").title())
+        + ' · On hand ' + escape(
+            f'{item["remaining"]:g} {item["unit"]}'
+        ) + ' / ' + escape(
+            f'{item["quantity"]:g} {item["unit"]}'
+        ) + '</li>'
+        for item in report["supplies"]
+    ) or "<li>No supplies recorded yet.</li>"
+    writable = supply_writes_enabled438()
+    csrf = issue_token(load_key()) if writable else None
+    form = ""
+    if writable:
+        kind_options = "".join(
+            '<option value="' + escape(kind, quote=True) + '">'
+            + escape(kind.replace("_", " ").title()) + '</option>'
+            for kind in KINDS
+        )
+        form = f'''<section><h2>Add Supply Inventory</h2>
+<form method="post" action="/secondary/supplies" autocomplete="off">
+<input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token" value="{uuid4()}">
+<label>Supply Name<input name="name" maxlength="160" required></label>
+<label>Type<select name="kind">{kind_options}</select></label>
+<label>Purchased / Added Quantity
+<input name="quantity" type="number" min="0.0001" step="any"
+inputmode="decimal" required></label>
+<p>BAC water uses mL. Disposables use whole item counts.</p>
+<label>Notes<textarea name="notes" maxlength="2000" rows="3"></textarea></label>
+<button type="submit">Add Supply</button>
+</form></section>'''
+    html = f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>My Supplies · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:570px;margin:auto;padding:16px}}
+section{{border:1px solid #9995;border-radius:12px;padding:14px;margin:14px 0}}
+label{{display:block;margin:14px 0}}
+input,select,textarea,button{{font:inherit;min-height:46px;padding:10px;width:100%}}
+button{{font-weight:700}}
+li{{margin:12px 0;overflow-wrap:anywhere}}
+</style></head><body><main>
+<h1>My Supplies</h1>
+<p>Private workspace {uid} · DEV preview</p>
+<p><a href="/secondary/inventory">My Inventory</a></p>
+<p>Supply intake is tracked independently of administrations.
+Dose and reconstitution supplies are not yet deducted by this page.</p>
+{form}
+<section><h2>Supply Inventory</h2><ul>{rows}</ul></section>
+</main></body></html>'''
+    response = HTMLResponse(html, headers={"Cache-Control": "no-store"})
+    return _csrf_response(response, csrf) if csrf is not None else response
+
+
+@preview_app.post("/supplies")
+async def secondary_supply_create438(request: Request):
+    require_preview()
+    if not supply_writes_enabled438():
+        raise HTTPException(404, "Private supply intake unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary sign-in required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+    try:
+        payload = form_create438(form)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+    try:
+        result = request_supply438(uid, "create", payload)
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private supply intake unavailable") from None
+    if result["status"] == "duplicate":
+        raise HTTPException(409, "This supply submission was already used")
+    return RedirectResponse(
+        "/secondary/supplies", status_code=303,
         headers={"Cache-Control": "no-store"},
     )
