@@ -14,6 +14,9 @@ from ..templating import render
 
 from ..food_storage_guard391 import require_food_storage391
 from ..food_read_engine406 import get_food_read_engine406
+from ..food_water425 import (
+    init_water_schema, water_report, parse_ounces,
+)
 
 router = APIRouter(
     dependencies=[Depends(require_food_storage391)]
@@ -106,6 +109,7 @@ def food_page(
     db_engine=Depends(get_food_read_engine406),
 ):
     init_food_schema(db_engine)
+    init_water_schema(db_engine)
     try:
         chosen = date.fromisoformat(day) if day else date.today()
     except ValueError:
@@ -118,6 +122,7 @@ def food_page(
         targets = dict(db.execute(text("SELECT nutrient,value FROM tracker_food_targets")).all())
     rows = [dict(r) for r in records]
     total = totals_for(day, db_engine=db_engine)
+    water = water_report(day, db_engine)
     coverage, food_count = nutrient_coverage(
         day, db_engine=db_engine
     )
@@ -153,6 +158,7 @@ def food_page(
         request, "food.html", day=day, entries=rows,
         nutrients=NUTRIENTS, totals=total, targets=targets,
         coverage=coverage, food_count=food_count,
+        water=water,
         favorites=favorites, recent=recent,
         favorite_ids=favorite_ids,
         search_query=query, search_results=search_results,
@@ -162,6 +168,69 @@ def food_page(
         next_day=(chosen + timedelta(days=1)).isoformat(),
         today=date.today().isoformat(),
     )
+
+
+@router.post("/food/water")
+async def add_water425(
+    request: Request,
+    db_engine=Depends(get_food_read_engine406),
+):
+    """Record drinking water for the selected Food Journal day."""
+    from .food_quick375 import selected_day
+
+    form = await request.form()
+    day = selected_day(form.get("day"))
+
+    try:
+        ounces = parse_ounces(form.get("ounces"))
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    init_water_schema(db_engine)
+
+    with db_engine.begin() as db:
+        db.execute(text("""
+            INSERT INTO tracker_water_entries(logged_on, ounces)
+            VALUES (:day, :ounces)
+        """), {"day": day, "ounces": ounces})
+
+    return RedirectResponse(
+        "/food?day=" + day + "#food-water",
+        status_code=303,
+    )
+
+
+@router.post("/food/water/{entry_id}/delete")
+async def delete_water425(
+    entry_id: int,
+    request: Request,
+    db_engine=Depends(get_food_read_engine406),
+):
+    """Delete only an entry belonging to the submitted day."""
+    from .food_quick375 import selected_day
+
+    form = await request.form()
+    day = selected_day(form.get("day"))
+
+    if entry_id <= 0:
+        raise HTTPException(404, "Water entry not found")
+
+    init_water_schema(db_engine)
+
+    with db_engine.begin() as db:
+        result = db.execute(text("""
+            DELETE FROM tracker_water_entries
+            WHERE id=:id AND logged_on=:day
+        """), {"id": entry_id, "day": day})
+
+        if result.rowcount != 1:
+            raise HTTPException(404, "Water entry not found")
+
+    return RedirectResponse(
+        "/food?day=" + day + "#food-water",
+        status_code=303,
+    )
+
 
 @router.get("/food/barcode/{barcode}")
 def barcode_lookup(barcode: str):

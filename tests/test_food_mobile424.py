@@ -39,6 +39,15 @@ def macro_view(food_count, totals, targets, coverage):
             for key in MACROS
         },
         nutrients=NUTRIENTS,
+        water={
+            'count': 0,
+            'total': 0,
+            'target': 140,
+            'remaining': 140,
+            'over': 0,
+            'percent': 0,
+            'entries': [],
+        },
     )
 
 
@@ -50,7 +59,7 @@ def test_unlogged_day_has_no_false_remaining():
         {},
     )
 
-    assert output.count('Not logged') == 4
+    assert output.count('Not logged') == 5
     assert 'No food has been logged' in output
     assert 'role="progressbar"' not in output
 

@@ -1,0 +1,111 @@
+/* Release 425: daily hydration dashboard and mobile quick logging. */
+
+.food425-water-card {
+  grid-column: 1 / -1;
+}
+
+.food425-water-log {
+  margin: .8rem 0 1rem;
+  padding: .75rem;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 10px;
+  scroll-margin-top: 1rem;
+}
+
+.food425-water-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.food425-water-head h3 {
+  margin: 0;
+}
+
+.food425-water-head small {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.food425-water-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .4rem;
+  margin: .7rem 0;
+}
+
+.food425-water-presets button {
+  min-height: 48px;
+  min-width: 0;
+  padding: .4rem;
+  font-weight: 700;
+}
+
+.food425-water-custom,
+.food425-water-history {
+  margin-top: .5rem;
+}
+
+.food425-water-custom summary,
+.food425-water-history summary {
+  cursor: pointer;
+  padding: .4rem 0;
+}
+
+.food425-water-custom-form {
+  display: flex;
+  align-items: end;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin: .5rem 0;
+}
+
+.food425-water-custom-form label {
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
+.food425-water-custom-form input {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.food425-water-custom-form button {
+  min-height: 44px;
+}
+
+.food425-water-history ul {
+  list-style: none;
+  padding: 0;
+  margin: .5rem 0;
+}
+
+.food425-water-history li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .6rem;
+  padding: .35rem 0;
+  border-bottom: 1px solid var(--border, #ddd);
+}
+
+.food425-water-history li span {
+  font-variant-numeric: tabular-nums;
+}
+
+.food425-water-history li button {
+  min-height: 40px;
+}
+
+@media (max-width: 520px) {
+  .food425-water-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .food425-water-log {
+    padding: .6rem;
+  }
+}

@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/static/css/tracker-food384.css?v=384">
 <link rel="stylesheet" href="/static/css/tracker-food423.css?v=423">
 <link rel="stylesheet" href="/static/css/tracker-food424.css?v=424">
+<link rel="stylesheet" href="/static/css/tracker-food425.css?v=425">
 <script src="/static/js/tracker-food424.js?v=424" defer></script>
 <script src="/static/js/tracker-food384.js?v=384" defer></script>
 <script src="/static/js/tracker-food382.js?v=382" defer></script>
@@ -32,6 +33,7 @@ Confirm package-label values before saving.</p>
 <a href="#food-quick-log">Log Favorite</a>
 <a href="#food-add">Scan / Add</a>
 <a href="#food-search">Saved Foods</a>
+<a href="#food-water">Water</a>
 <a href="#food-targets">Daily Targets</a>
 </nav>
 <section class="food-dashboard">
@@ -102,6 +104,58 @@ Confirm package-label values before saving.</p>
       {% endif %}
     </article>
     {% endfor %}
+
+    <article class="food423-macro food425-water-card"
+      aria-label="Daily water intake">
+      <div class="food423-heading">
+        <span>Water</span>
+        <span>US fl oz</span>
+      </div>
+
+      <div class="food423-values">
+        <div>
+          <small>Logged</small>
+          <strong>{{ water.total|round(1) }}</strong>
+        </div>
+        <div>
+          <small>Target</small>
+          <strong>{{ water.target }}</strong>
+        </div>
+        <div>
+          <small>
+            {% if water.count == 0 %}Status
+            {% elif water.over > 0 %}Above target
+            {% else %}Remaining{% endif %}
+          </small>
+          <strong>
+            {% if water.count == 0 %}
+              Not logged
+            {% elif water.over > 0 %}
+              {{ water.over|round(1) }} over
+            {% else %}
+              {{ water.remaining|round(1) }}
+            {% endif %}
+          </strong>
+        </div>
+      </div>
+
+      {% if water.count > 0 %}
+      <div class="food423-track"
+        role="progressbar"
+        aria-label="Water target progress"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="{{ water.percent }}"
+        aria-valuetext="{{ water.total }} of {{ water.target }} fluid ounces">
+        <div class="food423-fill"
+          style="width:{{ water.percent }}%"></div>
+      </div>
+      {% else %}
+      <p class="food423-note">
+        No water entered for this day.
+      </p>
+      {% endif %}
+    </article>
   </div>
   {% if food_count == 0 %}
   <p class="note food424-unlogged" role="status">
@@ -109,6 +163,80 @@ Confirm package-label values before saving.</p>
     placeholders, not confirmation of zero intake.
   </p>
   {% endif %}
+
+<section id="food-water" class="food425-water-log"
+  aria-label="Water logging">
+
+  <div class="food425-water-head">
+    <h3>Log Water</h3>
+    <small>
+      {{ water.total|round(1) }} / {{ water.target }} fl oz
+    </small>
+  </div>
+
+  <p class="note">
+    Track drinking water in US fluid ounces.
+    Your 140 oz goal is a personal tracking target.
+    Other drinks and foods are not counted automatically.
+  </p>
+
+  <form action="/food/water" method="post"
+    class="food425-water-presets">
+    <input type="hidden" name="day" value="{{ day }}">
+    <button type="submit" name="ounces" value="8">+8 oz</button>
+    <button type="submit" name="ounces" value="16">+16 oz</button>
+    <button type="submit" name="ounces" value="24">+24 oz</button>
+    <button type="submit" name="ounces" value="32">+32 oz</button>
+  </form>
+
+  <details class="food425-water-custom">
+    <summary>Custom Amount</summary>
+
+    <form action="/food/water" method="post"
+      class="food425-water-custom-form">
+      <input type="hidden" name="day" value="{{ day }}">
+
+      <label>
+        Water (fl oz)
+        <input name="ounces" type="number" min="0.01"
+          max="256" step="0.01" inputmode="decimal"
+          placeholder="e.g. 20" required>
+      </label>
+
+      <button class="primary" type="submit">
+        Add Water
+      </button>
+    </form>
+  </details>
+
+  <details class="food425-water-history">
+    <summary>Water Entries ({{ water.count }})</summary>
+
+    {% if water.entries %}
+    <ul>
+      {% for entry in water.entries %}
+      <li>
+        <span>{{ entry.ounces|round(1) }} fl oz</span>
+
+        <form action="/food/water/{{ entry.id }}/delete"
+          method="post">
+          <input type="hidden" name="day" value="{{ day }}">
+          <button type="submit"
+            aria-label="Remove {{ entry.ounces }} fluid ounce water entry">
+            Remove
+          </button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="note">
+      No water entries logged for this day.
+    </p>
+    {% endif %}
+  </details>
+
+</section>
   <details><summary>All Nutrients &amp; Daily Targets</summary>
     <div class="food-nutrients">
       {% for key, info in nutrients.items() %}
