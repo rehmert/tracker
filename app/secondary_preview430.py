@@ -341,6 +341,8 @@ def overview_get(request: Request):
 <main>
 <h1>Private Workspace Overview</h1>
 <p>DEV-only read-only preview. Account {uid}.</p>
+<p><a href="/secondary/vitals">Recent Vitals</a> ·
+<a href="/secondary/doses">Recent Doses</a></p>
 <table>{rows}</table>
 <form method="post" action="/secondary/logout">
 <input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
@@ -373,3 +375,107 @@ async def logout_post(request: Request):
         httponly=True, samesite="strict",
     )
     return response
+
+
+# Release 432: read-only recent records, isolated per secondary workspace.
+# No user-selected workspace, generic SQL, or write routes are provided.
+from .worker_recent432 import read_recent432
+
+
+def _html_value432(value):
+    return escape("—" if value is None else str(value), quote=True)
+
+
+def _recent_page432(request, kind):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        report = read_recent432(uid, kind)
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private records unavailable") from None
+
+    if report.get("user_id") != uid or report.get("kind") != kind:
+        raise HTTPException(503, "Workspace identity mismatch")
+
+    if kind == "vitals":
+        title = "Recent Vitals"
+        headers = ("Recorded", "Weight", "Blood Pressure", "Pulse", "Context")
+        rows = []
+        for item in report["items"]:
+            weight = item["weight_kg"]
+            if weight is not None:
+                if config.WEIGHT_UNIT == "lb":
+                    weight = f"{float(weight) * 2.20462262:.1f} lb"
+                else:
+                    weight = f"{float(weight):.1f} kg"
+            bp = "—" if item["systolic"] is None else (
+                str(item["systolic"])
+                + ("/" + str(item["diastolic"]) if item["diastolic"] is not None else "")
+            )
+            rows.append((
+                item["at"], weight, bp, item["pulse_bpm"], item["context"],
+            ))
+    else:
+        title = "Recent Doses"
+        headers = ("Recorded", "Compound", "Amount", "Type", "Site")
+        rows = []
+        for item in report["items"]:
+            amount = str(item["amount"]) + " " + str(item["unit"])
+            rows.append((
+                item["at"], item["compound"], amount, item["kind"], item["site"],
+            ))
+
+    columns = "".join("<th>" + escape(label) + "</th>" for label in headers)
+    entries = "".join(
+        "<tr>" + "".join("<td>" + _html_value432(cell) + "</td>" for cell in row)
+        + "</tr>"
+        for row in rows
+    )
+    if not rows:
+        entries = '<tr><td colspan="5">No records yet.</td></tr>'
+
+    html = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>{escape(title)} · Tracker DEV</title>
+<style>
+body{{font:16px system-ui,sans-serif;max-width:850px;margin:0 auto;padding:16px}}
+nav{{display:flex;gap:14px;flex-wrap:wrap}}
+table{{border-collapse:collapse;width:100%;font-size:.9rem}}
+th,td{{border-bottom:1px solid #aaa5;text-align:left;padding:9px 6px}}
+.scroll{{overflow-x:auto}}
+</style>
+</head>
+<body>
+<main>
+<h1>{escape(title)}</h1>
+<p>Private workspace · Read-only</p>
+<nav><a href="/secondary/overview">Overview</a>
+<a href="/secondary/vitals">Vitals</a>
+<a href="/secondary/doses">Doses</a></nav>
+<div class="scroll"><table><thead><tr>{columns}</tr></thead>
+<tbody>{entries}</tbody></table></div>
+<p>Showing up to 10 most recent records.</p>
+</main>
+</body>
+</html>'''
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+
+@preview_app.get("/vitals")
+def recent_vitals432(request: Request):
+    return _recent_page432(request, "vitals")
+
+
+@preview_app.get("/doses")
+def recent_doses432(request: Request):
+    return _recent_page432(request, "doses")
