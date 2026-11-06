@@ -129,21 +129,31 @@ def vial_label_sheets447_download(
     rotation: int = 90,
     copies: int = 1,
     fmt: str = "png",
+    sheet: int = 0,
     db: Session = Depends(get_scoped_db390),
 ):
-    from ..vial_label_sheets447 import FORMATS, zip_sheets447
-    if fmt not in FORMATS:
-        raise HTTPException(422, "Choose SVG or PNG sheet exports")
+    from ..vial_label_sheets447 import FORMATS
+    from ..vial_label_direct450 import direct_download450
+    if fmt not in FORMATS or sheet < 0:
+        raise HTTPException(422, "Choose SVG or PNG and a valid strip number")
     _, pages = _label_job447(
         db, ids, layout, phase, rotation, copies,
     )
-    result = zip_sheets447(pages, layout, rotation, fmt)
+    try:
+        result = direct_download450(
+            pages, layout, rotation, fmt, sheet,
+        )
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    media = "image/svg+xml" if fmt == "svg" else "image/png"
+    part = f"strip-{sheet:03d}" if sheet else "all-strips"
     return Response(
-        content=result, media_type="application/zip",
+        content=result, media_type=media,
         headers={
             "Content-Disposition": (
-                'attachment; filename="vial-label-sheets-'
-                f'{layout}-{phase}-r{rotation}.{fmt}.zip"'
+                f'attachment; filename="vial-labels-{layout}-'
+                f'{phase}-r{rotation}-{part}.{fmt}"'
             ),
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "private, no-store",
