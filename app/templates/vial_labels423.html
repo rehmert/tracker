@@ -38,8 +38,24 @@ dimensions in the printer driver before printing.
     </select>
   </label>
 
+  <label class="field">
+    <span>Print direction</span>
+    <select name="rotation">
+      <option value="0" {% if rotation == 0 %}selected{% endif %}>0° — Normal</option>
+      <option value="90" {% if rotation == 90 %}selected{% endif %}>90° — Clockwise</option>
+      <option value="180" {% if rotation == 180 %}selected{% endif %}>180° — Upside down</option>
+      <option value="270" {% if rotation == 270 %}selected{% endif %}>270° — Clockwise</option>
+    </select>
+  </label>
+
   <div><button class="primary">Preview</button></div>
 </form>
+
+<p class="note">
+Rotation changes the text direction <strong>inside each sticker</strong>, not the
+strip dimensions. For 10 × 20 mm (four across), try 90° or 270° to read along
+the 20 mm edge. The SVG preview and PNG export use the same direction.
+</p>
 
 {% if phase == 'post' and not v.reconstituted_on %}
   <p class="flash error">
@@ -50,15 +66,15 @@ dimensions in the printer driver before printing.
     <img
       style="max-width:100%;height:auto"
       alt="Vial label preview"
-      src="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}">
+      src="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}">
   </div>
 
   <p>
-    <a href="/vials/{{ v.id }}/labels/export?fmt=png&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;download=1">
+    <a href="/vials/{{ v.id }}/labels/export?fmt=png&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;download=1">
       Download 203 DPI PNG
     </a>
     ·
-    <a href="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;download=1">
+    <a href="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;download=1">
       Download SVG
     </a>
   </p>
