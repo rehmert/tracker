@@ -1,0 +1,375 @@
+"""DEV-only, explicitly enabled read-only secondary-user preview.
+
+This is not an application router or a general HTTP proxy.
+Staged user credentials remain disabled for normal Tracker login.
+"""
+
+import hashlib
+import hmac
+import os
+import secrets
+import sqlite3
+import time
+from contextlib import closing
+from html import escape
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+
+from . import config, session_auth385 as auth
+from .csrf_runtime import load_key
+from .csrf_tokens import issue_token, verify_pair
+from .user_accounts427 import (
+    inspect_staged_account427,
+    staging_environment,
+    validate_username,
+)
+from .worker_request429 import read_workspace_overview429
+
+COOKIE = "tracker_secondary_preview430"
+CSRF_COOKIE = "tracker_secondary_csrf430"
+LIFETIME = 30 * 60
+WINDOW = 15 * 60
+
+preview_app = FastAPI(
+    title="Tracker Secondary Preview",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
+
+
+def preview_enabled():
+    return (
+        config.instance_label() == "DEV"
+        and auth.enabled()
+        and os.getenv("TRACKER_SECONDARY_PREVIEW430", "0") == "1"
+    )
+
+
+def require_preview():
+    if not preview_enabled():
+        raise HTTPException(404, "Secondary preview unavailable")
+    try:
+        staging_environment()
+    except (PermissionError, ValueError, RuntimeError, OSError):
+        raise HTTPException(503, "Secondary preview unavailable") from None
+
+
+def _tables(db):
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS tracker_secondary_sessions430 (
+            token_hash TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            expires_at INTEGER NOT NULL
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS tracker_secondary_failures430 (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            occurred_at INTEGER NOT NULL
+        )
+    """)
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS tracker_secondary_failures_time430
+        ON tracker_secondary_failures430(occurred_at)
+    """)
+    db.commit()
+
+
+def _verify_credentials(username, password):
+    try:
+        username = validate_username(username)
+    except ValueError:
+        return None
+
+    if not isinstance(password, str) or not 12 <= len(password) <= 1024:
+        return None
+
+    now = int(time.time())
+    with closing(auth.connect()) as db:
+        _tables(db)
+        db.execute("BEGIN IMMEDIATE")
+        db.execute(
+            "DELETE FROM tracker_secondary_failures430 WHERE occurred_at < ?",
+            (now - WINDOW,),
+        )
+        attempts = db.execute("""
+            SELECT COUNT(*) FROM tracker_secondary_failures430
+            WHERE occurred_at>=?
+        """, (now - WINDOW,)).fetchone()[0]
+        personal_attempts = db.execute("""
+            SELECT COUNT(*) FROM tracker_secondary_failures430
+            WHERE username=? AND occurred_at>=?
+        """, (username.casefold(), now - WINDOW)).fetchone()[0]
+
+        if attempts >= 40 or personal_attempts >= 8:
+            db.commit()
+            return None
+
+        row = db.execute("""
+            SELECT id, salt, password_hash FROM users
+            WHERE id>1 AND enabled=0 AND lower(username)=lower(?)
+        """, (username,)).fetchone()
+
+        salt = row[1] if row else b"\0" * 16
+        candidate = auth.password_digest(password, salt)
+        valid = bool(row) and hmac.compare_digest(candidate, row[2])
+
+        if not valid:
+            db.execute("""
+                INSERT INTO tracker_secondary_failures430
+                    (username, occurred_at) VALUES (?,?)
+            """, (username.casefold(), now))
+        else:
+            db.execute(
+                "DELETE FROM tracker_secondary_failures430 WHERE username=?",
+                (username.casefold(),),
+            )
+        db.commit()
+
+    if not valid:
+        return None
+
+    try:
+        account = inspect_staged_account427(row[0])
+    except (RuntimeError, PermissionError, ValueError, OSError, sqlite3.Error):
+        return None
+
+    return row[0] if account["username"].casefold() == username.casefold() else None
+
+
+def _new_session(uid):
+    raw = secrets.token_urlsafe(48)
+    digest = hashlib.sha256(raw.encode()).hexdigest()
+    now = int(time.time())
+
+    with closing(auth.connect()) as db:
+        _tables(db)
+        db.execute("BEGIN IMMEDIATE")
+        db.execute(
+            "DELETE FROM tracker_secondary_sessions430 WHERE expires_at<=?",
+            (now,),
+        )
+        db.execute("""
+            INSERT INTO tracker_secondary_sessions430
+                (token_hash, user_id, expires_at) VALUES (?,?,?)
+        """, (digest, uid, now + LIFETIME))
+        db.commit()
+    return raw
+
+
+def _session_user(token):
+    if not isinstance(token, str) or not 40 <= len(token) <= 160:
+        return None
+
+    digest = hashlib.sha256(token.encode()).hexdigest()
+    try:
+        with closing(auth.connect()) as db:
+            row = db.execute("""
+                SELECT u.id FROM tracker_secondary_sessions430 s
+                JOIN users u ON u.id=s.user_id
+                WHERE s.token_hash=? AND s.expires_at>?
+                  AND u.id>1 AND u.enabled=0
+            """, (digest, int(time.time()))).fetchone()
+
+        if row is None:
+            return None
+
+        inspect_staged_account427(row[0])
+        return row[0]
+    except (sqlite3.Error, OSError, ValueError, PermissionError, RuntimeError):
+        return None
+
+
+def _revoke(token):
+    if not isinstance(token, str) or not 40 <= len(token) <= 160:
+        return
+
+    digest = hashlib.sha256(token.encode()).hexdigest()
+    with closing(auth.connect()) as db:
+        db.execute(
+            "DELETE FROM tracker_secondary_sessions430 WHERE token_hash=?",
+            (digest,),
+        )
+        db.commit()
+
+
+def _csrf_response(response, token):
+    response.set_cookie(
+        CSRF_COOKIE, token,
+        httponly=True, secure=True, samesite="strict",
+        path="/secondary", max_age=900,
+    )
+    return response
+
+
+def _csrf_check(request, form):
+    if request.headers.get("sec-fetch-site", "").strip().lower() == "cross-site":
+        raise HTTPException(403, "Cross-site request rejected")
+
+    if not verify_pair(
+        request.cookies.get(CSRF_COOKIE),
+        str(form.get("csrf_token", "")),
+        load_key(),
+    ):
+        raise HTTPException(403, "Invalid request token")
+
+
+def _login_html(token, error=False):
+    token = escape(token, quote=True)
+    warning = (
+        '<p role="alert">Sign-in unsuccessful.</p>'
+        if error else ""
+    )
+    return f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Secondary Preview</title>
+<style>
+body{{font:16px system-ui;max-width:430px;margin:5vh auto;padding:20px}}
+input,button{{display:block;width:100%;padding:12px;margin:10px 0;font:inherit}}
+</style>
+</head>
+<body>
+<main>
+<h1>Private Workspace Preview</h1>
+<p>DEV only · Read-only overview</p>
+{warning}
+<form method="post" action="/secondary/login">
+<input type="hidden" name="csrf_token" value="{token}">
+<label>Username
+<input name="username" autocomplete="username" required>
+</label>
+<label>Password
+<input name="password" type="password" autocomplete="current-password" required>
+</label>
+<button type="submit">Sign In</button>
+</form>
+</main>
+</body>
+</html>'''
+
+
+@preview_app.get("/")
+def preview_root():
+    require_preview()
+    return RedirectResponse("/secondary/overview", status_code=303)
+
+
+@preview_app.get("/login")
+def login_get():
+    require_preview()
+    token = issue_token(load_key())
+    response = HTMLResponse(
+        _login_html(token),
+        headers={"Cache-Control": "no-store"},
+    )
+    return _csrf_response(response, token)
+
+
+@preview_app.post("/login")
+async def login_post(request: Request):
+    require_preview()
+    form = await request.form()
+    _csrf_check(request, form)
+    username = str(form.get("username", ""))[:81].strip()
+    password = str(form.get("password", ""))
+    uid = _verify_credentials(username, password)
+
+    if uid is None:
+        token = issue_token(load_key())
+        response = HTMLResponse(
+            _login_html(token, error=True),
+            status_code=401,
+            headers={"Cache-Control": "no-store"},
+        )
+        return _csrf_response(response, token)
+
+    raw = _new_session(uid)
+    response = RedirectResponse(
+        "/secondary/overview",
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+    response.set_cookie(
+        COOKIE, raw,
+        httponly=True, secure=True, samesite="strict",
+        path="/secondary", max_age=LIFETIME,
+    )
+    return response
+
+
+@preview_app.get("/overview")
+def overview_get(request: Request):
+    require_preview()
+
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        report = read_workspace_overview429(uid)
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private workspace unavailable") from None
+
+    if report.get("user_id") != uid:
+        raise HTTPException(503, "Workspace identity mismatch")
+
+    rows = "".join(
+        "<tr><th>" + escape(key.replace("_", " ").title()) +
+        "</th><td>" + str(value) + "</td></tr>"
+        for key, value in report["counts"].items()
+    )
+    token = issue_token(load_key())
+    html = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Private Workspace Overview</title>
+</head>
+<body>
+<main>
+<h1>Private Workspace Overview</h1>
+<p>DEV-only read-only preview. Account {uid}.</p>
+<table>{rows}</table>
+<form method="post" action="/secondary/logout">
+<input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
+<button type="submit">Sign Out</button>
+</form>
+</main>
+</body>
+</html>'''
+    response = HTMLResponse(
+        html,
+        headers={"Cache-Control": "no-store"},
+    )
+    return _csrf_response(response, token)
+
+
+@preview_app.post("/logout")
+async def logout_post(request: Request):
+    require_preview()
+    form = await request.form()
+    _csrf_check(request, form)
+    _revoke(request.cookies.get(COOKIE))
+
+    response = RedirectResponse(
+        "/secondary/login", status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+    response.delete_cookie(
+        COOKIE,
+        path="/secondary", secure=True,
+        httponly=True, samesite="strict",
+    )
+    return response

@@ -29,6 +29,7 @@ from .routers import (coas, compounds, dashboard, doses, labs, pages, protocols,
                       vials, vitals, pk, calendar, backups, search, inventory_intelligence, health_timeline, health_insights, exports, reliability, blends, vendor_prices)
 from .security import require_auth
 from . import session_auth385
+from . import secondary_preview430
 from .routers import food
 from .routers import food_quick375
 from .routers import food_bundle376
@@ -81,6 +82,15 @@ async def tracker_response_protection(request, call_next):
         )
     )
 
+    # Secondary preview validates its own signed CSRF tokens.
+    # Only its login/logout POSTs skip the generic Host/Origin check.
+    if (
+        secondary_preview430.preview_enabled()
+        and request.method.upper() == "POST"
+        and request.url.path in ("/secondary/login", "/secondary/logout")
+    ):
+        session_auth_post = True
+
     if (
         os.environ.get("TRACKER_ORIGIN_GUARD", "1") != "0"
         and not session_auth_post
@@ -107,6 +117,10 @@ async def tracker_response_protection(request, call_next):
                     "/account/sessions/revoke-others",
                 )
                 and session_auth385.enabled()
+            )
+            and not (
+                secondary_preview430.preview_enabled()
+                and request.url.path in ("/secondary/login", "/secondary/logout")
             )
             and reject_write(
                 request.method,
@@ -249,3 +263,8 @@ app.include_router(replenishment_review.router)
 # Read-only unified reconstitution calculator
 from .routers import reconstitution_calculator
 app.include_router(reconstitution_calculator.router)
+
+
+# Release 430: explicitly opt-in on DEV. Never mount on PROD.
+if secondary_preview430.preview_enabled():
+    app.mount("/secondary", secondary_preview430.preview_app)
