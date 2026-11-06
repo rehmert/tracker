@@ -342,7 +342,8 @@ def overview_get(request: Request):
 <h1>Private Workspace Overview</h1>
 <p>DEV-only read-only preview. Account {uid}.</p>
 <p><a href="/secondary/vitals">Recent Vitals</a> ·
-<a href="/secondary/doses">Recent Doses</a></p>
+<a href="/secondary/doses">Recent Doses</a> ·
+<a href="/secondary/inventory">My Inventory</a></p>
 <table>{rows}</table>
 <form method="post" action="/secondary/logout">
 <input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
@@ -467,7 +468,8 @@ th,td{{border-bottom:1px solid #aaa5;text-align:left;padding:9px 6px}}
 <p>Private workspace · Read-only</p>
 <nav><a href="/secondary/overview">Overview</a>
 <a href="/secondary/vitals">Vitals</a>
-<a href="/secondary/doses">Doses</a></nav>
+<a href="/secondary/doses">Doses</a>
+<a href="/secondary/inventory">Inventory</a></nav>
 {write_link}
 <div class="scroll"><table><thead><tr>{columns}</tr></thead>
 <tbody>{entries}</tbody></table></div>
@@ -767,3 +769,203 @@ async def dose_submit434(request: Request):
         status_code=303,
         headers={"Cache-Control": "no-store"},
     )
+
+
+# Release 435: private inventory listing and strictly create-only mutations.
+from .worker_inventory435 import (
+    request_inventory435, form_compound435, form_vial435,
+)
+from .models import CATEGORIES
+from .units import CONTENT_UNITS
+
+
+def inventory_writes_enabled435():
+    return (
+        preview_enabled()
+        and os.getenv("TRACKER_SECONDARY_INVENTORY_WRITES435", "0") == "1"
+    )
+
+
+@preview_app.get("/inventory")
+def inventory_page435(request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        report = request_inventory435(uid, "inventory")
+    except (RuntimeError, OSError, PermissionError, ValueError):
+        raise HTTPException(503, "Private inventory unavailable") from None
+
+    compounds = report["compounds"]
+    vials = report["vials"]
+    writable = inventory_writes_enabled435()
+
+    list_compounds = "".join(
+        "<li><strong>" + escape(row["name"]) + "</strong>"
+        + " · " + escape(row["category"])
+        + " · " + escape(row["primary_unit"]) + "</li>"
+        for row in compounds
+    ) or "<li>No compounds yet.</li>"
+    list_vials = "".join(
+        "<li><strong>" + escape(row["compound"]) + "</strong>"
+        + " · " + escape(row["label"] or f'Vial #{row["id"]}')
+        + " · " + escape(f'{row["content_value"]:g} {row["content_unit"]}')
+        + " · " + escape(row["status"]) + "</li>"
+        for row in vials
+    ) or "<li>No vials yet.</li>"
+
+    forms = ""
+    csrf = None
+    if writable:
+        csrf = issue_token(load_key())
+        category_choices = "".join(
+            '<option value="' + escape(value, quote=True) + '">'
+            + escape(value.title()) + '</option>'
+            for value in CATEGORIES
+        )
+        content_choices = "".join(
+            '<option value="' + escape(value, quote=True) + '"'
+            + (' selected' if value == 'mg' else '') + '>'
+            + escape(value) + '</option>'
+            for value in CONTENT_UNITS
+        )
+        compounds_choices = "".join(
+            '<option value="' + str(item["id"]) + '">'
+            + escape(item["name"]) + '</option>'
+            for item in compounds
+        )
+        disabled = "" if compounds else " disabled"
+        compound_token = str(uuid4())
+        vial_token = str(uuid4())
+
+        forms = f'''<section>
+<h2>Add Compound</h2>
+<form method="post" action="/secondary/inventory/compounds" autocomplete="off">
+<input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token" value="{compound_token}">
+<label>Name<input name="name" maxlength="120" required></label>
+<div class="twocol">
+<label>Category<select name="category">{category_choices}</select></label>
+<label>Primary Unit<select name="primary_unit">{content_choices}</select></label>
+</div>
+<label>Notes<textarea name="notes" maxlength="2000" rows="2"></textarea></label>
+<button type="submit">Add Compound</button>
+</form>
+</section>
+<section>
+<h2>Add Single Vial</h2>
+<form method="post" action="/secondary/inventory/vials" autocomplete="off">
+<input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token" value="{vial_token}">
+<label>Compound<select name="compound_id" required>
+{compounds_choices}</select></label>
+<label>Label<input name="label" maxlength="160"
+placeholder="Optional vial name"></label>
+<div class="twocol">
+<label>Content<input name="content_value" type="number"
+min="0.000001" step="any" inputmode="decimal" required></label>
+<label>Unit<select name="content_unit">{content_choices}</select></label>
+</div>
+<div class="twocol">
+<label>Form<select name="form">
+<option value="lyophilized">Lyophilized</option>
+<option value="solution">Solution</option>
+</select></label>
+<label>Liquid Volume (mL)<input name="volume_ml" type="number"
+min="0.0001" step="any" inputmode="decimal"
+placeholder="Required for solutions"></label>
+</div>
+<div class="twocol">
+<label>Lot<input name="lot" maxlength="80"></label>
+<label>Cap Color<input name="cap_color" maxlength="60"></label>
+</div>
+<label>Notes<textarea name="notes" maxlength="2000" rows="2"></textarea></label>
+<p>Creates one sealed vial without a purchase record.
+Bulk kits, reconstitution, editing, and deletion are not available here.</p>
+<button type="submit"{disabled}>Add Vial</button>
+</form>
+</section>'''
+
+    html = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Private Inventory · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:650px;margin:0 auto;padding:16px}}
+nav{{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:18px}}
+section{{border:1px solid #9995;border-radius:12px;padding:14px;margin:16px 0}}
+label{{display:block;margin:12px 0}}
+input,select,textarea,button{{font:inherit;min-height:46px;padding:10px;width:100%}}
+.twocol{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+@media(max-width:390px){{.twocol{{grid-template-columns:1fr}}}}
+li{{margin-bottom:8px;overflow-wrap:anywhere}}
+button{{font-weight:700}}
+</style>
+</head>
+<body><main>
+<h1>My Inventory</h1>
+<p>Private workspace {uid} · DEV preview</p>
+<nav><a href="/secondary/overview">Overview</a>
+<a href="/secondary/vitals">Vitals</a>
+<a href="/secondary/doses">Doses</a></nav>
+{forms}
+<section><h2>Compounds</h2><ul>{list_compounds}</ul></section>
+<section><h2>Vials</h2><ul>{list_vials}</ul></section>
+</main></body></html>'''
+
+    response = HTMLResponse(html, headers={"Cache-Control": "no-store"})
+    return _csrf_response(response, csrf) if csrf is not None else response
+
+
+async def _inventory_submit435(request, action):
+    require_preview()
+    if not inventory_writes_enabled435():
+        raise HTTPException(404, "Secondary inventory creation unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary sign-in required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+    try:
+        if action == "create_compound":
+            payload = form_compound435(form)
+        else:
+            payload = form_vial435(form)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    try:
+        result = request_inventory435(uid, action, payload)
+    except (RuntimeError, PermissionError, OSError, ValueError):
+        raise HTTPException(503, "Private inventory write unavailable") from None
+    if result["status"] == "duplicate":
+        raise HTTPException(409, "This inventory submission was already used")
+    if result["status"] == "rejected":
+        raise HTTPException(422, result["error"])
+    return RedirectResponse(
+        "/secondary/inventory", status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@preview_app.post("/inventory/compounds")
+async def create_private_compound435(request: Request):
+    return await _inventory_submit435(request, "create_compound")
+
+
+@preview_app.post("/inventory/vials")
+async def create_private_vial435(request: Request):
+    return await _inventory_submit435(request, "create_vial")
