@@ -1676,9 +1676,16 @@ Production remains unavailable.</p>
 <section><h2>Recovery Coverage</h2>
 <p>Recovery warning: the existing standard Tracker backup archives the
 administrator database and uploads, but does not include staged secondary
-user databases or <code>tracker-auth.sqlite3</code>. Secondary workspace
+user databases or <code>tracker-auth.sqlite3</code>. Automatic secondary
 backup and restore coverage is not yet available; do not use the standard
-backup as evidence of recovery for secondary accounts.</p></section>
+backup as evidence of recovery for secondary accounts.</p>
+<p>A separate DEV-only root-operated recovery command is available:
+<code>python scripts/tracker-secondary-backup442.py create</code>.
+It captures individually consistent SQLite snapshots and private uploads,
+then verifies an isolated restore without touching live records. It does
+not provide an atomic snapshot across users, automatic scheduling,
+off-host encryption, or a live restore function. Recovery readiness
+requires an actual verified archive.</p></section>
 </main></body></html>'''
     return HTMLResponse(
         html, headers={"Cache-Control": "no-store"}
