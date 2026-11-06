@@ -93,6 +93,10 @@ async def tracker_response_protection(request, call_next):
                 secondary_preview430.vital_writes_enabled433()
                 and request.url.path == "/secondary/vitals/new"
             )
+            or (
+                secondary_preview430.dose_writes_enabled434()
+                and request.url.path == "/secondary/doses/new"
+            )
         )
     )
     if secondary_form_post433:

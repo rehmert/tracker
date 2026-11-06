@@ -431,11 +431,11 @@ def _recent_page432(request, kind):
                 item["at"], item["compound"], amount, item["kind"], item["site"],
             ))
 
-    write_link = (
-        '<p><a href="/secondary/vitals/new">Log Vitals</a></p>'
-        if kind == "vitals" and vital_writes_enabled433()
-        else ""
-    )
+    write_link = ""
+    if kind == "vitals" and vital_writes_enabled433():
+        write_link = '<p><a href="/secondary/vitals/new">Log Vitals</a></p>'
+    if kind == "doses" and dose_writes_enabled434():
+        write_link = '<p><a href="/secondary/doses/new">Log Dose</a></p>'
 
     columns = "".join("<th>" + escape(label) + "</th>" for label in headers)
     entries = "".join(
@@ -618,6 +618,152 @@ async def vital_submit433(request: Request):
 
     return RedirectResponse(
         "/secondary/vitals",
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+# Release 434: DEV-only single-vial dose logging behind a second opt-in gate.
+# Inventory accounting, all database reads, and inserts occur in the child.
+from .worker_dose_write434 import form_payload434, request_dose434
+
+
+def dose_writes_enabled434():
+    return (
+        preview_enabled()
+        and os.getenv("TRACKER_SECONDARY_DOSE_WRITES434", "0") == "1"
+    )
+
+
+@preview_app.get("/doses/new")
+def dose_form434(request: Request):
+    require_preview()
+    if not dose_writes_enabled434():
+        raise HTTPException(404, "Secondary dose logging unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        options = request_dose434(uid, "options")["items"]
+    except (RuntimeError, ValueError, PermissionError, OSError):
+        raise HTTPException(503, "Private vial inventory unavailable") from None
+
+    option_html = "".join(
+        '<option value="' + str(item["id"]) + '">'
+        + escape(item["label"])
+        + " · "
+        + escape(f'{item["remaining_base"]:g} {item["base_unit"]} available')
+        + "</option>"
+        for item in options
+    )
+    if not options:
+        option_html = '<option value="">No available vials</option>'
+
+    from .routers.doses import INJECTION_SITES
+    site_html = '<option value="">Not recorded</option>' + "".join(
+        '<option value="' + escape(site, quote=True) + '">'
+        + escape(site) + '</option>'
+        for site in INJECTION_SITES
+    )
+    token = issue_token(load_key())
+    nonce = str(uuid4())
+    timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M")
+    disabled = " disabled" if not options else ""
+
+    html = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Log Dose · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:550px;margin:0 auto;padding:16px}}
+label{{display:block;margin:14px 0}}
+input,select,textarea,button{{font:inherit;width:100%;min-height:46px;padding:10px}}
+.grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+button{{font-weight:700}}
+</style>
+</head>
+<body>
+<main>
+<h1>Log Dose</h1>
+<p>Private workspace {uid} · DEV pilot</p>
+<p><a href="/secondary/doses">Recent Doses</a></p>
+<form method="post" action="/secondary/doses/new" autocomplete="off">
+<input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
+<input type="hidden" name="submission_token" value="{nonce}">
+<label>Vial
+<select name="vial_id" required>{option_html}</select></label>
+<label>Administered at
+<input type="datetime-local" name="taken_at" value="{timestamp}" required></label>
+<div class="grid">
+<label>Amount
+<input type="number" name="amount" min="0" step="any"
+inputmode="decimal" required></label>
+<label>Unit
+<select name="unit">
+<option value="mg">mg</option>
+<option value="mcg">mcg</option>
+<option value="IU">IU</option>
+<option value="mL">mL</option>
+<option value="uL">uL</option>
+<option value="g">g</option>
+</select></label>
+</div>
+<label>Injection Site
+<select name="site">{site_html}</select></label>
+<label>Notes
+<textarea name="notes" maxlength="2000" rows="3"></textarea></label>
+<p>Only a single-vial dose is supported. Supply deductions,
+waste entries, and corrections are not available in this pilot.</p>
+<button type="submit"{disabled}>Record Dose</button>
+</form>
+</main>
+</body>
+</html>'''
+    return _csrf_response(
+        HTMLResponse(html, headers={"Cache-Control": "no-store"}),
+        token,
+    )
+
+
+@preview_app.post("/doses/new")
+async def dose_submit434(request: Request):
+    require_preview()
+    if not dose_writes_enabled434():
+        raise HTTPException(404, "Secondary dose logging unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary sign-in required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+    try:
+        payload = form_payload434(form)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    try:
+        result = request_dose434(uid, "create_dose", payload)
+    except (RuntimeError, PermissionError, OSError):
+        raise HTTPException(503, "Private dose recording unavailable") from None
+
+    if result["status"] == "duplicate":
+        raise HTTPException(409, "This dose submission was already used")
+    if result["status"] == "rejected":
+        raise HTTPException(422, result["error"])
+
+    return RedirectResponse(
+        "/secondary/doses",
         status_code=303,
         headers={"Cache-Control": "no-store"},
     )
