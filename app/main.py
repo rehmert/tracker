@@ -116,6 +116,10 @@ async def tracker_response_protection(request, call_next):
                 secondary_preview430.supply_writes_enabled438()
                 and request.url.path == "/secondary/supplies"
             )
+            or (
+                secondary_preview430.supply_use_enabled439()
+                and request.url.path == "/secondary/supplies/use"
+            )
         )
     )
     if secondary_form_post433:

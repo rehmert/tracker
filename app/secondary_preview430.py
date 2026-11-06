@@ -1385,6 +1385,10 @@ inputmode="decimal" required></label>
 <label>Notes<textarea name="notes" maxlength="2000" rows="3"></textarea></label>
 <button type="submit">Add Supply</button>
 </form></section>'''
+    usage_link439 = (
+        '<p><a href="/secondary/supplies/use">Log Supply Use</a></p>'
+        if supply_use_enabled439() else ""
+    )
     html = f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1402,8 +1406,9 @@ li{{margin:12px 0;overflow-wrap:anywhere}}
 <h1>My Supplies</h1>
 <p>Private workspace {uid} · DEV preview</p>
 <p><a href="/secondary/inventory">My Inventory</a></p>
-<p>Supply intake is tracked independently of administrations.
-Dose and reconstitution supplies are not yet deducted by this page.</p>
+<p>Supply intake is separate from administration history.
+Use the explicit consumption form to link a supply to a recorded event.</p>
+{usage_link439}
 {form}
 <section><h2>Supply Inventory</h2><ul>{rows}</ul></section>
 </main></body></html>'''
@@ -1436,5 +1441,142 @@ async def secondary_supply_create438(request: Request):
         raise HTTPException(409, "This supply submission was already used")
     return RedirectResponse(
         "/secondary/supplies", status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+# Release 439: explicit supply consumption linked to a recorded private event.
+from .worker_supply_use439 import request_use439, form_use439
+
+
+def supply_use_enabled439():
+    return (
+        preview_enabled()
+        and os.getenv("TRACKER_SECONDARY_SUPPLY_USE439", "0") == "1"
+    )
+
+
+@preview_app.get("/supplies/use")
+def secondary_supply_use_form439(request: Request):
+    require_preview()
+    if not supply_use_enabled439():
+        raise HTTPException(404, "Supply-use logging unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        report = request_use439(uid, "options")
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private supply-use options unavailable") from None
+
+    choices = "".join(
+        '<option value="' + str(item["id"]) + '">'
+        + escape(item["name"])
+        + ' · ' + escape(item["kind"].replace("_", " ").title())
+        + ' · ' + escape(f'{item["remaining"]:g} {item["unit"]} available')
+        + '</option>'
+        for item in report["supplies"]
+    ) or '<option value="">No supplies available</option>'
+
+    references = "".join(
+        '<option value="' + escape(
+            item["type"] + ":" + str(item["id"]), quote=True,
+        ) + '">' + escape(item["label"]) + '</option>'
+        for item in report["references"]
+    ) or '<option value="">No dose or reconstitution history</option>'
+
+    history = "".join(
+        '<li>' + escape(item["supply"]) + " · "
+        + escape(f'{item["amount"]:g} {item["unit"]}')
+        + ' · ' + escape(item["reference"]) + '</li>'
+        for item in report["history"]
+    ) or "<li>No supply consumption recorded yet.</li>"
+
+    disabled = (
+        " disabled"
+        if not report["supplies"] or not report["references"]
+        else ""
+    )
+    csrf = issue_token(load_key())
+    html = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Log Supply Use · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:570px;margin:auto;padding:16px}}
+label{{display:block;margin:14px 0}}
+input,select,textarea,button{{font:inherit;width:100%;min-height:46px;padding:10px}}
+section{{border:1px solid #9995;border-radius:12px;padding:14px;margin:16px 0}}
+button{{font-weight:700}}li{{margin:12px 0;overflow-wrap:anywhere}}
+</style>
+</head>
+<body><main>
+<h1>Log Supply Use</h1>
+<p>Private workspace {uid} · DEV pilot</p>
+<p><a href="/secondary/supplies">My Supplies</a></p>
+<form action="/secondary/supplies/use" method="post" autocomplete="off">
+<input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token" value="{uuid4()}">
+<label>Supply<select name="supply_id" required>{choices}</select></label>
+<label>Link to recorded event
+<select name="reference" required>{references}</select></label>
+<label>Actual quantity used
+<input type="number" name="amount" min="0.0001" step="any"
+inputmode="decimal" required></label>
+<label>Notes or reason
+<textarea name="notes" maxlength="400" rows="3"></textarea></label>
+<p>BAC water uses mL and can only be linked to a reconstitution.
+Its cumulative recorded use cannot exceed the volume added.
+Needles, syringes, swabs and other disposables use whole counts.</p>
+<p>Supply use is never inferred from a dose. Record only what was actually used.
+The same supply cannot be linked twice to the same event in this pilot.</p>
+<button type="submit"{disabled}>Record Supply Use</button>
+</form>
+<section><h2>Recent Supply Use</h2><ul>{history}</ul></section>
+</main></body></html>'''
+    return _csrf_response(
+        HTMLResponse(html, headers={"Cache-Control": "no-store"}),
+        csrf,
+    )
+
+
+@preview_app.post("/supplies/use")
+async def secondary_supply_use_submit439(request: Request):
+    require_preview()
+    if not supply_use_enabled439():
+        raise HTTPException(404, "Supply-use logging unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary sign-in required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+    try:
+        payload = form_use439(form)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    try:
+        result = request_use439(uid, "use", payload)
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private supply-use storage unavailable") from None
+
+    if result["status"] == "duplicate":
+        raise HTTPException(409, "This supply submission identifier was used")
+    if result["status"] == "rejected":
+        raise HTTPException(422, result["error"])
+    return RedirectResponse(
+        "/secondary/supplies/use", status_code=303,
         headers={"Cache-Control": "no-store"},
     )
