@@ -891,6 +891,11 @@ Bulk kits, reconstitution, editing, and deletion are not available here.</p>
 </form>
 </section>'''
 
+    reconstitution_link = (
+        '<p><a href="/secondary/reconstitution">Record Reconstitution</a></p>'
+        if reconstitution_enabled436() else ""
+    )
+
     html = f'''<!doctype html>
 <html lang="en">
 <head>
@@ -914,6 +919,7 @@ button{{font-weight:700}}
 <body><main>
 <h1>My Inventory</h1>
 <p>Private workspace {uid} · DEV preview</p>
+{reconstitution_link}
 <nav><a href="/secondary/overview">Overview</a>
 <a href="/secondary/vitals">Vitals</a>
 <a href="/secondary/doses">Doses</a></nav>
@@ -969,3 +975,125 @@ async def create_private_compound435(request: Request):
 @preview_app.post("/inventory/vials")
 async def create_private_vial435(request: Request):
     return await _inventory_submit435(request, "create_vial")
+
+
+# Release 436: single-use private reconstitution recording with no supply debit.
+from .worker_reconstitution436 import (
+    request_reconstitution436, form_payload436,
+)
+
+
+def reconstitution_enabled436():
+    return (
+        preview_enabled()
+        and os.getenv("TRACKER_SECONDARY_RECONSTITUTION_WRITES436", "0") == "1"
+    )
+
+
+@preview_app.get("/reconstitution")
+def private_reconstitution_form436(request: Request):
+    require_preview()
+    if not reconstitution_enabled436():
+        raise HTTPException(404, "Secondary reconstitution unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        options = request_reconstitution436(uid, "options")["options"]
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private vial inventory unavailable") from None
+
+    choices = "".join(
+        '<option value="' + str(item["id"]) + '">'
+        + escape(item["label"])
+        + " · "
+        + escape(f'{item["content_value"]:g} {item["content_unit"]}')
+        + "</option>"
+        for item in options
+    )
+    if not options:
+        choices = '<option value="">No eligible dry vials</option>'
+
+    disabled = " disabled" if not options else ""
+    csrf = issue_token(load_key())
+    nonce = str(uuid4())
+    html = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Reconstitution · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:540px;margin:0 auto;padding:16px}}
+label{{display:block;margin:14px 0}}
+input,select,button{{font:inherit;min-height:46px;padding:10px;width:100%}}
+button{{font-weight:700}}
+</style>
+</head>
+<body><main>
+<h1>Record Reconstitution</h1>
+<p>Private workspace {uid} · DEV-only pilot</p>
+<p><a href="/secondary/inventory">My Inventory</a></p>
+<form method="post" action="/secondary/reconstitution" autocomplete="off">
+<input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token" value="{nonce}">
+<label>Dry Vial
+<select name="vial_id" required>{choices}</select></label>
+<label>Liquid volume added (mL)
+<input name="volume_ml" type="number" min="0.0001" max="1000"
+step="any" inputmode="decimal" placeholder="Actual measured amount"
+required></label>
+<p>Enter the volume you actually added; this form does not recommend
+a volume or dose. This records the vial volume and preparation event.
+It does not deduct BAC water or disposable supplies.</p>
+<p>Existing reconstitutions, dosed vials, corrections, and
+repeat preparations are not supported in this pilot.</p>
+<button type="submit"{disabled}>Record Reconstitution</button>
+</form>
+</main></body></html>'''
+    return _csrf_response(
+        HTMLResponse(html, headers={"Cache-Control": "no-store"}),
+        csrf,
+    )
+
+
+@preview_app.post("/reconstitution")
+async def private_reconstitution_submit436(request: Request):
+    require_preview()
+    if not reconstitution_enabled436():
+        raise HTTPException(404, "Secondary reconstitution unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary sign-in required")
+    form = await request.form()
+    _csrf_check(request, form)
+    try:
+        payload = form_payload436(form)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    try:
+        result = request_reconstitution436(uid, "reconstitute", payload)
+    except (RuntimeError, PermissionError, OSError, ValueError):
+        raise HTTPException(
+            503, "Private reconstitution storage unavailable"
+        ) from None
+
+    if result["status"] == "duplicate":
+        raise HTTPException(409, "This submission identifier was already used")
+    if result["status"] == "rejected":
+        raise HTTPException(422, result["error"])
+    return RedirectResponse(
+        "/secondary/inventory",
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )

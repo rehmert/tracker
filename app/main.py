@@ -104,6 +104,10 @@ async def tracker_response_protection(request, call_next):
                     "/secondary/inventory/vials",
                 )
             )
+            or (
+                secondary_preview430.reconstitution_enabled436()
+                and request.url.path == "/secondary/reconstitution"
+            )
         )
     )
     if secondary_form_post433:
