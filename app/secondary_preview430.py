@@ -345,7 +345,8 @@ def overview_get(request: Request):
 <p><a href="/secondary/vitals">Recent Vitals</a> ·
 <a href="/secondary/doses">Recent Doses</a> ·
 <a href="/secondary/inventory">My Inventory</a> ·
-<a href="/secondary/readiness">Workspace Readiness</a></p>
+<a href="/secondary/readiness">Workspace Readiness</a> ·
+<a href="/secondary/security">Session Security</a></p>
 <table>{rows}</table>
 <form method="post" action="/secondary/logout">
 <input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
@@ -1658,7 +1659,8 @@ th,td{{border-bottom:1px solid #9995;padding:10px 6px;text-align:left}}
 <h1>Workspace Readiness</h1>
 <p>DEV-only secondary workspace {uid} · Isolated data and login preview</p>
 <p><a href="/secondary/overview">Overview</a> ·
-<a href="/secondary/inventory">Inventory</a></p>
+<a href="/secondary/inventory">Inventory</a> ·
+<a href="/secondary/security">Session Security</a></p>
 <p>These controls do not activate normal Tracker multi-user login.
 Only the enabled pilot operations below permit writes.</p>
 <h2>Workspace Records</h2>
@@ -1671,7 +1673,97 @@ Only the enabled pilot operations below permit writes.</p>
 <p>Operators can suspend all secondary gateway access by setting
 <code>TRACKER_SECONDARY_LOCKDOWN440=1</code> in the DEV service environment.
 Production remains unavailable.</p>
+<section><h2>Recovery Coverage</h2>
+<p>Recovery warning: the existing standard Tracker backup archives the
+administrator database and uploads, but does not include staged secondary
+user databases or <code>tracker-auth.sqlite3</code>. Secondary workspace
+backup and restore coverage is not yet available; do not use the standard
+backup as evidence of recovery for secondary accounts.</p></section>
 </main></body></html>'''
     return HTMLResponse(
         html, headers={"Cache-Control": "no-store"}
+    )
+
+
+# Release 441: self-service secondary session review and scoped revocation.
+# No user ID or arbitrary session hash is accepted from the browser.
+from .secondary_sessions441 import session_overview441, revoke_other_sessions441
+
+
+@preview_app.get("/security")
+def secondary_security_page441(request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+    raw = request.cookies.get(COOKIE)
+    uid = _session_user(raw)
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+    try:
+        report = session_overview441(raw)
+    except (PermissionError, RuntimeError, ValueError, sqlite3.Error, OSError):
+        raise HTTPException(503, "Secondary session details unavailable") from None
+
+    csrf = issue_token(load_key())
+    html = f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Session Security · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:550px;margin:auto;padding:16px}}
+section{{border:1px solid #9995;border-radius:12px;padding:16px;margin:16px 0}}
+button{{font:inherit;min-height:46px;width:100%;padding:12px}}
+p{{line-height:1.5}}
+</style></head><body><main>
+<h1>Session Security</h1>
+<p>Private workspace {uid} · DEV-only pilot</p>
+<p><a href="/secondary/overview">Overview</a> ·
+<a href="/secondary/readiness">Readiness</a></p>
+<section>
+<h2>Active Sessions</h2>
+<p>{report["active_sessions"]} active session(s), including this device.</p>
+<p>{report["other_sessions"]} other active session(s).</p>
+<p>Current session expires {escape(report["current_expires_utc"])}.</p>
+<form method="post" action="/secondary/security/revoke-others">
+<input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
+<button type="submit">Sign Out Other Devices</button>
+</form>
+</section>
+<p>Session revocation does not change the password, enable standard
+Tracker login, or modify any private health or inventory records.
+Sign out this device from the Overview page.</p>
+</main></body></html>'''
+    return _csrf_response(
+        HTMLResponse(html, headers={"Cache-Control": "no-store"}),
+        csrf,
+    )
+
+
+@preview_app.post("/security/revoke-others")
+async def secondary_revoke_others441(request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+    raw = request.cookies.get(COOKIE)
+    uid = _session_user(raw)
+    if uid is None:
+        raise HTTPException(401, "Secondary session required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+    if set(form) != {"csrf_token"} or len(form.getlist("csrf_token")) != 1:
+        raise HTTPException(422, "Unexpected session control fields")
+
+    try:
+        revoke_other_sessions441(raw)
+    except PermissionError:
+        raise HTTPException(401, "Secondary session expired") from None
+    except (RuntimeError, ValueError, sqlite3.Error, OSError):
+        raise HTTPException(503, "Secondary session revocation unavailable") from None
+
+    return RedirectResponse(
+        "/secondary/security", status_code=303,
+        headers={"Cache-Control": "no-store"},
     )
