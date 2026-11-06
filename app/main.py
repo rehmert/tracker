@@ -82,13 +82,20 @@ async def tracker_response_protection(request, call_next):
         )
     )
 
-    # Secondary preview validates its own signed CSRF tokens.
-    # Only its login/logout POSTs skip the generic Host/Origin check.
-    if (
+    # Secondary forms validate their own signed CSRF cookie/token pairs.
+    # The vital POST is exempt only when the separate DEV write gate is on.
+    secondary_form_post433 = (
         secondary_preview430.preview_enabled()
         and request.method.upper() == "POST"
-        and request.url.path in ("/secondary/login", "/secondary/logout")
-    ):
+        and (
+            request.url.path in ("/secondary/login", "/secondary/logout")
+            or (
+                secondary_preview430.vital_writes_enabled433()
+                and request.url.path == "/secondary/vitals/new"
+            )
+        )
+    )
+    if secondary_form_post433:
         session_auth_post = True
 
     if (
@@ -118,10 +125,7 @@ async def tracker_response_protection(request, call_next):
                 )
                 and session_auth385.enabled()
             )
-            and not (
-                secondary_preview430.preview_enabled()
-                and request.url.path in ("/secondary/login", "/secondary/logout")
-            )
+            and not secondary_form_post433
             and reject_write(
                 request.method,
                 csrf_report,

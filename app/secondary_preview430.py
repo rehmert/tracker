@@ -1,4 +1,4 @@
-"""DEV-only, explicitly enabled read-only secondary-user preview.
+"""DEV-only, explicitly enabled secondary-user preview and vitals pilot.
 
 This is not an application router or a general HTTP proxy.
 Staged user credentials remain disabled for normal Tracker login.
@@ -431,6 +431,12 @@ def _recent_page432(request, kind):
                 item["at"], item["compound"], amount, item["kind"], item["site"],
             ))
 
+    write_link = (
+        '<p><a href="/secondary/vitals/new">Log Vitals</a></p>'
+        if kind == "vitals" and vital_writes_enabled433()
+        else ""
+    )
+
     columns = "".join("<th>" + escape(label) + "</th>" for label in headers)
     entries = "".join(
         "<tr>" + "".join("<td>" + _html_value432(cell) + "</td>" for cell in row)
@@ -462,6 +468,7 @@ th,td{{border-bottom:1px solid #aaa5;text-align:left;padding:9px 6px}}
 <nav><a href="/secondary/overview">Overview</a>
 <a href="/secondary/vitals">Vitals</a>
 <a href="/secondary/doses">Doses</a></nav>
+{write_link}
 <div class="scroll"><table><thead><tr>{columns}</tr></thead>
 <tbody>{entries}</tbody></table></div>
 <p>Showing up to 10 most recent records.</p>
@@ -479,3 +486,138 @@ def recent_vitals432(request: Request):
 @preview_app.get("/doses")
 def recent_doses432(request: Request):
     return _recent_page432(request, "doses")
+
+
+# Release 433: Explicitly opt-in, restricted secondary vitals logging.
+# Dose and inventory writes remain DISABLED.
+from datetime import datetime
+from uuid import uuid4
+from .worker_vital_write433 import form_payload433, create_vital_for_user433
+
+
+def vital_writes_enabled433():
+    return (
+        preview_enabled()
+        and os.getenv("TRACKER_SECONDARY_VITAL_WRITES433", "0") == "1"
+    )
+
+
+@preview_app.get("/vitals/new")
+def vital_form433(request: Request):
+    require_preview()
+    if not vital_writes_enabled433():
+        raise HTTPException(404, "Secondary vital logging unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    csrf = issue_token(load_key())
+    nonce = str(uuid4())
+    timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M")
+    unit = config.WEIGHT_UNIT
+    alternate = "kg" if unit == "lb" else "lb"
+
+    html = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Log Vitals · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px system-ui,sans-serif;max-width:540px;margin:0 auto;padding:16px}}
+label{{display:block;margin:14px 0}}
+input,select,textarea,button{{font:inherit;width:100%;min-height:46px;padding:10px}}
+fieldset{{border:1px solid #9995;border-radius:10px;margin:12px 0}}
+.grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+button{{font-weight:700}}
+</style>
+</head>
+<body>
+<main>
+<h1>Log Vitals</h1>
+<p>Private workspace {uid} · DEV pilot</p>
+<p><a href="/secondary/vitals">Recent Vitals</a></p>
+<form method="post" action="/secondary/vitals/new" autocomplete="off">
+<input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token" value="{nonce}">
+<label>Measured at
+<input type="datetime-local" name="measured_at"
+value="{timestamp}" required></label>
+<fieldset>
+<legend>Weight</legend>
+<div class="grid">
+<label>Amount<input type="number" name="weight" min="0" step="0.01"
+placeholder="Optional"></label>
+<label>Unit<select name="weight_unit">
+<option value="{unit}" selected>{unit}</option>
+<option value="{alternate}">{alternate}</option>
+</select></label>
+</div>
+</fieldset>
+<fieldset>
+<legend>Blood Pressure</legend>
+<div class="grid">
+<label>Systolic<input type="number" name="systolic" min="50" max="300"
+inputmode="numeric" placeholder="Top"></label>
+<label>Diastolic<input type="number" name="diastolic" min="20" max="200"
+inputmode="numeric" placeholder="Bottom"></label>
+</div>
+</fieldset>
+<label>Pulse (bpm)
+<input type="number" name="pulse_bpm" min="20" max="300"
+inputmode="numeric" placeholder="Optional"></label>
+<label>Context
+<input type="text" name="context" maxlength="80"
+placeholder="Morning, seated"></label>
+<label>Notes
+<textarea name="notes" maxlength="2000" rows="3"></textarea></label>
+<p>Enter at least one of weight, blood pressure, or pulse.</p>
+<button type="submit">Save Vital Reading</button>
+</form>
+</main>
+</body>
+</html>'''
+    return _csrf_response(
+        HTMLResponse(html, headers={"Cache-Control": "no-store"}),
+        csrf,
+    )
+
+
+@preview_app.post("/vitals/new")
+async def vital_submit433(request: Request):
+    require_preview()
+    if not vital_writes_enabled433():
+        raise HTTPException(404, "Secondary vital logging unavailable")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary sign-in required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+
+    try:
+        payload = form_payload433(form)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    try:
+        result = create_vital_for_user433(uid, payload)
+    except (RuntimeError, PermissionError, OSError):
+        raise HTTPException(503, "Private vitals storage unavailable") from None
+
+    if result["status"] == "duplicate":
+        raise HTTPException(409, "This vital reading was already recorded")
+
+    return RedirectResponse(
+        "/secondary/vitals",
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
