@@ -512,6 +512,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = matches[current];
 
       row.classList.add("tracker-find-current");
+      document.dispatchEvent(new CustomEvent(
+        "tracker:vials-show-row", {detail:{row}}
+      ));
       row.scrollIntoView({
         behavior: "auto",
         block: "center"
@@ -674,7 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </div>
 <!-- END_TRACKER_STAGE34_ATTENTION -->
 <div class="scroll"><table id="tracker-vials-sortable">
-  <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all visible vials"></th><th data-vial-sort="compound" aria-sort="none"><button type="button" class="vial-sort-button">Compound</button></th><th data-vial-sort="vial" aria-sort="none"><button type="button" class="vial-sort-button">Vial</button></th><th data-vial-sort="remaining" aria-sort="none"><button type="button" class="vial-sort-button">Remaining</button></th><th class="n" data-vial-sort="amount" aria-sort="none"><button type="button" class="vial-sort-button">Amount left</button></th><th class="n" data-vial-sort="landed" aria-sort="none"><button type="button" class="vial-sort-button">Landed cost</button></th><th data-vial-sort="cost" aria-sort="none"><button type="button" class="vial-sort-button">Cost</button></th><th data-vial-sort="coa" aria-sort="none"><button type="button" class="vial-sort-button">COA</button></th><th data-vial-sort="status" aria-sort="none"><button type="button" class="vial-sort-button">Status</button></th></tr></thead>
+  <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all visible vials"></th><th data-vial-sort="compound" aria-sort="none"><button type="button" class="vial-sort-button">Compound</button></th><th data-vial-sort="vial" aria-sort="none"><button type="button" class="vial-sort-button">Vial</button></th><th data-vial-sort="remaining" aria-sort="none"><button type="button" class="vial-sort-button">Remaining</button></th><th class="n" data-vial-sort="amount" aria-sort="none"><button type="button" class="vial-sort-button">Amount left</button></th><th class="n" data-vial-sort="landed" aria-sort="none"><button type="button" class="vial-sort-button">Landed cost</button></th><th data-vial-sort="cost" aria-sort="none"><button type="button" class="vial-sort-button">Cost</button></th><th data-vial-sort="coa" aria-sort="none"><button type="button" class="vial-sort-button">COA</button></th><th data-vial-sort="status" aria-sort="none"><button type="button" class="vial-sort-button">Status</button></th><th data-vial-sort="vendor" aria-sort="none"><button type="button" class="vial-sort-button">Vendor</button></th></tr></thead>
   <tbody>
   {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
   <tr data-attention-status="{{ v.status }}"
@@ -691,10 +694,29 @@ document.addEventListener("DOMContentLoaded", () => {
     <td>{{ d|unit_cost }}</td>
     <td>{{ 'yes' if v.coa else 'none' }}</td>
     <td>{{ v.status|replace('_', ' ') }}</td>
+    <td>{{ v.purchase.vendor if v.purchase and v.purchase.vendor else '—' }}</td>
   </tr>
-  {% else %}<tr><td colspan="9" class="empty">No vials match. Vials are added from a <a href="/purchases">purchase</a>.</td></tr>{% endfor %}
+  {% else %}<tr><td colspan="10" class="empty">No vials match. Vials are added from a <a href="/purchases">purchase</a>.</td></tr>{% endfor %}
   </tbody>
 </table></div>
+<nav id="tracker-vial-pager448" class="card" aria-label="Vial table pages" hidden>
+  <div class="tracker-vial-pager448-controls">
+    <label class="field"><span>Rows per page</span>
+      <select id="tracker-vial-page-size448" aria-label="Vial rows per page">
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="0">All</option>
+      </select>
+    </label>
+    <button type="button" id="tracker-vial-first448" aria-label="First vial page">First</button>
+    <button type="button" id="tracker-vial-prev448" aria-label="Previous vial page">Previous</button>
+    <span id="tracker-vial-page-info448" role="status" aria-live="polite">Loading vial pages…</span>
+    <button type="button" id="tracker-vial-next448" aria-label="Next vial page">Next</button>
+    <button type="button" id="tracker-vial-last448" aria-label="Last vial page">Last</button>
+  </div>
+  <p class="note">Pagination changes only which rows are visible. Saved selections, sorting, inventory reports and CSV exports still include the complete filtered inventory.</p>
+</nav>
 
 <!-- Guided bulk edits follow the selectable inventory table. -->
 <form id="bulk-vials" method="post" action="/vials/bulk">
@@ -962,6 +984,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 <script src="/static/vial_saved_views.js" defer></script>
 <script src="/static/js/tracker-vials-sort.js?v=1" defer></script>
+<script src="/static/js/tracker-vial-pages448.js?v=448" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-vial-pages448.css?v=448">
 <script src="/static/js/tracker-vial-attention.js?v=1" defer></script>
 <script src="/static/js/tracker-attention-navigation.js?v=1" defer></script>
 <link rel="stylesheet" href="/static/tracker-vials-sort.css?v=1">

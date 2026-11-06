@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, Response
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import services, units as U
 from ..inventory_lock import reserve_inventory_write
@@ -35,7 +35,9 @@ def vials_page(request: Request, status: str = "active", compound_id: str | None
 
     vials = list(
         db.scalars(
-            vial_listing(status,compound_id)
+            vial_listing(status,compound_id).options(
+                selectinload(Vial.purchase)
+            )
         )
     )
 

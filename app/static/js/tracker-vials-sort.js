@@ -28,7 +28,8 @@
       landed: 5,
       cost: 6,
       coa: 7,
-      status: 8
+      status: 8,
+      vendor: 9
     };
 
     const numberKeys = new Set([
@@ -127,6 +128,8 @@
               : 'none'
           );
         });
+        // Release 448: reapply the visible page after in-place DOM reordering.
+        document.dispatchEvent(new Event('tracker:vials-sorted'));
       });
     });
   }

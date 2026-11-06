@@ -1,0 +1,52 @@
+/* Release 448: responsive, read-only vial table pagination. */
+#tracker-vials-sortable tbody tr[hidden],
+#tracker-vial-pager448[hidden] {
+  display: none !important;
+}
+#tracker-vial-pager448 {
+  margin: .65rem 0 1rem;
+  padding: .7rem .85rem;
+}
+#tracker-vial-pager448 .tracker-vial-pager448-controls {
+  display: flex;
+  align-items: end;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+#tracker-vial-pager448 .field {
+  margin: 0 .4rem 0 0;
+}
+#tracker-vial-pager448 select {
+  min-height: 42px;
+  min-width: 5.5rem;
+}
+#tracker-vial-pager448 button {
+  min-height: 42px;
+  padding: .45rem .75rem;
+}
+#tracker-vial-page-info448 {
+  flex: 1 1 13rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  align-self: center;
+}
+#tracker-vial-pager448 .note {
+  margin: .5rem 0 0;
+}
+@media (max-width: 680px) {
+  #tracker-vial-pager448 .tracker-vial-pager448-controls {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .45rem;
+  }
+  #tracker-vial-pager448 .field,
+  #tracker-vial-page-info448 {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  #tracker-vial-pager448 button {
+    padding: .5rem .25rem;
+    font-size: .88rem;
+  }
+}
