@@ -156,8 +156,9 @@ def preview_primary_page487(request: Request, path: str):
         '</head><body><main>'
         '<a href="/secondary/overview">Private workspace</a>'
         '<h1>Primary Tracker — read-only preview</h1>'
-        '<p>Snapshot of your private workspace. This view is '
-        'non-interactive; writes and original app links are disabled.</p>'
+        '<p>Snapshot of your private workspace. Original app links '
+        'are disabled. Compound creation is available below only '
+        'when the separate private write gate is enabled.</p>'
         '<nav aria-label="Private features">' + nav + '</nav>'
         '<h2>' + escape(plan.route) + '</h2>'
         '<pre>' + escape(content) + '</pre>' + form_html
