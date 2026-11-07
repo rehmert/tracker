@@ -628,15 +628,34 @@ def test_food_write456_water_and_food_isolation(browser, monkeypatch):
         r'name="csrf_token"\s+value="([^"]+)"',
         page.text,
     ).group(1)
-    nonces = re.findall(
-        r'name="submission_token"\s+value="([^"]+)"',
-        page.text,
-    )
-    assert len(nonces) == 2
+    # Each form owns its own replay-protection token.
+    # Do not depend on the number or order of forms
+    # rendered on the mobile logging page.
+    def submission_token_for(action):
+        form_match = re.search(
+            r'<form method="post" action="/secondary/food/'
+            + re.escape(action)
+            + r'">(.*?)</form>',
+            page.text,
+            re.S,
+        )
+        assert form_match, f"Missing {action} form"
+
+        tokens = re.findall(
+            r'name="submission_token"\s+value="([^"]+)"',
+            form_match.group(1),
+        )
+        assert len(tokens) == 1
+        return tokens[0]
+
+    water_nonce = submission_token_for("water")
+    food_nonce = submission_token_for("entry")
+
+    assert water_nonce != food_nonce
 
     water = {
         "csrf_token": csrf,
-        "submission_token": nonces[0],
+        "submission_token": water_nonce,
         "day": DAY,
         "ounces": "8.5",
     }
@@ -656,7 +675,7 @@ def test_food_write456_water_and_food_isolation(browser, monkeypatch):
 
     food = {
         "csrf_token": csrf,
-        "submission_token": nonces[1],
+        "submission_token": food_nonce,
         "day": DAY,
         "name": "Private Test Yogurt",
         "meal": "Breakfast",
@@ -844,3 +863,150 @@ def test_food_write456_parent_child_wire_contract(browser, monkeypatch):
     assert captured[-1]["payload"]["proteins"] == "15.0"
     assert captured[-1]["payload"]["fiber"] == ""
     assert "nutrients" not in captured[-1]["payload"]
+
+
+# Release 457: private saved-food reuse with replay protection.
+def test_saved_food457_isolation_and_replay(browser, monkeypatch):
+    client, root = browser
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    login(client, 2)
+
+    form = client.get("/secondary/food/new")
+    assert form.status_code == 200
+    assert "Quick Log Saved Food" in form.text
+    assert "USER-TWO" in form.text
+    assert "USER-THREE" not in form.text
+
+    csrf = re.search(
+        r'name="csrf_token"\s+value="([^"]+)"',
+        form.text,
+    ).group(1)
+
+    reuse = re.search(
+        r'action="/secondary/food/reuse".*?'
+        r'name="submission_token"\s+value="([^"]+)"',
+        form.text,
+        re.S,
+    )
+    assert reuse
+
+    data = {
+        "csrf_token": csrf,
+        "submission_token": reuse.group(1),
+        "product_id": "1",
+        "day": DAY,
+        "meal": "Lunch",
+        "servings": "1",
+    }
+
+    result = client.post(
+        "/secondary/food/reuse",
+        data=data,
+        follow_redirects=False,
+    )
+    assert result.status_code == 303
+
+    again = client.post(
+        "/secondary/food/reuse",
+        data=data,
+        follow_redirects=False,
+    )
+    assert again.status_code == 409
+
+    with sqlite3.connect(
+        root / "users" / "2" / "tracker.db"
+    ) as db:
+        rows = db.execute("""
+            SELECT product_id,meal,servings
+            FROM tracker_food_entries ORDER BY id
+        """).fetchall()
+
+    assert rows == [
+        (1, "Breakfast", 2.0),
+        (1, "Lunch", 1.0),
+    ]
+
+    login(client, 3)
+    other = client.get("/secondary/food/new")
+    assert other.status_code == 200
+    assert "USER-THREE" in other.text
+    assert "USER-TWO" not in other.text
+
+    other_day = client.get("/secondary/food?day=" + DAY)
+    assert "USER-TWO" not in other_day.text
+    assert "450.0 kcal" in other_day.text
+
+
+def test_saved_food457_rejects_foreign_product_and_fields(
+    browser, monkeypatch
+):
+    import uuid
+    from app.worker_saved_food457 import (
+        request_saved457, parse_request457
+    )
+
+    _, root = browser
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+
+    for raw in (
+        b'{"action":"list","user_id":3}',
+        b'{"action":"list","database":"/tmp/other.db"}',
+        b'{"action":"reuse","payload":{"sql":"SELECT"}}',
+        b'{"action":"list","action":"reuse"}',
+        b"z" * 1000,
+    ):
+        with pytest.raises(ValueError):
+            parse_request457(raw)
+
+    with pytest.raises(PermissionError):
+        request_saved457(1, "list", data_root=root)
+
+    payload = {
+        "product_id": 99999,
+        "day": DAY,
+        "meal": "Dinner",
+        "servings": 1.0,
+        "submission_token": str(uuid.uuid4()),
+    }
+
+    with pytest.raises(RuntimeError):
+        request_saved457(2, "reuse", payload, root)
+
+    with sqlite3.connect(
+        root / "users" / "2" / "tracker.db"
+    ) as db:
+        assert db.execute("""
+            SELECT COUNT(*) FROM tracker_food_entries
+        """).fetchone()[0] == 1
+
+
+def test_saved_food457_gate_lockdown_and_prod(
+    browser, monkeypatch
+):
+    client, _ = browser
+    login(client, 2)
+
+    assert client.post("/secondary/food/reuse").status_code == 404
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+
+    assert client.post(
+        "/secondary/food/reuse",
+        data={"csrf_token": "invalid"},
+    ).status_code == 403
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 404
+    assert client.post("/secondary/food/reuse").status_code == 404
+
+    monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440")
+    monkeypatch.setattr(config, "instance_label", lambda: "PROD")
+    assert client.post("/secondary/food/reuse").status_code == 404

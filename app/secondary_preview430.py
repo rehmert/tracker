@@ -2041,6 +2041,13 @@ def secondary_food_week_csv455(request: Request):
     )
 
 
+# Release 457: isolated saved-food selection and logging.
+from .worker_saved_food457 import (
+    request_saved457,
+    form_reuse457,
+)
+
+
 # Release 456: explicitly gated secondary food/water logging.
 from .worker_food_write456 import (
     form_payload456,
@@ -2071,8 +2078,27 @@ def secondary_food_form456(request: Request):
             "/secondary/login", status_code=303
         )
 
+    try:
+        saved_report = request_saved457(uid, "list")
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(
+            503, "Private saved foods unavailable"
+        ) from None
+
+    saved_options = "".join(
+        '<option value="' + str(item["id"]) + '">'
+        + escape(item["name"])
+        + ' · ' + escape(item["serving"])
+        + '</option>'
+        for item in saved_report["items"]
+    )
+    saved_disabled = "" if saved_options else " disabled"
+    if not saved_options:
+        saved_options = '<option value="">No saved foods yet</option>'
+
     csrf = issue_token(load_key())
     day = _food_date452.today().isoformat()
+    reuse_nonce = str(uuid4())
     water_nonce = str(uuid4())
     food_nonce = str(uuid4())
 
@@ -2115,6 +2141,30 @@ gap:10px}}
 <p><a href="/secondary/food">Back to Food Journal</a></p>
 <h1>Log Food &amp; Water</h1>
 <p class="note">Private workspace · DEV pilot</p>
+<section><h2>Quick Log Saved Food</h2>
+<form method="post" action="/secondary/food/reuse">
+<input type="hidden" name="csrf_token"
+value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token"
+value="{reuse_nonce}">
+<label>Previously Logged Food
+<select name="product_id" required>{saved_options}</select></label>
+<label>Journal Day
+<input type="date" name="day" value="{day}" required></label>
+<div class="grid">
+<label>Meal<select name="meal">
+<option>Breakfast</option><option>Lunch</option>
+<option>Dinner</option><option>Snack</option>
+</select></label>
+<label>Servings
+<input type="number" name="servings" min=".001" max="100"
+step=".001" inputmode="decimal" value="1" required></label>
+</div>
+<button type="submit"{saved_disabled}>Log Saved Food</button>
+</form>
+<p class="note">Uses the saved per-serving nutrients
+from your private journal.</p>
+</section>
 <section><h2>Quick Water</h2>
 <form method="post" action="/secondary/food/water">
 <input type="hidden" name="csrf_token"
@@ -2212,3 +2262,43 @@ async def secondary_water_submit456(request: Request):
 @preview_app.post("/food/entry")
 async def secondary_food_submit456(request: Request):
     return await _secondary_food_submit456(request, "food")
+
+
+# Release 457: strict CSRF and authenticated private quick-log route.
+@preview_app.post("/food/reuse")
+async def secondary_quick_food457(request: Request):
+    require_preview()
+    if not food_writes_enabled456():
+        raise HTTPException(404, "Private food logging disabled")
+    if request.query_params:
+        raise HTTPException(400, "Unsupported quick food parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary session required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+
+    try:
+        payload = form_reuse457(form)
+    except ValueError:
+        raise HTTPException(422, "Invalid quick food entry") from None
+
+    try:
+        result = request_saved457(uid, "reuse", payload)
+    except ValueError:
+        raise HTTPException(422, "Saved food unavailable") from None
+    except (RuntimeError, PermissionError, OSError):
+        raise HTTPException(
+            503, "Private saved food write unavailable"
+        ) from None
+
+    if result["status"] == "duplicate":
+        raise HTTPException(409, "Saved food already recorded")
+
+    return RedirectResponse(
+        "/secondary/food?day=" + payload["day"],
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )

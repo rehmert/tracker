@@ -125,6 +125,7 @@ async def tracker_response_protection(request, call_next):
                 and request.url.path in (
                     "/secondary/food/water",
                     "/secondary/food/entry",
+                    "/secondary/food/reuse",
                 )
             )
             or request.url.path in (
