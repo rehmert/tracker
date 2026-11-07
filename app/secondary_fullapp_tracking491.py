@@ -212,8 +212,11 @@ async def _food_submit491(request, action):
     if not food_enabled491():
         raise HTTPException(404, "Private food logging disabled")
 
+    # The existing food worker uses action="food" while the public
+    # allowlisted URL names that operation "entry".
+    suffix = "entry" if action == "food" else "water"
     if (
-        request.url.path != "/secondary/full/food/" + action
+        request.url.path != "/secondary/full/food/" + suffix
         or request.query_params
     ):
         raise HTTPException(400, "Unexpected private food parameters")
