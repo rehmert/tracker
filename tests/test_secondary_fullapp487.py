@@ -122,7 +122,10 @@ def test_unauthorized_cannot_launch_private_worker(private_clients, monkeypatch)
     assert client.get("/secondary/full/compounds").status_code == 401
 
     login(client, 2)
-    assert client.post("/secondary/full/compounds").status_code == 405
+    # Release 488 registers a POST route, but the independent write gate
+    # defaults off. It must deny without starting any private worker.
+    monkeypatch.setenv("TRACKER_FULLAPP_WRITES488", "0")
+    assert client.post("/secondary/full/compounds").status_code == 404
 
     monkeypatch.setenv("TRACKER_SECONDARY_LOCKDOWN440", "1")
     assert client.get("/secondary/full/compounds").status_code == 404
