@@ -19,8 +19,8 @@ jobs:
     timeout-minutes: 20
     env:
       TRACKER_INSTANCE: DEV
-      TRACKER_DATA_DIR: ${{ runner.temp }}/tracker-private-ci
-      PYTHONPATH: ${{ github.workspace }}
+      TRACKER_DATA_DIR: /tmp/tracker-private-ci
+      PYTHONPATH: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
