@@ -530,3 +530,134 @@ def test_cutover466_http_authentication_and_isolation(
     assert client.get(
         "/secondary/cutover"
     ).status_code == 404
+
+
+# Release 467: request-scoped private SQLite resolution.
+def test_private_db467_http_user_isolation(
+    browser, monkeypatch
+):
+    client, _ = browser
+
+    anonymous = client.get(
+        "/secondary/data-context",
+        follow_redirects=False,
+    )
+    assert anonymous.status_code == 303
+
+    assert login(
+        client,
+        "member-2",
+        "secondary-password-2-secure-430",
+    ).status_code == 303
+
+    first = client.get("/secondary/data-context")
+
+    assert first.status_code == 200
+    assert first.headers["cache-control"] == "no-store"
+
+    report = first.json()
+    assert report["user_id"] == 2
+    assert report["counts"]["compounds"] == 1
+    assert report["write_access"] is False
+    assert report["normal_login_enabled"] is False
+    assert report["storage_mode"] == "secondary-read-only"
+
+    for suffix in (
+        "?user_id=3",
+        "?database=/tmp/other.db",
+        "?sql=DELETE",
+        "?user_id=2&user_id=3",
+    ):
+        result = client.get(
+            "/secondary/data-context" + suffix
+        )
+        assert result.status_code == 400
+
+    assert client.post(
+        "/secondary/data-context"
+    ).status_code == 405
+
+    assert login(
+        client,
+        "member-3",
+        "secondary-password-3-secure-430",
+    ).status_code == 303
+
+    second = client.get("/secondary/data-context")
+
+    assert second.status_code == 200
+    assert second.json()["user_id"] == 3
+    assert second.json()["counts"]["compounds"] == 0
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get(
+        "/secondary/data-context"
+    ).status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get(
+        "/secondary/data-context"
+    ).status_code == 404
+
+
+def test_private_db467_rejects_sqlite_writes(browser):
+    from starlette.requests import Request
+    from app.secondary_request_db467 import (
+        readonly_private_db467,
+    )
+    from app.secondary_preview430 import COOKIE
+
+    client, _ = browser
+
+    assert login(
+        client,
+        "member-2",
+        "secondary-password-2-secure-430",
+    ).status_code == 303
+
+    token = client.cookies.get(COOKIE)
+    assert token
+
+    request = Request({
+        "type": "http",
+        "http_version": "1.1",
+        "method": "GET",
+        "scheme": "https",
+        "path": "/secondary/data-context",
+        "raw_path": b"/secondary/data-context",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [
+            (
+                b"cookie",
+                (COOKIE + "=" + token).encode(),
+            )
+        ],
+        "client": ("127.0.0.1", 50000),
+        "server": ("tracker.test", 443),
+    })
+
+    with readonly_private_db467(request) as (scope, db):
+        assert scope.user_id == 2
+
+        assert db.execute(
+            "SELECT COUNT(*) FROM compounds"
+        ).fetchone()[0] == 1
+
+        with pytest.raises(sqlite3.OperationalError):
+            db.execute("""
+                INSERT INTO compounds
+                (name,category,notes,primary_unit)
+                VALUES ('forbidden','other','','mg')
+            """)
+
+    assert client.get(
+        "/secondary/data-context"
+    ).json()["counts"]["compounds"] == 1

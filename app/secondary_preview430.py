@@ -2848,3 +2848,44 @@ def secondary_barcode460(request: Request):
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+# Release 467: verified session -> private SQLite context.
+# GET only; no user-selected paths, IDs or SQL.
+from .secondary_request_db467 import scoped_counts467
+from fastapi.responses import JSONResponse as _JSON467
+
+
+@preview_app.get("/data-context")
+def secondary_data_context467(request: Request):
+    require_preview()
+
+    if request.query_params:
+        raise HTTPException(
+            400, "Unexpected private database parameters"
+        )
+
+    uid = _session_user(
+        request.cookies.get(COOKIE)
+    )
+
+    if uid is None:
+        return RedirectResponse(
+            "/secondary/login",
+            status_code=303,
+        )
+
+    report = scoped_counts467(request)
+
+    if report["user_id"] != uid:
+        raise HTTPException(
+            503, "Private context identity mismatch"
+        )
+
+    return _JSON467(
+        content=report,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
