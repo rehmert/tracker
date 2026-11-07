@@ -10,6 +10,7 @@ No HTTP-supplied user ID, private path, database name, or engine is trusted.
 """
 
 import os
+import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -88,7 +89,7 @@ def authorize_fullapp_route486(request: Request, relative_path: str):
 
     try:
         storage = worker_plan428(uid)
-    except (OSError, PermissionError, RuntimeError, ValueError):
+    except (OSError, PermissionError, RuntimeError, ValueError, sqlite3.Error):
         raise HTTPException(
             503, "Verified private workspace unavailable"
         ) from None
