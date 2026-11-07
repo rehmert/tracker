@@ -1924,6 +1924,7 @@ def secondary_food_day452(request: Request):
 # Uses the existing strictly scoped Release 452 worker once per day.
 from datetime import timedelta as _week_delta453
 from .secondary_food_week453 import render_week453
+from .worker_week454 import read_food_week454
 
 
 @preview_app.get("/food/week")
@@ -1953,7 +1954,7 @@ def secondary_food_week453(request: Request):
         raise HTTPException(422, "Invalid weekly food date") from None
 
     try:
-        reports = [read_food_day452(uid, day) for day in days]
+        reports = read_food_week454(uid, ending)
     except (RuntimeError, PermissionError, ValueError, OSError):
         raise HTTPException(
             503, "Private weekly food history unavailable"

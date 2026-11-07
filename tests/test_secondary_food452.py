@@ -279,3 +279,105 @@ def test_week453_lockdown_and_prod_denial(browser, monkeypatch):
     monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
     assert client.get("/secondary/food/week").status_code == 404
+
+
+# Release 454 single-worker weekly acceptance
+
+from app.worker_week454 import (
+    days454,
+    parse_request454,
+    read_food_week454,
+    validate_response454,
+)
+
+def test_week_has_exactly_seven_days():
+    days = days454(DAY)
+    assert days[0] == "2026-10-31"
+    assert days[-1] == DAY
+    assert len(days) == len(set(days)) == 7
+
+
+@pytest.mark.parametrize("raw", [
+    b"",
+    b"[]",
+    b'{"action":"food_week","day":"bad"}',
+    b'{"action":"food_week","day":"0001-01-01"}',
+    b'{"action":"food_week","day":"2026-11-06","user_id":3}',
+    b'{"action":"food_week","day":"2026-11-06","sql":"SELECT"}',
+    b'{"action":"food_week","day":"2026-11-06","day":"2026-11-07"}',
+    b'{"action":"food_day","day":"2026-11-06"}',
+    b"z" * 200,
+])
+def test_worker_request_allowlist(raw):
+    with pytest.raises(ValueError):
+        parse_request454(raw)
+
+
+def test_weekly_worker_isolates_two_users(browser):
+    _, root = browser
+
+    first = read_food_week454(2, DAY, root)
+    second = read_food_week454(3, DAY, root)
+
+    assert len(first) == len(second) == 7
+    assert first[-1]["totals"]["energy"] == 300
+    assert first[-1]["water_oz"] == 32
+    assert second[-1]["totals"]["energy"] == 450
+    assert second[-1]["water_oz"] == 12
+
+    with pytest.raises(PermissionError):
+        read_food_week454(1, DAY, root)
+
+
+def test_weekly_response_rejects_foreign_identity(browser):
+    _, root = browser
+    reports = read_food_week454(2, DAY, root)
+
+    payload = {
+        "mode": "offline-food-week454",
+        "user_id": 2,
+        "end_day": DAY,
+        "reports": reports,
+    }
+
+    payload["reports"][0]["user_id"] = 3
+
+    with pytest.raises(RuntimeError):
+        validate_response454(payload, 2, DAY)
+
+
+def test_weekly_worker_rejects_foreign_directory(browser):
+    _, root = browser
+
+    env = worker_environment428(2, root)
+    env["TRACKER_DATA_DIR"] = str(root / "users" / "3")
+
+    result = subprocess.run(
+        [sys.executable, "-m", "app.worker_week454"],
+        input=json.dumps({
+            "action": "food_week",
+            "day": DAY,
+        }),
+        env=env,
+        cwd=SOURCE_ROOT,
+        text=True,
+        capture_output=True,
+        timeout=60,
+    )
+
+    assert result.returncode != 0
+    assert not result.stdout.strip()
+
+
+def test_browser_week_still_works(browser):
+    client, _ = browser
+    login(client, 2)
+
+    response = client.get("/secondary/food/week?day=" + DAY)
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert "300.0 kcal" in response.text
+    assert "32.0 fl oz" in response.text
+
+    assert client.post("/secondary/food/week").status_code == 405
