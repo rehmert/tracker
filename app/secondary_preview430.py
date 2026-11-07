@@ -2156,6 +2156,11 @@ background:#16558b;color:white
 grid-template-columns:repeat(3,minmax(0,1fr))
 }}
 }}
+.barcode-lookup460{{
+border:1px solid #ccd7e2;border-radius:10px;
+padding:12px;background:#edf5fa;margin-bottom:14px
+}}
+.barcode-lookup460 button{{margin:4px 0}}
 </style></head><body><main>
 <p><a href="/secondary/food">Back to Food Journal</a></p>
 <h1>Log Food &amp; Water</h1>
@@ -2222,7 +2227,20 @@ You can also type a custom amount.</p>
 <button type="submit">Save Water</button>
 </form></section>
 <section><h2>Manual Food Entry</h2>
-<form method="post" action="/secondary/food/entry">
+<div class="barcode-lookup460">
+<label>Product Barcode
+<input id="barcode-code460" type="text"
+inputmode="numeric" pattern="[0-9]{{8,14}}"
+maxlength="14" autocomplete="off"
+placeholder="8–14 digit barcode"></label>
+<button type="button" id="barcode-lookup460">
+Look Up Barcode</button>
+<p class="note" id="barcode-status460" role="status"
+aria-live="polite">Lookup fills the fields below.
+Review the package before saving.</p>
+</div>
+<form method="post" action="/secondary/food/entry"
+id="manual-food-form460">
 <input type="hidden" name="csrf_token"
 value="{escape(csrf, quote=True)}">
 <input type="hidden" name="submission_token"
@@ -2336,6 +2354,82 @@ once, even if the same form is submitted again.</p>
 
     search459.addEventListener("input", filterSavedFoods459);
     filterSavedFoods459();
+  }}
+
+
+  const lookup460 = document.getElementById(
+    "barcode-lookup460"
+  );
+  const code460 = document.getElementById(
+    "barcode-code460"
+  );
+  const status460 = document.getElementById(
+    "barcode-status460"
+  );
+  const form460 = document.getElementById(
+    "manual-food-form460"
+  );
+
+  if (lookup460 && code460 && status460 && form460) {{
+    lookup460.addEventListener("click", async function () {{
+      const code = code460.value.trim();
+      if (!/^[0-9]{{8,14}}$/.test(code)) {{
+        status460.textContent = "Enter an 8–14 digit barcode.";
+        return;
+      }}
+
+      lookup460.disabled = true;
+      status460.textContent = "Looking up product...";
+
+      try {{
+        const response = await fetch(
+          "/secondary/food/barcode?code="
+          + encodeURIComponent(code),
+          {{credentials: "same-origin", cache: "no-store"}}
+        );
+
+        if (!response.ok) {{
+          status460.textContent =
+            response.status === 404
+              ? "Barcode not found. Enter food manually."
+              : "Lookup unavailable. Enter food manually.";
+          return;
+        }}
+
+        const item = await response.json();
+        if (
+          !item || item.barcode !== code
+          || typeof item.name !== "string"
+          || !item.nutrients
+        ) {{
+          throw new Error("Invalid barcode response");
+        }}
+
+        const name = form460.elements.namedItem("name");
+        if (name) name.value = item.name;
+
+        ["energy", "proteins", "carbohydrates", "fat",
+         "fiber"].forEach(function (key) {{
+          const field = form460.elements.namedItem(key);
+          if (!field) return;
+          const value = item.nutrients[key];
+          field.value =
+            typeof value === "number" && Number.isFinite(value)
+              ? String(value) : "";
+        }});
+
+        status460.textContent =
+          "Values " + item.basis + " (" + item.serving
+          + "). Verify serving size and nutrition label "
+          + "before pressing Save Food.";
+        if (name) name.focus();
+      }} catch (_error) {{
+        status460.textContent =
+          "Unable to read product details. Enter manually.";
+      }} finally {{
+        lookup460.disabled = false;
+      }}
+    }});
   }}
 
   const water = document.getElementById(
@@ -2470,4 +2564,53 @@ async def secondary_quick_food457(request: Request):
         "/secondary/food?day=" + payload["day"],
         status_code=303,
         headers={"Cache-Control": "no-store"},
+    )
+
+
+# Release 460: read-only public barcode metadata.
+# Returned values are not stored until an authenticated
+# user reviews and submits the existing manual food form.
+from fastapi.responses import JSONResponse as _JSON460
+from .secondary_barcode460 import (
+    validate_barcode460,
+    lookup_barcode460,
+    BarcodeUnavailable460,
+    BarcodeNotFound460,
+)
+
+
+@preview_app.get("/food/barcode")
+def secondary_barcode460(request: Request):
+    require_preview()
+    if not food_writes_enabled456():
+        raise HTTPException(404, "Barcode preview unavailable")
+
+    query = request.query_params
+    if set(query) != {"code"} or len(query.getlist("code")) != 1:
+        raise HTTPException(400, "Unexpected barcode parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary sign-in required")
+
+    try:
+        code = validate_barcode460(query["code"])
+    except ValueError:
+        raise HTTPException(422, "Invalid barcode") from None
+
+    try:
+        item = lookup_barcode460(code)
+    except BarcodeNotFound460:
+        raise HTTPException(404, "Barcode not found") from None
+    except BarcodeUnavailable460:
+        raise HTTPException(
+            503, "Barcode database unavailable"
+        ) from None
+
+    return _JSON460(
+        content=item,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
     )

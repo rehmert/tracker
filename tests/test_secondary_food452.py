@@ -635,7 +635,7 @@ def test_food_write456_water_and_food_isolation(browser, monkeypatch):
         form_match = re.search(
             r'<form method="post" action="/secondary/food/'
             + re.escape(action)
-            + r'">(.*?)</form>',
+            + r'"[^>]*>(.*?)</form>',
             page.text,
             re.S,
         )
@@ -1256,3 +1256,190 @@ def test_mobile_saved_food_search459_preserves_routes():
         assert routes.count(("POST", route)) == 1
 
     assert ("POST", "/food/search") not in routes
+
+
+# Release 460: public barcode lookup, no private DB writes.
+def test_barcode460_parse_and_basis():
+    from app.secondary_barcode460 import (
+        validate_barcode460,
+        parse_product460,
+        BarcodeNotFound460,
+    )
+
+    for code in (
+        "", "abc", "01234", "012345678901234",
+        "../private", "12345678?user_id=3",
+    ):
+        with pytest.raises(ValueError):
+            validate_barcode460(code)
+
+    code = "0123456789012"
+    assert validate_barcode460(code) == code
+
+    serving_data = {
+        "status": 1,
+        "product": {
+            "product_name": "Test Yogurt",
+            "serving_size": "150 g",
+            "nutriments": {
+                "energy-kcal_serving": 180,
+                "proteins_serving": 15,
+                "fat_serving": 2,
+                "energy-kcal_100g": 120,
+                "carbohydrates_100g": 12,
+            },
+        },
+    }
+
+    result = parse_product460(serving_data, code)
+    assert result["basis"] == "per serving"
+    assert result["nutrients"]["energy"] == 180
+    assert result["nutrients"]["proteins"] == 15
+    assert result["nutrients"]["carbohydrates"] is None
+
+    per100 = {
+        "status": 1,
+        "product": {
+            "product_name": "Test Snack",
+            "nutriments": {
+                "energy-kcal_100g": 230,
+                "proteins_100g": 12,
+            },
+        },
+    }
+
+    other = parse_product460(per100, code)
+    assert other["basis"] == "per 100 g"
+    assert other["serving"] == "100 g"
+    assert other["nutrients"]["energy"] == 230
+    assert other["nutrients"]["fiber"] is None
+
+    with pytest.raises(BarcodeNotFound460):
+        parse_product460({"status": 0}, code)
+
+
+def test_barcode460_authenticated_no_database_writes(
+    browser, monkeypatch
+):
+    import app.secondary_preview430 as preview_module
+
+    client, root = browser
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+
+    code = "0123456789012"
+    calls = []
+
+    def fake_lookup(value):
+        calls.append(value)
+        return {
+            "barcode": code,
+            "name": "Barcode Test Yogurt",
+            "basis": "per serving",
+            "serving": "150 g",
+            "nutrients": {
+                "energy": 180,
+                "proteins": 15,
+                "carbohydrates": None,
+                "fat": 2,
+                "fiber": None,
+            },
+            "source": "Open Food Facts",
+            "warning": "Review product label",
+        }
+
+    monkeypatch.setattr(
+        preview_module, "lookup_barcode460", fake_lookup
+    )
+
+    before = client.get(
+        "/secondary/food/barcode?code=" + code
+    )
+    assert before.status_code == 401
+    assert not calls
+
+    login(client, 2)
+
+    page = client.get("/secondary/food/new")
+    assert page.status_code == 200
+    assert "barcode-code460" in page.text
+    assert "manual-food-form460" in page.text
+
+    response = client.get(
+        "/secondary/food/barcode?code=" + code
+    )
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json()["name"] == "Barcode Test Yogurt"
+    assert calls == [code]
+
+    with sqlite3.connect(
+        root / "users" / "2" / "tracker.db"
+    ) as db:
+        assert db.execute("""
+            SELECT COUNT(*) FROM tracker_food_entries
+        """).fetchone()[0] == 1
+
+    login(client, 3)
+    another = client.get(
+        "/secondary/food/barcode?code=" + code
+    )
+    assert another.status_code == 200
+
+    with sqlite3.connect(
+        root / "users" / "3" / "tracker.db"
+    ) as db:
+        assert db.execute("""
+            SELECT COUNT(*) FROM tracker_food_entries
+        """).fetchone()[0] == 1
+
+
+def test_barcode460_input_gate_and_prod(browser, monkeypatch):
+    client, _ = browser
+    login(client, 2)
+
+    code = "0123456789012"
+
+    assert client.get(
+        "/secondary/food/barcode?code=" + code
+    ).status_code == 404
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+
+    for suffix in (
+        "",
+        "?user_id=3",
+        "?database=/tmp/x",
+        "?code=abc",
+        "?code=12345678&code=87654321",
+        "?code=12345678&sql=SELECT",
+    ):
+        result = client.get(
+            "/secondary/food/barcode" + suffix
+        )
+        assert result.status_code in (400, 422)
+
+    assert client.post(
+        "/secondary/food/barcode"
+    ).status_code == 405
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get(
+        "/secondary/food/barcode?code=" + code
+    ).status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get(
+        "/secondary/food/barcode?code=" + code
+    ).status_code == 404
