@@ -240,6 +240,24 @@ def test_write_flags_disable_form_and_post(browser489, monkeypatch):
     assert _vials(root, 2) == []
 
 
+def test_no_compounds_disables_vial_creation_button(browser489):
+    client, root = browser489
+    with sqlite3.connect(root / "users" / "3" / "tracker.db") as db:
+        db.execute("DELETE FROM compounds")
+
+    _login(client, 3)
+    page = client.get("/secondary/full/vials")
+    assert page.status_code == 200
+    assert '<button type="submit" disabled>Add vial</button>' in page.text
+    assert 'compound-user-2-489' not in page.text
+
+    invalid = _vial_form(page, 1, "foreign-compound-489")
+    assert client.post(
+        "/secondary/full/vials", data=invalid,
+    ).status_code == 422
+    assert _vials(root, 3) == []
+
+
 def test_main_middleware_has_exact_path_and_all_four_gates():
     from pathlib import Path
     main = Path("app/main.py").read_text()
