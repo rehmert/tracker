@@ -201,4 +201,10 @@ def test_no_live_forwarder_or_main_app_mount():
     assert "subprocess.Popen(" not in source
     assert "httpx.AsyncClient(" not in source
     assert 'app.mount("/secondary/full"' not in main
-    assert 'TRACKER_FULLAPP_GATEWAY486' not in main
+    # Release 488 may mention the gateway in the main middleware only
+    # for its single exact-path signed-CSRF exemption. Both new flags
+    # must default off, and the existing inventory guard must apply.
+    assert 'os.environ.get("TRACKER_FULLAPP_GATEWAY486", "0") == "1"' in main
+    assert 'os.environ.get("TRACKER_FULLAPP_WRITES488", "0") == "1"' in main
+    assert "secondary_preview430.inventory_writes_enabled435()" in main
+    assert 'request.url.path == "/secondary/full/compounds"' in main
