@@ -329,6 +329,28 @@ def overview_get(request: Request):
         "</th><td>" + str(value) + "</td></tr>"
         for key, value in report["counts"].items()
     )
+    # Release 464: aggregate existing DEV feature gates
+    # for the authenticated private account only.
+    from .secondary_hub464 import (
+        render_workspace_hub464,
+        render_workspace_nav464,
+        HUB_STYLE464,
+    )
+
+    capabilities = {
+        "food": food_writes_enabled456(),
+        "vitals": vital_writes_enabled433(),
+        "doses": dose_writes_enabled434(),
+        "inventory": inventory_writes_enabled435(),
+        "supplies": supply_writes_enabled438(),
+        "reconstitution": reconstitution_enabled436(),
+        "reconciliation": corrections_enabled437(),
+        "supply_use": supply_use_enabled439(),
+    }
+
+    hub = render_workspace_hub464(capabilities)
+    navigation = render_workspace_nav464()
+
     token = issue_token(load_key())
     html = f'''<!doctype html>
 <html lang="en">
@@ -337,11 +359,16 @@ def overview_get(request: Request):
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>Private Workspace Overview</title>
+<style>{HUB_STYLE464}</style>
 </head>
 <body>
 <main>
 <h1>Private Workspace Overview</h1>
 <p>DEV-only private workspace pilot. Account {uid}.</p>
+{navigation}
+{hub}
+<section class="hub-data464">
+<h2>Private Record Counts</h2>
 <p><a href="/secondary/vitals">Recent Vitals</a> ·
 <a href="/secondary/doses">Recent Doses</a> ·
 <a href="/secondary/food">Food &amp; Water</a> ·
@@ -349,10 +376,11 @@ def overview_get(request: Request):
 <a href="/secondary/readiness">Workspace Readiness</a> ·
 <a href="/secondary/security">Session Security</a></p>
 <table>{rows}</table>
-<form method="post" action="/secondary/logout">
+</section>
+<div class="hub-logout464"><form method="post" action="/secondary/logout">
 <input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
 <button type="submit">Sign Out</button>
-</form>
+</form></div>
 </main>
 </body>
 </html>'''
@@ -1609,6 +1637,8 @@ def secondary_readiness440(request: Request):
         raise HTTPException(503, "Workspace identity mismatch")
 
     capabilities = (
+        ("food", "Log Food and Water", food_writes_enabled456(),
+         "/secondary/food/new"),
         ("vitals", "Log Vitals", vital_writes_enabled433(),
          "/secondary/vitals/new"),
         ("doses", "Log Doses", dose_writes_enabled434(),

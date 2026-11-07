@@ -161,6 +161,9 @@ cursor:pointer;font-weight:700
 <a href="/secondary/vitals">Vitals</a>
 <a href="/secondary/doses">Doses</a>
 <a href="/secondary/inventory">Inventory</a>
+<a href="/secondary/supplies">Supplies</a>
+<a href="/secondary/readiness">Readiness</a>
+<a href="/secondary/security">Security</a>
 </nav>
 <h1>Food &amp; Water</h1>
 <p><a href="/secondary/food/new">Log Food or Water (DEV pilot)</a></p>

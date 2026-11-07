@@ -266,3 +266,76 @@ def test_main_mount_explicitly_opt_in():
     source = Path("app/main.py").read_text()
     assert "if secondary_preview430.preview_enabled():" in source
     assert 'app.mount("/secondary", secondary_preview430.preview_app)' in source
+
+
+# Release 464: integrated private dashboard.
+def test_workspace464_mobile_hub_and_capability_gates(
+    browser, monkeypatch
+):
+    client, _ = browser
+    assert login(
+        client, "member-2",
+        "secondary-password-2-secure-430",
+    ).status_code == 303
+
+    page = client.get("/secondary/overview")
+    assert page.status_code == 200
+    assert "My Workspace" in page.text
+    assert "Private Record Counts" in page.text
+    assert 'data-workspace-feature="food"' in page.text
+    assert 'href="/secondary/food/new"' not in page.text
+    assert "Account 2." in page.text
+    assert "<th>Compounds</th><td>1</td>" in page.text
+    assert 'action="/secondary/logout"' in page.text
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_VITAL_WRITES433", "1"
+    )
+
+    enabled = client.get("/secondary/overview")
+    assert enabled.status_code == 200
+    assert 'href="/secondary/food/new"' in enabled.text
+    assert 'href="/secondary/vitals/new"' in enabled.text
+
+    readiness = client.get("/secondary/readiness")
+    assert readiness.status_code == 200
+    assert 'data-feature="food"' in readiness.text
+    assert "Log Food and Water" in readiness.text
+
+    login(
+        client, "member-3",
+        "secondary-password-3-secure-430",
+    )
+    third = client.get("/secondary/overview")
+    assert third.status_code == 200
+    assert "Account 3." in third.text
+    assert "<th>Compounds</th><td>0</td>" in third.text
+    assert "<th>Compounds</th><td>1</td>" not in third.text
+
+
+def test_workspace464_lockdown_and_prod(
+    browser, monkeypatch
+):
+    client, _ = browser
+    assert login(
+        client, "member-2",
+        "secondary-password-2-secure-430",
+    ).status_code == 303
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get("/secondary/overview").status_code == 404
+    assert client.get("/secondary/readiness").status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get("/secondary/overview").status_code == 404
+    assert client.get("/secondary/readiness").status_code == 404
