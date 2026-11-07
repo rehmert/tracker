@@ -3007,3 +3007,79 @@ def secondary_attachment471(
     return private_attachment471(
         request, kind, record_id
     )
+
+
+# Release 472: current secondary session only.
+# Attachment upload is independently DEV-gated.
+from .secondary_files472 import (
+    private_catalog472, render_catalog472,
+    private_upload472, upload_enabled472,
+)
+
+
+@preview_app.get("/attachments")
+def secondary_catalog472(request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unexpected document parameters")
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+    report = private_catalog472(request)
+    if report["user_id"] != uid:
+        raise HTTPException(503, "Private catalog identity mismatch")
+    token = issue_token(load_key()) if upload_enabled472() else None
+    response = HTMLResponse(
+        render_catalog472(report, token),
+        headers={"Cache-Control": "no-store"},
+    )
+    return _csrf_response(response, token) if token else response
+
+
+@preview_app.post("/attachments/upload")
+async def secondary_upload472(request: Request):
+    require_preview()
+    if not upload_enabled472():
+        raise HTTPException(404, "Private uploads disabled")
+    if request.query_params:
+        raise HTTPException(400, "Unexpected upload parameters")
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary session required")
+
+    length = request.headers.get("content-length", "")
+    if length.isdecimal() and int(length) > 16 * 1024 * 1024:
+        raise HTTPException(413, "Upload too large")
+
+    async with request.form() as form:
+        if set(form) != {
+            "kind", "drawn_on", "lab_name",
+            "file", "csrf_token",
+        } or any(len(form.getlist(k)) != 1 for k in form):
+            raise HTTPException(422, "Unexpected upload fields")
+
+        _csrf_check(request, form)
+
+        from starlette.datastructures import UploadFile as _Upload472
+        upload = form["file"]
+        if not isinstance(upload, _Upload472):
+            raise HTTPException(422, "File required")
+
+        contents = await upload.read(15 * 1024 * 1024 + 1)
+        kind, record_id = private_upload472(
+            request,
+            str(form["kind"]),
+            upload.filename or "",
+            contents,
+            str(form["drawn_on"]),
+            str(form["lab_name"]),
+        )
+
+    if _session_user(request.cookies.get(COOKIE)) != uid:
+        raise HTTPException(503, "Session identity changed")
+
+    return RedirectResponse(
+        f"/secondary/attachments/{kind}/{record_id}",
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )

@@ -128,6 +128,10 @@ async def tracker_response_protection(request, call_next):
                     "/secondary/food/reuse",
                 )
             )
+            or (
+                secondary_preview430.upload_enabled472()
+                and request.url.path == "/secondary/attachments/upload"
+            )
             or request.url.path in (
                 "/secondary/security/revoke-others",
                 "/secondary/security/password",
