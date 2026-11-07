@@ -2179,6 +2179,23 @@ background:#101820;border-radius:10px;margin-top:10px
 @media(max-width:380px){{
 .camera-controls461{{grid-template-columns:1fr}}
 }}
+.nutrition-panel462{{
+margin-top:14px;padding:12px;
+border:1px solid #bacdda;
+border-radius:10px;background:#f5f9fc
+}}
+.nutrition-panel462 h3{{margin:0 0 8px}}
+.nutrition-totals462{{margin:8px 0}}
+.nutrition-totals462 div{{
+display:flex;justify-content:space-between;
+gap:10px;border-bottom:1px solid #d8e2eb;
+padding:8px 0
+}}
+.nutrition-totals462 dt{{font-weight:600}}
+.nutrition-totals462 dd{{
+margin:0;text-align:right;font-variant-numeric:tabular-nums
+}}
+#nutrition-grams-row462[hidden]{{display:none}}
 </style></head><body><main>
 <p><a href="/secondary/food">Back to Food Journal</a></p>
 <h1>Log Food &amp; Water</h1>
@@ -2291,6 +2308,32 @@ step=".001" inputmode="decimal" value="1" required></label>
 <p class="note">Enter nutrients per serving.
 Unknown nutrients may remain blank.</p>
 <div class="grid">{nutrient_inputs}</div>
+<div id="nutrition-quantity462" class="nutrition-panel462">
+<h3>Nutrition Preview</h3>
+<p class="note" id="nutrition-basis-label462">
+Manual entry: nutrient values are per serving.</p>
+<label id="nutrition-grams-row462" hidden>
+Grams Consumed (for 100 g nutrition basis)
+<input id="nutrition-grams462" type="number"
+min=".1" max="10000" step=".1" inputmode="decimal"
+value="100"></label>
+<p class="note" id="nutrition-status462"
+role="status" aria-live="polite"></p>
+<dl class="nutrition-totals462">
+<div><dt>Calories</dt>
+<dd id="nutrition-total-energy462">—</dd></div>
+<div><dt>Protein</dt>
+<dd id="nutrition-total-proteins462">—</dd></div>
+<div><dt>Carbohydrates</dt>
+<dd id="nutrition-total-carbohydrates462">—</dd></div>
+<div><dt>Fat</dt>
+<dd id="nutrition-total-fat462">—</dd></div>
+<div><dt>Fiber</dt>
+<dd id="nutrition-total-fiber462">—</dd></div>
+</dl>
+<p class="note">Unknown nutrients are not counted
+as zero. Review the product label before saving.</p>
+</div>
 <button type="submit">Save Food</button>
 </form></section>
 <p class="note">A successful submission is recorded only
@@ -2436,7 +2479,12 @@ once, even if the same form is submitted again.</p>
         }}
 
         const name = form460.elements.namedItem("name");
-        if (name) name.value = item.name;
+        if (name) {{
+          name.value =
+            item.basis === "per 100 g"
+              ? item.name.slice(0, 145) + " (per 100 g)"
+              : item.name;
+        }}
 
         ["energy", "proteins", "carbohydrates", "fat",
          "fiber"].forEach(function (key) {{
@@ -2452,6 +2500,10 @@ once, even if the same form is submitted again.</p>
           "Values " + item.basis + " (" + item.serving
           + "). Verify serving size and nutrition label "
           + "before pressing Save Food.";
+        document.dispatchEvent(new CustomEvent(
+          "tracker:barcode-loaded462",
+          {{detail: {{basis: item.basis, serving: item.serving}}}}
+        ));
         if (name) name.focus();
       }} catch (_error) {{
         status460.textContent =
@@ -2498,6 +2550,8 @@ once, even if the same form is submitted again.</p>
 }})();
 </script>
 <script src="/static/secondary_barcode_scan461.js?v=461"
+defer></script>
+<script src="/static/secondary_nutrition_quantity462.js?v=462"
 defer></script>
 </body></html>'''
 

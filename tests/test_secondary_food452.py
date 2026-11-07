@@ -1596,3 +1596,128 @@ def test_camera_barcode461_preserves_feature_gates(
         config, "instance_label", lambda: "PROD"
     )
     assert client.get("/secondary/food/new").status_code == 404
+
+
+# Release 462: distinguish per-serving vs per-100g
+# quantities before submitting the existing food form.
+def test_nutrition_quantity462_mobile_markup(browser, monkeypatch):
+    from html.parser import HTMLParser
+
+    client, _ = browser
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    login(client, 2)
+
+    response = client.get("/secondary/food/new")
+    assert response.status_code == 200
+
+    class Inspector(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.form = None
+            self.items = []
+
+        def handle_starttag(self, tag, attrs):
+            data = dict(attrs)
+            if tag == "form":
+                self.form = data.get("action")
+            self.items.append((self.form, tag, data))
+
+        def handle_endtag(self, tag):
+            if tag == "form":
+                self.form = None
+
+    parser = Inspector()
+    parser.feed(response.text)
+
+    grams = [
+        (owner, attrs)
+        for owner, tag, attrs in parser.items
+        if tag == "input"
+        and attrs.get("id") == "nutrition-grams462"
+    ]
+
+    assert len(grams) == 1
+    assert grams[0][0] == "/secondary/food/entry"
+    assert grams[0][1]["type"] == "number"
+    assert "name" not in grams[0][1]
+
+    scripts = [
+        attrs["src"]
+        for _, tag, attrs in parser.items
+        if tag == "script" and "src" in attrs
+    ]
+
+    assert (
+        "/static/secondary_nutrition_quantity462.js?v=462"
+        in scripts
+    )
+
+    assert "tracker:barcode-loaded462" in response.text
+    assert '" (per 100 g)"' in response.text
+
+    forms = [
+        attrs["action"]
+        for _, tag, attrs in parser.items
+        if tag == "form"
+    ]
+
+    assert forms == [
+        "/secondary/food/reuse",
+        "/secondary/food/water",
+        "/secondary/food/entry",
+    ]
+
+
+def test_nutrition_quantity462_no_extra_post_fields():
+    from pathlib import Path
+
+    script = Path(
+        "app/static/secondary_nutrition_quantity462.js"
+    ).read_text()
+
+    for marker in (
+        'tracker:barcode-loaded462',
+        'basis === "per 100 g"',
+        "gramsInput.addEventListener",
+        "servings.value = String(calculated)",
+        "Math.round(grams * 10) / 1000",
+        '"Unknown"',
+        "Number(raw) * count",
+    ):
+        assert marker in script, marker
+
+    for forbidden in (
+        "fetch(",
+        "XMLHttpRequest",
+        "sendBeacon",
+        "localStorage",
+        "sessionStorage",
+        "requestSubmit(",
+        ".submit(",
+    ):
+        assert forbidden not in script, forbidden
+
+
+def test_nutrition_quantity462_gates(browser, monkeypatch):
+    client, _ = browser
+    login(client, 2)
+
+    assert client.get("/secondary/food/new").status_code == 404
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 200
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 404
+
+    monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440")
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get("/secondary/food/new").status_code == 404
