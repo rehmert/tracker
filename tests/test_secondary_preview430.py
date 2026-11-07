@@ -661,3 +661,143 @@ def test_private_db467_rejects_sqlite_writes(browser):
     assert client.get(
         "/secondary/data-context"
     ).json()["counts"]["compounds"] == 1
+
+
+# Release 468: private SQLAlchemy context acceptance.
+def test_orm468_two_user_read_isolation(
+    browser, monkeypatch
+):
+    client, _ = browser
+
+    anonymous = client.get(
+        "/secondary/orm-summary.json",
+        follow_redirects=False,
+    )
+    assert anonymous.status_code == 303
+
+    assert login(
+        client,
+        "member-2",
+        "secondary-password-2-secure-430",
+    ).status_code == 303
+
+    first = client.get("/secondary/orm-summary.json")
+    assert first.status_code == 200
+    assert first.headers["cache-control"] == "no-store"
+
+    data = first.json()
+    assert data["user_id"] == 2
+    assert data["read_only"] is True
+    assert data["counts"]["compounds"] == 1
+    assert data["normal_login_enabled"] is False
+
+    page = client.get("/secondary/orm-summary")
+    assert page.status_code == 200
+    assert "Private Data Summary" in page.text
+
+    for route in (
+        "/secondary/orm-summary",
+        "/secondary/orm-summary.json",
+    ):
+        for suffix in (
+            "?user_id=3",
+            "?database=/tmp/other.db",
+            "?sql=DELETE",
+            "?user_id=2&user_id=3",
+        ):
+            assert client.get(
+                route + suffix
+            ).status_code == 400
+
+        assert client.post(route).status_code == 405
+
+    assert login(
+        client,
+        "member-3",
+        "secondary-password-3-secure-430",
+    ).status_code == 303
+
+    second = client.get("/secondary/orm-summary.json")
+
+    assert second.status_code == 200
+    assert second.json()["user_id"] == 3
+    assert second.json()["counts"]["compounds"] == 0
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get(
+        "/secondary/orm-summary.json"
+    ).status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get(
+        "/secondary/orm-summary.json"
+    ).status_code == 404
+
+
+def test_orm468_sqlalchemy_write_is_rejected(browser):
+    from fastapi import HTTPException
+    from starlette.requests import Request
+    from sqlalchemy import text
+
+    from app.secondary_orm468 import private_orm468
+    from app.secondary_preview430 import COOKIE
+
+    client, _ = browser
+
+    assert login(
+        client,
+        "member-2",
+        "secondary-password-2-secure-430",
+    ).status_code == 303
+
+    token = client.cookies.get(COOKIE)
+    assert token
+
+    request = Request({
+        "type": "http",
+        "http_version": "1.1",
+        "method": "GET",
+        "scheme": "https",
+        "path": "/secondary/orm-summary",
+        "raw_path": b"/secondary/orm-summary",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [
+            (
+                b"cookie",
+                (COOKIE + "=" + token).encode(),
+            )
+        ],
+        "client": ("127.0.0.1", 50000),
+        "server": ("tracker.test", 443),
+    })
+
+    with pytest.raises(
+        HTTPException
+    ) as denied:
+        with private_orm468(request) as (scope, db):
+            assert scope.user_id == 2
+            assert db.execute(
+                text("SELECT COUNT(*) FROM compounds")
+            ).scalar_one() == 1
+
+            db.execute(text("""
+                INSERT INTO compounds
+                (name,category,notes,primary_unit)
+                VALUES ('forbidden','other','','mg')
+            """))
+
+    assert denied.value.status_code == 503
+
+    result = client.get(
+        "/secondary/orm-summary.json"
+    )
+    assert result.status_code == 200
+    assert result.json()["counts"]["compounds"] == 1

@@ -2889,3 +2889,69 @@ def secondary_data_context467(request: Request):
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+# Release 468: scoped SQLAlchemy reads. These routes
+# never use the administrator's global engine.
+from .secondary_orm468 import (
+    private_summary468,
+    render_summary468,
+)
+
+
+def _secondary_orm_report468(request):
+    require_preview()
+
+    if request.query_params:
+        raise HTTPException(
+            400, "Unexpected ORM summary parameters"
+        )
+
+    uid = _session_user(
+        request.cookies.get(COOKIE)
+    )
+
+    if uid is None:
+        return None
+
+    report = private_summary468(request)
+
+    if report["user_id"] != uid:
+        raise HTTPException(
+            503, "Private ORM identity mismatch"
+        )
+
+    return report
+
+
+@preview_app.get("/orm-summary")
+def secondary_orm_summary468(request: Request):
+    report = _secondary_orm_report468(request)
+
+    if report is None:
+        return RedirectResponse(
+            "/secondary/login", status_code=303
+        )
+
+    return HTMLResponse(
+        render_summary468(report),
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@preview_app.get("/orm-summary.json")
+def secondary_orm_json468(request: Request):
+    report = _secondary_orm_report468(request)
+
+    if report is None:
+        return RedirectResponse(
+            "/secondary/login", status_code=303
+        )
+
+    return _JSON467(
+        report,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
