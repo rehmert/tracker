@@ -137,9 +137,18 @@ def preview_primary_page487(request: Request, path: str):
         for path, label in links
     )
 
-    form_html, csrf = _compound_form488() if (
-        plan.route == "/compounds" and _compound_write_enabled488()
-    ) else ("", None)
+    if plan.route == "/compounds" and _compound_write_enabled488():
+        form_html, csrf = _compound_form488()
+    elif plan.route == "/vials":
+        from .secondary_fullapp_vials489 import (
+            vial_form489, vial_writes_enabled489,
+        )
+        form_html, csrf = (
+            vial_form489(plan.user_id)
+            if vial_writes_enabled489() else ("", None)
+        )
+    else:
+        form_html, csrf = "", None
     form_policy = "form-action 'self'" if csrf else "form-action 'none'"
 
     html = (
@@ -157,8 +166,8 @@ def preview_primary_page487(request: Request, path: str):
         '<a href="/secondary/overview">Private workspace</a>'
         '<h1>Primary Tracker — read-only preview</h1>'
         '<p>Snapshot of your private workspace. Original app links '
-        'are disabled. Compound creation is available below only '
-        'when the separate private write gate is enabled.</p>'
+        'are disabled. Compound and vial creation are available '
+        'only when their private write gates are enabled.</p>'
         '<nav aria-label="Private features">' + nav + '</nav>'
         '<h2>' + escape(plan.route) + '</h2>'
         '<pre>' + escape(content) + '</pre>' + form_html
@@ -258,3 +267,8 @@ async def primary_compound_create488(request: Request):
         status_code=303,
         headers={"Cache-Control": "no-store"},
     )
+
+
+# Release 489: separately gated private primary vial creation.
+from .secondary_fullapp_vials489 import router as _vial_router489
+router.include_router(_vial_router489)
