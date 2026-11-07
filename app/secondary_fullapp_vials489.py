@@ -70,7 +70,8 @@ def vial_form489(uid):
         )
 
     units = "".join(
-        '<option value="' + escape(unit, quote=True) + '">'
+        '<option value="' + escape(unit, quote=True) + '"'
+        + (' selected' if unit == 'mg' else '') + '>'
         + escape(unit) + '</option>'
         for unit in sorted(CONTENT_UNITS)
     )
