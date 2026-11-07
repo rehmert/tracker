@@ -442,3 +442,131 @@ def test_473_switch_clears_legacy_cookie_path(browser):
             and "max-age=0" in value.lower()
             for value in headers
         )
+
+
+def test_478_failed_login_can_retry_with_same_form(browser):
+    """A 401 response must provide a valid retry token."""
+    from app.routers.session_login385 import LOGIN_CSRF
+    from app.csrf_tokens import verify_pair
+    from app.csrf_runtime import load_key
+
+    client = browser
+
+    failed = login(
+        client,
+        "member-2",
+        "incorrect-password",
+    )
+
+    assert failed.status_code == 401
+    assert "Sign-in unsuccessful" in failed.text
+
+    match = re.search(
+        r'name="csrf_token"\s+value="([^"]+)"',
+        failed.text,
+    )
+    assert match, "Retry form token missing"
+
+    retry_token = match.group(1)
+    assert retry_token
+    assert verify_pair(
+        client.cookies.get(LOGIN_CSRF),
+        retry_token,
+        load_key(),
+    )
+
+    assert client.cookies.get(auth.COOKIE) is None
+    assert client.cookies.get(SECONDARY_COOKIE) is None
+
+    # Submit directly from the returned error page.
+    # No intervening GET /login is permitted.
+    retried = client.post(
+        "/login",
+        data={
+            "username": "member-2",
+            "password": (
+                "secondary-secure-password-2-473"
+            ),
+            "csrf_token": retry_token,
+            "next": "/",
+        },
+        follow_redirects=False,
+    )
+
+    assert retried.status_code == 303
+    assert retried.headers["location"] == (
+        "/secondary/overview"
+    )
+
+    secondary_token = client.cookies.get(
+        SECONDARY_COOKIE
+    )
+    assert secondary_token
+    assert _session_user(secondary_token) == 2
+
+
+def test_478_blank_login_token_still_rejected(browser):
+    """Never bypass CSRF to make retries work."""
+    client = browser
+    page = client.get("/login")
+
+    assert page.status_code == 200
+
+    response = client.post(
+        "/login",
+        data={
+            "username": "member-2",
+            "password": (
+                "secondary-secure-password-2-473"
+            ),
+            "csrf_token": "",
+            "next": "/",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 403
+    assert client.cookies.get(SECONDARY_COOKIE) is None
+    assert client.cookies.get(auth.COOKIE) is None
+
+
+def test_478_admin_retry_also_works(browser):
+    """Administrator and secondary login share the fix."""
+    client = browser
+
+    failed = login(
+        client,
+        "operator",
+        "incorrect-password",
+        "/admin-only",
+    )
+    assert failed.status_code == 401
+
+    match = re.search(
+        r'name="csrf_token"\s+value="([^"]+)"',
+        failed.text,
+    )
+    assert match
+    token = match.group(1)
+    assert token
+
+    retried = client.post(
+        "/login",
+        data={
+            "username": "operator",
+            "password": (
+                "administrator-secure-password-473"
+            ),
+            "csrf_token": token,
+            "next": "/admin-only",
+        },
+        follow_redirects=False,
+    )
+
+    assert retried.status_code == 303
+    assert retried.headers["location"] == (
+        "/admin-only"
+    )
+    assert auth.session_user(
+        client.cookies.get(auth.COOKIE)
+    ) == 1

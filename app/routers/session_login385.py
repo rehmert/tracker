@@ -223,11 +223,29 @@ async def login_submit(request: Request):
             )
             return response
 
-        return HTMLResponse(
-            build_login_html("/", "", error="invalid"),
+        # A rejected credential must leave a usable login
+        # form. Issue a fresh token paired with a fresh
+        # secure cookie; never render an empty CSRF field.
+        retry_token = issue_token(load_key())
+        response = HTMLResponse(
+            build_login_html(
+                auth.safe_next(form.get("next")),
+                retry_token,
+                error="invalid",
+            ),
             status_code=401,
             headers={"Cache-Control": "no-store"},
         )
+        response.set_cookie(
+            LOGIN_CSRF,
+            retry_token,
+            secure=True,
+            httponly=True,
+            samesite="strict",
+            max_age=900,
+            path="/",
+        )
+        return response
 
     token, lifetime = auth.create_session(
         form.get("remember") == "yes"
