@@ -1918,3 +1918,54 @@ def secondary_food_day452(request: Request):
         render_food_day452(report),
         headers={"Cache-Control": "no-store"},
     )
+
+
+# Release 453: seven-day read-only food/water review.
+# Uses the existing strictly scoped Release 452 worker once per day.
+from datetime import timedelta as _week_delta453
+from .secondary_food_week453 import render_week453
+
+
+@preview_app.get("/food/week")
+def secondary_food_week453(request: Request):
+    require_preview()
+
+    query = request.query_params
+    if set(query) - {"day"} or len(query.getlist("day")) > 1:
+        raise HTTPException(400, "Unsupported weekly food parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        ending = validate_day452(
+            query.get("day")
+            if "day" in query
+            else _food_date452.today().isoformat()
+        )
+        end = _food_date452.fromisoformat(ending)
+        days = [
+            (end - _week_delta453(days=6 - i)).isoformat()
+            for i in range(7)
+        ]
+    except (ValueError, OverflowError):
+        raise HTTPException(422, "Invalid weekly food date") from None
+
+    try:
+        reports = [read_food_day452(uid, day) for day in days]
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(
+            503, "Private weekly food history unavailable"
+        ) from None
+
+    if any(
+        report.get("user_id") != uid or report.get("day") != day
+        for report, day in zip(reports, days)
+    ):
+        raise HTTPException(503, "Private weekly identity mismatch")
+
+    return HTMLResponse(
+        render_week453(reports, ending),
+        headers={"Cache-Control": "no-store"},
+    )

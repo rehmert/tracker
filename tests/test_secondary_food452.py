@@ -219,3 +219,63 @@ def test_date_validator_normalizes_nothing():
     for raw in ("2026-1-06", "2026-13-06", None, 20261106, "2026-11-06 "):
         with pytest.raises(ValueError):
             validate_day452(raw)
+
+
+# Release 453 weekly read-only acceptance.
+def test_week453_private_isolation_and_navigation(browser):
+    client, _ = browser
+    login(client, 2)
+
+    day = client.get("/secondary/food?day=" + DAY)
+    assert 'href="/secondary/food/week?day=' in day.text
+
+    week = client.get("/secondary/food/week?day=" + DAY)
+    assert week.status_code == 200
+    assert week.headers["cache-control"] == "no-store"
+    assert "Weekly Nutrition" in week.text
+    assert "300.0 kcal" in week.text
+    assert "40.0 g" in week.text
+    assert "32.0 fl oz" in week.text
+    assert "USER-THREE" not in week.text
+    assert "2026-10-31" in week.text
+
+    login(client, 3)
+    other = client.get("/secondary/food/week?day=" + DAY)
+    assert other.status_code == 200
+    assert "450.0 kcal" in other.text
+    assert "12.0 fl oz" in other.text
+    assert "300.0 kcal" not in other.text
+
+
+def test_week453_rejects_untrusted_parameters(browser):
+    client, _ = browser
+    login(client, 2)
+    for suffix in (
+        "?user_id=3",
+        "?database=/tmp/private.db",
+        "?sql=SELECT",
+        "?day=2026-11-06&day=2026-11-07",
+    ):
+        assert client.get("/secondary/food/week" + suffix).status_code == 400
+
+    for invalid in ("bad", "2026-02-30", "0001-01-01"):
+        assert client.get(
+            "/secondary/food/week?day=" + invalid
+        ).status_code == 422
+
+    assert client.post("/secondary/food/week").status_code == 405
+
+
+def test_week453_lockdown_and_prod_denial(browser, monkeypatch):
+    client, _ = browser
+    assert client.get(
+        "/secondary/food/week", follow_redirects=False
+    ).status_code == 303
+
+    login(client, 2)
+    monkeypatch.setenv("TRACKER_SECONDARY_LOCKDOWN440", "1")
+    assert client.get("/secondary/food/week").status_code == 404
+
+    monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440")
+    monkeypatch.setattr(config, "instance_label", lambda: "PROD")
+    assert client.get("/secondary/food/week").status_code == 404
