@@ -9,6 +9,7 @@ returned, and no secondary route is available on PROD.
 """
 
 import json
+from datetime import date
 import os
 import sqlite3
 import subprocess
@@ -39,8 +40,14 @@ def _page_query487(request, route):
     ):
         raise HTTPException(400, "Unsupported private page parameters")
 
-    # Date/query validity is additionally checked by the child.
-    return dict(given)
+    query = dict(given)
+    if "day" in query:
+        try:
+            if date.fromisoformat(query["day"]).isoformat() != query["day"]:
+                raise ValueError("Invalid day format")
+        except ValueError:
+            raise HTTPException(400, "Invalid food day") from None
+    return query
 
 
 def _run_isolated_page487(plan, query):
