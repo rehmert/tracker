@@ -44,12 +44,16 @@
           const matchesName = !query || clean(card.dataset.labName).includes(query);
           const show = matchesStatus && matchesName;
           card.hidden = !show;
+          if (!show) {
+            const details = card.querySelector('.lab-analyte-details');
+            if (details) details.open = false;
+          }
           if (show) visible++;
           grid.appendChild(card);
         }
         count.textContent = 'Showing ' + visible + ' of ' + cards.length + ' analytes.';
         empty.hidden = visible !== 0;
-        clear.disabled = !query && filter === 'all' && sort.value === 'recent';
+        clear.disabled = !query && filter === 'all' && sort.value === 'name-asc';
       }
 
       search.addEventListener('input', updateTrends);
@@ -58,7 +62,7 @@
       clear.addEventListener('click', () => {
         search.value = '';
         status.value = 'all';
-        sort.value = 'recent';
+        sort.value = 'name-asc';
         updateTrends();
         search.focus();
       });

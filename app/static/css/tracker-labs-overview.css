@@ -31,3 +31,50 @@
   #lab-trends-section .labs-overview-counts { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .labs-overview-controls .field { flex-basis:100%; }
 }
+
+/* Release 481: compact, accessible analyte accordion. */
+#labs-trend-grid .lab-analyte-details {
+  min-width: 0;
+}
+#labs-trend-grid .lab-analyte-summary {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding: .3rem 0;
+  cursor: pointer;
+  list-style-position: inside;
+}
+#labs-trend-grid .lab-analyte-summary:hover {
+  text-decoration: underline;
+  text-underline-offset: .2rem;
+}
+#labs-trend-grid .lab-analyte-summary:focus-visible {
+  outline: 3px solid #1769aa;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+#labs-trend-grid .lab-analyte-name {
+  font-size: 1.07rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+#labs-trend-grid .lab-analyte-latest {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+#labs-trend-grid .lab-analyte-latest small {
+  font-size: .82rem;
+  opacity: .82;
+}
+#labs-trend-grid .lab-analyte-expanded {
+  padding-top: .75rem;
+}
+#labs-trend-grid .lab-analyte-expanded .chartbox {
+  overflow-x: auto;
+  max-width: 100%;
+}
+#labs-trend-grid .lab-analyte-expanded svg {
+  max-width: 100%;
+  height: auto;
+}

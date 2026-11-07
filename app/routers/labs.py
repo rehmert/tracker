@@ -64,7 +64,7 @@ def labs_index(request: Request, db: Session = Depends(get_scoped_db390)):
         cards.append({"key": key, "name": res.analyte, "res": res, "rep": rep, "n": len(items),
                       "svg": svg, "skipped": sr.skipped, "unit": sr.unit,
                       "status": labs.range_status(res.value, res.ref_low, res.ref_high)})
-    cards.sort(key=lambda c: (c["rep"].drawn_on, c["res"].id), reverse=True)
+    cards.sort(key=lambda c: (c["name"].casefold(), c["key"]))
     reports = list(db.scalars(select(LabReport).order_by(LabReport.drawn_on.desc(), LabReport.id.desc())))
     return render(request, "labs.html", cards=cards, reports=reports)
 

@@ -86,8 +86,8 @@ def test_latest_result_range_statuses_and_report_links(lab_overview_client):
         'id="labs-trend-count"',
         'id="labs-report-search"',
         'id="labs-reports-table"',
-        'tracker-labs-overview.js?v=20261103',
-        'tracker-labs-overview.css?v=20261103',
+        'tracker-labs-overview.js?v=20261107-481',
+        'tracker-labs-overview.css?v=20261107-481',
         'data-lab-status="below"',
         'data-lab-status="above"',
         'data-lab-status="within"',
@@ -122,3 +122,80 @@ def test_overview_filtering_never_submits_labs(lab_overview_client):
     assert "fetch(" not in source
     assert ".submit(" not in source
     assert "localStorage" not in source
+
+
+def test_481_analytes_are_alphabetical_by_default(lab_overview_client):
+    client, engine = lab_overview_client
+
+    with Session(engine) as db:
+        newer = LabReport(
+            drawn_on=date(2026, 11, 6),
+            lab_name="New draw",
+        )
+        newer.results = [
+            LabResult(
+                analyte="TSH", value=0.5,
+                unit="mIU/L",
+            ),
+            LabResult(
+                analyte="Zinc", value=80,
+                unit="ug/dL",
+            ),
+        ]
+        older = LabReport(
+            drawn_on=date(2026, 9, 10),
+            lab_name="Older draw",
+        )
+        older.results = [
+            LabResult(
+                analyte="albumin", value=4.2,
+                unit="g/dL",
+            ),
+            LabResult(
+                analyte="Ferritin", value=120,
+                unit="ng/mL",
+            ),
+        ]
+        db.add_all([newer, older])
+        db.commit()
+
+    result = client.get("/labs")
+    assert result.status_code == 200
+    html = result.text
+
+    positions = [
+        html.index(f'data-lab-name="{name}"')
+        for name in ("albumin", "Ferritin", "TSH", "Zinc")
+    ]
+    assert positions == sorted(positions)
+
+    assert '<option value="name-asc" selected>' in html
+    assert html.count('class="lab-analyte-details"') == 4
+    assert html.count('class="lab-analyte-summary"') == 4
+    assert html.count("View complete") == 4
+    assert 'class="lab-analyte-details" open' not in html
+
+
+def test_481_expansion_is_click_only_not_page_navigation():
+    root = Path(__file__).resolve().parents[1]
+
+    html = (root / "app/templates/labs.html").read_text()
+    js = (
+        root / "app/static/js/tracker-labs-overview.js"
+    ).read_text()
+    css = (
+        root / "app/static/css/tracker-labs-overview.css"
+    ).read_text()
+
+    assert '<details class="lab-analyte-details">' in html
+    assert '<summary class="lab-analyte-summary">' in html
+    assert '<h3><a href="/labs/trends/' not in html
+    assert 'View complete {{ c.name }} history' in html
+    assert "sort.value = 'name-asc';" in js
+    assert "details.open = false;" in js
+    assert ".lab-analyte-summary:focus-visible" in css
+
+    # Display-only controls must not submit or modify labs.
+    assert "fetch(" not in js
+    assert ".submit(" not in js
+    assert "localStorage" not in js
