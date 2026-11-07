@@ -161,7 +161,7 @@ def preview_primary_page487(request: Request, path: str):
         '<nav aria-label="Private features">' + nav + '</nav>'
         '<h2>' + escape(plan.route) + '</h2>'
         '<pre>' + escape(content) + '</pre>' + form_html
-        '</main></body></html>'
+        + '</main></body></html>'
     )
 
     response = HTMLResponse(
