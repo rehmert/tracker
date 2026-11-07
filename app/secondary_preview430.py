@@ -3091,3 +3091,9 @@ async def secondary_upload472(request: Request):
         status_code=303,
         headers={"Cache-Control": "no-store"},
     )
+
+
+# Release 487: read-only private full-app preview, gated by Release 486.
+# No worker is started by importing or mounting this router.
+from .secondary_fullapp487 import router as _private_primary487
+preview_app.include_router(_private_primary487)
