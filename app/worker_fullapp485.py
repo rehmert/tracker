@@ -35,8 +35,15 @@ def run_fullapp_rehearsal485():
     from . import config, session_auth385
     from .db import engine
     from .routers import food, food_quick375
-    from .main import app
+    from .main import app, lifespan
+    from .routers import (
+        dashboard, compounds, vials, labs, protocols, doses, vitals,
+    )
+    from .security import require_auth
+    from .worker_probe428 import verify_feature_routes428
+    from fastapi import Depends, FastAPI
     from fastapi.routing import APIRoute
+    from fastapi.staticfiles import StaticFiles
     from fastapi.testclient import TestClient
 
     if session_auth385.enabled():
@@ -56,18 +63,42 @@ def run_fullapp_rehearsal485():
     ):
         raise RuntimeError("Full-app private engine or storage mismatch")
 
-    expected = (
-        "/healthz", "/", "/compounds", "/vials", "/labs",
-        "/protocols", "/doses", "/vitals", "/food",
+    # Tracker's existing route tests deliberately inspect feature
+    # module.router.routes, not app.routes. Preserve that convention
+    # and construct a test-only FastAPI ASGI harness from REAL routers.
+    # Never register or mount the harness in the running application.
+    modules = (
+        ("/", dashboard),
+        ("/compounds", compounds),
+        ("/vials", vials),
+        ("/labs", labs),
+        ("/protocols", protocols),
+        ("/doses", doses),
+        ("/vitals", vitals),
+        ("/food", food),
     )
-    routes = {
-        route.path
-        for route in app.routes
-        if isinstance(route, APIRoute) and "GET" in route.methods
-    }
-    missing = sorted(set(expected) - routes)
-    if missing:
-        raise RuntimeError("Primary routes unavailable: " + ", ".join(missing))
+    if verify_feature_routes428() != 3:
+        raise RuntimeError("Primary route registration changed")
+
+    harness = FastAPI(
+        title="Offline private primary route harness",
+        dependencies=[Depends(require_auth)],
+        lifespan=lifespan,
+        docs_url=None, redoc_url=None, openapi_url=None,
+    )
+    harness.mount(
+        "/static", StaticFiles(directory=config.BASE_DIR / "static"),
+        name="static",
+    )
+    for path, module in modules:
+        if not any(
+            isinstance(route, APIRoute)
+            and route.path == path
+            and "GET" in route.methods
+            for route in module.router.routes
+        ):
+            raise RuntimeError("Primary module route missing: " + path)
+        harness.include_router(module.router)
 
     before = _database_count(db_path)
     auth = (
@@ -75,19 +106,33 @@ def run_fullapp_rehearsal485():
     )
     statuses = {}
 
-    # ASGI TestClient stays inside this child. No TCP or Unix listener.
-    with TestClient(app, base_url="https://private-worker.invalid") as client:
-        if client.get("/healthz").status_code != 401:
+    # TestClient is in-process only: no Uvicorn or network listener.
+    # This is a primary-router isolation rehearsal, NOT proof that
+    # production gateway integration or full route parity is done.
+    with TestClient(harness, base_url="https://private-worker.invalid") as client:
+        if client.get("/compounds").status_code != 401:
             raise RuntimeError("Worker unauthenticated request was accepted")
 
-        for path in expected:
+        for path, _module in modules:
             response = client.get(path, auth=auth, follow_redirects=False)
             statuses[path] = response.status_code
             if response.status_code != 200:
                 raise RuntimeError(
-                    f"Private primary page {path} failed with HTTP "
+                    f"Private primary route {path} failed with HTTP "
                     f"{response.status_code}"
                 )
+
+    # The real main application still supplies the health endpoint.
+    with TestClient(app, base_url="https://private-worker.invalid") as client:
+        if client.get("/healthz").status_code != 401:
+            raise RuntimeError("Main app health authentication missing")
+        response = client.get("/healthz", auth=auth)
+        if response.status_code != 200:
+            raise RuntimeError(
+                "Main app health failed with HTTP "
+                + str(response.status_code)
+            )
+        statuses["/healthz"] = response.status_code
 
     after = _database_count(db_path)
     if before != after:
