@@ -39,6 +39,7 @@ from .routers import food_week379
 from .routers import food_search380
 from .routers import session_login385
 from .routers import account_security386
+from .routers import user_management479
 from .routers import user_db_status389
 from .routers import inventory_timeline
 
@@ -79,6 +80,7 @@ async def tracker_response_protection(request, call_next):
             "/logout",
             "/account/password",
             "/account/sessions/revoke-others",
+            "/account/users",
         )
     )
 
@@ -165,6 +167,7 @@ async def tracker_response_protection(request, call_next):
                     "/login",
                     "/account/password",
                     "/account/sessions/revoke-others",
+                    "/account/users",
                 )
                 and session_auth385.enabled()
             )
@@ -223,6 +226,7 @@ app.include_router(food_week379.router)
 app.include_router(food_search380.router)
 app.include_router(session_login385.router)
 app.include_router(account_security386.router)
+app.include_router(user_management479.router)
 app.include_router(user_db_status389.router)
 app.include_router(inventory_timeline.router)
 
