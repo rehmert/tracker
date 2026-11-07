@@ -276,3 +276,264 @@ def test_shared_provisioning_api(browser):
     assert (
         root / "users" / "2" / "tracker.db"
     ).is_file()
+
+
+# Release 480 regression tests.
+def edit_form480(client, uid=2):
+    page = client.get(f"/account/users/{uid}/edit")
+    assert page.status_code == 200
+
+    return {
+        "csrf_token": csrf_token(page.text),
+        "user_id": str(uid),
+        "username": "new-member",
+        "password": "",
+        "confirmation": "",
+    }
+
+
+def test_480_username_change_preserves_workspace(browser):
+    from app.secondary_preview430 import (
+        _new_session, _session_user
+    )
+
+    client, root = browser
+    admin_login(client)
+
+    created = client.post(
+        "/account/users",
+        data=form(client),
+        follow_redirects=False,
+    )
+    assert created.status_code == 303
+
+    db_path = root / "users" / "2" / "tracker.db"
+    before = db_path.read_bytes()
+
+    session = _new_session(2)
+    assert _session_user(session) == 2
+
+    values = edit_form480(client)
+    values["username"] = "renamed-member"
+
+    result = client.post(
+        "/account/users/edit",
+        data=values,
+        follow_redirects=False,
+    )
+
+    assert result.status_code == 303
+    assert result.headers["location"] == (
+        "/account/users/2/edit?updated=1"
+    )
+
+    assert staged_credential_matches427(
+        2, "renamed-member", "abc"
+    )
+    assert not staged_credential_matches427(
+        2, "new-member", "abc"
+    )
+    assert db_path.read_bytes() == before
+    assert _session_user(session) is None
+
+    # The administrator remains signed in.
+    assert auth.session_user(
+        client.cookies.get(auth.COOKIE)
+    ) == 1
+
+
+def test_480_password_reset_is_user_scoped(browser):
+    from app.secondary_preview430 import (
+        _new_session, _session_user
+    )
+
+    client, root = browser
+    admin_login(client)
+
+    first = client.post(
+        "/account/users",
+        data=form(client),
+        follow_redirects=False,
+    )
+    assert first.status_code == 303
+
+    second = client.post(
+        "/account/users",
+        data=form(client, "other-member", "xyz"),
+        follow_redirects=False,
+    )
+    assert second.status_code == 303
+
+    s2 = _new_session(2)
+    s3 = _new_session(3)
+
+    db2 = root / "users" / "2" / "tracker.db"
+    db3 = root / "users" / "3" / "tracker.db"
+    before = (db2.read_bytes(), db3.read_bytes())
+
+    values = edit_form480(client)
+    values["password"] = "new"
+    values["confirmation"] = "new"
+
+    result = client.post(
+        "/account/users/edit",
+        data=values,
+        follow_redirects=False,
+    )
+    assert result.status_code == 303
+
+    assert staged_credential_matches427(
+        2, "new-member", "new"
+    )
+    assert not staged_credential_matches427(
+        2, "new-member", "abc"
+    )
+    assert staged_credential_matches427(
+        3, "other-member", "xyz"
+    )
+
+    assert _session_user(s2) is None
+    assert _session_user(s3) == 3
+    assert (db2.read_bytes(), db3.read_bytes()) == before
+
+
+def test_480_first_edit_before_secondary_login(browser):
+    client, _ = browser
+    admin_login(client)
+
+    created = client.post(
+        "/account/users",
+        data=form(client),
+        follow_redirects=False,
+    )
+    assert created.status_code == 303
+
+    values = edit_form480(client)
+    values["password"] = "replacement"
+    values["confirmation"] = "replacement"
+
+    result = client.post(
+        "/account/users/edit",
+        data=values,
+        follow_redirects=False,
+    )
+
+    assert result.status_code == 303
+    assert staged_credential_matches427(
+        2, "new-member", "replacement"
+    )
+
+
+def test_480_duplicate_username_rejected(browser):
+    client, _ = browser
+    admin_login(client)
+
+    assert client.post(
+        "/account/users",
+        data=form(client),
+        follow_redirects=False,
+    ).status_code == 303
+
+    assert client.post(
+        "/account/users",
+        data=form(client, "other-member"),
+        follow_redirects=False,
+    ).status_code == 303
+
+    values = edit_form480(client)
+    values["username"] = "OTHER-MEMBER"
+
+    response = client.post(
+        "/account/users/edit",
+        data=values,
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 409
+    assert list_staged_accounts427()[0]["username"] == "new-member"
+
+
+def test_480_csrf_and_admin_protection(browser):
+    client, root = browser
+    admin_login(client)
+
+    assert client.post(
+        "/account/users",
+        data=form(client),
+        follow_redirects=False,
+    ).status_code == 303
+
+    values = edit_form480(client)
+    values["username"] = "renamed-member"
+
+    assert client.post(
+        "/account/users/edit",
+        data={**values, "csrf_token": "forged"},
+        follow_redirects=False,
+    ).status_code == 403
+
+    assert client.post(
+        "/account/users/edit",
+        headers={"Sec-Fetch-Site": "cross-site"},
+        data=values,
+        follow_redirects=False,
+    ).status_code == 403
+
+    assert client.post(
+        "/account/users/edit",
+        data={**values, "user_id": "1"},
+        follow_redirects=False,
+    ).status_code == 422
+
+    assert client.post(
+        "/account/users/edit",
+        data={
+            **values,
+            "password": "new",
+            "confirmation": "other",
+        },
+        follow_redirects=False,
+    ).status_code == 422
+
+    assert list_staged_accounts427()[0]["username"] == "new-member"
+
+    secondary = login(client, "new-member", "abc")
+    assert secondary.status_code == 303
+
+    assert client.post(
+        "/account/users/edit",
+        data=values,
+        follow_redirects=False,
+    ).status_code == 401
+
+    assert client.get(
+        "/account/users/2/edit",
+        follow_redirects=False,
+    ).status_code == 303
+
+
+def test_480_production_route_disabled(browser, monkeypatch):
+    client, _ = browser
+    admin_login(client)
+
+    assert client.post(
+        "/account/users",
+        data=form(client),
+        follow_redirects=False,
+    ).status_code == 303
+
+    values = edit_form480(client)
+
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+
+    assert client.get(
+        "/account/users/2/edit"
+    ).status_code == 404
+
+    assert client.post(
+        "/account/users/edit",
+        data=values,
+        follow_redirects=False,
+    ).status_code == 404

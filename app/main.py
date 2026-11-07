@@ -81,6 +81,7 @@ async def tracker_response_protection(request, call_next):
             "/account/password",
             "/account/sessions/revoke-others",
             "/account/users",
+            "/account/users/edit",
         )
     )
 
@@ -168,6 +169,7 @@ async def tracker_response_protection(request, call_next):
                     "/account/password",
                     "/account/sessions/revoke-others",
                     "/account/users",
+                    "/account/users/edit",
                 )
                 and session_auth385.enabled()
             )
