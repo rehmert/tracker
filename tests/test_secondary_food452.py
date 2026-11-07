@@ -1443,3 +1443,156 @@ def test_barcode460_input_gate_and_prod(browser, monkeypatch):
     assert client.get(
         "/secondary/food/barcode?code=" + code
     ).status_code == 404
+
+
+# Release 461: optional browser camera scanning.
+# Camera frames must never be uploaded to the Tracker server.
+def test_camera_barcode461_mobile_markup(browser, monkeypatch):
+    from html.parser import HTMLParser
+
+    client, _ = browser
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    login(client, 2)
+
+    response = client.get("/secondary/food/new")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+
+    class Inspect(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.form = None
+            self.elements = []
+
+        def handle_starttag(self, tag, attrs):
+            values = dict(attrs)
+            if tag == "form":
+                self.form = values.get("action")
+            self.elements.append(
+                (self.form, tag, values)
+            )
+
+        def handle_endtag(self, tag):
+            if tag == "form":
+                self.form = None
+
+    parser = Inspect()
+    parser.feed(response.text)
+
+    for element_id in (
+        "barcode-scan461",
+        "barcode-stop461",
+    ):
+        controls = [
+            (owner, attrs)
+            for owner, tag, attrs in parser.elements
+            if tag == "button"
+            and attrs.get("id") == element_id
+        ]
+        assert len(controls) == 1
+        assert controls[0][0] is None
+        assert controls[0][1]["type"] == "button"
+
+    videos = [
+        (owner, attrs)
+        for owner, tag, attrs in parser.elements
+        if tag == "video"
+        and attrs.get("id") == "barcode-video461"
+    ]
+
+    assert len(videos) == 1
+    assert videos[0][0] is None
+    assert "playsinline" in videos[0][1]
+    assert "hidden" in videos[0][1]
+
+    sources = [
+        attrs["src"]
+        for owner, tag, attrs in parser.elements
+        if tag == "script"
+        and "src" in attrs
+    ]
+
+    assert (
+        "/static/secondary_barcode_scan461.js?v=461"
+        in sources
+    )
+
+    forms = [
+        attrs["action"]
+        for _, tag, attrs in parser.elements
+        if tag == "form"
+    ]
+    assert forms == [
+        "/secondary/food/reuse",
+        "/secondary/food/water",
+        "/secondary/food/entry",
+    ]
+
+
+def test_camera_barcode461_local_only_and_cleanup():
+    from pathlib import Path
+
+    script = Path(
+        "app/static/secondary_barcode_scan461.js"
+    ).read_text()
+
+    for expected in (
+        "navigator.mediaDevices.getUserMedia",
+        "window.BarcodeDetector",
+        '"environment"',
+        "detector.detect(video)",
+        "barcode.value = value",
+        "lookup.click()",
+        "track.stop()",
+        'visibilitychange',
+        '"pagehide"',
+        '"barcode-stop461"',
+        "ticket !== generation",
+        "requestAnimationFrame",
+    ):
+        assert expected in script, expected
+
+    # Scanner performs no HTTP request itself. The only
+    # communication remains the existing barcode lookup.
+    for forbidden in (
+        "fetch(",
+        "XMLHttpRequest",
+        "sendBeacon",
+        "MediaRecorder",
+        "canvas.toDataURL",
+        ".submit(",
+        "requestSubmit(",
+    ):
+        assert forbidden not in script, forbidden
+
+    assert "audio: false" in script
+    assert '^[0-9]{8,14}$' in script
+
+
+def test_camera_barcode461_preserves_feature_gates(
+    browser, monkeypatch
+):
+    client, _ = browser
+    login(client, 2)
+
+    assert client.get("/secondary/food/new").status_code == 404
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 200
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get("/secondary/food/new").status_code == 404

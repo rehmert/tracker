@@ -2161,6 +2161,24 @@ border:1px solid #ccd7e2;border-radius:10px;
 padding:12px;background:#edf5fa;margin-bottom:14px
 }}
 .barcode-lookup460 button{{margin:4px 0}}
+.camera-controls461{{
+display:grid;grid-template-columns:1fr 1fr;
+gap:8px;margin-top:8px
+}}
+.camera-controls461 button{{
+margin:0;min-height:48px
+}}
+.camera-controls461 button[hidden]{{
+display:none
+}}
+#barcode-video461{{
+width:100%;max-height:360px;object-fit:cover;
+background:#101820;border-radius:10px;margin-top:10px
+}}
+#barcode-video461[hidden]{{display:none}}
+@media(max-width:380px){{
+.camera-controls461{{grid-template-columns:1fr}}
+}}
 </style></head><body><main>
 <p><a href="/secondary/food">Back to Food Journal</a></p>
 <h1>Log Food &amp; Water</h1>
@@ -2235,6 +2253,18 @@ maxlength="14" autocomplete="off"
 placeholder="8–14 digit barcode"></label>
 <button type="button" id="barcode-lookup460">
 Look Up Barcode</button>
+<div class="camera-controls461">
+<button type="button" id="barcode-scan461">
+Scan with Camera</button>
+<button type="button" id="barcode-stop461" hidden>
+Stop Camera</button>
+</div>
+<video id="barcode-video461" autoplay muted
+playsinline hidden aria-label="Barcode camera preview"></video>
+<p class="note" id="barcode-camera-status461"
+role="status" aria-live="polite">
+Camera scanning requires a supported browser and HTTPS.
+Manual barcode entry remains available.</p>
 <p class="note" id="barcode-status460" role="status"
 aria-live="polite">Lookup fills the fields below.
 Review the package before saving.</p>
@@ -2467,6 +2497,8 @@ once, even if the same form is submitted again.</p>
   }}
 }})();
 </script>
+<script src="/static/secondary_barcode_scan461.js?v=461"
+defer></script>
 </body></html>'''
 
     return _csrf_response(
