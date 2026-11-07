@@ -2,6 +2,7 @@
 
 import re
 import sqlite3
+from datetime import datetime
 
 import pytest
 from fastapi import FastAPI
@@ -68,7 +69,7 @@ def vital_payload(page, context="PRIVATE-TWO-490"):
     return {
         "csrf_token": hidden(page.text, "csrf_token"),
         "submission_token": hidden(page.text, "submission_token"),
-        "measured_at": "2026-11-05T10:15",
+        "measured_at": datetime.now().strftime("%Y-%m-%dT%H:%M"),
         "weight": "270.5",
         "weight_unit": "lb",
         "systolic": "124",
