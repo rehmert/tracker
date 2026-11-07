@@ -105,7 +105,7 @@ class _InertText487(HTMLParser):
             self.size += len(text)
 
     def text(self):
-        return "\n".join(self.parts)
+        return "\n".join(self.parts)[:MAX_TEXT487]
 
 
 def _snapshot_private487(uid, private, target):
