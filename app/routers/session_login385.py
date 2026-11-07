@@ -6,6 +6,10 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from .. import session_auth385 as auth
+from ..unified_login473 import (
+    enabled473,
+    authenticate_secondary473,
+)
 from ..csrf_runtime import COOKIE_NAME, load_key
 from ..csrf_tokens import issue_token, verify_pair
 
@@ -144,6 +148,81 @@ async def login_submit(request: Request):
         raise HTTPException(422, "Invalid credentials")
 
     if not auth.verify_admin(username, password):
+        secondary = authenticate_secondary473(
+            username, password
+        )
+
+        if secondary is not None:
+            from ..secondary_preview430 import (
+                COOKIE as SECONDARY_COOKIE,
+                LIFETIME as SECONDARY_LIFETIME,
+                _revoke as revoke_secondary,
+            )
+
+            uid, secondary_token = secondary
+            if type(uid) is not int or uid <= 1:
+                raise HTTPException(
+                    503, "Secondary identity mismatch"
+                )
+
+            previous_admin = request.cookies.get(
+                auth.COOKIE
+            )
+            if previous_admin:
+                auth.revoke(previous_admin)
+
+            previous_secondary = request.cookies.get(
+                SECONDARY_COOKIE
+            )
+            if previous_secondary:
+                revoke_secondary(previous_secondary)
+
+            response = RedirectResponse(
+                "/secondary/overview",
+                status_code=303,
+                headers={"Cache-Control": "no-store"},
+            )
+
+            response.delete_cookie(
+                auth.COOKIE,
+                path="/",
+                secure=True,
+                httponly=True,
+                samesite="lax",
+            )
+
+            # Unified login uses a root-path cookie so
+            # subsequent /login requests can see and revoke
+            # the previous secondary session.
+            response.set_cookie(
+                SECONDARY_COOKIE,
+                secondary_token,
+                secure=True,
+                httponly=True,
+                samesite="strict",
+                path="/",
+                max_age=SECONDARY_LIFETIME,
+            )
+
+            # Remove cookies issued by the original
+            # /secondary/login implementation.
+            response.delete_cookie(
+                SECONDARY_COOKIE,
+                path="/secondary",
+                secure=True,
+                httponly=True,
+                samesite="strict",
+            )
+
+            response.delete_cookie(
+                LOGIN_CSRF,
+                path="/",
+                secure=True,
+                httponly=True,
+                samesite="strict",
+            )
+            return response
+
         return HTMLResponse(
             build_login_html("/", "", error="invalid"),
             status_code=401,
@@ -169,6 +248,36 @@ async def login_submit(request: Request):
         max_age=lifetime,
         path="/",
     )
+
+    # Switching back to administrator credentials
+    # must revoke any previously active secondary session.
+    if enabled473():
+        from ..secondary_preview430 import (
+            COOKIE as SECONDARY_COOKIE,
+            _revoke as revoke_secondary,
+        )
+
+        previous_secondary = request.cookies.get(
+            SECONDARY_COOKIE
+        )
+
+        if previous_secondary:
+            revoke_secondary(previous_secondary)
+
+        response.delete_cookie(
+            SECONDARY_COOKIE,
+            path="/",
+            secure=True,
+            httponly=True,
+            samesite="strict",
+        )
+        response.delete_cookie(
+            SECONDARY_COOKIE,
+            path="/secondary",
+            secure=True,
+            httponly=True,
+            samesite="strict",
+        )
 
     response.delete_cookie(
         LOGIN_CSRF,

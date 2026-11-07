@@ -481,6 +481,14 @@ async def logout_post(request: Request):
         "/secondary/login", status_code=303,
         headers={"Cache-Control": "no-store"},
     )
+    # Unified login issues a root-path cookie;
+    # the original secondary login issues /secondary.
+    # Clear both variants during secondary logout.
+    response.delete_cookie(
+        COOKIE,
+        path="/", secure=True,
+        httponly=True, samesite="strict",
+    )
     response.delete_cookie(
         COOKIE,
         path="/secondary", secure=True,
