@@ -187,7 +187,10 @@ def render_page487(uid, private, route, query):
             "/static", StaticFiles(directory=config.BASE_DIR / "static"),
             name="static",
         )
-        harness.include_router(module.router)
+        # Render templates with the same peer-router names as the
+        # successful Release 485 full-feature harness.
+        for registered in modules.values():
+            harness.include_router(registered.router)
 
         with TestClient(
             harness, base_url="https://private-worker.invalid"
