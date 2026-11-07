@@ -339,3 +339,123 @@ def test_workspace464_lockdown_and_prod(
     )
     assert client.get("/secondary/overview").status_code == 404
     assert client.get("/secondary/readiness").status_code == 404
+
+
+# Release 465: authenticated current-account readiness.
+def test_account465_authenticated_private_page(
+    browser, monkeypatch
+):
+    client, _ = browser
+
+    denied = client.get(
+        "/secondary/account",
+        follow_redirects=False,
+    )
+
+    assert denied.status_code == 303
+    assert denied.headers["location"] == "/secondary/login"
+
+    result = login(
+        client,
+        "member-2",
+        "secondary-password-2-secure-430",
+    )
+    assert result.status_code == 303
+
+    first = client.get("/secondary/account")
+
+    assert first.status_code == 200
+    assert first.headers["cache-control"] == "no-store"
+    assert first.headers["x-content-type-options"] == "nosniff"
+
+    assert "member-2" in first.text
+    assert "member-3" not in first.text
+    assert "Production Access" in first.text
+
+    assert client.get(
+        "/secondary/account?user_id=3"
+    ).status_code == 400
+
+    assert client.post(
+        "/secondary/account"
+    ).status_code == 405
+
+    dashboard = client.get("/secondary/overview")
+    assert dashboard.status_code == 200
+    assert 'href="/secondary/account"' in dashboard.text
+
+    result = login(
+        client,
+        "member-3",
+        "secondary-password-3-secure-430",
+    )
+    assert result.status_code == 303
+
+    second = client.get("/secondary/account")
+
+    assert second.status_code == 200
+    assert "member-3" in second.text
+    assert "member-2" not in second.text
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+
+    assert client.get(
+        "/secondary/account"
+    ).status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+
+    assert client.get(
+        "/secondary/account"
+    ).status_code == 404
+
+
+def test_account465_cross_user_parameter_rejection(browser):
+    client, _ = browser
+
+    result = login(
+        client,
+        "member-2",
+        "secondary-password-2-secure-430",
+    )
+    assert result.status_code == 303
+
+    no_selector_routes = (
+        "/secondary/overview",
+        "/secondary/vitals",
+        "/secondary/doses",
+        "/secondary/inventory",
+        "/secondary/readiness",
+        "/secondary/security",
+        "/secondary/account",
+    )
+
+    for route in no_selector_routes:
+        response = client.get(
+            route + "?user_id=3"
+        )
+
+        assert response.status_code == 400, (
+            route, response.status_code
+        )
+
+    for route in (
+        "/secondary/food",
+        "/secondary/food/week",
+        "/secondary/food/week.csv",
+    ):
+        response = client.get(
+            route + "?user_id=3"
+        )
+
+        assert response.status_code == 400, (
+            route, response.status_code
+        )

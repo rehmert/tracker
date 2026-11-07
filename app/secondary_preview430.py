@@ -391,6 +391,43 @@ def overview_get(request: Request):
     return _csrf_response(response, token)
 
 
+# Release 465: authenticated, current-account-only
+# readiness. No browser-selected account IDs.
+from .secondary_account_readiness465 import render_account465
+
+
+@preview_app.get("/account")
+def secondary_account465(request: Request):
+    require_preview()
+
+    if request.query_params:
+        raise HTTPException(400, "Unexpected account parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse(
+            "/secondary/login", status_code=303
+        )
+
+    try:
+        record = inspect_staged_account427(uid)
+        if record.get("user_id") != uid:
+            raise RuntimeError("Account identity mismatch")
+        html = render_account465(record)
+    except (ValueError, RuntimeError, PermissionError, OSError):
+        raise HTTPException(
+            503, "Private account status unavailable"
+        ) from None
+
+    return HTMLResponse(
+        html,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @preview_app.post("/logout")
 async def logout_post(request: Request):
     require_preview()
@@ -1691,7 +1728,8 @@ th,td{{border-bottom:1px solid #9995;padding:10px 6px;text-align:left}}
 <p>DEV-only secondary workspace {uid} · Isolated data and login preview</p>
 <p><a href="/secondary/overview">Overview</a> ·
 <a href="/secondary/inventory">Inventory</a> ·
-<a href="/secondary/security">Session Security</a></p>
+<a href="/secondary/security">Session Security</a> ·
+<a href="/secondary/account">My Account</a></p>
 <p>These controls do not activate normal Tracker multi-user login.
 Only the enabled pilot operations below permit writes.</p>
 <h2>Workspace Records</h2>

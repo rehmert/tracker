@@ -134,5 +134,6 @@ def render_workspace_nav464():
         '<a href="/secondary/supplies">Supplies</a>'
         '<a href="/secondary/readiness">Readiness</a>'
         '<a href="/secondary/security">Security</a>'
+        '<a href="/secondary/account">My Account</a>'
         '</nav>'
     )
