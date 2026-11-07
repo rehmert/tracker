@@ -29,6 +29,7 @@ from .routers import (coas, compounds, dashboard, doses, labs, pages, protocols,
                       vials, vitals, pk, calendar, backups, search, inventory_intelligence, health_timeline, health_insights, exports, reliability, blends, vendor_prices)
 from .security import require_auth
 from . import session_auth385
+from . import secondary_preview430
 from .routers import food
 from .routers import food_quick375
 from .routers import food_bundle376
@@ -38,6 +39,7 @@ from .routers import food_week379
 from .routers import food_search380
 from .routers import session_login385
 from .routers import account_security386
+from .routers import user_management479
 from .routers import user_db_status389
 from .routers import inventory_timeline
 
@@ -78,8 +80,69 @@ async def tracker_response_protection(request, call_next):
             "/logout",
             "/account/password",
             "/account/sessions/revoke-others",
+            "/account/users",
+            "/account/users/edit",
         )
     )
+
+    # Secondary forms validate their own signed CSRF cookie/token pairs.
+    # The vital POST is exempt only when the separate DEV write gate is on.
+    secondary_form_post433 = (
+        secondary_preview430.preview_enabled()
+        and request.method.upper() == "POST"
+        and (
+            request.url.path in ("/secondary/login", "/secondary/logout")
+            or (
+                secondary_preview430.vital_writes_enabled433()
+                and request.url.path == "/secondary/vitals/new"
+            )
+            or (
+                secondary_preview430.dose_writes_enabled434()
+                and request.url.path == "/secondary/doses/new"
+            )
+            or (
+                secondary_preview430.inventory_writes_enabled435()
+                and request.url.path in (
+                    "/secondary/inventory/compounds",
+                    "/secondary/inventory/vials",
+                )
+            )
+            or (
+                secondary_preview430.reconstitution_enabled436()
+                and request.url.path == "/secondary/reconstitution"
+            )
+            or (
+                secondary_preview430.corrections_enabled437()
+                and request.url.path == "/secondary/reconcile/correct"
+            )
+            or (
+                secondary_preview430.supply_writes_enabled438()
+                and request.url.path == "/secondary/supplies"
+            )
+            or (
+                secondary_preview430.supply_use_enabled439()
+                and request.url.path == "/secondary/supplies/use"
+            )
+            or (
+                secondary_preview430.food_writes_enabled456()
+                and request.url.path in (
+                    "/secondary/food/water",
+                    "/secondary/food/entry",
+                    "/secondary/food/reuse",
+                )
+            )
+            or (
+                secondary_preview430.upload_enabled472()
+                and request.url.path == "/secondary/attachments/upload"
+            )
+            or request.url.path in (
+                "/secondary/security/revoke-others",
+                "/secondary/security/password",
+            )
+        )
+    )
+    if secondary_form_post433:
+        session_auth_post = True
 
     if (
         os.environ.get("TRACKER_ORIGIN_GUARD", "1") != "0"
@@ -105,9 +168,12 @@ async def tracker_response_protection(request, call_next):
                     "/login",
                     "/account/password",
                     "/account/sessions/revoke-others",
+                    "/account/users",
+                    "/account/users/edit",
                 )
                 and session_auth385.enabled()
             )
+            and not secondary_form_post433
             and reject_write(
                 request.method,
                 csrf_report,
@@ -162,6 +228,7 @@ app.include_router(food_week379.router)
 app.include_router(food_search380.router)
 app.include_router(session_login385.router)
 app.include_router(account_security386.router)
+app.include_router(user_management479.router)
 app.include_router(user_db_status389.router)
 app.include_router(inventory_timeline.router)
 
@@ -249,3 +316,8 @@ app.include_router(replenishment_review.router)
 # Read-only unified reconstitution calculator
 from .routers import reconstitution_calculator
 app.include_router(reconstitution_calculator.router)
+
+
+# Release 430: explicitly opt-in on DEV. Never mount on PROD.
+if secondary_preview430.preview_enabled():
+    app.mount("/secondary", secondary_preview430.preview_app)

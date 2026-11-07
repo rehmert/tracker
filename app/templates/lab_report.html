@@ -23,6 +23,39 @@
 
 
 <section>
+  <details class="lab-edit-panel">
+    <summary><strong>Edit Report Details</strong></summary>
+    <form method="post" action="/labs/{{ rep.id }}/edit"
+          class="grid lab-edit-form">
+      <label class="field">
+        <span>Draw Date</span>
+        <input type="date" name="drawn_on"
+               value="{{ rep.drawn_on.isoformat() }}"
+               required>
+      </label>
+      <label class="field">
+        <span>Lab Name</span>
+        <input type="text" name="lab_name"
+               value="{{ rep.lab_name or '' }}"
+               maxlength="160">
+      </label>
+      <label class="field">
+        <span>Report Notes</span>
+        <textarea name="notes" rows="3"
+                  maxlength="10000">{{ rep.notes or '' }}</textarea>
+      </label>
+      <div>
+        <button class="primary" type="submit">
+          Save Report Details
+        </button>
+      </div>
+    </form>
+    <p class="note">The original attached report and
+    its analyte values remain unchanged.</p>
+  </details>
+</section>
+
+<section>
   <h2>Add analyte</h2>
   <form method="post" action="/labs/{{ rep.id }}/results" class="grid">
     <label class="field"><span>Analyte</span><input name="analyte" list="analyte-names" maxlength="120" required></label>
@@ -75,10 +108,98 @@
     <td class="n">{{ r.res.value|num }}</td><td>{{ r.res.unit }}</td>
     <td class="n">{% if r.res.ref_low is not none %}{{ r.res.ref_low|num }} to {{ r.res.ref_high|num }}{% else %}—{% endif %}</td>
     <td>{% if r.status %}<span class="lab-status lab-status-{{ r.status }}" aria-label="{{ r.status|capitalize }} reference range">{{ r.status|capitalize }}</span>{% else %}—{% endif %}</td><td>{{ r.res.note or '—' }}</td>
-    <td><form method="post" action="/lab-results/{{ r.res.id }}/delete" onsubmit="return confirm('Remove this result?')"><button class="link danger">Remove</button></form></td>
+    <td class="lab-edit-actions">
+      <details class="lab-edit-panel">
+        <summary>Edit</summary>
+        <form method="post"
+              action="/lab-results/{{ r.res.id }}/edit"
+              class="lab-analyte-edit-form">
+          <label>Analyte
+            <input name="analyte" type="text"
+                   value="{{ r.res.analyte }}"
+                   maxlength="120" required>
+          </label>
+          <label>Value
+            <input name="value" type="number" step="any"
+                   value="{{ r.res.value }}" required>
+          </label>
+          <label>Unit
+            <input name="unit" type="text"
+                   value="{{ r.res.unit }}"
+                   maxlength="30" required>
+          </label>
+          <label>Printed Range — Low
+            <input name="ref_low" type="number" step="any"
+                   value="{{ r.res.ref_low if r.res.ref_low is not none else '' }}">
+          </label>
+          <label>Printed Range — High
+            <input name="ref_high" type="number" step="any"
+                   value="{{ r.res.ref_high if r.res.ref_high is not none else '' }}">
+          </label>
+          <label>Note
+            <textarea name="note" rows="2"
+                      maxlength="300">{{ r.res.note or '' }}</textarea>
+          </label>
+          <button class="primary" type="submit">
+            Save Result
+          </button>
+        </form>
+      </details>
+      <form method="post"
+            action="/lab-results/{{ r.res.id }}/delete"
+            onsubmit="return confirm('Remove this result?')">
+        <button class="link danger">Remove</button>
+      </form>
+    </td>
   </tr>
   {% else %}<tr><td colspan="7" class="empty">No results in this report.</td></tr>{% endfor %}
   </tbody>
 </table></div>
 <section><form method="post" action="/labs/{{ rep.id }}/delete" onsubmit="return confirm('Delete this report, its results and its file?')"><button class="link danger">Delete report</button></form></section>
+
+<style>
+.lab-edit-panel {
+  margin:.35rem 0;
+}
+.lab-edit-panel summary {
+  cursor:pointer;
+  padding:.45rem 0;
+  font-weight:650;
+}
+.lab-edit-panel summary:focus-visible {
+  outline:2px solid currentColor;
+  outline-offset:3px;
+}
+.lab-analyte-edit-form {
+  display:grid;
+  gap:.65rem;
+  min-width:min(72vw,300px);
+  max-width:100%;
+  margin:.6rem 0;
+}
+.lab-analyte-edit-form label {
+  display:grid;
+  gap:.2rem;
+  font-size:.88rem;
+  white-space:normal;
+}
+.lab-analyte-edit-form input,
+.lab-analyte-edit-form textarea,
+.lab-edit-form input,
+.lab-edit-form textarea {
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  font:inherit;
+  padding:.55rem;
+}
+.lab-edit-actions {
+  vertical-align:top;
+}
+@media(max-width:600px) {
+  .lab-analyte-edit-form {
+    min-width:220px;
+  }
+}
+</style>
 {% endblock %}

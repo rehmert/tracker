@@ -1,6 +1,7 @@
 """Regression coverage for adding compounds to a protocol editor."""
 from fastapi.testclient import TestClient
 from app.main import app
+from app import config
 
 
 def test_protocol_add_row_and_save():
@@ -31,7 +32,12 @@ def test_new_protocol_shows_editable_compound_fields_without_clicking():
         client.post('/compounds', data={'name': 'Visible Protocol Compound', 'category': 'peptide'})
         created = client.post('/protocols', data={'name': 'Visible fields test'})
         html = client.get(str(created.url)).text
-        assert '<title>Visible fields test · Tracker</title>' in html
+        instance = config.instance_label()
+        prefix = f"[{instance}] " if instance else ""
+        assert (
+            f"<title>{prefix}Visible fields test · Tracker</title>"
+            in html
+        )
         assert 'name="compound_id"' in html
         assert 'name="amount"' in html
         assert 'name="unit"' in html

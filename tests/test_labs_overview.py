@@ -86,8 +86,8 @@ def test_latest_result_range_statuses_and_report_links(lab_overview_client):
         'id="labs-trend-count"',
         'id="labs-report-search"',
         'id="labs-reports-table"',
-        'tracker-labs-overview.js?v=20261103',
-        'tracker-labs-overview.css?v=20261103',
+        'tracker-labs-overview.js?v=20261107-481',
+        'tracker-labs-overview.css?v=20261107-481',
         'data-lab-status="below"',
         'data-lab-status="above"',
         'data-lab-status="within"',
@@ -122,3 +122,318 @@ def test_overview_filtering_never_submits_labs(lab_overview_client):
     assert "fetch(" not in source
     assert ".submit(" not in source
     assert "localStorage" not in source
+
+
+def test_481_analytes_are_alphabetical_by_default(lab_overview_client):
+    client, engine = lab_overview_client
+
+    with Session(engine) as db:
+        newer = LabReport(
+            drawn_on=date(2026, 11, 6),
+            lab_name="New draw",
+        )
+        newer.results = [
+            LabResult(
+                analyte="TSH", value=0.5,
+                unit="mIU/L",
+            ),
+            LabResult(
+                analyte="Zinc", value=80,
+                unit="ug/dL",
+            ),
+        ]
+        older = LabReport(
+            drawn_on=date(2026, 9, 10),
+            lab_name="Older draw",
+        )
+        older.results = [
+            LabResult(
+                analyte="albumin", value=4.2,
+                unit="g/dL",
+            ),
+            LabResult(
+                analyte="Ferritin", value=120,
+                unit="ng/mL",
+            ),
+        ]
+        db.add_all([newer, older])
+        db.commit()
+
+    result = client.get("/labs")
+    assert result.status_code == 200
+    html = result.text
+
+    positions = [
+        html.index(f'data-lab-name="{name}"')
+        for name in ("albumin", "Ferritin", "TSH", "Zinc")
+    ]
+    assert positions == sorted(positions)
+
+    assert '<option value="name-asc" selected>' in html
+    assert html.count('class="lab-analyte-details"') == 4
+    assert html.count('class="lab-analyte-summary"') == 4
+    assert html.count("View complete") == 4
+    assert 'class="lab-analyte-details" open' not in html
+
+
+def test_481_expansion_is_click_only_not_page_navigation():
+    root = Path(__file__).resolve().parents[1]
+
+    html = (root / "app/templates/labs.html").read_text()
+    js = (
+        root / "app/static/js/tracker-labs-overview.js"
+    ).read_text()
+    css = (
+        root / "app/static/css/tracker-labs-overview.css"
+    ).read_text()
+
+    assert '<details class="lab-analyte-details">' in html
+    assert '<summary class="lab-analyte-summary">' in html
+    assert '<h3><a href="/labs/trends/' not in html
+    assert 'View complete {{ c.name }} history' in html
+    assert "sort.value = 'name-asc';" in js
+    assert "details.open = false;" in js
+    assert ".lab-analyte-summary:focus-visible" in css
+
+    # Display-only controls must not submit or modify labs.
+    assert "fetch(" not in js
+    assert ".submit(" not in js
+    assert "localStorage" not in js
+
+
+# Release 482: editing existing lab records.
+def test_482_edit_report_preserves_attachment_and_results(
+    lab_overview_client
+):
+    client, engine = lab_overview_client
+
+    with Session(engine) as db:
+        report = LabReport(
+            drawn_on=date(2026, 10, 1),
+            lab_name="Original Lab",
+            notes="Original note",
+            original_name="report.pdf",
+            stored_name="saved-report-482.pdf",
+            content_type="application/pdf",
+            size_bytes=123,
+            sha256="a" * 64,
+        )
+        report.results = [
+            LabResult(
+                analyte="TSH",
+                value=0.5,
+                unit="mIU/L",
+                ref_low=0.4,
+                ref_high=4.5,
+            )
+        ]
+        db.add(report)
+        db.commit()
+        rid = report.id
+        xid = report.results[0].id
+
+    page = client.get(f"/labs/{rid}")
+    assert page.status_code == 200
+    assert "Edit Report Details" in page.text
+    assert f'action="/labs/{rid}/edit"' in page.text
+    assert f'action="/lab-results/{xid}/edit"' in page.text
+
+    response = client.post(
+        f"/labs/{rid}/edit",
+        data={
+            "drawn_on": "2026-11-06",
+            "lab_name": "Updated Lab",
+            "notes": "Corrected draw date",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    with Session(engine) as db:
+        report = db.get(LabReport, rid)
+        result = db.get(LabResult, xid)
+
+        assert report.drawn_on == date(2026, 11, 6)
+        assert report.lab_name == "Updated Lab"
+        assert report.notes == "Corrected draw date"
+        assert report.original_name == "report.pdf"
+        assert report.stored_name == "saved-report-482.pdf"
+        assert report.sha256 == "a" * 64
+
+        assert result.analyte == "TSH"
+        assert result.value == 0.5
+        assert result.unit == "mIU/L"
+
+
+def test_482_edit_one_analyte_preserves_other_results(
+    lab_overview_client
+):
+    client, engine = lab_overview_client
+
+    with Session(engine) as db:
+        report = LabReport(
+            drawn_on=date(2026, 11, 6),
+            lab_name="Original Lab",
+        )
+        report.results = [
+            LabResult(
+                analyte="TSH", value=0.5,
+                unit="mIU/L",
+                ref_low=0.4, ref_high=4.5,
+            ),
+            LabResult(
+                analyte="IGF-1", value=200,
+                unit="ng/mL",
+            ),
+        ]
+        db.add(report)
+        db.commit()
+
+        first_id = report.results[0].id
+        second_id = report.results[1].id
+        rid = report.id
+
+    response = client.post(
+        f"/lab-results/{first_id}/edit",
+        data={
+            "analyte": "Free T4",
+            "value": "1.25",
+            "unit": "ng/dL",
+            "ref_low": "0.8",
+            "ref_high": "1.8",
+            "note": "Corrected transcription",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    with Session(engine) as db:
+        first = db.get(LabResult, first_id)
+        second = db.get(LabResult, second_id)
+
+        assert first.report_id == rid
+        assert first.analyte == "Free T4"
+        assert first.value == 1.25
+        assert first.unit == "ng/dL"
+        assert first.ref_low == 0.8
+        assert first.ref_high == 1.8
+        assert first.note == "Corrected transcription"
+
+        assert second.analyte == "IGF-1"
+        assert second.value == 200
+
+
+@pytest.mark.parametrize(
+    "value,low,high",
+    [
+        ("5", "1", ""),
+        ("5", "", "10"),
+        ("5", "10", "1"),
+        ("nan", "0", "10"),
+        ("inf", "0", "10"),
+        ("5", "nan", "10"),
+        ("5", "0", "inf"),
+        ("5", "abc", "10"),
+    ],
+)
+def test_482_invalid_result_edits_do_not_write(
+    lab_overview_client, value, low, high
+):
+    client, engine = lab_overview_client
+
+    with Session(engine) as db:
+        report = LabReport(
+            drawn_on=date(2026, 11, 6),
+            lab_name="Original",
+        )
+        report.results = [
+            LabResult(
+                analyte="Glucose", value=90,
+                unit="mg/dL",
+                ref_low=70, ref_high=99,
+            )
+        ]
+        db.add(report)
+        db.commit()
+        xid = report.results[0].id
+
+    response = client.post(
+        f"/lab-results/{xid}/edit",
+        data={
+            "analyte": "Changed",
+            "value": value,
+            "unit": "mg/dL",
+            "ref_low": low,
+            "ref_high": high,
+            "note": "Changed",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 422
+
+    with Session(engine) as db:
+        result = db.get(LabResult, xid)
+        assert result.analyte == "Glucose"
+        assert result.value == 90
+        assert result.ref_low == 70
+        assert result.ref_high == 99
+
+
+def test_482_invalid_report_edit_does_not_write(
+    lab_overview_client
+):
+    client, engine = lab_overview_client
+
+    with Session(engine) as db:
+        report = LabReport(
+            drawn_on=date(2026, 10, 1),
+            lab_name="Original",
+            notes="Unchanged",
+        )
+        db.add(report)
+        db.commit()
+        rid = report.id
+
+    response = client.post(
+        f"/labs/{rid}/edit",
+        data={
+            "drawn_on": "2026-02-30",
+            "lab_name": "Changed",
+            "notes": "Changed",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 422
+
+    with Session(engine) as db:
+        report = db.get(LabReport, rid)
+        assert report.drawn_on == date(2026, 10, 1)
+        assert report.lab_name == "Original"
+        assert report.notes == "Unchanged"
+
+
+def test_482_missing_edit_targets_return_404(
+    lab_overview_client
+):
+    client, _ = lab_overview_client
+
+    assert client.post(
+        "/labs/999999/edit",
+        data={
+            "drawn_on": "2026-11-06",
+            "lab_name": "A",
+            "notes": "",
+        },
+    ).status_code == 404
+
+    assert client.post(
+        "/lab-results/999999/edit",
+        data={
+            "analyte": "TSH",
+            "value": "1",
+            "unit": "mIU/L",
+            "ref_low": "",
+            "ref_high": "",
+            "note": "",
+        },
+    ).status_code == 404

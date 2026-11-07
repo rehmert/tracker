@@ -1,0 +1,16 @@
+[Unit]
+Description=Tracker DEV secondary-user verified recovery snapshot
+After=local-fs.target
+ConditionPathExists=/etc/tracker.env
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+Nice=10
+TimeoutStartSec=1800
+ExecStart=/bin/bash /opt/tracker/scripts/tracker-secondary-scheduled443.sh
+NoNewPrivileges=yes
+
+# Opt-in only. This service is never installed or started by the code release.

@@ -88,6 +88,7 @@ li {{margin:8px 0}}
 <body>
 <p><a href="/">← Back to Tracker</a></p>
 <h1>Account Security</h1>
+<p><a href="/account/users">Manage Secondary Users</a></p>
 <p>Signed in as <strong>{username}</strong>.</p>
 <section>
 <h2>Active Sessions</h2>

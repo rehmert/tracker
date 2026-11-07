@@ -9,6 +9,8 @@
   if (!form || !summary) return;
   // Vial rows live outside the form and associate through form="bulk-vials".
   const boxes = [...document.querySelectorAll('.bulk-vial-check[form="bulk-vials"]')];
+  // A page hides rows but does not clear or delete their saved selections.
+  const pageBoxes = () => boxes.filter(box => !box.closest('tr')?.hidden);
   const visible = new Map(boxes.map(b => [String(b.value), b]));
   const compoundSelect = document.getElementById('bulk7-compound');
   const statusSelect = document.getElementById('bulk7-status');
@@ -73,9 +75,10 @@
   }
   function sync() {
     for (const b of boxes) b.checked=Object.hasOwn(selected,String(b.value));
-    const count=boxes.filter(b=>b.checked).length;
-    summary.textContent=`${Object.keys(selected).length} selected across all views (${count} visible).`;
-    if(all) {all.checked=boxes.length>0 && count===boxes.length; all.indeterminate=count>0 && count<boxes.length;}
+    const visibleBoxes=pageBoxes();
+    const count=visibleBoxes.filter(b=>b.checked).length;
+    summary.textContent=`${Object.keys(selected).length} selected across all views (${count} on this page).`;
+    if(all) {all.checked=visibleBoxes.length>0 && count===visibleBoxes.length; all.indeterminate=count>0 && count<visibleBoxes.length;}
     const selectedCount=Object.keys(selected).length;
     for(const id of ['bulk-count','bulk-toolbar-count']) {const el=document.getElementById(id);if(el)el.textContent=String(selectedCount);}
     // This manager owns selection changes in the capture phase, so the older
@@ -152,7 +155,7 @@
   }
   const actions={
     // All bulk controls use this one persisted cross-view selection source.
-    'bulk-select-all':()=>{for(const b of boxes)b.checked=true;commitVisible();},
+    'bulk-select-all':()=>{for(const b of pageBoxes())b.checked=true;commitVisible();},
     'bulk-select-none':()=>{remember();selected={};sync();},
     'bulk-undo-selection':restore,
     'bulk-open-editor':()=>{
@@ -165,7 +168,7 @@
     },
     'bulk7-select':()=>{for(const b of boxes){const d=metadata(b);if((!compoundSelect?.value||compoundSelect.value===d.compound)&&(!statusSelect?.value||statusSelect.value===d.status.toLowerCase().replaceAll(' ','_')))b.checked=true;}commitVisible();},
     'bulk7-invert':()=>{for(const b of boxes)b.checked=!b.checked;commitVisible();},
-    'bulk7-clear':()=>{for(const b of boxes)b.checked=false;commitVisible();},
+    'bulk7-clear':()=>{for(const b of pageBoxes())b.checked=false;commitVisible();},
     'bulk7-deselect':()=>{
       for(const b of boxes){
         const d=metadata(b);
@@ -234,7 +237,7 @@
   },true);
   document.addEventListener('change',event=>{
     if(boxes.includes(event.target)){event.stopImmediatePropagation();commitVisible();}
-    else if(event.target===all){event.stopImmediatePropagation();for(const b of boxes)b.checked=all.checked;commitVisible();}
+    else if(event.target===all){event.stopImmediatePropagation();for(const b of pageBoxes())b.checked=all.checked;commitVisible();}
   },true);
   // Validate before Stage 4 form-level preview handlers receive the submit event.
   document.addEventListener('submit',async event=>{
@@ -270,5 +273,6 @@
     try {form.requestSubmit(event.submitter && event.submitter.form===form ? event.submitter : undefined);}
     finally {queueMicrotask(()=>{submitting=false;});}
   },true);
+  document.addEventListener('tracker:vials-page-changed',sync);
   sync();
 })();

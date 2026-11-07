@@ -57,7 +57,7 @@ def test_both_routers_have_guard():
 
 @pytest.mark.parametrize(
     "module_name,expected",
-    [("labs", 16), ("coas", 12)],
+    [("labs", 18), ("coas", 12)],
 )
 def test_database_dependencies_scoped(module_name, expected):
     path = ROOT / "app/routers" / f"{module_name}.py"

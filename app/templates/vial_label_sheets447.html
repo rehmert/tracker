@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Selected Vial Label Sheets · Tracker</title>
+<style>
+:root{color-scheme:light;--label-preview-scale:3}
+*{box-sizing:border-box}
+body{margin:0;background:#f3f6fa;color:#182332;font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+.toolbar{max-width:850px;margin:0 auto;padding:20px 18px}
+h1{font-size:1.5rem;margin:0 0 .4rem}
+.note{color:#495667;max-width:780px}
+.actions{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin:.9rem 0}
+.actions a,.actions button{border:1px solid #8394a8;border-radius:8px;background:#fff;padding:.6rem .85rem;color:#17365d;font:inherit;min-height:44px;cursor:pointer;text-decoration:none}
+.actions .primary{background:#164f85;color:white;border-color:#164f85}
+.settings{display:flex;flex-wrap:wrap;gap:.8rem;align-items:end;background:white;border:1px solid #ced7e2;border-radius:10px;padding:14px}
+.settings label{display:grid;gap:.3rem;flex:1 1 150px}
+.settings select{width:100%;padding:.55rem;min-height:44px;font:inherit}
+.preview-zoom-controls{display:flex;align-items:center;flex-wrap:wrap;gap:.65rem;margin:1rem 0 .3rem}
+.preview-zoom-controls label{font-weight:650}
+.preview-zoom-controls select{font:inherit;min-height:44px;padding:.5rem;min-width:7rem;border-radius:8px}
+.preview-zoom-controls .note{margin:0}
+.stats{font-weight:600}
+.sheets{display:flex;flex-direction:column;align-items:center;gap:24px;padding:10px 12px 32px;overflow-x:auto}
+.sheet-frame{background:#fff;border:1px solid #abb7c5;box-shadow:0 3px 16px #0002;padding:18px}
+.sheet-heading{font-size:.82rem;color:#566476;margin:0 0 10px}
+.sheet-downloads{display:flex;flex-wrap:wrap;gap:.65rem;margin:10px 0 0;font-size:.88rem}
+.sheet-downloads a{color:#164f85;min-height:36px;display:inline-flex;align-items:center}
+.label-preview-stage{width:calc({{ width_mm }}mm * var(--label-preview-scale));height:calc({{ height_mm }}mm * var(--label-preview-scale));}
+.label-sheet{width:{{ width_mm }}mm;height:{{ height_mm }}mm;overflow:hidden;background:white;transform:scale(var(--label-preview-scale));transform-origin:top left}
+.label-sheet svg{display:block;width:{{ width_mm }}mm;height:{{ height_mm }}mm;max-width:none}
+@page{size:{{ width_mm }}mm {{ height_mm }}mm;margin:0}
+@media print{
+  html,body{width:{{ width_mm }}mm;height:auto;margin:0!important;padding:0!important;background:white!important}
+  .toolbar,.sheet-heading,.sheet-downloads{display:none!important}
+  .sheets{display:block!important;padding:0!important;margin:0!important;overflow:visible!important}
+  .sheet-frame{display:block!important;padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;width:{{ width_mm }}mm;height:{{ height_mm }}mm;break-after:page;page-break-after:always;break-inside:avoid}
+  .sheet-frame:last-child{break-after:auto;page-break-after:auto}
+  .label-preview-stage{width:{{ width_mm }}mm!important;height:{{ height_mm }}mm!important}
+  .label-sheet{transform:none!important;transform-origin:top left!important}
+  .label-sheet,.label-sheet svg{width:{{ width_mm }}mm!important;height:{{ height_mm }}mm!important;overflow:hidden!important}
+}
+</style>
+</head>
+<body>
+<header class="toolbar">
+  <h1>Print Selected Vial Labels</h1>
+  <p class="note">Each selected vial receives its own label. Multi-label strips are filled in vial-number order; unused positions on the last strip remain blank. Nothing is changed in inventory.</p>
+  <p class="stats">{{ selected_count }} distinct vial{{ '' if selected_count == 1 else 's' }} · {{ label_count }} label{{ '' if label_count == 1 else 's' }} · {{ sheets|length }} sheet{{ '' if sheets|length == 1 else 's' }}</p>
+  <form method="get" action="/vials/labels/sheets" class="settings" aria-label="Label sheet settings">
+    <input type="hidden" name="ids" value="{{ selected_ids }}">
+    <label>Sheet layout
+      <select name="layout">
+        <option value="40x20" {% if layout == "40x20" %}selected{% endif %}>40 × 20 mm — 1 per sheet</option>
+        <option value="30x15x2" {% if layout == "30x15x2" %}selected{% endif %}>30 × 15 mm — 2 along feed</option>
+        <option value="10x20x4" {% if layout == "10x20x4" %}selected{% endif %}>10 × 20 mm — 4 across</option>
+      </select>
+    </label>
+    <label>Label content
+      <select name="phase">
+        <option value="auto" {% if phase == "auto" %}selected{% endif %}>Auto — based on each vial</option>
+        <option value="pre" {% if phase == "pre" %}selected{% endif %}>All unreconstituted</option>
+        <option value="post" {% if phase == "post" %}selected{% endif %}>All reconstituted</option>
+      </select>
+    </label>
+    <label>Text rotation
+      <select name="rotation">
+        {% for angle in (0,90,180,270) %}
+        <option value="{{ angle }}" {% if rotation == angle %}selected{% endif %}>{{ angle }}°</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Copies per vial
+      <select name="copies">
+        {% for n in (1,2,3,4) %}
+        <option value="{{ n }}" {% if copies == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit" class="primary">Update Preview</button>
+  </form>
+
+  <div class="preview-zoom-controls">
+    <label for="label-preview-zoom449">Preview zoom</label>
+    <select id="label-preview-zoom449" aria-label="Preview zoom, screen only">
+      <option value="1">100%</option>
+      <option value="1.5">150%</option>
+      <option value="2">200%</option>
+      <option value="3" selected>300% (default)</option>
+      <option value="4">400%</option>
+      <option value="5">500%</option>
+    </select>
+    <span id="label-preview-zoom-status449" class="note" role="status" aria-live="polite">Screen only — print and downloads remain actual size.</span>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="primary" onclick="window.print()">Print {{ sheets|length }} Sheet{{ '' if sheets|length == 1 else 's' }}</button>
+    <a href="/vials/labels/sheets/download?ids={{ selected_ids }}&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;copies={{ copies }}&amp;fmt=png">Download All PNG Sheets (one file)</a>
+    <a href="/vials/labels/sheets/download?ids={{ selected_ids }}&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;copies={{ copies }}&amp;fmt=svg">Download All SVG Sheets (one file)</a>
+    <a href="/vials">Back to Vials</a>
+  </div>
+  <p class="note">Downloads are direct PNG or SVG files, not ZIP archives. “All” combines the strips into one vertical image; individual strips are available beneath each preview. Each physical strip retains the selected template dimensions. The built-in image encoding does not require extraction.</p>
+  <p class="note">For direct browser printing, choose the matching physical media, <strong>100% / actual size</strong>, and no margins in the printer dialog. Browser print drivers may ignore custom paper sizes; if so, import the 203-DPI PNG or SVG sheets into compatible label software. The preview does not connect to the NIIMBOT printer by Bluetooth.</p>
+  <p class="note">Mixed (post-reconstitution) content uses only dates and volumes recorded on each vial. “Auto” shows unreconstituted content when a vial has no recorded reconstitution date.</p>
+</header>
+
+<main class="sheets" aria-label="Printable vial label strips">
+{% for sheet in sheets %}
+  <section class="sheet-frame" aria-label="Label sheet {{ sheet.number }} of {{ sheets|length }}">
+    <p class="sheet-heading">Strip {{ sheet.number }} of {{ sheets|length }}</p>
+    <div class="label-preview-stage"><div class="label-sheet">{{ sheet.svg }}</div></div>
+    <div class="sheet-downloads">
+      <a href="/vials/labels/sheets/download?ids={{ selected_ids }}&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;copies={{ copies }}&amp;fmt=png&amp;sheet={{ sheet.number }}">Download strip {{ sheet.number }} PNG</a>
+      <a href="/vials/labels/sheets/download?ids={{ selected_ids }}&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;copies={{ copies }}&amp;fmt=svg&amp;sheet={{ sheet.number }}">Download strip {{ sheet.number }} SVG</a>
+    </div>
+  </section>
+{% endfor %}
+</main>
+<script src="/static/js/tracker-label-preview-zoom449.js?v=449" defer></script>
+</body>
+</html>

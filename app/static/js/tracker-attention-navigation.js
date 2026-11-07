@@ -224,6 +224,11 @@
         'tracker-attention-current'
       );
 
+      // A matching vial may be on another paginated table page.
+      document.dispatchEvent(new CustomEvent(
+        'tracker:vials-show-row', {detail:{row}}
+      ));
+
       summary.textContent =
         `${activeLabel(active)}: ` +
         `${current + 1} of ${matches.length}`;

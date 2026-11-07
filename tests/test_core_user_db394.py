@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CORE = {
     "compounds": 5,
     "protocols": 12,
-    "vials": 16,
+    "vials": 18,  # Release 447 adds two GET-only, scoped label-sheet routes.
     "purchases": 11,
     "supplies": 5,
     "calendar": 5,
@@ -77,7 +77,7 @@ def test_every_core_dependency_is_scoped(name, count):
 
 
 def test_total_conversion_count():
-    assert sum(CORE.values()) == 54
+    assert sum(CORE.values()) == 56
 
 
 def test_scoped_dependency_preserves_fastapi_override():

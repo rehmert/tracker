@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, Response
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import services, units as U
 from ..inventory_lock import reserve_inventory_write
@@ -35,13 +35,131 @@ def vials_page(request: Request, status: str = "active", compound_id: str | None
 
     vials = list(
         db.scalars(
-            vial_listing(status,compound_id)
+            vial_listing(status,compound_id).options(
+                selectinload(Vial.purchase)
+            )
         )
     )
 
     return render(request, "vials.html", vials=vials, views=services.vial_views(db, vials),
                   status=status, statuses=VIAL_STATUSES, compound_id=compound_id, compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
 
+
+
+
+# Release 447: distinct-vial multi-label print sheets, read-only.
+# Static /vials/labels paths must precede /vials/{vid}.
+def _label_job447(db, ids, layout, phase, rotation, copies):
+    from sqlalchemy.orm import joinedload
+    from ..vial_label_sheets447 import (
+        parse_vial_ids447, validate_options447,
+        label_panels447, paginate447,
+    )
+    try:
+        selected_ids = parse_vial_ids447(ids)
+        validate_options447(layout, phase, rotation, copies)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    selected = list(db.scalars(
+        select(Vial)
+        .options(joinedload(Vial.compound))
+        .where(Vial.id.in_(selected_ids))
+    ))
+    lookup = {vial.id: vial for vial in selected}
+    if len(lookup) != len(selected_ids) or any(
+        ident not in lookup for ident in selected_ids
+    ):
+        raise HTTPException(404, "One or more selected vials no longer exist")
+    ordered = [lookup[ident] for ident in selected_ids]
+    try:
+        panels = label_panels447(ordered, phase, copies)
+        pages = paginate447(panels, layout)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return selected_ids, pages
+
+
+@router.get("/vials/labels/sheets")
+def vial_label_sheets447_page(
+    request: Request,
+    ids: str = "",
+    layout: str = "10x20x4",
+    phase: str = "auto",
+    rotation: int = 90,
+    copies: int = 1,
+    db: Session = Depends(get_scoped_db390),
+):
+    from markupsafe import Markup
+    from ..vial_label_sheets447 import (
+        svg_sheet447, physical_size447,
+    )
+
+    selected_ids, pages = _label_job447(
+        db, ids, layout, phase, rotation, copies,
+    )
+    width_mm, height_mm = physical_size447(layout)
+    sheet_views = [
+        {
+            "number": index + 1,
+            "svg": Markup(svg_sheet447(lines, layout, rotation).decode("utf-8")),
+        }
+        for index, lines in enumerate(pages)
+    ]
+    response = render(
+        request, "vial_label_sheets447.html",
+        selected_ids=",".join(map(str, selected_ids)),
+        selected_count=len(selected_ids),
+        label_count=sum(map(len, pages)),
+        sheets=sheet_views,
+        layout=layout, phase=phase,
+        rotation=rotation, copies=copies,
+        width_mm=width_mm, height_mm=height_mm,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@router.get("/vials/labels/sheets/download")
+def vial_label_sheets447_download(
+    ids: str = "",
+    layout: str = "10x20x4",
+    phase: str = "auto",
+    rotation: int = 90,
+    copies: int = 1,
+    fmt: str = "png",
+    sheet: int = 0,
+    db: Session = Depends(get_scoped_db390),
+):
+    from ..vial_label_sheets447 import FORMATS
+    from ..vial_label_direct450 import direct_download450
+    if fmt not in FORMATS or sheet < 0:
+        raise HTTPException(422, "Choose SVG or PNG and a valid strip number")
+    _, pages = _label_job447(
+        db, ids, layout, phase, rotation, copies,
+    )
+    try:
+        result = direct_download450(
+            pages, layout, rotation, fmt, sheet,
+        )
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    media = "image/svg+xml" if fmt == "svg" else "image/png"
+    part = f"strip-{sheet:03d}" if sheet else "all-strips"
+    return Response(
+        content=result, media_type=media,
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="vial-labels-{layout}-'
+                f'{phase}-r{rotation}-{part}.{fmt}"'
+            ),
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+            "Referrer-Policy": "no-referrer",
+        },
+    )
 
 
 # TRACKER_BULK_STAGE4
