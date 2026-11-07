@@ -114,6 +114,7 @@ def test_server_session_alone_selects_private_database(gateway):
         assert result["root_user_id"] == "3"
 
     # The first user session cannot turn into user 3.
+    client.cookies.clear()
     client.cookies.set(COOKIE, token2, path="/secondary")
     response = client.get("/secondary/full/compounds")
     assert response.status_code == 200
