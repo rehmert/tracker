@@ -155,6 +155,16 @@ def preview_primary_page487(request: Request, path: str):
             vital_form490()
             if vital_writes_enabled490() else ("", None)
         )
+    elif plan.route in ("/doses", "/food"):
+        from .secondary_fullapp_tracking491 import (
+            dose_enabled491, dose_form491, food_enabled491, food_forms491,
+        )
+        if plan.route == "/doses" and dose_enabled491():
+            form_html, csrf = dose_form491(plan.user_id)
+        elif plan.route == "/food" and food_enabled491():
+            form_html, csrf = food_forms491()
+        else:
+            form_html, csrf = "", None
     else:
         form_html, csrf = "", None
     form_policy = "form-action 'self'" if csrf else "form-action 'none'"
@@ -181,8 +191,8 @@ def preview_primary_page487(request: Request, path: str):
         '<a href="/secondary/overview">Private workspace</a>'
         '<h1>Primary Tracker — read-only preview</h1>'
         '<p>Snapshot of your private workspace. Original app links '
-        'are disabled. Compound creation, vial creation, and vitals '
-        'logging appear only when their private write gates are enabled.</p>'
+        'are disabled. Write forms for compounds, vials, vitals, '
+        'doses, and food appear only when their private write gates are enabled.</p>'
         '<nav aria-label="Private features">' + nav + '</nav>'
         '<h2>' + escape(plan.route) + '</h2>'
         '<pre>' + escape(content) + '</pre>' + form_html
@@ -291,3 +301,8 @@ router.include_router(_vial_router489)
 # Release 490: independently gated private primary vitals form.
 from .secondary_fullapp_vitals490 import router as _vital_router490
 router.include_router(_vital_router490)
+
+
+# Release 491: gated private primary-page dose, food and water forms.
+from .secondary_fullapp_tracking491 import router as _tracking_router491
+router.include_router(_tracking_router491)
