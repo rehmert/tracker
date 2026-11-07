@@ -135,6 +135,26 @@ async def tracker_response_protection(request, call_next):
                 secondary_preview430.upload_enabled472()
                 and request.url.path == "/secondary/attachments/upload"
             )
+            or (
+                os.environ.get("TRACKER_FULLAPP_GATEWAY486", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_WRITES488", "0") == "1"
+                and secondary_preview430.inventory_writes_enabled435()
+                and request.url.path == "/secondary/full/compounds"
+            )
+            or (
+                os.environ.get("TRACKER_FULLAPP_GATEWAY486", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_WRITES488", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_VIAL_WRITES489", "0") == "1"
+                and secondary_preview430.inventory_writes_enabled435()
+                and request.url.path == "/secondary/full/vials"
+            )
+            or (
+                os.environ.get("TRACKER_FULLAPP_GATEWAY486", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_WRITES488", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_VITAL_WRITES490", "0") == "1"
+                and secondary_preview430.vital_writes_enabled433()
+                and request.url.path == "/secondary/full/vitals"
+            )
             or request.url.path in (
                 "/secondary/security/revoke-others",
                 "/secondary/security/password",
