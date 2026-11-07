@@ -15,9 +15,10 @@ import sqlite3
 import subprocess
 import sys
 from html import escape
+from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from .fullapp_gateway486 import authorize_fullapp_route486
 from .worker_scope428 import SOURCE_ROOT, worker_environment428
@@ -136,6 +137,11 @@ def preview_primary_page487(request: Request, path: str):
         for path, label in links
     )
 
+    form_html, csrf = _compound_form488() if (
+        plan.route == "/compounds" and _compound_write_enabled488()
+    ) else ("", None)
+    form_policy = "form-action 'self'" if csrf else "form-action 'none'"
+
     html = (
         '<!doctype html><html lang="en"><head>'
         '<meta charset="utf-8">'
@@ -154,19 +160,100 @@ def preview_primary_page487(request: Request, path: str):
         'non-interactive; writes and original app links are disabled.</p>'
         '<nav aria-label="Private features">' + nav + '</nav>'
         '<h2>' + escape(plan.route) + '</h2>'
-        '<pre>' + escape(content) + '</pre>'
+        '<pre>' + escape(content) + '</pre>' + form_html
         '</main></body></html>'
     )
 
-    return HTMLResponse(
+    response = HTMLResponse(
         html,
         headers={
             "Cache-Control": "no-store",
             "Content-Security-Policy": (
                 "default-src 'none'; style-src 'unsafe-inline'; "
-                "base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+                "base-uri 'none'; " + form_policy + "; frame-ancestors 'none'"
             ),
             "X-Content-Type-Options": "nosniff",
             "Referrer-Policy": "no-referrer",
         },
+    )
+    if csrf:
+        from .secondary_preview430 import _csrf_response
+        return _csrf_response(response, csrf)
+    return response
+
+
+def _compound_write_enabled488():
+    """New primary-view form is separately opt-in. Pilot writes unchanged."""
+    from .secondary_preview430 import (
+        inventory_writes_enabled435, preview_enabled,
+    )
+    return (
+        preview_enabled()
+        and os.getenv("TRACKER_FULLAPP_GATEWAY486", "0") == "1"
+        and os.getenv("TRACKER_FULLAPP_WRITES488", "0") == "1"
+        and inventory_writes_enabled435()
+    )
+
+
+def _compound_form488():
+    """Only the existing verified inventory writer receives this POST."""
+    from .csrf_runtime import load_key
+    from .csrf_tokens import issue_token
+    from .models import CATEGORIES
+    from .units import CONTENT_UNITS
+
+    csrf = issue_token(load_key())
+    nonce = str(uuid4())
+    categories = "".join(
+        '<option value="' + escape(value, quote=True) + '">'
+        + escape(value.title()) + "</option>"
+        for value in sorted(CATEGORIES)
+    )
+    units = "".join(
+        '<option value="' + escape(value, quote=True) + '">'
+        + escape(value) + "</option>"
+        for value in sorted(CONTENT_UNITS)
+    )
+    html = (
+        '<section><h2>Add compound to my private inventory</h2>'
+        '<p>This writes only to your authenticated private workspace.</p>'
+        '<form method="post" action="/secondary/full/compounds" '
+        'autocomplete="off">'
+        '<input type="hidden" name="csrf_token" value="'
+        + escape(csrf, quote=True) + '">'
+        '<input type="hidden" name="submission_token" value="'
+        + escape(nonce, quote=True) + '">'
+        '<label>Compound name <input name="name" maxlength="120" '
+        'required></label>'
+        '<label>Category <select name="category">' + categories
+        + '</select></label>'
+        '<label>Default unit <select name="primary_unit">' + units
+        + '</select></label>'
+        '<label>Notes <textarea name="notes" maxlength="2000"></textarea>'
+        '</label><button type="submit">Add compound</button>'
+        '</form></section>'
+    )
+    return html, csrf
+
+
+@router.post("/full/compounds")
+async def primary_compound_create488(request: Request):
+    """Signed-CSRF, deduplicated private write via existing Release 435 worker."""
+    if not _compound_write_enabled488():
+        raise HTTPException(404, "Private primary writes unavailable")
+    if (
+        request.url.path != "/secondary/full/compounds"
+        or request.query_params
+    ):
+        raise HTTPException(400, "Unexpected private write parameters")
+    from .secondary_preview430 import _inventory_submit435
+
+    result = await _inventory_submit435(request, "create_compound")
+    if result.status_code != 303:
+        raise HTTPException(503, "Private inventory write failed")
+
+    return RedirectResponse(
+        "/secondary/full/compounds",
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
     )
