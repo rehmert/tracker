@@ -1122,3 +1122,137 @@ def test_mobile_quick_entry458_no_new_write_permissions(
         config, "instance_label", lambda: "PROD"
     )
     assert client.get("/secondary/food/new").status_code == 404
+
+
+# Release 459: client-side filtering of private saved foods.
+def test_mobile_saved_food_search459(browser, monkeypatch):
+    from html.parser import HTMLParser
+
+    client, _ = browser
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    login(client, 2)
+
+    response = client.get("/secondary/food/new")
+    assert response.status_code == 200
+
+    class Inspector(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.form = None
+            self.fields = []
+            self.buttons = []
+            self.options = []
+
+        def handle_starttag(self, tag, attrs):
+            data = dict(attrs)
+            if tag == "form":
+                self.form = data.get("action")
+            if tag in ("input", "select"):
+                self.fields.append((self.form, tag, data))
+            if tag == "button":
+                self.buttons.append((self.form, data))
+            if tag == "option":
+                self.options.append((self.form, data))
+
+        def handle_endtag(self, tag):
+            if tag == "form":
+                self.form = None
+
+    parser = Inspector()
+    parser.feed(response.text)
+
+    reuse = "/secondary/food/reuse"
+
+    search = [
+        attrs
+        for owner, tag, attrs in parser.fields
+        if owner == reuse
+        and attrs.get("id") == "saved-food-search459"
+    ]
+    assert len(search) == 1
+    assert search[0]["type"] == "search"
+    assert "name" not in search[0]
+    assert search[0]["autocomplete"] == "off"
+
+    saved = [
+        attrs
+        for owner, tag, attrs in parser.fields
+        if owner == reuse
+        and attrs.get("id") == "saved-food-select459"
+    ]
+    assert len(saved) == 1
+    assert saved[0]["name"] == "product_id"
+    assert "required" in saved[0]
+
+    submit = [
+        attrs
+        for owner, attrs in parser.buttons
+        if owner == reuse
+        and attrs.get("id") == "saved-food-submit459"
+    ]
+    assert len(submit) == 1
+    assert submit[0]["type"] == "submit"
+
+    assert "USER-TWO" in response.text
+    assert "USER-THREE" not in response.text
+
+    for expected in (
+        'search459.addEventListener("input", filterSavedFoods459)',
+        "select459.replaceChildren()",
+        "option.textContent = item.label",
+        "submit459.disabled =",
+        'count459.textContent =',
+    ):
+        assert expected in response.text
+
+    # Search only modifies client-side markup. Existing
+    # write routes and server form fields are unchanged.
+    assert parser.options
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_mobile_saved_food_search459_gates(browser, monkeypatch):
+    client, _ = browser
+    login(client, 2)
+
+    assert client.get("/secondary/food/new").status_code == 404
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 200
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get("/secondary/food/new").status_code == 404
+
+
+def test_mobile_saved_food_search459_preserves_routes():
+    from app.secondary_preview430 import preview_app
+
+    routes = [
+        (method, route.path)
+        for route in preview_app.routes
+        for method in getattr(route, "methods", set())
+        if route.path.startswith("/food/")
+    ]
+
+    for route in (
+        "/food/reuse",
+        "/food/water",
+        "/food/entry",
+    ):
+        assert routes.count(("POST", route)) == 1
+
+    assert ("POST", "/food/search") not in routes

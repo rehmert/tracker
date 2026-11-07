@@ -2166,8 +2166,15 @@ grid-template-columns:repeat(3,minmax(0,1fr))
 value="{escape(csrf, quote=True)}">
 <input type="hidden" name="submission_token"
 value="{reuse_nonce}">
+<label>Find Saved Food
+<input type="search" id="saved-food-search459"
+placeholder="Search by food name"
+autocomplete="off" aria-controls="saved-food-select459"></label>
+<p id="saved-food-count459" class="note"
+role="status" aria-live="polite"></p>
 <label>Previously Logged Food
-<select name="product_id" required>{saved_options}</select></label>
+<select name="product_id" id="saved-food-select459"
+required>{saved_options}</select></label>
 <label>Journal Day
 <input type="date" name="day" data-journal-day458 value="{day}" required></label>
 <div class="grid">
@@ -2179,7 +2186,8 @@ value="{reuse_nonce}">
 <input type="number" name="servings" min=".001" max="100"
 step=".001" inputmode="decimal" value="1" required></label>
 </div>
-<button type="submit"{saved_disabled}>Log Saved Food</button>
+<button type="submit" id="saved-food-submit459"
+{saved_disabled}>Log Saved Food</button>
 </form>
 <p class="note">Uses the saved per-serving nutrients
 from your private journal.</p>
@@ -2259,6 +2267,76 @@ once, even if the same form is submitted again.</p>
       }});
     }});
   }});
+
+
+  const search459 = document.getElementById(
+    "saved-food-search459"
+  );
+  const select459 = document.getElementById(
+    "saved-food-select459"
+  );
+  const count459 = document.getElementById(
+    "saved-food-count459"
+  );
+  const submit459 = document.getElementById(
+    "saved-food-submit459"
+  );
+
+  if (search459 && select459 && count459 && submit459) {{
+    const original459 = Array.from(
+      select459.options
+    ).filter(function (option) {{
+      return option.value !== "";
+    }}).map(function (option) {{
+      return {{
+        value: option.value,
+        label: option.textContent
+      }};
+    }});
+
+    const initiallyDisabled459 = original459.length === 0;
+
+    function filterSavedFoods459() {{
+      const query = search459.value.trim().toLocaleLowerCase();
+      const previousValue = select459.value;
+      const matching = original459.filter(function (item) {{
+        return item.label.toLocaleLowerCase().includes(query);
+      }});
+
+      select459.replaceChildren();
+
+      if (matching.length === 0) {{
+        const empty = document.createElement("option");
+        empty.value = "";
+        empty.textContent = "No matching saved foods";
+        select459.appendChild(empty);
+      }} else {{
+        matching.forEach(function (item) {{
+          const option = document.createElement("option");
+          option.value = item.value;
+          option.textContent = item.label;
+          select459.appendChild(option);
+        }});
+
+        if (matching.some(function (item) {{
+          return item.value === previousValue;
+        }})) {{
+          select459.value = previousValue;
+        }}
+      }}
+
+      select459.disabled = matching.length === 0;
+      submit459.disabled =
+        initiallyDisabled459 || matching.length === 0;
+
+      count459.textContent =
+        String(matching.length) + " of "
+        + String(original459.length) + " saved foods";
+    }}
+
+    search459.addEventListener("input", filterSavedFoods459);
+    filterSavedFoods459();
+  }}
 
   const water = document.getElementById(
     "water-amount458"
