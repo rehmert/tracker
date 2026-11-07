@@ -1,0 +1,48 @@
+name: Tracker private multi-user release checks
+on:
+  push:
+    branches:
+      - "release/491-private-primary-dose-food-20261107"
+  pull_request:
+    paths:
+      - "app/**"
+      - "tests/**"
+      - ".github/workflows/tracker-private-multiuser-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-multiuser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TRACKER_INSTANCE: DEV
+      TRACKER_DATA_DIR: ${{ runner.temp }}/tracker-private-ci
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install tested application dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Python compilation preflight
+        run: |
+          python -m py_compile app/main.py app/secondary_fullapp487.py app/secondary_fullapp_tracking491.py tests/test_secondary_fullapp491.py
+      - name: Multi-user isolation acceptance
+        run: |
+          python -m pytest -q \
+            tests/test_secondary_fullapp491.py \
+            tests/test_secondary_fullapp490.py \
+            tests/test_secondary_fullapp489.py \
+            tests/test_secondary_fullapp488.py \
+            tests/test_secondary_fullapp487.py \
+            tests/test_fullapp_gateway486.py \
+            tests/test_worker_fullapp485.py \
+            tests/test_worker_scope428.py \
+            tests/test_secondary_dose_write434.py \
+            tests/test_secondary_food452.py \
+            --disable-warnings --tb=short
