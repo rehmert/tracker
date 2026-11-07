@@ -381,3 +381,222 @@ def test_browser_week_still_works(browser):
     assert "32.0 fl oz" in response.text
 
     assert client.post("/secondary/food/week").status_code == 405
+
+
+# Release 455: authenticated, isolated weekly nutrition CSV.
+def test_week_csv455_private_export(browser):
+    import csv
+    import io
+
+    client, root = browser
+    login(client, 2)
+
+    page = client.get("/secondary/food/week?day=" + DAY)
+    assert page.status_code == 200
+    assert (
+        '/secondary/food/week.csv?day=' + DAY
+    ) in page.text
+
+    response = client.get(
+        "/secondary/food/week.csv?day=" + DAY
+    )
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert "text/csv" in response.headers["content-type"]
+    assert "attachment;" in response.headers["content-disposition"]
+
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert len(rows) == 7
+    assert rows[0]["date"] == "2026-10-31"
+    assert rows[-1]["date"] == DAY
+    assert float(rows[-1]["calories_kcal"]) == 300
+    assert float(rows[-1]["protein_g"]) == 40
+    assert float(rows[-1]["water_fl_oz"]) == 32
+    assert rows[-1]["fiber_g"] == ""
+    assert rows[-1]["fiber_coverage"] == "0"
+    assert rows[-1]["has_more_entries"] == "no"
+    assert "USER-THREE" not in response.text
+    assert str(root) not in response.text
+
+    login(client, 3)
+
+    other = client.get(
+        "/secondary/food/week.csv?day=" + DAY
+    )
+    assert other.status_code == 200
+
+    other_rows = list(
+        csv.DictReader(io.StringIO(other.text))
+    )
+
+    assert float(other_rows[-1]["calories_kcal"]) == 450
+    assert float(other_rows[-1]["water_fl_oz"]) == 12
+    assert float(other_rows[-1]["protein_g"]) == 60
+    assert "300.0" not in other.text
+
+
+def test_week_csv455_rejects_query_injection(browser):
+    client, _ = browser
+    login(client, 2)
+
+    for suffix in (
+        "?user_id=3",
+        "?database=/tmp/private.db",
+        "?sql=SELECT",
+        "?day=2026-11-06&day=2026-11-07",
+    ):
+        assert client.get(
+            "/secondary/food/week.csv" + suffix
+        ).status_code == 400
+
+    for invalid in (
+        "not-a-date",
+        "2026-02-30",
+        "0001-01-01",
+    ):
+        assert client.get(
+            "/secondary/food/week.csv?day=" + invalid
+        ).status_code == 422
+
+    assert client.post(
+        "/secondary/food/week.csv"
+    ).status_code == 405
+
+
+def test_week_csv455_prod_and_lockdown(browser, monkeypatch):
+    client, _ = browser
+
+    response = client.get(
+        "/secondary/food/week.csv",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/secondary/login"
+
+    login(client, 2)
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+
+    assert client.get(
+        "/secondary/food/week.csv"
+    ).status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+
+    assert client.get(
+        "/secondary/food/week.csv"
+    ).status_code == 404
+
+
+def test_week_csv455_missing_values_and_partial():
+    import csv
+    import io
+
+    from app.secondary_week_csv455 import (
+        render_week_csv455,
+    )
+    from app.worker_week454 import days454
+
+    reports = []
+
+    for day in days454(DAY):
+        reports.append({
+            "day": day,
+            "items": [],
+            "totals": {
+                key: 0.0 for key in (
+                    "energy", "proteins",
+                    "carbohydrates", "fat", "fiber"
+                )
+            },
+            "coverage": {
+                key: 0 for key in (
+                    "energy", "proteins",
+                    "carbohydrates", "fat", "fiber"
+                )
+            },
+            "water_oz": 0.0,
+            "water_target_oz": 140.0,
+            "has_more": False,
+        })
+
+    reports[-1]["has_more"] = True
+    reports[-1]["coverage"]["energy"] = 1
+    reports[-1]["totals"]["energy"] = 125.0
+
+    text = render_week_csv455(reports, DAY)
+    rows = list(csv.DictReader(io.StringIO(text)))
+
+    assert len(rows) == 7
+    assert rows[0]["calories_kcal"] == ""
+    assert rows[0]["water_fl_oz"] == "0.0"
+    assert rows[-1]["calories_kcal"] == "125.0"
+    assert rows[-1]["has_more_entries"] == "yes"
+    assert rows[-1]["protein_g"] == ""
+
+
+# Release 455 correction: CSV coverage names match exact headers.
+def test_week_csv455_coverage_columns_match_headers():
+    import csv
+    import io
+
+    from app.secondary_week_csv455 import (
+        FIELDS,
+        COVERAGE_COLUMN,
+        render_week_csv455,
+    )
+    from app.worker_week454 import days454
+
+    assert set(COVERAGE_COLUMN.values()).issubset(set(FIELDS))
+
+    reports = []
+
+    for day in days454(DAY):
+        reports.append({
+            "day": day,
+            "items": [{}],
+            "totals": {
+                "energy": 100.0,
+                "proteins": 20.0,
+                "carbohydrates": 30.0,
+                "fat": 10.0,
+                "fiber": 5.0,
+            },
+            "coverage": {
+                "energy": 1,
+                "proteins": 1,
+                "carbohydrates": 1,
+                "fat": 1,
+                "fiber": 1,
+            },
+            "water_oz": 24.0,
+            "water_target_oz": 140.0,
+            "has_more": False,
+        })
+
+    output = render_week_csv455(reports, DAY)
+    reader = csv.DictReader(io.StringIO(output))
+
+    assert tuple(reader.fieldnames) == FIELDS
+
+    rows = list(reader)
+    assert len(rows) == 7
+
+    for row in rows:
+        for column in COVERAGE_COLUMN.values():
+            assert row[column] == "1"
+
+        assert row["calories_kcal"] == "100.0"
+        assert row["protein_g"] == "20.0"
+        assert row["carbohydrates_g"] == "30.0"
+        assert row["fat_g"] == "10.0"
+        assert row["fiber_g"] == "5.0"

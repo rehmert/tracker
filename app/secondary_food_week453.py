@@ -182,6 +182,7 @@ button{{background:#16558b;color:white;border:0;padding:8px 14px}}
 <a href="/secondary/food/week">Current Week</a>
 {next_link}
 </nav>
+<p><a href="/secondary/food/week.csv?day={escape(end_day, quote=True)}">Download Weekly CSV</a></p>
 <h2>Seven-Day Totals</h2>
 <div class="stats">{"".join(summary_html)}</div>
 <p class="note">{escape(warning)}</p>

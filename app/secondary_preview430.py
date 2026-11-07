@@ -1970,3 +1970,72 @@ def secondary_food_week453(request: Request):
         render_week453(reports, ending),
         headers={"Cache-Control": "no-store"},
     )
+
+
+# Release 455: bounded, account-isolated weekly nutrition CSV.
+# No new worker permissions and no user-selected file or SQL.
+from fastapi.responses import Response as _CSVResponse455
+from .worker_week454 import days454 as _days454
+from .secondary_week_csv455 import render_week_csv455
+
+
+@preview_app.get("/food/week.csv")
+def secondary_food_week_csv455(request: Request):
+    require_preview()
+
+    query = request.query_params
+    if set(query) - {"day"} or len(query.getlist("day")) > 1:
+        raise HTTPException(400, "Unsupported CSV query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse(
+            "/secondary/login", status_code=303
+        )
+
+    try:
+        ending = validate_day452(
+            query.get("day")
+            if "day" in query
+            else _food_date452.today().isoformat()
+        )
+        days = _days454(ending)
+    except (ValueError, OverflowError):
+        raise HTTPException(422, "Invalid CSV date") from None
+
+    try:
+        reports = read_food_week454(uid, ending)
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(
+            503, "Private weekly CSV unavailable"
+        ) from None
+
+    if (
+        len(reports) != 7
+        or any(
+            report.get("user_id") != uid
+            or report.get("day") != day
+            for report, day in zip(reports, days)
+        )
+    ):
+        raise HTTPException(
+            503, "Private weekly CSV identity mismatch"
+        )
+
+    try:
+        body = render_week_csv455(reports, ending)
+    except (ValueError, KeyError, TypeError):
+        raise HTTPException(
+            503, "Private weekly CSV formatting failed"
+        ) from None
+
+    return _CSVResponse455(
+        content=body,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition":
+                f'attachment; filename="tracker-week-{ending}.csv"',
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
