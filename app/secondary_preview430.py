@@ -2137,6 +2137,25 @@ font-weight:700;margin-top:12px}}
 gap:10px}}
 .note{{font-size:.9rem;color:#405166}}
 @media(max-width:380px){{.grid{{grid-template-columns:1fr}}}}
+.water-presets458{{
+display:grid;
+grid-template-columns:repeat(5,minmax(0,1fr));
+gap:6px;margin:8px 0
+}}
+.water-presets458 button{{
+font-size:.88rem;padding:6px 2px;
+min-height:48px;margin:0;
+background:#e7f0f8;color:#16558b;
+border:1px solid #a5bed1
+}}
+.water-presets458 button[aria-pressed="true"]{{
+background:#16558b;color:white
+}}
+@media(max-width:420px){{
+.water-presets458{{
+grid-template-columns:repeat(3,minmax(0,1fr))
+}}
+}}
 </style></head><body><main>
 <p><a href="/secondary/food">Back to Food Journal</a></p>
 <h1>Log Food &amp; Water</h1>
@@ -2150,7 +2169,7 @@ value="{reuse_nonce}">
 <label>Previously Logged Food
 <select name="product_id" required>{saved_options}</select></label>
 <label>Journal Day
-<input type="date" name="day" value="{day}" required></label>
+<input type="date" name="day" data-journal-day458 value="{day}" required></label>
 <div class="grid">
 <label>Meal<select name="meal">
 <option>Breakfast</option><option>Lunch</option>
@@ -2172,10 +2191,26 @@ value="{escape(csrf, quote=True)}">
 <input type="hidden" name="submission_token"
 value="{water_nonce}">
 <label>Journal Day
-<input type="date" name="day" value="{day}" required></label>
+<input type="date" name="day" data-journal-day458 value="{day}" required></label>
 <label>Water (US fl oz)
-<input type="number" name="ounces" min=".01" max="256"
+<input type="number" name="ounces"
+id="water-amount458" min=".01" max="256"
 step=".01" inputmode="decimal" required></label>
+<div class="water-presets458"
+role="group" aria-label="Quick water amounts">
+<button type="button" data-water-amount458="8"
+aria-pressed="false">8 oz</button>
+<button type="button" data-water-amount458="12"
+aria-pressed="false">12 oz</button>
+<button type="button" data-water-amount458="16"
+aria-pressed="false">16 oz</button>
+<button type="button" data-water-amount458="24"
+aria-pressed="false">24 oz</button>
+<button type="button" data-water-amount458="32"
+aria-pressed="false">32 oz</button>
+</div>
+<p class="note">Tap an amount, then Save Water.
+You can also type a custom amount.</p>
 <button type="submit">Save Water</button>
 </form></section>
 <section><h2>Manual Food Entry</h2>
@@ -2185,7 +2220,7 @@ value="{escape(csrf, quote=True)}">
 <input type="hidden" name="submission_token"
 value="{food_nonce}">
 <label>Journal Day
-<input type="date" name="day" value="{day}" required></label>
+<input type="date" name="day" data-journal-day458 value="{day}" required></label>
 <label>Food Name
 <input name="name" maxlength="160" required></label>
 <div class="grid">
@@ -2204,7 +2239,63 @@ Unknown nutrients may remain blank.</p>
 </form></section>
 <p class="note">A successful submission is recorded only
 once, even if the same form is submitted again.</p>
-</main></body></html>'''
+</main><script>
+(function () {{
+  "use strict";
+
+  const dates = Array.from(
+    document.querySelectorAll(
+      'input[data-journal-day458]'
+    )
+  );
+
+  dates.forEach(function (field) {{
+    field.addEventListener("change", function () {{
+      if (!field.value) return;
+      dates.forEach(function (other) {{
+        if (other !== field) {{
+          other.value = field.value;
+        }}
+      }});
+    }});
+  }});
+
+  const water = document.getElementById(
+    "water-amount458"
+  );
+
+  const presets = Array.from(
+    document.querySelectorAll(
+      "button[data-water-amount458]"
+    )
+  );
+
+  function updatePreset() {{
+    if (!water) return;
+    presets.forEach(function (button) {{
+      button.setAttribute(
+        "aria-pressed",
+        button.dataset.waterAmount458 === water.value
+          ? "true" : "false"
+      );
+    }});
+  }}
+
+  presets.forEach(function (button) {{
+    button.addEventListener("click", function () {{
+      if (!water) return;
+      water.value = button.dataset.waterAmount458;
+      updatePreset();
+      water.focus();
+    }});
+  }});
+
+  if (water) {{
+    water.addEventListener("input", updatePreset);
+  }}
+}})();
+</script>
+</body></html>'''
 
     return _csrf_response(
         HTMLResponse(

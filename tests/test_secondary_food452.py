@@ -1010,3 +1010,115 @@ def test_saved_food457_gate_lockdown_and_prod(
     monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
     assert client.post("/secondary/food/reuse").status_code == 404
+
+
+# Release 458: mobile shortcuts never create new write routes.
+def test_mobile_quick_entry458_structure(browser, monkeypatch):
+    from html.parser import HTMLParser
+
+    client, _ = browser
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    login(client, 2)
+
+    response = client.get("/secondary/food/new")
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+
+    class MobileParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.forms = []
+            self.current = None
+            self.inputs = []
+            self.presets = []
+
+        def handle_starttag(self, tag, attributes):
+            values = dict(attributes)
+            if tag == "form":
+                self.current = values.get("action")
+                self.forms.append(self.current)
+            elif tag == "input":
+                self.inputs.append((self.current, values))
+            elif (
+                tag == "button"
+                and "data-water-amount458" in values
+            ):
+                self.presets.append(
+                    (self.current, values)
+                )
+
+        def handle_endtag(self, tag):
+            if tag == "form":
+                self.current = None
+
+    parsed = MobileParser()
+    parsed.feed(response.text)
+
+    routes = (
+        "/secondary/food/reuse",
+        "/secondary/food/water",
+        "/secondary/food/entry",
+    )
+    assert parsed.forms == list(routes)
+
+    for route in routes:
+        dates = [
+            attrs for owner, attrs in parsed.inputs
+            if owner == route
+            and attrs.get("name") == "day"
+        ]
+        assert len(dates) == 1
+        assert "data-journal-day458" in dates[0]
+
+        tokens = [
+            attrs for owner, attrs in parsed.inputs
+            if owner == route
+            and attrs.get("name") == "submission_token"
+        ]
+        assert len(tokens) == 1
+
+    assert [
+        attrs["data-water-amount458"]
+        for owner, attrs in parsed.presets
+    ] == ["8", "12", "16", "24", "32"]
+
+    assert all(
+        owner == "/secondary/food/water"
+        and attrs["type"] == "button"
+        and attrs["aria-pressed"] == "false"
+        for owner, attrs in parsed.presets
+    )
+
+    assert 'document.querySelectorAll(' in response.text
+    assert 'water.dataset' not in response.text
+    assert 'button.dataset.waterAmount458' in response.text
+
+
+def test_mobile_quick_entry458_no_new_write_permissions(
+    browser, monkeypatch
+):
+    client, _ = browser
+    login(client, 2)
+
+    assert client.get("/secondary/food/new").status_code == 404
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 200
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get("/secondary/food/new").status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get("/secondary/food/new").status_code == 404
