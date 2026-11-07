@@ -428,6 +428,48 @@ def secondary_account465(request: Request):
     )
 
 
+# Release 466: read-only, authenticated cutover assessment.
+# Current session identity only. No account selection.
+from .secondary_cutover466 import render_cutover466
+
+
+@preview_app.get("/cutover")
+def secondary_cutover466(request: Request):
+    require_preview()
+
+    if request.query_params:
+        raise HTTPException(
+            400, "Unexpected cutover parameters"
+        )
+
+    uid = _session_user(request.cookies.get(COOKIE))
+
+    if uid is None:
+        return RedirectResponse(
+            "/secondary/login", status_code=303
+        )
+
+    try:
+        record = inspect_staged_account427(uid)
+        if record.get("user_id") != uid:
+            raise RuntimeError(
+                "Current account identity mismatch"
+            )
+        page = render_cutover466(record)
+    except (ValueError, RuntimeError, PermissionError, OSError):
+        raise HTTPException(
+            503, "Cutover readiness unavailable"
+        ) from None
+
+    return HTMLResponse(
+        page,
+        headers={
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @preview_app.post("/logout")
 async def logout_post(request: Request):
     require_preview()
@@ -1729,7 +1771,8 @@ th,td{{border-bottom:1px solid #9995;padding:10px 6px;text-align:left}}
 <p><a href="/secondary/overview">Overview</a> ·
 <a href="/secondary/inventory">Inventory</a> ·
 <a href="/secondary/security">Session Security</a> ·
-<a href="/secondary/account">My Account</a></p>
+<a href="/secondary/account">My Account</a> ·
+<a href="/secondary/cutover">Cutover Readiness</a></p>
 <p>These controls do not activate normal Tracker multi-user login.
 Only the enabled pilot operations below permit writes.</p>
 <h2>Workspace Records</h2>

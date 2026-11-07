@@ -459,3 +459,74 @@ def test_account465_cross_user_parameter_rejection(browser):
         assert response.status_code == 400, (
             route, response.status_code
         )
+
+
+# Release 466: cutover assessment may only describe
+# the authenticated account in the DEV pilot.
+def test_cutover466_http_authentication_and_isolation(
+    browser, monkeypatch
+):
+    client, _ = browser
+
+    denied = client.get(
+        "/secondary/cutover",
+        follow_redirects=False,
+    )
+    assert denied.status_code == 303
+    assert denied.headers["location"] == "/secondary/login"
+
+    assert login(
+        client,
+        "member-2",
+        "secondary-password-2-secure-430",
+    ).status_code == 303
+
+    response = client.get("/secondary/cutover")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert "member-2" in response.text
+    assert "member-3" not in response.text
+
+    for query in (
+        "?user_id=3",
+        "?database=/tmp/private",
+        "?username=member-3",
+        "?activate=1",
+        "?user_id=2&user_id=3",
+    ):
+        result = client.get(
+            "/secondary/cutover" + query
+        )
+        assert result.status_code == 400
+
+    assert client.post(
+        "/secondary/cutover"
+    ).status_code == 405
+
+    assert login(
+        client,
+        "member-3",
+        "secondary-password-3-secure-430",
+    ).status_code == 303
+
+    other = client.get("/secondary/cutover")
+    assert other.status_code == 200
+    assert "member-3" in other.text
+    assert "member-2" not in other.text
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+    assert client.get(
+        "/secondary/cutover"
+    ).status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+    assert client.get(
+        "/secondary/cutover"
+    ).status_code == 404
