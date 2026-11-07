@@ -291,9 +291,51 @@ def test_session_helper_rejects_admin_or_bad_tokens(browsers):
             revoke_other_sessions441(token)
 
 
-def test_source_exempts_only_secondary_security_post_with_preview_gate():
+def test_source_exempts_only_secondary_security_posts_with_preview_gate():
+    """Release 451: both security POST routes are gated, no arbitrary routes."""
+    import ast
     from pathlib import Path
+
     source = Path("app/main.py").read_text()
-    assert 'request.url.path == "/secondary/security/revoke-others"' in source
-    assert "secondary_preview430.preview_enabled()" in source
+    tree = ast.parse(source)
+    assignments = [
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name)
+            and target.id == "secondary_form_post433"
+            for target in node.targets
+        )
+    ]
+    assert len(assignments) == 1
+    gate = assignments[0]
+    gate_source = ast.unparse(gate)
+    assert "secondary_preview430.preview_enabled()" in gate_source
+    assert "request.method.upper() == 'POST'" in gate_source
+
+    # The explicit exception must contain these two routes, and no
+    # additional unreviewed secondary security routes.
+    security_routes = []
+    for node in ast.walk(gate):
+        if (
+            isinstance(node, ast.Compare)
+            and ast.unparse(node.left) == "request.url.path"
+            and len(node.ops) == 1
+            and isinstance(node.ops[0], ast.In)
+            and len(node.comparators) == 1
+            and isinstance(node.comparators[0], ast.Tuple)
+        ):
+            security_routes.extend(
+                value.value
+                for value in node.comparators[0].elts
+                if isinstance(value, ast.Constant)
+                and isinstance(value.value, str)
+                and value.value.startswith("/secondary/security/")
+            )
+
+    assert security_routes == [
+        "/secondary/security/revoke-others",
+        "/secondary/security/password",
+    ]
     assert "and not secondary_form_post433" in source

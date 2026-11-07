@@ -1737,6 +1737,8 @@ def secondary_security_page441(request: Request):
 body{{font:16px system-ui,sans-serif;max-width:550px;margin:auto;padding:16px}}
 section{{border:1px solid #9995;border-radius:12px;padding:16px;margin:16px 0}}
 button{{font:inherit;min-height:46px;width:100%;padding:12px}}
+input{{font:inherit;width:100%;min-height:44px;padding:10px;margin:6px 0 12px}}
+label{{display:block;font-weight:600}}
 p{{line-height:1.5}}
 </style></head><body><main>
 <h1>Session Security</h1>
@@ -1753,9 +1755,29 @@ p{{line-height:1.5}}
 <button type="submit">Sign Out Other Devices</button>
 </form>
 </section>
-<p>Session revocation does not change the password, enable standard
-Tracker login, or modify any private health or inventory records.
-Sign out this device from the Overview page.</p>
+<section>
+<h2>Change My Password</h2>
+<p>Enter your existing password and a different new password of at
+least 12 characters. A successful change signs out <strong>all</strong>
+your secondary preview sessions, including this device. You must
+sign in again using your new password.</p>
+<form method="post" action="/secondary/security/password">
+<input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
+<label for="secondary-current-password451">Current password</label>
+<input id="secondary-current-password451" name="current_password"
+type="password" autocomplete="current-password" required maxlength="1024">
+<label for="secondary-new-password451">New password</label>
+<input id="secondary-new-password451" name="new_password"
+type="password" autocomplete="new-password" minlength="12" maxlength="1024" required>
+<label for="secondary-confirm-password451">Confirm new password</label>
+<input id="secondary-confirm-password451" name="confirm_password"
+type="password" autocomplete="new-password" minlength="12" maxlength="1024" required>
+<button type="submit">Change Password and Sign Out All Devices</button>
+</form>
+</section>
+<p>Password changes and session revocation never enable standard
+Tracker login or modify private health and inventory records.
+Sign out only this device from the Overview page.</p>
 </main></body></html>'''
     return _csrf_response(
         HTMLResponse(html, headers={"Cache-Control": "no-store"}),
@@ -1789,3 +1811,70 @@ async def secondary_revoke_others441(request: Request):
         "/secondary/security", status_code=303,
         headers={"Cache-Control": "no-store"},
     )
+
+
+# Release 451: password rotation for the current DEV-only secondary account.
+# Preserve the emergency lockdown, administrator isolation and signed CSRF.
+from .secondary_password451 import change_secondary_password451
+
+
+@preview_app.post("/security/password")
+async def secondary_password_change451(request: Request):
+    require_preview()
+    if request.query_params:
+        raise HTTPException(400, "Unsupported query parameters")
+
+    raw = request.cookies.get(COOKIE)
+    if _session_user(raw) is None:
+        raise HTTPException(401, "Secondary session required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+
+    fields = {
+        "csrf_token", "current_password",
+        "new_password", "confirm_password",
+    }
+    if set(form) != fields or any(
+        len(form.getlist(key)) != 1 for key in fields
+    ):
+        raise HTTPException(422, "Unexpected password form fields")
+
+    current = form.get("current_password")
+    new = form.get("new_password")
+    confirmation = form.get("confirm_password")
+    if (
+        not isinstance(current, str)
+        or not isinstance(new, str)
+        or not isinstance(confirmation, str)
+        or new != confirmation
+    ):
+        raise HTTPException(422, "Password change unsuccessful")
+
+    try:
+        successful = change_secondary_password451(raw, current, new)
+    except PermissionError:
+        raise HTTPException(401, "Secondary session expired") from None
+    except (RuntimeError, ValueError, sqlite3.Error, OSError):
+        raise HTTPException(
+            503, "Secondary credential update unavailable"
+        ) from None
+
+    if not successful:
+        raise HTTPException(
+            422, "Password change unsuccessful"
+        )
+
+    response = RedirectResponse(
+        "/secondary/login", status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+    response.delete_cookie(
+        COOKIE, path="/secondary", secure=True,
+        httponly=True, samesite="strict",
+    )
+    response.delete_cookie(
+        CSRF_COOKIE, path="/secondary", secure=True,
+        httponly=True, samesite="strict",
+    )
+    return response
