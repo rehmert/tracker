@@ -147,6 +147,7 @@ def render_page487(uid, private, route, query):
         from .security import require_auth
         from fastapi import Depends, FastAPI
         from fastapi.routing import APIRoute
+        from fastapi.staticfiles import StaticFiles
         from fastapi.testclient import TestClient
 
         if (
@@ -181,6 +182,10 @@ def render_page487(uid, private, route, query):
             dependencies=[Depends(require_auth)],
             lifespan=lifespan,
             docs_url=None, redoc_url=None, openapi_url=None,
+        )
+        harness.mount(
+            "/static", StaticFiles(directory=config.BASE_DIR / "static"),
+            name="static",
         )
         harness.include_router(module.router)
 
