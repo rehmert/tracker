@@ -120,7 +120,10 @@ async def tracker_response_protection(request, call_next):
                 secondary_preview430.supply_use_enabled439()
                 and request.url.path == "/secondary/supplies/use"
             )
-            or request.url.path == "/secondary/security/revoke-others"
+            or request.url.path in (
+                "/secondary/security/revoke-others",
+                "/secondary/security/password",
+            )
         )
     )
     if secondary_form_post433:
