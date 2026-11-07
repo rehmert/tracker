@@ -19,7 +19,7 @@ from .worker_read429 import private_overview429
 from .worker_food452 import validate_day452
 
 MAX_BYTES = 512
-MAX_ITEMS = 30
+MAX_ITEMS = 100
 OPERATION = "secondary_saved_food457"
 
 

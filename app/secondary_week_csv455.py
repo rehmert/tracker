@@ -7,13 +7,7 @@ import io
 
 from .worker_week454 import days454
 
-NUTRIENTS = (
-    "energy",
-    "proteins",
-    "carbohydrates",
-    "fat",
-    "fiber",
-)
+from .secondary_nutrients463 import NUTRIENTS, MICROS
 
 FIELDS = (
     "date",
@@ -31,6 +25,12 @@ FIELDS = (
     "carbohydrates_coverage",
     "fat_coverage",
     "fiber_coverage",
+) + tuple(
+    key.replace("-", "_") + "_" + unit
+    for key, _, unit in MICROS
+) + tuple(
+    key.replace("-", "_") + "_coverage"
+    for key, _, _ in MICROS
 )
 
 COLUMN = {
@@ -39,6 +39,10 @@ COLUMN = {
     "carbohydrates": "carbohydrates_g",
     "fat": "fat_g",
     "fiber": "fiber_g",
+    **{
+        key: key.replace("-", "_") + "_" + unit
+        for key, _, unit in MICROS
+    },
 }
 
 
@@ -48,6 +52,10 @@ COVERAGE_COLUMN = {
     "carbohydrates": "carbohydrates_coverage",
     "fat": "fat_coverage",
     "fiber": "fiber_coverage",
+    **{
+        key: key.replace("-", "_") + "_coverage"
+        for key, _, _ in MICROS
+    },
 }
 
 
@@ -82,9 +90,10 @@ def render_week_csv455(reports, end_day):
         }
 
         for key in NUTRIENTS:
-            reported = report["coverage"][key]
+            reported = report["coverage"].get(key, 0)
             row[COLUMN[key]] = (
-                report["totals"][key] if reported else ""
+                report["totals"].get(key, 0.0)
+                if reported else ""
             )
             row[COVERAGE_COLUMN[key]] = reported
 

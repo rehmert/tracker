@@ -2116,6 +2116,22 @@ def secondary_food_form456(request: Request):
         )
     )
 
+    from .secondary_nutrients463 import MICROS
+
+    micro_inputs = "".join(
+        '<label>' + escape(label) + ' (' + unit + ')'
+        + '<input type="number" name="' + key
+        + '" min="0" max="100000" step="0.001" '
+        + 'inputmode="decimal" placeholder="Unknown"></label>'
+        for key, label, unit in MICROS
+    )
+
+    micro_totals = "".join(
+        '<div><dt>' + escape(label) + '</dt><dd id="nutrition-total-'
+        + key + '462">Unknown</dd></div>'
+        for key, label, _ in MICROS
+    )
+
     html = f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -2196,6 +2212,14 @@ padding:8px 0
 margin:0;text-align:right;font-variant-numeric:tabular-nums
 }}
 #nutrition-grams-row462[hidden]{{display:none}}
+.advanced-nutrition463{{
+border:1px solid #cdd7e2;border-radius:10px;
+padding:10px;margin:12px 0
+}}
+.advanced-nutrition463 summary{{
+cursor:pointer;font-weight:700;
+min-height:44px;padding:8px 0
+}}
 </style></head><body><main>
 <p><a href="/secondary/food">Back to Food Journal</a></p>
 <h1>Log Food &amp; Water</h1>
@@ -2308,6 +2332,12 @@ step=".001" inputmode="decimal" value="1" required></label>
 <p class="note">Enter nutrients per serving.
 Unknown nutrients may remain blank.</p>
 <div class="grid">{nutrient_inputs}</div>
+<details class="advanced-nutrition463">
+<summary>Additional Nutrients (11)</summary>
+<p class="note">Values are per serving.
+Leave unknown nutrients blank.</p>
+<div class="grid">{micro_inputs}</div>
+</details>
 <div id="nutrition-quantity462" class="nutrition-panel462">
 <h3>Nutrition Preview</h3>
 <p class="note" id="nutrition-basis-label462">
@@ -2331,6 +2361,10 @@ role="status" aria-live="polite"></p>
 <div><dt>Fiber</dt>
 <dd id="nutrition-total-fiber462">—</dd></div>
 </dl>
+<details class="advanced-nutrition463">
+<summary>Additional Nutrient Totals</summary>
+<dl class="nutrition-totals462">{micro_totals}</dl>
+</details>
 <p class="note">Unknown nutrients are not counted
 as zero. Review the product label before saving.</p>
 </div>
@@ -2487,7 +2521,10 @@ once, even if the same form is submitted again.</p>
         }}
 
         ["energy", "proteins", "carbohydrates", "fat",
-         "fiber"].forEach(function (key) {{
+         "fiber", "sugars", "saturated-fat", "sodium",
+         "potassium", "calcium", "iron", "magnesium",
+         "vitamin-c", "vitamin-d", "vitamin-b12",
+         "cholesterol"].forEach(function (key) {{
           const field = form460.elements.namedItem(key);
           if (!field) return;
           const value = item.nutrients[key];

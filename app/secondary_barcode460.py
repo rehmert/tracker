@@ -9,16 +9,10 @@ import re
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-NUTRIENTS = (
-    "energy", "proteins", "carbohydrates", "fat", "fiber"
+from .secondary_nutrients463 import (
+    NUTRIENTS, REMOTE_KEYS, OFF_MG, OFF_MCG
 )
-REMOTE_KEYS = {
-    "energy": "energy-kcal",
-    "proteins": "proteins",
-    "carbohydrates": "carbohydrates",
-    "fat": "fat",
-    "fiber": "fiber",
-}
+
 MAX_BYTES = 65536
 
 
@@ -82,12 +76,29 @@ def parse_product460(data, code):
     )
     suffix = "_serving" if has_serving else "_100g"
 
-    values = {
-        key: number460(
-            nutrients.get(REMOTE_KEYS[key] + suffix)
+    values = {}
+    for key in NUTRIENTS:
+        raw = nutrients.get(REMOTE_KEYS[key] + suffix)
+
+        if type(raw) not in (float, int):
+            values[key] = None
+            continue
+
+        raw = float(raw)
+        if not math.isfinite(raw) or raw < 0:
+            values[key] = None
+            continue
+
+        multiplier = (
+            1000 if key in OFF_MG
+            else 1000000 if key in OFF_MCG
+            else 1
         )
-        for key in NUTRIENTS
-    }
+
+        value = round(raw * multiplier, 3)
+        values[key] = (
+            value if value <= 100000 else None
+        )
 
     return {
         "barcode": code,

@@ -18,8 +18,8 @@ from .worker_dose_write434 import _verified_storage
 from .worker_food452 import validate_day452
 
 MAX_BYTES = 4096
-NUTRIENTS = (
-    "energy", "proteins", "carbohydrates", "fat", "fiber"
+from .secondary_nutrients463 import (
+    NUTRIENTS, MACROS, MICROS
 )
 MEALS = ("Breakfast", "Lunch", "Dinner", "Snack")
 ACTIONS = ("water", "food")
@@ -150,26 +150,39 @@ def parse_request456(raw):
 
 def form_payload456(action, form):
     if action not in ACTIONS:
-        raise ValueError("Unsupported form action")
+        raise ValueError("Unsupported food action")
 
-    expected = (
-        {"day", "submission_token", "ounces", "csrf_token"}
-        if action == "water"
-        else {
-            "day", "submission_token", "csrf_token",
-            "name", "meal", "servings", *NUTRIENTS,
+    common = {"day", "submission_token", "csrf_token"}
+
+    if action == "water":
+        required = common | {"ounces"}
+        allowed = required
+    else:
+        required = common | {
+            "name", "meal", "servings"
+        } | {key for key, _, _ in MACROS}
+        allowed = required | {
+            key for key, _, _ in MICROS
         }
-    )
-    if set(form) != expected or any(
-        len(form.getlist(key)) != 1 for key in expected
-    ):
-        raise ValueError("Unexpected or repeated form fields")
 
-    data = {
-        key: str(form[key]).strip()
-        for key in expected - {"csrf_token"}
+    fields = set(form)
+
+    if (
+        not required.issubset(fields)
+        or not fields.issubset(allowed)
+        or any(len(form.getlist(k)) != 1 for k in fields)
+    ):
+        raise ValueError("Unexpected food form fields")
+
+    payload = {
+        key: (
+            str(form[key]).strip()
+            if key in form else ""
+        )
+        for key in allowed - {"csrf_token"}
     }
-    return validate_payload456(action, data)
+
+    return validate_payload456(action, payload)
 
 
 def private_write456(uid, private, action, payload):
@@ -188,8 +201,8 @@ def private_write456(uid, private, action, payload):
         **(
             {
                 key: (
-                    "" if payload["nutrients"][key] is None
-                    else str(payload["nutrients"][key])
+                    "" if payload["nutrients"].get(key) is None
+                    else str(payload["nutrients"].get(key))
                 )
                 for key in NUTRIENTS
             }
@@ -305,8 +318,8 @@ def request_write456(uid, action, payload, data_root=None):
             **(
                 {
                     key: (
-                        "" if payload["nutrients"][key] is None
-                        else str(payload["nutrients"][key])
+                        "" if payload["nutrients"].get(key) is None
+                        else str(payload["nutrients"].get(key))
                     )
                     for key in NUTRIENTS
                 }

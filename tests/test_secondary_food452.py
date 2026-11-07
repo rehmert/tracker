@@ -592,8 +592,10 @@ def test_week_csv455_coverage_columns_match_headers():
     assert len(rows) == 7
 
     for row in rows:
-        for column in COVERAGE_COLUMN.values():
+        for column in tuple(COVERAGE_COLUMN.values())[:5]:
             assert row[column] == "1"
+        for column in tuple(COVERAGE_COLUMN.values())[5:]:
+            assert row[column] == "0"
 
         assert row["calories_kcal"] == "100.0"
         assert row["protein_g"] == "20.0"
@@ -1721,3 +1723,225 @@ def test_nutrition_quantity462_gates(browser, monkeypatch):
         config, "instance_label", lambda: "PROD"
     )
     assert client.get("/secondary/food/new").status_code == 404
+
+
+def test_batch463_nutrient_contract_and_barcode():
+    from app.secondary_nutrients463 import (
+        NUTRIENTS, MACROS, MICROS,
+    )
+    from app.secondary_barcode460 import parse_product460
+
+    assert len(MACROS) == 5
+    assert len(MICROS) == 11
+    assert len(NUTRIENTS) == 16
+
+    data = {
+        "status": 1,
+        "product": {
+            "product_name": "Nutrient Unit Test",
+            "nutriments": {
+                "energy-kcal_100g": 120,
+                "sodium_100g": 0.42,
+                "potassium_100g": 0.31,
+                "iron_100g": 0.002,
+                "vitamin-d_100g": 0.000005,
+                "vitamin-b12_100g": 0.000002,
+            },
+        },
+    }
+
+    item = parse_product460(data, "0123456789012")
+    n = item["nutrients"]
+
+    assert n["energy"] == 120
+    assert n["sodium"] == 420
+    assert n["potassium"] == 310
+    assert n["iron"] == 2
+    assert n["vitamin-d"] == 5
+    assert n["vitamin-b12"] == 2
+    assert n["calcium"] is None
+
+
+def test_batch463_legacy_form_and_csv():
+    import csv
+    import io
+    import uuid
+
+    from starlette.datastructures import FormData
+    from app.worker_food_write456 import form_payload456
+    from app.secondary_week_csv455 import (
+        FIELDS, COLUMN, COVERAGE_COLUMN,
+        render_week_csv455,
+    )
+    from app.secondary_nutrients463 import NUTRIENTS, MICROS
+    from app.worker_saved_food457 import MAX_ITEMS
+    from app.worker_week454 import days454
+
+    form = {
+        "csrf_token": "sample",
+        "submission_token": str(uuid.uuid4()),
+        "day": DAY,
+        "name": "Legacy Food",
+        "meal": "Lunch",
+        "servings": "1",
+        "energy": "100",
+        "proteins": "20",
+        "carbohydrates": "",
+        "fat": "3",
+        "fiber": "",
+    }
+
+    payload = form_payload456("food", FormData(form))
+    assert payload["nutrients"]["energy"] == 100
+    assert all(
+        payload["nutrients"][key] is None
+        for key, _, _ in MICROS
+    )
+
+    with pytest.raises(ValueError):
+        form_payload456(
+            "food",
+            FormData(
+                list(form.items())
+                + [("sodium", "1"), ("sodium", "2")]
+            ),
+        )
+
+    assert MAX_ITEMS == 100
+    assert set(COLUMN) == set(NUTRIENTS)
+    assert set(COVERAGE_COLUMN) == set(NUTRIENTS)
+    assert len(FIELDS) == len(set(FIELDS))
+
+    reports = [
+        {
+            "day": day,
+            "items": [],
+            "totals": {key: 0.0 for key in NUTRIENTS},
+            "coverage": {key: 0 for key in NUTRIENTS},
+            "water_oz": 0.0,
+            "water_target_oz": 140.0,
+            "has_more": False,
+        }
+        for day in days454(DAY)
+    ]
+
+    reports[-1]["coverage"]["potassium"] = 1
+    reports[-1]["totals"]["potassium"] = 400
+
+    rows = list(csv.DictReader(io.StringIO(
+        render_week_csv455(reports, DAY)
+    )))
+
+    assert len(rows) == 7
+    assert rows[-1]["potassium_mg"] == "400"
+    assert rows[-1]["sodium_mg"] == ""
+    assert rows[-1]["sodium_coverage"] == "0"
+
+
+def test_batch463_private_isolation_end_to_end(browser, monkeypatch):
+    import csv
+    import io
+    import uuid
+
+    client, root = browser
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+    login(client, 2)
+
+    page = client.get("/secondary/food/new")
+    assert page.status_code == 200
+    assert "Additional Nutrients (11)" in page.text
+
+    form = re.search(
+        r'<form method="post" '
+        r'action="/secondary/food/entry"[^>]*>'
+        r'(.*?)</form>',
+        page.text,
+        re.S,
+    )
+    assert form
+
+    csrf = re.search(
+        r'name="csrf_token"\s+value="([^"]+)"',
+        form.group(1),
+    ).group(1)
+
+    token = re.search(
+        r'name="submission_token"\s+value="([^"]+)"',
+        form.group(1),
+    ).group(1)
+
+    from app.secondary_nutrients463 import NUTRIENTS
+
+    payload = {
+        "csrf_token": csrf,
+        "submission_token": token,
+        "day": DAY,
+        "name": "Batch 463 Mineral Food",
+        "meal": "Lunch",
+        "servings": "2",
+        **{key: "" for key in NUTRIENTS},
+    }
+    payload.update({
+        "energy": "100",
+        "proteins": "15",
+        "potassium": "400",
+        "sodium": "300",
+        "vitamin-d": "5",
+    })
+
+    saved = client.post(
+        "/secondary/food/entry",
+        data=payload,
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+
+    again = client.post(
+        "/secondary/food/entry",
+        data=payload,
+        follow_redirects=False,
+    )
+    assert again.status_code == 409
+
+    with sqlite3.connect(
+        root / "users" / "2" / "tracker.db"
+    ) as db:
+        raw = db.execute("""
+            SELECT nutrients FROM tracker_food_products
+            WHERE name=?
+        """, ("Batch 463 Mineral Food",)).fetchone()
+
+    assert raw
+    values = json.loads(raw[0])
+    assert values["potassium"] == 400
+    assert values["sodium"] == 300
+    assert values["iron"] is None
+
+    day = client.get("/secondary/food?day=" + DAY)
+    assert day.status_code == 200
+    assert "Micronutrients and Other Nutrients" in day.text
+    assert "800.0 mg" in day.text
+
+    csv_response = client.get(
+        "/secondary/food/week.csv?day=" + DAY
+    )
+    assert csv_response.status_code == 200
+
+    rows = list(csv.DictReader(io.StringIO(
+        csv_response.text
+    )))
+    assert float(rows[-1]["potassium_mg"]) == 800
+
+    login(client, 3)
+    other = client.get("/secondary/food?day=" + DAY)
+    assert "Batch 463 Mineral Food" not in other.text
+
+    other_csv = client.get(
+        "/secondary/food/week.csv?day=" + DAY
+    )
+    other_rows = list(csv.DictReader(io.StringIO(
+        other_csv.text
+    )))
+    assert other_rows[-1]["potassium_mg"] == ""

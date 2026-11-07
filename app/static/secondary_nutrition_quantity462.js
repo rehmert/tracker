@@ -41,7 +41,18 @@
     ["proteins", "Protein", "g"],
     ["carbohydrates", "Carbohydrates", "g"],
     ["fat", "Fat", "g"],
-    ["fiber", "Fiber", "g"]
+    ["fiber", "Fiber", "g"],
+    ["sugars", "Sugar", "g"],
+    ["saturated-fat", "Saturated Fat", "g"],
+    ["sodium", "Sodium", "mg"],
+    ["potassium", "Potassium", "mg"],
+    ["calcium", "Calcium", "mg"],
+    ["iron", "Iron", "mg"],
+    ["magnesium", "Magnesium", "mg"],
+    ["vitamin-c", "Vitamin C", "mg"],
+    ["vitamin-d", "Vitamin D", "mcg"],
+    ["vitamin-b12", "Vitamin B12", "mcg"],
+    ["cholesterol", "Cholesterol", "mg"]
   ];
 
   let basis = "manual";

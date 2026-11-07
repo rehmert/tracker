@@ -21,7 +21,7 @@ from .worker_read429 import private_overview429
 ACTION = "food_day"
 MAX_REQUEST = 128
 MAX_ROWS = 100
-NUTRIENTS = ("energy", "proteins", "carbohydrates", "fat", "fiber")
+from .secondary_nutrients463 import NUTRIENTS
 FIELDS = frozenset(("name", "meal", "servings") + NUTRIENTS)
 WATER_TARGET_OZ = 140.0
 

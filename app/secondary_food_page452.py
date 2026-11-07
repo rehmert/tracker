@@ -4,6 +4,7 @@ Pure formatting module. It has no database, authentication or write access.
 """
 from datetime import date, timedelta
 from html import escape
+from .secondary_nutrients463 import MICROS
 
 
 MACROS = (
@@ -52,6 +53,24 @@ def render_food_day452(report):
             + escape(label) + '</span><strong>'
             + escape(value) + '</strong><small>'
             + escape(label_text) + "</small></div>"
+        )
+
+    micro_cards = []
+    for key, label, unit in MICROS:
+        reported = report["coverage"][key]
+        value = _num452(
+            report["totals"][key] if reported else None,
+            unit,
+        )
+        micro_cards.append(
+            '<div class="stat"><span>' + escape(label)
+            + '</span><strong>' + escape(value)
+            + '</strong><small>'
+            + escape(
+                f"Reported for {reported} of "
+                f"{len(report['items'])} entries"
+            )
+            + '</small></div>'
         )
 
     food_cards = []
@@ -121,6 +140,14 @@ p{{margin:.55rem 0}}
 .nutrients{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}}
 .nutrients span{{font-size:.88rem}}
 .empty{{padding:16px;background:#fff;border-radius:10px}}
+.micro-details463{{
+background:#fff;border:1px solid #cdd7e2;
+border-radius:12px;padding:12px;margin:16px 0
+}}
+.micro-details463 summary{{
+min-height:44px;padding:8px 0;
+cursor:pointer;font-weight:700
+}}
 @media(min-width:680px){{
 .stats{{grid-template-columns:repeat(5,minmax(0,1fr))}}
 .food-list{{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -138,7 +165,7 @@ p{{margin:.55rem 0}}
 <h1>Food &amp; Water</h1>
 <p><a href="/secondary/food/new">Log Food or Water (DEV pilot)</a></p>
 <p><a href="/secondary/food/week?day={day_label}">View Seven-Day Nutrition &amp; Water Review</a></p>
-<p class="note">Private workspace · DEV preview · Read-only</p>
+<p class="note">Private workspace · DEV pilot</p>
 <form method="get" action="/secondary/food" class="day-picker">
 <label>Journal day
 <input name="day" type="date" required value="{day_label}">
@@ -153,6 +180,12 @@ p{{margin:.55rem 0}}
 <h2>Nutrition for {day_label}</h2>
 <div class="stats">{"".join(macro_cards)}</div>
 <p class="note">{escape(count_note)}</p>
+<details class="micro-details463">
+<summary>Micronutrients and Other Nutrients</summary>
+<div class="stats">{"".join(micro_cards)}</div>
+<p class="note">Unknown is not zero.
+Totals include displayed entries only.</p>
+</details>
 <h2>Water</h2>
 <div class="panel"><strong>{escape(water)}</strong>
 <span class="note"> logged · target {escape(water_target)}</span></div>
