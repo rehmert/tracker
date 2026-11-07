@@ -230,3 +230,106 @@ def test_opt_in_and_prod_restrictions_remain_active(browser, monkeypatch):
     monkeypatch.setenv("TRACKER_SECONDARY_PREVIEW430", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
     assert client.get("/secondary/doses").status_code == 404
+
+
+def test_recent_orm469_worker_bypassed_and_users_isolated(
+    browser, monkeypatch
+):
+    from app import secondary_preview430
+    from app.secondary_preview430 import COOKIE
+
+    client, root = browser
+
+    def forbidden_worker(*args, **kwargs):
+        raise AssertionError(
+            "Legacy worker called by migrated route"
+        )
+
+    monkeypatch.setattr(
+        secondary_preview430,
+        "read_recent432",
+        forbidden_worker,
+    )
+
+    login(client, 2)
+
+    first_vitals = client.get("/secondary/vitals")
+    first_doses = client.get("/secondary/doses")
+
+    assert first_vitals.status_code == 200
+    assert first_doses.status_code == 200
+
+    assert "PRIVATE-2" in first_vitals.text
+    assert "PRIVATE-3" not in first_vitals.text
+    assert "PRIVATE-SITE-2" in first_doses.text
+    assert "PRIVATE-SITE-3" not in first_doses.text
+
+    assert "&lt;img" in first_doses.text
+    assert '<img src=x onerror=' not in first_doses.text
+
+    assert "secret notes excluded" not in first_doses.text
+    assert "private note not returned" not in first_vitals.text
+
+    first_cookie = client.cookies.get(COOKIE)
+    assert first_cookie
+
+    login(client, 3)
+
+    second_vitals = client.get("/secondary/vitals")
+    second_doses = client.get("/secondary/doses")
+
+    assert second_vitals.status_code == 200
+    assert second_doses.status_code == 200
+
+    assert "PRIVATE-3" in second_vitals.text
+    assert "PRIVATE-2" not in second_vitals.text
+
+    assert "PRIVATE-SITE-3" in second_doses.text
+    assert "PRIVATE-SITE-2" not in second_doses.text
+
+    # A previously issued account-2 cookie can never
+    # choose account-3's database or reuse its identity.
+    client.cookies.set(COOKIE, first_cookie)
+    restored = client.get("/secondary/vitals")
+
+    assert restored.status_code == 200
+    assert "PRIVATE-2" in restored.text
+    assert "PRIVATE-3" not in restored.text
+
+    client.cookies.delete(COOKIE)
+
+    assert client.get(
+        "/secondary/vitals",
+        follow_redirects=False,
+    ).status_code == 303
+
+
+def test_recent_orm469_fail_closed_after_revocation(
+    browser
+):
+    from app.secondary_preview430 import COOKIE, _revoke
+
+    client, _ = browser
+    login(client, 2)
+
+    token = client.cookies.get(COOKIE)
+    assert token
+
+    assert client.get(
+        "/secondary/doses"
+    ).status_code == 200
+
+    _revoke(token)
+
+    for route in (
+        "/secondary/vitals",
+        "/secondary/doses",
+    ):
+        response = client.get(
+            route, follow_redirects=False
+        )
+        assert response.status_code == 303
+        assert (
+            response.headers["location"]
+            == "/secondary/login"
+        )

@@ -494,6 +494,9 @@ async def logout_post(request: Request):
 from .worker_recent432 import read_recent432
 
 
+from .secondary_recent_orm469 import read_recent_orm469
+
+
 def _html_value432(value):
     return escape("—" if value is None else str(value), quote=True)
 
@@ -508,11 +511,16 @@ def _recent_page432(request, kind):
         return RedirectResponse("/secondary/login", status_code=303)
 
     try:
-        report = read_recent432(uid, kind)
+        report = read_recent_orm469(request, kind)
     except (RuntimeError, PermissionError, ValueError, OSError):
         raise HTTPException(503, "Private records unavailable") from None
 
-    if report.get("user_id") != uid or report.get("kind") != kind:
+    if (
+        report.get("user_id") != uid
+        or report.get("kind") != kind
+        or report.get("mode") != "private-recent-orm469"
+        or report.get("read_only") is not True
+    ):
         raise HTTPException(503, "Workspace identity mismatch")
 
     if kind == "vitals":
