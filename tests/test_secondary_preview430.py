@@ -1011,3 +1011,163 @@ def test_orm470_revoked_session_and_lockdown(
     assert client.get(
         "/secondary/inventory"
     ).status_code == 404
+
+
+def test_attachments471_private_coa_and_labs(
+    browser, monkeypatch
+):
+    from datetime import date
+    import hashlib
+    from pathlib import Path
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+
+    from app.models import Coa, LabReport
+    from app.secondary_preview430 import COOKIE, _revoke
+
+    client, root = browser
+
+    data = {
+        2: b"%PDF-1.4\nprivate-user-two\n%%EOF\n",
+        3: b"%PDF-1.4\nprivate-user-three\n%%EOF\n",
+    }
+
+    for uid in (2, 3):
+        private = root / "users" / str(uid)
+        payload = data[uid]
+        digest = hashlib.sha256(payload).hexdigest()
+
+        (private / "uploads" / "coa" / "example.pdf").write_bytes(
+            payload
+        )
+        (private / "uploads" / "labs" / "example.pdf").write_bytes(
+            payload
+        )
+
+        engine = create_engine(
+            "sqlite:///" + str(private / "tracker.db")
+        )
+
+        with Session(engine) as session:
+            session.add(Coa(
+                original_name="my-coa.pdf",
+                stored_name="example.pdf",
+                content_type="application/pdf",
+                size_bytes=len(payload),
+                sha256=digest,
+                lab_name="Test",
+            ))
+            session.add(LabReport(
+                drawn_on=date(2026, 11, 7),
+                lab_name="Test",
+                original_name="my-labs.pdf",
+                stored_name="example.pdf",
+                content_type="application/pdf",
+                size_bytes=len(payload),
+                sha256=digest,
+            ))
+            session.commit()
+
+        engine.dispose()
+
+    routes = (
+        "/secondary/attachments/coa/1",
+        "/secondary/attachments/labs/1",
+    )
+
+    for route in routes:
+        response = client.get(
+            route, follow_redirects=False
+        )
+        assert response.status_code == 303
+
+    assert login(
+        client, "member-2",
+        "secondary-password-2-secure-430",
+    ).status_code == 303
+
+    for route in routes:
+        response = client.get(route)
+        assert response.status_code == 200
+        assert response.content == data[2]
+        assert response.headers["cache-control"] == (
+            "private, no-store"
+        )
+        assert (
+            response.headers["x-content-type-options"]
+            == "nosniff"
+        )
+
+        assert client.get(
+            route + "?user_id=3"
+        ).status_code == 400
+
+        assert client.post(route).status_code == 405
+
+    assert client.get(
+        "/secondary/attachments/coa/9999"
+    ).status_code == 404
+
+    assert client.get(
+        "/secondary/attachments/backup/1"
+    ).status_code == 404
+
+    assert login(
+        client, "member-3",
+        "secondary-password-3-secure-430",
+    ).status_code == 303
+
+    for route in routes:
+        response = client.get(route)
+        assert response.status_code == 200
+        assert response.content == data[3]
+        assert data[2] not in response.content
+
+    # Wrong on-disk contents must fail integrity checks.
+    (root / "users" / "3" / "uploads" /
+     "coa" / "example.pdf").write_bytes(
+        b"%PDF-1.4\nwrong-data\n%%EOF\n"
+    )
+
+    assert client.get(
+        routes[0]
+    ).status_code == 503
+
+    # A symlink cannot be substituted for a private file.
+    path = (
+        root / "users" / "3" / "uploads" /
+        "labs" / "example.pdf"
+    )
+    path.unlink()
+    path.symlink_to(
+        root / "users" / "2" /
+        "uploads" / "labs" / "example.pdf"
+    )
+
+    assert client.get(
+        routes[1]
+    ).status_code == 503
+
+    token = client.cookies.get(COOKIE)
+    assert token
+    _revoke(token)
+
+    assert client.get(
+        routes[0], follow_redirects=False
+    ).status_code == 303
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+
+    assert client.get(routes[0]).status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+
+    assert client.get(routes[0]).status_code == 404

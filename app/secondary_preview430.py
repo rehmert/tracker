@@ -2979,3 +2979,31 @@ def secondary_orm_json468(request: Request):
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+# Release 471: signed-in user's private attachments.
+# Read-only; record IDs are looked up in the user's DB.
+from .secondary_attachments471 import private_attachment471
+
+
+@preview_app.get("/attachments/{kind}/{record_id}")
+def secondary_attachment471(
+    request: Request,
+    kind: str,
+    record_id: int,
+):
+    require_preview()
+
+    uid = _session_user(
+        request.cookies.get(COOKIE)
+    )
+
+    if uid is None:
+        return RedirectResponse(
+            "/secondary/login",
+            status_code=303,
+        )
+
+    return private_attachment471(
+        request, kind, record_id
+    )
