@@ -184,7 +184,13 @@ def test_tampered_private_identity_denied(gateway):
             UPDATE tracker_staged_workspace426 SET user_id=3
         """)
 
-    assert client.get("/secondary/full/compounds").status_code == 503
+    # Session validation inspects the staged workspace first. When its
+    # identity marker is forged, authentication fails closed as 401;
+    # the downstream workspace resolver is never reached.
+    response = client.get("/secondary/full/compounds")
+    assert response.status_code == 401
+    assert "users/2" not in response.text
+    assert "tracker.db" not in response.text
 
 
 def test_no_live_forwarder_or_main_app_mount():
