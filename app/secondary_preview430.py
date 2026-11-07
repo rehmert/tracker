@@ -2039,3 +2039,176 @@ def secondary_food_week_csv455(request: Request):
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+# Release 456: explicitly gated secondary food/water logging.
+from .worker_food_write456 import (
+    form_payload456,
+    request_write456,
+)
+
+
+def food_writes_enabled456():
+    return (
+        preview_enabled()
+        and os.getenv(
+            "TRACKER_SECONDARY_FOOD_WRITES456", "0"
+        ) == "1"
+    )
+
+
+@preview_app.get("/food/new")
+def secondary_food_form456(request: Request):
+    require_preview()
+    if not food_writes_enabled456():
+        raise HTTPException(404, "Secondary food logging disabled")
+    if request.query_params:
+        raise HTTPException(400, "Unexpected food parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse(
+            "/secondary/login", status_code=303
+        )
+
+    csrf = issue_token(load_key())
+    day = _food_date452.today().isoformat()
+    water_nonce = str(uuid4())
+    food_nonce = str(uuid4())
+
+    nutrient_inputs = "".join(
+        '<label>' + escape(label)
+        + '<input type="number" name="' + key
+        + '" min="0" max="100000" step="0.001" '
+        + 'inputmode="decimal" placeholder="Optional"></label>'
+        for key, label in (
+            ("energy", "Calories (kcal)"),
+            ("proteins", "Protein (g)"),
+            ("carbohydrates", "Carbs (g)"),
+            ("fat", "Fat (g)"),
+            ("fiber", "Fiber (g)"),
+        )
+    )
+
+    html = f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Log Food &amp; Water · Tracker DEV</title>
+<style>
+*{{box-sizing:border-box}}
+body{{font:16px/1.5 system-ui,sans-serif;max-width:650px;
+margin:auto;padding:16px;background:#f3f6fa;color:#182333}}
+section{{background:white;border:1px solid #ccd7e2;
+border-radius:12px;padding:16px;margin:16px 0}}
+label{{display:block;margin:12px 0;font-weight:600}}
+input,select,button{{font:inherit;width:100%;min-height:46px;
+padding:10px;border-radius:8px}}
+input,select{{border:1px solid #9ca9b8}}
+button{{background:#16558b;color:white;border:0;
+font-weight:700;margin-top:12px}}
+.grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+gap:10px}}
+.note{{font-size:.9rem;color:#405166}}
+@media(max-width:380px){{.grid{{grid-template-columns:1fr}}}}
+</style></head><body><main>
+<p><a href="/secondary/food">Back to Food Journal</a></p>
+<h1>Log Food &amp; Water</h1>
+<p class="note">Private workspace · DEV pilot</p>
+<section><h2>Quick Water</h2>
+<form method="post" action="/secondary/food/water">
+<input type="hidden" name="csrf_token"
+value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token"
+value="{water_nonce}">
+<label>Journal Day
+<input type="date" name="day" value="{day}" required></label>
+<label>Water (US fl oz)
+<input type="number" name="ounces" min=".01" max="256"
+step=".01" inputmode="decimal" required></label>
+<button type="submit">Save Water</button>
+</form></section>
+<section><h2>Manual Food Entry</h2>
+<form method="post" action="/secondary/food/entry">
+<input type="hidden" name="csrf_token"
+value="{escape(csrf, quote=True)}">
+<input type="hidden" name="submission_token"
+value="{food_nonce}">
+<label>Journal Day
+<input type="date" name="day" value="{day}" required></label>
+<label>Food Name
+<input name="name" maxlength="160" required></label>
+<div class="grid">
+<label>Meal<select name="meal">
+<option>Breakfast</option><option>Lunch</option>
+<option>Dinner</option><option>Snack</option>
+</select></label>
+<label>Servings
+<input type="number" name="servings" min=".001" max="100"
+step=".001" inputmode="decimal" value="1" required></label>
+</div>
+<p class="note">Enter nutrients per serving.
+Unknown nutrients may remain blank.</p>
+<div class="grid">{nutrient_inputs}</div>
+<button type="submit">Save Food</button>
+</form></section>
+<p class="note">A successful submission is recorded only
+once, even if the same form is submitted again.</p>
+</main></body></html>'''
+
+    return _csrf_response(
+        HTMLResponse(
+            html, headers={"Cache-Control": "no-store"}
+        ),
+        csrf,
+    )
+
+
+async def _secondary_food_submit456(request, action):
+    require_preview()
+    if not food_writes_enabled456():
+        raise HTTPException(404, "Secondary food logging disabled")
+    if request.query_params:
+        raise HTTPException(400, "Unexpected food parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        raise HTTPException(401, "Secondary session required")
+
+    form = await request.form()
+    _csrf_check(request, form)
+
+    try:
+        payload = form_payload456(action, form)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    try:
+        result = request_write456(uid, action, payload)
+    except ValueError:
+        raise HTTPException(422, "Invalid private food request") from None
+    except (RuntimeError, PermissionError, OSError):
+        raise HTTPException(
+            503, "Private food storage unavailable"
+        ) from None
+
+    if result["status"] == "duplicate":
+        raise HTTPException(
+            409, "This entry was already recorded"
+        )
+
+    return RedirectResponse(
+        "/secondary/food?day=" + payload["day"],
+        status_code=303,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@preview_app.post("/food/water")
+async def secondary_water_submit456(request: Request):
+    return await _secondary_food_submit456(request, "water")
+
+
+@preview_app.post("/food/entry")
+async def secondary_food_submit456(request: Request):
+    return await _secondary_food_submit456(request, "food")

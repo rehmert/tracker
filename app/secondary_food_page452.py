@@ -136,6 +136,7 @@ p{{margin:.55rem 0}}
 <a href="/secondary/inventory">Inventory</a>
 </nav>
 <h1>Food &amp; Water</h1>
+<p><a href="/secondary/food/new">Log Food or Water (DEV pilot)</a></p>
 <p><a href="/secondary/food/week?day={day_label}">View Seven-Day Nutrition &amp; Water Review</a></p>
 <p class="note">Private workspace · DEV preview · Read-only</p>
 <form method="get" action="/secondary/food" class="day-picker">

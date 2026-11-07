@@ -600,3 +600,247 @@ def test_week_csv455_coverage_columns_match_headers():
         assert row["carbohydrates_g"] == "30.0"
         assert row["fat_g"] == "10.0"
         assert row["fiber_g"] == "5.0"
+
+
+# Release 456: explicit DEV gate, replay protection, and private writes.
+def test_food_write456_disabled_by_default(browser):
+    client, _ = browser
+    login(client, 2)
+    assert client.get("/secondary/food/new").status_code == 404
+    assert client.post("/secondary/food/water").status_code == 404
+    assert client.post("/secondary/food/entry").status_code == 404
+
+
+def test_food_write456_water_and_food_isolation(browser, monkeypatch):
+    from app.worker_food_write456 import form_payload456
+    import uuid
+
+    client, root = browser
+    monkeypatch.setenv("TRACKER_SECONDARY_FOOD_WRITES456", "1")
+    login(client, 2)
+
+    page = client.get("/secondary/food/new")
+    assert page.status_code == 200
+    assert "Save Water" in page.text
+    assert "Save Food" in page.text
+
+    csrf = re.search(
+        r'name="csrf_token"\s+value="([^"]+)"',
+        page.text,
+    ).group(1)
+    nonces = re.findall(
+        r'name="submission_token"\s+value="([^"]+)"',
+        page.text,
+    )
+    assert len(nonces) == 2
+
+    water = {
+        "csrf_token": csrf,
+        "submission_token": nonces[0],
+        "day": DAY,
+        "ounces": "8.5",
+    }
+    response = client.post(
+        "/secondary/food/water",
+        data=water,
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    replay = client.post(
+        "/secondary/food/water",
+        data=water,
+        follow_redirects=False,
+    )
+    assert replay.status_code == 409
+
+    food = {
+        "csrf_token": csrf,
+        "submission_token": nonces[1],
+        "day": DAY,
+        "name": "Private Test Yogurt",
+        "meal": "Breakfast",
+        "servings": "2",
+        "energy": "100",
+        "proteins": "15",
+        "carbohydrates": "",
+        "fat": "2",
+        "fiber": "",
+    }
+
+    response = client.post(
+        "/secondary/food/entry",
+        data=food,
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    duplicate = client.post(
+        "/secondary/food/entry",
+        data=food,
+        follow_redirects=False,
+    )
+    assert duplicate.status_code == 409
+
+    own = client.get("/secondary/food?day=" + DAY)
+    assert own.status_code == 200
+    assert "Private Test Yogurt" in own.text
+    assert "40.5 fl oz" in own.text
+
+    with sqlite3.connect(
+        root / "users" / "2" / "tracker.db"
+    ) as db:
+        count = db.execute("""
+            SELECT COUNT(*) FROM tracker_food_entries
+        """).fetchone()[0]
+        water_count = db.execute("""
+            SELECT COUNT(*) FROM tracker_water_entries
+        """).fetchone()[0]
+    assert count == 2
+    assert water_count == 2
+
+    login(client, 3)
+    other = client.get("/secondary/food?day=" + DAY)
+    assert "Private Test Yogurt" not in other.text
+    assert "12.0 fl oz" in other.text
+
+
+def test_food_write456_csrf_validation_and_lockdown(
+    browser, monkeypatch
+):
+    client, _ = browser
+    monkeypatch.setenv("TRACKER_SECONDARY_FOOD_WRITES456", "1")
+    login(client, 2)
+
+    data = {
+        "csrf_token": "invalid",
+        "submission_token":
+            "cc9e926a-0d75-4ef9-b1a4-7cc3fd124661",
+        "day": DAY,
+        "ounces": "12",
+    }
+    assert client.post(
+        "/secondary/food/water", data=data
+    ).status_code == 403
+
+    data["user_id"] = "3"
+    assert client.post(
+        "/secondary/food/water", data=data
+    ).status_code == 403
+
+    monkeypatch.setenv("TRACKER_SECONDARY_LOCKDOWN440", "1")
+    assert client.get("/secondary/food/new").status_code == 404
+    assert client.post(
+        "/secondary/food/water", data=data
+    ).status_code == 404
+
+
+def test_food_write456_worker_rejects_extra_fields():
+    from app.worker_food_write456 import parse_request456
+
+    for raw in (
+        b'{"action":"water","payload":{"user_id":3}}',
+        b'{"action":"water","payload":{"sql":"SELECT"}}',
+        b'{"action":"water","payload":{"database":"/tmp/x"}}',
+        b'{"action":"food","payload":{}}',
+        b'{"action":"water","action":"food","payload":{}}',
+        b"z" * 5000,
+    ):
+        with pytest.raises(ValueError):
+            parse_request456(raw)
+
+
+def test_food_write456_prod_denial(browser, monkeypatch):
+    client, _ = browser
+    monkeypatch.setenv("TRACKER_SECONDARY_FOOD_WRITES456", "1")
+    login(client, 2)
+    monkeypatch.setattr(config, "instance_label", lambda: "PROD")
+    assert client.get("/secondary/food/new").status_code == 404
+    assert client.post("/secondary/food/entry").status_code == 404
+
+
+# Release 456 correction: normalized numeric values are
+# serialized as strict worker-compatible strings.
+def test_food_write456_parent_child_wire_contract(browser, monkeypatch):
+    import uuid
+    from types import SimpleNamespace
+
+    from app.worker_food_write456 import (
+        request_write456,
+        parse_request456,
+    )
+
+    _, root = browser
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_FOOD_WRITES456", "1"
+    )
+
+    captured = []
+
+    def fake_worker_run(command, **kwargs):
+        assert command[-1] == "app.worker_food_write456"
+
+        message = kwargs["input"]
+        captured.append(json.loads(message))
+
+        action, payload = parse_request456(
+            message.encode("utf-8")
+        )
+
+        assert action in ("water", "food")
+        assert payload["day"] == DAY
+
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps({
+                "mode": "private-food-write456",
+                "user_id": 2,
+                "status": "created",
+                "written": True,
+            }),
+        )
+
+    monkeypatch.setattr(
+        "app.worker_food_write456.subprocess.run",
+        fake_worker_run,
+    )
+
+    water = {
+        "day": DAY,
+        "submission_token": str(uuid.uuid4()),
+        "ounces": 8.5,
+    }
+
+    result = request_write456(
+        2, "water", water, root
+    )
+
+    assert result["status"] == "created"
+    assert captured[-1]["payload"]["ounces"] == "8.5"
+
+    food = {
+        "day": DAY,
+        "submission_token": str(uuid.uuid4()),
+        "name": "Wire Contract Yogurt",
+        "meal": "Breakfast",
+        "servings": 2.0,
+        "nutrients": {
+            "energy": 100.0,
+            "proteins": 15.0,
+            "carbohydrates": None,
+            "fat": 2.0,
+            "fiber": None,
+        },
+    }
+
+    result = request_write456(
+        2, "food", food, root
+    )
+
+    assert result["status"] == "created"
+    assert captured[-1]["payload"]["servings"] == "2.0"
+    assert captured[-1]["payload"]["energy"] == "100.0"
+    assert captured[-1]["payload"]["proteins"] == "15.0"
+    assert captured[-1]["payload"]["fiber"] == ""
+    assert "nutrients" not in captured[-1]["payload"]
