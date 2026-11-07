@@ -487,6 +487,151 @@ def add_result(rid: int, analyte: str = Form(""), value: str = Form(""), unit: s
     return services.flash_redirect(f"/labs/{rid}", msg="Result added.")
 
 
+
+# Release 482: existing report and analyte editing.
+# Uses the same scoped database and attachment authorization
+# dependencies as the other lab endpoints.
+
+
+def _edit_report_values482(drawn_on, lab_name, notes):
+    if (
+        not isinstance(drawn_on, str)
+        or not isinstance(lab_name, str)
+        or not isinstance(notes, str)
+    ):
+        raise ValueError("Invalid report fields")
+
+    try:
+        when = date.fromisoformat(drawn_on.strip())
+    except ValueError:
+        raise ValueError("Enter a valid draw date") from None
+
+    name = lab_name.strip()
+    note = notes.strip()
+
+    if len(name) > 160 or len(note) > 10000:
+        raise ValueError("Report text exceeds allowed length")
+
+    return when, name, note
+
+
+def _edit_result_values482(
+    analyte, value, unit, ref_low, ref_high, note
+):
+    if any(
+        not isinstance(item, str)
+        for item in (analyte, value, unit, ref_low, ref_high, note)
+    ):
+        raise ValueError("Invalid analyte fields")
+
+    name = analyte.strip()
+    units = unit.strip()
+    comment = note.strip()
+
+    if not name or len(name) > 120:
+        raise ValueError("Analyte name must contain 1–120 characters")
+
+    if not units or len(units) > 30:
+        raise ValueError("Unit must contain 1–30 characters")
+
+    if len(comment) > 300:
+        raise ValueError("Analyte note exceeds 300 characters")
+
+    try:
+        measurement = float(value.strip())
+        low = float(ref_low.strip()) if ref_low.strip() else None
+        high = float(ref_high.strip()) if ref_high.strip() else None
+    except ValueError:
+        raise ValueError("Enter valid numerical values") from None
+
+    if not math.isfinite(measurement):
+        raise ValueError("Measurement must be finite")
+
+    if (low is None) != (high is None):
+        raise ValueError("Provide both reference limits or neither")
+
+    if low is not None:
+        if not math.isfinite(low) or not math.isfinite(high):
+            raise ValueError("Reference limits must be finite")
+        if low > high:
+            raise ValueError("Reference low exceeds reference high")
+
+    return name, measurement, units, low, high, comment
+
+
+@router.post("/labs/{rid}/edit")
+def edit_report482(
+    rid: int,
+    drawn_on: str = Form(""),
+    lab_name: str = Form(""),
+    notes: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    rep = _report(db, rid)
+
+    try:
+        when, name, note = _edit_report_values482(
+            drawn_on, lab_name, notes
+        )
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    rep.drawn_on = when
+    rep.lab_name = name
+    rep.notes = note
+    db.commit()
+
+    # The attached report, its metadata, and every individual
+    # analyte remain unchanged.
+    return services.flash_redirect(
+        f"/labs/{rid}", msg="Report details updated."
+    )
+
+
+@router.post("/lab-results/{xid}/edit")
+def edit_result482(
+    xid: int,
+    analyte: str = Form(""),
+    value: str = Form(""),
+    unit: str = Form(""),
+    ref_low: str = Form(""),
+    ref_high: str = Form(""),
+    note: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    result = db.get(LabResult, xid)
+
+    if result is None:
+        raise HTTPException(404, "Lab result not found")
+
+    # Ensure the result belongs to a report accessible under
+    # the current database scope.
+    _report(db, result.report_id)
+
+    try:
+        name, number, units, low, high, comment = (
+            _edit_result_values482(
+                analyte, value, unit, ref_low, ref_high, note
+            )
+        )
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    result.analyte = name
+    result.value = number
+    result.unit = units
+    result.ref_low = low
+    result.ref_high = high
+    result.note = comment
+
+    rid = result.report_id
+    db.commit()
+
+    return services.flash_redirect(
+        f"/labs/{rid}", msg="Analyte result updated."
+    )
+
+
 @router.post("/lab-results/{xid}/delete")
 def delete_result(xid: int, db: Session = Depends(get_scoped_db390)):
     res = db.get(LabResult, xid)
