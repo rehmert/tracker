@@ -344,6 +344,7 @@ def overview_get(request: Request):
 <p>DEV-only private workspace pilot. Account {uid}.</p>
 <p><a href="/secondary/vitals">Recent Vitals</a> ·
 <a href="/secondary/doses">Recent Doses</a> ·
+<a href="/secondary/food">Food &amp; Water</a> ·
 <a href="/secondary/inventory">My Inventory</a> ·
 <a href="/secondary/readiness">Workspace Readiness</a> ·
 <a href="/secondary/security">Session Security</a></p>
@@ -1878,3 +1879,42 @@ async def secondary_password_change451(request: Request):
         httponly=True, samesite="strict",
     )
     return response
+
+
+# Release 452: private food and water day history through an allowlisted,
+# read-only child worker. Account identity comes only from the preview session.
+from datetime import date as _food_date452
+from .worker_food452 import read_food_day452, validate_day452
+from .secondary_food_page452 import render_food_day452
+
+
+@preview_app.get("/food")
+def secondary_food_day452(request: Request):
+    require_preview()
+    query = request.query_params
+    if set(query) - {"day"} or len(query.getlist("day")) > 1:
+        raise HTTPException(400, "Unsupported food query parameters")
+
+    uid = _session_user(request.cookies.get(COOKIE))
+    if uid is None:
+        return RedirectResponse("/secondary/login", status_code=303)
+
+    try:
+        day = validate_day452(
+            query.get("day") if "day" in query else _food_date452.today().isoformat()
+        )
+    except ValueError:
+        raise HTTPException(422, "Invalid food date") from None
+
+    try:
+        report = read_food_day452(uid, day)
+    except (RuntimeError, PermissionError, ValueError, OSError):
+        raise HTTPException(503, "Private food history unavailable") from None
+
+    if report.get("user_id") != uid or report.get("day") != day:
+        raise HTTPException(503, "Private food identity mismatch")
+
+    return HTMLResponse(
+        render_food_day452(report),
+        headers={"Cache-Control": "no-store"},
+    )
