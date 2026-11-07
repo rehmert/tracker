@@ -85,11 +85,24 @@ def counts(root):
     return results
 
 
+def logical_private_digest491(path):
+    """Compare actual SQLite content, not file bytes.
+
+    SQLite can legitimately rewrite headers/pages when WAL checkpoints
+    complete, even if the application's logical data is unchanged.
+    Reading from a read-only connection avoids creating a new database.
+    """
+    with sqlite3.connect("file:" + str(path) + "?mode=ro", uri=True) as db:
+        db.execute("PRAGMA query_only=ON")
+        logical_dump = "\n".join(db.iterdump())
+    return hashlib.sha256(logical_dump.encode("utf-8")).digest()
+
+
 def test_private_primary_page_from_isolated_snapshot(private_clients):
     client, root = private_clients
     original_counts = counts(root)
     db_two = root / "users" / "2" / "tracker.db"
-    original_hash = hashlib.sha256(db_two.read_bytes()).digest()
+    original_hash = logical_private_digest491(db_two)
 
     login(client, 2)
     result = client.get("/secondary/full/compounds")
@@ -108,7 +121,7 @@ def test_private_primary_page_from_isolated_snapshot(private_clients):
     assert "private-487-two" not in second.text
 
     assert counts(root) == original_counts == [1, 1]
-    assert hashlib.sha256(db_two.read_bytes()).digest() == original_hash
+    assert logical_private_digest491(db_two) == original_hash
 
 
 def test_unauthorized_cannot_launch_private_worker(private_clients, monkeypatch):
