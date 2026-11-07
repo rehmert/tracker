@@ -801,3 +801,213 @@ def test_orm468_sqlalchemy_write_is_rejected(browser):
     )
     assert result.status_code == 200
     assert result.json()["counts"]["compounds"] == 1
+
+
+# Release 470: inventory and food reads use scoped
+# SQLAlchemy connections, not subprocess workers.
+def test_orm470_inventory_food_and_week_isolation(
+    browser, monkeypatch
+):
+    import csv
+    import io
+
+    from app import secondary_preview430 as gateway
+
+    client, root = browser
+
+    # Seed only account 2 with a food product.
+    with sqlite3.connect(
+        root / "users" / "2" / "tracker.db"
+    ) as db:
+        product = db.execute("""
+            INSERT INTO tracker_food_products
+                (name,serving_description,nutrients,source)
+            VALUES (?,?,?,?)
+        """, (
+            "PRIVATE-FOOD-470",
+            "1 serving",
+            '{"energy":125,"proteins":20,'
+            '"carbohydrates":10,"fat":3,'
+            '"fiber":2,"potassium":450}',
+            "test-470",
+        ))
+        db.execute("""
+            INSERT INTO tracker_food_entries
+                (product_id,eaten_on,meal,servings)
+            VALUES (?,?,?,?)
+        """, (
+            product.lastrowid,
+            "2026-11-07", "Lunch", 2,
+        ))
+        db.execute("""
+            INSERT INTO tracker_water_entries
+                (logged_on,ounces)
+            VALUES (?,?)
+        """, ("2026-11-07", 24))
+
+    # Prevent silent fallback to old read workers.
+    def forbidden_worker(*args, **kwargs):
+        raise AssertionError(
+            "Old read subprocess invoked"
+        )
+
+    monkeypatch.setattr(
+        gateway, "read_food_day452", forbidden_worker
+    )
+    monkeypatch.setattr(
+        gateway, "read_food_week454", forbidden_worker
+    )
+
+    original_inventory = gateway.request_inventory435
+
+    def guarded_inventory(uid, action, *args, **kwargs):
+        if action == "inventory":
+            raise AssertionError(
+                "Old inventory reader invoked"
+            )
+        return original_inventory(
+            uid, action, *args, **kwargs
+        )
+
+    monkeypatch.setattr(
+        gateway, "request_inventory435",
+        guarded_inventory,
+    )
+
+    login(
+        client, "member-2",
+        "secondary-password-2-secure-430",
+    )
+
+    inventory = client.get("/secondary/inventory")
+    day = client.get(
+        "/secondary/food?day=2026-11-07"
+    )
+    week = client.get(
+        "/secondary/food/week?day=2026-11-07"
+    )
+    exported = client.get(
+        "/secondary/food/week.csv?day=2026-11-07"
+    )
+
+    assert inventory.status_code == 200
+    assert "private-2" in inventory.text
+
+    assert day.status_code == 200
+    assert "PRIVATE-FOOD-470" in day.text
+    assert '<article class="food-card">' in day.text
+    assert day.text.count(
+        '<article class="food-card">'
+    ) == 1
+    assert "2.0 serving(s)" in day.text
+    assert "250.0 kcal" in day.text
+    assert "900.0 mg" in day.text
+    assert "No food entries recorded" not in day.text
+
+    assert week.status_code == 200
+    assert "250.0 kcal" in week.text
+
+    assert exported.status_code == 200
+    rows = list(csv.DictReader(
+        io.StringIO(exported.text)
+    ))
+    assert len(rows) == 7
+    assert float(rows[-1]["calories_kcal"]) == 250
+    assert float(rows[-1]["potassium_mg"]) == 900
+
+    login(
+        client, "member-3",
+        "secondary-password-3-secure-430",
+    )
+
+    other_inventory = client.get(
+        "/secondary/inventory"
+    )
+    other_day = client.get(
+        "/secondary/food?day=2026-11-07"
+    )
+    other_csv = client.get(
+        "/secondary/food/week.csv?day=2026-11-07"
+    )
+
+    assert other_inventory.status_code == 200
+    assert "private-2" not in other_inventory.text
+    assert other_day.status_code == 200
+    assert "PRIVATE-FOOD-470" not in other_day.text
+    assert other_csv.status_code == 200
+
+    other_rows = list(csv.DictReader(
+        io.StringIO(other_csv.text)
+    ))
+    assert other_rows[-1]["calories_kcal"] == ""
+    assert other_rows[-1]["potassium_mg"] == ""
+
+    for route in (
+        "/secondary/inventory",
+        "/secondary/food",
+        "/secondary/food/week",
+        "/secondary/food/week.csv",
+    ):
+        assert client.get(
+            route + "?user_id=2"
+        ).status_code == 400
+
+
+def test_orm470_revoked_session_and_lockdown(
+    browser, monkeypatch
+):
+    from app.secondary_preview430 import COOKIE, _revoke
+
+    client, _ = browser
+
+    login(
+        client, "member-2",
+        "secondary-password-2-secure-430",
+    )
+
+    token = client.cookies.get(COOKIE)
+    assert token
+
+    for route in (
+        "/secondary/inventory",
+        "/secondary/food",
+        "/secondary/food/week",
+        "/secondary/food/week.csv",
+    ):
+        assert client.get(route).status_code == 200
+
+    _revoke(token)
+
+    for route in (
+        "/secondary/inventory",
+        "/secondary/food",
+        "/secondary/food/week",
+        "/secondary/food/week.csv",
+    ):
+        response = client.get(
+            route, follow_redirects=False
+        )
+        assert response.status_code == 303
+
+    monkeypatch.setenv(
+        "TRACKER_SECONDARY_LOCKDOWN440", "1"
+    )
+
+    for route in (
+        "/secondary/inventory",
+        "/secondary/food",
+        "/secondary/food/week",
+        "/secondary/food/week.csv",
+    ):
+        assert client.get(route).status_code == 404
+
+    monkeypatch.delenv(
+        "TRACKER_SECONDARY_LOCKDOWN440"
+    )
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+
+    assert client.get(
+        "/secondary/inventory"
+    ).status_code == 404

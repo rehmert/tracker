@@ -905,6 +905,13 @@ def inventory_writes_enabled435():
     )
 
 
+from .secondary_food_inventory_orm470 import (
+    private_inventory_orm470,
+    private_food_day_orm470,
+    private_food_week_orm470,
+)
+
+
 @preview_app.get("/inventory")
 def inventory_page435(request: Request):
     require_preview()
@@ -916,9 +923,18 @@ def inventory_page435(request: Request):
         return RedirectResponse("/secondary/login", status_code=303)
 
     try:
-        report = request_inventory435(uid, "inventory")
+        report = private_inventory_orm470(request)
     except (RuntimeError, OSError, PermissionError, ValueError):
         raise HTTPException(503, "Private inventory unavailable") from None
+
+    if (
+        report.get("user_id") != uid
+        or report.get("mode") != "private-inventory-orm470"
+        or report.get("read_only") is not True
+    ):
+        raise HTTPException(
+            503, "Private inventory identity mismatch"
+        )
 
     compounds = report["compounds"]
     vials = report["vials"]
@@ -2026,7 +2042,7 @@ def secondary_food_day452(request: Request):
         raise HTTPException(422, "Invalid food date") from None
 
     try:
-        report = read_food_day452(uid, day)
+        report = private_food_day_orm470(request, day)
     except (RuntimeError, PermissionError, ValueError, OSError):
         raise HTTPException(503, "Private food history unavailable") from None
 
@@ -2073,7 +2089,7 @@ def secondary_food_week453(request: Request):
         raise HTTPException(422, "Invalid weekly food date") from None
 
     try:
-        reports = read_food_week454(uid, ending)
+        reports = private_food_week_orm470(request, ending)
     except (RuntimeError, PermissionError, ValueError, OSError):
         raise HTTPException(
             503, "Private weekly food history unavailable"
@@ -2123,7 +2139,7 @@ def secondary_food_week_csv455(request: Request):
         raise HTTPException(422, "Invalid CSV date") from None
 
     try:
-        reports = read_food_week454(uid, ending)
+        reports = private_food_week_orm470(request, ending)
     except (RuntimeError, PermissionError, ValueError, OSError):
         raise HTTPException(
             503, "Private weekly CSV unavailable"
