@@ -80,13 +80,15 @@ def validate_username(username):
 
 
 def validate_password(password):
+    # No minimum length or character-composition policy.
+    # Retain a transport/resource limit and reject blanks.
     if (
         not isinstance(password, str)
-        or not 12 <= len(password) <= 1024
         or not password.strip()
+        or len(password) > 1024
     ):
         raise ValueError(
-            "Password must contain 12–1024 characters"
+            "Password must be nonempty and at most 1024 characters"
         )
 
     return password

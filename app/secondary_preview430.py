@@ -85,7 +85,7 @@ def _verify_credentials(username, password):
     except ValueError:
         return None
 
-    if not isinstance(password, str) or not 12 <= len(password) <= 1024:
+    if (not isinstance(password, str) or not password.strip() or len(password) > 1024):
         return None
 
     now = int(time.time())
@@ -1902,7 +1902,7 @@ p{{line-height:1.5}}
 <section>
 <h2>Change My Password</h2>
 <p>Enter your existing password and a different new password of at
-least 12 characters. A successful change signs out <strong>all</strong>
+any length. A successful change signs out <strong>all</strong>
 your secondary preview sessions, including this device. You must
 sign in again using your new password.</p>
 <form method="post" action="/secondary/security/password">
@@ -1912,10 +1912,10 @@ sign in again using your new password.</p>
 type="password" autocomplete="current-password" required maxlength="1024">
 <label for="secondary-new-password451">New password</label>
 <input id="secondary-new-password451" name="new_password"
-type="password" autocomplete="new-password" minlength="12" maxlength="1024" required>
+type="password" autocomplete="new-password" maxlength="1024" required>
 <label for="secondary-confirm-password451">Confirm new password</label>
 <input id="secondary-confirm-password451" name="confirm_password"
-type="password" autocomplete="new-password" minlength="12" maxlength="1024" required>
+type="password" autocomplete="new-password" maxlength="1024" required>
 <button type="submit">Change Password and Sign Out All Devices</button>
 </form>
 </section>

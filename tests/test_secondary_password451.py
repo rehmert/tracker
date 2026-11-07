@@ -184,7 +184,7 @@ def test_own_password_rotation_revokes_only_own_sessions(browsers):
 
 
 
-@pytest.mark.parametrize("kind", ("wrong", "reused", "short", "mismatch"))
+@pytest.mark.parametrize("kind", ("wrong", "reused", "empty", "mismatch"))
 def test_bad_password_changes_leave_sessions_intact(browsers, kind):
     clients, root = browsers
     _login_all(browsers)
@@ -195,8 +195,8 @@ def test_bad_password_changes_leave_sessions_intact(browsers, kind):
         args = ("incorrect-original-secret", new, new)
     elif kind == "reused":
         args = (old, old, old)
-    elif kind == "short":
-        args = (old, "short", "short")
+    elif kind == "empty":
+        args = (old, "", "")
     else:
         args = (old, new, "confirmation-does-not-match")
     result = clients[0].post(
@@ -334,3 +334,30 @@ def test_release451_has_no_implicit_cross_module_test_imports():
     ]
     assert all(not name.startswith("test_secondary_") for name in dependencies)
     assert all(not name.startswith("tests.") for name in dependencies)
+
+
+
+def test_short_secondary_password_rotation(browsers):
+    clients, _ = browsers
+    old = "secondary-secure-password-2-441"
+
+    token = _login(clients[0], 2)
+    assert token
+
+    result = clients[0].post(
+        "/secondary/security/password",
+        data=_form(clients[0], old, "abc"),
+        follow_redirects=False,
+    )
+
+    assert result.status_code == 303
+    assert not staged_credential_matches427(
+        2, "member-2", old
+    )
+    assert staged_credential_matches427(
+        2, "member-2", "abc"
+    )
+
+    # Existing session must have been revoked.
+    with pytest.raises(PermissionError):
+        session_overview441(token)

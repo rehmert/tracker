@@ -161,7 +161,7 @@ def test_missing_workspace_is_rejected(staging):
 
 @pytest.mark.parametrize(
     "value",
-    ["", "short", " " * 20, "x" * 1025],
+    ["", " " * 20, "x" * 1025],
 )
 def test_weak_or_invalid_password_is_rejected(staging, value):
     with pytest.raises(ValueError):
@@ -252,3 +252,18 @@ def test_legacy_admin_database_is_untouched(staging):
     )
 
     assert legacy.read_bytes() == original
+
+
+
+def test_secondary_short_password_accepted(staging):
+    result = stage_secondary_account427(
+        2, "member-two", "abc"
+    )
+
+    assert result["user_id"] == 2
+    assert staged_credential_matches427(
+        2, "member-two", "abc"
+    )
+    assert not staged_credential_matches427(
+        2, "member-two", "wrong"
+    )

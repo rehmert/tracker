@@ -39,7 +39,7 @@ def change_secondary_password451(token, current_password, new_password):
         not isinstance(current_password, str)
         or not isinstance(new_password, str)
         or len(current_password) > 1024
-        or not 12 <= len(new_password) <= 1024
+        or len(new_password) > 1024
         or not new_password.strip()
         or hmac.compare_digest(
             current_password.encode("utf-8"), new_password.encode("utf-8")
