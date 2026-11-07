@@ -155,6 +155,23 @@ async def tracker_response_protection(request, call_next):
                 and secondary_preview430.vital_writes_enabled433()
                 and request.url.path == "/secondary/full/vitals"
             )
+            or (
+                os.environ.get("TRACKER_FULLAPP_GATEWAY486", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_WRITES488", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_DOSE_WRITES491", "0") == "1"
+                and secondary_preview430.dose_writes_enabled434()
+                and request.url.path == "/secondary/full/doses"
+            )
+            or (
+                os.environ.get("TRACKER_FULLAPP_GATEWAY486", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_WRITES488", "0") == "1"
+                and os.environ.get("TRACKER_FULLAPP_FOOD_WRITES491", "0") == "1"
+                and secondary_preview430.food_writes_enabled456()
+                and request.url.path in (
+                    "/secondary/full/food/water",
+                    "/secondary/full/food/entry",
+                )
+            )
             or request.url.path in (
                 "/secondary/security/revoke-others",
                 "/secondary/security/password",
