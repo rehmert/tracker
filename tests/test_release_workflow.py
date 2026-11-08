@@ -170,6 +170,9 @@ def test_501_https_fixture_is_loopback_only_and_preserves_security_headers():
     assert 'ssl.PROTOCOL_TLS_SERVER' in source
     assert 'self.send_header("Content-Length", str(len(payload)))' in source
 
+    assert 'request.all_headers()' in native
+    assert 'origins[0]["origin"] == HTTPS_URL' in native
+    assert 'origins[0]["fetch_site"] in ("same-origin", "<absent>")' in native
     assert 'TRACKER_TEST_HTTPS_URL' in native
     assert 'TRACKER_BROWSER_QA_DATA_DIR' in native
     assert "raise RuntimeError(" in native
