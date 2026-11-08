@@ -13,6 +13,7 @@ from playwright.sync_api import expect, sync_playwright
 
 pytestmark = pytest.mark.browser
 SCRIPT = Path(__file__).resolve().parents[2] / "app/static/js/tracker-food380.js"
+REVIEW_SCRIPT = SCRIPT.parent / "tracker-food499.js"
 URL = "http://tracker.test/food"
 
 HTML = """<!doctype html><html><body>
@@ -24,10 +25,16 @@ HTML = """<!doctype html><html><body>
 <p id="food380-status"></p><div id="food380-results"></div>
 <form id="food-entry-form">
   <input id="food-barcode"><input id="food-name"><input id="food-serving">
-  <input id="food-source"><input id="food-nutrient-energy">
+  <input id="food-source"><input name="servings" value="2">
+  <input id="food-nutrient-energy">
   <input id="food-nutrient-proteins">
 </form>
 <p id="food-scan-status"></p>
+<div id="food499-review">
+  <p id="food499-review-status"></p>
+  <div id="food499-macro-preview"></div>
+</div>
+<script>__REVIEW_SCRIPT__</script>
 <script>__SEARCH_SCRIPT__</script>
 </body></html>"""
 
@@ -42,7 +49,9 @@ def tab():
             lambda route: route.fulfill(
                 status=200,
                 content_type="text/html",
-                body=HTML.replace("__SEARCH_SCRIPT__", SCRIPT.read_text()),
+                body=HTML.replace("__REVIEW_SCRIPT__", REVIEW_SCRIPT.read_text()).replace(
+                    "__SEARCH_SCRIPT__", SCRIPT.read_text()
+                ),
             ),
         )
         errors = []
@@ -144,4 +153,23 @@ def test_search_rate_limit_shows_retry_delay(tab):
         "Retry after 45 seconds"
     )
     expect(page.locator("#food380-search-button")).to_be_enabled()
+    assert not errors, errors
+
+
+def test_499_macro_review_distinguishes_unknown_from_zero(tab):
+    page, errors = tab
+    expect(page.locator("#food499-review-status")).to_contain_text(
+        "0 of 4 core values reported"
+    )
+    page.locator("#food-serving").fill("170 g")
+    page.locator("#food-nutrient-energy").fill("0")
+    page.locator("#food-nutrient-proteins").fill("20")
+    expect(page.locator("#food499-review-status")).to_contain_text(
+        "2 of 4 core values reported"
+    )
+    expect(page.locator("#food499-review-status")).to_contain_text(
+        "Unknown: C, F"
+    )
+    expect(page.locator("#food499-macro-preview")).to_contain_text("Cal 0")
+    expect(page.locator("#food499-macro-preview")).to_contain_text("P 40")
     assert not errors, errors
