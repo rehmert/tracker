@@ -26,6 +26,31 @@ implementation. The real pytest fixture always uses a fresh temporary
 data root. The diagnostic refuses to run on PROD or against
 `/opt/tracker`.
 
+## Recorded Release 504 baseline (2026-11-08)
+
+The existing diagnostic ran successfully on DEV with unchanged real tests:
+
+| Test | Private subprocess calls | Worker time total | HTTP time total |
+| --- | ---: | ---: | ---: |
+| Full private workflow | 25 | 25.978 s | 27.453 s |
+| Authenticated readiness | 16 | 17.132 s | 17.831 s |
+
+Worker calls account for roughly 94.6% and 96.1% of the measured
+HTTP time, respectively. The readiness test invokes
+`app.worker_read429` 16 times; the private workflow repeatedly
+invokes the supply, supply-use, reconciliation and other isolated
+workers. This evidence points to imports / worker execution as the
+critical path, not HTTP transport or assertion collection.
+
+The new optional `--import-sample` uses CPython's built-in
+`-X importtime` flag for **one subprocess per distinct worker module**,
+while preserving the same private-worker command body and runtime
+environment. Its import instrumentation is slow by design: interpret
+sampled import timings independently from the above baseline.
+Captured stderr is parsed inside the profiler; only validated module
+names and self/cumulative microsecond timings are reported. Never
+print raw stderr because it could contain secrets on unexpected errors.
+
 ## Run after checking out a disposable candidate worktree on DEV
 
     cd /tmp/tracker-backups/qa504.XXXXXXXX/source
@@ -35,7 +60,7 @@ data root. The diagnostic refuses to run on PROD or against
 Optionally repeat for the slower readiness test:
 
     /opt/tracker/.venv/bin/python -u scripts/tracker-secondary-profile504.py \
-        --test readiness
+        --test readiness --import-sample
 
 These two profiles identify the critical path. Optimize only after
 confirming what dominates the 30-second full workflow:
