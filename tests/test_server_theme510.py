@@ -28,6 +28,8 @@ def test_theme_is_the_last_global_stylesheet_and_shared_with_mobile():
     mobile = (config.BASE_DIR / "static" / "css" / "tracker-mobile-daily509.css").read_text()
     assert 'background:var(--teal,#1265ad)' in mobile
     assert 'color:var(--teal-ink,#fff)' in mobile
+    assert 'outline:3px solid var(--tracker-brand-blue,#1686df)' in mobile
+    assert 'tracker-mobile-daily509.css?v=510' in (config.BASE_DIR / 'templates' / 'mobile_today509.html').read_text()
 
 
 def test_missing_custom_theme_uses_blue_light_and_dark_defaults(client, tmp_path, monkeypatch):
