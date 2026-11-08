@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import Response
 
-from . import config
+from .. import config
 
 router = APIRouter()
 THEME_FILE = config.DATA_DIR / "tracker-theme.css"
