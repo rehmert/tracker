@@ -613,7 +613,7 @@ def test_501_history_csv_source_ids_notes_and_safe_filename(lab_overview_client)
 
     assert lab_router.analyte_export_filename501("IGF-1") == "lab-igf-1-history.csv"
     assert lab_router.analyte_export_filename501("../../...") == "lab-analyte-history.csv"
-    assert lab_router.analyte_export_filename501("TSH\\r\\nunsafe.csv") == "lab-tsh-r-nunsafe-csv-history.csv"
+    assert lab_router.analyte_export_filename501("TSH\r\nunsafe.csv") == "lab-tsh-unsafe-csv-history.csv"
     assert len(lab_router.analyte_export_filename501("A" * 100)) <= 64
 
     client, engine = lab_overview_client
@@ -635,7 +635,7 @@ def test_501_history_csv_source_ids_notes_and_safe_filename(lab_overview_client)
     )
     assert response.headers["cache-control"] == "private, no-store"
     assert response.content.startswith(bytes.fromhex("efbbbf"))
-    assert b"\\r\\n" in response.content
+    assert b"\r\n" in response.content
     rows = list(csv.DictReader(io.StringIO(
         response.content.decode("utf-8-sig")
     )))
