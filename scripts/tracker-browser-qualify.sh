@@ -175,7 +175,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
   TRACKER_TEST_ISOLATED=1 TRACKER_BROWSER_QA_DATA_DIR="$DATA" \
   PYTHONDONTWRITEBYTECODE=1 \
-  "$PY" -B -m pytest -q -x --tb=short \
+  "$PY" -B -m pytest -q --tb=short \
     tests/browser/test_food_search_ui.py \
     tests/browser/test_inventory_alert_csv_review.py \
     tests/browser/test_lab_compare_review.py \
