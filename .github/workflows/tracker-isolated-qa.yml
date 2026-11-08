@@ -1,0 +1,64 @@
+name: Tracker isolated QA
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Python dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements-dev.txt pytest-xdist
+      - name: Compile Python source
+        run: .venv/bin/python -m compileall -q app scripts tests
+      - name: Full isolated non-browser regressions
+        run: |
+          .venv/bin/python -m pytest -q --tb=short --maxfail=1 \
+            -n 4 --dist=loadfile tests \
+            --ignore=tests/browser \
+            --ignore=tests/test_bulk_vial_browser.py \
+            --ignore=tests/test_bulk_vial_guided_browser.py \
+            --ignore=tests/test_bulk_delete_browser.py \
+            --ignore=tests/test_purchase_vial_browser.py \
+            --ignore=tests/test_stage33_browser_sorting.py \
+            --ignore=tests/test_health_timeline_dates_browser.py \
+            --ignore=tests/test_vitals_csv_browser.py
+
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install isolated browser QA environment
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements-dev.txt playwright
+          sudo .venv/bin/python -m playwright install --with-deps chromium
+          sh scripts/fetch_vendor.sh
+          sudo ln -s "$GITHUB_WORKSPACE" /opt/tracker
+          sudo git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Guarded disposable HTTP and HTTPS Chromium suite
+        run: |
+          set -Eeuo pipefail
+          QA="$(mktemp -d /tmp/tracker-github-qa.XXXXXXXX)"
+          rmdir "$QA"
+          sudo git -C "$GITHUB_WORKSPACE" worktree add --detach "$QA" "$GITHUB_SHA"
+          trap 'sudo git -C "$GITHUB_WORKSPACE" worktree remove --force "$QA"' EXIT
+          sudo timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" \
+            "$QA" "$GITHUB_WORKSPACE/.venv/bin/python"
