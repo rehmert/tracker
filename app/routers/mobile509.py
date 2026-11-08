@@ -140,6 +140,8 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
             metrics.weight_from_kg(weight_row.weight_kg, config.WEIGHT_UNIT)
             if weight_row else None
         ),
+        last_weight_when=weight_row.measured_at if weight_row else None,
         last_bp=bp_row,
         last_pulse=pulse_row.pulse_bpm if pulse_row else None,
+        last_pulse_when=pulse_row.measured_at if pulse_row else None,
     )
