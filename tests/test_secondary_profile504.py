@@ -86,6 +86,64 @@ def test_504_profile_records_timings_without_request_secrets(monkeypatch, capsys
     assert "password=" not in printed
 
 
+def test_504_importtime_parser_accepts_only_module_names_and_durations():
+    diagnostic = (
+        "import time: self [us] | cumulative | imported package\\n"
+        "import time:      40 |       120 |   app.worker_read429\\n"
+        "import time:     100 |       300 | sqlalchemy.orm\\n"
+        "password=not-for-log\\n"
+        "import time: 40 | 90 | ../credential/file\\n"
+    )
+    assert profiler.parse_import_time(diagnostic) == [
+        ("app.worker_read429", 40, 120),
+        ("sqlalchemy.orm", 100, 300),
+    ]
+
+
+def test_504_import_sample_preserves_worker_operation(monkeypatch, capsys):
+    observed = []
+
+    def fake_run(*args, **kwargs):
+        command = args[0] if args else kwargs["args"]
+        observed.append(command)
+        return SimpleNamespace(
+            returncode=0,
+            stderr=(
+                "import time: 250 | 1000 | app.worker_read429\\n"
+                "password=not-for-log\\n"
+            ),
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    recorder = profiler.TimingRecorder(import_sample=True)
+    recorder.install()
+    try:
+        for _ in range(2):
+            result = subprocess.run(
+                [sys.executable, "-m", "app.worker_read429"],
+                input='{"action":"overview"}',
+                capture_output=True, text=True,
+            )
+            assert result.returncode == 0
+    finally:
+        recorder.uninstall()
+
+    assert observed == [
+        [
+            sys.executable, "-X", "importtime",
+            "-m", "app.worker_read429",
+        ],
+        [sys.executable, "-m", "app.worker_read429"],
+    ]
+    assert len(recorder.workers) == 2
+    assert len(recorder.import_samples) == 1
+    recorder.report()
+    printed = capsys.readouterr().out
+    assert "SECONDARY_IMPORT_SAMPLE module=app.worker_read429 records=1" in printed
+    assert "imported=app.worker_read429" in printed
+    assert "not-for-log" not in printed
+
+
 def test_504_profiler_cannot_start_on_prod_or_live_checkout():
     source = SCRIPT.read_text()
     assert 'socket.gethostname().split(".")[0] != "tracker-dev"' in source
