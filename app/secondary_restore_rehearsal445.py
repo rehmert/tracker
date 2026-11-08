@@ -12,6 +12,7 @@ import json
 import os
 import secrets
 import sqlite3
+from contextlib import closing
 import stat
 import tempfile
 import zipfile
@@ -107,7 +108,7 @@ def _restore_files445(archive, data_root, expected_files, ids, key_included):
 
 def _invalidate445(auth_db, signing_key, original_key_included):
     """Only modifies the restored database and disposable signing key."""
-    with sqlite3.connect(auth_db) as db:
+    with closing(sqlite3.connect(auth_db)) as conn, conn as db:
         db.execute("PRAGMA foreign_keys=ON")
         tables = {row[0] for row in db.execute(
             "SELECT name FROM sqlite_master WHERE type='table'"
@@ -182,7 +183,7 @@ def _check_recovered445(data_root, ids, manifest):
             if _digest_file(data_root.joinpath(*name.split("/"))) != meta:
                 raise ValueError("Restored private upload checksum mismatch")
             uploads_verified += 1
-    with sqlite3.connect(data_root / AUTH_NAME) as db:
+    with closing(sqlite3.connect(data_root / AUTH_NAME)) as conn, conn as db:
         if db.execute("SELECT COUNT(*) FROM sessions").fetchone()[0] != 0:
             raise ValueError("Administrator sessions were not invalidated")
         tables = {x[0] for x in db.execute(
