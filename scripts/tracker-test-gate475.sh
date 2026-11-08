@@ -20,8 +20,15 @@ case "$MODE" in
         echo "authenticated browser fixture."
 
         "$PY" -m pytest \
-            -q \
+            -q tests \
             --ignore=tests/browser \
+            --ignore=tests/test_bulk_vial_browser.py \
+            --ignore=tests/test_bulk_vial_guided_browser.py \
+            --ignore=tests/test_bulk_delete_browser.py \
+            --ignore=tests/test_purchase_vial_browser.py \
+            --ignore=tests/test_stage33_browser_sorting.py \
+            --ignore=tests/test_health_timeline_dates_browser.py \
+            --ignore=tests/test_vitals_csv_browser.py \
             --disable-warnings \
             --tb=short
 
