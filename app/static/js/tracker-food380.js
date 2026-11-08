@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const status = document.getElementById('food380-status');
   const results = document.getElementById('food380-results');
   const button = document.getElementById('food380-search-button');
+  const clear = document.getElementById('food380-clear-button');
 
   if (!form || !input || !status || !results || !button) return;
 
@@ -118,9 +119,12 @@ document.addEventListener('DOMContentLoaded', () => {
       : products;
 
     if (!shown.length) {
-      status.textContent =
-        'No matching products with usable barcodes were found. ' +
-        'Try a more specific name or use manual entry.';
+      status.textContent = products.length && nutritionOnly?.checked
+        ? 'None of the ' + products.length +
+          ' results include reported macros. Uncheck the nutrition filter ' +
+          'to review them, or enter the food manually.'
+        : 'No matching products with usable barcodes were found. ' +
+          'Try a more specific name or use manual entry.';
       return;
     }
 
@@ -195,6 +199,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (clear) {
+    clear.addEventListener('click', () => {
+      // Invalidate pending responses so clearing cannot resurrect old cards.
+      searchVersion++;
+      lastProducts = [];
+      button.disabled = false;
+      input.value = '';
+      if (nutritionOnly) nutritionOnly.checked = false;
+      results.replaceChildren();
+      status.textContent = 'Search cleared. Enter a food or brand to search again.';
+      input.focus();
+    });
+  }
+
   form.addEventListener('submit', async event => {
     event.preventDefault();
 
@@ -220,6 +238,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const payload = await response.json();
 
       if (!response.ok) {
+        if (response.status === 429) {
+          const retry = Number(response.headers.get('Retry-After'));
+          const delay = Number.isFinite(retry) && retry >= 1 && retry <= 600
+            ? ' Retry after ' + Math.ceil(retry) + ' seconds.' : '';
+          throw new Error('Food database is busy.' + delay);
+        }
         throw new Error(payload.detail || 'Search failed');
       }
 
