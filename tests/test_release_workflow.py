@@ -155,3 +155,27 @@ def test_release_498_browser_gate_is_isolated_and_dev_only():
     assert 'TRACKER_DATA_DIR="$DATA"' in shell
 
     assert 'trap cleanup EXIT' in shell
+
+
+def test_501_https_fixture_is_loopback_only_and_preserves_security_headers():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "scripts/tracker-tls-proxy501.py").read_text()
+    native = (root / "tests/browser/test_labs_native_https501.py").read_text()
+
+    assert '("127.0.0.1", args.listen_port)' in source
+    assert '"127.0.0.1", self.backend_port' in source
+    assert 'conn.putheader("X-Forwarded-Proto", "https")' in source
+    assert '"x-forwarded-host", "x-forwarded-for"' in source
+    assert 'self.headers.items()' in source
+    assert 'ssl.PROTOCOL_TLS_SERVER' in source
+    assert 'self.send_header("Content-Length", str(len(payload)))' in source
+
+    assert 'TRACKER_TEST_HTTPS_URL' in native
+    assert 'TRACKER_BROWSER_QA_DATA_DIR' in native
+    assert "raise RuntimeError(" in native
+    assert "ignore_https_errors=True" in native
+    assert "multipart/form-data" in native
+    assert "set_input_files" in native
+    assert '"Sec-Fetch-Site": "cross-site"' in native
+    assert '"Origin": "https://attacker.invalid"' in native
+    assert "response.status == 403" in native
