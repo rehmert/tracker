@@ -69,6 +69,16 @@ def test_second_stage_benchmark_uses_lowest_worker_as_baseline():
     assert selected == 8
     assert gain < 0.10
 
+    selected, gain = benchmark.recommendation(
+        {8: 101.12, 12: 105.0, 16: 107.0}
+    )
+    assert selected == 8
+    assert gain == 0.0
+
+    selected, gain = benchmark.recommendation({8: 101.12})
+    assert selected == 8
+    assert gain == 0.0
+
 
 def test_serial_is_kept_when_parallel_is_slower():
     selected, gain = benchmark.recommendation(
