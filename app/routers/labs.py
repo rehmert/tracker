@@ -679,6 +679,49 @@ def delete_report(rid: int, db: Session = Depends(get_scoped_db390)):
     delete_after_commit(stored_name, attachment_directory400("labs"), services.delete_stored_file)
     return services.flash_redirect("/labs", msg="Report deleted.")
 
+def analyte_history500(items):
+    """Display-only rows with the latest unit and previous distinct draw date."""
+    ordered = sorted(
+        items, key=lambda pair: (pair[1].drawn_on, pair[0].id), reverse=True
+    )
+    if not ordered:
+        return [], ""
+    latest_unit = ordered[0][0].unit
+    latest_name = ordered[0][0].analyte
+    dated = {}
+    for res, rep in ordered:
+        dated.setdefault(rep.drawn_on, (res, rep))
+    dates = sorted(dated, reverse=True)
+    previous_date = {
+        stamp: dates[index + 1] if index + 1 < len(dates) else None
+        for index, stamp in enumerate(dates)
+    }
+    output = []
+    for res, rep in ordered:
+        converted = labs.convert(
+            latest_name, res.value, res.unit, latest_unit
+        )
+        prior_stamp = previous_date[rep.drawn_on]
+        prior = dated[prior_stamp] if prior_stamp is not None else None
+        prior_converted = (
+            labs.convert(latest_name, prior[0].value, prior[0].unit, latest_unit)
+            if prior else None
+        )
+        delta = (
+            converted - prior_converted
+            if converted is not None and prior_converted is not None
+            and math.isfinite(converted) and math.isfinite(prior_converted)
+            else None
+        )
+        output.append({
+            "res": res, "rep": rep, "converted": converted,
+            "previous": prior, "previous_converted": prior_converted,
+            "delta": delta,
+            "status": labs.range_status(res.value, res.ref_low, res.ref_high),
+        })
+    return output, latest_unit
+
+
 @router.get("/labs/trends/{analyte_key}")
 def analyte_trend(analyte_key: str, request: Request, db: Session = Depends(get_scoped_db390)):
     from urllib.parse import unquote
@@ -691,6 +734,44 @@ def analyte_trend(analyte_key: str, request: Request, db: Session = Depends(get_
     chart = charts.line_chart([charts.Series(latest.analyte, series.points)], width=850,
                               unit=f" {series.unit}", band=series.band,
                               band_label="Range printed on latest report")
-    rows = sorted(items, key=lambda x: x[1].drawn_on, reverse=True)
+    rows, unit = analyte_history500(items)
     return render(request, "lab_trend.html", title=latest.analyte, chart=chart,
-                  rows=rows, unit=series.unit, skipped=series.skipped)
+                  rows=rows, unit=unit, skipped=series.skipped,
+                  key=labs.analyte_key(latest.analyte))
+
+
+@router.get("/labs/trends/{analyte_key}/export.csv")
+def export_analyte_history500(
+    analyte_key: str, db: Session = Depends(get_scoped_db390)
+):
+    """Export recorded data and unit-safe comparisons without writes."""
+    from urllib.parse import unquote
+
+    items = _groups(db).get(unquote(analyte_key))
+    if not items:
+        raise HTTPException(404, "Analyte not found")
+    rows, unit = analyte_history500(items)
+    csv_rows = [[
+        "drawn_on", "laboratory", "analyte", "recorded_value",
+        "recorded_unit", "comparison_value", "comparison_unit",
+        "previous_drawn_on", "difference_from_previous",
+        "reference_low", "reference_high", "range_status",
+    ]]
+    for row in rows:
+        res, rep = row["res"], row["rep"]
+        csv_rows.append([
+            rep.drawn_on.isoformat(),
+            _lab_csv_text(rep.lab_name),
+            _lab_csv_text(res.analyte),
+            res.value,
+            _lab_csv_text(res.unit),
+            "" if row["converted"] is None else row["converted"],
+            _lab_csv_text(unit),
+            row["previous"][1].drawn_on.isoformat()
+                if row["previous"] else "",
+            "" if row["delta"] is None else row["delta"],
+            "" if res.ref_low is None else res.ref_low,
+            "" if res.ref_high is None else res.ref_high,
+            row["status"] or "",
+        ])
+    return _lab_csv_response(csv_rows, "lab-analyte-history.csv")
