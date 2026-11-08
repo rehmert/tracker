@@ -4,6 +4,7 @@ All tests use fake HTTP connections. They do not contact the real tracker
 service, touch live data, or incur actual retry delays.
 """
 import importlib.util
+from contextlib import nullcontext
 import urllib.error
 from pathlib import Path
 
@@ -130,3 +131,46 @@ def test_511_live_smoke_aborts_after_consecutive_transport_failures():
     assert 'health = get("/healthz", startup=True)' in source
     assert 'dashboard = get("/")' in source
     assert "release_auth_headers(instance, settings)" in source
+
+
+def test_511_full_sidebar_smoke_stops_at_outage_not_48_http_zeroes(
+    tmp_path, monkeypatch
+):
+    env = tmp_path / "tracker.env"
+    env.write_text("TRACKER_INSTANCE=PROD\\n")
+    monkeypatch.setattr(
+        smoke, "read_env", lambda _path: {"TRACKER_INSTANCE": "PROD"}
+    )
+    monkeypatch.setattr(smoke, "release_auth_headers", lambda *_: nullcontext({}))
+    monkeypatch.setattr(smoke, "port_from_service", lambda: 8000)
+    monkeypatch.setattr(smoke, "service_state", lambda: "ActiveState=failed")
+    monkeypatch.setattr(
+        smoke.urllib.request, "build_opener", lambda *args: object()
+    )
+    links = "".join(f'<a href="/page{i}">Page {i}</a>' for i in range(36))
+    dashboard = (
+        '<title>Tracker</title><nav id="app-sidebar">' +
+        links + '</nav><span class="tracker-instance--prod"></span>'
+    ).encode()
+    calls = []
+
+    def fake_read(_opener, _origin, path, _headers, *, startup=False):
+        calls.append(path)
+        if path == "/healthz":
+            return b'{"ok":true}'
+        if path == "/":
+            return dashboard
+        if path in ("/page0", "/page1"):
+            return b"<title>Tracker</title>tracker-instance--prod"
+        raise smoke.TransportFailure(
+            f"{path}: transport ConnectionRefusedError: [Errno 111] refused"
+        )
+
+    monkeypatch.setattr(smoke, "read_http_page", fake_read)
+    with pytest.raises(ValueError, match="stopped after") as exc:
+        smoke.run("PROD", env)
+    assert "ActiveState=failed" in str(exc.value)
+    assert "/page2" in str(exc.value)
+    assert "/page3" in str(exc.value)
+    assert "/page4" not in calls
+    assert len(calls) == 6  # health, dashboard, 2 successes, 2 failures
