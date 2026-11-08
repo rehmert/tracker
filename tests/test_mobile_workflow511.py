@@ -3,6 +3,7 @@
 Tests use the fully isolated SQLite DB configured by tests/conftest.py.
 """
 from pathlib import Path
+import re
 from uuid import uuid4
 
 import pytest
@@ -93,8 +94,8 @@ def test_511_dose_page_has_search_and_safe_recent_choices(client):
     assert 'hx-post="/doses"' in html
     assert 'name="submission_token"' in html
     assert 'name="vial_id" required' in html
-    assert 'tracker-vial-finder511.js?v=511' in html
-    assert 'tracker-mobile-accelerators511.css?v=511' in html
+    assert re.search(r'/static/js/tracker-vial-finder511\.js\?v=[\w.-]+', html)
+    assert re.search(r'/static/css/tracker-mobile-accelerators511\.css\?v=[\w.-]+', html)
 
 
 def test_511_calendar_handoff_cannot_be_contaminated_by_recent_vials(client):
@@ -128,8 +129,8 @@ def test_511_today_includes_read_only_repeat_cards_and_jumps(client):
     assert 'href="#mobile-schedule-heading"' in html
     assert 'href="#mobile-upcoming-heading"' in html
     assert 'data-daily-now511' in html
-    assert 'tracker-mobile-daily509.js?v=511' in html
-    assert 'tracker-mobile-daily509.css?v=511' in html
+    assert re.search(r'/static/js/tracker-mobile-daily509\.js\?v=[\w.-]+', html)
+    assert re.search(r'/static/css/tracker-mobile-daily509\.css\?v=[\w.-]+', html)
     with SessionLocal() as db:
         assert db.scalar(select(func.count()).select_from(DoseLog)) == before
     review = client.get(f"/doses?repeat_from={dose_id}")
