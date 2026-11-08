@@ -45,14 +45,20 @@ HTML = """<!doctype html><html><body>
       data-lab-status="within" data-lab-date="2026-10-29" data-lab-results="4">Glucose</article>
   </div>
   <input id="labs-report-search">
+  <select id="labs-reports-sort">
+    <option value="date-desc">Newest</option>
+    <option value="date-asc">Oldest</option>
+    <option value="lab-asc">Lab A-Z</option>
+    <option value="results-desc">Most results</option>
+  </select>
   <button id="labs-reports-clear">Clear</button>
   <span id="labs-reports-count"></span>
   <p id="labs-reports-empty" hidden>No matches</p>
   <table id="labs-reports-table"><tbody>
     <tr id="report-one" data-labs-report-row data-lab-report-date="2026-11-01"
-      data-lab-report-name="Current Diagnostics"><td>Nov 1 2026</td><td>Current Diagnostics</td></tr>
+      data-lab-report-name="Current Diagnostics" data-lab-report-results="2"><td>Nov 1 2026</td><td>Current Diagnostics</td></tr>
     <tr id="report-two" data-labs-report-row data-lab-report-date="2026-07-07"
-      data-lab-report-name="Earlier Diagnostics"><td>Jul 7 2026</td><td>Earlier Diagnostics</td></tr>
+      data-lab-report-name="Earlier Diagnostics" data-lab-report-results="4"><td>Jul 7 2026</td><td>Earlier Diagnostics</td></tr>
   </tbody></table>
 </body></html>"""
 
@@ -117,4 +123,30 @@ def test_report_search_filters_without_altering_trends(tab):
     assert page.locator("#report-one").is_visible()
     assert page.locator("#report-two").is_visible()
     assert len(shown(page)) == 4
+    assert not errors, errors
+
+
+def test_report_sorting_and_reset_preserve_search(tab):
+    page, errors = tab
+    rows = page.locator("#labs-reports-table tbody [data-labs-report-row]")
+
+    def ids():
+        return rows.evaluate_all("(items) => items.map(item => item.id)")
+
+    assert ids() == ["report-one", "report-two"]
+    page.locator("#labs-reports-sort").select_option("date-asc")
+    assert ids() == ["report-two", "report-one"]
+    page.locator("#labs-reports-sort").select_option("lab-asc")
+    assert ids() == ["report-one", "report-two"]
+    page.locator("#labs-reports-sort").select_option("results-desc")
+    assert ids() == ["report-two", "report-one"]
+
+    page.locator("#labs-report-search").fill("2026-07")
+    assert page.locator("#report-one").is_hidden()
+    assert page.locator("#report-two").is_visible()
+
+    page.locator("#labs-reports-clear").click()
+    assert page.locator("#labs-report-search").input_value() == ""
+    assert page.locator("#labs-reports-sort").input_value() == "date-desc"
+    assert ids() == ["report-one", "report-two"]
     assert not errors, errors
