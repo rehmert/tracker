@@ -1,1 +1,49 @@
-{% extends "base.html" %}{% block title %}Lab trend · {{ title }}{% endblock %}{% block content %}<h1>{{ title }} — historical trend</h1><p class="note">Measurements are converted to comparable units where supported. Different labs may use different reference intervals.</p><section><div class="scroll">{{ chart|safe }}</div>{% if skipped %}<p class="note">{{ skipped }} measurement(s) excluded because units could not be converted.</p>{% endif %}</section><section><h2>Recorded measurements</h2><div class="scroll"><table><thead><tr><th>Date</th><th>Value</th><th>Unit</th><th>Reference interval</th><th>Laboratory</th></tr></thead><tbody>{% for r,rep in rows %}<tr><td>{{ rep.drawn_on }}</td><td>{{ r.value|num }}</td><td>{{ r.unit }}</td><td>{{ r.ref_low if r.ref_low is not none else '—' }} – {{ r.ref_high if r.ref_high is not none else '—' }}</td><td>{{ rep.lab_name }}</td></tr>{% endfor %}</tbody></table></div></section><a href="/labs">← All labs</a>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Lab trend · {{ title }}{% endblock %}
+{% block content %}
+<h1>{{ title }} — historical trend</h1>
+<p class="note">Measurements appear exactly as recorded. Values are converted into the latest result's unit only where Tracker supports a conversion. Differences compare each result with the previous distinct draw date; they are not clinical interpretations.</p>
+<p class="row">
+  <a class="btn" href="/labs/trends/{{ key|urlencode }}/export.csv">Export History CSV</a>
+  <a class="btn" href="/labs/analyte?name={{ key|urlencode }}">View with dose and vial events</a>
+  <a class="btn" href="/labs">All Labs</a>
+</p>
+<section>
+  <div class="scroll">{{ chart|safe }}</div>
+  {% if skipped %}
+  <p class="note">{{ skipped }} measurement(s) cannot be charted in {{ unit }} because their units aren't convertible.</p>
+  {% endif %}
+</section>
+<section>
+  <h2>Recorded measurements</h2>
+  <div class="scroll">
+    <table id="lab500-history-table">
+      <thead>
+        <tr>
+          <th>Drawn</th>
+          <th>Recorded result</th>
+          <th>In {{ unit }}</th>
+          <th>Previous distinct draw</th>
+          <th>Difference</th>
+          <th>Printed range</th>
+          <th>Lab</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr data-lab500-history-row>
+          <td><a href="/labs/{{ r.rep.id }}">{{ r.rep.drawn_on|dt }}</a></td>
+          <td>{{ r.res.value|num }} {{ r.res.unit }}</td>
+          <td>{% if r.converted is not none %}{{ r.converted|num }} {{ unit }}{% else %}Not convertible{% endif %}</td>
+          <td>{% if r.previous %}{{ r.previous[1].drawn_on|dt }}{% else %}—{% endif %}</td>
+          <td>{% if r.delta is not none %}{{ r.delta|signed_decimal }} {{ unit }}{% elif r.previous %}Not convertible{% else %}—{% endif %}</td>
+          <td>{% if r.res.ref_low is not none and r.res.ref_high is not none %}{{ r.res.ref_low|num }} to {{ r.res.ref_high|num }} {{ r.res.unit }}{% if r.status %} · {{ r.status }}{% endif %}{% else %}—{% endif %}</td>
+          <td>{{ r.rep.lab_name or '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">The CSV includes original unrounded values, recorded units, and any supported comparisons. A blank comparison means the necessary information or unit conversion was unavailable. Printed reference ranges belong to the individual reports.</p>
+</section>
+{% endblock %}
