@@ -111,11 +111,11 @@ def test_filters_and_visible_totals_and_reset(browser):
     assert tab.locator("[data-purchase-needs-count]").inner_text() == "1"
 
     tab.locator("select[data-purchase-status]").select_option("all")
-    tab.locator("[data-purchase-vendor]").select_option("other supplier")
+    tab.locator("select[data-purchase-vendor]").select_option("other supplier")
     assert visible(tab) == ["purchase-2"]
     assert tab.locator("[data-purchase-visible-total]").inner_text() == "$50.00"
 
-    tab.locator("[data-purchase-vendor]").select_option("")
+    tab.locator("select[data-purchase-vendor]").select_option("")
     tab.locator("[data-purchase-from]").fill("2026-11-02")
     tab.locator("[data-purchase-through]").fill("2026-11-03")
     assert visible(tab) == ["purchase-1", "purchase-2"]
