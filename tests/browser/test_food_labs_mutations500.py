@@ -24,9 +24,8 @@ ISOLATED = (
     and DATA.parent.parent == Path("/tmp")
 )
 if not ISOLATED:
-    pytest.skip(
-        "CRUD tests require the guarded disposable localhost runner",
-        allow_module_level=True,
+    raise RuntimeError(
+        "CRUD tests require the guarded disposable localhost runner; refusing writes"
     )
 
 pytestmark = pytest.mark.browser
