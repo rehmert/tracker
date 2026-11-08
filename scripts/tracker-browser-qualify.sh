@@ -177,11 +177,6 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   PYTHONDONTWRITEBYTECODE=1 \
   "$PY" -B -m pytest -q -x --tb=short \
     tests/browser/test_food_search_ui.py \
-    tests/browser/test_labs_overview.py \
-    tests/browser/test_food_labs_live499.py \
-    tests/browser/test_food_labs_mutations500.py \
-    tests/browser/test_labs_native_https501.py \
-    tests/browser/test_food_search_ui.py \
     tests/browser/test_inventory_alert_csv_review.py \
     tests/browser/test_lab_compare_review.py \
     tests/browser/test_labs_overview.py \
