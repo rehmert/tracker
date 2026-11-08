@@ -7,6 +7,11 @@ cd "$ROOT"
 
 PYTHON=".venv/bin/python"
 REPORT="/tmp/tracker-verification-plus.json"
+umask 077
+AUDIT_DIR="$(mktemp -d /tmp/tracker-verify-plus.XXXXXXXX)"
+export TRACKER_VERIFY_AUDIT_DIR="$AUDIT_DIR"
+# Prevent an earlier success report from surviving a failed run.
+rm -f "$REPORT"
 
 echo "=============================================="
 echo " Tracker Extended Verification"
@@ -20,7 +25,7 @@ echo "=============================================="
 # Preflight is read-only unless --snapshot is supplied.
 
 "$PYTHON" scripts/tracker-preflight.py \
-    --json /tmp/tracker-preflight.json
+    --json "$AUDIT_DIR/preflight.json"
 
 echo
 echo "=== Python syntax ==="
@@ -87,7 +92,7 @@ echo "=== Existing quality gate ==="
 
 if [[ -f scripts/tracker-quality-gate.py ]]; then
     "$PYTHON" scripts/tracker-quality-gate.py \
-        --json /tmp/tracker-quality-report.json
+        --json "$AUDIT_DIR/quality-report.json"
 else
     echo "SKIP: Quality gate not installed"
 fi
@@ -97,7 +102,7 @@ echo "=== Existing release audit ==="
 
 if [[ -f scripts/tracker-release-audit.py ]]; then
     "$PYTHON" scripts/tracker-release-audit.py \
-        --json /tmp/tracker-release-audit.json
+        --json "$AUDIT_DIR/release-audit.json"
 else
     echo "SKIP: Release audit not installed"
 fi
@@ -113,19 +118,22 @@ echo "=== Verification report ==="
 "$PYTHON" - <<'PY'
 import datetime
 import json
+import os
 from pathlib import Path
 
+AUDIT_DIR = Path(os.environ['TRACKER_VERIFY_AUDIT_DIR'])
+
 reports = {
-    "preflight": "/tmp/tracker-preflight.json",
-    "quality_gate": "/tmp/tracker-quality-report.json",
-    "release_audit": "/tmp/tracker-release-audit.json",
+    "preflight": str(AUDIT_DIR / "preflight.json"),
+    "quality_gate": str(AUDIT_DIR / "quality-report.json"),
+    "release_audit": str(AUDIT_DIR / "release-audit.json"),
 }
 
 result = {
     "timestamp": datetime.datetime.now(
         datetime.timezone.utc
     ).isoformat(),
-    "verification": "passed",
+    "verification": "pending",
     "checks": {},
 }
 
@@ -163,6 +171,15 @@ for name, filename in reports.items():
             "available": False
         }
 
+result["verification"] = (
+    "passed" if len(result["checks"]) == len(reports)
+    and all(
+        value.get("available") is True and value.get("failures") == 0
+        for value in result["checks"].values()
+    )
+    else "failed"
+)
+
 Path("/tmp/tracker-verification-plus.json").write_text(
     json.dumps(result, indent=2) + "\n",
     encoding="utf-8",
@@ -174,6 +191,8 @@ print(
         indent=2,
     )
 )
+if result["verification"] != "passed":
+    raise SystemExit("FAIL: One or more audit reports are missing or failed")
 PY
 
 echo
@@ -183,3 +202,4 @@ echo "=============================================="
 
 echo
 echo "Report: $REPORT"
+echo "Fresh source reports: $AUDIT_DIR"
