@@ -730,7 +730,12 @@ def analyte_trend(analyte_key: str, request: Request, db: Session = Depends(get_
     if not items:
         raise HTTPException(404, "Analyte not found")
     latest, _ = max(items, key=lambda item: (item[1].drawn_on, item[0].id))
-    series = labs.build_series(latest.analyte, _points(items))
+    # Preserve deterministic same-day order so the chart and exported
+    # history both use the most recently stored result's unit.
+    ordered_items = sorted(
+        items, key=lambda pair: (pair[1].drawn_on, pair[0].id)
+    )
+    series = labs.build_series(latest.analyte, _points(ordered_items))
     chart = charts.line_chart([charts.Series(latest.analyte, series.points)], width=850,
                               unit=f" {series.unit}", band=series.band,
                               band_label="Range printed on latest report")
