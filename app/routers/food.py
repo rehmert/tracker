@@ -113,6 +113,10 @@ def food_page(
         chosen = date.fromisoformat(day) if day else date.today()
     except ValueError:
         chosen = date.today()
+    # Date links require a predecessor and successor. Reject only the
+    # two representable endpoints rather than allowing an OverflowError.
+    if chosen in (date.min, date.max):
+        raise HTTPException(422, "Day is outside the supported navigation range")
     day = chosen.isoformat()
     with db_engine.connect() as db:
         records = db.execute(text("""SELECT e.id, p.id AS product_id, p.name,p.serving_description,p.nutrients,
