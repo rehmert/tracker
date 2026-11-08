@@ -94,6 +94,13 @@ def test_513_food_weekly_csv_at_earliest_supported_date(isolated_food):
     assert "0001-01-07" in response.text
 
 
+def test_513_full_food_page_handles_earliest_supported_day(isolated_food):
+    client, _ = isolated_food
+    response = client.get("/food?day=0001-01-07")
+    assert response.status_code == 200
+    assert "0001-01-07" in response.text
+
+
 @pytest.mark.parametrize(("raw", "escaped"), [
     ("a\\b", "a\\\\b"),
     ("First\r\nSecond", "First\\nSecond"),
