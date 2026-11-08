@@ -15,6 +15,7 @@ from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, 
 from ..inventory_lock import reserve_inventory_write, require_inventory_write
 from .. import manual_supplies
 from ..templating import render
+from ..mobile_shortcuts511 import recent_preparations
 
 router = APIRouter()
 INJECTION_SITES = ("Abdomen upper left", "Abdomen upper right", "Abdomen lower left",
@@ -162,6 +163,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         if planned_handoff else vials
     )
     planned_compound = db.get(Compound, compound_id) if planned_handoff else None
+    recent_shortcuts = [] if planned_handoff else recent_preparations(db, form_vials, views)
 
     # Historical entries can prefill a NEW record only after explicit selection.
     # Never reuse the historical timestamp, supplies, notes, or submission token.
@@ -223,7 +225,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         select(SupplyCategory.key).where(SupplyCategory.unit == "count")
     ))
 
-    return render(request, "doses.html", rows=_rows(db, compound_id), vials=form_vials, views=views,
+    return render(request, "doses.html", rows=_rows(db, compound_id), vials=form_vials, views=views, recent_shortcuts=recent_shortcuts,
                   planned_handoff=planned_handoff,
                   planned_compound_name=planned_compound.name if planned_compound else "Planned compound",
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
