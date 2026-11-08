@@ -1,0 +1,20 @@
+/* Release 511: scoped mobile-friendly dose/vial shortcuts. */
+.tracker-vial-finder511{display:grid;gap:.45rem;min-width:0}
+.tracker-vial-finder511>label{font-weight:700;font-size:.86rem}
+.tracker-vial-finder511>input{width:100%;font-size:16px;min-height:3rem;border-radius:.65rem}
+.tracker-vial-matches511{display:grid;gap:.35rem}
+.tracker-vial-result511{display:block;width:100%;text-align:left;min-height:2.8rem;padding:.5rem .75rem;border:1px solid var(--rule,#cbd5e1);border-radius:.6rem;background:var(--surface,#fff);font-size:.84rem;overflow-wrap:anywhere}
+.tracker-vial-result511:hover,.tracker-vial-result511:focus-visible{border-color:var(--teal,#1265ad)}
+.tracker-vial-finder511 [data-vial-feedback511]{margin:.15rem 0 .5rem;font-size:.79rem}
+.tracker-dose-recents511{padding:.8rem;border:1px solid var(--rule,#cbd5e1);border-radius:.85rem;background:var(--wash,#f2f5f8);min-width:0}
+.tracker-dose-recents511 h3{margin:0 0 .35rem;font-size:1rem}
+.tracker-dose-recent-list511{display:grid;gap:.4rem}
+.tracker-dose-recent-item511{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.55rem .1rem;border-top:1px solid var(--rule,#cbd5e1);min-width:0}
+.tracker-dose-recent-item511>div:first-child{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.tracker-dose-recent-item511 strong{font-size:.87rem;overflow-wrap:anywhere}
+.tracker-dose-recent-item511 small{font-size:.76rem;color:var(--muted,#64748b)}
+.tracker-dose-recent-actions511{display:flex;gap:.35rem;flex:0 0 auto}
+.tracker-dose-recent-actions511 :is(button,a){display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.4rem .55rem;border-radius:.6rem;border:1px solid var(--rule,#cbd5e1);background:var(--surface,#fff);color:var(--ink,#1e293b);font-size:.78rem;font-weight:700;text-decoration:none;text-align:center}
+.tracker-dose-recent-actions511 button{border-color:var(--teal,#1265ad)}
+.tracker-dose-recents511 :is(button,a):focus-visible,.tracker-vial-finder511 :is(input,button):focus-visible{outline:3px solid var(--tracker-brand-blue,#1686df);outline-offset:2px}
+@media(max-width:760px){.tracker-dose-recent-item511{align-items:stretch;flex-direction:column;gap:.4rem}.tracker-dose-recent-actions511{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}.tracker-dose-recent-actions511 :is(button,a){min-width:0}}
