@@ -11,6 +11,22 @@ PY="$2"
   echo "ERROR: Source must be a separate candidate worktree and Python must exist" >&2
   exit 2
 }
+# HTMX is intentionally gitignored and absent from detached worktrees.
+# Use only the already-installed local vendor asset, never download code
+# or read application credentials/configuration.
+VENDOR_SRC="/opt/tracker/app/static/vendor/htmx.min.js"
+VENDOR_DST="$SOURCE/app/static/vendor/htmx.min.js"
+[[ -f "$VENDOR_SRC" && ! -L "$VENDOR_SRC" && ! -e "$VENDOR_DST" ]] || {
+  echo "ERROR: Clean installed HTMX vendor asset required for isolated browser QA" >&2
+  exit 2
+}
+mkdir -p "$(dirname "$VENDOR_DST")"
+install -m 0644 "$VENDOR_SRC" "$VENDOR_DST"
+cmp -s "$VENDOR_SRC" "$VENDOR_DST" || {
+  echo "ERROR: Copied isolated HTMX asset differs from installed source" >&2
+  exit 2
+}
+echo "ISOLATED_HTMX_VENDOR=VERIFIED"
 ROOT="$(mktemp -d /tmp/tracker-browser-qa.XXXXXXXX)"
 DATA="$ROOT/data"
 mkdir -m 700 "$DATA"
