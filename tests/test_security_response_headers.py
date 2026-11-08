@@ -11,7 +11,7 @@ from app.main import app
 
 def check_headers(response):
     assert response.headers["x-frame-options"] == "DENY"
-    assert response.headers["referrer-policy"] == "no-referrer"
+    assert response.headers["referrer-policy"] == "same-origin"
     assert response.headers["x-content-type-options"] == "nosniff"
 
 
