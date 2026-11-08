@@ -7,7 +7,7 @@ navigation shortcut, not an automatic administration or a recommended dose.
 from sqlalchemy import select
 
 from . import units as U
-from .models import DoseLog, Vial
+from .models import DoseLog
 
 
 def recent_preparations(db, available_vials, views, limit: int = 5) -> list[dict]:
