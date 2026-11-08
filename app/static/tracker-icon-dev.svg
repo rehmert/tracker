@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Tracker DEV">
+  <defs>
+    <linearGradient id="dev-background" x2="1" y2="1"><stop stop-color="#d58b2c"/><stop offset="1" stop-color="#70400b"/></linearGradient>
+    <linearGradient id="vial" x2="1" y2="1"><stop stop-color="#f8f7ed"/><stop offset="1" stop-color="#74b3db"/></linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="26" fill="url(#dev-background)"/>
+  <rect x="65" y="19" width="45" height="54" rx="6" fill="#fff9ec"/>
+  <path d="M65 25Q65 19 71 19H104Q110 19 110 25V32H65Z" fill="#f0a739"/>
+  <path d="M78 14V26M99 14V26" stroke="#fff9ec" stroke-width="5" stroke-linecap="round"/>
+  <path d="M76 51L84 60L101 42" fill="none" stroke="#17629b" stroke-width="6" stroke-linecap="round"/>
+  <rect x="23" y="14" width="43" height="15" rx="5" fill="#e7bf75"/>
+  <path d="M29 28H60V35Q67 41 67 49V78Q67 87 58 87H31Q22 87 22 78V49Q22 41 29 35Z" fill="url(#vial)" stroke="#fff9ec" stroke-width="2"/>
+  <rect x="26" y="52" width="37" height="26" rx="3" fill="#fff9ec"/>
+  <path d="M34 71V64M44 71V60M54 71V57" stroke="#17629b" stroke-width="5" stroke-linecap="round"/>
+  <rect x="16" y="90" width="96" height="27" rx="6" fill="#fff9ec"/>
+  <text x="64" y="110" text-anchor="middle" font-size="21" font-family="system-ui, sans-serif" font-weight="900" letter-spacing="5" fill="#70400b">DEV</text>
+</svg>
