@@ -4,8 +4,7 @@ import re
 import shutil
 import subprocess
 from datetime import date, timedelta
-from urllib.request import Request as URLRequest, urlopen
-from urllib.error import URLError
+from ..off_lookup494 import OFFFailure494, fetch_json494
 from fastapi import Depends, APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import text
@@ -238,11 +237,23 @@ def barcode_lookup(barcode: str):
         raise HTTPException(400,"Enter a valid 8–14 digit barcode.")
     url=f"https://world.openfoodfacts.org/api/v2/product/{barcode}?fields=product_name,brands,serving_size,nutriments"
     try:
-        request=URLRequest(url,headers={"User-Agent":"TrackerFoodJournal/0.1 (personal-use; openfoodfacts.org)"})
-        with urlopen(request,timeout=7) as response:
-            payload=json.load(response)
-    except (URLError,TimeoutError,ValueError,OSError):
-        raise HTTPException(503,"Food database unavailable. Enter label details manually.")
+        payload=fetch_json494(
+            url, "barcode", timeout=7, ttl=3600, retry=True,
+        )
+    except OFFFailure494 as exc:
+        if exc.reason == "not_found":
+            raise HTTPException(
+                404, "Barcode not found. Verify the code or enter manually.",
+            ) from None
+        if exc.reason in ("rate_limited", "local_limit", "cooldown"):
+            raise HTTPException(
+                429,
+                "Food database is busy. Retry shortly or enter label details manually.",
+                headers={"Retry-After": str(min(120, exc.retry_after or 60))},
+            ) from None
+        raise HTTPException(
+            503, "Food database temporarily unavailable. Enter label details manually.",
+        ) from None
     if payload.get("status")!=1:
         raise HTTPException(404,"Barcode not found. Use a nutrition-label photo or manual entry.")
     p=payload.get("product") or {}
