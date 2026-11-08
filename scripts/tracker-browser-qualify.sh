@@ -181,7 +181,25 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
     tests/browser/test_food_labs_live499.py \
     tests/browser/test_food_labs_mutations500.py \
     tests/browser/test_labs_native_https501.py \
-    tests/browser/test_navigation.py >"$TEST_LOG" 2>&1
+    tests/browser/test_food_search_ui.py \
+    tests/browser/test_inventory_alert_csv_review.py \
+    tests/browser/test_lab_compare_review.py \
+    tests/browser/test_labs_overview.py \
+    tests/browser/test_purchase_history_review.py \
+    tests/browser/test_supply_consumption_review.py \
+    tests/test_bulk_vial_browser.py \
+    tests/test_bulk_vial_guided_browser.py \
+    tests/test_bulk_delete_browser.py \
+    tests/test_purchase_vial_browser.py \
+    tests/test_stage33_browser_sorting.py \
+    tests/test_health_timeline_dates_browser.py \
+    tests/test_vitals_csv_browser.py \
+    tests/browser/test_food_labs_live499.py \
+    tests/browser/test_food_labs_mutations500.py \
+    tests/browser/test_labs_native_https501.py \
+    tests/browser/test_navigation.py \
+    tests/browser/test_pk_smoke_281.py \
+    tests/browser/test_stage33_live_sorting.py >"$TEST_LOG" 2>&1
 BROWSER_EXIT=$?
 set -e
 cat "$TEST_LOG"
