@@ -36,6 +36,18 @@ NUTRIENTS = {
 OFF_MG = {"sodium", "potassium", "calcium", "iron", "magnesium", "vitamin-c", "cholesterol"}
 OFF_MCG = {"vitamin-d", "vitamin-b12"}
 
+# Weekly summaries need the six preceding days; navigation needs the next day.
+EARLIEST_FOOD_DAY = date.min + timedelta(days=6)
+LATEST_FOOD_DAY = date.max - timedelta(days=1)
+
+
+def require_supported_food_day(chosen: date) -> date:
+    """Reject dates that would overflow the journal's calendar calculations."""
+    if not EARLIEST_FOOD_DAY <= chosen <= LATEST_FOOD_DAY:
+        raise HTTPException(422, "Day is outside the supported navigation range")
+    return chosen
+
+
 def init_food_schema(db_engine=None):
     selected_engine = engine if db_engine is None else db_engine
     with selected_engine.begin() as db:
@@ -107,17 +119,15 @@ def food_page(
     q: str = "",
     db_engine=Depends(get_food_read_engine406),
 ):
-    init_food_schema(db_engine)
-    init_water_schema(db_engine)
     try:
         chosen = date.fromisoformat(day) if day else date.today()
     except ValueError:
         chosen = date.today()
-    # Date links require a predecessor and successor. Reject only the
-    # two representable endpoints rather than allowing an OverflowError.
-    if chosen in (date.min, date.max):
-        raise HTTPException(422, "Day is outside the supported navigation range")
+    chosen = require_supported_food_day(chosen)
     day = chosen.isoformat()
+    # Invalid date requests must not initialize or access storage.
+    init_food_schema(db_engine)
+    init_water_schema(db_engine)
     with db_engine.connect() as db:
         records = db.execute(text("""SELECT e.id, p.id AS product_id, p.name,p.serving_description,p.nutrients,
             e.servings,e.meal,p.source FROM tracker_food_entries e JOIN tracker_food_products p
@@ -346,8 +356,11 @@ async def create_food_entry(request: Request, db_engine=Depends(get_food_read_en
     if not name:
         raise HTTPException(422,"Food name is required.")
     eaten=str(form.get("day",""))
-    try: date.fromisoformat(eaten)
-    except ValueError: raise HTTPException(422,"Invalid date")
+    try:
+        chosen = date.fromisoformat(eaten)
+    except ValueError:
+        raise HTTPException(422, "Invalid date") from None
+    require_supported_food_day(chosen)
     quantity=to_float(form.get("servings"))
     if not 0 < quantity <= 100:
         raise HTTPException(422,"Servings must be greater than zero and at most 100.")
