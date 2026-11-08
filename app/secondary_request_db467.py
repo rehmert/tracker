@@ -6,7 +6,7 @@ database path, SQLite URI, or SQL statement.
 
 This does not change the administrator-scoped global engine.
 """
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote
@@ -89,9 +89,9 @@ def readonly_private_db467(request: Request):
     )
 
     try:
-        with sqlite3.connect(
+        with closing(sqlite3.connect(
             uri, uri=True, timeout=5
-        ) as db:
+        )) as db:
             db.execute("PRAGMA query_only=ON")
 
             marker = db.execute("""
