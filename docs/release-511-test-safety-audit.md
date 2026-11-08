@@ -33,9 +33,11 @@ The candidate's `scripts/tracker-browser-qualify.sh` runs all twelve
 `tests/browser/test_*.py` modules and seven isolated browser fixture modules
 from `tests/` against either self-contained HTML or a disposable candidate
 service on random loopback HTTP/HTTPS ports. The runner never reads the
-installed database or any live credentials. Existing live sorting tests can
-skip data-dependent assertions when the disposable inventory is empty;
-isolated fixture tests provide deterministic coverage of sorting logic.
+installed database or any live credentials. The runner seeds exactly two synthetic vials in its
+private candidate SQLite database before live sorting/search tests. This
+makes those assertions meaningful even on a fresh checkout; no actual
+user inventory is touched. Isolated fixture tests provide additional
+deterministic coverage of sorting logic.
 
 The former 300-second browser-stage timeout is 600 seconds to accommodate
 the additional Playwright tests. A failed browser gate stops deployment.
