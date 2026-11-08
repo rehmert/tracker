@@ -17,8 +17,9 @@
 <script src="/static/js/tracker-food424.js?v=424" defer></script>
 <script src="/static/js/tracker-food384.js?v=384" defer></script>
 <script src="/static/js/tracker-food382.js?v=382" defer></script>
-<script src="/static/js/tracker-food380.js?v=496" defer></script>
-<script src="/static/js/tracker-food374.js?v=376" defer></script>
+<script src="/static/js/tracker-food380.js?v=499" defer></script>
+<script src="/static/js/tracker-food374.js?v=499" defer></script>
+<script src="/static/js/tracker-food499.js?v=499" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Tap a section below to expand it.
 Daily totals remain visible; nutrient values can be incomplete.
@@ -433,6 +434,9 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 <article class="food375-item">
 <strong>{{ item.name }}</strong>
 <small>{{ item.serving_description }}</small>
+{% if item.saved_versions > 1 %}
+<small class="note food499-duplicate" role="note">{{ item.saved_versions }} saved versions share this name, barcode and serving size. Verify nutrition before logging.</small>
+{% endif %}
 
 <div class="food384-preview"
  data-food384-preview
@@ -567,6 +571,10 @@ unknown, not zero.
  </div>
 </details>
 <p class="note" id="food-review-warning">Only confirmed numbers should be entered. Leave unknown nutrients blank. Newly recorded unknown values remain distinct from confirmed zero values.</p>
+<div id="food499-review" aria-label="Nutrition completeness review">
+<p class="note" id="food499-review-status" role="status" aria-live="polite"></p>
+<div id="food499-macro-preview" class="food384-preview" aria-label="Calories and macros for quantity being logged"></div>
+</div>
 <button class="primary food-save" type="submit">Save Food Entry</button>
 </form>
 </div>
