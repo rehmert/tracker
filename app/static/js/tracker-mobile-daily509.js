@@ -8,6 +8,22 @@
     if (!form) return;
 
     const buttons = [...root.querySelectorAll("[data-daily-mode]")];
+    const nowButton = root.querySelector("[data-daily-now511]");
+    const timeInput = form.elements.namedItem("measured_at");
+    function currentLocalTime() {
+      const now = new Date();
+      const pad = value => String(value).padStart(2, "0");
+      return now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" +
+        pad(now.getDate()) + "T" + pad(now.getHours()) + ":" +
+        pad(now.getMinutes());
+    }
+    nowButton?.addEventListener("click", () => {
+      if (!timeInput) return;
+      timeInput.value = currentLocalTime();
+      timeInput.dispatchEvent(new Event("change", { bubbles: true }));
+      const message = root.querySelector("[data-daily-status]");
+      if (message) message.textContent = "Recording time updated to the current local time.";
+    });
     const status = root.querySelector("[data-daily-status]");
     const fields = {
       weight: ["weight"],
