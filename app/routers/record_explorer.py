@@ -2,6 +2,7 @@
 """Read-only record exploration tools."""
 
 import html
+from contextlib import closing
 import json
 import sqlite3
 from datetime import date
@@ -109,7 +110,7 @@ def table_html(rows, headings):
 
 @router.get("/vials")
 def vial_lifecycle():
-    with database() as db:
+    with closing(database()) as db:
         available = tables(db)
 
         if "vials" not in available:
@@ -156,7 +157,7 @@ def vial_lifecycle():
 
 @router.get("/notes")
 def notes_history():
-    with database() as db:
+    with closing(database()) as db:
         available = tables(db)
 
         if not {"pages", "page_revisions"} <= available:
@@ -197,7 +198,7 @@ def notes_compare(
     left: int = 0,
     right: int = 0,
 ):
-    with database() as db:
+    with closing(database()) as db:
         page = db.execute(
             "SELECT id,title,body FROM pages WHERE id=?",
             (pid,),
@@ -300,7 +301,7 @@ def database_explorer(
 ):
     from urllib.parse import urlencode
 
-    with database() as db:
+    with closing(database()) as db:
         available = tables(db) & set(VIEWER_COLUMNS)
 
         if not table:
@@ -407,7 +408,7 @@ tables are excluded. Search is limited to visible columns.</small></p>
 
 @router.get("/health")
 def health_explorer():
-    with database() as db:
+    with closing(database()) as db:
         available = tables(db)
 
         if "vital_readings" not in available:
