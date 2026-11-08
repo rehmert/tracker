@@ -5,8 +5,9 @@ test_secondary_private_workflow440.py, allowing safe xdist loadfile sharding.
 """
 import sqlite3
 from contextlib import closing
+from copy import deepcopy
 
-from app import config, session_auth385 as auth
+from app import config, session_auth385 as auth, secondary_preview430 as gateway
 from scripts.secondary_integration440_support import (
     FEATURES, browser, _hidden, _login, _row, _counts,
 )
@@ -18,8 +19,38 @@ def test_authenticated_readiness_matches_every_runtime_flag(browser, monkeypatch
     assert anonymous.headers["location"] == "/secondary/login"
 
     _login(client, 2)
-    page = client.get("/secondary/readiness")
+
+    # Obtain a real, independently validated worker response for this
+    # authenticated secondary account. The only fixture substitution below
+    # reuses this read-only count snapshot while testing feature-flag HTML.
+    # It never substitutes for session/identity checks or write requests.
+    private_report = {}
+    actual_worker = gateway.read_workspace_overview429
+
+    def capture_verified_report(uid):
+        report = actual_worker(uid)
+        private_report["uid"] = uid
+        private_report["result"] = deepcopy(report)
+        return report
+
+    with monkeypatch.context() as capture:
+        capture.setattr(
+            gateway, "read_workspace_overview429", capture_verified_report
+        )
+        page = client.get("/secondary/readiness")
+
     assert page.status_code == 200
+    assert private_report["uid"] == 2
+    assert private_report["result"]["user_id"] == 2
+    assert private_report["result"]["workspace_status"] == "inactive"
+    assert private_report["result"]["login_enabled"] is False
+    assert private_report["result"]["http_listener_started"] is False
+
+    def stable_worker_report(uid):
+        # Keep fail-closed account binding even for this test-only snapshot.
+        if type(uid) is not int or uid != 2:
+            raise PermissionError("Unexpected workspace identity")
+        return deepcopy(private_report["result"])
     assert page.headers["cache-control"] == "no-store"
     assert 'href="/secondary/readiness"' in client.get(
         "/secondary/overview"
@@ -32,15 +63,31 @@ def test_authenticated_readiness_matches_every_runtime_flag(browser, monkeypatch
     for flag, name, route in FEATURES:
         assert "Enabled (DEV)" in _row(page.text, name)
         monkeypatch.delenv(flag, raising=False)
-        disabled = client.get("/secondary/readiness")
+        with monkeypatch.context() as pinned_readonly:
+            pinned_readonly.setattr(
+                gateway, "read_workspace_overview429", stable_worker_report
+            )
+            disabled = client.get("/secondary/readiness")
         assert disabled.status_code == 200
         assert "Disabled" in _row(disabled.text, name)
         assert "Enabled (DEV)" not in _row(disabled.text, name)
+        # Exercise the actual fail-closed write route without any worker stub.
         assert client.post(route, data={}).status_code == 404
         monkeypatch.setenv(flag, "1")
-        assert "Enabled (DEV)" in _row(
-            client.get("/secondary/readiness").text, name
-        )
+        with monkeypatch.context() as pinned_readonly:
+            pinned_readonly.setattr(
+                gateway, "read_workspace_overview429", stable_worker_report
+            )
+            enabled = client.get("/secondary/readiness")
+        assert "Enabled (DEV)" in _row(enabled.text, name)
+
+    # End with an independent, real worker invocation after every flag
+    # toggle. This still tests production readiness and account identity.
+    final_page = client.get("/secondary/readiness")
+    assert final_page.status_code == 200
+    assert "secondary workspace 2" in final_page.text.lower()
+    for _, name, _ in FEATURES:
+        assert "Enabled (DEV)" in _row(final_page.text, name)
 
 
 def test_gateway_emergency_lockdown_denies_every_preview_route(browser, monkeypatch):
