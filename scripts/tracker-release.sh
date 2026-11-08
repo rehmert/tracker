@@ -101,10 +101,11 @@ PY
  echo "=== COMPLETE REGRESSION SUITE ==="
  echo "Critical safety tests are included in full-suite collection."
  TEST_PYTEST_EXTRA=()
- if [[ "$INSTANCE" == DEV && "$SERIAL_TESTS" == 0 ]] && "$PY" -c 'import xdist' >/dev/null 2>&1; then
-  # Each xdist worker imports conftest independently and receives its own
-  # disposable SQLite directory. Limit concurrency to available LXC CPUs.
-  # Keep tests from a module together to limit fixture interactions.
+ if [[ "$SERIAL_TESTS" == 0 ]] && "$PY" -c 'import xdist' >/dev/null 2>&1; then
+  # DEV and PROD use the same isolated xdist gate after being assigned
+  # equivalent CPU/RAM resources. Each worker creates its own temporary
+  # SQLite directory. Keep modules together to limit fixture interactions.
+  # Limit worker count to effective LXC CPU availability, capped at 16.
   WORKERS="$("$PY" - <<'PY'
 import os
 from pathlib import Path
@@ -125,7 +126,11 @@ PY
    echo "BACKEND_TEST_MODE=SERIAL reason=limited_cpu"
   fi
  else
-  echo "BACKEND_TEST_MODE=SERIAL reason=prod_or_override_or_missing_xdist"
+  if [[ "$SERIAL_TESTS" == 1 ]]; then
+   echo "BACKEND_TEST_MODE=SERIAL reason=serial_override"
+  else
+   echo "BACKEND_TEST_MODE=SERIAL reason=missing_xdist"
+  fi
  fi
  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
@@ -263,9 +268,10 @@ bash -n "$RUN/worker.sh"
 UNIT="tracker-release-$(date +%s)-$$"
 # Make the log available before the worker starts; no source/data changes.
 touch "$RUN/deployment.log"
-# The DEV xdist gate has a separate bound, leaving 2 GiB headroom on
-# an 8 GiB DEV LXC. PROD retains its original 1 GiB serial release cap.
-if [[ "$INSTANCE" == DEV && "$SERIAL_TESTS" == 0 ]]; then
+# DEV and PROD have matching 8 GiB LXC allocations. Parallel release
+# workers get 6 GiB, leaving 2 GiB for the running Tracker service and OS.
+# --serial-tests retains the original conservative 1 GiB release limit.
+if [[ "$SERIAL_TESTS" == 0 ]]; then
  MEMORY_PROPERTY="MemoryMax=6G"
 else
  MEMORY_PROPERTY="MemoryMax=1G"
