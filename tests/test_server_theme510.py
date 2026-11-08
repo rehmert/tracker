@@ -93,3 +93,40 @@ def test_user_selected_appearance_is_unchanged():
     css = theme510.DEFAULT_FILE.read_text()
     assert ':root[data-theme="light"]' in css
     assert ':root[data-theme="dark"]' in css
+
+
+def test_authenticated_css_is_private_and_rejects_invalid_credentials(
+    client, tmp_path, monkeypatch
+):
+    """Server-managed CSS must honor the global authentication dependency."""
+    import base64
+    from app import session_auth385
+
+    monkeypatch.setattr(session_auth385, "enabled", lambda: False)
+    monkeypatch.setattr(config, "AUTH_USER", "operator")
+    monkeypatch.setattr(config, "AUTH_PASS", "secret")
+    monkeypatch.setattr(theme510, "THEME_FILE", tmp_path / "missing.css")
+
+    missing = client.get("/ui/theme.css", follow_redirects=False)
+    assert missing.status_code == 401
+    assert missing.headers["cache-control"] == "private, no-store"
+
+    bad = base64.b64encode(b"operator:wrong").decode("ascii")
+    assert client.get(
+        "/ui/theme.css",
+        headers={"Authorization": "Basic " + bad},
+        follow_redirects=False,
+    ).status_code == 401
+
+    good = base64.b64encode(b"operator:secret").decode("ascii")
+    response = client.get(
+        "/ui/theme.css",
+        headers={"Authorization": "Basic " + good},
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/css")
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.headers["vary"] == "Cookie, Authorization"
+    assert response.headers["x-tracker-theme-source"] == "default"
+    assert "--tracker-brand-blue" in response.text
