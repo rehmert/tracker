@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import PlainTextResponse
 
 from .request_origin import reject_cross_origin_write
+from .food_origin492 import allow_food_proxy_write492, is_food_write492
 from .csrf_runtime import prepare_html_cookie
 from .csrf_reporting import report_status, REPORT_HEADER
 from .csrf_policy289 import reject_write
@@ -144,24 +145,38 @@ async def tracker_response_protection(request, call_next):
     if secondary_form_post433:
         session_auth_post = True
 
-    if (
+    # A TLS reverse proxy may rewrite Host to an internal authority,
+    # so Food POSTs can fail the original Origin comparison. Only an
+    # allowlisted Food POST with valid signed CSRF and browser-supplied
+    # same-origin Fetch Metadata can use this exceptional path.
+    # Never disable TRACKER_ORIGIN_GUARD or trust X-Forwarded-Host.
+    origin_rejected = (
         os.environ.get("TRACKER_ORIGIN_GUARD", "1") != "0"
         and not session_auth_post
         and reject_cross_origin_write(
             request.method,
             request.headers,
         )
-    ):
+    )
+    csrf_report = None
+    if origin_rejected and is_food_write492(request.url.path):
+        csrf_report = await report_status(request)
+        if allow_food_proxy_write492(
+            request.method, request.url.path, request.headers, csrf_report,
+        ):
+            origin_rejected = False
+
+    if origin_rejected:
         response = PlainTextResponse(
             "Cross-origin write request denied.",
             status_code=403,
         )
-        csrf_report = None
     else:
         # Bounded URL-encoded inspection uses the cached
         # request body; multipart and streaming bodies are
         # left untouched for the original endpoint.
-        csrf_report = await report_status(request)
+        if csrf_report is None:
+            csrf_report = await report_status(request)
         if (
             not (
                 request.url.path in (
