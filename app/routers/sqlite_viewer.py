@@ -73,11 +73,15 @@ def _connection():
         timeout=5,
     )
 
-    # Defense in depth: reject write statements.
-    connection.execute("PRAGMA query_only=ON")
-    connection.row_factory = sqlite3.Row
-
-    return connection
+    try:
+        # Defense in depth: reject write statements.
+        connection.execute("PRAGMA query_only=ON")
+        connection.row_factory = sqlite3.Row
+        return connection
+    except Exception:
+        # A failed setup must not strand an open database descriptor.
+        connection.close()
+        raise
 
 
 def _quote_identifier(value):
