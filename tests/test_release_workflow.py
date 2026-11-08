@@ -131,6 +131,16 @@ def test_release_498_browser_gate_is_isolated_and_dev_only():
     assert 'tests/browser/test_food_labs_mutations500.py' in shell
     assert 'TRACKER_TEST_ISOLATED=1' in shell
     assert 'TRACKER_BROWSER_QA_DATA_DIR="$DATA"' in shell
+    assert 'ISOLATED_HTMX_VENDOR=VERIFIED' in shell
+    assert 'install -m 0644 "$VENDOR_SRC" "$VENDOR_DST"' in shell
+    assert 'cmp -s "$VENDOR_SRC" "$VENDOR_DST"' in shell
+
+    # Browser form input arrives as JavaScript pairs (lists). Python
+    # urlencode requires a sequence of tuples to preserve repeatable keys.
+    mutation = (ROOT / "tests/browser/test_food_labs_mutations500.py").read_text()
+    assert 'data=urlencode([tuple(pair) for pair in submitted["fields"]])' in mutation
+    assert "TRACKER_BROWSER_QA_DATA_DIR" in mutation
+
     assert 'TRACKER_DATA_DIR="$DATA"' in shell
 
     assert 'trap cleanup EXIT' in shell
