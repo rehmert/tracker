@@ -2,6 +2,7 @@
 """Tracker maintenance and verification dashboard."""
 
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -44,10 +45,10 @@ def maintenance_review(request: Request):
     checks = []
 
     try:
-        with sqlite3.connect(
+        with closing(sqlite3.connect(
             database.as_uri() + "?mode=ro",
             uri=True,
-        ) as db:
+        )) as db:
             db.execute("PRAGMA query_only=ON")
 
             integrity = db.execute(
