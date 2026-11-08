@@ -97,7 +97,13 @@ PY
   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
   --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
   --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
- echo "=== ALL TESTS PASSED ==="
+ echo "=== ALL BACKEND TESTS PASSED ==="
+ if [[ "$INSTANCE" == DEV ]]; then
+  echo "=== ISOLATED BROWSER QUALIFICATION ==="
+  timeout 300 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+ else
+  echo "=== PROD: browser qualification is required on DEV before main promotion ==="
+ fi
  cd "$APP"
  unset TRACKER_DATA_DIR PYTHONPATH
  [[ -z "$(g status --porcelain)" && "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Live checkout changed"
