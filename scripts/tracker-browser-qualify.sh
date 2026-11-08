@@ -88,9 +88,10 @@ PY
 echo "=== OFFLINE FOOD AND LABS BROWSER TESTS + LIVE NAVIGATION ==="
 env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" \
-  TRACKER_TEST_URL="$URL" PYTHONDONTWRITEBYTECODE=1 \
+  TRACKER_TEST_URL="$URL" TRACKER_TEST_ISOLATED=1 PYTHONDONTWRITEBYTECODE=1 \
   "$PY" -B -m pytest -q -x --tb=short \
     tests/browser/test_food_search_ui.py \
     tests/browser/test_labs_overview.py \
     tests/browser/test_food_labs_live499.py \
+    tests/browser/test_food_labs_mutations500.py \
     tests/browser/test_navigation.py
