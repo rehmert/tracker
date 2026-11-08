@@ -88,6 +88,9 @@ def test_upstream_503_triggers_modern_fallback(client, monkeypatch):
     ]
     assert [k for k, _ in calls] == ["name-legacy", "name-modern"]
     assert urlsplit(calls[1][1]).hostname == "search.openfoodfacts.org"
+    assert parse_qs(urlsplit(calls[1][1]).query)["fields"] == [
+        "code,product_name"
+    ]
 
 
 def test_search_both_upstreams_fail_returns_503(client, monkeypatch):
