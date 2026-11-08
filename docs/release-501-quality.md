@@ -10,6 +10,11 @@
   printed reference intervals, report IDs, result IDs, and result notes.
   Filenames use a bounded ASCII slug rather than untrusted analyte text.
   Existing per-report exports and CSV import formats are unchanged.
+- **Native form compatibility:** the global `Referrer-Policy` becomes
+  `same-origin`, which avoids `Origin: null` on legitimate native POSTs
+  while withholding all referrer information from cross-origin requests.
+  The existing Origin guard still rejects `null`, foreign, and cross-site
+  requests. Explicit stricter endpoint policies remain intact.
 - **Browser quality:** disposable, loopback-only HTTPS test proxy checks
   native multipart Labs create/upload, edit, and delete, plus a negative
   cross-site write. Tests never touch the installed DEV or PROD database.
