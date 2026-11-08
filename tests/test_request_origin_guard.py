@@ -283,3 +283,25 @@ def test_safe_get_remains_unchanged(client):
         headers={"Sec-Fetch-Site": "same-site"},
     )
     assert response.status_code == 200
+
+
+def test_501_labs_native_form_has_safe_referrer_and_still_denies_null_origin(client):
+    form = client.get("/labs/new")
+    assert form.status_code == 200
+    # Same-origin allows Chromium's native POST Origin, without exposing
+    # a page's referrer to another site.
+    assert form.headers["referrer-policy"] == "same-origin"
+    assert 'enctype="multipart/form-data"' in form.text
+
+    rejected = client.post(
+        "/labs",
+        data={"drawn_on": "2026-11-08"},
+        headers={
+            "Origin": "null",
+            "Sec-Fetch-Site": "same-origin",
+        },
+        follow_redirects=False,
+    )
+    assert rejected.status_code == 403
+    assert rejected.text == "Cross-origin write request denied."
+    assert rejected.headers["referrer-policy"] == "same-origin"
