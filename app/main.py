@@ -20,6 +20,7 @@ from fastapi.responses import PlainTextResponse
 
 from .request_origin import reject_cross_origin_write
 from .food_origin492 import allow_food_proxy_write492, is_food_write492
+from .labs_origin500 import allow_lab_proxy_write500, is_lab_write500
 from .csrf_runtime import prepare_html_cookie
 from .csrf_reporting import report_status, REPORT_HEADER
 from .csrf_policy289 import reject_write
@@ -162,6 +163,14 @@ async def tracker_response_protection(request, call_next):
     if origin_rejected and is_food_write492(request.url.path):
         csrf_report = await report_status(request)
         if allow_food_proxy_write492(
+            request.method, request.url.path, request.headers, csrf_report,
+        ):
+            origin_rejected = False
+
+    if origin_rejected and is_lab_write500(request.url.path):
+        if csrf_report is None:
+            csrf_report = await report_status(request)
+        if allow_lab_proxy_write500(
             request.method, request.url.path, request.headers, csrf_report,
         ):
             origin_rejected = False
