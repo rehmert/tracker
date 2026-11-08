@@ -8,6 +8,7 @@ import shutil
 import sqlite3
 import tempfile
 import zipfile
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,6 +18,11 @@ from .upload_coordination325 import upload_guard
 from .backup_references341 import assert_complete
 
 BACKUP_DIR = Path(os.getenv('TRACKER_BACKUP_DIR', str(config.DATA_DIR.parent / 'backups'))).resolve()
+
+# Bound verification work even when inspecting malformed or hostile archives.
+# These ceilings are well above ordinary per-vial uploads and database sizes.
+MAX_BACKUP_ENTRIES = 50_000
+MAX_RESTORED_BYTES = 64 * 1024 * 1024 * 1024
 
 
 def _digest(path: Path) -> str:
@@ -28,7 +34,7 @@ def _digest(path: Path) -> str:
 
 
 def _verify_db(path: Path) -> None:
-    with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as conn:
+    with closing(sqlite3.connect(f'file:{path}?mode=ro', uri=True)) as conn:
         if conn.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
             raise ValueError('SQLite integrity check failed')
 
@@ -47,8 +53,8 @@ def create_backup(data_dir: Path | None = None, backup_dir: Path | None = None) 
         with tempfile.TemporaryDirectory(prefix='.tracker-backup-', dir=target) as temp:
             work = Path(temp)
             snapshot = work / 'tracker.db'
-            with sqlite3.connect(f'file:{data / "tracker.db"}?mode=ro', uri=True) as source:
-                with sqlite3.connect(snapshot) as dest:
+            with closing(sqlite3.connect(f'file:{data / "tracker.db"}?mode=ro', uri=True)) as source:
+                with closing(sqlite3.connect(snapshot)) as dest:
                     source.backup(dest)
             _verify_db(snapshot)
             entries = [snapshot]
@@ -85,15 +91,48 @@ def create_backup(data_dir: Path | None = None, backup_dir: Path | None = None) 
 
 def verify_backup(path: Path) -> dict:
     with zipfile.ZipFile(path) as z:
+        entries = z.infolist()
+        if len(entries) > MAX_BACKUP_ENTRIES:
+            raise ValueError('Backup contains too many files')
+        names = [entry.filename for entry in entries]
+        if len(names) != len(set(names)):
+            raise ValueError('Duplicate backup archive entry')
+        if sum(entry.file_size for entry in entries) > MAX_RESTORED_BYTES:
+            raise ValueError('Backup uncompressed size exceeds safety limit')
         manifest = json.loads(z.read('manifest.json'))
-        if manifest.get('version') != 1 or 'tracker.db' not in manifest.get('files', {}):
+        if not isinstance(manifest, dict):
             raise ValueError('Invalid backup manifest')
-        expected = set(manifest['files']) | {'manifest.json'}
-        if set(z.namelist()) != expected:
+        files = manifest.get('files')
+        if (
+            manifest.get('version') != 1
+            or not isinstance(files, dict)
+            or 'tracker.db' not in files
+        ):
+            raise ValueError('Invalid backup manifest')
+        expected = set(files) | {'manifest.json'}
+        if set(names) != expected:
             raise ValueError('Unexpected or missing archive entries')
-        for name, info in manifest['files'].items():
-            if name.startswith('/') or '..' in Path(name).parts or '\\' in name:
+        entry_by_name = {entry.filename: entry for entry in entries}
+        for name, info in files.items():
+            if (
+                not isinstance(name, str)
+                or name.startswith('/')
+                or '..' in Path(name).parts
+                or '\\' in name
+                or name in ('.', '..', 'manifest.json')
+                or not (name == 'tracker.db' or name.startswith('uploads/'))
+                or name.endswith('/')
+            ):
                 raise ValueError('Unsafe archive path')
+            if (
+                not isinstance(info, dict)
+                or type(info.get('bytes')) is not int
+                or info['bytes'] < 0
+                or entry_by_name[name].file_size != info['bytes']
+                or not isinstance(info.get('sha256'), str)
+                or len(info['sha256']) != 64
+            ):
+                raise ValueError(f'Invalid backup file metadata: {name}')
             h = hashlib.sha256()
             count = 0
             with z.open(name) as stream:
