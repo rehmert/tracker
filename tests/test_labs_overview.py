@@ -604,3 +604,47 @@ def test_500_analyte_history_html_and_csv_are_read_only(lab_overview_client):
 
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(LabResult)) == before
+
+
+def test_501_history_csv_source_ids_notes_and_safe_filename(lab_overview_client):
+    import csv
+    import io
+    from app.routers import labs as lab_router
+
+    assert lab_router.analyte_export_filename501("IGF-1") == "lab-igf-1-history.csv"
+    assert lab_router.analyte_export_filename501("../../...") == "lab-analyte-history.csv"
+    assert lab_router.analyte_export_filename501("TSH\\r\\nunsafe.csv") == "lab-tsh-r-nunsafe-csv-history.csv"
+    assert len(lab_router.analyte_export_filename501("A" * 100)) <= 64
+
+    client, engine = lab_overview_client
+    with Session(engine) as db:
+        report = LabReport(drawn_on=date(2026, 11, 8), lab_name="Lab")
+        report.results = [
+            LabResult(analyte="TSH", value=1.25, unit="mIU/L",
+                      note="=HYPERLINK(unsafe)")
+        ]
+        db.add(report)
+        db.commit()
+        rid, result_id = report.id, report.results[0].id
+        before = db.scalar(select(func.count()).select_from(LabResult))
+
+    response = client.get("/labs/trends/tsh/export.csv")
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == (
+        'attachment; filename="lab-tsh-history.csv"'
+    )
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.content.startswith(bytes.fromhex("efbbbf"))
+    assert b"\\r\\n" in response.content
+    rows = list(csv.DictReader(io.StringIO(
+        response.content.decode("utf-8-sig")
+    )))
+    assert len(rows) == 1
+    assert rows[0]["report_id"] == str(rid)
+    assert rows[0]["result_id"] == str(result_id)
+    assert rows[0]["result_note"] == "'=HYPERLINK(unsafe)"
+    assert rows[0]["recorded_value"] == "1.25"
+    assert rows[0]["difference_from_previous"] == ""
+
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(LabResult)) == before
