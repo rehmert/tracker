@@ -7,6 +7,8 @@ import sqlite3
 from contextlib import closing
 from copy import deepcopy
 
+import pytest
+
 from app import config, session_auth385 as auth, secondary_preview430 as gateway
 from scripts.secondary_integration440_support import (
     FEATURES, browser, _hidden, _login, _row, _counts,
@@ -51,6 +53,15 @@ def test_authenticated_readiness_matches_every_runtime_flag(browser, monkeypatch
         if type(uid) is not int or uid != 2:
             raise PermissionError("Unexpected workspace identity")
         return deepcopy(private_report["result"])
+
+    # The test-only return value is bound to the authenticated user and is
+    # immutable across GETs; a modified copy cannot poison later requests.
+    with pytest.raises(PermissionError):
+        stable_worker_report(3)
+    snapshot_copy = stable_worker_report(2)
+    snapshot_copy["counts"].clear()
+    assert stable_worker_report(2)["counts"] == private_report["result"]["counts"]
+
     assert page.headers["cache-control"] == "no-store"
     assert 'href="/secondary/readiness"' in client.get(
         "/secondary/overview"
