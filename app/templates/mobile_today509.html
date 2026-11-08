@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Today{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/css/tracker-mobile-daily509.css?v=510">
-<script defer src="/static/js/tracker-mobile-daily509.js?v=509"></script>
+<link rel="stylesheet" href="/static/css/tracker-mobile-daily509.css?v=511">
+<script defer src="/static/js/tracker-mobile-daily509.js?v=511"></script>
 
 <div class="tracker-daily509" data-mobile-daily509>
   <header class="tracker-daily-hero">
@@ -21,6 +21,31 @@
     <a href="/doses#quick-dose-entry">+ Log Dose</a>
     <a href="/quick-entry">More Actions</a>
   </nav>
+  <nav class="tracker-daily-jumps511" aria-label="Jump to daily activity">
+    <a href="#mobile-quick-vitals">Record vitals</a>
+    <a href="#mobile-schedule-heading">Today's doses</a>
+    <a href="#mobile-upcoming-heading">Upcoming</a>
+    <a href="#mobile-recent-heading">Dose history</a>
+  </nav>
+
+  {% if recent_shortcuts %}
+  <section class="tracker-daily-section tracker-daily-reuse511" aria-labelledby="mobile-reuse-heading511">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-reuse-heading511">Prepare a recent dose</h2>
+      <a href="/doses#quick-dose-entry">Dose log</a>
+    </div>
+    <p class="tracker-daily-note">Your last eligible entry for each compound. Opens a draft for review; no dose is recorded.</p>
+    <div class="tracker-daily-reuse-list511">
+      {% for item in recent_shortcuts %}
+      <a href="/doses?repeat_from={{ item.id }}#quick-dose-entry">
+        <strong>{{ item.name }}</strong>
+        <small>{{ item.amount|num }} {{ item.unit }} · {{ item.vial_name }}</small>
+        <span>Prepare similar</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   <section class="tracker-daily-section" aria-labelledby="mobile-latest-heading">
     <div class="tracker-daily-heading">
@@ -66,6 +91,7 @@
         <span>When</span>
         <input type="datetime-local" name="measured_at" value="{{ now }}" required>
       </label>
+      <button type="button" class="tracker-daily-now511" data-daily-now511>Use current time</button>
       <label class="tracker-daily-input tracker-daily-weight">
         <span>Weight</span>
         <input type="number" name="weight" id="mobile-weight" step="any" min="0" inputmode="decimal" autocomplete="off" placeholder="Enter weight">
@@ -179,6 +205,22 @@
       </li>
       {% endfor %}
     </ul>
+    {% if summary.upcoming|length > 8 %}
+    <details class="tracker-daily-more511">
+      <summary>Show {{ summary.upcoming|length - 8 }} more upcoming entries</summary>
+      <ul class="tracker-daily-list tracker-daily-upcoming">
+      {% for day, item in summary.upcoming[8:] %}
+        <li>
+          <div>
+            <strong>{{ day.strftime('%a %b %-d') }} · {{ item.name }}</strong>
+            <span>{{ item.dose }} · {{ item.protocol }}</span>
+          </div>
+          <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review</a>
+        </li>
+      {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
     {% else %}
     <p class="tracker-daily-empty">Nothing projected for the coming week.</p>
     {% endif %}
