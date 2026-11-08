@@ -191,12 +191,12 @@
     </div>
     {% if recent_vitals %}
     <ul class="tracker-daily-list">
-      {% for reading in recent_vitals %}
+      {% for reading, display_weight in recent_vitals %}
       <li>
         <div>
           <strong>{{ reading.measured_at|dt }}</strong>
           <span>
-            {% if reading.weight_kg is not none %}{{ reading.weight_kg|num }} kg{% endif %}
+            {% if display_weight is not none %}{{ display_weight|n1 }} {{ unit }}{% endif %}
             {% if reading.systolic is not none %} · BP {{ reading.systolic }}/{{ reading.diastolic }}{% endif %}
             {% if reading.pulse_bpm is not none %} · Pulse {{ reading.pulse_bpm }}{% endif %}
           </span>
