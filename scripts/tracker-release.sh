@@ -90,6 +90,13 @@ from pathlib import Path
 assert Path(app.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve())
 print('PASS: Isolated source import')
 PY
+ if [[ "$INSTANCE" == DEV ]]; then
+  echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
+  timeout 300 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+  echo "=== BROWSER GATE PASSED ==="
+ else
+  echo "=== PROD: browser qualification is required on DEV before main promotion ==="
+ fi
  echo "=== COMPLETE REGRESSION SUITE ==="
  echo "Critical safety tests are included in full-suite collection."
  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings --durations=20 tests \
@@ -98,12 +105,6 @@ PY
   --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
   --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
  echo "=== ALL BACKEND TESTS PASSED ==="
- if [[ "$INSTANCE" == DEV ]]; then
-  echo "=== ISOLATED BROWSER QUALIFICATION ==="
-  timeout 300 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
- else
-  echo "=== PROD: browser qualification is required on DEV before main promotion ==="
- fi
  cd "$APP"
  unset TRACKER_DATA_DIR PYTHONPATH
  [[ -z "$(g status --porcelain)" && "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Live checkout changed"
