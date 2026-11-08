@@ -37,6 +37,8 @@ def theme_bytes() -> tuple[bytes, str]:
         if len(data) > MAX_THEME_BYTES:
             raise ValueError("Theme exceeds size limit")
         data.decode("utf-8", errors="strict")
+        if not data.strip():
+            raise ValueError("Empty theme override")
         return data, "override"
     except (OSError, ValueError, UnicodeDecodeError):
         return DEFAULT_FILE.read_bytes(), "default"
