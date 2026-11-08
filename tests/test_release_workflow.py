@@ -101,3 +101,30 @@ def test_release_streams_logs_by_default_and_supports_detach():
     assert 'tail -n +1 --follow=descriptor --pid="$pid" "$log"' in source
     assert 'follow_deployment_log "$UNIT" "$RUN/deployment.log"' in source
     assert "=== DEPLOYMENT FAILED" in source
+
+
+def test_release_498_browser_gate_is_isolated_and_dev_only():
+    source = SCRIPT.read_text(encoding="utf-8")
+    runner = ROOT / "scripts/tracker-browser-qualify.sh"
+    shell = runner.read_text(encoding="utf-8")
+
+    syntax = subprocess.run(
+        ["bash", "-n", str(runner)],
+        text=True, capture_output=True, check=False,
+    )
+    assert syntax.returncode == 0, syntax.stderr
+
+    assert 'if [[ "$INSTANCE" == DEV ]]; then' in source
+    assert 'timeout 300 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"' in source
+    assert "ISOLATED BROWSER QUALIFICATION" in source
+
+    # The candidate, not a running installed Tracker, must be exercised.
+    assert '[[ "$SOURCE" != /opt/tracker' in shell
+    assert 'TRACKER_DATA_DIR="$DATA"' in shell
+    assert 'TRACKER_TEST_URL="$URL"' in shell
+    assert "env -i" in shell
+    assert '127.0.0.1' in shell
+    assert 'tests/browser/test_navigation.py' in shell
+    assert 'tests/browser/test_labs_overview.py' in shell
+    assert 'tests/browser/test_food_search_ui.py' in shell
+    assert 'trap cleanup EXIT' in shell
