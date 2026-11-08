@@ -50,7 +50,12 @@ def saved_foods(db_engine=None):
     init_food_schema(selected_engine)
     with selected_engine.connect() as db:
         favorites = db.execute(text("""
-            SELECT p.id, p.name, p.serving_description, p.nutrients,
+            SELECT p.id, p.name, p.barcode, p.serving_description, p.nutrients,
+                (SELECT COUNT(*) FROM tracker_food_products other
+                 WHERE lower(other.name)=lower(p.name)
+                   AND COALESCE(other.barcode,'')=COALESCE(p.barcode,'')
+                   AND lower(other.serving_description)=lower(p.serving_description)
+                ) AS saved_versions,
                 COALESCE(
                     (SELECT e.meal FROM tracker_food_entries e
                      WHERE e.product_id=p.id
@@ -70,7 +75,12 @@ def saved_foods(db_engine=None):
         """)).mappings().all()
 
         recent = db.execute(text("""
-            SELECT p.id, p.name, p.serving_description, p.nutrients,
+            SELECT p.id, p.name, p.barcode, p.serving_description, p.nutrients,
+                   (SELECT COUNT(*) FROM tracker_food_products other
+                    WHERE lower(other.name)=lower(p.name)
+                      AND COALESCE(other.barcode,'')=COALESCE(p.barcode,'')
+                      AND lower(other.serving_description)=lower(p.serving_description)
+                   ) AS saved_versions,
                    e.meal, e.servings
             FROM tracker_food_entries e
             JOIN tracker_food_products p ON p.id=e.product_id
