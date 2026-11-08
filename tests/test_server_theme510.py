@@ -3,6 +3,7 @@
 The app/test DB is already isolated by tests/conftest.py.
 """
 from pathlib import Path
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -29,7 +30,10 @@ def test_theme_is_the_last_global_stylesheet_and_shared_with_mobile():
     assert 'background:var(--teal,#1265ad)' in mobile
     assert 'color:var(--teal-ink,#fff)' in mobile
     assert 'outline:3px solid var(--tracker-brand-blue,#1686df)' in mobile
-    assert 'tracker-mobile-daily509.css?v=510' in (config.BASE_DIR / 'templates' / 'mobile_today509.html').read_text()
+    # The mobile CSS version changes when newer releases update that asset.
+    # Assert a versioned URL, rather than pinning a previous release's number.
+    today_html = (config.BASE_DIR / "templates" / "mobile_today509.html").read_text()
+    assert re.search(r'/static/css/tracker-mobile-daily509\.css\?v=[\w.-]+', today_html)
 
 
 def test_missing_custom_theme_uses_blue_light_and_dark_defaults(client, tmp_path, monkeypatch):
