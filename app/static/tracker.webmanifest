@@ -3,7 +3,7 @@
   "name": "Tracker",
   "short_name": "Tracker",
   "description": "Private protocol, dose, inventory and health tracking",
-  "start_url": "/",
+  "start_url": "/mobile",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -29,6 +29,11 @@
     }
   ],
   "shortcuts": [
+    {
+      "name": "Today",
+      "short_name": "Today",
+      "url": "/mobile"
+    },
     {
       "name": "Quick Entry",
       "short_name": "Add",
