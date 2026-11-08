@@ -152,5 +152,3 @@ def test_full_private_browser_workflow_with_audits_and_no_cross_account_data(bro
         page = client.get(route)
         assert page.status_code == 200
         assert secret not in page.text
-
-
