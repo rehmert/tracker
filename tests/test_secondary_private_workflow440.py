@@ -95,6 +95,7 @@ def test_full_private_browser_workflow_with_audits_and_no_cross_account_data(bro
             "status": "in_use",
             "reason": "Physical vial label verified",
         },
+        page=correction_page,
     )
 
     for route, expected in (
