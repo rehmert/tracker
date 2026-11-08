@@ -3,6 +3,7 @@
 The standard tests/conftest.py creates a separate disposable SQLite database.
 """
 from binascii import crc32
+import json
 from datetime import datetime
 from pathlib import Path
 import struct
@@ -15,7 +16,6 @@ from sqlalchemy import func, select
 from app.db import SessionLocal
 from app.main import app
 from app.models import Compound, DoseLog, Vial, VitalReading
-from app.routers.mobile509 import manifest_data
 
 ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / "app/static"
@@ -28,8 +28,8 @@ def client():
 
 
 def test_509_development_and_production_have_distinct_install_identities():
-    dev = manifest_data("DEV")
-    prod = manifest_data("PROD")
+    dev = json.loads((STATIC / "tracker-dev.webmanifest").read_text())
+    prod = json.loads((STATIC / "tracker.webmanifest").read_text())
     assert dev["name"] == dev["short_name"] == "Tracker DEV"
     assert prod["name"] == prod["short_name"] == "Tracker"
     assert dev["theme_color"] != prod["theme_color"]
@@ -49,22 +49,29 @@ def test_509_development_and_production_have_distinct_install_identities():
         assert (STATIC / icon["src"].removeprefix("/static/")).is_file()
 
 
-def test_509_dynamic_manifest_is_correct_and_not_cached(client, monkeypatch):
-    with monkeypatch.context() as patch:
-        patch.setenv("TRACKER_INSTANCE", "DEV")
-        dev = client.get("/tracker.webmanifest")
-        assert dev.status_code == 200
-        assert "application/manifest+json" in dev.headers["content-type"]
-        assert dev.headers.get("cache-control") == "private, no-store"
-        assert dev.json()["name"] == "Tracker DEV"
-        assert dev.json()["icons"][0]["src"].endswith("-dev-192.png")
-    with monkeypatch.context() as patch:
-        patch.setenv("TRACKER_INSTANCE", "PROD")
-        prod = client.get("/tracker.webmanifest")
-        assert prod.status_code == 200
-        assert prod.json()["name"] == "Tracker"
-        assert prod.json()["icons"][0]["src"].endswith("-192.png")
-        assert "-dev-" not in prod.json()["icons"][0]["src"]
+def test_509_static_manifests_are_accessible_without_session_cookie(client):
+    # Mounted static files are not subject to the application's global
+    # authentication dependency. Chrome must be able to fetch installation
+    # metadata even when the user has not signed in.
+    for path, name in (
+        ("/static/tracker-dev.webmanifest", "Tracker DEV"),
+        ("/static/tracker.webmanifest", "Tracker"),
+    ):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert response.json()["name"] == name
+        assert response.json()["start_url"] == "/mobile"
+        assert response.headers.get("location") is None
+
+
+def test_509_no_authenticated_manifest_route_regression():
+    html = (ROOT / "app/templates/base.html").read_text()
+    router = (ROOT / "app/routers/mobile509.py").read_text()
+    assert html.count('rel="manifest"') == 1
+    assert "/static/tracker-dev.webmanifest" in html
+    assert "/static/tracker.webmanifest" in html
+    assert 'href="/tracker.webmanifest"' not in html
+    assert '@router.get("/tracker.webmanifest"' not in router
 
 
 def test_509_dev_android_pngs_are_real_images_not_placeholder_headers():
@@ -198,7 +205,8 @@ def test_509_mobile_assets_preserve_existing_scope_and_explicit_submission():
     css = (STATIC / "css/tracker-mobile-daily509.css").read_text()
     base = (ROOT / "app/templates/base.html").read_text()
     assert base.count('rel="manifest"') == 1
-    assert 'href="/tracker.webmanifest"' in base
+    assert "/static/tracker-dev.webmanifest" in base
+    assert "/static/tracker.webmanifest" in base
     assert 'href="/mobile"' in base
     assert 'tracker-mobile-daily509' in html
     assert 'data-daily-mode="weight"' in html
