@@ -2,6 +2,7 @@
 """Read-only SQLite database browser for Tracker."""
 
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -330,7 +331,9 @@ def sqlite_viewer_export(table: str, q: str = ""):
     if len(q) > MAX_SEARCH_LENGTH:
         raise HTTPException(400, "Search text too long")
 
-    with _connection() as db:
+    # sqlite3's context manager commits/rolls back but does not close.
+    # Explicit closure prevents read-only handle leakage after exports.
+    with closing(_connection()) as db:
         if table not in _tables(db):
             raise HTTPException(404, "Unknown table")
 
@@ -395,7 +398,7 @@ def sqlite_viewer_export(table: str, q: str = ""):
                 value = _display_value(row[name])
 
                 # Prevent spreadsheet formula execution.
-                if value and value[0] in "=+-@":
+                if value and value.lstrip().startswith(("=", "+", "-", "@")):
                     value = "'" + value
 
                 values.append(value)
