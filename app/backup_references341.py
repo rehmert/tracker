@@ -1,12 +1,14 @@
 """Verify that stored SQLite attachment references exist in the archive."""
 import sqlite3
+from contextlib import closing
 
 _TABLES=(('coas','coa'),('lab_reports','labs'))
 
 
 def required_attachments(snapshot):
     required=set()
-    with sqlite3.connect(snapshot) as db:
+    with closing(sqlite3.connect(snapshot)) as db:
+        db.execute('PRAGMA query_only=ON')
         for table,folder in _TABLES:
             exists=db.execute(
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
