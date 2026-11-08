@@ -1,18 +1,17 @@
 """Release 380: bounded, read-only food-name search via Open Food Facts."""
 
-import json
 import re
 from math import isfinite
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import Request as URLRequest, urlopen
 
 from fastapi import APIRouter, HTTPException
+
+from ..off_lookup494 import OFFFailure494, fetch_json494
 
 router = APIRouter()
 
 BASE_URL = "https://world.openfoodfacts.org/cgi/search.pl"
-MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MODERN_URL = "https://search.openfoodfacts.org/search"
 MAX_RESULTS = 15
 
 
@@ -123,43 +122,70 @@ def search_food_name(query):
         ),
     })
 
-    request = URLRequest(
-        BASE_URL + "?" + parameters,
-        headers={
-            "User-Agent": (
-                "TrackerFoodJournal/0.1 "
-                "(personal-use; openfoodfacts.org)"
-            ),
-            "Accept": "application/json",
-        },
-    )
+    legacy_url = BASE_URL + "?" + parameters
 
     try:
-        with urlopen(request, timeout=8) as response:
-            raw = response.read(MAX_RESPONSE_BYTES + 1)
-
-        if len(raw) > MAX_RESPONSE_BYTES:
-            raise HTTPException(
-                502,
-                "Food database returned too much data.",
-            )
-
-        payload = json.loads(raw)
-        if not isinstance(payload, dict):
-            raise ValueError("Invalid database response")
-
-    except HTTPException:
-        raise
-    except (HTTPError, URLError, TimeoutError, OSError, ValueError):
-        raise HTTPException(
-            503,
-            "Food-name search is temporarily unavailable. "
-            "Try a barcode or manual entry.",
+        # The legacy search still covers more recently added products.
+        # Never retry its 503 immediately: the modern service is a better
+        # fallback and has an independent upstream infrastructure.
+        payload = fetch_json494(
+            legacy_url, "name-legacy", timeout=7, ttl=900, retry=False,
         )
+        products = normalize_results(payload)
+    except OFFFailure494 as legacy_failure:
+        modern_parameters = urlencode({
+            "q": query,
+            "page_size": str(MAX_RESULTS),
+            "page": "1",
+            # The search index may not hold nutrition data; users fetch
+            # complete serving details via the existing barcode endpoint.
+            "fields": "code,product_name,brands,serving_size",
+        })
+        try:
+            modern = fetch_json494(
+                MODERN_URL + "?" + modern_parameters,
+                "name-modern", timeout=7, ttl=900, retry=True,
+            )
+            hits = modern.get("hits")
+            if not isinstance(hits, list):
+                raise OFFFailure494("bad_search_response")
+            # Search-a-licious returns product fields directly in hits.
+            # Accept an Elasticsearch-style wrapper defensively as well.
+            products = normalize_results({
+                "products": [
+                    item.get("_source", item)
+                    if isinstance(item, dict) else item
+                    for item in hits
+                ]
+            })
+        except OFFFailure494 as modern_failure:
+            limited = (
+                legacy_failure.reason in ("rate_limited", "local_limit", "cooldown")
+                and modern_failure.reason in ("rate_limited", "local_limit", "cooldown")
+            )
+            if limited:
+                delay = max(
+                    1,
+                    min(120, max(
+                        legacy_failure.retry_after or 1,
+                        modern_failure.retry_after or 1,
+                    )),
+                )
+                raise HTTPException(
+                    429,
+                    "Food search is busy. Please retry in a minute, "
+                    "or enter the food manually.",
+                    headers={"Retry-After": str(delay)},
+                ) from None
+            raise HTTPException(
+                503,
+                "Open Food Facts search is temporarily unavailable. "
+                "Try a barcode or manual entry.",
+            ) from None
 
     return {
         "query": query,
-        "products": normalize_results(payload),
+        "products": products,
         "source": "Open Food Facts",
     }
 
