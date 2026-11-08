@@ -18,17 +18,15 @@
   <link rel="stylesheet" href="/static/css/tracker-instance.css?v=20261101">
 
   <!-- Tracker application identity -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <link rel="icon"
         type="image/svg+xml"
         href="/static/tracker-icon.svg?v=34.27">
-  <link rel="manifest"
-        href="/static/tracker.webmanifest">
+  <link rel="manifest" href="/static/tracker.webmanifest">
   <meta name="theme-color" content="#1265ad">
-
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f7fa">
-  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   {% set instance = tracker_instance_label() %}
   <title>{% if instance %}[{{ instance }}] {% endif %}{% block title %}Home{% endblock %} · Tracker</title>
   <link rel="stylesheet" href="/static/app.css?v=sidebar-scroll-20261031">
@@ -82,6 +80,9 @@
   <!-- Batch 38: Compact page spacing (last CSS override) -->
   <link rel="stylesheet"
         href="/static/css/tracker-compact-layout.css?v=batch39">
+  <!-- Release 507: Android-first app shell; layered after legacy layout rules. -->
+  <link rel="stylesheet" href="/static/css/tracker-mobile-shell507.css?v=507">
+  <script src="/static/js/tracker-mobile-shell507.js?v=507" defer></script>
 </head>
 <body>
 <a class="tracker-skip-link" href="#main-content">Skip to Content</a>
@@ -120,6 +121,27 @@
   </nav>
   <main id="main-content" tabindex="-1">
     <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</span><a href="/" aria-label="Overview">Overview</a></div>
+    <nav class="tracker-mobile-dock" aria-label="Mobile quick navigation">
+      <a href="/" {% if path == '/' %}aria-current="page"{% endif %}>
+        <span class="tracker-mobile-dock-icon" aria-hidden="true">⌂</span><span>Home</span>
+      </a>
+      <a href="/activity" {% if path.startswith('/activity') %}aria-current="page"{% endif %}>
+        <span class="tracker-mobile-dock-icon" aria-hidden="true">◷</span><span>Today</span>
+      </a>
+      <a href="/quick-entry" {% if path.startswith('/quick-entry') %}aria-current="page"{% endif %}>
+        <span class="tracker-mobile-dock-icon" aria-hidden="true">＋</span><span>Add</span>
+      </a>
+      <a href="/doses" {% if path.startswith('/doses') %}aria-current="page"{% endif %}>
+        <span class="tracker-mobile-dock-icon" aria-hidden="true">✓</span><span>Doses</span>
+      </a>
+      <a href="/vitals" {% if path.startswith('/vitals') %}aria-current="page"{% endif %}>
+        <span class="tracker-mobile-dock-icon" aria-hidden="true">♡</span><span>Vitals</span>
+      </a>
+      <button type="button" id="tracker-mobile-more" aria-label="More pages"
+              aria-controls="app-sidebar" aria-expanded="false">
+        <span class="tracker-mobile-dock-icon" aria-hidden="true">☷</span><span>More</span>
+      </button>
+    </nav>
     <div class="workspace-toolbar" aria-label="Workspace tools">
       {% if tracker_session_login_enabled() %}
       <a href="/account/security"
