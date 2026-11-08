@@ -6,7 +6,6 @@ There are no mobile-specific tables, caches or background writes.
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -18,59 +17,6 @@ from ..templating import render
 from ..today import schedule_summary
 
 router = APIRouter()
-
-
-def manifest_data(instance: str) -> dict:
-    """Keep DEV and PROD app icons/names distinct without changing app origins."""
-    dev = instance == "DEV"
-    suffix = "-dev" if dev else ""
-    name = "Tracker DEV" if dev else "Tracker"
-    return {
-        "id": "/",
-        "name": name,
-        "short_name": name,
-        "description": "Personal dose, vitals, protocol and inventory tracking",
-        "start_url": "/mobile",
-        "scope": "/",
-        "display": "standalone",
-        "background_color": "#ffffff",
-        "theme_color": "#a56212" if dev else "#1265ad",
-        "icons": [
-            {
-                "src": f"/static/tracker-icon{suffix}-192.png",
-                "sizes": "192x192",
-                "type": "image/png",
-                "purpose": "any",
-            },
-            {
-                "src": f"/static/tracker-icon{suffix}-512.png",
-                "sizes": "512x512",
-                "type": "image/png",
-                "purpose": "any",
-            },
-            {
-                "src": f"/static/tracker-icon{suffix}.svg",
-                "sizes": "any",
-                "type": "image/svg+xml",
-                "purpose": "any",
-            },
-        ],
-        "shortcuts": [
-            {"name": "Today", "short_name": "Today", "url": "/mobile"},
-            {"name": "Quick Entry", "short_name": "Add", "url": "/quick-entry"},
-            {"name": "Dose Log", "short_name": "Doses", "url": "/doses"},
-            {"name": "Vitals", "short_name": "Vitals", "url": "/vitals"},
-        ],
-    }
-
-
-@router.get("/tracker.webmanifest", include_in_schema=False)
-def mobile_manifest():
-    return JSONResponse(
-        content=manifest_data(config.instance_label()),
-        media_type="application/manifest+json",
-        headers={"Cache-Control": "private, no-store"},
-    )
 
 
 @router.get("/mobile", include_in_schema=False)
