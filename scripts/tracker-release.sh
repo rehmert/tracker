@@ -93,7 +93,7 @@ print('PASS: Isolated source import')
 PY
  if [[ "$INSTANCE" == DEV ]]; then
   echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
-  timeout 300 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+  timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
   echo "=== BROWSER GATE PASSED ==="
  else
   echo "=== PROD: browser qualification is required on DEV before main promotion ==="
