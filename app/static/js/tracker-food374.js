@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(data.name)$('food-name').value=data.name;if(data.serving_description)$('food-serving').value=data.serving_description;
   for(const [k,v] of Object.entries(data.nutrients||{})){let e=$('food-nutrient-'+k);if(e&&v!==null&&Number.isFinite(Number(v)))e.value=v;}
   if(data.source)$('food-source').value=data.source;
+  $('food-entry-form')?.dispatchEvent(new Event('food:nutrition-loaded'));
  }
  async function lookup(){let b=barcode.value.trim();if(!/^\d{8,14}$/.test(b)){status.textContent='Enter an 8–14 digit barcode.';return;}
   status.textContent='Looking up barcode…';try{const r=await fetch('/food/barcode/'+encodeURIComponent(b));const data=await r.json();if(!r.ok)throw Error(data.detail||'Lookup failed');
