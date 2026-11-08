@@ -4,6 +4,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: tracker-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -12,8 +16,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install Python dependencies
@@ -25,7 +29,7 @@ jobs:
         run: .venv/bin/python -m compileall -q app scripts tests
       - name: Full isolated non-browser regressions
         run: |
-          .venv/bin/python -m pytest -q --tb=short --maxfail=1 \
+          .venv/bin/python -m pytest -q --tb=short \
             -n 4 --dist=loadfile tests \
             --ignore=tests/browser \
             --ignore=tests/test_bulk_vial_browser.py \
@@ -40,8 +44,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
       - name: Install isolated browser QA environment
