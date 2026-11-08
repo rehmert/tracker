@@ -131,6 +131,17 @@ def test_release_498_browser_gate_is_isolated_and_dev_only():
     assert 'tests/browser/test_food_labs_mutations500.py' in shell
     assert 'TRACKER_TEST_ISOLATED=1' in shell
     assert 'TRACKER_BROWSER_QA_DATA_DIR="$DATA"' in shell
+    assert 'TRACKER_TEST_HTTPS_URL="$HTTPS_URL"' in shell
+    assert 'ISOLATED_HTTPS_PROXY_READY=YES' in shell
+    assert 'scripts/tracker-tls-proxy501.py' in shell
+    assert 'tests/browser/test_labs_native_https501.py' in shell
+    assert 'BROWSER_PYTEST_EXIT=$BROWSER_EXIT' in shell
+    assert 'BROWSER_TEST_LOG=$TEST_LOG' in shell
+    assert 'rm -f "$ROOT/qa-private-key.pem"' in shell
+    assert source.index('ISOLATED BROWSER QUALIFICATION (FIRST)') < (
+        source.index('=== COMPLETE REGRESSION SUITE ===')
+    )
+
     assert 'ISOLATED_HTMX_VENDOR=VERIFIED' in shell
     assert 'install -m 0644 "$VENDOR_SRC" "$VENDOR_DST"' in shell
     assert 'cmp -s "$VENDOR_SRC" "$VENDOR_DST"' in shell
