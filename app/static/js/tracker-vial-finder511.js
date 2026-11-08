@@ -71,9 +71,10 @@
         renderMatches();
         return;
       }
-      if (event.key === "Enter" && shown.length) {
-        event.preventDefault(); // Never allow Enter in search to submit a dose.
-        choose(shown[0].id);
+      if (event.key === "Enter") {
+        // Never submit a dose from the search, even when no vials match.
+        event.preventDefault();
+        if (shown.length) choose(shown[0].id);
       }
     });
     form.querySelectorAll("[data-vial-choice511]").forEach(button => {
