@@ -42,8 +42,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     skip_host=True, skip_accept_encoding=True,
                 )
                 for key, value in self.headers.items():
-                    if key.lower() not in HOP and key.lower() != "content-length":
+                    if key.lower() not in HOP and key.lower() not in (
+                        "content-length", "x-forwarded-proto",
+                        "x-forwarded-host", "x-forwarded-for",
+                    ):
                         conn.putheader(key, value)
+                # TLS is terminated here; never trust caller-supplied proxy
+                # metadata. Uvicorn trusts this loopback peer for scheme.
+                conn.putheader("X-Forwarded-Proto", "https")
                 conn.putheader("Connection", "close")
                 if body is not None:
                     conn.putheader("Content-Length", str(len(body)))
@@ -79,8 +85,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
     do_DELETE = proxy
 
     def log_message(self, format, *args):
-        # Never log submitted form bodies, tokens, or cookie headers.
-        print("TLS_QA_REQUEST " + (format % args), file=sys.stderr)
+        # Never log request paths, tokens, cookies, or form payloads.
+        return
 
 
 def main():
