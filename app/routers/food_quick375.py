@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 
 from ..db import engine
-from .food import init_food_schema, to_float
+from .food import init_food_schema, to_float, require_supported_food_day
 
 from ..food_storage_guard391 import require_food_storage391
 from ..food_engine392 import get_food_engine392
@@ -21,9 +21,10 @@ MEALS = frozenset(("Breakfast", "Lunch", "Dinner", "Snack"))
 
 def selected_day(raw):
     try:
-        return date.fromisoformat(str(raw)).isoformat()
+        chosen = date.fromisoformat(str(raw))
     except (TypeError, ValueError):
-        raise HTTPException(422, "Invalid food journal date")
+        raise HTTPException(422, "Invalid food journal date") from None
+    return require_supported_food_day(chosen).isoformat()
 
 
 def food_redirect(day, section=None):
