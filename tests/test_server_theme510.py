@@ -73,7 +73,7 @@ def test_unsafe_or_oversized_override_falls_back_safely(client, tmp_path, monkey
     monkeypatch.setattr(theme510, "THEME_FILE", target)
     target.write_bytes(b"\xff")
     assert client.get("/ui/theme.css").headers["x-tracker-theme-source"] == "default"
-    target.write_text("   \\n", encoding="utf-8")
+    target.write_text("   \n", encoding="utf-8")
     assert client.get("/ui/theme.css").headers["x-tracker-theme-source"] == "default"
     target.write_bytes(b" " * (theme510.MAX_THEME_BYTES + 1))
     assert client.get("/ui/theme.css").headers["x-tracker-theme-source"] == "default"
