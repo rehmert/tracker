@@ -88,7 +88,7 @@ case "$MODE" in
       exit 2
     }
     echo "=== EXPERIMENTAL PARALLEL TESTING: $WORKERS WORKERS ==="
-    echo "=== GUARDED DEPLOYMENTS REMAIN SERIAL ==="
+    echo "=== GUARDED DEPLOYMENTS USE THEIR OWN BOUNDED WORKER POLICY ==="
     exec "$PY" -m pytest \
       "${COMMON[@]}" \
       -n "$WORKERS" --dist=loadfile \
