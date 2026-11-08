@@ -61,29 +61,24 @@ def test_search_result_includes_coverage():
 
 
 def test_external_lookup_is_still_read_only(monkeypatch):
-    class FakeResponse:
-        def __enter__(self):
-            return self
+    calls = []
 
-        def __exit__(self, *args):
-            return False
-
-        def read(self, size=-1):
-            return json.dumps({
-                "products": [
-                    {
-                        "code": "1234567890123",
-                        "product_name": "Test Product",
-                        "nutriments": {
-                            "energy-kcal_100g": 150,
-                        },
-                    }
-                ]
-            }).encode()
+    def fake_fetch(url, kind, **kwargs):
+        calls.append((url, kind))
+        return {
+            "products": [{
+                "code": "1234567890123",
+                "product_name": "Test Product",
+                "nutriments": {
+                    "energy-kcal_100g": 150,
+                },
+            }]
+        }
 
     monkeypatch.setattr(
-        food_search380, "urlopen",
-        lambda request, timeout: FakeResponse(),
+        food_search380,
+        "fetch_json494",
+        fake_fetch,
     )
 
     app = FastAPI()
@@ -98,3 +93,9 @@ def test_external_lookup_is_still_read_only(monkeypatch):
     item = result.json()["products"][0]
     assert item["macro_100g"]["energy"] == 150
     assert item["nutrition_available"] is True
+
+    assert len(calls) == 1
+    assert calls[0][1] == "name-legacy"
+    assert calls[0][0].startswith(
+        "https://world.openfoodfacts.org/cgi/search.pl?"
+    )

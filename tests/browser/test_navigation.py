@@ -75,7 +75,7 @@ def test_dashboard_above_favorites(page):
     result = tab.evaluate("""
     () => {
       const dashboard = document.querySelector(
-        '#app-sidebar > .nav-pinned'
+        '#app-sidebar .nav-scroll > .nav-pinned'
       );
       const favorites = document.querySelector(
         '#nav-favorites'
@@ -89,7 +89,7 @@ def test_dashboard_above_favorites(page):
       }
 
       const nodes = [
-        ...document.querySelector('#app-sidebar').children
+        ...document.querySelector('#app-sidebar .nav-scroll').children
       ];
 
       return (
@@ -241,8 +241,9 @@ def test_page_links_alphabetical(page):
             ".nav-group > li > a"
         ).all_inner_texts()
 
-        assert names == sorted(
-            names,
+        normalized = [name.strip() for name in names]
+        assert normalized == sorted(
+            normalized,
             key=str.casefold,
         )
 

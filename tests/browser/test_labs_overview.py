@@ -88,7 +88,8 @@ def test_outside_range_and_reset(tab):
     assert shown(page) == []
     assert page.locator("#labs-trend-empty").is_visible()
     page.locator("#labs-trend-clear").click()
-    assert shown(page) == ["lab-ferritin", "lab-tsh", "lab-glucose", "lab-igf"]
+    # Reset restores the application's alphabetical default.
+    assert shown(page) == ["lab-ferritin", "lab-glucose", "lab-igf", "lab-tsh"]
     assert not errors, errors
 
 
