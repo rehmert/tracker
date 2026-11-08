@@ -74,6 +74,7 @@ def test_500_food_create_edit_quick_reuse_and_delete(page):
         has_text=name
     )).to_have_count(1)
 
+    tab.locator("#food-recorded").evaluate("(node) => { node.open = true; }")
     row = tab.locator("#food-recorded .food-log-row").filter(has_text=name)
     row.locator("details.food377-edit").evaluate(
         "(node) => { node.open = true; }"
@@ -129,7 +130,7 @@ def test_500_lab_report_create_edit_history_export_and_delete(page):
     form.get_by_role("button", name="Save report").click()
 
     report_path = urlsplit(tab.url).path
-    assert re.fullmatch(r"/labs/\\d+", report_path), report_path
+    assert re.fullmatch(r"/labs/\d+", report_path), report_path
     expect(tab.locator("h1")).to_contain_text("Lab report")
     expect(tab.locator("body")).to_contain_text("QA Analyte 500")
 
