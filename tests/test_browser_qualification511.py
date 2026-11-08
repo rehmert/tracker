@@ -47,4 +47,7 @@ def test_511_guarded_release_keeps_backend_and_browser_separate():
     source = RELEASE.read_text(encoding="utf-8")
     assert 'timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh"' in source
     assert "--ignore=tests/browser" in source
+    browser = QUALIFIER.read_text(encoding="utf-8")
+    assert "DISPOSABLE_INVENTORY_FIXTURES=2" in browser
+    assert 'TRACKER_DATA_DIR="$DATA"' in browser
     assert source.index("ISOLATED BROWSER QUALIFICATION") < source.index("COMPLETE REGRESSION SUITE")
