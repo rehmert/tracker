@@ -74,10 +74,29 @@
     const reportCount = document.getElementById('labs-reports-count');
     const reportEmpty = document.getElementById('labs-reports-empty');
     const reportClear = document.getElementById('labs-reports-clear');
+    const reportSort = document.getElementById('labs-reports-sort');
 
     if (reportTable && reportSearch && reportCount && reportEmpty && reportClear) {
       const rows = [...reportTable.querySelectorAll('tbody [data-labs-report-row]')];
+      const initialRows = new Map(rows.map((row, index) => [row, index]));
       function updateReports() {
+        if (reportSort && reportTable.tBodies.length) {
+          const ordered = [...rows].sort((a, b) => {
+            const recent = b.dataset.labReportDate.localeCompare(a.dataset.labReportDate);
+            const name = clean(a.dataset.labReportName).localeCompare(
+              clean(b.dataset.labReportName), undefined, {numeric: true}
+            );
+            const results = Number(b.dataset.labReportResults || 0) -
+              Number(a.dataset.labReportResults || 0);
+            let comparison;
+            if (reportSort.value === 'date-asc') comparison = -recent || name;
+            else if (reportSort.value === 'lab-asc') comparison = name || recent;
+            else if (reportSort.value === 'results-desc') comparison = results || recent;
+            else comparison = recent || name;
+            return comparison || initialRows.get(a) - initialRows.get(b);
+          });
+          for (const row of ordered) reportTable.tBodies[0].appendChild(row);
+        }
         const query = clean(reportSearch.value);
         let visible = 0;
         for (const row of rows) {
@@ -90,11 +109,13 @@
         }
         reportCount.textContent = 'Showing ' + visible + ' of ' + rows.length + ' reports.';
         reportEmpty.hidden = visible !== 0 || rows.length === 0;
-        reportClear.disabled = !query;
+        reportClear.disabled = !query && (!reportSort || reportSort.value === 'date-desc');
       }
       reportSearch.addEventListener('input', updateReports);
+      reportSort?.addEventListener('change', updateReports);
       reportClear.addEventListener('click', () => {
         reportSearch.value = '';
+        if (reportSort) reportSort.value = 'date-desc';
         updateReports();
         reportSearch.focus();
       });
