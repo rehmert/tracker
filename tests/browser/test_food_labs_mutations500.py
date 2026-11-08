@@ -83,7 +83,7 @@ def submit_lab_form500(tab, form_selector):
     assert token, "Browser CSRF token was not issued"
     response = tab.request.post(
         request_url,
-        data=urlencode(submitted["fields"]),
+        data=urlencode([tuple(pair) for pair in submitted["fields"]]),
         headers={
             "Content-Type": "application/x-www-form-urlencoded",
             "X-Tracker-CSRF": token,
