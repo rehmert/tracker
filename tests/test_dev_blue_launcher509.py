@@ -40,7 +40,7 @@ def test_dev_blue_icons_decode_and_use_blue_palette():
     ))
     for size in (192, 512):
         data = (STATIC / f"tracker-icon-dev-blue-{size}.png").read_bytes()
-        assert data.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+        assert data.startswith(b"\x89PNG\r\n\x1a\n")
         assert struct.unpack(">II", data[16:24]) == (size, size)
         assert data[25] == 3  # indexed color
         position = 8
