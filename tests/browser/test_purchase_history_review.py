@@ -105,12 +105,12 @@ def test_filters_and_visible_totals_and_reset(browser):
     assert tab.locator("[data-purchase-needs-count]").inner_text() == "1"
     assert "3 of 3" in tab.locator("[data-purchase-results]").inner_text()
 
-    tab.locator("[data-purchase-status]").select_option("needs-items")
+    tab.locator("select[data-purchase-status]").select_option("needs-items")
     assert visible(tab) == ["purchase-1"]
     assert tab.locator("[data-purchase-visible-total]").inner_text() == "$0.00"
     assert tab.locator("[data-purchase-needs-count]").inner_text() == "1"
 
-    tab.locator("[data-purchase-status]").select_option("all")
+    tab.locator("select[data-purchase-status]").select_option("all")
     tab.locator("[data-purchase-vendor]").select_option("other supplier")
     assert visible(tab) == ["purchase-2"]
     assert tab.locator("[data-purchase-visible-total]").inner_text() == "$50.00"
@@ -155,7 +155,7 @@ def test_sort_headers_and_search_preserved(browser):
 
 def test_csv_uses_filtered_rows_and_escapes_vendor_formula(browser):
     tab, errors = page(browser)
-    tab.locator("[data-purchase-status]").select_option("needs-items")
+    tab.locator("select[data-purchase-status]").select_option("needs-items")
     with tab.expect_download() as download:
         tab.locator("[data-purchase-export]").click()
     item = download.value
@@ -172,7 +172,7 @@ def test_csv_uses_filtered_rows_and_escapes_vendor_formula(browser):
         "INV-1", "0", "0", "0.00", "Needs items"
     ]
 
-    tab.locator("[data-purchase-status]").select_option("has-items")
+    tab.locator("select[data-purchase-status]").select_option("has-items")
     with tab.expect_download() as download2:
         tab.locator("[data-purchase-export]").click()
     values = list(csv.reader(StringIO(
