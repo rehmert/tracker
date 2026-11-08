@@ -506,3 +506,101 @@ def test_499_overview_shows_prior_result_without_writing(lab_overview_client):
 
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(LabResult)) == before
+
+
+def test_500_full_history_compares_distinct_draw_dates_safely():
+    from types import SimpleNamespace
+    from app.routers import labs as lab_router
+    from app import labs as lab_helpers
+
+    def measured(value, unit, ident):
+        return SimpleNamespace(
+            analyte="Total Testosterone", value=value,
+            unit=unit, id=ident, ref_low=None, ref_high=None,
+        )
+
+    def report(day):
+        return SimpleNamespace(drawn_on=date.fromisoformat(day))
+
+    older = (measured(20, "nmol/L", 1), report("2026-07-07"))
+    same_day = (measured(580, "ng/dL", 2), report("2026-11-08"))
+    latest = (measured(600, "ng/dL", 3), report("2026-11-08"))
+    rows, unit = lab_router.analyte_history500([older, same_day, latest])
+    assert unit == "ng/dL"
+    assert [row["res"].id for row in rows] == [3, 2, 1]
+    expected = 600 - lab_helpers.convert(
+        "Total Testosterone", 20, "nmol/L", "ng/dL"
+    )
+    assert rows[0]["previous"][0].id == 1
+    assert rows[0]["delta"] == pytest.approx(expected)
+    assert rows[1]["previous"][0].id == 1
+    assert rows[2]["delta"] is None
+
+    incompatible = (
+        measured(300, "mg/L", 4), report("2026-10-01")
+    )
+    rows, _ = lab_router.analyte_history500([incompatible, latest])
+    assert rows[0]["delta"] is None
+    assert rows[1]["converted"] is None
+
+
+def test_500_analyte_history_html_and_csv_are_read_only(lab_overview_client):
+    import csv
+    import io
+
+    client, engine = lab_overview_client
+    with Session(engine) as db:
+        older = LabReport(
+            drawn_on=date(2026, 7, 7), lab_name="=Unsafe Lab"
+        )
+        older.results = [
+            LabResult(
+                analyte="TSH", value=2, unit="mIU/L",
+                ref_low=0.4, ref_high=4.5
+            )
+        ]
+        latest = LabReport(
+            drawn_on=date(2026, 11, 8), lab_name="Later"
+        )
+        latest.results = [
+            LabResult(
+                analyte="TSH", value=0.1, unit="mIU/L",
+                ref_low=0.4, ref_high=4.5
+            )
+        ]
+        db.add_all([older, latest])
+        db.commit()
+        before = db.scalar(select(func.count()).select_from(LabResult))
+
+    html = client.get("/labs/trends/tsh")
+    assert html.status_code == 200
+    for marker in (
+        "lab500-history-table",
+        "Export History CSV",
+        "Previous distinct draw",
+        "Difference",
+        "View with dose and vial events",
+        "Not convertible",
+    ):
+        # Not convertible is an optional row value, not required for TSH.
+        if marker != "Not convertible":
+            assert marker in html.text, marker
+    assert html.text.count("data-lab500-history-row") == 2
+
+    response = client.get("/labs/trends/tsh/export.csv")
+    assert response.status_code == 200
+    assert response.content.startswith(b"\\xef\\xbb\\xbf")
+    assert "private, no-store" in response.headers["cache-control"]
+    rows = list(csv.DictReader(io.StringIO(
+        response.content.decode("utf-8-sig")
+    )))
+    assert len(rows) == 2
+    assert rows[0]["drawn_on"] == "2026-11-08"
+    assert float(rows[0]["difference_from_previous"]) == pytest.approx(-1.9)
+    assert rows[1]["laboratory"] == "'=Unsafe Lab"
+    assert rows[1]["difference_from_previous"] == ""
+    assert float(rows[1]["recorded_value"]) == 2
+    assert client.get("/labs/trends/missing/export.csv").status_code == 404
+
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(LabResult)) == before
