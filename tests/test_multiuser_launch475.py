@@ -117,12 +117,14 @@ def test_475_browser_gate_is_separate():
     ).read_text()
 
     assert "browser)" in source
-    assert "TRACKER_TEST_URL" in source
-    assert "tests/browser" in source
+    assert "TRACKER_BROWSER_CANDIDATE" in source
+    assert "tracker-browser-qualify.sh" in source
 
-    # Browser testing must not be silently reported as
-    # successful when no target was configured.
-    assert '[[ -n "${TRACKER_TEST_URL:-}" ]]' in source
+    # Browser testing must not target an installed app or silently pass
+    # without a detached disposable worktree and its guarded runner.
+    assert '[[ -n "$CANDIDATE" ]]' in source
+    assert '[[ "$CANDIDATE" != "$APP"' in source
+    assert "TRACKER_TEST_URL" not in source
 
 
 def test_475_test_gate_shell_syntax():
