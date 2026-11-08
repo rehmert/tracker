@@ -344,6 +344,13 @@ Adjust the quantity and meal before adding it to the selected day.</p>
  data-food500-name="{{ item.name }}" data-food500-serving="{{ item.serving_description }}">
  <div class="food375-name"><strong>{{ item.name }}</strong>
  <small>{{ item.serving_description }}</small></div>
+{% if item.saved_versions > 1 %}
+<p class="note food499-duplicate" role="note">
+{{ item.saved_versions }} saved versions share this name, barcode and serving size.
+This entry is saved record #{{ item.id }}. Compare its per-serving nutrition
+and choose the intended version before logging.
+</p>
+{% endif %}
 
 <div class="food384-preview"
  data-food384-preview
@@ -390,6 +397,13 @@ Adjust the quantity and meal before adding it to the selected day.</p>
  data-food500-name="{{ item.name }}" data-food500-serving="{{ item.serving_description }}">
  <div class="food375-name"><strong>{{ item.name }}</strong>
  <small>{{ item.serving_description }}</small></div>
+{% if item.saved_versions > 1 %}
+<p class="note food499-duplicate" role="note">
+{{ item.saved_versions }} saved versions share this name, barcode and serving size.
+This entry is saved record #{{ item.id }}. Compare its per-serving nutrition
+and choose the intended version before logging.
+</p>
+{% endif %}
 
 <div class="food384-preview"
  data-food384-preview
