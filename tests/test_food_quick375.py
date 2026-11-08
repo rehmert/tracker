@@ -197,3 +197,59 @@ def test_500_quick_food_filters_preserve_existing_submit_forms():
     assert "fetch(" not in script
     assert ".submit(" not in script
     assert "localStorage" not in script
+
+
+def test_501_saved_food_versions_visible_without_mutating_entries(client):
+    browser, db_engine = client
+    make_entry(browser)
+
+    # Same identity, changed nutrition: keep both saved products independently.
+    for energy, barcode in (("130", ""), ("150", "123456789012")):
+        result = browser.post("/food/entry", data={
+            "day": "2026-11-06",
+            "name": "Test Greek Yogurt",
+            "serving_description": "1 container",
+            "servings": "1",
+            "meal": "Lunch",
+            "energy": energy,
+            "proteins": "20",
+            "barcode": barcode,
+        }, follow_redirects=False)
+        assert result.status_code == 303
+
+    with db_engine.connect() as db:
+        rows = db.execute(text("""
+            SELECT id, barcode FROM tracker_food_products ORDER BY id
+        """)).all()
+        before = db.execute(text(
+            "SELECT COUNT(*) FROM tracker_food_entries"
+        )).scalar_one()
+    assert len(rows) == 3
+    # Favorites/recent both use read-only metadata; they must never combine
+    # or overwrite product versions or entries.
+    selected = rows[0][0]
+    assert browser.post(
+        f"/food/favorite/{selected}",
+        data={"day": "2026-11-06"},
+        follow_redirects=False,
+    ).status_code == 303
+
+    favorites, recent = food_quick375.saved_foods()
+    assert favorites[0]["saved_versions"] == 2
+    by_id = {item["id"]: item for item in recent}
+    assert len(by_id) == 3
+    assert by_id[rows[0][0]]["saved_versions"] == 2
+    assert by_id[rows[1][0]]["saved_versions"] == 2
+    assert by_id[rows[2][0]]["saved_versions"] == 1
+
+    with db_engine.connect() as db:
+        assert db.execute(text(
+            "SELECT COUNT(*) FROM tracker_food_entries"
+        )).scalar_one() == before
+
+    template = (
+        __import__("pathlib").Path(__file__).resolve().parents[1]
+        / "app/templates/food.html"
+    ).read_text()
+    assert template.count("This entry is saved record #{{ item.id }}") == 2
+    assert template.count("{% if item.saved_versions > 1 %}") >= 3
