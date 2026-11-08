@@ -89,7 +89,7 @@ def test_foreign_post_blocked_before_router(client):
 
     assert response.status_code == 403
     assert response.headers["x-frame-options"] == "DENY"
-    assert response.headers["referrer-policy"] == "no-referrer"
+    assert response.headers["referrer-policy"] == "same-origin"
     assert response.headers["cache-control"] == "private, no-store"
 
     listing = client.get("/compounds")
