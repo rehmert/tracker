@@ -49,7 +49,7 @@
 
     for (const link of root.querySelectorAll("[data-daily-mode-link]")) {
       link.addEventListener("click", () => {
-        chooseMode(link.dataset.dailyModeLink, false);
+        chooseMode(link.dataset.dailyModeLink, true);
       });
     }
 
@@ -70,6 +70,13 @@
         chooseMode("all");
         if (status) status.textContent = "Enter a weight, a blood pressure, or a pulse before saving.";
         field("weight")?.focus();
+        return;
+      }
+      if (Boolean(field("systolic")?.value) !== Boolean(field("diastolic")?.value)) {
+        event.preventDefault();
+        chooseMode("bp");
+        if (status) status.textContent = "Enter both blood pressure numbers before saving.";
+        (field("systolic")?.value ? field("diastolic") : field("systolic"))?.focus();
         return;
       }
       if (status) status.textContent = "Saving reading…";
