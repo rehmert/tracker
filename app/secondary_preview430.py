@@ -2103,9 +2103,15 @@ def secondary_food_week453(request: Request):
             503, "Private weekly food history unavailable"
         ) from None
 
-    if any(
-        report.get("user_id") != uid or report.get("day") != day
-        for report, day in zip(reports, days)
+    if (
+        not isinstance(reports, (list, tuple))
+        or len(reports) != 7
+        or any(
+            not isinstance(report, dict)
+            or report.get("user_id") != uid
+            or report.get("day") != day
+            for report, day in zip(reports, days)
+        )
     ):
         raise HTTPException(503, "Private weekly identity mismatch")
 
