@@ -45,7 +45,15 @@ def test_other_routes_do_not_gain_exception(path):
     ("https://tracker.example", "same-site", "valid", False),
     ("https://tracker.example", "", "valid", False),
     ("http://tracker.example", "same-origin", "valid", False),
-    ("null", "same-origin", "valid", False),
+    ("null", "same-origin", "valid", True),
+    ("null", "cross-site", "valid", False),
+    ("null", "same-site", "valid", False),
+    ("null", "", "valid", False),
+    ("null", "same-origin", "invalid", False),
+    ("null", "same-origin", "missing", False),
+    ("null", "same-origin", "form-uninspected", False),
+    ("NULL", "same-origin", "valid", False),
+    ("null ", "same-origin", "valid", False),
     ("https://attacker.example/path", "same-origin", "valid", False),
     ("https://user@tracker.example", "same-origin", "valid", False),
     ("https://tracker.example", "same-origin", "invalid", False),
@@ -110,6 +118,39 @@ def test_real_proxy_food_post_reaches_validation(reverse_proxy_client):
     assert response.headers["x-tracker-csrf-report"] == "valid"
 
 
+def test_real_null_origin_signed_header_reaches_food_validation(reverse_proxy_client):
+    """Model the exact production browser request and prove route reachability."""
+    client, token = reverse_proxy_client
+    response = client.post(
+        "/food/entry",
+        headers={
+            "Origin": "null",
+            "Sec-Fetch-Site": "same-origin",
+            HEADER_NAME: token,
+        },
+        data={"name": ""},
+        follow_redirects=False,
+    )
+    assert response.status_code == 422
+    assert response.headers["x-tracker-csrf-report"] == "valid"
+
+
+def test_real_null_origin_signed_form_reaches_food_validation(reverse_proxy_client):
+    """Ordinary HTML form with only signed hidden field also succeeds."""
+    client, token = reverse_proxy_client
+    response = client.post(
+        "/food/entry",
+        headers={
+            "Origin": "null",
+            "Sec-Fetch-Site": "same-origin",
+        },
+        data={"name": "", "csrf_token": token},
+        follow_redirects=False,
+    )
+    assert response.status_code == 422
+    assert response.headers["x-tracker-csrf-report"] == "valid"
+
+
 def test_real_proxy_signed_form_field_is_sufficient(reverse_proxy_client):
     client, token = reverse_proxy_client
     response = client.post(
@@ -135,7 +176,12 @@ def test_real_proxy_signed_form_field_is_sufficient(reverse_proxy_client):
     ({"Origin": "http://tracker.example",
       "Sec-Fetch-Site": "same-origin"}, 403),
     ({"Origin": "null",
-      "Sec-Fetch-Site": "same-origin"}, 403),
+      "Sec-Fetch-Site": "cross-site"}, 403),
+    ({"Origin": "null",
+      "Sec-Fetch-Site": "same-site"}, 403),
+    ({"Origin": "null",
+      "Sec-Fetch-Site": "same-origin",
+      HEADER_NAME: "forged"}, 403),
     ({"Origin": "https://tracker.example",
       "Sec-Fetch-Site": "same-origin",
       HEADER_NAME: "forged"}, 403),
@@ -151,12 +197,13 @@ def test_real_proxy_rejects_unsafe_or_unsigned(reverse_proxy_client, headers, ex
     assert response.status_code == expected
 
 
-def test_missing_csrf_does_not_receive_proxy_exception(reverse_proxy_client):
+@pytest.mark.parametrize("origin", ("https://tracker.example", "null"))
+def test_missing_csrf_does_not_receive_proxy_exception(reverse_proxy_client, origin):
     client, token = reverse_proxy_client
     response = client.post(
         "/food/entry",
         headers={
-            "Origin": "https://tracker.example",
+            "Origin": origin,
             "Sec-Fetch-Site": "same-origin",
         },
         data={"name": ""},
@@ -165,12 +212,13 @@ def test_missing_csrf_does_not_receive_proxy_exception(reverse_proxy_client):
     assert response.status_code == 403
 
 
-def test_all_other_routes_still_reject_proxy_mismatch(reverse_proxy_client):
+@pytest.mark.parametrize("origin", ("https://tracker.example", "null"))
+def test_all_other_routes_still_reject_proxy_mismatch(reverse_proxy_client, origin):
     client, token = reverse_proxy_client
     response = client.post(
         "/compounds",
         headers={
-            "Origin": "https://tracker.example",
+            "Origin": origin,
             "Sec-Fetch-Site": "same-origin",
             HEADER_NAME: token,
         },
