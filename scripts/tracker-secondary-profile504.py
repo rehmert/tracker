@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -34,6 +35,25 @@ TARGETS = {
 }
 
 
+IMPORT_TIME_RE = re.compile(
+    r"^import time:\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|\\s*(.+)$"
+)
+
+
+def parse_import_time(stderr: str) -> list[tuple[str, int, int]]:
+    """Read only module names and durations, ignoring all other child output."""
+    rows = []
+    for line in stderr.splitlines():
+        match = IMPORT_TIME_RE.fullmatch(line)
+        if match is not None:
+            module = match.group(3).strip()
+            if re.fullmatch(r"[A-Za-z0-9_.]+", module):
+                rows.append(
+                    (module, int(match.group(1)), int(match.group(2)))
+                )
+    return rows
+
+
 def worker_command(args: object) -> str | None:
     """Identify known private worker subprocesses without recording arguments."""
     if not isinstance(args, (tuple, list)):
@@ -50,9 +70,13 @@ def worker_command(args: object) -> str | None:
 
 
 class TimingRecorder:
-    def __init__(self):
+    def __init__(self, *, import_sample: bool = False):
         self.requests: list[tuple[str, str, int | str, float]] = []
         self.workers: list[tuple[str, float]] = []
+        self.import_sample = import_sample
+        self.import_samples: dict[
+            str, list[tuple[str, int, int]]
+        ] = {}
         self._request = None
         self._run = None
 
@@ -89,9 +113,39 @@ class TimingRecorder:
             module = worker_command(command)
             if module is None:
                 return original_run(*args, **kwargs)
+
+            # Instrument only the first subprocess of each distinct module.
+            # No worker body, environment, IPC payload or security condition
+            # is modified. CPython prints import timings on captured stderr.
+            # These sampled calls run slower: do not compare their wall time
+            # with a normal benchmark.
+            sample = (
+                self.import_sample and module not in self.import_samples
+                and isinstance(command, (list, tuple))
+                and len(command) >= 3
+                and command[1] == "-m"
+                and isinstance(command[0], str)
+            )
+            if sample:
+                self.import_samples[module] = []
+                modified_command = [
+                    command[0], "-X", "importtime", *command[1:]
+                ]
+                if args:
+                    args = (modified_command, *args[1:])
+                else:
+                    kwargs = {**kwargs, "args": modified_command}
+
             began = time.perf_counter()
             try:
-                return original_run(*args, **kwargs)
+                result = original_run(*args, **kwargs)
+                if sample and isinstance(
+                    getattr(result, "stderr", None), str
+                ):
+                    self.import_samples[module] = parse_import_time(
+                        result.stderr
+                    )
+                return result
             finally:
                 recorded_workers.append(
                     (module, time.perf_counter() - began)
@@ -156,12 +210,36 @@ class TimingRecorder:
             f"TOTAL_SECONDS={sum(row[1] for row in self.workers):.3f}",
             flush=True,
         )
+        if self.import_sample:
+            print("=== SAMPLED CHILD IMPORT COST (MICROSECONDS) ===", flush=True)
+            for worker, rows in sorted(self.import_samples.items()):
+                print(
+                    f"SECONDARY_IMPORT_SAMPLE module={worker} "
+                    f"records={len(rows)}",
+                    flush=True,
+                )
+                for imported, self_us, cumulative_us in sorted(
+                    rows, key=lambda row: row[2], reverse=True
+                )[:12]:
+                    print(
+                        f"SECONDARY_IMPORT worker={worker} "
+                        f"imported={imported} self_us={self_us} "
+                        f"cumulative_us={cumulative_us}",
+                        flush=True,
+                    )
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--test", choices=sorted(TARGETS), default="workflow"
+    )
+    parser.add_argument(
+        "--import-sample", action="store_true",
+        help=(
+            "Capture CPython import times for the first private worker "
+            "of each module. Slows sampled calls; diagnostic only."
+        ),
     )
     args = parser.parse_args(argv)
 
@@ -182,7 +260,7 @@ def main(argv=None) -> int:
     # isolation. Do not import app.* before pytest.main().
     import pytest
 
-    recorder = TimingRecorder()
+    recorder = TimingRecorder(import_sample=args.import_sample)
     recorder.install()
     try:
         code = pytest.main([
