@@ -85,7 +85,8 @@ def recommendation(
 ) -> tuple[int, float]:
     # Permit a second-stage benchmark (8,12,16) without rerunning
     # the already-established 1-worker baseline.
-    baseline = medians[min(medians)]
+    baseline_workers = min(medians)
+    baseline = medians[baseline_workers]
     best = min(
         medians,
         key=lambda workers: medians[workers],
@@ -96,7 +97,7 @@ def recommendation(
     ) / baseline
 
     selected = (
-        best if gain >= threshold else 1
+        best if gain >= threshold else baseline_workers
     )
 
     return selected, max(0.0, gain)
