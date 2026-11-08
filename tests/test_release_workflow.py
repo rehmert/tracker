@@ -128,4 +128,8 @@ def test_release_498_browser_gate_is_isolated_and_dev_only():
     assert 'tests/browser/test_labs_overview.py' in shell
     assert 'tests/browser/test_food_search_ui.py' in shell
     assert 'tests/browser/test_food_labs_live499.py' in shell
+    assert 'tests/browser/test_food_labs_mutations500.py' in shell
+    assert 'TRACKER_TEST_ISOLATED=1' in shell
+    assert 'TRACKER_DATA_DIR="$DATA"' in shell
+
     assert 'trap cleanup EXIT' in shell
