@@ -69,7 +69,7 @@ def test_custom_theme_has_no_path_parameter_or_post_endpoint(client):
 def test_unsafe_or_oversized_override_falls_back_safely(client, tmp_path, monkeypatch):
     target = tmp_path / "tracker-theme.css"
     monkeypatch.setattr(theme510, "THEME_FILE", target)
-    target.write_bytes(b"\\xff")
+    target.write_bytes(b"\xff")
     assert client.get("/ui/theme.css").headers["x-tracker-theme-source"] == "default"
     target.write_bytes(b" " * (theme510.MAX_THEME_BYTES + 1))
     assert client.get("/ui/theme.css").headers["x-tracker-theme-source"] == "default"
