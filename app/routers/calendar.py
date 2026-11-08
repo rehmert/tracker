@@ -240,8 +240,13 @@ def restore_projection(exclusion_id: int, db: Session = Depends(get_scoped_db390
 
 
 def _ical_escape(value: object) -> str:
-    return (str(value).replace('\\', '\\\\').replace('\n', '\\n')
-            .replace(',', '\\,').replace(';', '\\;'))
+    """Escape iCalendar TEXT, including CR-only and CRLF newlines.
+
+    Untrusted note/protocol fields must never introduce a raw content line.
+    """
+    text = str(value).replace('\\', '\\\\')
+    return (text.replace('\r\n', '\n').replace('\r', '\n')
+            .replace('\n', '\\n').replace(',', '\\,').replace(';', '\\;'))
 
 
 def _ical_line(value: str) -> str:
