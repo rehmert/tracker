@@ -17,6 +17,7 @@ import stat
 import tempfile
 import uuid
 import zipfile
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
@@ -40,7 +41,7 @@ def _read_only_db(path):
 
 def _check_sqlite(path, uid=None):
     from .user_bootstrap426 import REQUIRED_TABLES
-    with _read_only_db(path) as conn:
+    with closing(_read_only_db(path)) as conn:
         if conn.execute("PRAGMA integrity_check").fetchone() != ("ok",):
             raise ValueError("Recovered SQLite integrity check failed")
         if conn.execute("PRAGMA foreign_key_check").fetchone() is not None:
@@ -87,8 +88,8 @@ def _sqlite_snapshot(source, destination):
     if destination.exists() or destination.is_symlink():
         raise ValueError("Snapshot target already exists")
 
-    with _read_only_db(source) as src:
-        with sqlite3.connect(str(destination), timeout=10) as dst:
+    with closing(_read_only_db(source)) as src:
+        with closing(sqlite3.connect(str(destination), timeout=10)) as dst:
             src.backup(dst, pages=512, sleep=0.1)
     os.chmod(destination, 0o600)
 
@@ -115,7 +116,7 @@ def _copy_upload(source, destination):
     _no_links(source)
     destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-    with os.fdopen(os.open(source, flags), "rb") as src:
+    with os.fdopen(os.open(source, flags), "rb")) as src:
         before = os.fstat(src.fileno())
         if not stat.S_ISREG(before.st_mode):
             raise ValueError("Upload source is not a regular file")
@@ -362,7 +363,7 @@ def create_secondary_backup442(data_root=None, backup_dir=None):
                 raise ValueError("Private uploads changed during snapshot")
 
         # Check for user provisioning while the rolling capture was running.
-        with _read_only_db(auth_db) as db:
+        with closing(_read_only_db(auth_db)) as db:
             after_ids = [
                 row[0] for row in db.execute("""
                     SELECT id FROM users WHERE id>1 AND enabled=0 ORDER BY id
