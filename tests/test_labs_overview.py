@@ -438,3 +438,71 @@ def test_482_missing_edit_targets_return_404(
             "note": "",
         },
     ).status_code == 404
+
+
+def test_499_previous_draw_uses_distinct_dates_and_safe_unit_conversion():
+    from types import SimpleNamespace
+    from app.routers import labs as labs_router
+    from app import labs as lab_math
+
+    def result(value, unit, ident, analyte="Total Testosterone"):
+        return SimpleNamespace(
+            value=value, unit=unit, id=ident, analyte=analyte
+        )
+
+    def report(when):
+        return SimpleNamespace(drawn_on=date.fromisoformat(when))
+
+    older = (result(20, "nmol/L", 1), report("2026-07-07"))
+    newest = (result(600, "ng/dL", 3), report("2026-11-07"))
+    same_date = (result(580, "ng/dL", 2), report("2026-11-07"))
+    previous = labs_router.previous_draw499(
+        [older, newest, same_date], newest
+    )
+    assert previous["res"] is older[0]
+    assert previous["rep"] is older[1]
+    expected = 600 - lab_math.convert(
+        "Total Testosterone", 20, "nmol/L", "ng/dL"
+    )
+    assert previous["delta"] == pytest.approx(expected)
+
+    # Never invent a numeric difference for unconvertible units.
+    incompatible = (result(200, "mg/L", 4, "Ferritin"), report("2026-07-07"))
+    latest_ferritin = (result(175, "ng/mL", 5, "Ferritin"), report("2026-11-07"))
+    prior = labs_router.previous_draw499(
+        [incompatible, latest_ferritin], latest_ferritin
+    )
+    assert prior["delta"] is None
+    assert labs_router.previous_draw499([newest], newest) is None
+
+
+def test_499_overview_shows_prior_result_without_writing(lab_overview_client):
+    client, engine = lab_overview_client
+    with Session(engine) as db:
+        earlier = LabReport(
+            drawn_on=date(2026, 7, 7), lab_name="Earlier"
+        )
+        earlier.results = [
+            LabResult(analyte="TSH", value=2.0, unit="mIU/L")
+        ]
+        later = LabReport(
+            drawn_on=date(2026, 11, 1), lab_name="Later"
+        )
+        later.results = [
+            LabResult(analyte="TSH", value=0.1, unit="mIU/L")
+        ]
+        db.add_all([earlier, later])
+        db.commit()
+        before = db.scalar(
+            select(func.count()).select_from(LabResult)
+        )
+
+    response = client.get("/labs")
+    assert response.status_code == 200
+    assert 'class="meta lab499-previous"' in response.text
+    assert "Previous draw" in response.text
+    assert "Difference from previous:" in response.text
+    assert "mIU/L" in response.text
+
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(LabResult)) == before
