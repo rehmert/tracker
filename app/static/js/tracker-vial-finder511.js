@@ -83,6 +83,16 @@
     select.addEventListener("change", () => {
       if (!(search?.value || "").trim()) feedback.textContent = selectedMessage();
     });
+    // The dose logger resets the existing form after a successful save.
+    // Keep the finder in sync with that new (unsaved) form state.
+    form.addEventListener("reset", () => {
+      queueMicrotask(() => {
+        if (search) search.value = "";
+        shown = [];
+        matches.replaceChildren();
+        feedback.textContent = selectedMessage();
+      });
+    });
     feedback.textContent = selectedMessage();
   }
   if (document.readyState === "loading") {
