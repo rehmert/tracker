@@ -1,10 +1,11 @@
-"""Release 492: constrained HTTPS reverse-proxy origin exception for Food.
+"""Releases 492-493: tightly constrained proxy-origin exception for Food.
 
-The existing origin guard compares the browser's public Origin with the
-internal Host FastAPI may receive from a reverse proxy. This narrowly
-permits signed, browser-attested same-origin Food writes when those
-authorities differ. No proxy-supplied headers are trusted; arbitrary paths,
-unsigned requests, same-site and cross-site requests remain blocked.
+Some production browsers send Origin: null even on a same-origin Food form
+submission. Never treat a null origin as trusted by itself. This exceptional
+path requires the browser's same-origin Fetch Metadata, a valid signed CSRF
+cookie/submission pair, an exact allowlisted Food POST, and either a
+syntactically valid HTTPS Origin or the exact literal opaque Origin "null".
+Other paths, methods, and cross-site/same-site writes remain blocked.
 """
 
 import re
@@ -36,11 +37,11 @@ def is_food_write492(path):
 
 
 def allow_food_proxy_write492(method, path, headers, csrf_report):
-    """Require exact Food POST + signed CSRF + browser same-origin HTTPS.
+    """Verify the very limited Food proxy/opaque-origin exception.
 
-    This function is considered only AFTER the existing cross-origin
-    guard rejected the request. It never permits HTTP origins, missing
-    or contradictory browser metadata, non-Food paths, or invalid tokens.
+    Called only after normal cross-origin verification rejected the write.
+    Origin "null" never suffices without independent signed CSRF plus
+    Sec-Fetch-Site: same-origin; missing or untrusted metadata fails shut.
     """
 
     if (
@@ -54,6 +55,12 @@ def allow_food_proxy_write492(method, path, headers, csrf_report):
     origin = headers.get("origin", "")
     if not isinstance(origin, str):
         return False
+
+    # Some legitimate Food form submissions have an opaque Origin:
+    # literal "null". This is accepted ONLY after all four guards above
+    # passed, notably independent signed CSRF and browser Fetch Metadata.
+    if origin == "null":
+        return True
 
     if not origin.lower().startswith("https://"):
         return False
