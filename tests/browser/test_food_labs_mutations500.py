@@ -146,7 +146,7 @@ def test_500_lab_report_create_edit_history_export_and_delete(page):
 
     csv = tab.request.get(history + "/export.csv")
     assert csv.status == 200
-    assert csv.body().startswith(b"\\xef\\xbb\\xbf")
+    assert csv.body().startswith(b"\xef\xbb\xbf")
     assert b"QA Analyte 500" in csv.body()
 
     tab.goto(URL + report_path, wait_until="networkidle")
