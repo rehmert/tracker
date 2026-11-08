@@ -72,7 +72,7 @@ def page(browser):
     context.close()
 
 
-def submit_native(tab, control, *, expected_path):
+def submit_native(tab, control, *, expected_path, origin_events=None):
     with tab.expect_navigation(wait_until="domcontentloaded") as nav:
         control.click()
     response = nav.value
@@ -81,7 +81,8 @@ def submit_native(tab, control, *, expected_path):
     assert re.fullmatch(expected_path, actual_path), (
         "Native browser form failed: "
         f"HTTP {response.status}, path={actual_path}, "
-        f"body={tab.locator('body').inner_text()[:180]}"
+        f"body={tab.locator('body').inner_text()[:180]}, "
+        f"origin_metadata={(origin_events or [])[-1:]}"
     )
     assert response.status == 200
     return actual_path
@@ -108,8 +109,8 @@ def test_501_native_https_multipart_create_edit_delete_with_file(page):
         "buffer": b"%PDF-1.4\n%%EOF\n",
     })
     report_path = submit_native(
-        tab, form.get_by_role("button", name="Save report"),
-        expected_path=r"/labs/[1-9][0-9]*",
+        tab, form.get_by_role("button", name=re.compile("save report", re.I)),
+        expected_path=r"/labs/[1-9][0-9]*", origin_events=origins,
     )
     expect(tab.locator("body")).to_contain_text(
         re.compile("Native HTTPS QA Lab 501", re.I)
@@ -126,8 +127,8 @@ def test_501_native_https_multipart_create_edit_delete_with_file(page):
     edit = tab.locator('form[action="' + report_path + '/edit"]')
     edit.locator('input[name="lab_name"]').fill("Native HTTPS QA Lab 501 Edited")
     submit_native(
-        tab, edit.get_by_role("button", name="Save Report Details"),
-        expected_path=re.escape(report_path),
+        tab, edit.get_by_role("button", name=re.compile("save report details", re.I)),
+        expected_path=re.escape(report_path), origin_events=origins,
     )
     expect(tab.locator("h1")).to_contain_text(
         re.compile("Native HTTPS QA Lab 501 Edited", re.I)
@@ -138,7 +139,7 @@ def test_501_native_https_multipart_create_edit_delete_with_file(page):
     submit_native(
         tab,
         tab.locator('form[action="' + report_path + '/delete"] button'),
-        expected_path=r"/labs",
+        expected_path=r"/labs", origin_events=origins,
     )
     assert tab.request.get(HTTPS_URL + report_path).status == 404
     assert not errors, errors
