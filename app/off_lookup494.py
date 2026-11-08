@@ -154,11 +154,13 @@ def fetch_json494(url, kind, *, timeout=7, ttl=900, retry=True):
                 raise OFFFailure494(
                     "rate_limited", status=status, retry_after=delay
                 ) from None
-            if status in (502, 503, 504) and attempt + 1 < attempts:
+            if 500 <= status <= 599 and attempt + 1 < attempts:
                 time.sleep(0.4)
                 continue
-            if status in (502, 503, 504):
-                _cooldown494(kind, 30)
+            if 500 <= status <= 599:
+                # Legacy CGI search often experiences prolonged 503s.
+                # A longer circuit break avoids hammering that backend.
+                _cooldown494(kind, 180 if kind == "name-legacy" else 30)
             LOGGER.warning("OFF read failed kind=%s http=%s", kind, status)
             raise OFFFailure494(
                 "not_found" if status == 404 else "upstream_http",
