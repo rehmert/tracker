@@ -31,7 +31,7 @@ def test_507_single_canonical_manifest_and_mobile_safe_viewport():
 def test_507_manifest_is_installable_and_uses_only_same_origin_paths():
     manifest = json.loads((STATIC / "tracker.webmanifest").read_text())
     assert manifest["id"] == "/"
-    assert manifest["start_url"] == "/"
+    assert manifest["start_url"] == "/mobile"
     assert manifest["scope"] == "/"
     assert manifest["display"] == "standalone"
     icons = manifest["icons"]
@@ -42,7 +42,7 @@ def test_507_manifest_is_installable_and_uses_only_same_origin_paths():
         ("/static/tracker-icon-512.png", "512x512", "image/png"),
     }
     assert {item["url"] for item in manifest["shortcuts"]} == {
-        "/quick-entry", "/doses", "/vitals",
+        "/mobile", "/quick-entry", "/doses", "/vitals",
     }
     assert all(item["url"].startswith("/") for item in manifest["shortcuts"])
 
