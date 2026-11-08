@@ -71,7 +71,7 @@ def test_511_recent_preparations_skips_closed_vials(client):
         vial = db.get(Vial, vial_id)
         vial.status = "discarded"
         db.commit()
-        result = recent_preparations(db, [vial], services.vial_views(db, [vial]))
+        result = recent_preparations(db, [vial], {})
         assert result == []
 
 
