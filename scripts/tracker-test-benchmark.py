@@ -26,6 +26,35 @@ PASS_RE = re.compile(
 )
 
 
+def environment_capacity() -> dict:
+    """Record actual cgroup CPU/memory limits, not just host CPU count."""
+    resource = {
+        "visible_cpus": os.cpu_count(),
+        "affinity_cpus": (
+            len(os.sched_getaffinity(0))
+            if hasattr(os, "sched_getaffinity") else None
+        ),
+        "cpu_quota_cpus": None,
+        "memory_limit_bytes": None,
+    }
+    # cgroup v2: avoid assuming an LXC sees the host's entire allocation.
+    try:
+        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota != "max":
+            resource["cpu_quota_cpus"] = round(
+                int(quota) / int(period), 2
+            )
+    except (OSError, ValueError, ZeroDivisionError):
+        pass
+    try:
+        memory = Path("/sys/fs/cgroup/memory.max").read_text().strip()
+        if memory != "max":
+            resource["memory_limit_bytes"] = int(memory)
+    except (OSError, ValueError):
+        pass
+    return resource
+
+
 def parse_workers(value: str) -> list[int]:
     try:
         workers = [
@@ -231,6 +260,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     output.chmod(0o700)
 
+    capacity = environment_capacity()
+    print(f"BENCHMARK_CAPACITY={json.dumps(capacity, sort_keys=True)}", flush=True)
+    quota = capacity["cpu_quota_cpus"]
+    if quota is not None and max(args.workers) > quota:
+        print(
+            f"WARNING: {max(args.workers)} workers exceed "
+            f"effective cgroup CPU quota of {quota:g}; "
+            "upgrade the DEV LXC CPU allocation before comparing",
+            flush=True,
+        )
+
     results = []
     expected_count = None
     failed = False
@@ -284,6 +324,7 @@ def main(argv: list[str] | None = None) -> int:
         "baseline_workers": min(args.workers),
         "repeat": args.repeat,
         "expected_passed": expected_count,
+        "environment_capacity": capacity,
         "runs": results,
         "fully_qualified": fully_qualified,
     }
