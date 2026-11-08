@@ -168,6 +168,30 @@ for _ in range(60):
 else:
     raise SystemExit("ERROR: Isolated HTTPS proxy not ready")
 PY
+echo "=== DISPOSABLE INVENTORY FOR LIVE SORT/SEARCH QA ==="
+# Only mutate the private candidate database created above. Never touch the
+# installed Tracker database or user files.
+env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+  PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" TRACKER_INSTANCE=DEV \
+  PYTHONDONTWRITEBYTECODE=1 "$PY" -B - <<'PY'
+from app.db import SessionLocal
+from app.models import Compound, Vial
+
+with SessionLocal() as db:
+    for compound_name in ("QA Alpha 511", "QA Zeta 511"):
+        compound = Compound(name=compound_name, category="peptide")
+        db.add(compound)
+        db.flush()
+        db.add(Vial(
+            compound_id=compound.id,
+            label=compound_name + " vial",
+            status="in_use",
+            content_value=100,
+            content_unit="mg",
+        ))
+    db.commit()
+print("DISPOSABLE_INVENTORY_FIXTURES=2")
+PY
 echo "=== OFFLINE FOOD AND LABS BROWSER TESTS + LIVE NAVIGATION ==="
 set +e
 env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
