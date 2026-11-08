@@ -23,7 +23,7 @@
   <link rel="icon"
         type="image/svg+xml"
         href="{{ '/static/tracker-icon-dev.svg' if tracker_instance_label() == 'DEV' else '/static/tracker-icon.svg' }}?v=509">
-  <link rel="manifest" href="/tracker.webmanifest">
+  <link rel="manifest" href="{{ '/static/tracker-dev.webmanifest' if tracker_instance_label() == 'DEV' else '/static/tracker.webmanifest' }}?v=5091">
   <meta name="theme-color" content="{{ '#a56212' if tracker_instance_label() == 'DEV' else '#1265ad' }}">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
