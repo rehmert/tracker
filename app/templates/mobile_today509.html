@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Today{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-mobile-daily509.css?v=509">
+<script defer src="/static/js/tracker-mobile-daily509.js?v=509"></script>
+
+<div class="tracker-daily509" data-mobile-daily509>
+  <header class="tracker-daily-hero">
+    <div>
+      <p class="tracker-daily-eyebrow">DAILY WORKSPACE</p>
+      <h1>Today</h1>
+      <p class="muted">{{ today.strftime('%A, %B %-d') }} · Records and planned activity</p>
+    </div>
+    {% if instance == "DEV" %}
+    <strong class="tracker-daily-dev" aria-label="Tracker development environment">DEV · Test Workspace</strong>
+    {% endif %}
+  </header>
+
+  <nav class="tracker-daily-actions" aria-label="Common recording actions">
+    <a href="#mobile-quick-vitals" class="tracker-daily-action-primary">+ Log Vitals</a>
+    <a href="/doses#quick-dose-entry">+ Log Dose</a>
+    <a href="/quick-entry">More Actions</a>
+  </nav>
+
+  <section class="tracker-daily-section" aria-labelledby="mobile-latest-heading">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-latest-heading">Latest Readings</h2>
+      <a href="/vitals">History</a>
+    </div>
+    <div class="tracker-daily-metrics">
+      <a href="#mobile-quick-vitals" data-daily-mode-link="weight">
+        <span>Weight</span>
+        <strong>{% if last_weight is not none %}{{ last_weight|n1 }}{% else %}—{% endif %}</strong>
+        <small>{{ unit }}</small>
+      </a>
+      <a href="#mobile-quick-vitals" data-daily-mode-link="bp">
+        <span>Blood Pressure</span>
+        <strong>{% if last_bp and last_bp.diastolic is not none %}{{ last_bp.systolic }}/{{ last_bp.diastolic }}{% else %}—{% endif %}</strong>
+        <small>mmHg</small>
+      </a>
+      <a href="#mobile-quick-vitals" data-daily-mode-link="pulse">
+        <span>Pulse</span>
+        <strong>{{ last_pulse if last_pulse is not none else '—' }}</strong>
+        <small>bpm</small>
+      </a>
+    </div>
+    <p class="tracker-daily-note">These are your most recent recorded measurements, which may have different dates.</p>
+  </section>
+
+  <section id="mobile-quick-vitals" class="tracker-daily-section" aria-labelledby="mobile-record-heading">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-record-heading">Record Vitals</h2>
+      <a href="/vitals#quick-vitals-entry">Full Vitals</a>
+    </div>
+    <p class="tracker-daily-note">Enter any combination of readings. Blood pressure requires both numbers. Saving creates one actual record.</p>
+    <div class="tracker-daily-mode" role="group" aria-label="Choose measurement to enter">
+      <button type="button" data-daily-mode="weight" aria-pressed="false">Weight</button>
+      <button type="button" data-daily-mode="bp" aria-pressed="false">BP</button>
+      <button type="button" data-daily-mode="pulse" aria-pressed="false">Pulse</button>
+      <button type="button" data-daily-mode="all" aria-pressed="true">All</button>
+    </div>
+    <form method="post" action="/vitals" class="tracker-daily-vitals"
+          data-daily-vitals-form data-mode="all">
+      <input type="hidden" name="return_to" value="mobile">
+      <label class="tracker-daily-input tracker-daily-time">
+        <span>When</span>
+        <input type="datetime-local" name="measured_at" value="{{ now }}" required>
+      </label>
+      <label class="tracker-daily-input tracker-daily-weight">
+        <span>Weight</span>
+        <input type="number" name="weight" id="mobile-weight" step="any" min="0" inputmode="decimal" autocomplete="off" placeholder="Enter weight">
+      </label>
+      <label class="tracker-daily-input tracker-daily-unit">
+        <span>Unit</span>
+        <select name="weight_unit">
+          <option value="lb" {% if unit == 'lb' %}selected{% endif %}>lb</option>
+          <option value="kg" {% if unit == 'kg' %}selected{% endif %}>kg</option>
+        </select>
+      </label>
+      <label class="tracker-daily-input tracker-daily-systolic">
+        <span>BP top</span>
+        <input type="number" name="systolic" id="mobile-bp-top" min="0" step="1" inputmode="numeric" placeholder="Systolic">
+      </label>
+      <label class="tracker-daily-input tracker-daily-diastolic">
+        <span>BP bottom</span>
+        <input type="number" name="diastolic" min="0" step="1" inputmode="numeric" placeholder="Diastolic">
+      </label>
+      <label class="tracker-daily-input tracker-daily-pulse">
+        <span>Pulse</span>
+        <input type="number" name="pulse" id="mobile-pulse" min="0" step="1" inputmode="numeric" placeholder="Beats/min">
+      </label>
+      <details class="tracker-daily-optional">
+        <summary>Context and notes (optional)</summary>
+        <label class="tracker-daily-input">
+          <span>Context</span>
+          <input name="context" maxlength="80" placeholder="Morning, seated…">
+        </label>
+        <label class="tracker-daily-input">
+          <span>Notes</span>
+          <input name="notes" maxlength="1000">
+        </label>
+      </details>
+      <p class="tracker-daily-form-status" data-daily-status role="status" aria-live="polite"></p>
+      <button type="submit" class="primary tracker-daily-save">Save Reading</button>
+    </form>
+  </section>
+
+  <section class="tracker-daily-section" aria-labelledby="mobile-schedule-heading">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-schedule-heading">Today's Administrations</h2>
+      <a href="/calendar">Calendar</a>
+    </div>
+    <p class="tracker-daily-note">Scheduled items are projections only. A dose is recorded only when you save it in the dose log.</p>
+    {% set due = summary.today | selectattr('status', 'equalto', 'due') | list %}
+    {% set recorded = summary.today | selectattr('status', 'equalto', 'recorded') | list %}
+    <p class="tracker-daily-summary">{{ recorded|length }} matched recorded · {{ due|length }} due</p>
+    {% if summary.today %}
+      <ul class="tracker-daily-list">
+        {% for item in summary.today %}
+        <li>
+          <div>
+            <strong>{{ item.name }}</strong>
+            <span>{{ item.dose }}{% if item.dose_time %} · {{ item.dose_time }}{% endif %}</span>
+            {% if item.protocol %}<small>{{ item.protocol }}</small>{% endif %}
+          </div>
+          {% if item.status == 'due' %}
+          <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ today.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review &amp; Log</a>
+          {% else %}
+          <span class="tracker-daily-pill">{{ 'Recorded' if item.status == 'recorded' else 'Unscheduled record' }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="tracker-daily-empty">No administrations scheduled or recorded today.</p>
+    {% endif %}
+    {% if summary.missing_start %}
+      <p class="tracker-daily-note">Some active protocols have no start date and cannot be projected. <a href="/protocols">Review protocols</a>.</p>
+    {% endif %}
+  </section>
+
+  <section class="tracker-daily-section" aria-labelledby="mobile-recent-heading">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-recent-heading">Recent Doses</h2>
+      <a href="/doses#dose-history">Dose History</a>
+    </div>
+    {% if recent_doses %}
+    <ul class="tracker-daily-list">
+      {% for dose in recent_doses %}
+      <li>
+        <div>
+          <strong>{{ dose.vial.compound.name }}</strong>
+          <span>{{ dose.entered_value|num }} {{ dose.entered_unit }} · {{ dose.taken_at|dt }}</span>
+        </div>
+        <a href="/doses?repeat_from={{ dose.id }}#quick-dose-entry">Prepare Similar</a>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="tracker-daily-note">Prepare Similar prefills a new draft. It does not repeat or save an administration until reviewed and submitted.</p>
+    {% else %}
+    <p class="tracker-daily-empty">No doses recorded yet. <a href="/doses#quick-dose-entry">Record your first dose</a>.</p>
+    {% endif %}
+  </section>
+
+  <section class="tracker-daily-section" aria-labelledby="mobile-upcoming-heading">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-upcoming-heading">Next 7 Days</h2>
+      <a href="/calendar">Full Calendar</a>
+    </div>
+    {% if summary.upcoming %}
+    <ul class="tracker-daily-list tracker-daily-upcoming">
+      {% for day, item in summary.upcoming[:8] %}
+      <li>
+        <div>
+          <strong>{{ day.strftime('%a %b %-d') }} · {{ item.name }}</strong>
+          <span>{{ item.dose }} · {{ item.protocol }}</span>
+        </div>
+        <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="tracker-daily-empty">Nothing projected for the coming week.</p>
+    {% endif %}
+  </section>
+
+  <section class="tracker-daily-section" aria-labelledby="mobile-vitals-history-heading">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-vitals-history-heading">Recent Vital Readings</h2>
+      <a href="/vitals">All Vitals</a>
+    </div>
+    {% if recent_vitals %}
+    <ul class="tracker-daily-list">
+      {% for reading in recent_vitals %}
+      <li>
+        <div>
+          <strong>{{ reading.measured_at|dt }}</strong>
+          <span>
+            {% if reading.weight_kg is not none %}{{ reading.weight_kg|num }} kg{% endif %}
+            {% if reading.systolic is not none %} · BP {{ reading.systolic }}/{{ reading.diastolic }}{% endif %}
+            {% if reading.pulse_bpm is not none %} · Pulse {{ reading.pulse_bpm }}{% endif %}
+          </span>
+        </div>
+        <a href="/vitals/{{ reading.id }}/edit">View</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="tracker-daily-empty">No vital readings yet.</p>
+    {% endif %}
+  </section>
+
+  <nav class="tracker-daily-footer" aria-label="Additional Tracker areas">
+    <a href="/food">Food Journal</a>
+    <a href="/vials">Inventory</a>
+    <a href="/health-timeline">Health Timeline</a>
+    <a href="/">Desktop Overview</a>
+  </nav>
+</div>
+{% endblock %}
