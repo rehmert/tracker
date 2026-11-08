@@ -1,0 +1,50 @@
+/* Release 509: phone-first Today workspace; no desktop-wide overrides. */
+.tracker-daily509{width:min(100%,76rem);margin:auto;display:grid;gap:.85rem;min-width:0;color:var(--ink,#192c31)}
+.tracker-daily509 *{box-sizing:border-box}
+.tracker-daily-hero{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:.75rem}
+.tracker-daily-hero h1{margin:.1rem 0 .2rem;font-size:clamp(1.8rem,5vw,2.35rem)}
+.tracker-daily-hero p{margin:0}
+.tracker-daily-eyebrow{font-weight:800;font-size:.68rem;letter-spacing:.15em}
+.tracker-daily-dev{display:inline-flex;border-radius:.75rem;padding:.55rem .8rem;background:#f8dfaa;border:1px solid #a26a14;color:#583600;font-size:.85rem}
+.tracker-daily-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem}
+.tracker-daily-actions a{display:flex;justify-content:center;align-items:center;text-align:center;min-height:3.2rem;min-width:0;padding:.65rem .3rem;border-radius:.85rem;border:1px solid var(--rule,#cbd5e1);font-weight:750;text-decoration:none;background:var(--surface,#fff);color:var(--ink,#192c31)}
+.tracker-daily-actions .tracker-daily-action-primary{background:#1265ad;color:#fff;border-color:#1265ad}
+.tracker-daily-section{min-width:0;padding:clamp(.75rem,2.5vw,1.15rem);border:1px solid var(--rule,#cbd5e1);border-radius:1rem;background:var(--surface,#fff)}
+.tracker-daily-heading{display:flex;align-items:center;justify-content:space-between;gap:.55rem;margin-bottom:.6rem}
+.tracker-daily-heading h2{font-size:1.08rem;margin:0}
+.tracker-daily-heading a{font-size:.84rem;white-space:nowrap}
+.tracker-daily-note,.tracker-daily-empty{color:var(--muted,#62717d);font-size:.85rem;line-height:1.45;margin:.45rem 0 .6rem}
+.tracker-daily-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.45rem}
+.tracker-daily-metrics a{display:flex;flex-direction:column;min-width:0;padding:.68rem .45rem;border-radius:.8rem;background:var(--wash,#f1f5f9);border:1px solid var(--rule,#cbd5e1);text-decoration:none;color:var(--ink,#192c31)}
+.tracker-daily-metrics a span,.tracker-daily-metrics a small{color:var(--muted,#62717d);font-size:.72rem}
+.tracker-daily-metrics a strong{font-size:clamp(1.1rem,4vw,1.4rem);margin:.2rem 0}
+.tracker-daily-mode{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.35rem;margin:.75rem 0}
+.tracker-daily-mode button{min-height:2.9rem;min-width:0;padding:.3rem .2rem;font-weight:700;border-radius:.65rem;border:1px solid var(--rule,#cbd5e1);color:var(--ink,#192c31);background:var(--surface,#fff)}
+.tracker-daily-mode button[aria-pressed="true"]{background:var(--teal,#1265ad);color:var(--teal-ink,#fff)}
+.tracker-daily-vitals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;align-items:end}
+.tracker-daily-input{display:flex;flex-direction:column;gap:.24rem;min-width:0;margin:0}
+.tracker-daily-input span{font-size:.78rem;font-weight:700}
+.tracker-daily-input input,.tracker-daily-input select{font-size:16px!important;width:100%;min-width:0;min-height:3rem;margin:0;padding:.55rem .65rem;border:1px solid var(--rule,#a7b4c1);border-radius:.6rem;color:var(--ink,#192c31);background:var(--surface,#fff)}
+.tracker-daily-time,.tracker-daily-optional,.tracker-daily-form-status,.tracker-daily-save{grid-column:1/-1}
+.tracker-daily-optional{padding:.3rem 0}
+.tracker-daily-optional summary{cursor:pointer;font-weight:650;font-size:.85rem;min-height:2.2rem}
+.tracker-daily-optional .tracker-daily-input{margin:.45rem 0}
+.tracker-daily-form-status:empty{display:none}
+.tracker-daily-form-status{margin:0;color:var(--muted,#62717d)}
+.tracker-daily-save{width:100%;min-height:3.25rem;border-radius:.75rem;font-size:1rem;font-weight:750}
+.tracker-daily-vitals[data-mode="weight"] .tracker-daily-systolic,.tracker-daily-vitals[data-mode="weight"] .tracker-daily-diastolic,.tracker-daily-vitals[data-mode="weight"] .tracker-daily-pulse,.tracker-daily-vitals[data-mode="bp"] .tracker-daily-weight,.tracker-daily-vitals[data-mode="bp"] .tracker-daily-unit,.tracker-daily-vitals[data-mode="bp"] .tracker-daily-pulse,.tracker-daily-vitals[data-mode="pulse"] .tracker-daily-weight,.tracker-daily-vitals[data-mode="pulse"] .tracker-daily-unit,.tracker-daily-vitals[data-mode="pulse"] .tracker-daily-systolic,.tracker-daily-vitals[data-mode="pulse"] .tracker-daily-diastolic{display:none}
+.tracker-daily-summary{margin:.25rem 0 .65rem;font-weight:700;font-size:.9rem}
+.tracker-daily-list{display:grid;gap:0;padding:0;list-style:none;margin:0}
+.tracker-daily-list li{display:flex;justify-content:space-between;align-items:center;gap:.65rem;min-width:0;padding:.7rem 0;border-top:1px solid var(--rule,#cbd5e1)}
+.tracker-daily-list li:first-child{border-top:0}
+.tracker-daily-list li>div{display:flex;flex-direction:column;min-width:0;gap:.18rem}
+.tracker-daily-list li strong{font-size:.9rem;overflow-wrap:anywhere}
+.tracker-daily-list li span,.tracker-daily-list li small{font-size:.79rem;color:var(--muted,#62717d);overflow-wrap:anywhere}
+.tracker-daily-list li a{flex:0 0 auto;text-decoration:none;border:1px solid var(--rule,#cbd5e1);border-radius:.6rem;padding:.55rem .65rem;font-size:.77rem;font-weight:700;min-height:2.5rem;display:inline-flex;align-items:center;color:var(--ink,#192c31)}
+.tracker-daily-list .tracker-daily-pill{padding:.4rem .55rem;border-radius:1rem;background:var(--wash,#f1f5f9);text-align:right}
+.tracker-daily-footer{display:flex;flex-wrap:wrap;gap:.55rem;margin:.25rem 0 .65rem}
+.tracker-daily-footer a{border:1px solid var(--rule,#cbd5e1);padding:.6rem .7rem;border-radius:.65rem;min-height:2.65rem;display:inline-flex;align-items:center;font-size:.8rem}
+.tracker-daily509 :is(a,button,input,select,summary):focus-visible{outline:3px solid #2784c2;outline-offset:2px}
+@media(max-width:760px){.tracker-daily509{gap:.7rem}.tracker-daily-list li a{max-width:38%}.tracker-daily-dev{font-size:.74rem}}
+@media(max-width:350px){.tracker-daily-actions{gap:.25rem}.tracker-daily-actions a{font-size:.75rem}.tracker-daily-list li{flex-wrap:wrap}.tracker-daily-list li a{max-width:100%}}
+@media print{.tracker-daily-actions,.tracker-daily-vitals,.tracker-daily-mode{display:none!important}}
