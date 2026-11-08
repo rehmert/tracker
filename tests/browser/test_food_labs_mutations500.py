@@ -176,8 +176,8 @@ def test_500_lab_report_create_edit_history_export_and_delete(page):
     row.locator('input[name="unit"]').fill("ng/mL")
     report_path = submit_lab_form500(tab, "form[data-lab-manual-entry]")
     assert re.fullmatch(r"/labs/\d+", report_path), report_path
-    expect(tab.locator("h1")).to_contain_text("Lab report")
-    expect(tab.locator("body")).to_contain_text("QA Analyte 500")
+    expect(tab.locator("h1")).to_contain_text(re.compile(r"Lab report", re.I))
+    expect(tab.locator("body")).to_contain_text(re.compile(r"QA Analyte 500", re.I))
 
     tab.locator("details.lab-edit-panel").first.evaluate(
         "(node) => { node.open = true; }"
@@ -185,7 +185,7 @@ def test_500_lab_report_create_edit_history_export_and_delete(page):
     edit = tab.locator('form[action="' + report_path + '/edit"]')
     edit.locator('input[name="lab_name"]').fill("Browser QA Lab 500 Edited")
     submit_lab_form500(tab, 'form[action="' + report_path + '/edit"]')
-    expect(tab.locator("h1")).to_contain_text("Browser QA Lab 500 Edited")
+    expect(tab.locator("h1")).to_contain_text(re.compile(r"Browser QA Lab 500 Edited", re.I))
 
     history = URL + "/labs/trends/qa%20analyte%20500"
     result = tab.goto(history, wait_until="networkidle")
@@ -201,6 +201,8 @@ def test_500_lab_report_create_edit_history_export_and_delete(page):
     tab.goto(URL + report_path, wait_until="networkidle")
     submit_lab_form500(tab, 'form[action="' + report_path + '/delete"]')
     expect(tab.locator("body")).not_to_contain_text(
-        "Browser QA Lab 500 Edited"
+        re.compile(r"Browser QA Lab 500 Edited", re.I)
     )
+    # The report must actually be gone, not merely displayed in Title Case.
+    assert tab.request.get(URL + report_path).status == 404
     assert not errors, errors
