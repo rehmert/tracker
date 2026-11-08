@@ -110,8 +110,9 @@ def test_guarded_release_keeps_all_safety_gates_with_bounded_dev_parallelism():
     assert source.count('"$PY" -m pytest') == 1
     assert 'timeout 1200 "$PY" -m pytest' in source
     assert 'TEST_PYTEST_EXTRA=(-n "$WORKERS" --dist=loadfile)' in source
-    assert '[[ "$INSTANCE" == DEV && "$SERIAL_TESTS" == 0 ]]' in source
-    assert 'if [[ "$INSTANCE" == DEV && "$SERIAL_TESTS" == 0 ]] && "$PY" -c' in source
+    assert 'if [[ "$SERIAL_TESTS" == 0 ]] && "$PY" -c' in source
+    assert 'if [[ "$INSTANCE" == DEV && "$SERIAL_TESTS" == 0 ]]' not in source
+    assert 'if [[ "$INSTANCE" == PROD && "$SERIAL_TESTS" == 0 ]]' not in source
     assert 'TEST_PYTEST_EXTRA=()' in source
     assert 'print(min(16, max(1, count)))' in source
     assert 'BACKEND_TEST_MODE=PARALLEL workers=$WORKERS' in source
