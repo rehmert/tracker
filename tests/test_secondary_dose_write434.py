@@ -82,8 +82,13 @@ def _login(client, uid):
     assert response.status_code == 303
 
 
-def _dose_form(client):
-    page = client.get("/secondary/doses/new")
+def _dose_form(client, *, page=None):
+    if page is None:
+        page = client.get("/secondary/doses/new")
+    else:
+        assert page.request.method == "GET"
+        assert page.request.url.path == "/secondary/doses/new"
+        assert not page.request.url.query
     assert page.status_code == 200, page.text[:250]
     assert 'action="/secondary/doses/new"' in page.text
     return {
@@ -123,7 +128,7 @@ def test_authenticated_dose_write_is_private_and_decrements_available(browser):
     assert page.status_code == 200
     assert "PRIVATE-VIAL-2" in page.text
     assert "<img" not in page.text
-    data = _dose_form(client)
+    data = _dose_form(client, page=page)
 
     result = client.post(
         "/secondary/doses/new", data=data, follow_redirects=False,
