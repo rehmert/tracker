@@ -8,7 +8,7 @@
 .tracker-daily-dev{display:inline-flex;border-radius:.75rem;padding:.55rem .8rem;background:#f8dfaa;border:1px solid #a26a14;color:#583600;font-size:.85rem}
 .tracker-daily-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem}
 .tracker-daily-actions a{display:flex;justify-content:center;align-items:center;text-align:center;min-height:3.2rem;min-width:0;padding:.65rem .3rem;border-radius:.85rem;border:1px solid var(--rule,#cbd5e1);font-weight:750;text-decoration:none;background:var(--surface,#fff);color:var(--ink,#192c31)}
-.tracker-daily-actions .tracker-daily-action-primary{background:#1265ad;color:#fff;border-color:#1265ad}
+.tracker-daily-actions .tracker-daily-action-primary{background:var(--teal,#1265ad);color:var(--teal-ink,#fff);border-color:var(--teal,#1265ad)}
 .tracker-daily-section{min-width:0;padding:clamp(.75rem,2.5vw,1.15rem);border:1px solid var(--rule,#cbd5e1);border-radius:1rem;background:var(--surface,#fff)}
 .tracker-daily-heading{display:flex;align-items:center;justify-content:space-between;gap:.55rem;margin-bottom:.6rem}
 .tracker-daily-heading h2{font-size:1.08rem;margin:0}

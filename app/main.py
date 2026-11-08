@@ -276,6 +276,10 @@ app.include_router(activity.router)
 from .routers import mobile509
 app.include_router(mobile509.router)
 
+# Release 510: server-managed, request-time CSS overrides.
+from .routers import theme510
+app.include_router(theme510.router)
+
 # Release 69-72: read-only workflow tools
 from .routers import workflow_tools
 app.include_router(workflow_tools.router)

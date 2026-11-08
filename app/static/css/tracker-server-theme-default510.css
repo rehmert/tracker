@@ -1,0 +1,30 @@
+/*
+ * Tracker 510: default server-managed theme (light + dark).
+ *
+ * This checked-in file is ONLY the fallback. To customize appearance without
+ * editing application code or redeploying Tracker, create/edit:
+ *
+ *     TRACKER_DATA_DIR/tracker-theme.css
+ *
+ * GET /ui/theme.css serves that file immediately, with no-store headers.
+ * Keep this CSS free of remote @import/url() requests and of private data.
+ */
+:root,
+:root[data-theme="light"] {
+  --teal: #1265ad;
+  --teal-ink: #ffffff;
+  --tracker-brand-blue: #1686df;
+  --tracker-brand-deep: #0754a6;
+  --tracker-brand-soft: rgba(22, 134, 223, .075);
+  --tracker-brand-border: rgba(22, 134, 223, .20);
+  --tracker-brand-focus: rgba(22, 134, 223, .22);
+}
+:root[data-theme="dark"] {
+  --teal: #79b8f7;
+  --teal-ink: #102438;
+  --tracker-brand-blue: #65b9ff;
+  --tracker-brand-deep: #3399e8;
+  --tracker-brand-soft: rgba(101, 185, 255, .10);
+  --tracker-brand-border: rgba(101, 185, 255, .23);
+  --tracker-brand-focus: rgba(101, 185, 255, .25);
+}

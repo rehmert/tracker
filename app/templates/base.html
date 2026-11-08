@@ -83,6 +83,9 @@
   <!-- Release 507: Android-first app shell; layered after legacy layout rules. -->
   <link rel="stylesheet" href="/static/css/tracker-mobile-shell507.css?v=507">
   <script src="/static/js/tracker-mobile-shell507.js?v=507" defer></script>
+  <!-- Always fetch server-managed theme on each visit, after other global CSS.
+       Separate from the Android launcher icon / PWA manifest. -->
+  <link rel="stylesheet" href="/ui/theme.css">
 </head>
 <body>
 <a class="tracker-skip-link" href="#main-content">Skip to Content</a>
