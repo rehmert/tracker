@@ -52,6 +52,32 @@ def _name_options(db: Session) -> list[str]:
     return sorted(seen.values(), key=str.lower)
 
 
+def previous_draw499(items, latest):
+    """Read-only prior dated value and unit-safe difference from latest."""
+    current_res, current_rep = latest
+    older = [
+        (res, rep) for res, rep in items
+        if rep.drawn_on < current_rep.drawn_on
+    ]
+    if not older:
+        return None
+    prior_res, prior_rep = max(
+        older, key=lambda entry: (entry[1].drawn_on, entry[0].id)
+    )
+    converted = labs.convert(
+        current_res.analyte, prior_res.value, prior_res.unit, current_res.unit
+    )
+    delta = (
+        current_res.value - converted
+        if converted is not None
+        and math.isfinite(current_res.value)
+        and math.isfinite(converted)
+        else None
+    )
+    return {"res": prior_res, "rep": prior_rep, "delta": delta,
+            "converted": converted}
+
+
 @router.get("/labs")
 def labs_index(request: Request, db: Session = Depends(get_scoped_db390)):
     cards = []
@@ -63,6 +89,7 @@ def labs_index(request: Request, db: Session = Depends(get_scoped_db390)):
             unit=f" {sr.unit}", band=sr.band, band_label="Range printed on the latest report")
         cards.append({"key": key, "name": res.analyte, "res": res, "rep": rep, "n": len(items),
                       "svg": svg, "skipped": sr.skipped, "unit": sr.unit,
+                      "previous": previous_draw499(items, (res, rep)),
                       "status": labs.range_status(res.value, res.ref_low, res.ref_high)})
     cards.sort(key=lambda c: (c["name"].casefold(), c["key"]))
     reports = list(db.scalars(select(LabReport).order_by(LabReport.drawn_on.desc(), LabReport.id.desc())))
