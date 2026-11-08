@@ -139,7 +139,7 @@ def search_food_name(query):
             "page": "1",
             # The search index may not hold nutrition data; users fetch
             # complete serving details via the existing barcode endpoint.
-            "fields": "code,product_name,brands,serving_size",
+            "fields": "code,product_name",
         })
         try:
             modern = fetch_json494(
