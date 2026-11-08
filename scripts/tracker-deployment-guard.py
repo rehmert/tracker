@@ -57,6 +57,31 @@ def changed_paths(root, base, target):
     ]
 
 
+
+def tracked_app_paths(root):
+    """Check every tracked application file, not only release diff files.
+
+    A restrictive checkout umask can make previously unchanged modules
+    unreadable, and importing the app will then fail at service restart.
+    """
+    process = subprocess.run(
+        [
+            "git", "-c", f"safe.directory={root}", "-C", str(root),
+            "ls-files", "-z", "--", "app/",
+        ],
+        capture_output=True, check=False,
+    )
+    if process.returncode:
+        raise ValueError(
+            "Cannot list tracked application files: "
+            + process.stderr.decode("utf-8", "replace")[:180]
+        )
+    names = [os.fsdecode(raw) for raw in process.stdout.split(b"\\0") if raw]
+    if not names:
+        raise ValueError("No tracked application files found")
+    return names
+
+
 def source_paths(root, changes):
     """Only regular files under the application source tree are allowed."""
     root = Path(root).resolve()
@@ -112,7 +137,8 @@ def main(argv=None):
     try:
         user = args.service_user or service_user(args.service)
         changed = changed_paths(root, args.base, args.target)
-        count, errors = validate(root, changed, user)
+        tracked = tracked_app_paths(root)
+        count, errors = validate(root, changed + tracked, user)
     except (OSError, ValueError) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
@@ -124,7 +150,7 @@ def main(argv=None):
 
     print(
         f"PASS: {count} application files readable by "
-        f"{user} ({len(changed)} changed application paths)"
+        f"{user} ({len(changed)} changed application paths; all tracked files checked)"
     )
     return 0
 
