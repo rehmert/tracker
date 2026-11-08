@@ -58,23 +58,31 @@ case "$MODE" in
         ;;
 
     browser)
-        echo "=== EXTERNAL BROWSER ACCEPTANCE ==="
-
-        [[ -n "${TRACKER_TEST_URL:-}" ]] || {
-            echo "ERROR: Set TRACKER_TEST_URL"
-            echo "Browser tests require a separately"
-            echo "prepared authenticated test server."
+        echo "=== DISPOSABLE BROWSER ACCEPTANCE ==="
+        # Never run browser mutations against an installed Tracker service.
+        # The candidate runner starts its own loopback HTTP/HTTPS servers and
+        # uses an independent temporary SQLite directory.
+        CANDIDATE="${TRACKER_BROWSER_CANDIDATE:-}"
+        [[ -n "$CANDIDATE" ]] || {
+            echo "ERROR: Set TRACKER_BROWSER_CANDIDATE to a detached candidate worktree."
+            echo "For release qualification, use the guarded tracker-release.sh flow."
             exit 2
         }
-
-        echo "TARGET=$TRACKER_TEST_URL"
-
-        "$PY" -m pytest -q \
-            tests/browser \
-            --disable-warnings \
-            --tb=short
-
-        echo "=== BROWSER ACCEPTANCE SUCCESS ==="
+        CANDIDATE="$(realpath -e -- "$CANDIDATE")"
+        [[ "$CANDIDATE" != "$APP" && "$CANDIDATE" != "$APP/"* ]] || {
+            echo "ERROR: Refusing to use the installed application as candidate."
+            exit 2
+        }
+        [[ -f "$CANDIDATE/app/main.py" &&
+           -f "$CANDIDATE/scripts/tracker-browser-qualify.sh" ]] || {
+            echo "ERROR: Invalid detached candidate worktree."
+            exit 2
+        }
+        [[ "$(git -C "$CANDIDATE" rev-parse --show-toplevel)" == "$CANDIDATE" ]] || {
+            echo "ERROR: Candidate is not a worktree root."
+            exit 2
+        }
+        exec bash "$CANDIDATE/scripts/tracker-browser-qualify.sh" "$CANDIDATE" "$PY"
         ;;
 
     *)
