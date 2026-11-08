@@ -272,6 +272,10 @@ def healthz():
 from .routers import activity
 app.include_router(activity.router)
 
+# Release 509: private Android Today workspace and install identity.
+from .routers import mobile509
+app.include_router(mobile509.router)
+
 # Release 69-72: read-only workflow tools
 from .routers import workflow_tools
 app.include_router(workflow_tools.router)
