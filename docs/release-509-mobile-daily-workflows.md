@@ -26,13 +26,15 @@ application build, separate API, third-party dependencies or public ports.
    generates a new submission token and requires confirmation,
    checking the current vial's remaining quantity. The mobile
    Today screen never saves a dose.
-4. **Distinct installed Android identities.** PWA manifest is served
-   dynamically at `/tracker.webmanifest` with `Cache-Control:
-   private, no-store`. PROD is Tracker with blue icons and DEV is
-   Tracker DEV with amber icons. Both point to `/mobile` as the
-   startup page, but each HTTPS origin is a separate installation.
-   Existing static icon and manifest paths remain for compatibility,
-   although the HTML layout now links the dynamic manifest.
+4. **Distinct installed Android identities.** PROD links to the
+   public static `/static/tracker.webmanifest` and DEV to
+   `/static/tracker-dev.webmanifest`. PROD is Tracker with blue
+   icons and DEV is Tracker DEV with amber icons. Both point to
+   `/mobile` as the startup page and install separately by HTTPS
+   origin. Only installation metadata and icons are public; all
+   health records remain behind the normal Tracker authentication.
+   The static path is essential because Chrome cannot reliably
+   install from the earlier authenticated dynamic manifest route.
 5. **Updated mobile navigation and Quick Entry.** The bottom Today
    tab launches the new page, and Today is included in the existing
    sidebar navigation. Quick Entry offers direct links to Today
@@ -93,3 +95,29 @@ plus the updated Release 507 manifest/dock contracts.
   PWA already works through private HTTPS and Tailscale.
 - Barcode capture and offline editing: keep separate until
   requirements and safe behavior are worked out.
+
+## DEV installation recovery after initial Release 509 rollout
+
+Initial Release 509 linked `/tracker.webmanifest`, an application
+route subject to `require_auth`. Chrome on Android can reject PWA
+installation when it receives the login redirect rather than the
+installation manifest. The in-branch follow-up restores the known
+working Release 507 static-hosting approach, with separate public
+DEV and PROD manifests and a versioned HTML manifest link.
+
+Validate after guarded DEV deployment:
+
+```bash
+curl -k -sS -o /dev/null -w '%{http_code} %{content_type}\n' \
+  https://tracker-dev.rehmert.net/static/tracker-dev.webmanifest
+curl -sS http://127.0.0.1:8000/static/tracker-dev.webmanifest \
+  | python3 -m json.tool
+```
+
+The first request should return 200 (certificate trust is
+best checked separately without `-k`), and the second must show
+`"name": "Tracker DEV"`, `"start_url": "/mobile"`, and both
+valid static PNG icons. On Android, reload the logged-in `/mobile`
+page, then use Chrome's Install app option. If Chrome caches the
+previous failure, close the tab and reopen it after deployment.
+Do not expose the private application or open WAN firewall ports.
