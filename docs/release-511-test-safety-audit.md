@@ -66,9 +66,11 @@ silently set `TRACKER_CSRF_ENFORCE=1`: multipart and legacy flows require
 end-to-end compatibility testing before that can be a safe default.
 
 The installed Python dependencies are version-ranged rather than locked.
-Capture a tested environment snapshot and evaluate compatibility before
-introducing a lockfile. A GitHub test runner cannot replace a guarded
-restore/recovery drill on the actual DEV host.
+Capture a tested environment snapshot on the actual DEV and PROD LXC hosts
+and evaluate compatibility before introducing a lockfile. **All qualification
+must execute on the dedicated DEV LXC**, using the pinned release workflow
+and its disposable test worktree, not GitHub-hosted CI. GitHub is a source
+repository only.
 
 ## Acceptance
 
