@@ -19,14 +19,18 @@ def test_worker_selection_validation():
     assert benchmark.parse_workers(
         "1,2,4"
     ) == [1, 2, 4]
+    assert benchmark.parse_workers(
+        "8,12,16,24,32"
+    ) == [8, 12, 16, 24, 32]
+    assert benchmark.parse_workers("8") == [8]
 
     for invalid in (
-        "2,4",
         "1,1",
         "0,1",
-        "1,9",
+        "1,33",
         "1,banana",
         "",
+        "1,2,3,4,5,6,7,8,9",
     ):
         with pytest.raises(
             benchmark.argparse.ArgumentTypeError
@@ -50,6 +54,22 @@ def test_parallel_recommended_only_with_meaningful_gain():
     assert gain == pytest.approx(0.075)
 
 
+def test_second_stage_benchmark_uses_lowest_worker_as_baseline():
+    # No need to waste another 10 minutes on a serial run after the
+    # first 2,591-test benchmark established a reproducible baseline.
+    selected, gain = benchmark.recommendation(
+        {8: 101.12, 12: 85.0, 16: 70.0}
+    )
+    assert selected == 16
+    assert gain == pytest.approx((101.12 - 70) / 101.12)
+
+    selected, gain = benchmark.recommendation(
+        {8: 101.12, 12: 100.0, 16: 99.0}
+    )
+    assert selected == 8
+    assert gain < 0.10
+
+
 def test_serial_is_kept_when_parallel_is_slower():
     selected, gain = benchmark.recommendation(
         {1: 30.0, 2: 31.0, 4: 33.0}
@@ -67,6 +87,8 @@ def test_runner_uses_existing_isolated_test_modes():
     assert '"TRACKER_TEST_WORKERS"' in source
     assert "run_one(" in source
     assert "fully_qualified" in source
+    assert '"baseline_workers": min(args.workers)' in source
+    assert '"deployment_ready": False' in source
     assert "report.json" in source
 
 
