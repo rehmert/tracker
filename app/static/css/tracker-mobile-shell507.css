@@ -1,0 +1,90 @@
+/* Release 507: thumb-reachable navigation for small-screen standalone/Chrome.
+   Existing desktop navigation and page styling remain unchanged. */
+.tracker-mobile-dock { display: none; }
+
+@media (max-width: 760px) {
+  #main-content {
+    padding-bottom: calc(6.6rem + env(safe-area-inset-bottom, 0px));
+    min-width: 0;
+  }
+
+  .tracker-mobile-dock {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30; /* Below the existing sidebar and its backdrop. */
+    padding: .35rem max(.35rem, env(safe-area-inset-right, 0px))
+             calc(.3rem + env(safe-area-inset-bottom, 0px))
+             max(.35rem, env(safe-area-inset-left, 0px));
+    gap: .15rem;
+    border-top: 1px solid var(--rule, #d5dce5);
+    background: var(--surface, #fff);
+    color: var(--ink, #18211e);
+    box-shadow: 0 -3px 18px rgba(0, 0, 0, .10);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tracker-mobile-dock a,
+  .tracker-mobile-dock button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .14rem;
+    min-width: 0;
+    min-height: 3.3rem;
+    padding: .24rem .05rem;
+    border: 0;
+    border-radius: .7rem;
+    background: transparent;
+    color: inherit;
+    font: 600 .66rem/1.2 system-ui, -apple-system, sans-serif;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .tracker-mobile-dock a[aria-current="page"],
+  .tracker-mobile-dock button[aria-expanded="true"] {
+    background: var(--wash, #e6eef5);
+    color: var(--teal, #1265ad);
+  }
+
+  .tracker-mobile-dock a:focus-visible,
+  .tracker-mobile-dock button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+  }
+
+  .tracker-mobile-dock-icon {
+    font-size: 1.43rem;
+    line-height: 1.1;
+    font-weight: 650;
+  }
+
+  /* Keyboard interactions should not compete with the mobile software keyboard. */
+  .tracker-mobile-editing .tracker-mobile-dock { display: none; }
+
+  /* Keep notifications visible above the dock instead of hiding behind it. */
+  .toast-region {
+    bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 360px) {
+  .tracker-mobile-dock a,
+  .tracker-mobile-dock button { font-size: .58rem; }
+  .tracker-mobile-dock-icon { font-size: 1.27rem; }
+}
+
+@media (min-width: 761px) {
+  .tracker-mobile-dock { display: none !important; }
+}
+
+@media print {
+  .tracker-mobile-dock { display: none !important; }
+  #main-content { padding-bottom: 0 !important; }
+}
