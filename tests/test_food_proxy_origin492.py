@@ -126,7 +126,8 @@ def test_real_proxy_signed_form_field_is_sufficient(reverse_proxy_client):
 
 @pytest.mark.parametrize("headers,expected", (
     ({"Origin": "https://tracker.example",
-      "Sec-Fetch-Site": "same-origin"}, 403),
+      "Sec-Fetch-Site": "same-origin",
+      HEADER_NAME: "forged"}, 403),
     ({"Origin": "https://tracker.example",
       "Sec-Fetch-Site": "cross-site"}, 403),
     ({"Origin": "https://tracker.example",
@@ -148,6 +149,20 @@ def test_real_proxy_rejects_unsafe_or_unsigned(reverse_proxy_client, headers, ex
         follow_redirects=False,
     )
     assert response.status_code == expected
+
+
+def test_missing_csrf_does_not_receive_proxy_exception(reverse_proxy_client):
+    client, token = reverse_proxy_client
+    response = client.post(
+        "/food/entry",
+        headers={
+            "Origin": "https://tracker.example",
+            "Sec-Fetch-Site": "same-origin",
+        },
+        data={"name": ""},
+        follow_redirects=False,
+    )
+    assert response.status_code == 403
 
 
 def test_all_other_routes_still_reject_proxy_mismatch(reverse_proxy_client):
