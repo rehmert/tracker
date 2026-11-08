@@ -95,7 +95,7 @@ def search_products(query, db_engine=None):
 
 def weekly_summary(day, db_engine=None):
     """Seven days of logged totals, ending on selected day."""
-    end = date.fromisoformat(day)
+    end = date.fromisoformat(selected_day(day))
     start = end - timedelta(days=6)
 
     selected_engine = (
