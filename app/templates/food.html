@@ -20,6 +20,7 @@
 <script src="/static/js/tracker-food380.js?v=499" defer></script>
 <script src="/static/js/tracker-food374.js?v=499" defer></script>
 <script src="/static/js/tracker-food499.js?v=499" defer></script>
+<script src="/static/js/tracker-food500.js?v=500" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Tap a section below to expand it.
 Daily totals remain visible; nutrient values can be incomplete.
@@ -319,11 +320,28 @@ Save Daily Targets
 <h2>Quick Log</h2>
 <p class="note">Reuse a saved food with its original nutrient values.
 Adjust the quantity and meal before adding it to the selected day.</p>
+<div id="food500-quick-controls" class="food376-search" aria-label="Quick Log filters">
+<label for="food500-quick-search">Find favorite or recent food
+<input type="search" id="food500-quick-search" autocomplete="off"
+ placeholder="Filter by food name or serving size">
+</label>
+<label for="food500-quick-scope">Show
+<select id="food500-quick-scope">
+<option value="all">Favorites and recent</option>
+<option value="favorites">Favorites only</option>
+<option value="recent">Recent only</option>
+</select>
+</label>
+<button type="button" id="food500-quick-reset">Clear Filters</button>
+</div>
+<p id="food500-quick-count" class="note" role="status" aria-live="polite"></p>
+<p id="food500-quick-empty" class="note" hidden>No saved foods match. Try a different search or Search Saved Foods.</p>
 {% if favorites %}
 <h3>Favorites</h3>
-<div class="food375-list">
+<div class="food375-list" id="food500-favorites">
 {% for item in favorites %}
-<article class="food375-item">
+<article class="food375-item" data-food500-quick-card data-food500-scope="favorites"
+ data-food500-name="{{ item.name }}" data-food500-serving="{{ item.serving_description }}">
  <div class="food375-name"><strong>{{ item.name }}</strong>
  <small>{{ item.serving_description }}</small></div>
 
@@ -364,11 +382,12 @@ Adjust the quantity and meal before adding it to the selected day.</p>
 {% endfor %}
 </div>
 {% endif %}
-<details {% if not favorites %}open{% endif %}>
+<details id="food500-recent" {% if not favorites %}open{% endif %}>
 <summary>Recent Foods</summary>
 <div class="food375-list">
 {% for item in recent %}
-<article class="food375-item">
+<article class="food375-item" data-food500-quick-card data-food500-scope="recent"
+ data-food500-name="{{ item.name }}" data-food500-serving="{{ item.serving_description }}">
  <div class="food375-name"><strong>{{ item.name }}</strong>
  <small>{{ item.serving_description }}</small></div>
 
