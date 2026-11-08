@@ -71,6 +71,14 @@
         <div class="lab-analyte-expanded">
           <div class="chartbox">{{ c.svg|safe }}</div>
           <p class="meta">{{ c.n }} result{{ '' if c.n == 1 else 's' }}{% if c.skipped %} · {{ c.skipped }} in other units not drawn{% endif %}</p>
+          {% if c.previous %}
+          <p class="meta lab499-previous">Previous draw {{ c.previous.rep.drawn_on|dt }}: {{ c.previous.res.value|num }} {{ c.previous.res.unit }}.
+          {% if c.previous.delta is not none %}Difference from previous: {{ c.previous.delta|signed_decimal }} {{ c.res.unit }}{% if c.previous.res.unit != c.res.unit %} (prior converted to latest units){% endif %}.
+          {% else %}Difference unavailable: units not convertible.{% endif %}
+          </p>
+          {% else %}
+          <p class="meta lab499-previous">No earlier draw date recorded for this analyte.</p>
+          {% endif %}
           <p><a href="/labs/trends/{{ c.key|urlencode }}">View complete {{ c.name }} history</a></p>
         </div>
       </details>
