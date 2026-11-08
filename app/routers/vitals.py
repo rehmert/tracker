@@ -90,21 +90,24 @@ def vitals_page(request: Request, days: int = 90, events: int = 1,
 @router.post("/vitals")
 def add_reading(measured_at: str = Form(""), weight: str = Form(""), weight_unit: str = Form(config.WEIGHT_UNIT),
                 systolic: str = Form(""), diastolic: str = Form(""), pulse: str = Form(""),
-                context: str = Form(""), notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
+                context: str = Form(""), notes: str = Form(""), return_to: str = Form(""),
+                db: Session = Depends(get_scoped_db390)):
+    # Only a fixed internal destination; untrusted URLs never become redirects.
+    destination = "/mobile" if return_to == "mobile" else "/vitals"
     try:
         w = _opt(weight, float)
         kg = metrics.weight_to_kg(w, weight_unit) if w is not None else None
         sy, di, hr = _opt(systolic, int), _opt(diastolic, int), _opt(pulse, int)
         when = services.parse_datetime(measured_at)
     except ValueError as exc:
-        return services.flash_redirect("/vitals", err=str(exc))
+        return services.flash_redirect(destination, err=str(exc))
     errors = metrics.validate(kg, sy, di, hr)
     if errors:
-        return services.flash_redirect("/vitals", err=" ".join(errors))
+        return services.flash_redirect(destination, err=" ".join(errors))
     db.add(VitalReading(measured_at=when, weight_kg=kg, systolic=sy, diastolic=di, pulse_bpm=hr,
                         context=context.strip()[:80], notes=notes.strip()))
     db.commit()
-    return services.flash_redirect("/vitals", msg="Reading saved.")
+    return services.flash_redirect(destination, msg="Reading saved.")
 
 
 
