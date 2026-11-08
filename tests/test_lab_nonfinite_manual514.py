@@ -109,3 +109,60 @@ def test_514_invalid_manual_report_cannot_write_nonfinite_rows(lab_client_514):
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(LabReport)) == 0
         assert db.scalar(select(func.count()).select_from(LabResult)) == 0
+
+
+def test_514_manual_parser_never_drops_mismatched_form_rows():
+    parsed, echoed, error = _parse_rows(
+        ["TSH", "IGF-1"],
+        ["1.25"],
+        ["mIU/L", "ng/mL"],
+        ["0.4", "80"],
+        ["4.5", "250"],
+    )
+    assert parsed == []
+    assert len(echoed) == 2
+    assert echoed[1]["analyte"] == "IGF-1"
+    assert echoed[1]["value"] == ""
+    assert "Incomplete lab result rows" in error
+
+
+def test_514_partially_filled_rows_are_not_discarded_as_blank():
+    parsed, echoed, error = _parse_rows(
+        [""], [""], ["ng/mL"], [""], [""]
+    )
+    assert parsed == []
+    assert len(echoed) == 1
+    assert "analyte name" in error.lower()
+
+
+def test_514_blank_row_remains_ignorable_after_valid_measurement():
+    parsed, echoed, error = _parse_rows(
+        ["TSH", ""], ["1.25", ""], ["mIU/L", ""],
+        ["0.4", ""], ["4.5", ""],
+    )
+    assert error is None
+    assert len(echoed) == 2
+    assert len(parsed) == 1
+    assert parsed[0].value == 1.25
+
+
+def test_514_incomplete_form_cannot_commit_partial_report(lab_client_514):
+    client, engine = lab_client_514
+    response = client.post(
+        "/labs",
+        data={
+            "drawn_on": "2026-11-08",
+            "lab_name": "Isolated lab QA",
+            "analyte": "TSH",
+            "value": "1.25",
+            "unit": "mIU/L",
+            "ref_low": "0.4",
+            # Missing ref_high must reject rather than silently lose rows.
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    assert "Incomplete lab result rows" in response.text
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(LabReport)) == 0
+        assert db.scalar(select(func.count()).select_from(LabResult)) == 0
