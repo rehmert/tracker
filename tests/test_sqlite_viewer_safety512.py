@@ -80,3 +80,23 @@ def test_512_export_closes_sqlite_handle_even_on_error(
     assert len(opened) == 1
     with pytest.raises(sqlite3.ProgrammingError):
         opened[0].execute("SELECT 1")
+
+
+def test_512_failed_readonly_setup_closes_connection(isolated_sqlite, monkeypatch):
+    class FailedConnection:
+        closed = False
+
+        def execute(self, statement):
+            raise sqlite3.OperationalError("Query-only setup failed")
+
+        def close(self):
+            self.closed = True
+
+    failure = FailedConnection()
+    monkeypatch.setattr(
+        sqlite_viewer.sqlite3, "connect",
+        lambda *args, **kwargs: failure,
+    )
+    with pytest.raises(sqlite3.OperationalError):
+        sqlite_viewer._connection()
+    assert failure.closed
