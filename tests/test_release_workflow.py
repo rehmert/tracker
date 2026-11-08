@@ -115,7 +115,7 @@ def test_release_498_browser_gate_is_isolated_and_dev_only():
     assert syntax.returncode == 0, syntax.stderr
 
     assert 'if [[ "$INSTANCE" == DEV ]]; then' in source
-    assert 'timeout 300 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"' in source
+    assert 'timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"' in source
     assert "ISOLATED BROWSER QUALIFICATION" in source
 
     # The candidate, not a running installed Tracker, must be exercised.
