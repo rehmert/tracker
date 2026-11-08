@@ -46,7 +46,7 @@ def init_schema(db_engine=None):
 
 
 def search_products(query, db_engine=None):
-    """Read-only saved-product search; latest matching records first."""
+    """Read-only saved-product search: exact match, prefix, then recent partials."""
     value = str(query or "").strip()[:100]
     if not value:
         return []
@@ -59,6 +59,11 @@ def search_products(query, db_engine=None):
         rows = db.execute(text("""
             SELECT p.id, p.name, p.barcode,
                    p.serving_description, p.nutrients,
+                   (SELECT COUNT(*) FROM tracker_food_products other
+                    WHERE lower(other.name)=lower(p.name)
+                      AND COALESCE(other.barcode,'')=COALESCE(p.barcode,'')
+                      AND lower(other.serving_description)=lower(p.serving_description)
+                   ) AS saved_versions,
                    COALESCE(
                        (SELECT e.meal FROM tracker_food_entries e
                         WHERE e.product_id=p.id
@@ -74,7 +79,14 @@ def search_products(query, db_engine=None):
             FROM tracker_food_products p
             WHERE instr(lower(p.name), lower(:query)) > 0
                OR instr(COALESCE(p.barcode,''), :query) > 0
-            ORDER BY p.id DESC
+            ORDER BY
+              CASE
+                WHEN lower(p.name)=lower(:query)
+                  OR (p.barcode=:query AND p.barcode!='') THEN 0
+                WHEN substr(lower(p.name),1,length(:query))=lower(:query) THEN 1
+                ELSE 2
+              END,
+              p.id DESC
             LIMIT 30
         """), {"query": value}).mappings().all()
 
