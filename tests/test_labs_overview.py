@@ -589,7 +589,7 @@ def test_500_analyte_history_html_and_csv_are_read_only(lab_overview_client):
 
     response = client.get("/labs/trends/tsh/export.csv")
     assert response.status_code == 200
-    assert response.content.startswith(b"\\xef\\xbb\\xbf")
+    assert response.content.startswith(b"\xef\xbb\xbf")
     assert "private, no-store" in response.headers["cache-control"]
     rows = list(csv.DictReader(io.StringIO(
         response.content.decode("utf-8-sig")
