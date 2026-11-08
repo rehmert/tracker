@@ -157,6 +157,58 @@ def release_auth_headers(instance, settings):
 
     yield headers
 
+class TransportFailure(ValueError):
+    """The server could not be reached (as opposed to an HTTP failure)."""
+
+
+def read_http_page(opener, origin, path, headers, *, startup=False,
+                   clock=time.monotonic, pause=time.sleep):
+    """Retry short loopback transport interruptions without masking HTTP errors.
+
+    The old smoke runner reported HTTP 0 and immediately failed every remaining
+    sidebar link when the loopback listener was temporarily unavailable.
+    A sustained outage still fails closed, with the actual socket exception.
+    """
+    deadline = clock() + (30 if startup else 4)
+    attempts = 0
+    while True:
+        attempts += 1
+        try:
+            request = urllib.request.Request(origin + path, headers=headers)
+            with opener.open(request, timeout=6) as result:
+                status = result.status
+                body = result.read(3 * 1024 * 1024)
+            if status != 200:
+                raise ValueError(f"{path}: HTTP {status}")
+            return body
+        except urllib.error.HTTPError as error:
+            # A login redirect or real application error is not a socket glitch.
+            raise ValueError(f"{path}: HTTP {error.code}") from error
+        except OSError as error:
+            remaining = deadline - clock()
+            if remaining <= 0:
+                raise TransportFailure(
+                    f"{path}: transport {type(error).__name__}: {error} "
+                    f"(attempts={attempts})"
+                ) from error
+            pause(min(0.35, remaining))
+
+
+def service_state():
+    """Short, read-only summary for a live smoke failure."""
+    try:
+        result = subprocess.run(
+            ["systemctl", "show", "tracker",
+             "-p", "ActiveState", "-p", "SubState",
+             "-p", "MainPID", "-p", "ExecMainStatus",
+             "-p", "Result", "-p", "NRestarts"],
+            text=True, capture_output=True, timeout=5, check=False,
+        )
+        return result.stdout.strip().replace("\n", " | ")[:550]
+    except (OSError, subprocess.TimeoutExpired):
+        return "systemd status unavailable"
+
+
 def run(instance, envfile):
     settings = read_env(envfile)
     if settings.get("TRACKER_INSTANCE", "").upper() != instance:
@@ -168,23 +220,9 @@ def run(instance, envfile):
         origin = f"http://127.0.0.1:{port_from_service()}"
 
         def get(path, startup=False):
-            deadline = time.monotonic() + (30 if startup else 0)
-            while True:
-                status = 0
-                try:
-                    request = urllib.request.Request(origin + path, headers=headers)
-                    with opener.open(request, timeout=6) as result:
-                        status = result.status
-                        body = result.read(3 * 1024 * 1024)
-                    if status == 200:
-                        return body
-                except urllib.error.HTTPError as error:
-                    status = error.code
-                except OSError:
-                    pass
-                if time.monotonic() >= deadline:
-                    raise ValueError(f"{path}: HTTP {status}")
-                time.sleep(1)
+            return read_http_page(
+                opener, origin, path, headers, startup=startup
+            )
 
         health = get("/healthz", startup=True)
         if b'"ok":true' not in health.replace(b" ", b""):
@@ -196,19 +234,38 @@ def run(instance, envfile):
         if len(paths) < 35:
             raise ValueError(f"Sidebar unexpectedly contains {len(paths)} paths")
         failures = []
+        checked = 0
+        consecutive_transport_failures = 0
+        aborted = False
         for path in paths:
+            checked += 1
             try:
                 body = dashboard if path == "/" else get(path)
+                consecutive_transport_failures = 0
                 if b"<title>" not in body or (
                     f"tracker-instance--{instance.lower()}".encode() not in body
                 ):
                     failures.append(f"{path}: missing title/instance badge")
+            except TransportFailure as error:
+                failures.append(str(error)[:200])
+                consecutive_transport_failures += 1
+                if consecutive_transport_failures >= 2:
+                    aborted = True
+                    break
             except (OSError, ValueError) as error:
-                failures.append(f"{path}: {str(error)[:120]}")
+                consecutive_transport_failures = 0
+                failures.append(str(error)[:200])
         if failures:
+            suffix = (
+                f"; stopped after {checked}/{len(paths)} checks "
+                f"because the server remained unreachable"
+                if aborted else ""
+            )
             raise ValueError(
-                f"{len(failures)}/{len(paths)} pages failed: "
-                + "; ".join(failures[:12])
+                f"{len(failures)} failed of {checked} checked/"
+                f"{len(paths)} sidebar pages: "
+                + "; ".join(failures[:12]) + suffix
+                + "; service: " + service_state()
             )
         print(f"PASS: /healthz and {len(paths)} sidebar pages HTTP 200; {instance} identity")
 
