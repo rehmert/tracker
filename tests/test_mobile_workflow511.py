@@ -141,7 +141,9 @@ def test_511_client_search_only_updates_existing_vial_selector():
     assert 'select[name="vial_id"]' in js
     assert 'select.value = id' in js
     assert 'dispatchEvent(new Event("change", { bubbles: true }))' in js
-    assert 'event.preventDefault(); // Never allow Enter' in js
+    assert 'if (event.key === "Enter") {' in js
+    assert 'if (shown.length) choose(shown[0].id);' in js
+    assert 'event.preventDefault();' in js
     assert 'button.type = "button"' in js
     assert 'document.createElement("button")' in js
     assert 'button.textContent = item.label' in js
