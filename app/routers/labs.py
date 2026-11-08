@@ -2,6 +2,7 @@ import csv
 import io
 import math
 import re
+from itertools import zip_longest
 
 from datetime import date, datetime, timedelta
 
@@ -176,12 +177,21 @@ def _opt_float(text: str) -> float | None:
 
 def _parse_rows(analyte, value, unit, ref_low, ref_high):
     """Returns (LabResult list, echo rows for re-rendering, error or None)."""
-    echo = [dict(analyte=a, value=v, unit=u, ref_low=lo, ref_high=hi)
-            for a, v, u, lo, hi in zip(analyte, value, unit, ref_low, ref_high)]
+    fields = (analyte, value, unit, ref_low, ref_high)
+    # zip() silently truncates when a dynamic form omits one of its inputs.
+    # Preserve every submitted row for review and refuse partial saves.
+    echo = [
+        dict(analyte=a, value=v, unit=u, ref_low=lo, ref_high=hi)
+        for a, v, u, lo, hi in zip_longest(*fields, fillvalue="")
+    ]
+    if len({len(field) for field in fields}) != 1:
+        return [], echo, "Incomplete lab result rows; review all fields and retry."
     results = []
     for r in echo:
-        if not r["analyte"].strip() and not r["value"].strip():
-            continue                                    # blank row
+        if not any((r[key] or "").strip() for key in (
+            "analyte", "value", "unit", "ref_low", "ref_high"
+        )):
+            continue                                    # entirely blank row
         try:
             if not r["analyte"].strip():
                 raise ValueError("Every result needs an analyte name.")
