@@ -4,6 +4,8 @@ Static tests require no Android tooling, web browser or external network.
 """
 import json
 import struct
+import zlib
+from binascii import crc32
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +55,35 @@ def test_507_android_icons_have_real_png_headers_and_correct_dimensions():
         assert raw[-12:-8] == b"\x00\x00\x00\x00"
         assert raw[-8:-4] == b"IEND"
         assert len(raw) > 1000
+
+
+def test_507_png_chunks_and_pixel_stream_are_valid():
+    for dimension in (192, 512):
+        raw = (STATIC / f"tracker-icon-{dimension}.png").read_bytes()
+        offset, image_stream, palette = 8, bytearray(), None
+        while offset < len(raw):
+            size = struct.unpack(">I", raw[offset:offset + 4])[0]
+            kind = raw[offset + 4:offset + 8]
+            data = raw[offset + 8:offset + 8 + size]
+            stored_crc = struct.unpack(
+                ">I", raw[offset + 8 + size:offset + 12 + size]
+            )[0]
+            assert crc32(kind + data) == stored_crc
+            offset += 12 + size
+            if kind == b"PLTE":
+                palette = data
+            if kind == b"IDAT":
+                image_stream.extend(data)
+            if kind == b"IEND":
+                break
+        assert offset == len(raw)
+        assert palette is not None and len(palette) == 12
+        pixels = zlib.decompress(image_stream)
+        assert len(pixels) == dimension * (1 + dimension // 4)
+        assert all(
+            pixels[row * (1 + dimension // 4)] == 0
+            for row in range(dimension)
+        )
 
 
 def test_507_phone_dock_exposes_workflows_and_reuses_real_sidebar():
