@@ -13,7 +13,10 @@ from playwright.sync_api import expect, sync_playwright
 
 
 URL = os.environ.get("TRACKER_TEST_URL", "").rstrip("/")
-DATA = Path(os.environ.get("TRACKER_DATA_DIR", "/")).resolve()
+DATA = Path(os.environ.get("TRACKER_BROWSER_QA_DATA_DIR", "/")).resolve()
+# pytest's tests/conftest.py intentionally overrides TRACKER_DATA_DIR.
+# The isolated candidate server's directory is passed separately by the
+# guarded browser runner and must remain a valid disposable localhost path.
 PARSED = urlsplit(URL)
 ISOLATED = (
     os.environ.get("TRACKER_TEST_ISOLATED") == "1"
@@ -21,7 +24,8 @@ ISOLATED = (
     and PARSED.port not in (None, 8000)
     and DATA.name == "data"
     and DATA.parent.name.startswith("tracker-browser-qa.")
-    and DATA.parent.parent == Path("/tmp")
+    and DATA.parent.parent == Path("/tmp").resolve()
+    and DATA.is_dir()
 )
 if not ISOLATED:
     raise RuntimeError(
