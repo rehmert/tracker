@@ -101,11 +101,19 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         .order_by(DoseLog.taken_at.desc(), DoseLog.id.desc())
         .limit(5)
     ))
-    recent_vitals = list(db.scalars(
+    recent_vital_rows = list(db.scalars(
         select(VitalReading)
         .order_by(VitalReading.measured_at.desc(), VitalReading.id.desc())
         .limit(5)
     ))
+    recent_vitals = [
+        (
+            reading,
+            metrics.weight_from_kg(reading.weight_kg, config.WEIGHT_UNIT)
+            if reading.weight_kg is not None else None,
+        )
+        for reading in recent_vital_rows
+    ]
 
     # The latest available reading for each measurement is independent.
     def latest(column):
