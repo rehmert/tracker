@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const entryForm = document.getElementById('food-entry-form');
+    entryForm?.dispatchEvent(new Event('food:nutrition-loaded'));
 
     if (entryForm) {
       entryForm.scrollIntoView({
