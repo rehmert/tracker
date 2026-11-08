@@ -2,7 +2,7 @@
 {% block title %}Lab results{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-labs-overview.css?v=20261107-481">
-<script src="/static/js/tracker-labs-overview.js?v=20261107-481" defer></script>
+<script src="/static/js/tracker-labs-overview.js?v=20261108-497" defer></script>
 <h1>Lab results</h1>
 <p class="note">Enter results exactly as printed on your report, including the unit and the lab's own reference range if it shows one. The charts show your numbers over time with that printed range shaded. This page doesn't tell you what a result means.</p>
 <p class="row">
@@ -86,7 +86,15 @@
     <label class="field" for="labs-report-search"><span>Find report by date or lab</span>
       <input id="labs-report-search" type="search" placeholder="Search saved reports…" autocomplete="off" aria-controls="labs-reports-table">
     </label>
-    <button type="button" id="labs-reports-clear">Clear report search</button>
+    <label class="field" for="labs-reports-sort"><span>Report order</span>
+      <select id="labs-reports-sort" aria-controls="labs-reports-table">
+        <option value="date-desc" selected>Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="lab-asc">Lab name A–Z</option>
+        <option value="results-desc">Most results</option>
+      </select>
+    </label>
+    <button type="button" id="labs-reports-clear">Reset report filters</button>
     <span id="labs-reports-count" role="status" aria-live="polite">Showing {{ reports|length }} of {{ reports|length }} reports.</span>
   </div>
   <p id="labs-reports-empty" class="note" hidden>No reports match that search.</p>
@@ -94,7 +102,7 @@
     <thead><tr><th>Drawn</th><th>Lab</th><th class="n">Results</th><th>File</th></tr></thead>
     <tbody>
     {% for r in reports %}
-    <tr data-labs-report-row data-lab-report-date="{{ r.drawn_on.isoformat() }}" data-lab-report-name="{{ r.lab_name }}"><td><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td><td>{{ r.lab_name or '—' }}</td><td class="n">{{ r.results|length }}</td><td>{{ 'yes' if r.stored_name else '—' }}</td></tr>
+    <tr data-labs-report-row data-lab-report-date="{{ r.drawn_on.isoformat() }}" data-lab-report-name="{{ r.lab_name }}" data-lab-report-results="{{ r.results|length }}"><td><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td><td>{{ r.lab_name or '—' }}</td><td class="n">{{ r.results|length }}</td><td>{{ 'yes' if r.stored_name else '—' }}</td></tr>
     {% else %}<tr><td colspan="4" class="empty">No lab reports yet.</td></tr>{% endfor %}
     </tbody>
   </table></div>
