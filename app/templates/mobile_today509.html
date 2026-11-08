@@ -31,17 +31,17 @@
       <a href="#mobile-quick-vitals" data-daily-mode-link="weight">
         <span>Weight</span>
         <strong>{% if last_weight is not none %}{{ last_weight|n1 }}{% else %}—{% endif %}</strong>
-        <small>{{ unit }}</small>
+        <small>{{ unit }} · {{ (last_weight_when|dt) if last_weight_when else 'No reading' }}</small>
       </a>
       <a href="#mobile-quick-vitals" data-daily-mode-link="bp">
         <span>Blood Pressure</span>
         <strong>{% if last_bp and last_bp.diastolic is not none %}{{ last_bp.systolic }}/{{ last_bp.diastolic }}{% else %}—{% endif %}</strong>
-        <small>mmHg</small>
+        <small>mmHg · {{ (last_bp.measured_at|dt) if last_bp else 'No reading' }}</small>
       </a>
       <a href="#mobile-quick-vitals" data-daily-mode-link="pulse">
         <span>Pulse</span>
         <strong>{{ last_pulse if last_pulse is not none else '—' }}</strong>
-        <small>bpm</small>
+        <small>bpm · {{ (last_pulse_when|dt) if last_pulse_when else 'No reading' }}</small>
       </a>
     </div>
     <p class="tracker-daily-note">These are your most recent recorded measurements, which may have different dates.</p>
