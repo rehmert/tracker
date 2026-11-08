@@ -121,7 +121,7 @@ def assess(env_path, exec_start, service_user):
             "FAIL",
             "partial_auth_configuration",
             "Only one authentication setting is populated; "
-            "the application will not enforce Basic auth.",
+            "Tracker returns HTTP 503 (fail closed).",
         ))
     else:
         findings.append(finding(
