@@ -9,6 +9,7 @@ import os
 import sqlite3
 import tempfile
 import zipfile
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -81,7 +82,7 @@ def audit_archive(archive: Path, max_age_hours: float = 24) -> dict:
 
         uri = f"file:{database.as_posix()}?mode=ro"
 
-        with sqlite3.connect(uri, uri=True) as connection:
+        with closing(sqlite3.connect(uri, uri=True)) as connection:
             integrity = connection.execute(
                 "PRAGMA integrity_check"
             ).fetchone()[0]
