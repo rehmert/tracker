@@ -4,6 +4,7 @@ No external sockets are opened. Tests stub name resolution, sockets, TLS,
 HTTP connections, and redirect responses.
 """
 import socket
+from email.message import Message
 from urllib.parse import urlsplit
 
 import pytest
@@ -107,7 +108,8 @@ def test_517_html_read_is_bounded_and_uses_pinned_destination(monkeypatch):
 
     class Response:
         status = 200
-        headers = {"Content-Type": "text/html; charset=utf-8"}
+        headers = Message()
+        headers["Content-Type"] = "text/html; charset=utf-8"
 
         def getheader(self, key):
             return self.headers.get(key)
