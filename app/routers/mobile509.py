@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import config, metrics
-from ..models import DoseLog, Protocol, VitalReading
+from .. import config, metrics, services
+from ..models import DoseLog, Protocol, VitalReading, Vial
+from ..mobile_shortcuts511 import recent_preparations
 from ..projection_exclusions import exclusions_for
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
@@ -47,6 +48,12 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         .order_by(DoseLog.taken_at.desc(), DoseLog.id.desc())
         .limit(5)
     ))
+    active_vials = list(db.scalars(
+        select(Vial).where(Vial.status.in_(("in_use", "sealed")))
+    ))
+    recent_shortcuts = recent_preparations(
+        db, active_vials, services.vial_views(db, active_vials)
+    ) if active_vials else []
     recent_vital_rows = list(db.scalars(
         select(VitalReading)
         .order_by(VitalReading.measured_at.desc(), VitalReading.id.desc())
@@ -80,7 +87,7 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         instance=config.instance_label(),
         unit=config.WEIGHT_UNIT,
         summary=summary,
-        recent_doses=recent_doses,
+        recent_doses=recent_doses, recent_shortcuts=recent_shortcuts,
         recent_vitals=recent_vitals,
         last_weight=(
             metrics.weight_from_kg(weight_row.weight_kg, config.WEIGHT_UNIT)
