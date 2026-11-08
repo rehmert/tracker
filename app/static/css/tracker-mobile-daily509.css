@@ -44,7 +44,7 @@
 .tracker-daily-list .tracker-daily-pill{padding:.4rem .55rem;border-radius:1rem;background:var(--wash,#f1f5f9);text-align:right}
 .tracker-daily-footer{display:flex;flex-wrap:wrap;gap:.55rem;margin:.25rem 0 .65rem}
 .tracker-daily-footer a{border:1px solid var(--rule,#cbd5e1);padding:.6rem .7rem;border-radius:.65rem;min-height:2.65rem;display:inline-flex;align-items:center;font-size:.8rem}
-.tracker-daily509 :is(a,button,input,select,summary):focus-visible{outline:3px solid #2784c2;outline-offset:2px}
+.tracker-daily509 :is(a,button,input,select,summary):focus-visible{outline:3px solid var(--tracker-brand-blue,#1686df);outline-offset:2px}
 @media(max-width:760px){.tracker-daily509{gap:.7rem}.tracker-daily-list li a{max-width:38%}.tracker-daily-dev{font-size:.74rem}}
 @media(max-width:350px){.tracker-daily-actions{gap:.25rem}.tracker-daily-actions a{font-size:.75rem}.tracker-daily-list li{flex-wrap:wrap}.tracker-daily-list li a{max-width:100%}}
 @media print{.tracker-daily-actions,.tracker-daily-vitals,.tracker-daily-mode{display:none!important}}
