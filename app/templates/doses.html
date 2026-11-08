@@ -2,6 +2,8 @@
 {% block title %}Dose log{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-android-log374.css?v=374">
+<link rel="stylesheet" href="/static/css/tracker-mobile-accelerators511.css?v=511">
+<script src="/static/js/tracker-vial-finder511.js?v=511" defer></script>
 <script src="/static/js/tracker-android-log374.js?v=374" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-mobile-log373.css?v=373">
 <script src="/static/js/tracker-time24-371.js?v=371" defer></script>
@@ -119,6 +121,33 @@
         hx-on::response-error="this.dataset.saving='';this.querySelector('button[type=submit]').disabled=false;">
     <input type="hidden" name="submission_token" value="{{ submission_token }}">
     {% if planned_handoff %}<input type="hidden" name="planned_compound_id" value="{{ selected_compound_id }}">{% endif %}
+    <div class="tracker-vial-finder511 wide" data-vial-finder511>
+      <label for="tracker-vial-search511">Find a vial by compound or label</label>
+      <input type="search" id="tracker-vial-search511" data-vial-search511
+             autocomplete="off" placeholder="Search available vials…"
+             aria-controls="tracker-vial-matches511">
+      <div id="tracker-vial-matches511" data-vial-matches511
+           class="tracker-vial-matches511" aria-label="Matching available vials"></div>
+      <p class="note" data-vial-feedback511 role="status" aria-live="polite">Or use the complete vial selector below.</p>
+    </div>
+    {% if recent_shortcuts and not planned_handoff %}
+    <section class="tracker-dose-recents511 wide" aria-labelledby="tracker-dose-recents-heading511">
+      <h3 id="tracker-dose-recents-heading511">Recently used compounds</h3>
+      <p class="note">Select a recent vial or prepare a historical entry for review. Neither action records a dose.</p>
+      <div class="tracker-dose-recent-list511">
+      {% for item in recent_shortcuts %}
+        <div class="tracker-dose-recent-item511">
+          <div><strong>{{ item.name }}</strong>
+            <small>{{ item.vial_name }} · Last entered {{ item.amount|num }} {{ item.unit }}</small></div>
+          <div class="tracker-dose-recent-actions511">
+            <button type="button" data-vial-choice511="{{ item.vial_id }}">Select vial</button>
+            <a href="/doses?repeat_from={{ item.id }}#quick-dose-entry">Prepare similar</a>
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+    </section>
+    {% endif %}
     <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="load, input delay:200ms, change" hx-target="#dose-preview">
       <label class="field" id="calendar-vial-picker"><span>{% if planned_handoff %}Confirm vial for {{ planned_compound_name }}{% else %}Vial{% endif %}</span>
         <select name="vial_id" required>
