@@ -88,3 +88,34 @@ def test_guard_cli_rejects_invalid_git_revision(tmp_path):
     assert result.returncode != 0
     assert "FAIL:" in result.stderr
     assert len(result.stderr) < 500
+
+
+def test_guard_includes_unchanged_tracked_app_files(tmp_path):
+    root = _mock_sources(tmp_path)
+    unchanged = root / "app/routers/food.py"
+    unchanged.write_text("source", encoding="utf-8")
+
+    subprocess.run(
+        ["git", "init", "-q", str(root)], check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(root), "add", "--", "app/"], check=True,
+    )
+
+    tracked = guard.tracked_app_paths(root)
+    assert "app/routers/food.py" in tracked
+
+    count, errors = guard.validate(
+        root, tracked, "tracker",
+        probe=lambda path, user: path != unchanged,
+    )
+    assert count == len(tracked)
+    assert any(
+        "cannot read app/routers/food.py" in message
+        for message in errors
+    )
+
+
+def test_guard_fails_closed_outside_git_repository(tmp_path):
+    with pytest.raises(ValueError, match="Cannot list tracked"):
+        guard.tracked_app_paths(tmp_path)
