@@ -85,8 +85,14 @@ def _login(client, uid):
     assert result.status_code == 303
 
 
-def _form(client):
-    response = client.get("/secondary/reconstitution")
+def _form(client, *, page=None):
+    if page is None:
+        response = client.get("/secondary/reconstitution")
+    else:
+        response = page
+        assert response.request.method == "GET"
+        assert response.request.url.path == "/secondary/reconstitution"
+        assert not response.request.url.query
     assert response.status_code == 200, response.text[:200]
     assert 'action="/secondary/reconstitution"' in response.text
     return {
@@ -129,7 +135,7 @@ def test_record_volume_event_and_then_dose_by_ml_without_other_user_change(brows
     assert "SOLUTION-VIAL" not in page.text
     assert "PRIVATE-VIAL-3" not in page.text
 
-    form = _form(client)
+    form = _form(client, page=page)
     response = client.post(
         "/secondary/reconstitution", data=form, follow_redirects=False,
     )
