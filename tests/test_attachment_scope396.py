@@ -57,7 +57,7 @@ def test_both_routers_have_guard():
 
 @pytest.mark.parametrize(
     "module_name,expected",
-    [("labs", 18), ("coas", 12)],
+    [("labs", 19), ("coas", 12)],
 )
 def test_database_dependencies_scoped(module_name, expected):
     path = ROOT / "app/routers" / f"{module_name}.py"
@@ -86,6 +86,18 @@ def test_database_dependencies_scoped(module_name, expected):
 
     assert scoped == expected
     assert legacy == 0
+    if module_name == "labs":
+        # The Release 500 historical CSV export is a new scoped endpoint;
+        # keep it behind the same attachment and workspace dependencies.
+        export = next(
+            route for route in labs.router.routes
+            if isinstance(route, APIRoute)
+            and route.path == "/labs/trends/{analyte_key}/export.csv"
+        )
+        dependencies = [item.dependency for item in export.dependencies]
+        assert guard.require_attachment_scope396 in dependencies
+        from app.attachment_files400 import require_attachment_workspace400
+        assert require_attachment_workspace400 in dependencies
 
 
 def test_scoped_dependency_preserves_override():
