@@ -92,4 +92,5 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   "$PY" -B -m pytest -q -x --tb=short \
     tests/browser/test_food_search_ui.py \
     tests/browser/test_labs_overview.py \
+    tests/browser/test_food_labs_live499.py \
     tests/browser/test_navigation.py
