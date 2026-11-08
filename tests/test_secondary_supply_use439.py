@@ -345,10 +345,9 @@ def test_csrf_fetch_site_unauthenticated_and_flags(browser, monkeypatch):
     monkeypatch.delenv("TRACKER_SECONDARY_SUPPLY_USE439", raising=False)
     assert client.get("/secondary/supplies/use").status_code == 404
     assert client.post("/secondary/supplies/use", data=form).status_code == 404
-    assert client.get("/secondary/supplies").status_code == 200
-    assert 'href="/secondary/supplies/use"' not in (
-        client.get("/secondary/supplies").text
-    )
+    disabled_page = client.get("/secondary/supplies")
+    assert disabled_page.status_code == 200
+    assert 'href="/secondary/supplies/use"' not in disabled_page.text
     assert _state(root, 2)[1] == []
     monkeypatch.setenv("TRACKER_SECONDARY_SUPPLY_USE439", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
