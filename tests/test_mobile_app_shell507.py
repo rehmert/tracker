@@ -16,7 +16,7 @@ STATIC = ROOT / "app/static"
 def test_507_single_canonical_manifest_and_mobile_safe_viewport():
     html = BASE.read_text(encoding="utf-8")
     assert html.count('rel="manifest"') == 1
-    assert 'href="/static/tracker.webmanifest"' in html
+    assert 'href="/tracker.webmanifest"' in html
     assert 'name="theme-color"' in html
     assert html.count('name="theme-color"') == 1
     assert 'viewport-fit=cover' in html
@@ -92,7 +92,7 @@ def test_507_phone_dock_exposes_workflows_and_reuses_real_sidebar():
     assert 'aria-label="Mobile quick navigation"' in html
     assert 'id="tracker-mobile-more"' in html
     assert 'aria-controls="app-sidebar"' in html
-    for route in ('href="/"', 'href="/activity"', 'href="/quick-entry"',
+    for route in ('href="/"', 'href="/mobile"', 'href="/quick-entry"',
                   'href="/doses"', 'href="/vitals"'):
         assert route in html
     assert 'aria-current="page"' in html
