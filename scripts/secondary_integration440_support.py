@@ -78,8 +78,17 @@ def _login(client, uid):
     assert result.status_code == 303
 
 
-def _post_form(client, page_path, action, fields):
-    response = client.get(page_path)
+def _post_form(client, page_path, action, fields, *, page=None):
+    # A previously fetched GET page may be reused only for that exact route.
+    # This is test-only: it never skips a security check in the application
+    # and avoids fetching an identical authenticated correction form twice.
+    if page is None:
+        response = client.get(page_path)
+    else:
+        response = page
+        assert response.request.method == "GET"
+        assert response.request.url.path == page_path
+        assert not response.request.url.query
     assert response.status_code == 200, (
         page_path, response.status_code, response.text[:200]
     )
