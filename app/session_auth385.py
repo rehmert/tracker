@@ -11,6 +11,7 @@ import re
 import secrets
 import sqlite3
 import time
+from contextlib import closing
 
 from . import config
 
@@ -40,9 +41,13 @@ def connect():
         raise RuntimeError("Authentication store unavailable")
 
     db = sqlite3.connect(str(path), timeout=5)
-    db.execute("PRAGMA foreign_keys=ON")
-    db.execute("PRAGMA busy_timeout=5000")
-    return db
+    try:
+        db.execute("PRAGMA foreign_keys=ON")
+        db.execute("PRAGMA busy_timeout=5000")
+        return db
+    except BaseException:
+        db.close()
+        raise
 
 
 def password_digest(password, salt):
@@ -81,7 +86,7 @@ def bootstrap(username, password):
         salt = secrets.token_bytes(16)
         hashed = password_digest(password, salt)
 
-        with sqlite3.connect(str(path)) as db:
+        with closing(sqlite3.connect(str(path))) as conn, conn as db:
             db.executescript("""
                 CREATE TABLE users (
                     id INTEGER PRIMARY KEY,
@@ -128,7 +133,7 @@ def verify_admin(username, password):
     now = int(time.time())
 
     try:
-        with connect() as db:
+        with closing(connect()) as conn, conn as db:
             db.execute(
                 "DELETE FROM failures WHERE occurred_at < ?",
                 (now - 900,),
@@ -186,7 +191,7 @@ def create_session(remember):
         REMEMBER_SECONDS if remember else SESSION_SECONDS
     )
 
-    with connect() as db:
+    with closing(connect()) as conn, conn as db:
         db.execute(
             "DELETE FROM sessions WHERE expires_at<=?",
             (now,),
@@ -210,7 +215,7 @@ def session_user(token):
     hashed = hashlib.sha256(token.encode()).hexdigest()
 
     try:
-        with connect() as db:
+        with closing(connect()) as conn, conn as db:
             result = db.execute("""
                 SELECT u.id FROM sessions s
                 JOIN users u ON u.id=s.user_id
@@ -232,7 +237,7 @@ def revoke(token):
 
     hashed = hashlib.sha256(token.encode()).hexdigest()
 
-    with connect() as db:
+    with closing(connect()) as conn, conn as db:
         db.execute(
             "DELETE FROM sessions WHERE token_hash=?",
             (hashed,),
@@ -261,7 +266,7 @@ def current_admin(token):
     if session_user(token) != 1:
         return None
 
-    with connect() as db:
+    with closing(connect()) as conn, conn as db:
         row = db.execute("""
             SELECT username FROM users
             WHERE id=1 AND enabled=1
@@ -277,7 +282,7 @@ def session_overview(token):
     now = int(time.time())
     current = hashlib.sha256(token.encode()).hexdigest()
 
-    with connect() as db:
+    with closing(connect()) as conn, conn as db:
         rows = db.execute("""
             SELECT token_hash, expires_at
             FROM sessions
@@ -300,7 +305,7 @@ def revoke_other_sessions(token):
 
     current = hashlib.sha256(token.encode()).hexdigest()
 
-    with connect() as db:
+    with closing(connect()) as conn, conn as db:
         result = db.execute("""
             DELETE FROM sessions
             WHERE user_id=1 AND token_hash<>?
@@ -325,7 +330,7 @@ def change_password(token, current_password, new_password):
     ):
         return False
 
-    with connect() as db:
+    with closing(connect()) as conn, conn as db:
         db.execute("BEGIN IMMEDIATE")
         row = db.execute("""
             SELECT salt, password_hash FROM users
@@ -360,7 +365,7 @@ def recover_admin(new_password):
     if not isinstance(new_password, str) or not 12 <= len(new_password) <= 1024:
         raise ValueError("New password must be 12–1024 characters")
 
-    with connect() as db:
+    with closing(connect()) as conn, conn as db:
         db.execute("BEGIN IMMEDIATE")
         row = db.execute(
             "SELECT id FROM users WHERE id=1"
