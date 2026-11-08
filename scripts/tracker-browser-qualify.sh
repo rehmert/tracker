@@ -47,6 +47,8 @@ cleanup() {
     kill "$SERVER_PID" 2>/dev/null || true
     wait "$SERVER_PID" 2>/dev/null || true
   fi
+  # Test-only TLS identity must not persist after the proxy stops.
+  rm -f "$ROOT/qa-private-key.pem" "$ROOT/qa-cert.pem"
   echo "ISOLATED_SERVER_STOPPED=YES"
   if ((code != 0)); then
     echo "ISOLATED_BROWSER=FAILED code=$code"
