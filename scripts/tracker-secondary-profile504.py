@@ -36,7 +36,7 @@ TARGETS = {
 
 
 IMPORT_TIME_RE = re.compile(
-    r"^import time:\\s*(\\d+)\\s*\\|\\s*(\\d+)\\s*\\|\\s*(.+)$"
+    r"^import time:\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(.+)$"
 )
 
 
