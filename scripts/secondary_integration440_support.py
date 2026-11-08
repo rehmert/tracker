@@ -122,5 +122,3 @@ def _counts(root, uid):
                 "preparation_supplies", "change_audit",
             )
         }
-
-
