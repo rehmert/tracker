@@ -169,3 +169,44 @@ def test_invalid_template_rejected(setup):
         follow_redirects=False,
     )
     assert empty.status_code == 422
+
+
+def test_499_saved_food_ranking_and_version_warning(setup):
+    _, engine = setup
+    # Saved records with identical identifying fields but different nutrients
+    # must remain individually selectable, with an explicit version count.
+    foods = (
+        ("Greek Yogurt", "3333333333333", '{"energy":120}'),
+        ("Yogurt Plus", "2222222222222", '{"energy":110}'),
+        ("Yogurt", "1111111111111", '{"energy":100}'),
+        ("Yogurt", "1111111111111", '{"energy":130}'),
+    )
+    food.init_food_schema(engine)
+    with engine.begin() as db:
+        for name, barcode, nutrients in foods:
+            db.execute(text("""
+                INSERT INTO tracker_food_products
+                    (name, barcode, serving_description, nutrients, source)
+                VALUES (:name, :barcode, '1 cup', :nutrients, 'manual')
+            """), {"name": name, "barcode": barcode, "nutrients": nutrients})
+
+    found = food_bundle376.search_products("yogurt", db_engine=engine)
+    assert [r["name"] for r in found] == [
+        "Yogurt", "Yogurt", "Yogurt Plus", "Greek Yogurt"
+    ]
+    assert [r["saved_versions"] for r in found] == [2, 2, 1, 1]
+    by_barcode = food_bundle376.search_products(
+        "1111111111111", db_engine=engine
+    )
+    assert len(by_barcode) == 2
+    assert all(item["saved_versions"] == 2 for item in by_barcode)
+
+
+def test_499_saved_versions_are_review_only():
+    from pathlib import Path
+    template = (
+        Path(__file__).resolve().parents[1] / "app/templates/food.html"
+    ).read_text()
+    assert "item.saved_versions > 1" in template
+    assert "saved versions share this name" in template
+    assert 'action="/food/quick/{{ item.id }}"' in template
