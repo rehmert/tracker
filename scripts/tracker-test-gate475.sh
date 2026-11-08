@@ -46,6 +46,7 @@ case "$MODE" in
             tests/test_secondary_account465.py \
             tests/test_secondary_workspace464.py \
             tests/test_secondary_integration440.py \
+            tests/test_secondary_private_workflow440.py \
             tests/test_secondary_sessions441.py \
             tests/test_secondary_password451.py \
             tests/test_request_scope393.py \
