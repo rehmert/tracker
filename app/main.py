@@ -215,7 +215,12 @@ async def tracker_response_protection(request, call_next):
         )
 
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "no-referrer"
+    # 'no-referrer' makes Chromium emit Origin: null on traditional form
+    # POSTs, which the fail-closed Origin guard rightly denies. Restrict
+    # referrers to this origin instead; never disclose them cross-origin.
+    # Explicit stricter endpoint policies (for label downloads, etc.) win.
+    if "referrer-policy" not in response.headers:
+        response.headers["Referrer-Policy"] = "same-origin"
     response.headers["X-Content-Type-Options"] = "nosniff"
 
     # Endpoint-specific policies, especially CSV exports,
