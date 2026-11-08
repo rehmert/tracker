@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import json
+import math
 from html import escape
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -7,7 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import calc, services
+from .. import calc, services, units as U
 from ..scoped_db390 import get_scoped_db390
 from ..models import Compound, Protocol, ProtocolItem, ProtocolRevision, Vial
 from ..templating import render
@@ -110,11 +111,14 @@ def _validate_timing(parsed, days, times, fasting):
 def _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period):
     """Returns (valid inputs, results for rows that failed to parse). Row order of
     the form is kept in the results list via the third element."""
+    fields = (compound_id, amount, unit, freq_count, freq_period)
+    if len({len(field) for field in fields}) != 1:
+        raise HTTPException(400, "Incomplete protocol item fields; nothing was saved.")
     parsed: list[calc.ItemInput | calc.ItemResult] = []
-    for cid, a, u, fc, fp in zip(compound_id, amount, unit, freq_count, freq_period):
+    for cid, a, u, fc, fp in zip(*fields):
         try:
             cid_i = int(cid)
-        except ValueError:
+        except (TypeError, ValueError):
             parsed.append(calc.invalid_result("Unknown compound", "Choose a compound."))
             continue
         ref = refs.get(cid_i)
@@ -122,10 +126,19 @@ def _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period):
             parsed.append(calc.invalid_result("Unknown compound", "Choose a compound."))
             continue
         try:
-            parsed.append(calc.ItemInput(cid_i, float(a), u, float(fc), fp))
-        except ValueError:
-            parsed.append(calc.invalid_result(ref.name, "Enter a number for the amount and "
-                                              "the frequency.", cid_i))
+            quantity, frequency = float(a), float(fc)
+            if (not math.isfinite(quantity) or not math.isfinite(frequency)
+                    or not 0 <= quantity <= 1_000_000
+                    or not 0 <= frequency <= 1_000_000):
+                raise ValueError("Amount and frequency must be finite, nonnegative numbers.")
+            if fp == "interval" and frequency <= 0:
+                raise ValueError("An interval must be greater than zero days.")
+            if fp not in calc.PERIOD_DAYS and fp != "interval":
+                raise ValueError("Select a supported frequency period.")
+            U.parse_unit(u)
+            parsed.append(calc.ItemInput(cid_i, quantity, u, frequency, fp))
+        except (TypeError, ValueError) as exc:
+            parsed.append(calc.invalid_result(ref.name, str(exc), cid_i))
     return parsed
 
 
@@ -133,6 +146,8 @@ def _horizon(text: str) -> float:
     try:
         w = float(text)
     except ValueError:
+        return 12.0
+    if not math.isfinite(w):
         return 12.0
     return min(max(w, 0.1), 520.0)
 
