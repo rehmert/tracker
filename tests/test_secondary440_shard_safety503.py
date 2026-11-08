@@ -71,7 +71,7 @@ def test_503_secondary440_shared_setup_remains_isolated_and_fail_closed():
     for marker in (
         'all(value == 0 for value in _counts(root, 3).values())',
         'assert not (root / "tracker.db").exists()',
-        '"SELECT action FROM change_audit ORDER BY id"',
+        'SELECT action FROM change_audit ORDER BY id',
         'secret not in page.text',
         '"secondary_correction437"',
     ):
