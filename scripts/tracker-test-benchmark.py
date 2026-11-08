@@ -37,18 +37,14 @@ def parse_workers(value: str) -> list[int]:
             "workers must be comma-separated integers"
         ) from exc
 
-    if (
-        not workers
-        or 1 not in workers
-        or len(set(workers)) != len(workers)
-    ):
+    if not workers or len(set(workers)) != len(workers):
         raise argparse.ArgumentTypeError(
-            "include worker 1 exactly once; no duplicates"
+            "specify unique worker counts (for example: 8,12,16)"
         )
 
-    if any(n < 1 or n > 8 for n in workers):
+    if len(workers) > 8 or any(n < 1 or n > 32 for n in workers):
         raise argparse.ArgumentTypeError(
-            "worker counts must be between 1 and 8"
+            "specify at most eight worker counts between 1 and 32"
         )
 
     return workers
@@ -58,7 +54,9 @@ def recommendation(
     medians: dict[int, float],
     threshold: float = 0.10,
 ) -> tuple[int, float]:
-    baseline = medians[1]
+    # Permit a second-stage benchmark (8,12,16) without rerunning
+    # the already-established 1-worker baseline.
+    baseline = medians[min(medians)]
     best = min(
         medians,
         key=lambda workers: medians[workers],
@@ -176,8 +174,8 @@ def main(argv: list[str] | None = None) -> int:
         type=parse_workers,
         default=[1, 2, 4],
         help=(
-            "comma-separated worker counts including 1 "
-            "(default: 1,2,4)"
+            "unique worker counts 1-32; the lowest count is "
+            "the comparison baseline (default: 1,2,4)"
         ),
     )
 
@@ -283,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
         ).isoformat(),
         "commit": commit,
         "workers": args.workers,
+        "baseline_workers": min(args.workers),
         "repeat": args.repeat,
         "expected_passed": expected_count,
         "runs": results,
@@ -316,8 +315,14 @@ def main(argv: list[str] | None = None) -> int:
                 gain, 4
             ),
             "recommendation_rule": (
-                "Parallel requires at least "
-                "10% measured speedup"
+                "A higher worker count must improve runtime at least "
+                "10% versus the lowest benchmarked worker count"
+            ),
+            "deployment_ready": False,
+            "qualification_note": (
+                "Benchmark is advisory: repeatability, host memory "
+                "and the release systemd memory cap need separate "
+                "validation before enabling xdist in deployments"
             ),
         })
 
@@ -335,7 +340,8 @@ def main(argv: list[str] | None = None) -> int:
 
         print(
             f"RECOMMENDATION: {selected} worker(s); "
-            f"best measured improvement {gain:.1%}",
+            f"best measured improvement {gain:.1%} "
+            f"versus {min(args.workers)} worker(s)",
             flush=True,
         )
 
