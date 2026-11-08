@@ -147,6 +147,8 @@ def test_511_client_search_only_updates_existing_vial_selector():
     assert 'button.type = "button"' in js
     assert 'document.createElement("button")' in js
     assert 'button.textContent = item.label' in js
+    assert 'form.addEventListener("reset"' in js
+    assert 'feedback.textContent = selectedMessage()' in js
     for forbidden in ("form.submit(", "fetch(", "localStorage", "sessionStorage", "indexedDB"):
         assert forbidden not in js
 
