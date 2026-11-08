@@ -44,7 +44,8 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"
+ [[ "$SERIAL_TESTS" == 0 || "$SERIAL_TESTS" == 1 ]] || fail "Invalid serial test override"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0
  export GIT_CONFIG_COUNT=2
  export GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
@@ -99,7 +100,34 @@ PY
  fi
  echo "=== COMPLETE REGRESSION SUITE ==="
  echo "Critical safety tests are included in full-suite collection."
- timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings --durations=20 tests \
+ TEST_PYTEST_EXTRA=()
+ if [[ "$INSTANCE" == DEV && "$SERIAL_TESTS" == 0 ]] && "$PY" -c 'import xdist' >/dev/null 2>&1; then
+  # Each xdist worker imports conftest independently and receives its own
+  # disposable SQLite directory. Limit concurrency to available LXC CPUs.
+  # Keep tests from a module together to limit fixture interactions.
+  WORKERS="$("$PY" - <<'PY'
+import os
+from pathlib import Path
+count = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
+try:
+    quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+    if quota != "max":
+        count = min(count, max(1, int(quota) // int(period)))
+except (OSError, ValueError, ZeroDivisionError):
+    pass
+print(min(16, max(1, count)))
+PY
+)"
+  if [[ "$WORKERS" =~ ^([1-9]|1[0-6])$ ]] && ((WORKERS >= 2)); then
+   TEST_PYTEST_EXTRA=(-n "$WORKERS" --dist=loadfile)
+   echo "BACKEND_TEST_MODE=PARALLEL workers=$WORKERS"
+  else
+   echo "BACKEND_TEST_MODE=SERIAL reason=limited_cpu"
+  fi
+ else
+  echo "BACKEND_TEST_MODE=SERIAL reason=prod_or_override_or_missing_xdist"
+ fi
+ timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
   --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
@@ -194,14 +222,15 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -eq 5 ]] || fail "Bad worker arguments"
+ [[ $# -eq 6 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
+  --serial-tests) SERIAL_TESTS=1; shift;;
   --instance|--base|--target|--ref)
    (( $# >= 2 )) || fail "Missing argument for $1"
    case "$1" in
@@ -234,8 +263,16 @@ bash -n "$RUN/worker.sh"
 UNIT="tracker-release-$(date +%s)-$$"
 # Make the log available before the worker starts; no source/data changes.
 touch "$RUN/deployment.log"
-systemd-run --unit="$UNIT" --collect --property='MemoryMax=1G' \
- /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF"
+# The DEV xdist gate has a separate bound, leaving 2 GiB headroom on
+# an 8 GiB DEV LXC. PROD retains its original 1 GiB serial release cap.
+if [[ "$INSTANCE" == DEV && "$SERIAL_TESTS" == 0 ]]; then
+ MEMORY_PROPERTY="MemoryMax=6G"
+else
+ MEMORY_PROPERTY="MemoryMax=1G"
+fi
+echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
+systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
 if (( FOLLOW )); then
