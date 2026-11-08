@@ -70,10 +70,16 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt
 sh scripts/fetch_vendor.sh          # downloads htmx into app/static/vendor/
 uvicorn app.main:app --reload       # http://127.0.0.1:8000
-pytest                              # unit + smoke tests
+TRACKER_TEST_PYTHON="$PWD/.venv/bin/python" bash scripts/tracker-test.sh --full  # isolated backend tests
 ```
 
 The database file and tables are created on first start in `./data`.
+
+Do **not** run plain `pytest` over the entire repository: the browser mutation modules
+intentionally refuse collection unless a disposable HTTP/HTTPS QA instance is running.
+For server-side release acceptance, use the pinned `scripts/tracker-release.sh`
+workflow, which creates a separate worktree and runs both backend and browser gates.
+See `docs/release-511-test-safety-audit.md` for safe manual test entry points.
 
 ## Deploy on a Linux server / Proxmox VM
 
