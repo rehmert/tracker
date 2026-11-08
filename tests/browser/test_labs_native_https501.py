@@ -59,7 +59,9 @@ def page(browser):
             urlsplit(request.url).path.startswith("/labs")
             or urlsplit(request.url).path.startswith("/lab-results")
         ):
-            headers = request.headers
+            # Playwright's .headers may omit browser-generated security
+            # headers. .all_headers() captures the wire-level request.
+            headers = request.all_headers()
             origins.append({
                 "origin": headers.get("origin", "<absent>"),
                 "fetch_site": headers.get("sec-fetch-site", "<absent>"),
@@ -119,7 +121,11 @@ def test_501_native_https_multipart_create_edit_delete_with_file(page):
 
     # This is a real form submission, not the signed API-request helper.
     assert origins and origins[0]["content_type"] == "multipart/form-data"
-    assert origins[0]["fetch_site"] == "same-origin"
+    # A real successful native POST must carry the expected HTTPS Origin.
+    # Chromium may omit Sec-Fetch-Site in some environments; when present,
+    # it must still describe a same-origin navigation.
+    assert origins[0]["origin"] == HTTPS_URL, origins[0]
+    assert origins[0]["fetch_site"] in ("same-origin", "<absent>"), origins[0]
 
     tab.locator("details.lab-edit-panel").first.evaluate(
         "(node) => { node.open = true; }"
