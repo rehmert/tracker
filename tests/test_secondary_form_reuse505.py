@@ -96,3 +96,59 @@ def test_505_real_workflow_still_requires_correction_snapshot_and_post():
     assert 'page=correction_page' in source
     assert 'client, "/secondary/reconcile/vials/1", "/secondary/reconcile/correct"' in source
     assert '"reason": "Physical vial label verified"' in source
+
+
+def test_505_dose_and_reconstitution_forms_reuse_checked_gets():
+    root = Path(__file__).resolve().parent
+    scenarios = (
+        (
+            "test_secondary_dose_write434.py",
+            "def _dose_form(client, *, page=None):",
+            'page = client.get("/secondary/doses/new")',
+            'data = _dose_form(client, page=page)',
+            '"csrf_token": _field(page.text, "csrf_token")',
+            '"/secondary/doses/new", data=data, follow_redirects=False,',
+            'assert page.request.url.path == "/secondary/doses/new"',
+        ),
+        (
+            "test_secondary_reconstitution436.py",
+            "def _form(client, *, page=None):",
+            'page = client.get("/secondary/reconstitution")',
+            'form = _form(client, page=page)',
+            '"csrf_token": _field(response.text, "csrf_token")',
+            '"/secondary/reconstitution", data=form, follow_redirects=False,',
+            'assert response.request.url.path == "/secondary/reconstitution"',
+        ),
+    )
+    for path, helper, first_get, reused, csrf, post, exact in scenarios:
+        source = (root / path).read_text(encoding="utf-8")
+        for marker in (helper, first_get, reused, csrf, post, exact):
+            assert marker in source, (path, marker)
+        assert 'assert not ' in source and '.request.url.query' in source
+
+
+def test_505_supply_and_supply_use_pages_keep_all_security_checks():
+    root = Path(__file__).resolve().parent
+    supply = (root / "test_secondary_supply438.py").read_text(
+        encoding="utf-8"
+    )
+    supply_use = (root / "test_secondary_supply_use439.py").read_text(
+        encoding="utf-8"
+    )
+    for marker in (
+        'escaped_page = client.get("/secondary/supplies")',
+        'assert "&lt;img" in escaped_page.text',
+        'assert \'<img src=x onerror=\' not in escaped_page.text',
+        'disabled_page = client.get("/secondary/supplies")',
+        'assert disabled_page.status_code == 200',
+        'assert \'action="/secondary/supplies"\' not in disabled_page.text',
+        'assert client.post("/secondary/supplies", data=form).status_code == 404',
+    ):
+        assert marker in supply, marker
+    for marker in (
+        'disabled_page = client.get("/secondary/supplies")',
+        'assert disabled_page.status_code == 200',
+        'assert \'href="/secondary/supplies/use"\' not in disabled_page.text',
+        'assert client.post("/secondary/supplies/use", data=form).status_code == 404',
+    ):
+        assert marker in supply_use, marker
