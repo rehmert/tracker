@@ -51,6 +51,37 @@ Captured stderr is parsed inside the profiler; only validated module
 names and self/cumulative microsecond timings are reported. Never
 print raw stderr because it could contain secrets on unexpected errors.
 
+## Test-only readiness optimization
+
+The readiness flag test previously issued 16 authenticated GETs that
+each launched an independent `app.worker_read429` subprocess, for
+17.132 seconds of worker execution. The response's private workspace
+counts are invariant during feature-flag toggles; those toggles alter
+the page's capability display and disabled write routes, not the
+workspace's database contents.
+
+`tests/test_secondary_integration440.py` now captures a **genuine**
+worker-validated report from the first authenticated readiness GET.
+Only the repeated read-only flag-display GETs temporarily reuse deep
+copies of that report, strictly bound to user 2. A different user ID
+raises `PermissionError`. The patch is restored before the real
+disabled POST request on each flag, and before a final independent
+readiness request after all seven flags are reenabled.
+
+The test still checks every original flag-display assertion and every
+disabled write's HTTP 404, while also validating the report's identity,
+inactive state, and read-only shape. Other security tests continue to
+execute real independent workers for revoked sessions, workspace
+tampering, PROD lockdown and cross-account data isolation. The
+full private workflow test (25 real worker calls) is unchanged.
+
+This is a scoped **test substitution**, not a production cache.
+The optimization reduces repeated integration coverage for the
+specific flag-display GETs; it does not speed up real secondary
+worker processes or change runtime security behavior.
+`tests/test_secondary_readiness_snapshot504.py` verifies that
+the substitution remains bounded to those GET contexts.
+
 ## Run after checking out a disposable candidate worktree on DEV
 
     cd /tmp/tracker-backups/qa504.XXXXXXXX/source
@@ -78,7 +109,9 @@ confirming what dominates the 30-second full workflow:
 - If timings are distributed uniformly across all requests, avoid
   deleting test actions and instead retain Release 503 scheduling.
 
-This release adds diagnostics and unit checks only, and changes no
-application code, security assertions, deployment settings, or test
-collection. It must not be deployed to PROD solely to collect a
-DEV-specific performance profile.
+This release adds diagnostics, unit/contract checks, and a
+test-only, strictly scoped readiness speedup. It changes no
+application code, security middleware, deployment settings, or
+feature-flag assertions. It should be promoted only after the
+isolated full 16-worker suite and guarded DEV deployment pass.
+The profiler itself is diagnostic and should not be invoked on PROD.
