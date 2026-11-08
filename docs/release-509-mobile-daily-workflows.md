@@ -121,3 +121,20 @@ valid static PNG icons. On Android, reload the logged-in `/mobile`
 page, then use Chrome's Install app option. If Chrome caches the
 previous failure, close the tab and reopen it after deployment.
 Do not expose the private application or open WAN firewall ports.
+
+## Blue accent polish
+
+The user confirmed Android installation works and requested the in-app
+accent change from green/teal to blue. The application continues to
+reuse the established CSS custom property `--teal` for compatibility,
+but Release 509 now sets it to `#1265ad` with white ink in light
+mode and `#79b8f7` with dark ink in dark mode. This changes active
+navigation, links, primary action buttons, focus accents and mobile
+Today measurement tabs consistently. Both color pairs exceed 4.5:1
+contrast for normal text. The main stylesheet query version is bumped
+to `509-blue-accent` so installed Android PWAs request the new CSS.
+
+The DEV launcher and DEV environment label remain distinct and amber;
+the user requested an in-app blue accent in place of green, not the
+removal of DEV/PROD environment identification. No schema, dose/vital
+write logic, manifest or app dependencies were changed for this polish.
