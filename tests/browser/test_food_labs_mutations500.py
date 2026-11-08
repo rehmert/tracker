@@ -6,7 +6,7 @@ tracker-browser-qualify.sh server. It never targets installed DEV or PROD.
 import os
 import re
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urljoin, urlsplit
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
@@ -51,6 +51,53 @@ def page(browser):
     tab.on("pageerror", lambda error: errors.append(str(error)))
     yield tab, errors
     context.close()
+
+
+def submit_lab_form500(tab, form_selector):
+    """Submit the exact visible form fields through the same browser context.
+
+    Native Chromium form submissions with Referrer-Policy: no-referrer may
+    emit Origin: null; the production origin guard correctly blocks them.
+    This isolated integration test preserves that guard, and sends a signed
+    same-origin API request using the browser's existing CSRF cookie.
+    It validates the server write and resulting rendered UI, not proxy
+    behavior of a native multipart POST or actual file uploads.
+    """
+    form = tab.locator(form_selector)
+    assert form.evaluate("(f) => f.checkValidity()")
+    submitted = form.evaluate("""(f) => ({
+        action: f.action,
+        fields: [...new FormData(f).entries()]
+            .filter(([key, value]) => typeof value === 'string')
+    })""")
+    request_url = submitted["action"]
+    destination = urlsplit(request_url)
+    assert destination.scheme == PARSED.scheme
+    assert destination.hostname == PARSED.hostname
+    assert destination.port == PARSED.port
+    assert re.fullmatch(
+        r"/labs(?:/[1-9][0-9]{0,9}/(?:edit|delete))?", destination.path
+    ), destination.path
+
+    token = tab.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token, "Browser CSRF token was not issued"
+    response = tab.request.post(
+        request_url,
+        data=urlencode(submitted["fields"]),
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-Tracker-CSRF": token,
+        },
+        max_redirects=0,
+    )
+    assert response.status == 303, (
+        response.status, response.text()[:240]
+    )
+    assert response.headers.get("x-tracker-csrf-report") == "valid"
+    redirect_url = urljoin(URL + "/", response.headers["location"])
+    assert urlsplit(redirect_url).netloc == PARSED.netloc
+    tab.goto(redirect_url, wait_until="networkidle")
+    return urlsplit(tab.url).path
 
 
 def test_500_food_create_edit_quick_reuse_and_delete(page):
@@ -127,9 +174,7 @@ def test_500_lab_report_create_edit_history_export_and_delete(page):
     row.locator('input[name="analyte"]').fill("QA Analyte 500")
     row.locator('input[name="value"]').fill("10")
     row.locator('input[name="unit"]').fill("ng/mL")
-    form.get_by_role("button", name="Save report").click()
-
-    report_path = urlsplit(tab.url).path
+    report_path = submit_lab_form500(tab, "form[data-lab-manual-entry]")
     assert re.fullmatch(r"/labs/\d+", report_path), report_path
     expect(tab.locator("h1")).to_contain_text("Lab report")
     expect(tab.locator("body")).to_contain_text("QA Analyte 500")
@@ -139,7 +184,7 @@ def test_500_lab_report_create_edit_history_export_and_delete(page):
     )
     edit = tab.locator('form[action="' + report_path + '/edit"]')
     edit.locator('input[name="lab_name"]').fill("Browser QA Lab 500 Edited")
-    edit.get_by_role("button", name="Save Report Details").click()
+    submit_lab_form500(tab, 'form[action="' + report_path + '/edit"]')
     expect(tab.locator("h1")).to_contain_text("Browser QA Lab 500 Edited")
 
     history = URL + "/labs/trends/qa%20analyte%20500"
@@ -154,8 +199,7 @@ def test_500_lab_report_create_edit_history_export_and_delete(page):
     assert b"QA Analyte 500" in csv.body()
 
     tab.goto(URL + report_path, wait_until="networkidle")
-    tab.on("dialog", lambda dialog: dialog.accept())
-    tab.locator('form[action="' + report_path + '/delete"] button').click()
+    submit_lab_form500(tab, 'form[action="' + report_path + '/delete"]')
     expect(tab.locator("body")).not_to_contain_text(
         "Browser QA Lab 500 Edited"
     )
