@@ -1,6 +1,7 @@
 import csv
 import io
 import math
+import re
 
 from datetime import date, datetime, timedelta
 
@@ -745,6 +746,12 @@ def analyte_trend(analyte_key: str, request: Request, db: Session = Depends(get_
                   key=labs.analyte_key(latest.analyte))
 
 
+def analyte_export_filename501(name: str) -> str:
+    """Stable safe ASCII filename; never interpolate raw analyte text in headers."""
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:48].strip("-")
+    return f"lab-{slug or 'analyte'}-history.csv"
+
+
 @router.get("/labs/trends/{analyte_key}/export.csv")
 def export_analyte_history500(
     analyte_key: str, db: Session = Depends(get_scoped_db390)
@@ -761,6 +768,7 @@ def export_analyte_history500(
         "recorded_unit", "comparison_value", "comparison_unit",
         "previous_drawn_on", "difference_from_previous",
         "reference_low", "reference_high", "range_status",
+        "report_id", "result_id", "result_note",
     ]]
     for row in rows:
         res, rep = row["res"], row["rep"]
@@ -778,5 +786,10 @@ def export_analyte_history500(
             "" if res.ref_low is None else res.ref_low,
             "" if res.ref_high is None else res.ref_high,
             row["status"] or "",
+            rep.id,
+            res.id,
+            _lab_csv_text(res.note),
         ])
-    return _lab_csv_response(csv_rows, "lab-analyte-history.csv")
+    return _lab_csv_response(
+        csv_rows, analyte_export_filename501(rows[0]["res"].analyte)
+    )
