@@ -88,11 +88,11 @@ def test_504_profile_records_timings_without_request_secrets(monkeypatch, capsys
 
 def test_504_importtime_parser_accepts_only_module_names_and_durations():
     diagnostic = (
-        "import time: self [us] | cumulative | imported package\\n"
-        "import time:      40 |       120 |   app.worker_read429\\n"
-        "import time:     100 |       300 | sqlalchemy.orm\\n"
-        "password=not-for-log\\n"
-        "import time: 40 | 90 | ../credential/file\\n"
+        "import time: self [us] | cumulative | imported package\n"
+        "import time:      40 |       120 |   app.worker_read429\n"
+        "import time:     100 |       300 | sqlalchemy.orm\n"
+        "password=not-for-log\n"
+        "import time: 40 | 90 | ../credential/file\n"
     )
     assert profiler.parse_import_time(diagnostic) == [
         ("app.worker_read429", 40, 120),
@@ -109,8 +109,8 @@ def test_504_import_sample_preserves_worker_operation(monkeypatch, capsys):
         return SimpleNamespace(
             returncode=0,
             stderr=(
-                "import time: 250 | 1000 | app.worker_read429\\n"
-                "password=not-for-log\\n"
+                "import time: 250 | 1000 | app.worker_read429\n"
+                "password=not-for-log\n"
             ),
         )
 
