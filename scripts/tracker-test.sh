@@ -79,8 +79,8 @@ case "$MODE" in
     ;;
   --parallel-check)
     WORKERS="${TRACKER_TEST_WORKERS:-2}"
-    [[ "$WORKERS" =~ ^[1-8]$ ]] || {
-      echo "ERROR: TRACKER_TEST_WORKERS must be 1-8." >&2
+    [[ "$WORKERS" =~ ^([1-9]|[12][0-9]|3[0-2])$ ]] || {
+      echo "ERROR: TRACKER_TEST_WORKERS must be 1-32." >&2
       exit 2
     }
     "$PY" -m pytest --help | grep -F -- '--dist=' >/dev/null || {
