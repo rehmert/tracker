@@ -16,7 +16,8 @@ STATIC = ROOT / "app/static"
 def test_507_single_canonical_manifest_and_mobile_safe_viewport():
     html = BASE.read_text(encoding="utf-8")
     assert html.count('rel="manifest"') == 1
-    assert 'href="/tracker.webmanifest"' in html
+    assert "/static/tracker-dev.webmanifest" in html
+    assert "/static/tracker.webmanifest" in html
     assert 'name="theme-color"' in html
     assert html.count('name="theme-color"') == 1
     assert 'viewport-fit=cover' in html
