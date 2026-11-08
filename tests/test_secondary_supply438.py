@@ -189,8 +189,10 @@ def test_cross_account_view_and_html_injection_are_isolated(browser):
     assert client.post(
         "/secondary/supplies", data=data, follow_redirects=False,
     ).status_code == 303
-    assert "&lt;img" in client.get("/secondary/supplies").text
-    assert '<img src=x onerror=' not in client.get("/secondary/supplies").text
+    escaped_page = client.get("/secondary/supplies")
+    assert escaped_page.status_code == 200
+    assert "&lt;img" in escaped_page.text
+    assert '<img src=x onerror=' not in escaped_page.text
 
     _login(client, 3)
     page = client.get("/secondary/supplies")
@@ -246,10 +248,9 @@ def test_csrf_unauthenticated_query_and_disabled_flags(browser, monkeypatch):
     ).status_code == 400
 
     monkeypatch.delenv("TRACKER_SECONDARY_SUPPLY_WRITES438", raising=False)
-    assert client.get("/secondary/supplies").status_code == 200
-    assert 'action="/secondary/supplies"' not in client.get(
-        "/secondary/supplies"
-    ).text
+    disabled_page = client.get("/secondary/supplies")
+    assert disabled_page.status_code == 200
+    assert 'action="/secondary/supplies"' not in disabled_page.text
     assert client.post("/secondary/supplies", data=form).status_code == 404
     assert _state(root, 2)[1] == []
     monkeypatch.setenv("TRACKER_SECONDARY_SUPPLY_WRITES438", "1")
