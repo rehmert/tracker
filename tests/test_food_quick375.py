@@ -170,3 +170,30 @@ def test_quick_log_rejects_invalid_inputs(client):
         assert db.execute(text(
             "SELECT COUNT(*) FROM tracker_food_entries"
         )).scalar_one() == 1
+
+
+def test_500_quick_food_filters_preserve_existing_submit_forms():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    markup = (root / "app/templates/food.html").read_text()
+    script = (root / "app/static/js/tracker-food500.js").read_text()
+
+    for marker in (
+        'id="food500-quick-controls"',
+        'id="food500-quick-search"',
+        'id="food500-quick-scope"',
+        'id="food500-quick-count"',
+        'id="food500-quick-reset"',
+        'id="food500-quick-empty"',
+        'data-food500-scope="favorites"',
+        'data-food500-scope="recent"',
+        'id="food500-recent"',
+        'tracker-food500.js?v=500',
+    ):
+        assert marker in markup, marker
+    assert 'action="/food/quick/{{ item.id }}"' in markup
+    assert "card.hidden = !visible" in script
+    assert "recent.open = true" in script
+    assert "fetch(" not in script
+    assert ".submit(" not in script
+    assert "localStorage" not in script
