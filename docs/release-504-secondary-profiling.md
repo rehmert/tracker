@@ -3,7 +3,7 @@
 Release 503 removed an xdist `loadfile` scheduling bottleneck by separating
 the longest private-workflow test from the readiness tests. The private
 workflow itself still performs real authenticated requests against
-disposable SQLite workspaces, including audit, CSRF, mutation replay and
+disposable SQLite workspaces, including audits, CSRF-protected form submissions, and
 cross-account checks. These are valuable security invariants and should
 not be skipped or stubbed merely for speed.
 
