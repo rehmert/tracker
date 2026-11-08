@@ -76,7 +76,7 @@ def tracked_app_paths(root):
             "Cannot list tracked application files: "
             + process.stderr.decode("utf-8", "replace")[:180]
         )
-    names = [os.fsdecode(raw) for raw in process.stdout.split(b"\\0") if raw]
+    names = [os.fsdecode(raw) for raw in process.stdout.split(b"\0") if raw]
     if not names:
         raise ValueError("No tracked application files found")
     return names
