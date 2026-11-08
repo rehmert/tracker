@@ -188,11 +188,20 @@ def _parse_rows(analyte, value, unit, ref_low, ref_high):
             if not r["unit"].strip():
                 raise ValueError(f"'{r['analyte'].strip()}' needs a unit (as printed on the report).")
             val = float(r["value"])
+            if not math.isfinite(val):
+                raise ValueError(
+                    f"'{r['analyte'].strip()}': result must be a finite number."
+                )
             lo, hi = _opt_float(r["ref_low"]), _opt_float(r["ref_high"])
             if (lo is None) != (hi is None):
                 raise ValueError(f"'{r['analyte'].strip()}': enter both ends of the printed range, or neither.")
-            if lo is not None and lo > hi:
-                raise ValueError(f"'{r['analyte'].strip()}': the printed range's low end is above its high end.")
+            if lo is not None:
+                if not math.isfinite(lo) or not math.isfinite(hi):
+                    raise ValueError(
+                        f"'{r['analyte'].strip()}': reference limits must be finite numbers."
+                    )
+                if lo > hi:
+                    raise ValueError(f"'{r['analyte'].strip()}': the printed range's low end is above its high end.")
         except ValueError as exc:
             msg = str(exc)
             if msg.startswith("could not convert"):
