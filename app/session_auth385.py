@@ -1,4 +1,4 @@
-"""DEV-only single-admin sessions.
+"""Separate administrator sessions for explicitly enabled DEV/PROD instances.
 
 Multi-user data isolation is NOT enabled. The existing
 Tracker database remains the administrator's data.
