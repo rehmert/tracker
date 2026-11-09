@@ -47,6 +47,33 @@ def _multipart_compound520(client, *, data=None, headers=None):
     )
 
 
+def test_520_strict_denied_multipart_cannot_create_compound(strict_client520):
+    client = strict_client520
+    _token520(client)
+    name = "520 forbidden compound"
+    response = _multipart_compound520(client, data={"name": name})
+    assert response.status_code == 403
+    listing = client.get("/compounds", params={"q": name})
+    assert listing.status_code == 200
+    assert name not in listing.text
+
+
+def test_520_strict_signed_multipart_can_create_isolated_compound(
+    strict_client520,
+):
+    client = strict_client520
+    token = _token520(client)
+    name = "520 signed native compound"
+    response = _multipart_compound520(
+        client, data={"name": name, "csrf_token": token},
+    )
+    assert response.status_code == 303
+    assert response.headers[REPORT_HEADER] == "valid"
+    listing = client.get("/compounds", params={"q": name})
+    assert listing.status_code == 200
+    assert name in listing.text
+
+
 def test_520_strict_missing_multipart_token_denied(strict_client520):
     client = strict_client520
     _token520(client)
