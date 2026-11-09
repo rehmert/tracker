@@ -370,7 +370,7 @@ def test_account465_authenticated_private_page(
 
     assert "member-2" in first.text
     assert "member-3" not in first.text
-    assert "Production Access" in first.text
+    assert "Private Workspace" in first.text
 
     assert client.get(
         "/secondary/account?user_id=3"
