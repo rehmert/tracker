@@ -56,4 +56,9 @@ def allow_signed_proxy_write522(method, headers, csrf_status):
     if origin == "null":
         return True
 
+    # urlsplit alone accepts hostnames containing embedded whitespace.
+    # Never relax the Origin guard for malformed/ambiguous authorities.
+    if any(char.isspace() or ord(char) < 0x20 for char in origin):
+        return False
+
     return _authority(origin) is not None
