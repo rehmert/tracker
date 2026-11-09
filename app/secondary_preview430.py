@@ -240,7 +240,7 @@ input,button{{display:block;width:100%;padding:12px;margin:10px 0;font:inherit}}
 <body>
 <main>
 <h1>Private Workspace Preview</h1>
-<p>DEV only · Private workspace pilot</p>
+<p>Private workspace · authenticated access</p>
 {warning}
 <form method="post" action="/secondary/login">
 <input type="hidden" name="csrf_token" value="{token}">
@@ -3025,7 +3025,7 @@ def secondary_attachment471(
 
 
 # Release 472: current secondary session only.
-# Attachment upload is independently DEV-gated.
+# Attachment upload is independently feature-gated.
 from .secondary_files472 import (
     private_catalog472, render_catalog472,
     private_upload472, upload_enabled472,
