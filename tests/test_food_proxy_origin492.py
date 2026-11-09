@@ -173,8 +173,10 @@ def test_real_proxy_signed_form_field_is_sufficient(reverse_proxy_client):
       "Sec-Fetch-Site": "cross-site"}, 403),
     ({"Origin": "https://tracker.example",
       "Sec-Fetch-Site": "same-site"}, 403),
+    # Release 522 permits an HTTP LAN browser origin only when the
+    # submitted CSRF header is also valid and metadata is same-origin.
     ({"Origin": "http://tracker.example",
-      "Sec-Fetch-Site": "same-origin"}, 403),
+      "Sec-Fetch-Site": "same-origin"}, 422),
     ({"Origin": "null",
       "Sec-Fetch-Site": "cross-site"}, 403),
     ({"Origin": "null",
