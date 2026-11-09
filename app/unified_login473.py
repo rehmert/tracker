@@ -1,4 +1,4 @@
-"""DEV-only, explicitly enabled unified secondary login.
+"""Unified secondary login for explicitly enabled DEV/PROD instances.
 
 Secondary credentials create secondary sessions only.
 They never authorize administrator routes or the
