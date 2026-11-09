@@ -169,6 +169,14 @@ for _ in range(60):
 else:
     raise SystemExit("ERROR: Isolated HTTPS proxy not ready")
 PY
+# Ensure Vitals/Labs/COA tests actually run against a reverse proxy which
+# rewrites upstream Host; otherwise the regression would be a false pass.
+grep -qx 'QA_WRITE_PROXY_HOST_REWRITE=ENABLED' "$TLS_LOG" || {
+  echo "ERROR: isolated reverse-proxy Host-rewrite fixture was not enabled"
+  exit 2
+}
+echo "ISOLATED_PROXY_HOST_REWRITE=VERIFIED"
+
 echo "=== DISPOSABLE INVENTORY FOR LIVE SORT/SEARCH QA ==="
 # Only mutate the private candidate database created above. Never touch the
 # installed Tracker database or user files.
