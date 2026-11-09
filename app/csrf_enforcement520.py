@@ -71,7 +71,10 @@ async def enforce_multipart_csrf520(request: Request) -> None:
     where the parser's cached FormData remains available to the endpoint.
     """
     if (
-        not strict_csrf_enabled520()
+        not (
+            strict_csrf_enabled520()
+            or getattr(request.state, "proxy_origin_csrf_required522", False)
+        )
         or request.method.upper() not in UNSAFE_METHODS
         or owns_signed_csrf520(request)
         or not is_multipart520(request)
