@@ -113,7 +113,7 @@ def render_food_day452(report):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Food &amp; Water · Tracker DEV</title>
+<title>Food &amp; Water · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#f3f6fa;color:#182333;font:16px/1.45 system-ui,sans-serif}}
@@ -166,9 +166,9 @@ cursor:pointer;font-weight:700
 <a href="/secondary/security">Security</a>
 </nav>
 <h1>Food &amp; Water</h1>
-<p><a href="/secondary/food/new">Log Food or Water (DEV pilot)</a></p>
+<p><a href="/secondary/food/new">Log Food or Water</a></p>
 <p><a href="/secondary/food/week?day={day_label}">View Seven-Day Nutrition &amp; Water Review</a></p>
-<p class="note">Private workspace · DEV pilot</p>
+<p class="note">Private workspace</p>
 <form method="get" action="/secondary/food" class="day-picker">
 <label>Journal day
 <input name="day" type="date" required value="{day_label}">
