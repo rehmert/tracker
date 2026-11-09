@@ -4,6 +4,7 @@ from html import escape
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from ..instance_parity523 import interactive_parity523
 from .. import config, session_auth385 as auth
 from ..csrf_runtime import load_key
 from ..csrf_tokens import issue_token, verify_pair
@@ -15,7 +16,7 @@ CSRF_COOKIE = "tracker_users_csrf479"
 
 
 def _admin479(request):
-    if config.instance_label() != "DEV" or not auth.enabled():
+    if not interactive_parity523() or not auth.enabled():
         raise HTTPException(404, "Unavailable")
 
     if auth.session_user(
