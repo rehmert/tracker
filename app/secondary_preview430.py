@@ -16,6 +16,7 @@ from html import escape
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from .instance_parity523 import interactive_parity523
 from . import config, session_auth385 as auth
 from .csrf_runtime import load_key
 from .csrf_tokens import issue_token, verify_pair
@@ -41,7 +42,7 @@ preview_app = FastAPI(
 
 def preview_enabled():
     return (
-        config.instance_label() == "DEV"
+        interactive_parity523()
         and auth.enabled()
         and os.getenv("TRACKER_SECONDARY_PREVIEW430", "0") == "1"
         and os.getenv("TRACKER_SECONDARY_LOCKDOWN440", "0") != "1"
