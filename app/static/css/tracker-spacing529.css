@@ -1,0 +1,186 @@
+/*
+ * Release 529: Vertical spacing refinement.
+ *
+ * Balanced and Compact only. Comfortable is unchanged.
+ * Layout-only: no hidden content, smaller fonts, modified
+ * form controls, fixed heights or application behavior.
+ *
+ * Loaded after the legacy and mobile styles.
+ */
+
+:root[data-density="balanced"] {
+  --density-section-gap: .85rem;
+  --density-heading-gap: .4rem;
+  --density-form-gap: .48rem;
+  --density-grid-gap: .6rem;
+}
+
+:root[data-density="compact"] {
+  --density-section-gap: .45rem;
+  --density-heading-gap: .2rem;
+  --density-form-gap: .3rem;
+  --density-grid-gap: .38rem;
+}
+
+:root[data-density="balanced"] #main-content,
+:root[data-density="compact"] #main-content {
+  --space529-section: .75rem;
+  --space529-heading: .35rem;
+  --space529-note: .4rem;
+}
+
+:root[data-density="compact"] #main-content {
+  --space529-section: .42rem;
+  --space529-heading: .2rem;
+  --space529-note: .25rem;
+}
+
+/* Avoid stacking large margins on consecutive sections. */
+:root[data-density="balanced"] #main-content h2,
+:root[data-density="compact"] #main-content h2 {
+  margin-top: var(--space529-section);
+  margin-bottom: var(--space529-heading);
+}
+
+:root[data-density="balanced"] #main-content h3,
+:root[data-density="compact"] #main-content h3 {
+  margin-top: var(--space529-section);
+  margin-bottom: var(--space529-heading);
+}
+
+/* Reclaim vertical space around page introductions. */
+:root[data-density="balanced"] #main-content .section-intro,
+:root[data-density="compact"] #main-content .section-intro,
+:root[data-density="balanced"] #main-content .note,
+:root[data-density="compact"] #main-content .note {
+  margin-bottom: var(--space529-note);
+}
+
+/* Common page grids and cards. */
+:root[data-density="balanced"] #main-content .grid,
+:root[data-density="compact"] #main-content .grid {
+  row-gap: var(--density-form-gap);
+  margin-bottom: var(--space529-section);
+}
+
+:root[data-density="balanced"] #main-content .cards,
+:root[data-density="compact"] #main-content .cards {
+  margin-top: var(--space529-section);
+  margin-bottom: var(--space529-section);
+}
+
+/* A lighter vertical rhythm between dashboard sections. */
+:root[data-density="balanced"] #main-content .dashboard-panel {
+  margin-top: .5rem;
+  margin-bottom: .5rem;
+}
+
+:root[data-density="compact"] #main-content .dashboard-panel {
+  margin-top: .35rem;
+  margin-bottom: .35rem;
+}
+
+:root[data-density="balanced"] #main-content .dashboard-metrics,
+:root[data-density="compact"] #main-content .dashboard-metrics {
+  margin-bottom: var(--space529-section);
+}
+
+/*
+ * The mobile Today page has its own display:grid gaps.
+ * Reducing generic section margins alone cannot affect them.
+ */
+@media (max-width: 760px) {
+  :root[data-density="balanced"] #main-content .tracker-daily509 {
+    gap: .48rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily509 {
+    gap: .28rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-section {
+    padding: .65rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-section {
+    padding: .48rem .6rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-heading {
+    margin-bottom: .35rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-heading {
+    margin-bottom: .2rem;
+  }
+
+  :root[data-density="balanced"] #main-content
+  :is(.tracker-daily-note, .tracker-daily-empty) {
+    margin: .25rem 0 .35rem;
+  }
+
+  :root[data-density="compact"] #main-content
+  :is(.tracker-daily-note, .tracker-daily-empty) {
+    margin: .15rem 0 .25rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-mode {
+    margin: .45rem 0;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-mode {
+    margin: .3rem 0;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-vitals {
+    gap: .48rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-vitals {
+    gap: .3rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-summary {
+    margin-bottom: .4rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-summary {
+    margin-bottom: .25rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-list li {
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-list li {
+    padding-top: .35rem;
+    padding-bottom: .35rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-metrics a {
+    padding: .55rem .45rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-metrics a {
+    padding: .4rem .45rem;
+  }
+
+  /* Preserve generous tap targets despite the tighter layout. */
+  :root[data-density="balanced"] #main-content .tracker-daily-actions a,
+  :root[data-density="compact"] #main-content .tracker-daily-actions a,
+  :root[data-density="balanced"] #main-content .tracker-daily-mode button,
+  :root[data-density="compact"] #main-content .tracker-daily-mode button,
+  :root[data-density="balanced"] #main-content .tracker-daily-list li a,
+  :root[data-density="compact"] #main-content .tracker-daily-list li a {
+    min-height: 44px;
+  }
+}
+
+/* No spacing overrides apply when printing. */
+@media print {
+  :root[data-density="balanced"] #main-content .tracker-daily509,
+  :root[data-density="compact"] #main-content .tracker-daily509 {
+    gap: revert;
+  }
+}
