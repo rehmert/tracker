@@ -122,15 +122,21 @@ def test_smoke_uses_and_revokes_temporary_session(environment):
     assert auth.session_user(token) is None
 
 
-def test_prod_smoke_remains_basic_auth(environment):
+def test_prod_smoke_basic_auth_fallback(environment):
+    """Legacy Basic Auth remains available without session mode."""
     module = runpy.run_path(
         "scripts/tracker-runtime-smoke.py"
     )
+
+    # Use a separate directory without the session-enable flag.
+    legacy_dir = environment / "legacy-no-session"
+    legacy_dir.mkdir()
 
     settings = {
         "TRACKER_INSTANCE": "PROD",
         "TRACKER_USER": "operator",
         "TRACKER_PASS": "legacy-password-387",
+        "TRACKER_DATA_DIR": str(legacy_dir),
     }
 
     with module["release_auth_headers"](
@@ -144,6 +150,44 @@ def test_prod_smoke_remains_basic_auth(environment):
         assert base64.b64decode(value).decode() == (
             "operator:legacy-password-387"
         )
+
+
+def test_prod_smoke_uses_and_revokes_session(
+    environment, monkeypatch
+):
+    """Production session authentication takes priority over Basic Auth."""
+    monkeypatch.setattr(
+        config, "instance_label", lambda: "PROD"
+    )
+
+    module = runpy.run_path(
+        "scripts/tracker-runtime-smoke.py"
+    )
+
+    settings = {
+        "TRACKER_INSTANCE": "PROD",
+        "TRACKER_USER": "operator",
+        "TRACKER_PASS": "legacy-password-387",
+        "TRACKER_DATA_DIR": str(environment),
+    }
+
+    factory = module["release_auth_headers"]
+
+    with factory("PROD", settings) as headers:
+        assert "Authorization" not in headers
+        assert "Cookie" in headers
+
+        token = headers["Cookie"].split("=", 1)[1]
+
+        assert auth.session_user(token) == 1
+        assert len(auth.session_overview(token)) == 1
+
+        request = make_request(token)
+
+        assert require_auth(None, request) is None
+        assert request.state.tracker_user_id == 1
+
+    assert auth.session_user(token) is None
 
 
 def test_no_user_data_database_created(environment):
