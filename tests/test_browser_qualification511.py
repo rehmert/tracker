@@ -16,14 +16,44 @@ ISOLATED_ROOT = (
 )
 
 
+# Release 521 reruns selected existing modules with strict CSRF enabled.
+# A strict-only module must not be collected against the report-only server.
+STRICT_PASS_MARKER = "# Release 521: a second browser gate"
+STRICT_ONLY = frozenset({
+    "tests/browser/test_strict_csrf521.py",
+})
+STRICT_REPLAY = frozenset({
+    "tests/browser/test_labs_native_https501.py",
+    "tests/browser/test_food_labs_mutations500.py",
+})
+
+
 def test_511_every_browser_module_in_disposable_qualification():
     source = QUALIFIER.read_text(encoding="utf-8")
+    assert source.count(STRICT_PASS_MARKER) == 1
+    standard, strict = source.split(STRICT_PASS_MARKER, 1)
+
     browser_paths = sorted((ROOT / "tests/browser").glob("test_*.py"))
     required = [str(path.relative_to(ROOT)) for path in browser_paths]
     required.extend(ISOLATED_ROOT)
     assert len(required) == len(set(required))
+
     for name in required:
-        assert source.count(name) == 1, name
+        if name in STRICT_ONLY:
+            assert standard.count(name) == 0, ("strict-only in standard pass", name)
+            assert strict.count(name) == 1, ("strict-only gate missing", name)
+        else:
+            assert standard.count(name) == 1, ("standard gate missing", name)
+            assert strict.count(name) == (1 if name in STRICT_REPLAY else 0), (
+                "unexpected strict replay or missing coverage", name
+            )
+
+    assert STRICT_ONLY <= set(required)
+    assert STRICT_REPLAY <= set(required)
+    assert 'TRACKER_CSRF_ENFORCE=1' in strict
+    assert 'TRACKER_TEST_STRICT_CSRF=1' in strict
+    assert 'ISOLATED_STRICT_CSRF_READY=YES' in strict
+    assert 'ISOLATED_STRICT_CSRF_BROWSER=PASSED' in strict
 
 
 def test_511_all_legacy_browser_entry_points_delegate_to_disposable_qa():
