@@ -110,6 +110,7 @@ def test_523_mocked_cutover_enables_expected_flags_and_marker(cutover, monkeypat
     monkeypatch.setattr(script, "run", fake_run)
     monkeypatch.setattr(script, "process_env", lambda: environment)
     monkeypatch.setattr(script, "verify_login", lambda: None)
+    monkeypatch.setattr(script, "backup", lambda: None)
     monkeypatch.setattr(script, "prepare_auth", lambda values, root, db: (
         root / script.MARKER, os.getuid(), os.getgid()
     ))
@@ -143,6 +144,7 @@ def test_523_mocked_failed_smoke_rolls_back_basic_auth(cutover, monkeypatch):
 
     monkeypatch.setattr(script, "run", fake_run)
     monkeypatch.setattr(script, "process_env", lambda: environment)
+    monkeypatch.setattr(script, "backup", lambda: None)
     monkeypatch.setattr(script, "verify_login", lambda: (
         (_ for _ in ()).throw(RuntimeError("Mocked health failure"))
     ))
