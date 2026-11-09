@@ -97,6 +97,9 @@ def test_523_prod_admin_signin_security_and_logout(page):
     _goto(tab, "/account/users")
     expect(tab.locator("body")).to_contain_text("qa-member523")
 
+    # Return to the main app shell: the standalone User Management page
+    # correctly has no logout form of its own.
+    _goto(tab, "/")
     # Logout must revoke the signed administrator session, not just a UI flag.
     tab.locator('form[action="/logout"] input[name="csrf_token"]').wait_for()
     with tab.expect_response(
@@ -123,6 +126,6 @@ def test_523_prod_secondary_login_private_and_admin_denial(page):
     _goto(tab, "/secondary/security")
     expect(tab.locator("body")).to_contain_text("Active Sessions")
 
-    # A secondary cookie must not become an administrator session.
-    assert not tab.context.cookies([HTTPS_URL + "/"]).__class__ is None
+    # A secondary user is routed only to their own workspace, with
+    # administrator management still denied by the real server.
     assert not errors, errors
