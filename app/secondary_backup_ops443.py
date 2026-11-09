@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .instance_parity523 import interactive_parity523
 from .secondary_backup442 import (
     _no_links, create_secondary_backup442, verify_secondary_backup442,
 )
@@ -30,7 +31,7 @@ LOCK_NAME = ".tracker-secondary-backup443.lock"
 
 def _dev443():
     from . import config
-    if config.instance_label() != "DEV":
+    if not interactive_parity523():
         raise PermissionError("Secondary backup operations require DEV")
 
 
