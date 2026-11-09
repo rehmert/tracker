@@ -11,6 +11,7 @@ import uuid
 from contextlib import closing
 from pathlib import Path
 
+from .instance_parity523 import interactive_parity523
 from .worker_scope428 import worker_plan428
 
 
@@ -80,7 +81,7 @@ def backup_secondary472(user_id):
 def main():
     from . import config
 
-    if config.instance_label() != "DEV":
+    if not interactive_parity523():
         raise PermissionError("DEV only")
     if len(sys.argv) != 2 or not sys.argv[1].isdecimal():
         raise ValueError("Usage: python -m app.secondary_backup472 USER_ID")
