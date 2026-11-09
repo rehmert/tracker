@@ -6,7 +6,7 @@ from html import escape
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from .. import session_auth385 as auth
+from .. import config, session_auth385 as auth
 from ..csrf_runtime import load_key
 from ..csrf_tokens import issue_token, verify_pair
 
@@ -45,6 +45,7 @@ def check_csrf(request, form):
 def page_html(username, sessions, csrf):
     username = escape(username)
     csrf = escape(csrf, quote=True)
+    identity = config.instance_label() or "LOCAL"
 
     active = len(sessions)
     records = []
@@ -66,7 +67,7 @@ def page_html(username, sessions, csrf):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Account Security · Tracker DEV</title>
+<title>Account Security · Tracker {identity}</title>
 <style>
 :root {{color-scheme:light dark}}
 * {{box-sizing:border-box}}
@@ -117,8 +118,8 @@ autocomplete="new-password" minlength="12" required></label>
 <button class="primary" type="submit">Change Password</button>
 </form>
 </section>
-<p class="note">This release supports one administrator only.
-Other user accounts remain disabled until data isolation is implemented.</p>
+<p class="note">Administrator sessions and password management are separate from
+private secondary-user accounts.</p>
 </body>
 </html>"""
 
