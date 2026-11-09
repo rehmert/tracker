@@ -5,6 +5,7 @@ password hashes, chooses an arbitrary browser-supplied user,
 or permits cross-user database access.
 """
 import json
+from .instance_parity523 import interactive_parity523
 from html import escape
 
 REQUIRED_ACCOUNT_FIELDS = frozenset({
@@ -136,7 +137,7 @@ def main():
     from . import config
     from .user_accounts427 import list_staged_accounts427
 
-    if config.instance_label() != "DEV":
+    if not interactive_parity523():
         raise PermissionError("DEV only")
 
     if os.getenv("TRACKER_SECONDARY_LOCKDOWN440") == "1":
