@@ -12,6 +12,7 @@ import os
 import re
 import subprocess
 import sys
+from .instance_parity523 import interactive_parity523
 import uuid
 
 MAX_BYTES = 4096
@@ -410,7 +411,7 @@ def request_reconciliation437(user_id, action, *, vial_id=None,
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
     if (
-        config.instance_label() != "DEV"
+        not interactive_parity523()
         or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1"
     ):
         raise PermissionError("Private reconciliation disabled")
