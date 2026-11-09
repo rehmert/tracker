@@ -1,4 +1,4 @@
-"""DEV-only, explicitly enabled unified secondary login.
+"""Explicitly enabled unified secondary login.
 
 Secondary credentials create secondary sessions only.
 They never authorize administrator routes or the
@@ -13,7 +13,7 @@ def enabled473():
     from .secondary_preview430 import preview_enabled
 
     return (
-        config.instance_label() == "DEV"
+        config.instance_label() in ("DEV", "PROD")
         and session_auth385.enabled()
         and preview_enabled()
         and os.getenv(

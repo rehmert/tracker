@@ -1,4 +1,4 @@
-"""DEV-only browser login and logout."""
+"""Browser login and logout for both environments."""
 
 from html import escape
 
@@ -39,7 +39,7 @@ def build_login_html(destination, token, error=""):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Sign In · Tracker DEV</title>
+<title>Sign In · Tracker</title>
 <style>
 :root {{color-scheme:light dark}}
 * {{box-sizing:border-box}}
@@ -64,7 +64,7 @@ background:#1265ad;color:white}}
 </head>
 <body>
 <main>
-<h1>Tracker DEV</h1>
+<h1>Tracker</h1>
 <p>Sign in to your personal workspace.</p>
 {warning}
 <form method="post" action="/login">

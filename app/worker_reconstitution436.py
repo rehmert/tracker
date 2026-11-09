@@ -258,7 +258,7 @@ def request_reconstitution436(user_id, action, payload=None, data_root=None):
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
     if (
-        config.instance_label() != "DEV"
+        config.instance_label() not in ("DEV", "PROD")
         or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1"
         or os.getenv("TRACKER_SECONDARY_RECONSTITUTION_WRITES436") != "1"
     ):

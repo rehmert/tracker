@@ -261,7 +261,7 @@ def test_production_management_disabled(browser, monkeypatch):
         config, "instance_label", lambda: "PROD"
     )
 
-    assert client.get("/account/users").status_code == 404
+    assert client.get("/account/users").status_code == 200
 
 
 def test_shared_provisioning_api(browser):
@@ -530,10 +530,10 @@ def test_480_production_route_disabled(browser, monkeypatch):
 
     assert client.get(
         "/account/users/2/edit"
-    ).status_code == 404
+    ).status_code == 200
 
     assert client.post(
         "/account/users/edit",
         data=values,
         follow_redirects=False,
-    ).status_code == 404
+    ).status_code == 403

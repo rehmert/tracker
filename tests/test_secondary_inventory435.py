@@ -386,10 +386,10 @@ def test_disable_write_flag_keeps_inventory_read_only(browser, monkeypatch):
 
     monkeypatch.setenv("TRACKER_SECONDARY_INVENTORY_WRITES435", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/inventory").status_code == 404
+    assert client.get("/secondary/inventory").status_code == 200
     assert client.post(
         "/secondary/inventory/vials", data=form,
-    ).status_code == 404
+    ).status_code == 403
 
 
 @pytest.mark.parametrize("raw", (

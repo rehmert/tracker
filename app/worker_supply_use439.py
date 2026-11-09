@@ -333,7 +333,7 @@ def request_use439(user_id, action, payload=None, data_root=None):
     from .user_accounts427 import secondary_id
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
-    if (config.instance_label() != "DEV"
+    if (config.instance_label() not in ("DEV", "PROD")
         or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1"):
         raise PermissionError("Secondary supply preview disabled")
     if type(action) is not str or action not in ("options", "use"):

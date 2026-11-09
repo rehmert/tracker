@@ -159,7 +159,7 @@ def test_prod_and_master_disable_all_readiness(browser, monkeypatch):
     client, _ = browser
     _login(client, 2)
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/readiness").status_code == 404
+    assert client.get("/secondary/readiness").status_code == 200
     monkeypatch.setattr(config, "instance_label", lambda: "DEV")
     monkeypatch.delenv("TRACKER_SECONDARY_PREVIEW430", raising=False)
     assert client.get("/secondary/readiness").status_code == 404

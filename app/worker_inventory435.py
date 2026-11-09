@@ -336,7 +336,7 @@ def request_inventory435(user_id, action, payload=None, data_root=None):
     from .user_accounts427 import secondary_id
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
-    if config.instance_label() != "DEV" or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1":
+    if config.instance_label() not in ("DEV", "PROD") or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1":
         raise PermissionError("Secondary preview disabled")
     if type(action) is not str or action not in OPERATIONS:
         raise ValueError("Unsupported inventory operation")

@@ -1,4 +1,4 @@
-"""DEV-only single-admin sessions.
+"""Environment-independent single-admin sessions.
 
 Multi-user data isolation is NOT enabled. The existing
 Tracker database remains the administrator's data.
@@ -25,7 +25,7 @@ REMEMBER_SECONDS = 30 * 86400
 
 def enabled():
     return (
-        config.instance_label() == "DEV"
+        config.instance_label() in ("DEV", "PROD")
         and (config.DATA_DIR / FLAG).is_file()
     )
 

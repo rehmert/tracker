@@ -293,7 +293,7 @@ def test_disabled_and_unauthenticated_users_cannot_write(browser, monkeypatch):
 
     monkeypatch.setenv("TRACKER_SECONDARY_DOSE_WRITES434", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.post("/secondary/doses/new", data=data).status_code == 404
+    assert client.post("/secondary/doses/new", data=data).status_code == 200
 
 
 def test_workspace_marker_tampering_rejects_write_before_child_launch(browser):

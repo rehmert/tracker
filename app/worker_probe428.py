@@ -26,7 +26,7 @@ def validate_environment():
 
     if (
         os.getenv("TRACKER_WORKER_PROBE_ONLY") != "1"
-        or os.getenv("TRACKER_INSTANCE") != "DEV"
+        or os.getenv("TRACKER_INSTANCE") not in ("DEV", "PROD")
         or not raw_uid.isdecimal()
         or not parent_raw
         or not private_raw

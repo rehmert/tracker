@@ -290,7 +290,7 @@ def request_write456(uid, action, payload, data_root=None):
     )
 
     if (
-        config.instance_label() != "DEV"
+        config.instance_label() not in ("DEV", "PROD")
         or os.getenv(
             "TRACKER_SECONDARY_FOOD_WRITES456", "0"
         ) != "1"

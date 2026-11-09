@@ -58,7 +58,7 @@ def establish_request_scope(
     scope = VerifiedRequestScope(
         user_id=verified_user_id,
         storage=storage,
-        authentication_mode="dev-session",
+        authentication_mode="app-session",
     )
 
     request.state.tracker_user_id = verified_user_id
@@ -104,7 +104,7 @@ def verified_request_scope(request: Request):
 
     if (
         scope.storage != planned_storage(user_id)
-        or scope.authentication_mode != "dev-session"
+        or scope.authentication_mode != "app-session"
     ):
         raise HTTPException(
             403, "Authenticated storage context mismatch"

@@ -352,8 +352,8 @@ def test_csrf_fetch_site_unauthenticated_and_flags(browser, monkeypatch):
     assert _state(root, 2)[1] == []
     monkeypatch.setenv("TRACKER_SECONDARY_SUPPLY_USE439", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/supplies/use").status_code == 404
-    assert client.post("/secondary/supplies/use", data=form).status_code == 404
+    assert client.get("/secondary/supplies/use").status_code == 200
+    assert client.post("/secondary/supplies/use", data=form).status_code == 403
 
 
 @pytest.mark.parametrize("raw", (

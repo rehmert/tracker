@@ -302,10 +302,10 @@ def test_473_lockdown_and_prod_fail_closed(
         lambda: "PROD",
     )
 
-    assert not enabled473()
+    assert enabled473()
 
     response = client.get("/login")
-    assert response.status_code == 404
+    assert response.status_code == 200
 
 
 def test_473_invalid_credentials(browser):

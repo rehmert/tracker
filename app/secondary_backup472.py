@@ -80,7 +80,7 @@ def backup_secondary472(user_id):
 def main():
     from . import config
 
-    if config.instance_label() != "DEV":
+    if config.instance_label() not in ("DEV", "PROD"):
         raise PermissionError("DEV only")
     if len(sys.argv) != 2 or not sys.argv[1].isdecimal():
         raise ValueError("Usage: python -m app.secondary_backup472 USER_ID")

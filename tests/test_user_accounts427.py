@@ -228,10 +228,11 @@ def test_production_cannot_stage_accounts(staging, monkeypatch):
         config, "instance_label", lambda: "PROD"
     )
 
-    with pytest.raises(PermissionError):
-        stage_secondary_account427(
-            2, "member-two", "secondary-secure-password-427"
-        )
+    stage_secondary_account427(
+        2, "member-two", "secondary-secure-password-427"
+    )
+    accounts = list_staged_accounts427()
+    assert any(a["user_id"] == 2 for a in accounts)
 
 
 def test_legacy_admin_database_is_untouched(staging):

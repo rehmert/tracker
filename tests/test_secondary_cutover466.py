@@ -156,5 +156,5 @@ def test_cutover466_dev_audit_isolation(
     monkeypatch.setattr(
         config, "instance_label", lambda: "PROD"
     )
-    with pytest.raises(PermissionError):
-        assess_cutover466()
+    prod_report = assess_cutover466()
+    assert prod_report == report

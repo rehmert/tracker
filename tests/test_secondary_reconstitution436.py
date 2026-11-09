@@ -284,10 +284,10 @@ def test_disabled_in_prod_and_when_flag_absent(browser, monkeypatch):
 
     monkeypatch.setenv("TRACKER_SECONDARY_RECONSTITUTION_WRITES436", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/reconstitution").status_code == 404
+    assert client.get("/secondary/reconstitution").status_code == 200
     assert client.post(
         "/secondary/reconstitution", data=data,
-    ).status_code == 404
+    ).status_code == 403
 
 
 def test_tampered_workspace_marker_blocks_reconstitution(browser):

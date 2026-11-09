@@ -153,7 +153,7 @@ def test_unauthenticated_prod_and_lockdown_cannot_view_food(browser, monkeypatch
 
     monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440", raising=False)
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/food?day=" + DAY).status_code == 404
+    assert client.get("/secondary/food?day=" + DAY).status_code == 200
 
 
 @pytest.mark.parametrize("raw", [
@@ -278,7 +278,7 @@ def test_week453_lockdown_and_prod_denial(browser, monkeypatch):
 
     monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/food/week").status_code == 404
+    assert client.get("/secondary/food/week").status_code == 200
 
 
 # Release 454 single-worker weekly acceptance
@@ -494,7 +494,7 @@ def test_week_csv455_prod_and_lockdown(browser, monkeypatch):
 
     assert client.get(
         "/secondary/food/week.csv"
-    ).status_code == 404
+    ).status_code == 200
 
 
 def test_week_csv455_missing_values_and_partial():
@@ -776,8 +776,8 @@ def test_food_write456_prod_denial(browser, monkeypatch):
     monkeypatch.setenv("TRACKER_SECONDARY_FOOD_WRITES456", "1")
     login(client, 2)
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/food/new").status_code == 404
-    assert client.post("/secondary/food/entry").status_code == 404
+    assert client.get("/secondary/food/new").status_code == 200
+    assert client.post("/secondary/food/entry").status_code == 403
 
 
 # Release 456 correction: normalized numeric values are
@@ -1011,7 +1011,7 @@ def test_saved_food457_gate_lockdown_and_prod(
 
     monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.post("/secondary/food/reuse").status_code == 404
+    assert client.post("/secondary/food/reuse").status_code == 403
 
 
 # Release 458: mobile shortcuts never create new write routes.
@@ -1123,7 +1123,7 @@ def test_mobile_quick_entry458_no_new_write_permissions(
     monkeypatch.setattr(
         config, "instance_label", lambda: "PROD"
     )
-    assert client.get("/secondary/food/new").status_code == 404
+    assert client.get("/secondary/food/new").status_code == 200
 
 
 # Release 459: client-side filtering of private saved foods.
@@ -1237,7 +1237,7 @@ def test_mobile_saved_food_search459_gates(browser, monkeypatch):
     monkeypatch.setattr(
         config, "instance_label", lambda: "PROD"
     )
-    assert client.get("/secondary/food/new").status_code == 404
+    assert client.get("/secondary/food/new").status_code == 200
 
 
 def test_mobile_saved_food_search459_preserves_routes():
@@ -1444,7 +1444,7 @@ def test_barcode460_input_gate_and_prod(browser, monkeypatch):
     )
     assert client.get(
         "/secondary/food/barcode?code=" + code
-    ).status_code == 404
+    ).status_code == 200
 
 
 # Release 461: optional browser camera scanning.
@@ -1597,7 +1597,7 @@ def test_camera_barcode461_preserves_feature_gates(
     monkeypatch.setattr(
         config, "instance_label", lambda: "PROD"
     )
-    assert client.get("/secondary/food/new").status_code == 404
+    assert client.get("/secondary/food/new").status_code == 200
 
 
 # Release 462: distinguish per-serving vs per-100g
@@ -1722,7 +1722,7 @@ def test_nutrition_quantity462_gates(browser, monkeypatch):
     monkeypatch.setattr(
         config, "instance_label", lambda: "PROD"
     )
-    assert client.get("/secondary/food/new").status_code == 404
+    assert client.get("/secondary/food/new").status_code == 200
 
 
 def test_batch463_nutrient_contract_and_barcode():

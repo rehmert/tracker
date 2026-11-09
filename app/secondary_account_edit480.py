@@ -16,7 +16,7 @@ from .user_accounts427 import (
 
 
 def edit_secondary_account480(user_id, username, password=None):
-    if config.instance_label() != "DEV" or not auth.enabled():
+    if config.instance_label() not in ("DEV", "PROD") or not auth.enabled():
         raise PermissionError("DEV mode required")
 
     uid = secondary_id(user_id)

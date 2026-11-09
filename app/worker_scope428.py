@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from . import config
 from .user_accounts427 import (
     inspect_staged_account427,
     secondary_id,
@@ -59,7 +60,7 @@ def worker_environment428(user_id, data_root=None):
 
     environment.update({
         "PYTHONPATH": str(SOURCE_ROOT),
-        "TRACKER_INSTANCE": "DEV",
+        "TRACKER_INSTANCE": config.instance_label(),
         "TRACKER_DATA_DIR": str(private.root),
         "TRACKER_BACKUP_DIR": str(private.backups),
         "TRACKER_USER": "isolated-worker",

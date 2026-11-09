@@ -177,22 +177,42 @@ def test_symlinks_and_wrong_permissions_fail_closed(ready):
 def test_invalid_retention_and_non_dev_are_rejected(ready, monkeypatch):
     _, dest = ready
     backup_directory443(dest, create=True)
+
+    # Invalid parameters must remain rejected.
     for bad in (0, 1, 366, True, 1.5, "7"):
         with pytest.raises(ValueError):
             run_backup443(dest, keep=bad)
         with pytest.raises(ValueError):
             prune443(dest, keep=bad)
+
     for bad in (0, 721, "24", True):
         with pytest.raises(ValueError):
             health443(dest, max_age_hours=bad)
 
+    # Release 523 enables secondary backup operations in PROD.
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
+
+    result = run_backup443(dest)
+    assert result["verified_user_count"] == 2
+    assert result["retained"] == 1
+
+    report = health443(dest)
+    assert report["healthy"] is True
+    assert report["user_count"] == 2
+
+    assert prune443(dest, keep=2) == []
+    assert len(archives443(dest)) == 1
+
+    # Unknown environments must still fail closed.
+    monkeypatch.setattr(config, "instance_label", lambda: "UNKNOWN")
+
     with pytest.raises(PermissionError):
         run_backup443(dest)
     with pytest.raises(PermissionError):
         health443(dest)
     with pytest.raises(PermissionError):
         prune443(dest)
+
 
 
 def test_timer_is_opt_in_and_prod_untouched():

@@ -15,7 +15,7 @@ CSRF_COOKIE = "tracker_users_csrf479"
 
 
 def _admin479(request):
-    if config.instance_label() != "DEV" or not auth.enabled():
+    if config.instance_label() not in ("DEV", "PROD") or not auth.enabled():
         raise HTTPException(404, "Unavailable")
 
     if auth.session_user(

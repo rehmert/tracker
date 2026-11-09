@@ -38,7 +38,7 @@ def secondary_id(user_id):
 
 def staging_environment(data_root=None):
     """Require a real DEV authentication store and trusted data root."""
-    if config.instance_label() != "DEV" or not auth.enabled():
+    if config.instance_label() not in ("DEV", "PROD") or not auth.enabled():
         raise PermissionError(
             "Secondary account staging requires DEV session mode"
         )

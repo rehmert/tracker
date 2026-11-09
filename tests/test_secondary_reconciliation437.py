@@ -386,10 +386,10 @@ def test_disabled_flag_keeps_reconciliation_read_only_and_prod_denied(browser, m
 
     monkeypatch.setenv("TRACKER_SECONDARY_VIAL_CORRECTIONS437", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/reconcile").status_code == 404
+    assert client.get("/secondary/reconcile").status_code == 200
     assert client.post(
         "/secondary/reconcile/correct", data=data,
-    ).status_code == 404
+    ).status_code == 200
 
 
 def test_unauthenticated_and_admin_worker_identity_are_denied(browser):

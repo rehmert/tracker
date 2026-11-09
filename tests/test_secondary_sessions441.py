@@ -270,11 +270,11 @@ def test_prod_disabled_preview_and_lockdown_denial(browsers, monkeypatch):
 
     monkeypatch.delenv("TRACKER_SECONDARY_LOCKDOWN440", raising=False)
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert clients[0].get("/secondary/security").status_code == 404
+    assert clients[0].get("/secondary/security").status_code == 200
     assert clients[0].post(
         "/secondary/security/revoke-others",
         data={"csrf_token": token},
-    ).status_code == 404
+    ).status_code == 403
 
     monkeypatch.setattr(config, "instance_label", lambda: "DEV")
     monkeypatch.delenv("TRACKER_SECONDARY_PREVIEW430", raising=False)

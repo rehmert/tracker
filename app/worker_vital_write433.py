@@ -202,7 +202,7 @@ def create_vital_for_user433(uid, payload, data_root=None):
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
     from . import config
 
-    if config.instance_label() != "DEV" or os.getenv("TRACKER_SECONDARY_VITAL_WRITES433") != "1":
+    if config.instance_label() not in ("DEV", "PROD") or os.getenv("TRACKER_SECONDARY_VITAL_WRITES433") != "1":
         raise PermissionError("Secondary vitals logging is disabled")
 
     uid = secondary_id(uid)

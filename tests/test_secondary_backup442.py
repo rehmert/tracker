@@ -250,14 +250,21 @@ def test_upload_changed_during_snapshot_does_not_publish(staged, monkeypatch):
 
 def test_prod_and_missing_auth_gate_creation(staged, monkeypatch):
     root, directory = staged
+
+    # Release 523 permits secondary backups in both environments.
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    with pytest.raises(PermissionError):
-        create_secondary_backup442(root, directory)
+    archive = create_secondary_backup442(root, directory)
+    assert archive.is_file()
+    assert verify_secondary_backup442(archive)["restore_verified"] is True
+
+    # Authentication must still be enabled.
     monkeypatch.setattr(config, "instance_label", lambda: "DEV")
     (root / auth.FLAG).unlink()
     with pytest.raises(PermissionError):
         create_secondary_backup442(root, directory)
-    assert not list(directory.glob("tracker-secondary-*.zip"))
+
+    # A denied operation must not publish another archive.
+    assert len(list(directory.glob("tracker-secondary-*.zip"))) == 1
 
 
 def test_recovery_size_bound_and_archive_symlink_are_rejected(staged, tmp_path):

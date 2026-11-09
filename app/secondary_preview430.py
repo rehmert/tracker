@@ -1,4 +1,4 @@
-"""DEV-only, explicitly enabled secondary-user gateway and controls.
+"""Explicitly enabled secondary-user gateway and controls.
 
 This is not an application router or a general HTTP proxy.
 Staged user credentials remain disabled for normal Tracker login.
@@ -41,7 +41,7 @@ preview_app = FastAPI(
 
 def preview_enabled():
     return (
-        config.instance_label() == "DEV"
+        config.instance_label() in ("DEV", "PROD")
         and auth.enabled()
         and os.getenv("TRACKER_SECONDARY_PREVIEW430", "0") == "1"
         and os.getenv("TRACKER_SECONDARY_LOCKDOWN440", "0") != "1"
@@ -239,7 +239,7 @@ input,button{{display:block;width:100%;padding:12px;margin:10px 0;font:inherit}}
 <body>
 <main>
 <h1>Private Workspace Preview</h1>
-<p>DEV only · Private workspace pilot</p>
+<p>Private workspace</p>
 {warning}
 <form method="post" action="/secondary/login">
 <input type="hidden" name="csrf_token" value="{token}">

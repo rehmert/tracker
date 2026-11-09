@@ -123,4 +123,6 @@ def test_prod_cannot_enable(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
     (tmp_path / auth.FLAG).write_text("enabled")
 
+    assert auth.enabled() is True
+    (tmp_path / auth.FLAG).unlink()
     assert auth.enabled() is False

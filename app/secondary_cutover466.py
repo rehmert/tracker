@@ -73,7 +73,7 @@ def validate_report466(report):
 
 def assess_cutover466():
     """Offline administrator audit; no user-selected arguments."""
-    if config.instance_label() != "DEV" or not auth.enabled():
+    if config.instance_label() not in ("DEV", "PROD") or not auth.enabled():
         raise PermissionError("DEV session mode required")
 
     root = staging_environment()

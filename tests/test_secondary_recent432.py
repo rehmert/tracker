@@ -229,7 +229,7 @@ def test_opt_in_and_prod_restrictions_remain_active(browser, monkeypatch):
     assert client.get("/secondary/vitals").status_code == 404
     monkeypatch.setenv("TRACKER_SECONDARY_PREVIEW430", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/doses").status_code == 404
+    assert client.get("/secondary/doses").status_code == 200
 
 
 def test_recent_orm469_worker_bypassed_and_users_isolated(

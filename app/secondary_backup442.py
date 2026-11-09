@@ -288,7 +288,7 @@ def create_secondary_backup442(data_root=None, backup_dir=None):
     from .user_storage388 import planned_storage
 
     root = staging_environment(data_root)
-    if config.instance_label() != "DEV":
+    if config.instance_label() not in ("DEV", "PROD"):
         raise PermissionError("Secondary backup requires DEV")
     target_dir = _no_links(
         Path(backup_dir or "/var/backups/tracker-secondary-dev").absolute()

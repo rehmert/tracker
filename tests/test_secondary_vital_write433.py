@@ -254,8 +254,8 @@ def test_write_disabled_by_default_and_for_production(browser, monkeypatch):
 
     monkeypatch.setenv("TRACKER_SECONDARY_VITAL_WRITES433", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/vitals/new").status_code == 404
-    assert client.post("/secondary/vitals/new", data=data).status_code == 404
+    assert client.get("/secondary/vitals/new").status_code == 200
+    assert client.post("/secondary/vitals/new", data=data).status_code == 403
 
 
 def test_no_session_cannot_post(browser):

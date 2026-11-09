@@ -269,13 +269,23 @@ def test_age_missing_refuses_to_publish(ready, monkeypatch):
 
 
 def test_prod_does_not_export_or_rehearse(ready, monkeypatch):
-    root, backup_dir, export_dir, backup = ready
+    root, backup_dir, export_dir, archive = ready
+    before = _live_hashes(root)
+
+    # Release 523 permits verified encrypted exports in PROD.
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    with pytest.raises(PermissionError):
-        export_encrypted444(
-            backup, recipient=FAKE_RECIPIENT,
-            backup_dir=backup_dir, export_dir=export_dir,
-        )
+    calls = _fake_encrypt(monkeypatch)
+    result = export_encrypted444(
+        archive, recipient=FAKE_RECIPIENT,
+        backup_dir=backup_dir, export_dir=export_dir,
+    )
+
+    encrypted = Path(result["encrypted_file"])
+    assert encrypted.is_file()
+    assert encrypted.read_bytes() == b"test-placeholder-not-real-crypto"
+    assert result["user_count"] == 2
+    assert len(calls) == 1
+    assert _live_hashes(root) == before
 
 
 def test_real_age_encrypt_decrypt_and_tamper_detection_when_installed(ready, tmp_path):

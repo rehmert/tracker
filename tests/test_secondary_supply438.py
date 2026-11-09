@@ -254,8 +254,8 @@ def test_csrf_unauthenticated_query_and_disabled_flags(browser, monkeypatch):
     assert _state(root, 2)[1] == []
     monkeypatch.setenv("TRACKER_SECONDARY_SUPPLY_WRITES438", "1")
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    assert client.get("/secondary/supplies").status_code == 404
-    assert client.post("/secondary/supplies", data=form).status_code == 404
+    assert client.get("/secondary/supplies").status_code == 200
+    assert client.post("/secondary/supplies", data=form).status_code == 403
 
 
 @pytest.mark.parametrize("raw", (

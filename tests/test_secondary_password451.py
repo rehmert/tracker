@@ -257,7 +257,7 @@ def test_password_gateway_stays_disabled_when_locked_or_prod(browsers, monkeypat
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
     assert clients[0].post(
         "/secondary/security/password", data=form,
-    ).status_code == 404
+    ).status_code == 200
 
 
 def test_current_password_attempt_limit_prevents_repeated_guesses(browsers):

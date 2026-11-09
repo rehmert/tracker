@@ -226,9 +226,20 @@ def test_symlinked_archive_and_unsafe_permissions_rejected(backup):
 
 def test_prod_protection_and_no_workspace_activation(backup, monkeypatch):
     root, archive, scratch = backup
+    before = _live_hashes(root)
+
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    with pytest.raises(PermissionError):
-        rehearse_archive445(archive, scratch_parent=scratch)
+
+    # Rehearsal must work in PROD without restoring live data.
+    report = rehearse_archive445(archive, scratch_parent=scratch)
+
+    assert report["rehearsal_passed"] is True
+    assert report["live_data_modified"] is False
+    assert report["listener_started"] is False
+    assert report["sandbox_destroyed"] is True
+    assert _live_hashes(root) == before
+    assert list(scratch.iterdir()) == []
+
     with sqlite3.connect(root / "tracker-auth.sqlite3") as db:
         assert db.execute(
             "SELECT id,enabled FROM users WHERE id>1 ORDER BY id"
@@ -281,24 +292,51 @@ def test_encrypted_rehearsal_uses_only_disposable_plaintext(
 def test_no_encrypted_rehearsal_with_wrong_identity_or_prod(
     backup, monkeypatch, tmp_path,
 ):
+    from app import secondary_restore_rehearsal445 as mod
+
     root, archive, scratch = backup
+    before = _live_hashes(root)
+
     encrypted = tmp_path / (archive.name + ".age")
-    encrypted.write_bytes(b"ciphertext")
+    encrypted.write_bytes(b"test-ciphertext-not-real-age")
     encrypted.chmod(0o600)
+
     identity = tmp_path / "id.agekey"
     identity.write_text("test")
     identity.chmod(0o644)
+
+    # Insecure private-key permissions are always rejected.
     with pytest.raises(ValueError, match="0600"):
         rehearse_encrypted_archive445(
             encrypted, identity=identity, scratch_parent=scratch,
         )
+
     identity.chmod(0o600)
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
-    with pytest.raises(PermissionError):
-        rehearse_encrypted_archive445(
-            encrypted, identity=identity, scratch_parent=scratch,
-        )
+
+    calls = []
+
+    def fake_decrypt(args):
+        calls.append(args)
+        assert args[:2] == ["-d", "-i"]
+        assert args[2] == str(identity)
+        assert args[3] == "-o"
+        assert args[-1] == str(encrypted)
+        shutil.copyfile(archive, args[4])
+
+    monkeypatch.setattr(mod, "_run_age444", fake_decrypt)
+
+    report = rehearse_encrypted_archive445(
+        encrypted, identity=identity, scratch_parent=scratch,
+    )
+
+    assert report["rehearsal_passed"] is True
+    assert report["decryption_verified"] is True
+    assert report["live_data_modified"] is False
+    assert report["sandbox_destroyed"] is True
+    assert len(calls) == 1
     assert list(scratch.iterdir()) == []
+    assert _live_hashes(root) == before
 
 
 def test_restored_signing_key_generated_even_if_archive_missing_key(
