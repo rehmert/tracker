@@ -11,6 +11,7 @@ import subprocess
 import sys
 import uuid
 
+from .instance_parity523 import interactive_parity523
 from .worker_dose_write434 import _verified_storage
 from .worker_probe428 import validate_environment
 from .worker_supply438 import KINDS, COUNT_KINDS
@@ -333,7 +334,7 @@ def request_use439(user_id, action, payload=None, data_root=None):
     from .user_accounts427 import secondary_id
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
-    if (config.instance_label() != "DEV"
+    if (not interactive_parity523()
         or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1"):
         raise PermissionError("Secondary supply preview disabled")
     if type(action) is not str or action not in ("options", "use"):
