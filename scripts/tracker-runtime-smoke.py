@@ -77,7 +77,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 @contextmanager
 def release_auth_headers(instance, settings):
-    """Use a revocable session for local DEV smoke verification.
+    """Use a revocable session for enabled DEV or PROD installations.
 
     The release process invokes this script as root. No HTTP
     authentication bypass is installed in the application.
@@ -86,13 +86,16 @@ def release_auth_headers(instance, settings):
         "User-Agent": "Tracker-Release-Smoke/1.0",
     }
 
-    if instance == "DEV":
+    if instance in ("DEV", "PROD"):
         directory = Path(
             settings.get("TRACKER_DATA_DIR")
             or "/opt/tracker/data"
         ).resolve()
 
-        flag = directory / ".tracker-session-auth-dev"
+        flag = directory / (
+            ".tracker-session-auth-prod523"
+            if instance == "PROD" else ".tracker-session-auth-dev"
+        )
 
         if flag.is_file():
             # Load the application from the installed source.
@@ -100,14 +103,16 @@ def release_auth_headers(instance, settings):
             if root not in sys.path:
                 sys.path.insert(0, root)
 
-            os.environ["TRACKER_INSTANCE"] = "DEV"
+            os.environ["TRACKER_INSTANCE"] = instance
             os.environ["TRACKER_DATA_DIR"] = str(directory)
+            if instance == "PROD":
+                os.environ["TRACKER_PROD_PARITY523"] = "1"
 
             from app import session_auth385 as auth
 
             if not auth.enabled():
                 raise ValueError(
-                    "DEV session auth is configured but unavailable"
+                    "Session auth is configured but unavailable"
                 )
 
             token, _ = auth.create_session(False)
@@ -138,8 +143,8 @@ def release_auth_headers(instance, settings):
 
             return
 
-    # Original Basic Auth behavior for PROD, and for
-    # installations where session mode is disabled.
+    # Legacy Basic Auth is retained only for instances not yet cut over
+    # to the separately provisioned session authentication store.
     if (
         settings.get("TRACKER_USER")
         and settings.get("TRACKER_PASS")
