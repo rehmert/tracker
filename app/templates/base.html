@@ -83,6 +83,8 @@
   <!-- Release 507: Android-first app shell; layered after legacy layout rules. -->
   <link rel="stylesheet" href="/static/css/tracker-mobile-shell507.css?v=507">
   <script src="/static/js/tracker-mobile-shell507.js?v=507" defer></script>
+  <link rel="stylesheet" href="/static/css/tracker-mobile-quick528.css?v=528">
+  <script src="/static/js/tracker-mobile-quick528.js?v=528" defer></script>
   <!-- Always fetch server-managed theme on each visit, after other global CSS.
        Separate from the Android launcher icon / PWA manifest. -->
   <link rel="stylesheet" href="/ui/theme.css">
@@ -131,7 +133,7 @@
       <a href="/mobile" {% if path.startswith('/mobile') %}aria-current="page"{% endif %}>
         <span class="tracker-mobile-dock-icon" aria-hidden="true">◷</span><span>Today</span>
       </a>
-      <a href="/quick-entry" {% if path.startswith('/quick-entry') %}aria-current="page"{% endif %}>
+      <a href="/quick-entry" id="tracker-mobile-add528" aria-controls="tracker-mobile-quick528" aria-expanded="false" {% if path.startswith('/quick-entry') %}aria-current="page"{% endif %}>
         <span class="tracker-mobile-dock-icon" aria-hidden="true">＋</span><span>Add</span>
       </a>
       <a href="/doses" {% if path.startswith('/doses') %}aria-current="page"{% endif %}>
@@ -213,6 +215,7 @@
     {% block content %}{% endblock %}
   </main>
 </div>
+{% include "_mobile_quick528.html" %}
 <div class="command-overlay" id="command-overlay" hidden>
   <div class="command-panel" role="dialog" aria-modal="true" aria-label="Search Tracker" aria-describedby="command-help">
     <div class="command-header"><span aria-hidden="true">⌕</span><input id="command-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="command-results" aria-expanded="false" placeholder="Search compounds, vials, protocols, purchases, supplies, labs…" autocomplete="off" aria-label="Search Tracker"><button type="button" id="command-close" aria-label="Close search">Esc</button></div>

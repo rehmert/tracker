@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -88,26 +88,95 @@ def vitals_page(request: Request, days: int = 90, events: int = 1,
 
 
 @router.post("/vitals")
-def add_reading(measured_at: str = Form(""), weight: str = Form(""), weight_unit: str = Form(config.WEIGHT_UNIT),
-                systolic: str = Form(""), diastolic: str = Form(""), pulse: str = Form(""),
-                context: str = Form(""), notes: str = Form(""), return_to: str = Form(""),
-                db: Session = Depends(get_scoped_db390)):
-    # Only a fixed internal destination; untrusted URLs never become redirects.
+def add_reading(
+    request: Request,
+    measured_at: str = Form(""),
+    weight: str = Form(""),
+    weight_unit: str = Form(config.WEIGHT_UNIT),
+    systolic: str = Form(""),
+    diastolic: str = Form(""),
+    pulse: str = Form(""),
+    context: str = Form(""),
+    notes: str = Form(""),
+    return_to: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
     destination = "/mobile" if return_to == "mobile" else "/vitals"
+    quick = request.headers.get("x-tracker-mobile-quick") == "528"
+
+    def invalid(message):
+        if quick:
+            return JSONResponse(
+                {"ok": False, "error": message},
+                status_code=422,
+                headers={"Cache-Control": "no-store"},
+            )
+        return services.flash_redirect(destination, err=message)
+
     try:
+        if weight_unit not in ("lb", "kg"):
+            raise ValueError("Invalid weight unit")
+
         w = _opt(weight, float)
-        kg = metrics.weight_to_kg(w, weight_unit) if w is not None else None
-        sy, di, hr = _opt(systolic, int), _opt(diastolic, int), _opt(pulse, int)
+        kg = (
+            metrics.weight_to_kg(w, weight_unit)
+            if w is not None else None
+        )
+
+        sy = _opt(systolic, int)
+        di = _opt(diastolic, int)
+        hr = _opt(pulse, int)
         when = services.parse_datetime(measured_at)
-    except ValueError as exc:
-        return services.flash_redirect(destination, err=str(exc))
+
+    except (ValueError, OverflowError) as exc:
+        return invalid(str(exc))
+
     errors = metrics.validate(kg, sy, di, hr)
+
     if errors:
-        return services.flash_redirect(destination, err=" ".join(errors))
-    db.add(VitalReading(measured_at=when, weight_kg=kg, systolic=sy, diastolic=di, pulse_bpm=hr,
-                        context=context.strip()[:80], notes=notes.strip()))
+        return invalid(" ".join(errors))
+
+    if quick and all(
+        value is None for value in (kg, sy, di, hr)
+    ):
+        return invalid("Enter a measurement before saving.")
+
+    reading = VitalReading(
+        measured_at=when,
+        weight_kg=kg,
+        systolic=sy,
+        diastolic=di,
+        pulse_bpm=hr,
+        context=context.strip()[:80],
+        notes=notes.strip(),
+    )
+
+    db.add(reading)
     db.commit()
-    return services.flash_redirect(destination, msg="Reading saved.")
+
+    if quick:
+        if w is not None:
+            display = f"{w:g} {weight_unit}"
+        elif sy is not None and di is not None:
+            display = f"{sy}/{di} mmHg"
+        else:
+            display = f"{hr} bpm"
+
+        return JSONResponse(
+            {
+                "ok": True,
+                "id": reading.id,
+                "edit_url": f"/vitals/{reading.id}/edit",
+                "value": display,
+                "message": "Reading saved.",
+            },
+            headers={"Cache-Control": "no-store"},
+        )
+
+    return services.flash_redirect(
+        destination,
+        msg="Reading saved.",
+    )
 
 
 

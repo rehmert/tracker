@@ -1,0 +1,182 @@
+{# Release 528: shared mobile quick-add dialog. #}
+<div id="tracker-mobile-quick528"
+     class="tracker-quick528-overlay"
+     hidden>
+
+  <section class="tracker-quick528-sheet"
+           role="dialog"
+           aria-modal="true"
+           aria-labelledby="tracker-quick528-title"
+           tabindex="-1">
+
+    <header class="tracker-quick528-head">
+      <h2 id="tracker-quick528-title">Quick Add</h2>
+      <button type="button"
+              data-quick528-close
+              aria-label="Close quick add">✕</button>
+    </header>
+
+    <div class="tracker-quick528-choices"
+         data-quick528-choices
+         aria-label="Choose an entry">
+
+      <button type="button" data-quick528-choice="weight">
+        Weight
+      </button>
+
+      <button type="button" data-quick528-choice="bp">
+        Blood Pressure
+      </button>
+
+      <button type="button" data-quick528-choice="water">
+        Water
+      </button>
+
+      <a href="/food#food-quick-log">Food</a>
+      <a href="/doses#quick-dose-entry">Dose</a>
+      <a href="/labs/new#lab-manual-entry">Labs</a>
+
+      <a class="tracker-quick528-more"
+         href="/quick-entry">All actions</a>
+    </div>
+
+    <div data-quick528-entry hidden>
+      <button type="button"
+              class="tracker-quick528-back"
+              data-quick528-back>
+        ‹ Choose another
+      </button>
+
+      <h3 data-quick528-entry-title></h3>
+
+      <form data-quick528-form="weight"
+            action="/vitals"
+            method="post"
+            hidden>
+
+        <input type="hidden"
+               name="return_to"
+               value="mobile">
+
+        <input type="hidden"
+               name="measured_at"
+               data-quick528-time>
+
+        <label>
+          Weight
+          <input name="weight"
+                 type="number"
+                 inputmode="decimal"
+                 step="any"
+                 min="0"
+                 required>
+        </label>
+
+        <label>
+          Unit
+          <select name="weight_unit">
+            <option value="lb">lb</option>
+            <option value="kg">kg</option>
+          </select>
+        </label>
+
+        <button type="submit" class="primary">
+          Save Weight
+        </button>
+      </form>
+
+      <form data-quick528-form="bp"
+            action="/vitals"
+            method="post"
+            hidden>
+
+        <input type="hidden"
+               name="return_to"
+               value="mobile">
+
+        <input type="hidden"
+               name="measured_at"
+               data-quick528-time>
+
+        <label>
+          Systolic
+          <input name="systolic"
+                 type="number"
+                 inputmode="numeric"
+                 min="0"
+                 step="1"
+                 required>
+        </label>
+
+        <label>
+          Diastolic
+          <input name="diastolic"
+                 type="number"
+                 inputmode="numeric"
+                 min="0"
+                 step="1"
+                 required>
+        </label>
+
+        <button type="submit" class="primary">
+          Save Blood Pressure
+        </button>
+      </form>
+
+      <form data-quick528-form="water"
+            action="/food/water"
+            method="post"
+            hidden>
+
+        <input type="hidden"
+               name="day"
+               data-quick528-day>
+
+        <label>
+          Water (fl oz)
+          <input name="ounces"
+                 type="number"
+                 inputmode="decimal"
+                 step="0.01"
+                 min="0.01"
+                 max="256"
+                 required>
+        </label>
+
+        <button type="submit" class="primary">
+          Save Water
+        </button>
+      </form>
+    </div>
+
+    <div data-quick528-success
+         hidden
+         aria-live="polite"
+         role="status">
+
+      <h3>Saved successfully</h3>
+      <p data-quick528-saved-value></p>
+
+      <nav class="tracker-quick528-next"
+           aria-label="After saving">
+
+        <a href="/vitals" data-quick528-edit>
+          Review saved entry
+        </a>
+
+        <button type="button" data-quick528-another>
+          Log another
+        </button>
+
+        <button type="button" data-quick528-done>
+          Done
+        </button>
+      </nav>
+    </div>
+
+    <p class="tracker-quick528-status"
+       data-quick528-status
+       role="status"
+       aria-live="polite"></p>
+  </section>
+</div>

@@ -1,0 +1,166 @@
+/* Release 528: mobile-only quick-add bottom sheet. */
+
+.tracker-quick528-overlay[hidden],
+.tracker-quick528-sheet [hidden] {
+  display: none !important;
+}
+
+.tracker-quick528-overlay {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .tracker-quick528-overlay:not([hidden]) {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(0, 0, 0, .5);
+  }
+
+  .tracker-quick528-sheet {
+    box-sizing: border-box;
+    width: min(100%, 37rem);
+    max-height: calc(
+      95dvh - env(safe-area-inset-top, 0px)
+    );
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding:
+      1rem
+      max(1rem, env(safe-area-inset-right, 0px))
+      calc(1rem + env(safe-area-inset-bottom, 0px))
+      max(1rem, env(safe-area-inset-left, 0px));
+    border-radius: 1.15rem 1.15rem 0 0;
+    background: var(--surface, #fff);
+    color: var(--ink, #18211e);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, .25);
+  }
+
+  .tracker-quick528-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+  }
+
+  .tracker-quick528-head h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .tracker-quick528-choices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .55rem;
+    margin-top: .9rem;
+  }
+
+  .tracker-quick528-choices .tracker-quick528-more {
+    grid-column: 1 / -1;
+  }
+
+  .tracker-quick528-sheet :is(button, a) {
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+
+  .tracker-quick528-choices :is(button, a),
+  .tracker-quick528-next :is(button, a) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: .6rem;
+    border-radius: .75rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    background: var(--wash, #f1f5f9);
+    color: var(--ink, #18211e);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .tracker-quick528-sheet form {
+    display: grid;
+    gap: .75rem;
+    margin-top: .65rem;
+  }
+
+  .tracker-quick528-sheet form label {
+    display: grid;
+    gap: .3rem;
+    font-weight: 650;
+  }
+
+  .tracker-quick528-sheet :is(input, select) {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 48px;
+    font-size: 16px;
+    padding: .6rem;
+    border-radius: .55rem;
+    border: 1px solid var(--rule, #a7b4c1);
+    background: var(--surface, #fff);
+    color: inherit;
+  }
+
+  .tracker-quick528-sheet form button[type=submit] {
+    min-height: 52px;
+    font-weight: 750;
+  }
+
+  .tracker-quick528-head button {
+    min-width: 44px;
+    background: transparent;
+    border: 0;
+    font-size: 1.35rem;
+  }
+
+  .tracker-quick528-back {
+    padding: .3rem 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-weight: 650;
+  }
+
+  .tracker-quick528-next {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tracker-quick528-next a {
+    grid-column: 1 / -1;
+  }
+
+  .tracker-quick528-status {
+    margin: .65rem 0 0;
+    min-height: 1.2rem;
+    color: var(--muted, #62717d);
+  }
+
+  .tracker-quick528-sheet
+  :is(button, a, input, select):focus-visible {
+    outline: 3px solid var(--teal, #1265ad);
+    outline-offset: 2px;
+  }
+
+  body.tracker-quick528-open {
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 761px) {
+  .tracker-quick528-overlay {
+    display: none !important;
+  }
+}
+
+@media print {
+  .tracker-quick528-overlay {
+    display: none !important;
+  }
+}

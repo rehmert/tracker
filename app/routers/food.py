@@ -194,18 +194,42 @@ async def add_water425(
     form = await request.form()
     day = selected_day(form.get("day"))
 
+    quick = request.headers.get("x-tracker-mobile-quick") == "528"
+
     try:
         ounces = parse_ounces(form.get("ounces"))
     except ValueError as exc:
+        if quick:
+            return JSONResponse(
+                {"ok": False, "error": str(exc)},
+                status_code=422,
+                headers={"Cache-Control": "no-store"},
+            )
         raise HTTPException(422, str(exc)) from exc
 
     init_water_schema(db_engine)
 
     with db_engine.begin() as db:
-        db.execute(text("""
+        result = db.execute(text("""
             INSERT INTO tracker_water_entries(logged_on, ounces)
             VALUES (:day, :ounces)
         """), {"day": day, "ounces": ounces})
+
+        inserted = result.lastrowid
+
+    if quick:
+        return JSONResponse(
+            {
+                "ok": True,
+                "id": inserted,
+                "value": f"{ounces:g} fl oz",
+                "message": "Water saved.",
+                "edit_url": (
+                    "/food?day=" + day + "#food-water"
+                ),
+            },
+            headers={"Cache-Control": "no-store"},
+        )
 
     return RedirectResponse(
         "/food?day=" + day + "#food-water",
