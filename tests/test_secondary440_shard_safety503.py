@@ -37,14 +37,13 @@ def test_503_secondary440_security_gates_stay_in_independent_test_files():
         "test_no_query_params_and_readiness_never_changes_private_records",
     }
 
-    # The explicit security acceptance command is not a recursive pytest
-    # discovery: it MUST name the separated workflow file.
     script = ACCEPTANCE.read_text(encoding="utf-8")
     assert "tests/test_secondary_integration440.py" in script
     assert "tests/test_secondary_private_workflow440.py" in script
 
     runner = RELEASE.read_text(encoding="utf-8")
-    assert "TEST_PYTEST_EXTRA=(-n \"$WORKERS\" --dist=loadfile)" in runner
+    assert 'TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)' in runner
+    assert "BACKEND_TEST_MODE=SERIAL reason=" not in runner
     assert "--ignore=tests/test_secondary_private_workflow440.py" not in runner
     assert "--ignore=tests/test_secondary_integration440.py" not in runner
 

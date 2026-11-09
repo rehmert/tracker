@@ -24,28 +24,30 @@ def test_508_release_script_remains_valid_bash():
 
 def test_508_prod_and_dev_share_parallel_eligibility():
     source = _source()
-    assert 'if [[ "$SERIAL_TESTS" == 0 ]] && "$PY" -c \'import xdist\'' in source
+
+    assert 'TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)' in source
+    assert 'BACKEND_TEST_MODE=PARALLEL workers=16' in source
+    assert "import xdist" in source
+    assert 'fail "pytest-xdist missing; serial fallback prohibited"' in source
+    assert 'TEST_PYTEST_EXTRA=()' not in source
+    assert 'BACKEND_TEST_MODE=SERIAL reason=' not in source
+
     assert '[[ "$INSTANCE" == DEV && "$SERIAL_TESTS" == 0 ]]' not in source
     assert '[[ "$INSTANCE" == PROD && "$SERIAL_TESTS" == 0 ]]' not in source
-    assert 'TEST_PYTEST_EXTRA=(-n "$WORKERS" --dist=loadfile)' in source
-    assert 'print(min(16, max(1, count)))' in source
-    assert 'os.sched_getaffinity(0)' in source
-    assert 'Path("/sys/fs/cgroup/cpu.max")' in source
-    assert 'BACKEND_TEST_MODE=PARALLEL workers=$WORKERS' in source
-    assert 'BACKEND_TEST_MODE=SERIAL reason=limited_cpu' in source
+    assert 'verify_prod_approval' in source
 
 
 def test_508_prod_parallel_has_six_gib_and_override_retains_serial():
     source = _source()
-    assert '--serial-tests) SERIAL_TESTS=1; shift;;' in source
-    assert 'if [[ "$SERIAL_TESTS" == 0 ]]; then\n MEMORY_PROPERTY="MemoryMax=6G"' in source
-    assert 'else\n MEMORY_PROPERTY="MemoryMax=1G"\nfi' in source
-    assert 'BACKEND_TEST_MODE=SERIAL reason=serial_override' in source
-    assert 'BACKEND_TEST_MODE=SERIAL reason=missing_xdist' in source
+    assert '--serial-tests) fail "Serial testing prohibited"' in source
+    assert '[[ "$SERIAL_TESTS" == 0 ]]' in source
+    assert 'BACKEND_TEST_MODE=SERIAL reason=' not in source
+    assert 'MEMORY_PROPERTY="MemoryMax=6G"' in source
     assert 'systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY"' in source
     assert 'worker "$@"' in source
     assert 'if [[ "$INSTANCE" == PROD ]]; then' in source
     assert '[[ "$REF" == main && "$(g rev-parse origin/main)" == "$TARGET" ]]' in source
+    assert '/usr/local/sbin/tracker-verify-dev-approval' in source
 
 
 def test_508_full_suite_isolated_and_recovery_guards_unchanged():
