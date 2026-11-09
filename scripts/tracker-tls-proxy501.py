@@ -20,22 +20,22 @@ HOP = frozenset({
 class Handler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     backend_port: int
-    qa_rewrite_vitals_host: bool = False
+    qa_rewrite_browser_host: bool = False
 
-    def _rewrite_vitals_host(self):
-        """Only QA Vitals mutations simulate a TLS proxy rewriting Host."""
+    def _rewrite_browser_host(self):
+        """Simulate production TLS Host rewriting on guarded browser writes."""
+        if not self.qa_rewrite_browser_host or self.command not in (
+            "POST", "DELETE",
+        ):
+            return False
         path = self.path.split("?", 1)[0]
-        return (
-            self.qa_rewrite_vitals_host
-            and self.command in ("POST", "DELETE")
-            and (
-                path == "/vitals"
-                or re.fullmatch(
-                    r"/vitals/[1-9][0-9]{0,9}(?:/edit)?",
-                    path,
-                ) is not None
-            )
-        )
+        if path in ("/vitals", "/labs", "/labs/import-csv", "/coas/new"):
+            return True
+        return any(re.fullmatch(pattern, path) is not None for pattern in (
+            r"/vitals/[1-9][0-9]{0,9}(?:/edit)?",
+            r"/labs/[1-9][0-9]{0,9}/(?:edit|delete|import-csv)",
+            r"/coas/[1-9][0-9]{0,9}/(?:edit|verify|delete)",
+        ))
 
     def proxy(self):
         try:
@@ -63,7 +63,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         "content-length", "x-forwarded-proto",
                         "x-forwarded-host", "x-forwarded-for",
                     ):
-                        if key.lower() == "host" and self._rewrite_vitals_host():
+                        if key.lower() == "host" and self._rewrite_browser_host():
                             # Simulate a real LAN TLS proxy that forwards
                             # the browser's public Origin unmodified while
                             # changing Host to the backend listener.
@@ -121,8 +121,8 @@ def main():
     parser.add_argument("--cert", required=True)
     parser.add_argument("--key", required=True)
     parser.add_argument(
-        "--qa-rewrite-vitals-host", action="store_true",
-        help="Test-only: rewrite Host on Vitals write requests",
+        "--qa-rewrite-browser-host", action="store_true",
+        help="Test-only: rewrite Host on Vitals, Labs and COA writes",
     )
     args = parser.parse_args()
     for port in (args.listen_port, args.backend_port):
@@ -131,7 +131,7 @@ def main():
 
     class BoundHandler(Handler):
         backend_port = args.backend_port
-        qa_rewrite_vitals_host = args.qa_rewrite_vitals_host
+        qa_rewrite_browser_host = args.qa_rewrite_browser_host
 
     server = http.server.ThreadingHTTPServer(
         ("127.0.0.1", args.listen_port), BoundHandler
@@ -140,8 +140,8 @@ def main():
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(args.cert, args.key)
     server.socket = context.wrap_socket(server.socket, server_side=True)
-    if args.qa_rewrite_vitals_host:
-        print("QA_VITALS_PROXY_HOST_REWRITE=ENABLED", flush=True)
+    if args.qa_rewrite_browser_host:
+        print("QA_WRITE_PROXY_HOST_REWRITE=ENABLED", flush=True)
     print("TLS_QA_PROXY_READY=YES", flush=True)
     try:
         server.serve_forever(poll_interval=0.2)
