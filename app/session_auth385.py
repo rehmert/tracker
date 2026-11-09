@@ -18,6 +18,7 @@ from . import config
 
 COOKIE = "tracker_session"
 FLAG = ".tracker-session-auth-dev"
+PROD_FLAG523 = ".tracker-session-auth-prod523"
 DATABASE = "tracker-auth.sqlite3"
 
 SESSION_SECONDS = 12 * 3600
@@ -25,10 +26,10 @@ REMEMBER_SECONDS = 30 * 86400
 
 
 def enabled():
-    return (
-        interactive_parity523()
-        and (config.DATA_DIR / FLAG).is_file()
-    )
+    if not interactive_parity523():
+        return False
+    marker = PROD_FLAG523 if config.instance_label() == "PROD" else FLAG
+    return (config.DATA_DIR / marker).is_file()
 
 
 def database_path():
