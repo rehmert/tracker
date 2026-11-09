@@ -255,6 +255,9 @@ def activate():
         run("systemctl", "restart", "tracker.service")
         check_process(True)
         verify_login()
+        # Do not declare the cutover successful without a verified private
+        # authentication/workspace recovery snapshot.
+        backup()
     except BaseException:
         # Atomic fallback restores previous Basic Auth if any check fails.
         # The securely stored but inactive auth database is retained.
