@@ -13,6 +13,7 @@ import subprocess
 import sys
 import uuid
 
+from .instance_parity523 import interactive_parity523
 from .worker_probe428 import validate_environment
 from .worker_dose_write434 import _verified_storage
 from .worker_food452 import validate_day452
@@ -290,7 +291,7 @@ def request_write456(uid, action, payload, data_root=None):
     )
 
     if (
-        config.instance_label() != "DEV"
+        not interactive_parity523()
         or os.getenv(
             "TRACKER_SECONDARY_FOOD_WRITES456", "0"
         ) != "1"
