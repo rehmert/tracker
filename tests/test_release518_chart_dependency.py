@@ -13,7 +13,8 @@ from sqlalchemy.pool import StaticPool
 
 from app import services
 from app.db import Base
-from app.models import Compound, DoseLog, LabReport, Purchase, Vial
+from app.models import Compound, DoseLog, LabReport, LabResult, Purchase, Vial
+from app.routers import health_timeline
 
 
 def _marker(event):
@@ -148,3 +149,53 @@ def test_518_dependency_diff_identifies_changed_versions_without_noise():
     assert tool.compare_snapshots(first, second) == {
         "packages.fastapi": ["0.1", "0.2"],
     }
+
+
+def test_518_health_timeline_related_rows_use_batched_loading():
+    """Twenty distinct vial/lab relationships must not trigger N+1 SQL."""
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        for index in range(20):
+            compound = Compound(name=f"518 timeline compound {index}")
+            vial = Vial(
+                compound=compound, content_value=10,
+                content_unit="mg", label=f"Lab marker {index}",
+            )
+            report = LabReport(
+                drawn_on=date(2026, 11, 8),
+                lab_name=f"518 timeline lab {index}",
+            )
+            report.results.append(
+                LabResult(analyte="TSH", value=1.0, unit="mIU/L")
+            )
+            db.add_all([
+                DoseLog(
+                    vial=vial,
+                    taken_at=datetime(2026, 11, 8, 10, 0),
+                    entered_value=1.0, entered_unit="mg",
+                    amount_base=1000.0, kind="dose",
+                ),
+                report,
+            ])
+        db.commit()
+        db.expunge_all()
+        sql = []
+
+        def track(conn, cursor, statement, parameters, context, executemany):
+            if statement.lstrip().lower().startswith("select"):
+                sql.append(statement)
+
+        event.listen(engine, "before_cursor_execute", track)
+        try:
+            context = health_timeline._timeline_context(db, days=3650)
+        finally:
+            event.remove(engine, "before_cursor_execute", track)
+        assert len([e for e in context["events"] if e["type"] == "Dose"]) == 20
+        assert len([e for e in context["events"] if e["type"] == "Lab"]) == 20
+        assert len(sql) <= 8, f"Unexpected N+1 query count: {len(sql)}"
+    engine.dispose()
