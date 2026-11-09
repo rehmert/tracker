@@ -69,6 +69,12 @@ def test_523_real_auth_bootstrap_remains_in_private_prod_data(cutover):
     monkeypatch.setattr(config, "instance_label", lambda: "PROD")
 
     values, _, db = script.settings()
+    # prepare_auth intentionally sets process-local runtime variables.
+    # Register their originals with monkeypatch so no test worker leaks
+    # PROD identity into unrelated DEV/default backend tests.
+    monkeypatch.setenv("TRACKER_INSTANCE", "PROD")
+    monkeypatch.setenv("TRACKER_PROD_PARITY523", "1")
+    monkeypatch.setenv("TRACKER_DATA_DIR", str(data))
     marker, uid, gid = script.prepare_auth(values, data, db)
     from app import session_auth385 as auth
 
