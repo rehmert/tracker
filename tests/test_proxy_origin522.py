@@ -175,6 +175,71 @@ def test_522_proxy_vitals_edit_and_htmx_delete_use_signed_proof(proxy_client522)
         assert db.get(VitalReading, rid) is None
 
 
+@pytest.mark.parametrize("origin", ("https://tracker.example", "null"))
+def test_522_proxy_native_multipart_labs_upload_verified_at_route(
+    proxy_client522, origin,
+):
+    """A signed HTML multipart field must pass proxy guard in report-only mode.
+
+    The invalid CSV deliberately reaches normal endpoint validation and does
+    not create any lab report. Middleware must not preconsume the upload body.
+    """
+    client, token = proxy_client522
+    headers = {"Origin": origin, "Sec-Fetch-Site": "same-origin"}
+    payload = {
+        "csrf_token": token,
+        "drawn_on": "2026-11-08",
+        "lab_name": "QA multipart proxy 522",
+    }
+    accepted = client.post(
+        "/labs/import-csv",
+        headers=headers,
+        data=payload,
+        files={"csv_file": ("bad.csv", b"not,a,valid,csv\\n", "text/csv")},
+        follow_redirects=False,
+    )
+    assert accepted.status_code != 403
+    assert accepted.headers["x-tracker-csrf-report"] == "valid"
+
+    no_token = client.post(
+        "/labs/import-csv",
+        headers=headers,
+        data={"drawn_on": "2026-11-08"},
+        files={"csv_file": ("bad.csv", b"bad\\n", "text/csv")},
+        follow_redirects=False,
+    )
+    assert no_token.status_code == 403
+    assert "CSRF token required" in no_token.text
+
+    forged = client.post(
+        "/labs/import-csv",
+        headers=headers,
+        data={"csrf_token": "forged", "drawn_on": "2026-11-08"},
+        files={"csv_file": ("bad.csv", b"bad\\n", "text/csv")},
+        follow_redirects=False,
+    )
+    assert forged.status_code == 403
+
+
+def test_522_proxy_signed_multipart_header_succeeds_without_form_field(
+    proxy_client522,
+):
+    client, token = proxy_client522
+    accepted = client.post(
+        "/labs/import-csv",
+        headers={
+            "Origin": "https://tracker.example",
+            "Sec-Fetch-Site": "same-origin",
+            HEADER_NAME: token,
+        },
+        data={"drawn_on": "2026-11-08"},
+        files={"csv_file": ("bad.csv", b"bad\\n", "text/csv")},
+        follow_redirects=False,
+    )
+    assert accepted.status_code != 403
+    assert accepted.headers["x-tracker-csrf-report"] == "valid"
+
+
 def test_522_proxy_unsigned_legacy_client_without_origin_unchanged(proxy_client522):
     client, token = proxy_client522
     # No browser metadata and no Origin is not a proxy-mismatch exception.
