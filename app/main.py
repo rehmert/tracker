@@ -23,6 +23,9 @@ from .food_origin492 import allow_food_proxy_write492, is_food_write492
 from .csrf_runtime import prepare_html_cookie
 from .csrf_reporting import report_status, REPORT_HEADER
 from .csrf_policy289 import reject_write
+from .csrf_enforcement520 import (
+    enforce_multipart_csrf520, is_multipart520, owns_signed_csrf520,
+)
 
 from . import config, models  # noqa: F401  (models import registers tables)
 from .db import Base, engine
@@ -60,7 +63,9 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Tracker", dependencies=[Depends(require_auth)],
+app = FastAPI(
+    title="Tracker",
+    dependencies=[Depends(require_auth), Depends(enforce_multipart_csrf520)],
               lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 
@@ -178,17 +183,16 @@ async def tracker_response_protection(request, call_next):
         if csrf_report is None:
             csrf_report = await report_status(request)
         if (
-            not (
-                request.url.path in (
-                    "/login",
-                    "/account/password",
-                    "/account/sessions/revoke-others",
-                    "/account/users",
-                    "/account/users/edit",
-                )
-                and session_auth385.enabled()
-            )
+            not owns_signed_csrf520(request)
             and not secondary_form_post433
+            # Multipart form bodies are never consumed in HTTP middleware.
+            # Under strict mode, the global FastAPI route dependency verifies
+            # the cached FormData field or signed X-Tracker-CSRF header before
+            # the endpoint can perform any database or file writes.
+            and not (
+                is_multipart520(request)
+                and csrf_report == "form-uninspected"
+            )
             and reject_write(
                 request.method,
                 csrf_report,
@@ -201,11 +205,13 @@ async def tracker_response_protection(request, call_next):
         else:
             response = await call_next(request)
 
+    if getattr(request.state, "csrf_multipart_verified520", False):
+        csrf_report = "valid"
     if csrf_report is not None:
         response.headers[REPORT_HEADER] = csrf_report
 
-    # Token verification remains non-enforcing.
-    # Missing or invalid tokens do not block existing writes.
+    # Token verification remains report-only unless the operator explicitly
+    # enables TRACKER_CSRF_ENFORCE=1 after DEV browser/upload qualification.
     try:
         prepare_html_cookie(request, response)
     except (OSError, ValueError):
