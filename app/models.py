@@ -87,6 +87,11 @@ class Vial(Base):
     @property
     def all_coas(self):
         return sorted({c.id: c for c in ([self.coa] if self.coa else []) + list(self.linked_coas)}.values(), key=lambda c: (c.tested_on or date.min, c.id), reverse=True)
+    linked_coas: Mapped[list["Coa"]] = relationship("Coa", secondary="coa_vial_links", back_populates="linked_vials")
+
+    @property
+    def all_coas(self):
+        return sorted({c.id: c for c in ([self.coa] if self.coa else []) + list(self.linked_coas)}.values(), key=lambda c: (c.tested_on or date.min, c.id), reverse=True)
 
 
 class Blend(Base):
@@ -153,6 +158,11 @@ class Coa(Base):
     verification_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
     verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     vials: Mapped[list["Vial"]] = relationship("Vial", back_populates="coa")
+    linked_vials: Mapped[list["Vial"]] = relationship("Vial", secondary="coa_vial_links", back_populates="linked_coas")
+
+    @property
+    def all_vials(self):
+        return sorted({v.id: v for v in list(self.vials) + list(self.linked_vials)}.values(), key=lambda v: v.id)
     linked_vials: Mapped[list["Vial"]] = relationship("Vial", secondary="coa_vial_links", back_populates="linked_coas")
 
     @property
