@@ -20,7 +20,9 @@ from fastapi.responses import PlainTextResponse
 
 from .request_origin import reject_cross_origin_write
 from .food_origin492 import allow_food_proxy_write492, is_food_write492
-from .proxy_origin522 import allow_signed_proxy_write522
+from .proxy_origin522 import (
+    allow_signed_proxy_write522, defer_proxy_multipart522,
+)
 from .csrf_runtime import prepare_html_cookie
 from .csrf_reporting import report_status, REPORT_HEADER
 from .csrf_policy289 import reject_write
@@ -189,6 +191,17 @@ async def tracker_response_protection(request, call_next):
         if allow_signed_proxy_write522(
             request.method, request.headers, csrf_report,
         ):
+            origin_rejected = False
+        elif defer_proxy_multipart522(
+            request.method,
+            request.headers,
+            csrf_report,
+            request.headers.get("content-type", ""),
+        ):
+            # The route dependency must verify the signed multipart field
+            # before any endpoint can write, even in report-only mode.
+            # No multipart body is read in HTTP middleware.
+            request.state.proxy_origin_csrf_required522 = True
             origin_rejected = False
 
     if origin_rejected:
