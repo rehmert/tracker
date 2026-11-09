@@ -75,6 +75,10 @@ worker() {
  g worktree add --detach "$QA" "$TARGET"
  cd "$QA"
  export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
+ # A production release worker must never inherit the running service's
+ # interactive parity opt-in while testing against disposable data. Tests
+ # which explicitly exercise PROD parity set their own isolated flag.
+ export TRACKER_PROD_PARITY523=0
  mkdir -p "$TRACKER_DATA_DIR"
  git diff --check "$BASE" "$TARGET"
  "$PY" -m compileall -q app scripts tests
