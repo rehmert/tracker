@@ -316,3 +316,95 @@ if (( STRICT_EXIT != 0 )); then
   exit "$STRICT_EXIT"
 fi
 echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
+
+# Release 523: true PROD-mode browser acceptance, not a DEV-only simulation.
+# The identical disposable candidate backend/HTTPS proxy is reused with an
+# independent PROD auth database, a PROD-specific marker, and explicit flags.
+# The installed DEV/PROD processes, credentials and data are never accessed.
+echo "=== PROD SESSION + MULTIUSER CHROMIUM GATE — DISPOSABLE ONLY ==="
+kill "$SERVER_PID" 2>/dev/null || true
+wait "$SERVER_PID" 2>/dev/null || true
+SERVER_PID=""
+PROD_SERVER_LOG="$ROOT/prod-server.log"
+PROD_BROWSER_LOG="$ROOT/prod-browser.log"
+
+env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+  PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" TRACKER_INSTANCE=PROD \
+  TRACKER_PROD_PARITY523=1 PYTHONDONTWRITEBYTECODE=1 \
+  "$PY" -B - <<'PY'
+from app import config, session_auth385 as auth
+from app.user_bootstrap426 import initialize_staged_workspace426
+from app.user_accounts427 import stage_secondary_account427
+
+assert config.instance_label() == "PROD"
+assert not auth.enabled(), "PROD candidate unexpectedly activated before marker"
+auth.bootstrap("qa-admin523", "qa-pass-admin523")
+marker = config.DATA_DIR / auth.PROD_FLAG523
+marker.write_text("isolated PROD browser candidate only")
+marker.chmod(0o600)
+assert auth.enabled(), "PROD marker and explicit opt-in did not activate sessions"
+initialize_staged_workspace426(2, config.DATA_DIR)
+stage_secondary_account427(
+    2, "qa-member523", "qa-pass-member523",
+)
+print("ISOLATED_PROD_AUTH_BOOTSTRAP=VERIFIED")
+PY
+
+env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+  PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" TRACKER_INSTANCE=PROD \
+  TRACKER_PROD_PARITY523=1 TRACKER_SECONDARY_PREVIEW430=1 \
+  TRACKER_MULTIUSER_LOGIN473=1 TRACKER_SECONDARY_LOCKDOWN440=0 \
+  TRACKER_SECONDARY_VITAL_WRITES433=1 TRACKER_SECONDARY_DOSE_WRITES434=1 \
+  TRACKER_SECONDARY_INVENTORY_WRITES435=1 TRACKER_SECONDARY_FOOD_WRITES456=1 \
+  TRACKER_SECONDARY_SUPPLY_WRITES438=1 TRACKER_SECONDARY_SUPPLY_USE439=1 \
+  TRACKER_SECONDARY_RECONSTITUTION_WRITES436=1 \
+  TRACKER_SECONDARY_VIAL_CORRECTIONS437=1 \
+  TRACKER_SECONDARY_ATTACHMENT_UPLOAD472=1 \
+  PYTHONDONTWRITEBYTECODE=1 \
+  "$PY" -B -m uvicorn app.main:app --host 127.0.0.1 \
+    --port "$PORT" --app-dir "$SOURCE" >"$PROD_SERVER_LOG" 2>&1 &
+SERVER_PID=$!
+
+"$PY" - "$URL" "$SERVER_PID" <<'PY'
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
+
+url, pid = sys.argv[1], int(sys.argv[2])
+opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+for _ in range(60):
+    try:
+        os.kill(pid, 0)
+        with opener.open(url + "/login", timeout=3) as response:
+            body = response.read()
+        if response.status == 200 and b"Tracker PROD" in body and b'csrf_token' in body:
+            print("ISOLATED_PROD_LOGIN_READY=YES")
+            break
+    except (OSError, urllib.error.URLError):
+        pass
+    time.sleep(0.5)
+else:
+    raise SystemExit("ERROR: isolated PROD login server was unavailable")
+PY
+
+set +e
+env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+  PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" \
+  TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
+  TRACKER_TEST_ISOLATED=1 TRACKER_TEST_PROD_PARITY=1 \
+  TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
+  "$PY" -B -m pytest -q --tb=short \
+    tests/test_prod_login_browser523.py >"$PROD_BROWSER_LOG" 2>&1
+PROD_BROWSER_EXIT=$?
+set -e
+cat "$PROD_BROWSER_LOG"
+echo "PROD_SESSION_BROWSER_EXIT=$PROD_BROWSER_EXIT"
+if (( PROD_BROWSER_EXIT != 0 )); then
+  echo "PROD_BROWSER_TEST_LOG=$PROD_BROWSER_LOG"
+  grep -E '^(FAILED |ERROR |E   |[0-9]+ failed|[0-9]+ error)' "$PROD_BROWSER_LOG" | tail -n 45 || true
+  tail -n 30 "$PROD_SERVER_LOG" || true
+  exit "$PROD_BROWSER_EXIT"
+fi
+echo "ISOLATED_PROD_SESSION_BROWSER=PASSED"
