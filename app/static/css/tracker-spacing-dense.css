@@ -1,0 +1,232 @@
+/*
+ * Tracker vertical rhythm refinement.
+ *
+ * Substantial spacing reduction across desktop and mobile.
+ * Does not change content, font size, data, forms or behavior.
+ *
+ * Comfortable density deliberately remains unchanged.
+ */
+
+/* Shared spacing budgets */
+:root[data-density="balanced"] {
+  --dense-section: .55rem;
+  --dense-inner: .45rem;
+  --dense-card-y: .65rem;
+  --dense-heading: .32rem;
+}
+
+:root[data-density="compact"] {
+  --dense-section: .28rem;
+  --dense-inner: .25rem;
+  --dense-card-y: .42rem;
+  --dense-heading: .16rem;
+}
+
+/* Main page chrome */
+:root[data-density="balanced"] #main-content,
+:root[data-density="compact"] #main-content {
+  padding-top: var(--dense-section);
+}
+
+:root[data-density="balanced"] #main-content > .workspace-toolbar,
+:root[data-density="compact"] #main-content > .workspace-toolbar {
+  margin-bottom: var(--dense-section);
+  padding-bottom: var(--dense-inner);
+}
+
+:root[data-density="balanced"] #main-content > .ux-breadcrumbs,
+:root[data-density="compact"] #main-content > .ux-breadcrumbs,
+:root[data-density="balanced"] #tracker-page-jump-slot:not(:empty),
+:root[data-density="compact"] #tracker-page-jump-slot:not(:empty) {
+  margin-bottom: var(--dense-inner);
+}
+
+/* Page and section headings */
+:root[data-density="balanced"] #main-content h2,
+:root[data-density="compact"] #main-content h2 {
+  margin-top: var(--dense-section);
+  margin-bottom: var(--dense-heading);
+}
+
+:root[data-density="balanced"] #main-content h3,
+:root[data-density="compact"] #main-content h3 {
+  margin-top: var(--dense-inner);
+  margin-bottom: var(--dense-heading);
+}
+
+:root[data-density="balanced"] #main-content > h1,
+:root[data-density="compact"] #main-content > h1 {
+  margin-bottom: var(--dense-heading);
+}
+
+/*
+ * Dashboard panels are a major source of repeated whitespace.
+ * Reduce their exterior margins AND interior padding.
+ */
+:root[data-density="balanced"] #main-content .dashboard-panel,
+:root[data-density="compact"] #main-content .dashboard-panel {
+  margin-top: var(--dense-section);
+  margin-bottom: var(--dense-section);
+  padding:
+    var(--dense-card-y)
+    .75rem;
+}
+
+:root[data-density="balanced"] #main-content .dashboard-metrics,
+:root[data-density="compact"] #main-content .dashboard-metrics,
+:root[data-density="balanced"] #main-content .tracker-status-grid,
+:root[data-density="compact"] #main-content .tracker-status-grid {
+  gap: var(--dense-inner);
+  margin-bottom: var(--dense-section);
+}
+
+:root[data-density="balanced"] #main-content .dashboard-metrics > div,
+:root[data-density="compact"] #main-content .dashboard-metrics > div {
+  padding: var(--dense-card-y) .72rem;
+}
+
+:root[data-density="balanced"] #main-content .tracker-attention,
+:root[data-density="compact"] #main-content .tracker-attention,
+:root[data-density="balanced"] #main-content .tracker-status-overview,
+:root[data-density="compact"] #main-content .tracker-status-overview {
+  margin-top: var(--dense-section);
+  margin-bottom: var(--dense-section);
+}
+
+/* Shared cards, grids and summary blocks */
+:root[data-density="balanced"] #main-content .cards,
+:root[data-density="compact"] #main-content .cards,
+:root[data-density="balanced"] #main-content .today-cards,
+:root[data-density="compact"] #main-content .today-cards,
+:root[data-density="balanced"] #main-content .protocol-card-list,
+:root[data-density="compact"] #main-content .protocol-card-list {
+  gap: var(--dense-inner);
+  margin-top: var(--dense-inner);
+  margin-bottom: var(--dense-section);
+}
+
+:root[data-density="balanced"] #main-content
+:is(.today-card, .protocol-card, .inventory-card, .insight-card, .export-card),
+:root[data-density="compact"] #main-content
+:is(.today-card, .protocol-card, .inventory-card, .insight-card, .export-card) {
+  padding: var(--dense-card-y) .72rem;
+}
+
+:root[data-density="balanced"] #main-content .grid,
+:root[data-density="compact"] #main-content .grid {
+  row-gap: var(--dense-inner);
+  margin-top: var(--dense-inner);
+  margin-bottom: var(--dense-section);
+}
+
+:root[data-density="balanced"] #main-content .inline,
+:root[data-density="compact"] #main-content .inline {
+  gap: var(--dense-inner);
+  margin-top: var(--dense-inner);
+  margin-bottom: var(--dense-section);
+}
+
+:root[data-density="balanced"] #main-content
+:is(.section-intro, .ux-callout, .meta),
+:root[data-density="compact"] #main-content
+:is(.section-intro, .ux-callout, .meta) {
+  margin-top: var(--dense-inner);
+  margin-bottom: var(--dense-inner);
+}
+
+/* Charts and report panels */
+:root[data-density="balanced"] #main-content .chartbox,
+:root[data-density="compact"] #main-content .chartbox {
+  padding: var(--dense-card-y);
+}
+
+:root[data-density="balanced"] #main-content .tracker-page-jump,
+:root[data-density="compact"] #main-content .tracker-page-jump {
+  margin-top: var(--dense-inner);
+  margin-bottom: var(--dense-section);
+  padding: var(--dense-inner) .55rem;
+}
+
+/*
+ * Mobile Today: aggressively reduce the repeated section and list
+ * spacing, which is otherwise controlled by independent page CSS.
+ */
+@media (max-width: 760px) {
+  :root[data-density="balanced"] #main-content .tracker-daily509 {
+    gap: .34rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily509 {
+    gap: .14rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-section {
+    padding: .52rem .62rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-section {
+    padding: .34rem .5rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-heading,
+  :root[data-density="compact"] #main-content .tracker-daily-heading {
+    margin-bottom: var(--dense-heading);
+  }
+
+  :root[data-density="balanced"] #main-content
+  :is(.tracker-daily-note, .tracker-daily-empty),
+  :root[data-density="compact"] #main-content
+  :is(.tracker-daily-note, .tracker-daily-empty) {
+    margin: .12rem 0 .2rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-mode,
+  :root[data-density="compact"] #main-content .tracker-daily-mode {
+    margin: var(--dense-inner) 0;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-vitals,
+  :root[data-density="compact"] #main-content .tracker-daily-vitals {
+    gap: var(--dense-inner);
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-list li {
+    padding-top: .38rem;
+    padding-bottom: .38rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-list li {
+    padding-top: .2rem;
+    padding-bottom: .2rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-metrics a {
+    padding: .45rem .4rem;
+  }
+
+  :root[data-density="compact"] #main-content .tracker-daily-metrics a {
+    padding: .3rem .4rem;
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-summary,
+  :root[data-density="compact"] #main-content .tracker-daily-summary {
+    margin: .15rem 0 var(--dense-inner);
+  }
+
+  :root[data-density="balanced"] #main-content .tracker-daily-footer,
+  :root[data-density="compact"] #main-content .tracker-daily-footer {
+    margin-top: .15rem;
+    margin-bottom: .2rem;
+    gap: .35rem;
+  }
+
+  /* Preserve accessible mobile tap targets. */
+  :root[data-density="balanced"] #main-content .tracker-daily-actions a,
+  :root[data-density="compact"] #main-content .tracker-daily-actions a,
+  :root[data-density="balanced"] #main-content .tracker-daily-mode button,
+  :root[data-density="compact"] #main-content .tracker-daily-mode button,
+  :root[data-density="balanced"] #main-content .tracker-daily-list li a,
+  :root[data-density="compact"] #main-content .tracker-daily-list li a {
+    min-height: 44px;
+  }
+}
