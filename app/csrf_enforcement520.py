@@ -63,7 +63,11 @@ def _verify_pair520(cookie: str | None, submitted: object) -> None:
 
 
 async def enforce_multipart_csrf520(request: Request) -> None:
-    """Only for strict-mode multipart writes; no body work in report mode.
+    """Verify multipart writes under strict mode or a proxy-mismatch exception.
+
+    Normal report-only requests remain unparsed by this dependency. Proxy
+    mismatch requests specifically flagged by HTTP middleware must pass the
+    same mandatory signed token verification before any endpoint can write.
 
     A valid CSRF request header is sufficient for JS/HTMX uploads. Traditional
     multipart HTML forms without a header must supply exactly one signed form
