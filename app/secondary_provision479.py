@@ -22,7 +22,7 @@ from .user_bootstrap426 import initialize_staged_workspace426
 
 def create_secondary_user479(username, password, confirmation):
     if not interactive_parity523() or not auth.enabled():
-        raise PermissionError("DEV session authentication required")
+        raise PermissionError("Session authentication required")
 
     username = validate_username(username)
     password = validate_password(password)
