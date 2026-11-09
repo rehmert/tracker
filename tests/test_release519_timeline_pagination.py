@@ -179,3 +179,58 @@ def test_519_invalid_filter_falls_back_to_all(timeline_db):
     standard = _new(db)
     assert actual["event_type"] == "all"
     assert actual["events"] == standard["events"]
+
+
+def test_519_http_pages_and_search_csv_remain_compatible(timeline_db):
+    """Check real FastAPI route wiring, including legacy search and CSV."""
+    import csv
+    import io
+
+    from fastapi.testclient import TestClient
+    from app.db import get_db
+    from app.main import app
+
+    _, engine = timeline_db
+
+    def isolated():
+        with Session(engine) as session:
+            yield session
+
+    app.dependency_overrides[get_db] = isolated
+    try:
+        with TestClient(app) as client:
+            params = {
+                "days": 0,
+                "start_date": "2026-11-01",
+                "end_date": "2026-11-09",
+                "page": 2,
+                "page_size": 25,
+            }
+            page = client.get("/health-timeline", params=params)
+            assert page.status_code == 200
+            assert 'class="r5-event"' in page.text
+            assert page.text.count('class="r5-event"') == 25
+            assert "Page 2 of" in page.text
+
+            search = client.get("/health-timeline", params={
+                **params, "page": 1, "q": "dose-note-5",
+            })
+            assert search.status_code == 200
+            assert "dose-note-5" in search.text
+
+            exported = client.get(
+                "/health-timeline/export.csv", params=params,
+            )
+            assert exported.status_code == 200
+            rows = list(csv.DictReader(io.StringIO(
+                exported.content.decode("utf-8-sig")
+            )))
+            assert len(rows) > 25
+            assert len(rows) == _timeline_context(
+                timeline_db[0],
+                days=0,
+                start_date=date(2026, 11, 1),
+                end_date=date(2026, 11, 9),
+            )["total"]
+    finally:
+        app.dependency_overrides.pop(get_db, None)
