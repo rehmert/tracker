@@ -172,6 +172,14 @@ PY
  PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
   "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
  echo "=== ISOLATED RESTORE VERIFICATION PASSED ==="
+ # Once PROD session auth is activated, a normal Tracker backup does not
+ # include the private account store or secondary workspaces. Fail the
+ # release before installation unless their separate recovery snapshot
+ # also passes its own isolated restore/integrity verification.
+ if [[ "$INSTANCE" == PROD && -f "$DATA_DIR/.tracker-session-auth-prod523" ]]; then
+  echo "=== VERIFIED PRIVATE PROD AUTH/USER BACKUP ==="
+  "$PY" "$APP/scripts/tracker-prod-parity523.py" backup
+ fi
  echo "=== Install via fast-forward ==="
  umask 022
  g merge --ff-only "$TARGET"
