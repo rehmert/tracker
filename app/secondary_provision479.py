@@ -9,6 +9,7 @@ import stat
 import sys
 from pathlib import Path
 
+from .instance_parity523 import interactive_parity523
 from . import config, session_auth385 as auth
 from .user_accounts427 import (
     list_staged_accounts427,
@@ -20,7 +21,7 @@ from .user_bootstrap426 import initialize_staged_workspace426
 
 
 def create_secondary_user479(username, password, confirmation):
-    if config.instance_label() != "DEV" or not auth.enabled():
+    if not interactive_parity523() or not auth.enabled():
         raise PermissionError("DEV session authentication required")
 
     username = validate_username(username)
