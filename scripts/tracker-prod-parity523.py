@@ -75,9 +75,12 @@ def settings():
         raise RuntimeError("Refusing activation outside PROD")
     if not values.get("TRACKER_USER") or not values.get("TRACKER_PASS"):
         raise RuntimeError("Existing PROD Basic Auth credentials required")
-    root = Path(values.get("TRACKER_DATA_DIR") or ROOT / "data").resolve()
-    if not root.is_dir() or root.is_symlink():
-        raise RuntimeError("Missing or symlinked PROD data directory")
+    configured = Path(values.get("TRACKER_DATA_DIR") or ROOT / "data")
+    if not configured.is_absolute() or configured.is_symlink():
+        raise RuntimeError("Invalid or symlinked PROD data path")
+    root = configured.resolve()
+    if not root.is_dir():
+        raise RuntimeError("Missing PROD data directory")
     db = root / "tracker.db"
     if db.is_symlink() or not db.is_file():
         raise RuntimeError("Missing PROD primary SQLite database")
@@ -249,8 +252,8 @@ def activate():
             0o600,
         )
         os.close(fd)
-        os.chown(marker, uid, gid)
         created.append(marker)
+        os.chown(marker, uid, gid)
         run("systemctl", "daemon-reload")
         run("systemctl", "restart", "tracker.service")
         check_process(True)
