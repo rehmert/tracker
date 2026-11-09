@@ -58,7 +58,7 @@ def render_workspace_hub464(capabilities):
             'data-workspace-feature="' + key + '">'
             '<h3>' + escape(title) + '</h3>'
             '<p class="hub-status464">'
-            + ('Logging enabled in DEV'
+            + ('Logging enabled'
                if enabled else 'Read-only / disabled')
             + '</p>'
             '<div class="hub-actions464">'
@@ -72,7 +72,7 @@ def render_workspace_hub464(capabilities):
         '<h2 id="hub-title464">My Workspace</h2>'
         '<p>Choose a section to view your private records. '
         'Write actions appear only when their separate '
-        'DEV feature gate is enabled.</p>'
+        'feature is enabled.</p>'
         '<div class="hub-grid464">'
         + "".join(cards)
         + '</div></section>'
