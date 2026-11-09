@@ -6,6 +6,7 @@ administrator's global SQLAlchemy engine.
 """
 import os
 
+from .instance_parity523 import interactive_parity523
 from . import config, session_auth385
 
 
@@ -13,7 +14,7 @@ def enabled473():
     from .secondary_preview430 import preview_enabled
 
     return (
-        config.instance_label() == "DEV"
+        interactive_parity523()
         and session_auth385.enabled()
         and preview_enabled()
         and os.getenv(
