@@ -8,11 +8,11 @@ from itertools import groupby
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import Response
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import config, metrics
 from ..scoped_db390 import get_scoped_db390
-from ..models import VitalReading, DoseLog, LabReport, Protocol
+from ..models import VitalReading, DoseLog, LabReport, Protocol, Vial
 from ..templating import render
 
 router = APIRouter()
@@ -79,7 +79,10 @@ def _timeline_context(
             detail=detail, link=f"/vitals/{reading.id}/edit",
         ))
 
-    dose_query = select(DoseLog)
+    # Avoid an implicit query for each dose's vial and compound.
+    dose_query = select(DoseLog).options(
+        selectinload(DoseLog.vial).selectinload(Vial.compound)
+    )
     if since is not None:
         dose_query = dose_query.where(DoseLog.taken_at >= since)
     if through is not None:
@@ -92,7 +95,10 @@ def _timeline_context(
             link=f"/doses/{dose.id}/edit",
         ))
 
-    report_query = select(LabReport)
+    # Every report renders its result count; load them in batches.
+    report_query = select(LabReport).options(
+        selectinload(LabReport.results)
+    )
     if since is not None:
         report_query = report_query.where(LabReport.drawn_on >= since.date())
     if through is not None:
