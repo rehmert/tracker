@@ -87,8 +87,12 @@ def release_auth_headers(instance, settings):
     }
 
     if instance in ("DEV", "PROD"):
+        # The release backend suite runs with a disposable TRACKER_DATA_DIR.
+        # Never probe a live PROD auth marker from an isolated pytest worker
+        # merely because a synthetic settings dict omitted its data path.
         directory = Path(
             settings.get("TRACKER_DATA_DIR")
+            or os.environ.get("TRACKER_DATA_DIR")
             or "/opt/tracker/data"
         ).resolve()
 
