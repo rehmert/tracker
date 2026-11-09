@@ -27,17 +27,9 @@ def _single_header522(headers, name):
     return True
 
 
-def allow_signed_proxy_write522(method, headers, csrf_status):
-    """Whether to override ONLY an Origin/Host mismatch already rejected.
-
-    The caller must invoke this only after the existing origin guard rejects
-    an unsafe browser write. No destination/remote-host allowlist is inferred
-    from X-Forwarded-* headers, which untrusted peers could supply.
-    """
+def _proxy_browser_metadata522(method, headers):
+    """Independent browser proof prerequisite for any proxy exception."""
     if method.upper() not in UNSAFE_METHODS:
-        return False
-
-    if csrf_status != "valid":
         return False
 
     if headers.get("sec-fetch-site", "").strip().lower() != "same-origin":
@@ -56,9 +48,31 @@ def allow_signed_proxy_write522(method, headers, csrf_status):
     if origin == "null":
         return True
 
-    # urlsplit alone accepts hostnames containing embedded whitespace.
-    # Never relax the Origin guard for malformed/ambiguous authorities.
+    # urlsplit alone accepts hostnames with embedded whitespace.
     if any(char.isspace() or ord(char) < 0x20 for char in origin):
         return False
 
     return _authority(origin) is not None
+
+
+def allow_signed_proxy_write522(method, headers, csrf_status):
+    """Accept an otherwise rejected Origin only with signed CSRF proof."""
+    return (
+        csrf_status == "valid"
+        and _proxy_browser_metadata522(method, headers)
+    )
+
+
+def defer_proxy_multipart522(method, headers, csrf_status, content_type):
+    """Authorize route-level validation, NEVER an unverified write.
+
+    Multipart native forms have an uninspected body in HTTP middleware.
+    Defer to the existing File/Form route dependency, where the complete
+    parsed signed field + cookie are checked before endpoint mutation.
+    """
+    return (
+        csrf_status == "form-uninspected"
+        and content_type.split(";", 1)[0].strip().lower()
+        == "multipart/form-data"
+        and _proxy_browser_metadata522(method, headers)
+    )
