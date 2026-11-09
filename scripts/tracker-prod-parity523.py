@@ -275,6 +275,77 @@ def activate():
     print("Credentials migrated from existing PROD Basic Auth; no DEV data copied")
 
 
+def backup():
+    """Verified root-private authentication + secondary-user snapshot.
+
+    The legacy primary Tracker backup contains only tracker.db and its
+    uploads. Protect private sessions/accounts/workspaces independently.
+    """
+    if os.geteuid() != 0:
+        raise RuntimeError("Root required")
+    values, data, _ = settings()
+    if not (data / MARKER).is_file():
+        raise RuntimeError("PROD browser login has not been activated")
+    os.environ.update({
+        "TRACKER_INSTANCE": "PROD",
+        "TRACKER_PROD_PARITY523": "1",
+        "TRACKER_DATA_DIR": str(data),
+    })
+    sys.path.insert(0, str(ROOT))
+    from app import session_auth385 as auth
+    from app.user_accounts427 import list_staged_accounts427
+
+    if not auth.enabled():
+        raise RuntimeError("PROD authentication store unavailable")
+    destination = Path("/var/backups/tracker-secondary-prod")
+    if destination.is_symlink():
+        raise RuntimeError("Unsafe private backup directory")
+    destination.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if (
+        stat.S_IMODE(destination.stat().st_mode) != 0o700
+        or destination.stat().st_uid != 0
+    ):
+        raise RuntimeError("Private backup directory must be root-owned 0700")
+
+    if list_staged_accounts427():
+        from app.secondary_backup442 import (
+            create_secondary_backup442, verify_secondary_backup442,
+        )
+        archive = create_secondary_backup442(backup_dir=destination)
+        report = verify_secondary_backup442(archive)
+        if not report["restore_verified"]:
+            raise RuntimeError("Private archive restore verification failed")
+        print("PROD_PRIVATE_BACKUP=VERIFIED")
+        print("ARCHIVE=" + str(archive))
+        return
+
+    # Before a second account exists, the private snapshot tool intentionally
+    # refuses an empty roster. Back up the administrator auth store itself.
+    import sqlite3
+    from datetime import datetime, timezone
+    auth_db = auth.database_path()
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    fd, temp = tempfile.mkstemp(
+        dir=destination, prefix=".tracker-auth-prod523-"
+    )
+    os.close(fd)
+    try:
+        with sqlite3.connect(f"file:{auth_db}?mode=ro", uri=True) as source:
+            with sqlite3.connect(temp) as target:
+                source.backup(target)
+        with sqlite3.connect(f"file:{temp}?mode=ro", uri=True) as snap:
+            if snap.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise RuntimeError("Authentication snapshot failed integrity check")
+        os.chmod(temp, 0o600)
+        final = destination / f"tracker-auth-prod-{stamp}.sqlite3"
+        os.replace(temp, final)
+    finally:
+        if os.path.exists(temp):
+            os.unlink(temp)
+    print("PROD_PRIVATE_BACKUP=VERIFIED")
+    print("ARCHIVE=" + str(final))
+
+
 def status():
     values, data, _ = settings()
     marker = data / MARKER
@@ -291,13 +362,15 @@ def status():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("enable", "status"))
+    parser.add_argument("command", choices=("enable", "status", "backup"))
     args = parser.parse_args()
     if os.geteuid() != 0:
         raise SystemExit("Root required")
     try:
         if args.command == "enable":
             activate()
+        elif args.command == "backup":
+            backup()
         else:
             status()
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as exc:
