@@ -14,6 +14,7 @@ import sys
 import uuid
 from urllib.parse import quote
 
+from .instance_parity523 import interactive_parity523
 from .worker_probe428 import validate_environment
 from .worker_read429 import private_overview429
 
@@ -336,7 +337,7 @@ def request_inventory435(user_id, action, payload=None, data_root=None):
     from .user_accounts427 import secondary_id
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
-    if config.instance_label() != "DEV" or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1":
+    if not interactive_parity523() or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1":
         raise PermissionError("Secondary preview disabled")
     if type(action) is not str or action not in OPERATIONS:
         raise ValueError("Unsupported inventory operation")
