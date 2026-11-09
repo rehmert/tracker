@@ -75,7 +75,7 @@ def validate_report466(report):
 def assess_cutover466():
     """Offline administrator audit; no user-selected arguments."""
     if not interactive_parity523() or not auth.enabled():
-        raise PermissionError("DEV session mode required")
+        raise PermissionError("Session mode required")
 
     root = staging_environment()
     accounts = list_staged_accounts427()
