@@ -59,7 +59,7 @@ def render_account465(record):
 <meta name="viewport"
 content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>My Account · Tracker DEV</title>
+<title>My Account · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px/1.5 system-ui,sans-serif;
@@ -87,8 +87,8 @@ background:#e3eef8;border-radius:8px;color:#164f85}}
 <dt>Account Number</dt><dd>{uid}</dd>
 <dt>Workspace</dt><dd>Private, staged and inactive</dd>
 <dt>Normal Tracker Login</dt><dd>Disabled</dd>
-<dt>Secondary DEV Pilot Login</dt><dd>Available</dd>
-<dt>Production Access</dt><dd>Not enabled</dd>
+<dt>Private Workspace Login</dt><dd>Available</dd>
+<dt>Private Workspace</dt><dd>Available through unified login</dd>
 </dl>
 </section>
 <section>
