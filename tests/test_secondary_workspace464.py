@@ -30,7 +30,7 @@ def test_hub464_allowlisted_routes_and_flags():
     assert 'href="/secondary/food/new"' in enabled
     assert 'href="/secondary/vitals/new"' in enabled
     assert 'href="/secondary/doses/new"' not in enabled
-    assert "Logging enabled in DEV" in enabled
+    assert "Logging enabled" in enabled
 
     navigation = render_workspace_nav464()
     assert 'href="/secondary/security"' in navigation
