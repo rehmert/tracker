@@ -6,8 +6,11 @@ uploads; no real user data, live file stores or public HTTP calls.
 import pytest
 from fastapi import Depends, FastAPI, File, UploadFile
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 
 from app import config, session_auth385
+from app.db import SessionLocal
+from app.models import Compound
 from app.csrf_enforcement520 import (
     SIGNED_SESSION_POST_PATHS520,
     enforce_multipart_csrf520,
@@ -47,15 +50,24 @@ def _multipart_compound520(client, *, data=None, headers=None):
     )
 
 
+def _compound_count520(name):
+    # Query the conftest-isolated SQLite database directly. The /compounds
+    # search form echoes its q parameter even if no such record exists.
+    with SessionLocal() as db:
+        return db.scalar(
+            select(func.count()).select_from(Compound)
+            .where(Compound.name == name)
+        )
+
+
 def test_520_strict_denied_multipart_cannot_create_compound(strict_client520):
     client = strict_client520
     _token520(client)
     name = "520 forbidden compound"
+    before = _compound_count520(name)
     response = _multipart_compound520(client, data={"name": name})
     assert response.status_code == 403
-    listing = client.get("/compounds", params={"q": name})
-    assert listing.status_code == 200
-    assert name not in listing.text
+    assert _compound_count520(name) == before == 0
 
 
 def test_520_strict_signed_multipart_can_create_isolated_compound(
@@ -64,14 +76,13 @@ def test_520_strict_signed_multipart_can_create_isolated_compound(
     client = strict_client520
     token = _token520(client)
     name = "520 signed native compound"
+    before = _compound_count520(name)
     response = _multipart_compound520(
         client, data={"name": name, "csrf_token": token},
     )
     assert response.status_code == 303
     assert response.headers[REPORT_HEADER] == "valid"
-    listing = client.get("/compounds", params={"q": name})
-    assert listing.status_code == 200
-    assert name in listing.text
+    assert _compound_count520(name) == before + 1
 
 
 def test_520_strict_missing_multipart_token_denied(strict_client520):
