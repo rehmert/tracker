@@ -306,4 +306,3 @@ if (( STRICT_EXIT != 0 )); then
   exit "$STRICT_EXIT"
 fi
 echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
-
