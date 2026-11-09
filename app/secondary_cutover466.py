@@ -7,6 +7,7 @@ import json
 import sys
 from html import escape
 
+from .instance_parity523 import interactive_parity523
 from . import config, session_auth385 as auth
 from .secondary_account_readiness465 import (
     normalize_account465,
@@ -73,7 +74,7 @@ def validate_report466(report):
 
 def assess_cutover466():
     """Offline administrator audit; no user-selected arguments."""
-    if config.instance_label() != "DEV" or not auth.enabled():
+    if not interactive_parity523() or not auth.enabled():
         raise PermissionError("DEV session mode required")
 
     root = staging_environment()
