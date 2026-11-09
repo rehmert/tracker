@@ -201,6 +201,51 @@ with SessionLocal() as db:
     db.commit()
 print("DISPOSABLE_INVENTORY_FIXTURES=2")
 PY
+
+# Release 524: preserve parallel execution without overlapping
+# conflicting mutations against the same disposable SQLite database.
+run_isolated_browser_module() {
+    local module="$1"
+    local strict="$2"
+    local logfile="$3"
+    local rc
+
+    local -a envvars=(
+        HOME=/root
+        PATH=/usr/local/bin:/usr/bin:/bin
+        PYTHONPATH="$SOURCE"
+        TRACKER_DATA_DIR="$DATA"
+        TRACKER_TEST_URL="$URL"
+        TRACKER_TEST_HTTPS_URL="$HTTPS_URL"
+        TRACKER_TEST_ISOLATED=1
+        TRACKER_BROWSER_QA_DATA_DIR="$DATA"
+        PYTHONDONTWRITEBYTECODE=1
+        PYTHONUNBUFFERED=1
+    )
+
+    if [[ "$strict" == 1 ]]; then
+        envvars+=(TRACKER_TEST_STRICT_CSRF=1)
+    fi
+
+    echo
+    echo "=== BROWSER MODULE: $module (strict=$strict) ==="
+    echo "WORKERS=16"
+    echo "MODULE_LOG=$logfile"
+
+    set +e
+    env -i "${envvars[@]}" \
+        "$PY" -B -m pytest \
+        -n 16 --dist=loadfile \
+        -q --tb=short "$module" \
+        2>&1 | tee "$logfile"
+
+    rc=${PIPESTATUS[0]}
+    set -e
+
+    echo "MODULE_EXIT=$rc"
+    return "$rc"
+}
+
 echo "=== OFFLINE FOOD AND LABS BROWSER TESTS + LIVE NAVIGATION ==="
 set +e
 env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
@@ -208,7 +253,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
   TRACKER_TEST_ISOLATED=1 TRACKER_BROWSER_QA_DATA_DIR="$DATA" \
   PYTHONDONTWRITEBYTECODE=1 \
-  "$PY" -B -m pytest -q --tb=short \
+  "$PY" -B -m pytest -n 16 --dist=loadfile -q --tb=short \
     tests/browser/test_food_search_ui.py \
     tests/browser/test_inventory_alert_csv_review.py \
     tests/browser/test_lab_compare_review.py \
@@ -224,17 +269,21 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
     tests/test_vitals_csv_browser.py \
     tests/browser/test_food_labs_live499.py \
     tests/browser/test_food_labs_mutations500.py \
-    tests/browser/test_labs_native_https501.py \
     tests/browser/test_vitals_proxy_host522.py \
     tests/browser/test_navigation.py \
     tests/browser/test_pk_smoke_281.py \
-    tests/browser/test_stage33_live_sorting.py >"$TEST_LOG" 2>&1
-BROWSER_EXIT=$?
+    tests/browser/test_stage33_live_sorting.py 2>&1 | tee "$TEST_LOG"
+BROWSER_EXIT=${PIPESTATUS[0]}
 set -e
-cat "$TEST_LOG"
 echo "BROWSER_PYTEST_EXIT=$BROWSER_EXIT"
 
 (( BROWSER_EXIT == 0 )) || exit "$BROWSER_EXIT"
+echo "=== REGULAR BROWSER SUITE PASSED ==="
+
+run_isolated_browser_module \
+    tests/browser/test_labs_native_https501.py \
+    0 "$ROOT/labs501-browser.log"
+
 
 # Release 521: a second browser gate runs the SAME isolated candidate
 # with global strict CSRF enabled. Existing report-only browser tests still
@@ -299,14 +348,11 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
   TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
   TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
-  "$PY" -B -m pytest -q --tb=short \
+  "$PY" -B -m pytest -n 16 --dist=loadfile -q --tb=short \
     tests/browser/test_strict_csrf521.py \
-    tests/browser/test_labs_native_https501.py \
-    tests/browser/test_food_labs_mutations500.py \
-    >"$STRICT_TEST_LOG" 2>&1
-STRICT_EXIT=$?
+    2>&1 | tee "$STRICT_TEST_LOG"
+STRICT_EXIT=${PIPESTATUS[0]}
 set -e
-cat "$STRICT_TEST_LOG"
 echo "STRICT_BROWSER_PYTEST_EXIT=$STRICT_EXIT"
 if (( STRICT_EXIT != 0 )); then
   echo "STRICT_BROWSER_TEST_LOG=$STRICT_TEST_LOG"
@@ -315,4 +361,15 @@ if (( STRICT_EXIT != 0 )); then
   tail -n 20 "$STRICT_SERVER_LOG" || true
   exit "$STRICT_EXIT"
 fi
+
+echo "=== STRICT CSRF CORE TESTS PASSED ==="
+
+run_isolated_browser_module \
+    tests/browser/test_food_labs_mutations500.py \
+    1 "$ROOT/strict-labs500.log"
+
+run_isolated_browser_module \
+    tests/browser/test_labs_native_https501.py \
+    1 "$ROOT/strict-labs501.log"
+
 echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"

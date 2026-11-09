@@ -6,6 +6,16 @@ APP=/opt/tracker
 PY="$APP/.venv/bin/python"
 fail() { echo "ERROR: $*" >&2; exit 1; }
 g() { git -C "$APP" "$@"; }
+
+verify_prod_approval() {
+  if [[ "$INSTANCE" == PROD ]]; then
+    local verifier=/usr/local/sbin/tracker-verify-dev-approval
+    [[ -f "$verifier" && -x "$verifier" && ! -L "$verifier" ]] ||
+      fail "Trusted PROD approval verifier unavailable"
+    "$verifier" "$TARGET" ||
+      fail "Exact-commit DEV approval required"
+  fi
+}
 instance_check() {
  "$PY" - "$1" <<'PY'
 import re,sys
@@ -27,6 +37,10 @@ cleanup() {
   umask 022
   if [[ "$(g rev-parse HEAD)" == "$TARGET" && -z "$(g status --porcelain)" ]]; then
    if g reset --hard "$BASE"; then
+     echo "=== Refresh rollback bytecode ==="
+     find "$APP/app" "$APP/scripts" -type f -name '*.pyc' -delete
+     "$PY" -m compileall -q -f "$APP/app" "$APP/scripts" ||
+       echo "WARNING: Rollback bytecode compilation failed"
     while IFS= read -r f; do
      if [[ -f "$APP/$f" && ! -L "$APP/$f" ]]; then chmod a+r "$APP/$f"; fi
     done < <(changed)
@@ -45,7 +59,7 @@ cleanup() {
 }
 worker() {
  RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"
- [[ "$SERIAL_TESTS" == 0 || "$SERIAL_TESTS" == 1 ]] || fail "Invalid serial test override"
+ [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0
  export GIT_CONFIG_COUNT=2
  export GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
@@ -54,6 +68,9 @@ worker() {
  exec >> "$RUN/deployment.log" 2>&1
  trap cleanup EXIT
  echo "Started: $(date -Is); instance: $INSTANCE"
+ exec 9>/run/lock/tracker-db-sync.lock
+ flock -n 9 || fail "Database replication active"
+ echo "REPLICATION_DEPLOYMENT_LOCK=ACQUIRED"
  cd "$APP"
  [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "Not a clean main checkout"
  [[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Starting commit differs from pinned base"
@@ -65,6 +82,7 @@ worker() {
  if [[ "$INSTANCE" == PROD ]]; then
   [[ "$REF" == main && "$(g rev-parse origin/main)" == "$TARGET" ]] || fail "PROD requires promoted main"
  fi
+ verify_prod_approval
  g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from base"
  if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py)'; then
   fail "Schema/dependency/systemd changes require separately reviewed deployment"
@@ -100,38 +118,10 @@ PY
  fi
  echo "=== COMPLETE REGRESSION SUITE ==="
  echo "Critical safety tests are included in full-suite collection."
- TEST_PYTEST_EXTRA=()
- if [[ "$SERIAL_TESTS" == 0 ]] && "$PY" -c 'import xdist' >/dev/null 2>&1; then
-  # DEV and PROD use the same isolated xdist gate after being assigned
-  # equivalent CPU/RAM resources. Each worker creates its own temporary
-  # SQLite directory. Keep modules together to limit fixture interactions.
-  # Limit worker count to effective LXC CPU availability, capped at 16.
-  WORKERS="$("$PY" - <<'PY'
-import os
-from pathlib import Path
-count = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
-try:
-    quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
-    if quota != "max":
-        count = min(count, max(1, int(quota) // int(period)))
-except (OSError, ValueError, ZeroDivisionError):
-    pass
-print(min(16, max(1, count)))
-PY
-)"
-  if [[ "$WORKERS" =~ ^([1-9]|1[0-6])$ ]] && ((WORKERS >= 2)); then
-   TEST_PYTEST_EXTRA=(-n "$WORKERS" --dist=loadfile)
-   echo "BACKEND_TEST_MODE=PARALLEL workers=$WORKERS"
-  else
-   echo "BACKEND_TEST_MODE=SERIAL reason=limited_cpu"
-  fi
- else
-  if [[ "$SERIAL_TESTS" == 1 ]]; then
-   echo "BACKEND_TEST_MODE=SERIAL reason=serial_override"
-  else
-   echo "BACKEND_TEST_MODE=SERIAL reason=missing_xdist"
-  fi
- fi
+ "$PY" -c 'import xdist' >/dev/null ||
+  fail "pytest-xdist missing; serial fallback prohibited"
+ TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)
+ echo "BACKEND_TEST_MODE=PARALLEL workers=16"
  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
@@ -176,7 +166,13 @@ PY
  umask 022
  g merge --ff-only "$TARGET"
  INSTALLED=1
- [[ "$(g rev-parse HEAD)" == "$TARGET" ]] || fail "Unexpected new HEAD"
+ [[ "$(g rev-parse HEAD)" == "$TARGET" ]] ||
+   fail "Unexpected new HEAD"
+
+  echo "=== Refresh installed Python bytecode ==="
+  find "$APP/app" "$APP/scripts" -type f -name '*.pyc' -delete
+  "$PY" -m compileall -q -f "$APP/app" "$APP/scripts"
+  echo "INSTALLED_BYTECODE_REFRESH=PASSED"
  while IFS= read -r f; do
   [[ -f "$APP/$f" && ! -L "$APP/$f" ]] || fail "Missing new source: $f"
   chmod a+r "$APP/$f"
@@ -235,7 +231,7 @@ INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
-  --serial-tests) SERIAL_TESTS=1; shift;;
+  --serial-tests) fail "Serial testing prohibited";;
   --instance|--base|--target|--ref)
    (( $# >= 2 )) || fail "Missing argument for $1"
    case "$1" in
@@ -254,6 +250,7 @@ done
 [[ "$INSTANCE" != PROD || "$REF" == main ]] || fail "PROD requires --ref main"
 [[ $(id -u) == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run as root on configured Tracker host"
 instance_check "$INSTANCE"
+verify_prod_approval
 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "Not a clean main checkout"
 [[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Unexpected starting commit"
