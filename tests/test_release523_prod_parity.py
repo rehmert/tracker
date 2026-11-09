@@ -15,7 +15,9 @@ from app import config, session_auth385 as auth
 from app.instance_parity523 import interactive_parity523
 from app.main import tracker_response_protection
 from app.security import require_auth
-from app.routers import session_login385, account_security386
+from app.routers import (
+    session_login385, account_security386, user_management479,
+)
 from app.secondary_preview430 import (
     COOKIE as SECONDARY_COOKIE,
     preview_app, preview_enabled,
@@ -52,6 +54,7 @@ def prod_environment523(monkeypatch, tmp_path):
     host.middleware("http")(tracker_response_protection)
     host.include_router(session_login385.router)
     host.include_router(account_security386.router)
+    host.include_router(user_management479.router)
     host.mount("/secondary", preview_app)
 
     @host.get("/admin-only")
@@ -181,6 +184,39 @@ def test_523_prod_secondary_login_and_private_user_isolation(prod_environment523
     assert not preview_enabled()
     assert not enabled473()
     assert client.get("/secondary/overview").status_code == 404
+
+
+def test_523_prod_admin_can_provision_and_manage_private_user(
+    prod_environment523,
+):
+    client, root, monkeypatch = prod_environment523
+    monkeypatch.setenv("TRACKER_PROD_PARITY523", "1")
+
+    admin = _login(client, "operator", "new-prod-login-password")
+    assert admin.status_code == 303
+    manager = client.get("/account/users")
+    assert manager.status_code == 200
+    token = _csrf(manager.text)
+    response = client.post(
+        "/account/users",
+        data={
+            "csrf_token": token,
+            "username": "prodmember523",
+            "password": "private-prod-user-secret",
+            "confirmation": "private-prod-user-secret",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303, response.text[:180]
+    assert "prodmember523" in client.get("/account/users").text
+
+    member = _login(client, "prodmember523", "private-prod-user-secret")
+    assert member.status_code == 303
+    assert member.headers["location"] == "/secondary/overview"
+    assert client.get("/secondary/overview").status_code == 200
+    assert client.get(
+        "/account/users", follow_redirects=False
+    ).status_code == 303
 
 
 def test_523_prod_marker_not_interchangeable_with_dev_marker(
