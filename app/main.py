@@ -20,6 +20,7 @@ from fastapi.responses import PlainTextResponse
 
 from .request_origin import reject_cross_origin_write
 from .food_origin492 import allow_food_proxy_write492, is_food_write492
+from .proxy_origin522 import allow_signed_proxy_write522
 from .csrf_runtime import prepare_html_cookie
 from .csrf_reporting import report_status, REPORT_HEADER
 from .csrf_policy289 import reject_write
@@ -168,6 +169,25 @@ async def tracker_response_protection(request, call_next):
         csrf_report = await report_status(request)
         if allow_food_proxy_write492(
             request.method, request.url.path, request.headers, csrf_report,
+        ):
+            origin_rejected = False
+
+    # Release 522: a TLS reverse proxy may pass the browser's public
+    # Origin but rewrite Host to an internal listener. Food already had an
+    # isolated exception; apply the same independently signed proof to all
+    # browser writes, including native Vitals forms, edits, and HTMX DELETE.
+    # The ordinary guard still blocks cross-site/same-site and malformed
+    # writes. This branch requires a *valid* signed double-submit CSRF pair
+    # even when global CSRF enforcement is configured report-only.
+    if (
+        origin_rejected
+        and request.headers.get("sec-fetch-site", "").strip().lower()
+        == "same-origin"
+    ):
+        if csrf_report is None:
+            csrf_report = await report_status(request)
+        if allow_signed_proxy_write522(
+            request.method, request.headers, csrf_report,
         ):
             origin_rejected = False
 
