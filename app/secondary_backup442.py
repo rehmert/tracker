@@ -292,7 +292,12 @@ def create_secondary_backup442(data_root=None, backup_dir=None):
     if not interactive_parity523():
         raise PermissionError("Secondary backup requires DEV")
     target_dir = _no_links(
-        Path(backup_dir or "/var/backups/tracker-secondary-dev").absolute()
+        Path(
+            backup_dir or (
+                "/var/backups/tracker-secondary-"
+                + config.instance_label().lower()
+            )
+        ).absolute()
     )
     if target_dir == root or target_dir.is_relative_to(root):
         raise ValueError("Secondary archive must be outside live data")
