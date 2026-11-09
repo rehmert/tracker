@@ -16,6 +16,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -137,12 +138,19 @@ def verify_login():
         except urllib.error.HTTPError as error:
             return error.code, error.headers, error.read(100_000)
 
-    code, headers, _ = get("/")
-    if code != 303 or not headers.get("location", "").startswith("/login"):
-        raise RuntimeError("Unauthenticated PROD root did not redirect to login")
-    code, _, body = get("/login")
-    if code != 200 or b'name="csrf_token"' not in body:
-        raise RuntimeError("PROD browser login is unavailable")
+    deadline = time.monotonic() + 30
+    while True:
+        try:
+            code, headers, _ = get("/")
+            if code == 303 and headers.get("location", "").startswith("/login"):
+                code, _, body = get("/login")
+                if code == 200 and b'name="csrf_token"' in body:
+                    break
+        except OSError:
+            pass
+        if time.monotonic() >= deadline:
+            raise RuntimeError("PROD browser login failed startup verification")
+        time.sleep(1)
     subprocess.run([
         sys.executable, str(ROOT / "scripts/tracker-runtime-smoke.py"),
         "--instance", "PROD",
@@ -206,9 +214,10 @@ def atomic_text(path, content, mode):
 def activate():
     if os.geteuid() != 0:
         raise RuntimeError("Root required")
-    if run("git", "-C", str(ROOT), "branch", "--show-current") != "main":
+    git = ("git", "-c", f"safe.directory={ROOT}", "-C", str(ROOT))
+    if run(*git, "branch", "--show-current") != "main":
         raise RuntimeError("PROD checkout must be main")
-    if run("git", "-C", str(ROOT), "status", "--porcelain"):
+    if run(*git, "status", "--porcelain"):
         raise RuntimeError("Dirty PROD source checkout")
     if run("systemctl", "is-active", "tracker.service") != "active":
         raise RuntimeError("Tracker service must be active")
@@ -253,7 +262,12 @@ def activate():
             file.unlink(missing_ok=True)
         subprocess.run(["systemctl", "daemon-reload"], check=False)
         subprocess.run(["systemctl", "restart", "tracker.service"], check=False)
-        print("ROLLBACK: PROD session activation cancelled; Basic Auth restored")
+        try:
+            check_process(False)
+        except (OSError, RuntimeError):
+            print("WARNING: Rollback attempted; verify PROD service immediately")
+        else:
+            print("ROLLBACK: PROD session activation cancelled; Basic Auth active")
         raise
     print("PROD_LOGIN_PARITY523=ENABLED")
     print("PROD_BASIC_AUTH_REPLACED=YES")
