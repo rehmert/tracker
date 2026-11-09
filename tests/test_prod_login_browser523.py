@@ -126,6 +126,21 @@ def test_523_prod_secondary_login_private_and_admin_denial(page):
     _goto(tab, "/secondary/security")
     expect(tab.locator("body")).to_contain_text("Active Sessions")
 
-    # A secondary user is routed only to their own workspace, with
-    # administrator management still denied by the real server.
+    # Logout must revoke only the secondary session, without exposing
+    # administrator routes or permitting reuse of the old cookie.
+    _goto(tab, "/secondary/overview")
+    form = tab.locator('form[action="/secondary/logout"]')
+    assert form.locator('input[name="csrf_token"]').count() == 1
+    with tab.expect_response(
+        lambda r: r.request.method == "POST"
+        and urlsplit(r.url).path == "/secondary/logout"
+    ) as logout:
+        form.get_by_role("button", name="Sign Out").click()
+    assert logout.value.status == 303
+    tab.wait_for_url(HTTPS_URL + "/secondary/login")
+    denied = tab.request.get(
+        HTTPS_URL + "/secondary/overview", max_redirects=0
+    )
+    assert denied.status == 303
+    assert denied.headers["location"] == "/secondary/login"
     assert not errors, errors
