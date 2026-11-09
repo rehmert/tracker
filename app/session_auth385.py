@@ -13,6 +13,7 @@ import sqlite3
 import time
 from contextlib import closing
 
+from .instance_parity523 import interactive_parity523
 from . import config
 
 COOKIE = "tracker_session"
@@ -25,7 +26,7 @@ REMEMBER_SECONDS = 30 * 86400
 
 def enabled():
     return (
-        config.instance_label() == "DEV"
+        interactive_parity523()
         and (config.DATA_DIR / FLAG).is_file()
     )
 
