@@ -61,7 +61,7 @@ def _html479(accounts, token, created=False):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>User Management · Tracker DEV</title>
+<title>User Management · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#f3f6fa;color:#192638;
@@ -88,7 +88,7 @@ border-bottom:1px solid #e2e8f0}}
 <p><a href="/account/security">Account Security</a>
  · <a href="/">Tracker Home</a></p>
 <h1>User Management</h1>
-<p>Administrator only · DEV secondary workspaces</p>
+<p>Administrator only · private secondary workspaces</p>
 {notice}
 <section>
 <h2>Secondary Users ({len(accounts)})</h2>
@@ -240,7 +240,7 @@ def _edit_html480(account, token, updated=False):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Edit User · Tracker DEV</title>
+<title>Edit User · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#f3f6fa;color:#192638;
