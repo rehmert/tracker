@@ -15,6 +15,7 @@ import stat
 from contextlib import closing
 from pathlib import Path
 
+from .instance_parity523 import interactive_parity523
 from . import config
 from . import session_auth385 as auth
 from .user_bootstrap426 import (
@@ -38,7 +39,7 @@ def secondary_id(user_id):
 
 def staging_environment(data_root=None):
     """Require a real DEV authentication store and trusted data root."""
-    if config.instance_label() != "DEV" or not auth.enabled():
+    if not interactive_parity523() or not auth.enabled():
         raise PermissionError(
             "Secondary account staging requires DEV session mode"
         )

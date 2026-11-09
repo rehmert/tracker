@@ -126,7 +126,7 @@ def render_week453(reports, end_day):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Weekly Nutrition · Tracker DEV</title>
+<title>Weekly Nutrition · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#f3f6fa;color:#182333;
@@ -169,7 +169,7 @@ button{{background:#16558b;color:white;border:0;padding:8px 14px}}
 <a href="/secondary/inventory">Inventory</a>
 </nav>
 <h1>Weekly Nutrition &amp; Water</h1>
-<p class="note">Private workspace · DEV-only · Read-only</p>
+<p class="note">Private workspace · Read-only</p>
 <p>Reviewing {escape(expected[0])} through {escape(end_day)}</p>
 <form action="/secondary/food/week" method="get">
 <label>End date

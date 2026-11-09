@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .instance_parity523 import interactive_parity523
 from .secondary_backup442 import (
     _no_links, create_secondary_backup442, verify_secondary_backup442,
 )
@@ -30,7 +31,7 @@ LOCK_NAME = ".tracker-secondary-backup443.lock"
 
 def _dev443():
     from . import config
-    if config.instance_label() != "DEV":
+    if not interactive_parity523():
         raise PermissionError("Secondary backup operations require DEV")
 
 
@@ -39,8 +40,12 @@ def backup_directory443(path=None, *, create=False):
     from . import config
     _dev443()
     root = _no_links(Path(config.DATA_DIR).absolute())
+    default = (
+        Path("/var/backups/tracker-secondary-prod")
+        if config.instance_label() == "PROD" else DEFAULT_BACKUP_DIR
+    )
     directory = _no_links(
-        Path(path if path is not None else DEFAULT_BACKUP_DIR).absolute()
+        Path(path if path is not None else default).absolute()
     )
     if directory == root or directory.is_relative_to(root):
         raise ValueError("Backup directory cannot be inside live data")

@@ -75,6 +75,10 @@ worker() {
  g worktree add --detach "$QA" "$TARGET"
  cd "$QA"
  export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
+ # A production release worker must never inherit the running service's
+ # interactive parity opt-in while testing against disposable data. Tests
+ # which explicitly exercise PROD parity set their own isolated flag.
+ export TRACKER_PROD_PARITY523=0
  mkdir -p "$TRACKER_DATA_DIR"
  git diff --check "$BASE" "$TARGET"
  "$PY" -m compileall -q app scripts tests
@@ -172,6 +176,14 @@ PY
  PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
   "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
  echo "=== ISOLATED RESTORE VERIFICATION PASSED ==="
+ # Once PROD session auth is activated, a normal Tracker backup does not
+ # include the private account store or secondary workspaces. Fail the
+ # release before installation unless their separate recovery snapshot
+ # also passes its own isolated restore/integrity verification.
+ if [[ "$INSTANCE" == PROD && -f "$DATA_DIR/.tracker-session-auth-prod523" ]]; then
+  echo "=== VERIFIED PRIVATE PROD AUTH/USER BACKUP ==="
+  "$PY" "$APP/scripts/tracker-prod-parity523.py" backup
+ fi
  echo "=== Install via fast-forward ==="
  umask 022
  g merge --ff-only "$TARGET"

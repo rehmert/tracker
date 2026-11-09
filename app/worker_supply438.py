@@ -13,6 +13,7 @@ import sys
 import uuid
 from datetime import date
 
+from .instance_parity523 import interactive_parity523
 from .worker_dose_write434 import _verified_storage
 from .worker_probe428 import validate_environment
 
@@ -185,7 +186,7 @@ def request_supply438(user_id, action, payload=None, data_root=None):
     from .user_accounts427 import secondary_id
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
-    if (config.instance_label() != "DEV"
+    if (not interactive_parity523()
         or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1"):
         raise PermissionError("Private supply preview disabled")
     if type(action) is not str or action not in ("list", "create"):

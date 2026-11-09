@@ -14,6 +14,7 @@ import sys
 import uuid
 from datetime import date
 
+from .instance_parity523 import interactive_parity523
 from .worker_probe428 import validate_environment
 from .worker_dose_write434 import _verified_storage
 
@@ -258,7 +259,7 @@ def request_reconstitution436(user_id, action, payload=None, data_root=None):
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
     if (
-        config.instance_label() != "DEV"
+        not interactive_parity523()
         or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1"
         or os.getenv("TRACKER_SECONDARY_RECONSTITUTION_WRITES436") != "1"
     ):

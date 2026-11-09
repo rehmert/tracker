@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recover the sole DEV administrator from the local console."""
+"""Recover the administrator on explicitly enabled DEV or PROD sessions."""
 
 import getpass
 import os
@@ -30,17 +30,20 @@ def main():
                 raise RuntimeError(f"Invalid {key}")
             settings[key] = values[0]
 
-    if settings.get("TRACKER_INSTANCE", "").upper() != "DEV":
-        raise RuntimeError("DEV identity required")
+    instance = settings.get("TRACKER_INSTANCE", "").upper()
+    if instance not in ("DEV", "PROD"):
+        raise RuntimeError("Explicit DEV or PROD identity required")
 
-    os.environ["TRACKER_INSTANCE"] = "DEV"
+    os.environ["TRACKER_INSTANCE"] = instance
+    if instance == "PROD":
+        os.environ["TRACKER_PROD_PARITY523"] = "1"
     if settings.get("TRACKER_DATA_DIR"):
         os.environ["TRACKER_DATA_DIR"] = settings["TRACKER_DATA_DIR"]
 
     from app import session_auth385 as auth
 
     if not auth.enabled():
-        raise RuntimeError("DEV session authentication is disabled")
+        raise RuntimeError("Session authentication is disabled")
 
     source = auth.database_path()
     if not source.is_file() or source.is_symlink():
@@ -69,7 +72,16 @@ def main():
             live.backup(target)
 
     os.chmod(backup, 0o600)
+    original = source.stat()
     auth.recover_admin(password)
+    # Root-operated recovery must not strand the service with root-owned
+    # SQLite files/journals or an inaccessible auth store.
+    for path in (source, Path(str(source) + "-wal"), Path(str(source) + "-shm")):
+        if path.exists():
+            if path.is_symlink():
+                raise RuntimeError("Unsafe authentication sidecar symlink")
+            os.chown(path, original.st_uid, original.st_gid)
+            os.chmod(path, 0o600)
 
     print("PASS: Administrator password reset")
     print("PASS: All browser sessions revoked")

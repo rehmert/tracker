@@ -1,4 +1,4 @@
-"""DEV-only, explicitly enabled secondary-user gateway and controls.
+"""private, explicitly enabled secondary-user gateway and controls.
 
 This is not an application router or a general HTTP proxy.
 Staged user credentials remain disabled for normal Tracker login.
@@ -16,6 +16,7 @@ from html import escape
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from .instance_parity523 import interactive_parity523
 from . import config, session_auth385 as auth
 from .csrf_runtime import load_key
 from .csrf_tokens import issue_token, verify_pair
@@ -41,7 +42,7 @@ preview_app = FastAPI(
 
 def preview_enabled():
     return (
-        config.instance_label() == "DEV"
+        interactive_parity523()
         and auth.enabled()
         and os.getenv("TRACKER_SECONDARY_PREVIEW430", "0") == "1"
         and os.getenv("TRACKER_SECONDARY_LOCKDOWN440", "0") != "1"
@@ -239,7 +240,7 @@ input,button{{display:block;width:100%;padding:12px;margin:10px 0;font:inherit}}
 <body>
 <main>
 <h1>Private Workspace Preview</h1>
-<p>DEV only · Private workspace pilot</p>
+<p>Private workspace · authenticated access</p>
 {warning}
 <form method="post" action="/secondary/login">
 <input type="hidden" name="csrf_token" value="{token}">
@@ -364,7 +365,7 @@ def overview_get(request: Request):
 <body>
 <main>
 <h1>Private Workspace Overview</h1>
-<p>DEV-only private workspace pilot. Account {uid}.</p>
+<p>Private workspace. Account {uid}.</p>
 {navigation}
 {hub}
 <section class="hub-data464">
@@ -580,7 +581,7 @@ def _recent_page432(request, kind):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>{escape(title)} · Tracker DEV</title>
+<title>{escape(title)} · Tracker</title>
 <style>
 body{{font:16px system-ui,sans-serif;max-width:850px;margin:0 auto;padding:16px}}
 nav{{display:flex;gap:14px;flex-wrap:wrap}}
@@ -655,7 +656,7 @@ def vital_form433(request: Request):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Log Vitals · Tracker DEV</title>
+<title>Log Vitals · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:540px;margin:0 auto;padding:16px}}
@@ -669,7 +670,7 @@ button{{font-weight:700}}
 <body>
 <main>
 <h1>Log Vitals</h1>
-<p>Private workspace {uid} · DEV pilot</p>
+<p>Private workspace {uid} · private workspace</p>
 <p><a href="/secondary/vitals">Recent Vitals</a></p>
 <form method="post" action="/secondary/vitals/new" autocomplete="off">
 <input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
@@ -752,7 +753,7 @@ async def vital_submit433(request: Request):
     )
 
 
-# Release 434: DEV-only single-vial dose logging behind a second opt-in gate.
+# Release 434: private single-vial dose logging behind a second opt-in gate.
 # Inventory accounting, all database reads, and inserts occur in the child.
 from .worker_dose_write434 import form_payload434, request_dose434
 
@@ -809,7 +810,7 @@ def dose_form434(request: Request):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Log Dose · Tracker DEV</title>
+<title>Log Dose · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:550px;margin:0 auto;padding:16px}}
@@ -822,7 +823,7 @@ button{{font-weight:700}}
 <body>
 <main>
 <h1>Log Dose</h1>
-<p>Private workspace {uid} · DEV pilot</p>
+<p>Private workspace {uid} · private workspace</p>
 <p><a href="/secondary/doses">Recent Doses</a></p>
 <form method="post" action="/secondary/doses/new" autocomplete="off">
 <input type="hidden" name="csrf_token" value="{escape(token, quote=True)}">
@@ -1045,7 +1046,7 @@ Bulk kits, reconstitution, editing, and deletion are not available here.</p>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Private Inventory · Tracker DEV</title>
+<title>Private Inventory · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:650px;margin:0 auto;padding:16px}}
@@ -1061,7 +1062,7 @@ button{{font-weight:700}}
 </head>
 <body><main>
 <h1>My Inventory</h1>
-<p>Private workspace {uid} · DEV preview</p>
+<p>Private workspace {uid} · private workspace</p>
 <p><a href="/secondary/supplies">My Supplies</a> ·
 <a href="/secondary/reconcile">Reconcile Vial Inventory</a></p>
 {reconstitution_link}
@@ -1172,7 +1173,7 @@ def private_reconstitution_form436(request: Request):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Reconstitution · Tracker DEV</title>
+<title>Reconstitution · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:540px;margin:0 auto;padding:16px}}
@@ -1183,7 +1184,7 @@ button{{font-weight:700}}
 </head>
 <body><main>
 <h1>Record Reconstitution</h1>
-<p>Private workspace {uid} · DEV-only pilot</p>
+<p>Private workspace {uid} · private workspace</p>
 <p><a href="/secondary/inventory">My Inventory</a></p>
 <form method="post" action="/secondary/reconstitution" autocomplete="off">
 <input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
@@ -1306,7 +1307,7 @@ def reconcile_page437(request: Request):
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Inventory Reconciliation · Tracker DEV</title>
+<title>Inventory Reconciliation · Tracker</title>
 <style>
 body{{font:16px system-ui,sans-serif;max-width:700px;margin:auto;padding:16px}}
 section{{border:1px solid #9995;border-radius:10px;padding:12px;margin:12px 0}}
@@ -1410,7 +1411,7 @@ rows="3" required></textarea></label>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Vial Reconciliation · Tracker DEV</title>
+<title>Vial Reconciliation · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:630px;margin:auto;padding:16px}}
@@ -1536,7 +1537,7 @@ inputmode="decimal" required></label>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>My Supplies · Tracker DEV</title>
+<title>My Supplies · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:570px;margin:auto;padding:16px}}
@@ -1547,7 +1548,7 @@ button{{font-weight:700}}
 li{{margin:12px 0;overflow-wrap:anywhere}}
 </style></head><body><main>
 <h1>My Supplies</h1>
-<p>Private workspace {uid} · DEV preview</p>
+<p>Private workspace {uid} · private workspace</p>
 <p><a href="/secondary/inventory">My Inventory</a></p>
 <p>Supply intake is separate from administration history.
 Use the explicit consumption form to link a supply to a recorded event.</p>
@@ -1651,7 +1652,7 @@ def secondary_supply_use_form439(request: Request):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Log Supply Use · Tracker DEV</title>
+<title>Log Supply Use · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:570px;margin:auto;padding:16px}}
@@ -1663,7 +1664,7 @@ button{{font-weight:700}}li{{margin:12px 0;overflow-wrap:anywhere}}
 </head>
 <body><main>
 <h1>Log Supply Use</h1>
-<p>Private workspace {uid} · DEV pilot</p>
+<p>Private workspace {uid} · private workspace</p>
 <p><a href="/secondary/supplies">My Supplies</a></p>
 <form action="/secondary/supplies/use" method="post" autocomplete="off">
 <input type="hidden" name="csrf_token" value="{escape(csrf, quote=True)}">
@@ -1768,7 +1769,7 @@ def secondary_readiness440(request: Request):
     capabilities_html = "".join(
         '<tr data-feature="' + key + '"><th scope="row">'
         + escape(title) + "</th><td>"
-        + ("Enabled (DEV)" if enabled else "Disabled")
+        + ("Enabled" if enabled else "Disabled")
         + "</td><td>"
         + (
             '<a href="' + escape(destination, quote=True)
@@ -1790,7 +1791,7 @@ def secondary_readiness440(request: Request):
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Workspace Readiness · Tracker DEV</title>
+<title>Workspace Readiness · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:650px;margin:auto;padding:16px}}
@@ -1799,7 +1800,7 @@ th,td{{border-bottom:1px solid #9995;padding:10px 6px;text-align:left}}
 .scroll{{overflow-x:auto}} p{{line-height:1.5}}
 </style></head><body><main>
 <h1>Workspace Readiness</h1>
-<p>DEV-only secondary workspace {uid} · Isolated data and login preview</p>
+<p>Private secondary workspace {uid} · Isolated data and login preview</p>
 <p><a href="/secondary/overview">Overview</a> ·
 <a href="/secondary/inventory">Inventory</a> ·
 <a href="/secondary/security">Session Security</a> ·
@@ -1815,7 +1816,7 @@ Only the enabled pilot operations below permit writes.</p>
 <tbody>{capabilities_html}</tbody>
 </table></div>
 <p>Operators can suspend all secondary gateway access by setting
-<code>TRACKER_SECONDARY_LOCKDOWN440=1</code> in the DEV service environment.
+<code>TRACKER_SECONDARY_LOCKDOWN440=1</code> in the Tracker service environment.
 Production remains unavailable.</p>
 <section><h2>Recovery Coverage</h2>
 <p>Recovery warning: the existing standard Tracker backup archives the
@@ -1823,7 +1824,7 @@ administrator database and uploads, but does not include staged secondary
 user databases or <code>tracker-auth.sqlite3</code>. Automatic secondary
 backup and restore coverage is not yet available; do not use the standard
 backup as evidence of recovery for secondary accounts.</p>
-<p>A separate DEV-only root-operated recovery command is available:
+<p>A separate private root-operated recovery command is available:
 <code>python scripts/tracker-secondary-backup442.py create</code>.
 It captures individually consistent SQLite snapshots and private uploads,
 then verifies an isolated restore without touching live records.
@@ -1875,7 +1876,7 @@ def secondary_security_page441(request: Request):
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Session Security · Tracker DEV</title>
+<title>Session Security · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px system-ui,sans-serif;max-width:550px;margin:auto;padding:16px}}
@@ -1886,7 +1887,7 @@ label{{display:block;font-weight:600}}
 p{{line-height:1.5}}
 </style></head><body><main>
 <h1>Session Security</h1>
-<p>Private workspace {uid} · DEV-only pilot</p>
+<p>Private workspace {uid} · private workspace</p>
 <p><a href="/secondary/overview">Overview</a> ·
 <a href="/secondary/readiness">Readiness</a></p>
 <section>
@@ -1957,7 +1958,7 @@ async def secondary_revoke_others441(request: Request):
     )
 
 
-# Release 451: password rotation for the current DEV-only secondary account.
+# Release 451: password rotation for the current private secondary account.
 # Preserve the emergency lockdown, administrator isolation and signed CSRF.
 from .secondary_password451 import change_secondary_password451
 
@@ -2285,7 +2286,7 @@ def secondary_food_form456(request: Request):
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Log Food &amp; Water · Tracker DEV</title>
+<title>Log Food &amp; Water · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px/1.5 system-ui,sans-serif;max-width:650px;
@@ -2372,7 +2373,7 @@ min-height:44px;padding:8px 0
 </style></head><body><main>
 <p><a href="/secondary/food">Back to Food Journal</a></p>
 <h1>Log Food &amp; Water</h1>
-<p class="note">Private workspace · DEV pilot</p>
+<p class="note">Private workspace · private workspace</p>
 <section><h2>Quick Log Saved Food</h2>
 <form method="post" action="/secondary/food/reuse">
 <input type="hidden" name="csrf_token"
@@ -3024,7 +3025,7 @@ def secondary_attachment471(
 
 
 # Release 472: current secondary session only.
-# Attachment upload is independently DEV-gated.
+# Attachment upload is independently feature-gated.
 from .secondary_files472 import (
     private_catalog472, render_catalog472,
     private_upload472, upload_enabled472,

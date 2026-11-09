@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
+from .instance_parity523 import interactive_parity523
 from .worker_probe428 import validate_environment
 from .worker_read429 import private_overview429
 
@@ -202,7 +203,7 @@ def create_vital_for_user433(uid, payload, data_root=None):
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
     from . import config
 
-    if config.instance_label() != "DEV" or os.getenv("TRACKER_SECONDARY_VITAL_WRITES433") != "1":
+    if not interactive_parity523() or os.getenv("TRACKER_SECONDARY_VITAL_WRITES433") != "1":
         raise PermissionError("Secondary vitals logging is disabled")
 
     uid = secondary_id(uid)

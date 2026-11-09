@@ -5,7 +5,7 @@ from html import escape
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from .. import session_auth385 as auth
+from .. import config, session_auth385 as auth
 from ..unified_login473 import (
     enabled473,
     authenticate_secondary473,
@@ -24,6 +24,7 @@ def build_login_html(destination, token, error=""):
         auth.safe_next(destination), quote=True
     )
     token = escape(token, quote=True)
+    identity = config.instance_label() or "LOCAL"
 
     warning = (
         '<p role="alert">Sign-in unsuccessful. '
@@ -39,7 +40,7 @@ def build_login_html(destination, token, error=""):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Sign In · Tracker DEV</title>
+<title>Sign In · Tracker {identity}</title>
 <style>
 :root {{color-scheme:light dark}}
 * {{box-sizing:border-box}}
@@ -64,7 +65,7 @@ background:#1265ad;color:white}}
 </head>
 <body>
 <main>
-<h1>Tracker DEV</h1>
+<h1>Tracker {identity}</h1>
 <p>Sign in to your personal workspace.</p>
 {warning}
 <form method="post" action="/login">

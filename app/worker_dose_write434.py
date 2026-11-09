@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+from .instance_parity523 import interactive_parity523
 import uuid
 from datetime import datetime, timedelta
 
@@ -292,7 +293,7 @@ def request_dose434(user_id, action, payload=None, data_root=None):
     from .worker_scope428 import SOURCE_ROOT, worker_environment428
 
     if (
-        config.instance_label() != "DEV"
+        not interactive_parity523()
         or os.getenv("TRACKER_SECONDARY_PREVIEW430") != "1"
         or os.getenv("TRACKER_SECONDARY_DOSE_WRITES434") != "1"
     ):

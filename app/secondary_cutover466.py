@@ -7,6 +7,7 @@ import json
 import sys
 from html import escape
 
+from .instance_parity523 import interactive_parity523
 from . import config, session_auth385 as auth
 from .secondary_account_readiness465 import (
     normalize_account465,
@@ -73,8 +74,8 @@ def validate_report466(report):
 
 def assess_cutover466():
     """Offline administrator audit; no user-selected arguments."""
-    if config.instance_label() != "DEV" or not auth.enabled():
-        raise PermissionError("DEV session mode required")
+    if not interactive_parity523() or not auth.enabled():
+        raise PermissionError("Session mode required")
 
     root = staging_environment()
     accounts = list_staged_accounts427()
@@ -151,7 +152,7 @@ def render_cutover466(account):
 <meta name="viewport"
 content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Cutover Readiness · Tracker DEV</title>
+<title>Cutover Readiness · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#f3f6fa;color:#182333;
@@ -182,7 +183,7 @@ li{{margin:8px 0}}
 <h2>Current Account</h2>
 <p>Signed in as <strong>{username}</strong>
 (account {uid}).</p>
-<p class="status">DEV pilot active;
+<p class="status">Private workspace active;
 normal application login not enabled.</p>
 <p>Private staged workspace: inactive.</p>
 <p class="note">The account remains isolated from
