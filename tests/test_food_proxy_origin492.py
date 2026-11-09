@@ -213,9 +213,12 @@ def test_missing_csrf_does_not_receive_proxy_exception(reverse_proxy_client, ori
 
 
 @pytest.mark.parametrize("origin", ("https://tracker.example", "null"))
-def test_all_other_routes_still_reject_proxy_mismatch(reverse_proxy_client, origin):
+def test_522_other_routes_accept_proxy_mismatch_only_with_signed_proof(
+    reverse_proxy_client, origin,
+):
+    """Release 522 supersedes Food-only bypass for signed browser writes."""
     client, token = reverse_proxy_client
-    response = client.post(
+    allow = client.post(
         "/compounds",
         headers={
             "Origin": origin,
@@ -225,4 +228,21 @@ def test_all_other_routes_still_reject_proxy_mismatch(reverse_proxy_client, orig
         data={},
         follow_redirects=False,
     )
-    assert response.status_code == 403
+    # Reached router's missing-name validation; no record created.
+    assert allow.status_code == 422
+    assert allow.headers["x-tracker-csrf-report"] == "valid"
+
+    for headers in (
+        {"Origin": origin, "Sec-Fetch-Site": "same-origin"},
+        {"Origin": origin, "Sec-Fetch-Site": "same-origin",
+         HEADER_NAME: "forged"},
+        {"Origin": origin, "Sec-Fetch-Site": "cross-site",
+         HEADER_NAME: token},
+        {"Origin": origin, "Sec-Fetch-Site": "same-site",
+         HEADER_NAME: token},
+    ):
+        denied = client.post(
+            "/compounds", headers=headers, data={},
+            follow_redirects=False,
+        )
+        assert denied.status_code == 403
