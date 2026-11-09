@@ -89,7 +89,13 @@ def labs_index(request: Request, db: Session = Depends(get_scoped_db390)):
         svg = charts.line_chart(
             [charts.Series(res.analyte, sr.points, fmt="{:.8f}")], width=420, plot_h=90,
             unit=f" {sr.unit}", band=sr.band, band_label="Range printed on the latest report")
+        recent = sorted(
+            items,
+            key=lambda it: (it[1].drawn_on, it[0].id),
+            reverse=True,
+        )[:3]
         cards.append({"key": key, "name": res.analyte, "res": res, "rep": rep, "n": len(items),
+                      "recent": recent,
                       "svg": svg, "skipped": sr.skipped, "unit": sr.unit,
                       "previous": previous_draw499(items, (res, rep)),
                       "status": labs.range_status(res.value, res.ref_low, res.ref_high)})

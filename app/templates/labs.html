@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Lab results{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/css/tracker-labs-overview.css?v=20261107-481">
+<link rel="stylesheet" href="/static/css/tracker-labs-overview.css?v=20261109-527">
 <script src="/static/js/tracker-labs-overview.js?v=20261108-497" defer></script>
 <h1>Lab results</h1>
 <p class="note">Enter results exactly as printed on your report, including the unit and the lab's own reference range if it shows one. The charts show your numbers over time with that printed range shaded. This page doesn't tell you what a result means.</p>
@@ -64,8 +64,16 @@
         <summary class="lab-analyte-summary">
           <span class="lab-analyte-name">{{ c.name }}</span>
           <span class="lab-analyte-latest">
-            <strong>{{ c.res.value|num }} {{ c.res.unit }}</strong>
-            <small>{{ c.rep.drawn_on|dt }}{% if c.res.ref_low is not none %} · printed range {{ c.res.ref_low|num }} to {{ c.res.ref_high|num }}{% if c.status %} · {{ c.status }} that range{% endif %}{% endif %}</small>
+            <span class="lab-recent-values" aria-label="Three most recent measurements">
+              {% for recent_res, recent_rep in c.recent %}
+              <span class="lab-recent-reading" data-recent-draw="{{ recent_rep.drawn_on.isoformat() }}">
+                <small>{{ recent_rep.drawn_on|dt }}</small>
+                <strong>{{ recent_res.value|num }}</strong>
+                <small>{{ recent_res.unit }}</small>
+              </span>
+              {% endfor %}
+            </span>
+            <small>Latest draw {{ c.rep.drawn_on|dt }}{% if c.res.ref_low is not none %} · printed range {{ c.res.ref_low|num }} to {{ c.res.ref_high|num }}{% if c.status %} · {{ c.status }} that range{% endif %}{% endif %}</small>
           </span>
         </summary>
         <div class="lab-analyte-expanded">

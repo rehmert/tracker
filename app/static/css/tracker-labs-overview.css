@@ -78,3 +78,40 @@
   max-width: 100%;
   height: auto;
 }
+
+/* Release 527: three recent measurements without expanding the chart. */
+#labs-trend-grid .lab-recent-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .45rem;
+  width: 100%;
+}
+#labs-trend-grid .lab-recent-reading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: .12rem;
+  padding: .38rem .55rem;
+  border: 1px solid var(--rule, #dce5ec);
+  border-radius: 8px;
+  background: var(--wash, transparent);
+  font-variant-numeric: tabular-nums;
+}
+#labs-trend-grid .lab-recent-reading strong {
+  font-size: 1.06rem;
+  line-height: 1.2;
+}
+#labs-trend-grid .lab-recent-reading small {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 420px) {
+  #labs-trend-grid .lab-recent-values {
+    gap: .25rem;
+  }
+  #labs-trend-grid .lab-recent-reading {
+    padding: .3rem .35rem;
+  }
+  #labs-trend-grid .lab-recent-reading strong {
+    font-size: .95rem;
+  }
+}

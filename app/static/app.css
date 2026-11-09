@@ -846,3 +846,35 @@ main .page-header .description {
     overflow-x: hidden;
   }
 }
+
+
+/* Release 527: reclaim unused desktop space at the top of routes.
+   Preserve the existing Compact preference and mobile navigation. */
+@media (min-width: 761px) {
+  :root:not([data-density="compact"])
+  #main-content > .workspace-toolbar {
+    margin-top: -.35rem;
+    margin-bottom: .55rem;
+    padding-top: .2rem;
+    padding-bottom: .45rem;
+  }
+
+  :root:not([data-density="compact"])
+  #main-content > .ux-breadcrumbs:not([hidden]) {
+    margin-top: 0;
+    margin-bottom: .35rem;
+  }
+
+  :root:not([data-density="compact"])
+  #main-content > h1 {
+    margin-top: .3rem;
+    margin-bottom: .4rem;
+    line-height: 1.2;
+  }
+
+  :root:not([data-density="compact"])
+  #main-content > h1 + .note {
+    margin-top: .25rem;
+    margin-bottom: .65rem;
+  }
+}

@@ -88,7 +88,7 @@ def test_latest_result_range_statuses_and_report_links(lab_overview_client):
         'id="labs-reports-table"',
         'id="labs-reports-sort"',
         'tracker-labs-overview.js?v=20261108-497',
-        'tracker-labs-overview.css?v=20261107-481',
+        'tracker-labs-overview.css?v=20261109-527',
         'data-lab-status="below"',
         'data-lab-status="above"',
         'data-lab-status="within"',
@@ -648,3 +648,57 @@ def test_501_history_csv_source_ids_notes_and_safe_filename(lab_overview_client)
 
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(LabResult)) == before
+
+
+def test_527_recent_three_results_newest_first(lab_overview_client):
+    client, engine = lab_overview_client
+    draws = [
+        (date(2026, 2, 1), 1.1),
+        (date(2026, 5, 1), 2.2),
+        (date(2026, 8, 1), 3.3),
+        (date(2026, 11, 1), 4.4),
+    ]
+    with Session(engine) as db:
+        for when, value in draws:
+            report = LabReport(drawn_on=when, lab_name="Test draw")
+            report.results = [
+                LabResult(analyte="TSH", value=value, unit="mIU/L")
+            ]
+            db.add(report)
+        db.commit()
+
+    response = client.get("/labs")
+    assert response.status_code == 200
+    markup = response.text
+    dates = [
+        "2026-11-01",
+        "2026-08-01",
+        "2026-05-01",
+    ]
+    positions = [
+        markup.index(f'data-recent-draw="{day}"')
+        for day in dates
+    ]
+    assert positions == sorted(positions)
+    assert 'data-recent-draw="2026-02-01"' not in markup
+    assert markup.count('class="lab-recent-reading"') == 3
+    for number in ("4.4", "3.3", "2.2"):
+        assert f"<strong>{number}</strong>" in markup
+
+    assert '<details class="lab-analyte-details">' in markup
+    assert '<summary class="lab-analyte-summary">' in markup
+    assert '<div class="lab-analyte-expanded">' in markup
+
+
+def test_527_recent_values_are_available_before_graph_expansion():
+    template = (
+        ROOT / "app/templates/labs.html"
+    ).read_text()
+    css = (
+        ROOT / "app/static/app.css"
+    ).read_text()
+    assert template.index("lab-recent-values") < template.index(
+        "lab-analyte-expanded"
+    )
+    assert "Release 527: reclaim unused desktop space" in css
+    assert ':root:not([data-density="compact"])' in css
