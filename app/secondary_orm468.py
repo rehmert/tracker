@@ -246,7 +246,7 @@ def render_summary468(report):
 <meta name="viewport"
 content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Private Data Summary · Tracker DEV</title>
+<title>Private Data Summary · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:#f3f6fa;color:#182333;
