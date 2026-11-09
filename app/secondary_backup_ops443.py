@@ -40,8 +40,12 @@ def backup_directory443(path=None, *, create=False):
     from . import config
     _dev443()
     root = _no_links(Path(config.DATA_DIR).absolute())
+    default = (
+        Path("/var/backups/tracker-secondary-prod")
+        if config.instance_label() == "PROD" else DEFAULT_BACKUP_DIR
+    )
     directory = _no_links(
-        Path(path if path is not None else DEFAULT_BACKUP_DIR).absolute()
+        Path(path if path is not None else default).absolute()
     )
     if directory == root or directory.is_relative_to(root):
         raise ValueError("Backup directory cannot be inside live data")
