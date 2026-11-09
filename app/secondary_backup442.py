@@ -116,7 +116,7 @@ def _copy_upload(source, destination):
     _no_links(source)
     destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-    with os.fdopen(os.open(source, flags), "rb")) as src:
+    with os.fdopen(os.open(source, flags), "rb") as src:
         before = os.fstat(src.fileno())
         if not stat.S_ISREG(before.st_mode):
             raise ValueError("Upload source is not a regular file")
