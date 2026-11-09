@@ -14,6 +14,7 @@ import sys
 import uuid
 from urllib.parse import quote
 
+from .instance_parity523 import interactive_parity523
 from .worker_probe428 import validate_environment
 from .worker_read429 import private_overview429
 from .worker_food452 import validate_day452
@@ -287,7 +288,7 @@ def request_saved457(uid, action, payload=None, data_root=None):
     )
 
     if (
-        config.instance_label() != "DEV"
+        not interactive_parity523()
         or os.getenv("TRACKER_SECONDARY_FOOD_WRITES456", "0") != "1"
     ):
         raise PermissionError("Private food logging disabled")
