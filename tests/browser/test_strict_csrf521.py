@@ -167,6 +167,16 @@ def test_521_htmx_preview_writes_include_signed_header(tab):
     _navigate(page, "/pages/new")
     editor = page.locator("#notes-body")
     assert editor.get_attribute("hx-post") == "/pages/preview"
+
+    # New notes open in Visual mode by default, so their Markdown textarea
+    # is intentionally hidden. Switch modes through the actual UI rather
+    # than forcing input into a hidden element (Playwright rejects that).
+    page.locator("#notes-source-mode").click()
+    expect(page.locator("#notes-source-mode")).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    expect(editor).to_be_visible()
+
     with page.expect_response(_post_response(page, "/pages/preview")) as pending:
         editor.fill("**Strict HTMX preview 521**")
     _verified(pending.value, status=200)
