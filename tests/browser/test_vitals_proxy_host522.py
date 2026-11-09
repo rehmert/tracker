@@ -1,7 +1,7 @@
 """Release 522: real HTTPS Vitals workflows through a Host-rewriting QA proxy.
 
-The disposable TLS proxy rewrites Host for Vitals mutations only, while
-retaining the browser's public Origin and Sec-Fetch-Site. This reproduces
+The disposable TLS proxy rewrites Host for Vitals, Labs, and COA mutations,
+while retaining the browser's public Origin and Sec-Fetch-Site. This reproduces
 the rejected production request that prior same-host browser tests missed.
 Never collect against an installed DEV/PROD service or real user database.
 """
@@ -88,6 +88,30 @@ def _verify(response, expected):
     assert response.headers.get("x-tracker-csrf-report") == "valid"
 
 
+def _fill_vitals_datetime522(form, stamp):
+    """Use Tracker's actual visible 24-hour controls, not its hidden field.
+
+    tracker-time24-371.js hides the original named datetime-local input,
+    replacing it with visible date and HH:MM controls. They synchronize the
+    hidden submitted value through input/change events.
+    """
+    date, clock = stamp.split("T", 1)
+    original = form.locator('input[name="measured_at"]')
+    assert original.count() == 1
+    expect(original).to_be_hidden()
+
+    date_input = form.locator("input.tracker-time24-date")
+    clock_input = form.locator("input.tracker-time24-clock")
+    expect(date_input).to_be_visible()
+    expect(clock_input).to_be_visible()
+    date_input.fill(date)
+    clock_input.fill(clock)
+
+    expect(date_input).to_have_value(date)
+    expect(clock_input).to_have_value(clock)
+    expect(original).to_have_value(stamp)
+
+
 def test_522_real_native_https_vitals_create_edit_and_htmx_delete(tab):
     page, errors, metadata = tab
     _go(page)
@@ -96,7 +120,7 @@ def test_522_real_native_https_vitals_create_edit_and_htmx_delete(tab):
     assert form.locator('input[name="csrf_token"]').count() == 1
 
     label = "QA Host Rewrite Vitals 522"
-    form.locator('input[name="measured_at"]').fill("2026-11-08T20:30")
+    _fill_vitals_datetime522(form, "2026-11-08T20:30")
     form.locator('input[name="weight"]').fill("180")
     form.locator('input[name="context"]').fill(label)
     with page.expect_response(
@@ -115,6 +139,7 @@ def test_522_real_native_https_vitals_create_edit_and_htmx_delete(tab):
     assert edit_link and re.match(r"^/vitals/[1-9][0-9]*/edit", edit_link)
     _go(page, edit_link)
     edit = page.locator('form[data-tracker-vitals-entry="edit"]')
+    _fill_vitals_datetime522(edit, "2026-11-08T20:31")
     edit.locator('input[name="context"]').fill("QA Host Rewrite Edited 522")
     with page.expect_response(
         lambda resp: resp.request.method == "POST"
