@@ -67,7 +67,7 @@ def test_account465_escaped_render_and_audit():
     assert "<script>" not in html
     assert "&lt;script&gt;" in html
     assert "Normal Tracker Login" in html
-    assert "Production Access" in html
+    assert "Private Workspace" in html
 
     result = audit_accounts465([
         record(2, "member-2"),
