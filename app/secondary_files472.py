@@ -142,7 +142,7 @@ accept=".pdf,.png,.jpg,.jpeg,.webp" required></label>
 <meta charset="utf-8"><meta name="viewport"
 content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>Private Documents · Tracker DEV</title>
+<title>Private Documents · Tracker</title>
 <style>
 *{{box-sizing:border-box}}
 body{{font:16px/1.5 system-ui,sans-serif;margin:0;
@@ -161,7 +161,7 @@ a{{color:#16558b}}
 <nav><a href="/secondary/overview">Workspace</a> ·
 <a href="/secondary/orm-summary">Summary</a></nav>
 <h1>Private Documents</h1>
-<p>Account {report["user_id"]} · DEV-only private storage</p>
+<p>Account {report["user_id"]} · isolated private storage</p>
 <section><h2>COAs and Lab Reports</h2>
 <ul>{entries}</ul></section>{form}
 <p>Downloads are verified against the stored SHA-256 digest.
