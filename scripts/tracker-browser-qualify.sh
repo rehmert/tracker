@@ -139,7 +139,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   PYTHONDONTWRITEBYTECODE=1 \
   "$PY" -B scripts/tracker-tls-proxy501.py \
   --listen-port "$HTTPS_PORT" --backend-port "$PORT" \
-  --qa-rewrite-vitals-host \
+  --qa-rewrite-browser-host \
   --cert "$ROOT/qa-cert.pem" --key "$ROOT/qa-private-key.pem" \
   >"$TLS_LOG" 2>&1 &
 TLS_PID=$!
