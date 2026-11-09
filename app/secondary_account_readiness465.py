@@ -138,7 +138,7 @@ def main():
     from .user_accounts427 import list_staged_accounts427
 
     if not interactive_parity523():
-        raise PermissionError("DEV only")
+        raise PermissionError("Private workspace access disabled")
 
     if os.getenv("TRACKER_SECONDARY_LOCKDOWN440") == "1":
         raise PermissionError("Secondary preview locked down")
