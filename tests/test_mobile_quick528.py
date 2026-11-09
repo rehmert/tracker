@@ -1,3 +1,4 @@
+import re
 """Release 528 mobile quick actions and write paths."""
 
 from pathlib import Path
@@ -216,3 +217,75 @@ def test_528_assets_have_no_sensitive_storage():
     assert "focusable" in javascript
     assert "env(safe-area-inset-bottom" in styles
     assert "@media (min-width: 761px)" in styles
+
+
+
+def test_528_hidden_quick_forms_do_not_duplicate_vitals_selector(client):
+    response = client.get("/vitals")
+
+    assert response.status_code == 200
+
+    html = response.text
+
+    # Existing native-HTTPS test expects the one real
+    # page-level vitals form, not hidden quick-add forms.
+    assert html.count(
+        'action="/vitals" method="post"'
+    ) <= 1
+
+    from html.parser import HTMLParser
+
+    class FormParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.forms = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "form":
+                self.forms.append(dict(attrs))
+
+    parser = FormParser()
+    parser.feed(html)
+
+    native = [
+        form for form in parser.forms
+        if form.get("action") == "/vitals"
+        and form.get("method") == "post"
+    ]
+
+    assert len(native) == 1
+
+    quick = [
+        form for form in parser.forms
+        if "data-quick528-form" in form
+    ]
+
+    assert len(quick) == 3
+
+    assert [
+        form.get("data-quick528-endpoint")
+        for form in quick
+    ] == [
+        "/vitals",
+        "/vitals",
+        "/food/water",
+    ]
+
+    assert all(
+        form.get("action") is None
+        for form in quick
+    )
+
+
+def test_528_quick_fetch_uses_explicit_existing_endpoints():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+
+    source = (
+        root / "app/static/js/tracker-mobile-quick528.js"
+    ).read_text()
+
+    assert "form.dataset.quick528Endpoint" in source
+    assert re.search(r"fetch\(\s*endpoint\s*,", source)
+    assert "form.action," not in source

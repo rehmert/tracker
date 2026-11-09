@@ -279,8 +279,19 @@
           message("Saving…");
 
           try {
+            const endpoint =
+              form.dataset.quick528Endpoint;
+
+            if (!endpoint ||
+                !endpoint.startsWith("/") ||
+                endpoint.startsWith("//")) {
+              throw new Error(
+                "Invalid mobile entry endpoint."
+              );
+            }
+
             const response = await fetch(
-              form.action,
+              endpoint,
               {
                 method: "POST",
                 body: new FormData(form),
