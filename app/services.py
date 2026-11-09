@@ -10,8 +10,8 @@ from uuid import uuid4
 
 from fastapi import UploadFile
 from fastapi.responses import RedirectResponse
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.orm import Session, joinedload
 
 from . import calc, charts, config, units as U
 from .upload_coordination325 import upload_guard, async_upload_guard
@@ -215,21 +215,56 @@ def events_between(db: Session, start: datetime, end: datetime) -> list[charts.E
         events.append(charts.Event(d.taken_at, "dose",
                                    f"{name}: {d.entered_value:g} {d.entered_unit}", name))
 
-    use = {vid: (first, last) for vid, first, last in db.execute(
-        select(DoseLog.vial_id, func.min(DoseLog.taken_at), func.max(DoseLog.taken_at))
-        .where(DoseLog.kind == "dose").group_by(DoseLog.vial_id)).all()}
-    for v in db.scalars(select(Vial)):
+    # Keep the lifetime first/last dose aggregation in SQLite and select
+    # only vials that can actually emit an in-range marker. Previously every
+    # vial, purchase and lab report was loaded and discarded in Python.
+    use = (
+        select(
+            DoseLog.vial_id.label("vial_id"),
+            func.min(DoseLog.taken_at).label("first_at"),
+            func.max(DoseLog.taken_at).label("last_at"),
+        )
+        .where(DoseLog.kind == "dose")
+        .group_by(DoseLog.vial_id)
+        .subquery()
+    )
+    vial_query = (
+        select(Vial, use.c.first_at, use.c.last_at)
+        .outerjoin(use, use.c.vial_id == Vial.id)
+        .options(joinedload(Vial.compound))
+        .where(or_(
+            Vial.reconstituted_on.between(start.date(), end.date()),
+            use.c.first_at.between(start, end),
+            and_(
+                Vial.status.in_(("finished", "discarded")),
+                use.c.last_at.between(start, end),
+            ),
+        ))
+        .order_by(Vial.id)
+    )
+    for v, first, last in db.execute(vial_query):
         name = f"{v.compound.name} {v.label or '#' + str(v.id)}"
         if v.reconstituted_on:
             events.append(charts.Event(_noon(v.reconstituted_on), "marker", name, mark="R"))
-        if v.id in use:
-            first, last = use[v.id]
+        if first is not None:
             events.append(charts.Event(first, "marker", name, mark="S"))
             if v.status in ("finished", "discarded"):
                 events.append(charts.Event(last, "marker", name, mark="F"))
-    for p in db.scalars(select(Purchase)):
+
+    purchase_query = (
+        select(Purchase)
+        .where(Purchase.purchased_on.between(start.date(), end.date()))
+        .order_by(Purchase.id)
+    )
+    for p in db.scalars(purchase_query):
         events.append(charts.Event(_noon(p.purchased_on), "marker", f"Purchase from {p.vendor}", mark="P"))
-    for r in db.scalars(select(LabReport)):
+
+    lab_query = (
+        select(LabReport)
+        .where(LabReport.drawn_on.between(start.date(), end.date()))
+        .order_by(LabReport.id)
+    )
+    for r in db.scalars(lab_query):
         events.append(charts.Event(_noon(r.drawn_on), "marker",
                                    f"Lab draw{': ' + r.lab_name if r.lab_name else ''}", mark="L"))
     return [e for e in events if start <= e.at <= end]
