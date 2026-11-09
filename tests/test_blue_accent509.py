@@ -52,7 +52,7 @@ def test_509_blue_primary_theme_drives_navigation_and_mobile_capture():
 
 def test_509_mobile_html_busts_cached_green_stylesheet():
     html = BASE.read_text()
-    assert '/static/app.css?v=509-blue-accent' in html
+    assert '/static/app.css?v=527-density' in html
     assert 'app.css?v=sidebar-scroll-20261031' not in html
     assert 'href="/static/tracker-dev.webmanifest' in html or (
         "/static/tracker-dev.webmanifest" in html
