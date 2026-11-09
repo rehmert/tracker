@@ -11,9 +11,10 @@ Base: Release 514 `0b7cc0960d0b7fbff92c0f38d9db76c01a4cdfd3`.
   back to 12 weeks instead of entering persisted numeric/forecast state.
 - **Secondary Food weekly HTML:** require exactly seven correctly attributed
   reports, consistent with the already-guarded weekly CSV route.
-- **COA ORM:** eliminate shadowed, duplicate `linked_coas`, `linked_vials`,
-  `all_coas`, and `all_vials` declarations while retaining the existing
-  mapped relationships and deduplicating view semantics.
+- **COA ORM:** preserve existing COA relationship behavior and verify it in
+  regression tests. The identified duplicate declarations remain unchanged
+  because this guarded installer blocks all changes to `app/models.py`.
+  That cleanup requires a separately reviewed schema/model release.
 
 No schema, dependency, service, or authentication configuration changes.
 
