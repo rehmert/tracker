@@ -3,8 +3,6 @@
 Tests use only TestClient requests, temporary signing keys, and in-memory
 uploads; no real user data, live file stores or public HTTP calls.
 """
-from io import BytesIO
-
 import pytest
 from fastapi import Depends, FastAPI, File, UploadFile
 from fastapi.testclient import TestClient
@@ -74,6 +72,29 @@ def test_520_strict_invalid_multipart_form_field_denied(strict_client520, bad):
     _token520(client)
     response = _multipart_compound520(client, data={"csrf_token": bad})
     assert response.status_code == 403
+
+
+def test_520_strict_signed_field_requires_matching_cookie(strict_client520):
+    client = strict_client520
+    token = _token520(client)
+    client.cookies.delete(COOKIE_NAME)
+    response = _multipart_compound520(client, data={"csrf_token": token})
+    assert response.status_code == 403
+
+
+def test_520_strict_signing_key_unavailable_fails_closed(
+    strict_client520, monkeypatch,
+):
+    client = strict_client520
+    token = _token520(client)
+
+    def missing_key():
+        raise ValueError("simulated missing key; must not be exposed")
+
+    monkeypatch.setattr("app.csrf_enforcement520.load_key", missing_key)
+    response = _multipart_compound520(client, data={"csrf_token": token})
+    assert response.status_code == 503
+    assert "simulated missing key" not in response.text
 
 
 def test_520_strict_duplicate_form_tokens_denied(strict_client520):
