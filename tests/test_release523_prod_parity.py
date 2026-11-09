@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 
 from app import config, session_auth385 as auth
 from app.instance_parity523 import interactive_parity523
+from app.main import tracker_response_protection
 from app.security import require_auth
 from app.routers import session_login385, account_security386
 from app.secondary_preview430 import (
@@ -48,6 +49,7 @@ def prod_environment523(monkeypatch, tmp_path):
     (tmp_path / auth.PROD_FLAG523).write_text("enabled")
 
     host = FastAPI(dependencies=[Depends(require_auth)])
+    host.middleware("http")(tracker_response_protection)
     host.include_router(session_login385.router)
     host.include_router(account_security386.router)
     host.mount("/secondary", preview_app)
