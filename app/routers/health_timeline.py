@@ -173,6 +173,20 @@ def timeline(
     page_size: int = 50,
     db: Session = Depends(get_scoped_db390),
 ):
+    # The common, unsearched view uses bounded SQL index pages and
+    # grouped SQL counts. Free-text search and full CSV export retain
+    # the existing Python renderer for exact search semantics.
+    if not q.strip():
+        from ..timeline_paged519 import paged_timeline_context
+
+        context = paged_timeline_context(
+            db, days=days, event_type=event_type,
+            start_date=start_date, end_date=end_date,
+            page=page, page_size=page_size,
+            ranges=RANGES, event_types=EVENT_TYPES,
+        )
+        return render(request, "health_timeline.html", **context)
+
     context = _timeline_context(
         db, days=days, event_type=event_type, q=q,
         start_date=start_date, end_date=end_date,
