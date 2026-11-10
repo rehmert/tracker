@@ -1442,9 +1442,38 @@ def test_barcode460_input_gate_and_prod(browser, monkeypatch):
     monkeypatch.setattr(
         config, "instance_label", lambda: "PROD"
     )
-    assert client.get(
+
+    # Exercise the PROD gate without relying on an external
+    # Open Food Facts request, which may fail independently
+    # of Tracker.
+    import app.secondary_preview430 as preview_module
+
+    calls = []
+
+    def fake_lookup(value):
+        calls.append(value)
+        return {
+            "barcode": value,
+            "name": "Test Barcode Product",
+            "basis": "per serving",
+            "serving": "100 g",
+            "nutrients": {},
+            "source": "Open Food Facts",
+            "warning": "Review product label",
+        }
+
+    monkeypatch.setattr(
+        preview_module, "lookup_barcode460", fake_lookup
+    )
+
+    result = client.get(
         "/secondary/food/barcode?code=" + code
-    ).status_code == 200
+    )
+
+    assert result.status_code == 200
+    assert result.json()["barcode"] == code
+    assert result.json()["name"] == "Test Barcode Product"
+    assert calls == [code]
 
 
 # Release 461: optional browser camera scanning.
