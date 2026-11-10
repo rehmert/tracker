@@ -16,16 +16,36 @@ PY="$2"
 # or read application credentials/configuration.
 VENDOR_SRC="/opt/tracker/app/static/vendor/htmx.min.js"
 VENDOR_DST="$SOURCE/app/static/vendor/htmx.min.js"
-[[ -f "$VENDOR_SRC" && ! -L "$VENDOR_SRC" && ! -e "$VENDOR_DST" ]] || {
-  echo "ERROR: Clean installed HTMX vendor asset required for isolated browser QA" >&2
+[[ -f "$VENDOR_SRC" && ! -L "$VENDOR_SRC" ]] || {
+  echo "ERROR: Trusted installed HTMX asset unavailable" >&2
   exit 2
 }
-mkdir -p "$(dirname "$VENDOR_DST")"
-install -m 0644 "$VENDOR_SRC" "$VENDOR_DST"
-cmp -s "$VENDOR_SRC" "$VENDOR_DST" || {
-  echo "ERROR: Copied isolated HTMX asset differs from installed source" >&2
-  exit 2
-}
+
+if [[ -e "$VENDOR_DST" || -L "$VENDOR_DST" ]]; then
+  [[ -f "$VENDOR_DST" && ! -L "$VENDOR_DST" ]] || {
+    echo "ERROR: Existing candidate HTMX asset is not a regular file" >&2
+    exit 2
+  }
+
+  cmp -s "$VENDOR_SRC" "$VENDOR_DST" || {
+    echo "ERROR: Existing candidate HTMX asset differs from trusted source" >&2
+    exit 2
+  }
+
+  echo "ISOLATED_HTMX_VENDOR=REUSED_VERIFIED"
+else
+  mkdir -p "$(dirname "$VENDOR_DST")"
+
+  install -m 0644 "$VENDOR_SRC" "$VENDOR_DST"
+
+  cmp -s "$VENDOR_SRC" "$VENDOR_DST" || {
+    echo "ERROR: Copied isolated HTMX asset differs from trusted source" >&2
+    exit 2
+  }
+
+  echo "ISOLATED_HTMX_VENDOR=COPIED_VERIFIED"
+fi
+
 echo "ISOLATED_HTMX_VENDOR=VERIFIED"
 ROOT="$(mktemp -d /tmp/tracker-browser-qa.XXXXXXXX)"
 DATA="$ROOT/data"
