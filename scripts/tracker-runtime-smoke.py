@@ -242,15 +242,18 @@ class SmokeAuthenticationRejected(SmokeRequestError):
     """An authenticated request was explicitly rejected."""
 
 
+MAX_RESPONSE_BYTES = 3 * 1024 * 1024
+
+
 def fetch_page(opener, origin, path, headers, timeout=6):
-    """Return successful page bytes or preserve the failure category."""
+    """Return complete page bytes or preserve the failure category."""
     request = urllib.request.Request(
         origin + path, headers=headers,
     )
     try:
         with opener.open(request, timeout=timeout) as response:
             status = response.status
-            body = response.read(3 * 1024 * 1024)
+            body = response.read(MAX_RESPONSE_BYTES + 1)
     except urllib.error.HTTPError as error:
         status = error.code
         destination = error.headers.get("Location", "")
@@ -298,6 +301,11 @@ def fetch_page(opener, origin, path, headers, timeout=6):
 
     if status != 200:
         raise SmokeRequestError(f"HTTP {status}")
+
+    if len(body) > MAX_RESPONSE_BYTES:
+        raise SmokeRequestError(
+            "HTTP 200 with response exceeding size limit"
+        )
 
     return body
 
