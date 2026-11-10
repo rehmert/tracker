@@ -1,0 +1,20 @@
+/*
+ * Release 531 — refined page-title typography.
+ * All density modes. No changes to H2/H3, body text,
+ * controls, or existing vertical-spacing rules.
+ */
+
+/* Standard application page titles */
+#main-content h1 {
+  font-size: clamp(1.5rem, 2.15vw, 1.85rem);
+}
+
+/* Dashboard uses a larger but more restrained hero title */
+#main-content .dashboard-hero h1 {
+  font-size: clamp(1.75rem, 2.65vw, 2.2rem);
+}
+
+/* Mobile Today has its own independent title styling */
+#main-content .tracker-daily-hero h1 {
+  font-size: clamp(1.55rem, 4.4vw, 1.95rem);
+}
