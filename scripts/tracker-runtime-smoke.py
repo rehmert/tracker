@@ -69,6 +69,40 @@ def port_from_service():
     return int(match.group(1)) if match else 8000
 
 
+def service_working_directory():
+    """Resolve relative data paths against systemd's working directory."""
+    result = subprocess.run(
+        ["systemctl", "show", "tracker",
+         "-p", "WorkingDirectory", "--value"],
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    value = result.stdout.strip()
+
+    if not value:
+        raise ValueError(
+            "Tracker systemd WorkingDirectory is unset"
+        )
+
+    directory = Path(value)
+
+    if not directory.is_absolute():
+        raise ValueError(
+            "Tracker systemd WorkingDirectory is not absolute"
+        )
+
+    directory = directory.resolve()
+
+    if not directory.is_dir():
+        raise ValueError(
+            "Tracker systemd WorkingDirectory does not exist"
+        )
+
+    return directory
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
         return None
@@ -87,10 +121,19 @@ def _release_auth_headers_unmanaged(instance, settings):
     }
 
     if instance in ("DEV", "PROD"):
-        directory = Path(
+        raw_directory = (
             settings.get("TRACKER_DATA_DIR")
-            or "/opt/tracker/data"
-        ).resolve()
+            or str(Path(__file__).resolve().parents[1] / "data")
+        )
+
+        directory = Path(raw_directory).expanduser()
+
+        if not directory.is_absolute():
+            directory = (
+                service_working_directory() / directory
+            )
+
+        directory = directory.resolve()
 
         flag = directory / ".tracker-session-auth-dev"
 
