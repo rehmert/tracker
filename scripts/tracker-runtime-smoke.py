@@ -17,23 +17,30 @@ import urllib.request
 
 
 class Links(HTMLParser):
+    """Collect sidebar links without losing nested navigation."""
+
     def __init__(self):
         super().__init__()
-        self.in_sidebar = False
+        self.sidebar_depth = 0
         self.paths = []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
-        if tag == "nav" and attrs.get("id") == "app-sidebar":
-            self.in_sidebar = True
-        if self.in_sidebar and tag == "a":
-            url = attrs.get("href", "")
+
+        if tag == "nav":
+            if self.sidebar_depth:
+                self.sidebar_depth += 1
+            elif attrs.get("id") == "app-sidebar":
+                self.sidebar_depth = 1
+
+        if self.sidebar_depth and tag == "a":
+            url = attrs.get("href") or ""
             if url.startswith("/") and not url.startswith("//"):
                 self.paths.append(url.split("?", 1)[0])
 
     def handle_endtag(self, tag):
-        if tag == "nav" and self.in_sidebar:
-            self.in_sidebar = False
+        if tag == "nav" and self.sidebar_depth:
+            self.sidebar_depth -= 1
 
 
 def read_env(path):
