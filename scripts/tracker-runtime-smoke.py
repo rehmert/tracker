@@ -112,8 +112,8 @@ def _release_auth_headers_unmanaged(instance, settings):
 
             token, _ = auth.create_session(False)
 
-            # Shorten this diagnostic session to two minutes.
-            # The finally block also revokes it immediately.
+            # Allow a bounded ten-minute diagnostic window, including
+            # readiness and sidebar checks. Always revoke on exit.
             import hashlib
 
             hashed = hashlib.sha256(
@@ -125,7 +125,7 @@ def _release_auth_headers_unmanaged(instance, settings):
                     UPDATE sessions
                     SET expires_at=?
                     WHERE token_hash=? AND user_id=1
-                """, (int(time.time()) + 120, hashed))
+                """, (int(time.time()) + 600, hashed))
 
             headers["Cookie"] = (
                 auth.COOKIE + "=" + token
@@ -176,60 +176,185 @@ def release_auth_headers(instance, settings):
                 os.environ[name] = value
 
 
+
+
+class SmokeRequestError(ValueError):
+    """HTTP failure or transport failure without leaking credentials."""
+
+
+def fetch_page(opener, origin, path, headers, timeout=6):
+    """Return successful page bytes or preserve the failure category."""
+    request = urllib.request.Request(
+        origin + path, headers=headers,
+    )
+    try:
+        with opener.open(request, timeout=timeout) as response:
+            status = response.status
+            body = response.read(3 * 1024 * 1024)
+    except urllib.error.HTTPError as error:
+        status = error.code
+        error.close()
+        raise SmokeRequestError(
+            f"HTTP {status}"
+        ) from None
+    except urllib.error.URLError as error:
+        reason = error.reason
+        raise SmokeRequestError(
+            "TRANSPORT "
+            + type(reason).__name__
+            + ": "
+            + str(reason)[:100]
+        ) from None
+    except (OSError, TimeoutError) as error:
+        raise SmokeRequestError(
+            "TRANSPORT "
+            + type(error).__name__
+            + ": "
+            + str(error)[:100]
+        ) from None
+
+    if status != 200:
+        raise SmokeRequestError(f"HTTP {status}")
+
+    return body
+
+
+def wait_for_authenticated_readiness(opener, origin, headers):
+    """Require both health and authenticated dashboard before traversal."""
+    deadline = time.monotonic() + 45
+    last_failure = "not attempted"
+    attempts = 0
+
+    while True:
+        attempts += 1
+        try:
+            health = fetch_page(
+                opener, origin, "/healthz", headers,
+            )
+            if b'"ok":true' not in health.replace(b" ", b""):
+                raise SmokeRequestError(
+                    "HTTP 200 with invalid health content"
+                )
+
+            dashboard = fetch_page(
+                opener, origin, "/", headers,
+            )
+            if b"<title>" not in dashboard:
+                raise SmokeRequestError(
+                    "HTTP 200 with invalid dashboard content"
+                )
+
+            print(
+                f"READINESS=PASS attempts={attempts}",
+                flush=True,
+            )
+            return dashboard
+
+        except SmokeRequestError as error:
+            last_failure = str(error)
+
+        if time.monotonic() >= deadline:
+            raise ValueError(
+                "Authenticated readiness failed after "
+                f"{attempts} attempts: {last_failure}"
+            )
+
+        time.sleep(1)
+
+
 def run(instance, envfile):
     settings = read_env(envfile)
+
     if settings.get("TRACKER_INSTANCE", "").upper() != instance:
         raise ValueError("Instance mismatch")
+
     with release_auth_headers(instance, settings) as headers:
         opener = urllib.request.build_opener(
             urllib.request.ProxyHandler({}), NoRedirect()
         )
         origin = f"http://127.0.0.1:{port_from_service()}"
 
-        def get(path, startup=False):
-            deadline = time.monotonic() + (30 if startup else 0)
-            while True:
-                status = 0
-                try:
-                    request = urllib.request.Request(origin + path, headers=headers)
-                    with opener.open(request, timeout=6) as result:
-                        status = result.status
-                        body = result.read(3 * 1024 * 1024)
-                    if status == 200:
-                        return body
-                except urllib.error.HTTPError as error:
-                    status = error.code
-                except OSError:
-                    pass
-                if time.monotonic() >= deadline:
-                    raise ValueError(f"{path}: HTTP {status}")
-                time.sleep(1)
+        dashboard = wait_for_authenticated_readiness(
+            opener, origin, headers
+        )
 
-        health = get("/healthz", startup=True)
-        if b'"ok":true' not in health.replace(b" ", b""):
-            raise ValueError("Health check content invalid")
-        dashboard = get("/")
         parser = Links()
-        parser.feed(dashboard.decode("utf-8", errors="replace"))
+        parser.feed(
+            dashboard.decode("utf-8", errors="replace")
+        )
+
         paths = list(dict.fromkeys(parser.paths))
+
         if len(paths) < 35:
-            raise ValueError(f"Sidebar unexpectedly contains {len(paths)} paths")
+            raise ValueError(
+                f"Sidebar unexpectedly contains {len(paths)} paths"
+            )
+
         failures = []
-        for path in paths:
+        started = time.monotonic()
+
+        print(f"SIDEBAR_ENDPOINTS={len(paths)}", flush=True)
+
+        for number, path in enumerate(paths, 1):
+            before = time.monotonic()
+
             try:
-                body = dashboard if path == "/" else get(path)
-                if b"<title>" not in body or (
-                    f"tracker-instance--{instance.lower()}".encode() not in body
+                body = (
+                    dashboard if path == "/"
+                    else fetch_page(
+                        opener, origin, path, headers
+                    )
+                )
+
+                if (
+                    b"<title>" not in body
+                    or (
+                        f"tracker-instance--{instance.lower()}"
+                    ).encode() not in body
                 ):
-                    failures.append(f"{path}: missing title/instance badge")
-            except (OSError, ValueError) as error:
-                failures.append(f"{path}: {str(error)[:120]}")
+                    raise SmokeRequestError(
+                        "HTTP 200 with missing title/instance badge"
+                    )
+
+                elapsed = time.monotonic() - before
+
+                print(
+                    f"{number:02d}/{len(paths):02d} "
+                    f"PASS {path}: HTTP 200 ({elapsed:.2f}s)",
+                    flush=True,
+                )
+
+            except SmokeRequestError as error:
+                elapsed = time.monotonic() - before
+                reason = str(error)
+
+                failures.append((path, reason))
+
+                print(
+                    f"{number:02d}/{len(paths):02d} "
+                    f"FAIL {path}: {reason} ({elapsed:.2f}s)",
+                    flush=True,
+                )
+
+        duration = time.monotonic() - started
+
+        print(f"SIDEBAR_FAILURES={len(failures)}")
+        print(f"SIDEBAR_ELAPSED_SECONDS={duration:.1f}")
+
         if failures:
+            details = "; ".join(
+                f"{path}: {reason}"
+                for path, reason in failures[:12]
+            )
             raise ValueError(
                 f"{len(failures)}/{len(paths)} pages failed: "
-                + "; ".join(failures[:12])
+                + details
             )
-        print(f"PASS: /healthz and {len(paths)} sidebar pages HTTP 200; {instance} identity")
+
+        print(
+            f"PASS: /healthz and {len(paths)} sidebar pages "
+            f"HTTP 200; {instance} identity"
+        )
 
 
 def main() -> int:
