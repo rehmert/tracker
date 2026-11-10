@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture
-def alert_client():
+def alert_client(monkeypatch):
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False},
         poolclass=StaticPool,
@@ -27,12 +27,11 @@ def alert_client():
         with Session(engine) as session:
             yield session
 
-    app.dependency_overrides[get_db] = override
+    monkeypatch.setitem(app.dependency_overrides, get_db, override)
     try:
         with TestClient(app) as client:
             yield client, engine
     finally:
-        app.dependency_overrides.pop(get_db, None)
         engine.dispose()
 
 

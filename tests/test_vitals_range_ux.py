@@ -15,7 +15,7 @@ from app.models import VitalReading
 
 
 @pytest.fixture
-def vitals_client():
+def vitals_client(monkeypatch):
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False},
         poolclass=StaticPool,
@@ -26,7 +26,7 @@ def vitals_client():
         with Session(engine) as db:
             yield db
 
-    app.dependency_overrides[get_db] = override_db
+    monkeypatch.setitem(app.dependency_overrides, get_db, override_db)
     try:
         now = datetime.now()
         old = now - timedelta(days=365 * 12)
@@ -42,7 +42,6 @@ def vitals_client():
         with TestClient(app) as client:
             yield client, engine
     finally:
-        app.dependency_overrides.pop(get_db, None)
         engine.dispose()
 
 

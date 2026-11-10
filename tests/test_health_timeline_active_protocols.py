@@ -17,7 +17,7 @@ from app.models import Compound, DoseLog, LabReport, Protocol, Vial, VitalReadin
 
 
 @pytest.fixture
-def timeline_client():
+def timeline_client(monkeypatch):
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -29,12 +29,11 @@ def timeline_client():
         with Session(engine) as db:
             yield db
 
-    app.dependency_overrides[get_db] = isolated_db
+    monkeypatch.setitem(app.dependency_overrides, get_db, isolated_db)
     try:
         with TestClient(app) as client:
             yield client, engine
     finally:
-        app.dependency_overrides.pop(get_db, None)
         engine.dispose()
 
 
@@ -43,9 +42,10 @@ def test_timeline_only_includes_active_protocols_and_retains_records(
     timeline_client, days
 ):
     client, engine = timeline_client
-    start = date.today() - timedelta(days=8)
-    end = date.today() - timedelta(days=2)
-    measured = datetime.combine(date.today() - timedelta(days=1), datetime.min.time())
+    today = date.today()
+    start = today - timedelta(days=8)
+    end = today - timedelta(days=2)
+    measured = datetime.combine(today - timedelta(days=1), datetime.min.time())
 
     with Session(engine) as db:
         active = Protocol(
