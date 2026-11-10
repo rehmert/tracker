@@ -352,6 +352,30 @@ def wait_for_authenticated_readiness(opener, origin, headers):
         time.sleep(1)
 
 
+
+MIN_SIDEBAR_ENDPOINTS = 52
+
+
+def validate_sidebar_coverage(paths):
+    """Reject incomplete sidebar discovery before HTTP traversal."""
+    unique_count = len(set(paths))
+
+    if unique_count < MIN_SIDEBAR_ENDPOINTS:
+        raise ValueError(
+            "Sidebar coverage below required minimum: "
+            f"{unique_count}/{MIN_SIDEBAR_ENDPOINTS} "
+            "unique destinations"
+        )
+
+    print(
+        f"SIDEBAR_COVERAGE=PASS "
+        f"unique={unique_count} "
+        f"minimum={MIN_SIDEBAR_ENDPOINTS}",
+        flush=True,
+    )
+
+
+
 def run(instance, envfile):
     settings = read_env(envfile)
 
@@ -375,10 +399,7 @@ def run(instance, envfile):
 
         paths = list(dict.fromkeys(parser.paths))
 
-        if len(paths) < 35:
-            raise ValueError(
-                f"Sidebar unexpectedly contains {len(paths)} paths"
-            )
+        validate_sidebar_coverage(paths)
 
         failures = []
         started = time.monotonic()
