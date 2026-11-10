@@ -36,8 +36,24 @@ class Links(HTMLParser):
 
         if self.sidebar_depth and tag == "a":
             url = attrs.get("href") or ""
-            if url.startswith("/") and not url.startswith("//"):
-                self.paths.append(url.split("?", 1)[0])
+
+            # Only local absolute paths represent sidebar pages.
+            # Fragments and queries do not identify distinct pages.
+            if not url.startswith("/") or url.startswith("//"):
+                return
+
+            try:
+                parsed = urllib.parse.urlsplit(url)
+            except ValueError:
+                return
+
+            if (
+                not parsed.scheme
+                and not parsed.netloc
+                and parsed.path.startswith("/")
+                and not parsed.path.startswith("//")
+            ):
+                self.paths.append(parsed.path)
 
     def handle_endtag(self, tag):
         if tag == "nav" and self.sidebar_depth:
