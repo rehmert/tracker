@@ -272,19 +272,20 @@ def fetch_page(opener, origin, path, headers, timeout=6):
             f"HTTP {status}"
         ) from None
     except urllib.error.URLError as error:
+        # Exception messages can include credentials, URLs,
+        # or internal hostnames. Report only the error type.
         reason = error.reason
+        category = (
+            type(reason).__name__
+            if isinstance(reason, BaseException)
+            else "URLError"
+        )
         raise SmokeRequestError(
-            "TRANSPORT "
-            + type(reason).__name__
-            + ": "
-            + str(reason)[:100]
+            "TRANSPORT " + category
         ) from None
     except (OSError, TimeoutError) as error:
         raise SmokeRequestError(
-            "TRANSPORT "
-            + type(error).__name__
-            + ": "
-            + str(error)[:100]
+            "TRANSPORT " + type(error).__name__
         ) from None
 
     if status != 200:
