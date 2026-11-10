@@ -2,6 +2,7 @@
 """Authenticated, read-only live HTTP smoke of Tracker sidebar destinations."""
 import argparse
 import base64
+import json
 import os
 import sys
 from contextlib import contextmanager
@@ -301,6 +302,21 @@ def fetch_page(opener, origin, path, headers, timeout=6):
     return body
 
 
+def validate_health_response(body):
+    """Require a top-level JSON health status of boolean true."""
+    try:
+        payload = json.loads(body)
+    except (ValueError, UnicodeDecodeError):
+        raise SmokeRequestError(
+            "HTTP 200 with invalid health JSON"
+        ) from None
+
+    if not isinstance(payload, dict) or payload.get("ok") is not True:
+        raise SmokeRequestError(
+            "HTTP 200 with invalid health status"
+        )
+
+
 def wait_for_authenticated_readiness(opener, origin, headers):
     """Require both health and authenticated dashboard before traversal."""
     deadline = time.monotonic() + 45
@@ -313,10 +329,7 @@ def wait_for_authenticated_readiness(opener, origin, headers):
             health = fetch_page(
                 opener, origin, "/healthz", headers,
             )
-            if b'"ok":true' not in health.replace(b" ", b""):
-                raise SmokeRequestError(
-                    "HTTP 200 with invalid health content"
-                )
+            validate_health_response(health)
 
             dashboard = fetch_page(
                 opener, origin, "/", headers,
