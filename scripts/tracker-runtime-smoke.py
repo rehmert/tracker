@@ -480,6 +480,14 @@ def run(instance, envfile):
                     flush=True,
                 )
 
+            except (
+                SmokeAuthenticationRedirect,
+                SmokeAuthenticationRejected,
+            ) as error:
+                raise ValueError(
+                    "Authenticated sidebar rejected: "
+                    + str(error)
+                ) from None
             except SmokeRequestError as error:
                 elapsed = time.monotonic() - before
                 reason = str(error)
