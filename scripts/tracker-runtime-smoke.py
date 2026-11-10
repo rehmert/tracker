@@ -76,7 +76,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 @contextmanager
-def release_auth_headers(instance, settings):
+def _release_auth_headers_unmanaged(instance, settings):
     """Use a revocable session for local DEV and PROD verification.
 
     The release process invokes this script as root. No HTTP
@@ -155,6 +155,26 @@ def release_auth_headers(instance, settings):
         )
 
     yield headers
+
+
+@contextmanager
+def release_auth_headers(instance, settings):
+    """Restore diagnostic environment after success or failure."""
+    names = ("TRACKER_INSTANCE", "TRACKER_DATA_DIR")
+    previous = {name: os.environ.get(name) for name in names}
+
+    try:
+        with _release_auth_headers_unmanaged(
+            instance, settings
+        ) as headers:
+            yield headers
+    finally:
+        for name, value in previous.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
 
 def run(instance, envfile):
     settings = read_env(envfile)

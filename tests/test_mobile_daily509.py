@@ -4,7 +4,7 @@ The standard tests/conftest.py creates a separate disposable SQLite database.
 """
 from binascii import crc32
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import struct
 import zlib
@@ -116,14 +116,23 @@ def test_509_mobile_today_renders_and_shows_real_quick_form(client):
 
 
 def test_509_inline_vitals_save_and_return_to_mobile(client):
-    before = None
+    # The mobile summary sorts by measurement timestamp.
+    # Ensure this disposable test reading is the latest.
     with SessionLocal() as db:
         before = db.scalar(select(func.count(VitalReading.id)))
+        latest_when = db.scalar(
+            select(func.max(VitalReading.measured_at))
+        )
+
+    measured_when = datetime.now().replace(microsecond=0)
+
+    if latest_when is not None and latest_when >= measured_when:
+        measured_when = latest_when + timedelta(seconds=1)
     response = client.post(
         "/vitals",
         data={
             "return_to": "mobile",
-            "measured_at": "2026-11-08T08:45",
+            "measured_at": measured_when.isoformat(timespec="seconds"),
             "weight": "180",
             "weight_unit": "lb",
             "systolic": "124",

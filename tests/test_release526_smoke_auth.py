@@ -113,6 +113,9 @@ def test_disabled_session_auth_fails_closed(
         sys.modules, "app.session_auth385", fake_auth
     )
 
+    previous_instance = os.environ.get("TRACKER_INSTANCE")
+    previous_data_dir = os.environ.get("TRACKER_DATA_DIR")
+
     with pytest.raises(ValueError, match="unavailable"):
         with smoke.release_auth_headers(
             instance,
@@ -122,3 +125,7 @@ def test_disabled_session_auth_fails_closed(
             },
         ):
             pass
+
+
+    assert os.environ.get("TRACKER_INSTANCE") == previous_instance
+    assert os.environ.get("TRACKER_DATA_DIR") == previous_data_dir
