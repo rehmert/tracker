@@ -389,6 +389,28 @@ def validate_sidebar_coverage(paths):
 
 
 
+
+def validate_dashboard_identity(dashboard, instance):
+    """Require the expected instance badge before sidebar traversal."""
+    if instance not in ("DEV", "PROD"):
+        raise ValueError("Invalid smoke instance")
+
+    badge = (
+        f"tracker-instance--{instance.lower()}"
+    ).encode()
+
+    if b"<title>" not in dashboard or badge not in dashboard:
+        raise SmokeRequestError(
+            "HTTP 200 with missing dashboard title/instance badge"
+        )
+
+    print(
+        f"DASHBOARD_IDENTITY=PASS instance={instance}",
+        flush=True,
+    )
+
+
+
 def run(instance, envfile):
     settings = read_env(envfile)
 
@@ -404,6 +426,8 @@ def run(instance, envfile):
         dashboard = wait_for_authenticated_readiness(
             opener, origin, headers
         )
+
+        validate_dashboard_identity(dashboard, instance)
 
         parser = Links()
         parser.feed(
