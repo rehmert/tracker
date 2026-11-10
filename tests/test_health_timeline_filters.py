@@ -21,7 +21,7 @@ from app.models import Compound, DoseLog, LabReport, Protocol, Vial, VitalReadin
 
 
 @pytest.fixture
-def timeline_records():
+def timeline_records(monkeypatch):
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
@@ -31,10 +31,11 @@ def timeline_records():
         with Session(engine) as session:
             yield session
 
-    app.dependency_overrides[get_db] = override
+    monkeypatch.setitem(app.dependency_overrides, get_db, override)
     try:
-        date_recent = date.today() - timedelta(days=4)
-        date_old = date.today() - timedelta(days=365 * 12)
+        today = date.today()
+        date_recent = today - timedelta(days=4)
+        date_old = today - timedelta(days=365 * 12)
         with Session(engine) as db:
             active = Protocol(
                 name="Active timeline regimen", is_active=True,
@@ -77,7 +78,6 @@ def timeline_records():
         with TestClient(app) as client:
             yield client, ids
     finally:
-        app.dependency_overrides.pop(get_db, None)
         engine.dispose()
 
 
