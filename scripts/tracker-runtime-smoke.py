@@ -70,10 +70,20 @@ def read_env(path):
 
 
 def port_from_service():
-    """Resolve Tracker's configured port without unsafe fallback."""
+    """Require one valid, unambiguous configured TCP port."""
     result = subprocess.run(
         ["systemctl", "show", "tracker", "-p", "ExecStart", "--value"],
         text=True, capture_output=True, check=True,
+    )
+
+    declarations = re.findall(
+        r"(?<!\S)--port(?=\s|=|;|$)",
+        result.stdout,
+    )
+
+    matches = re.findall(
+        r"(?<!\S)--port(?:\s+|=)(\d+)(?=\s|;|$)",
+        result.stdout,
     )
 
     match = re.search(
@@ -81,9 +91,17 @@ def port_from_service():
         result.stdout,
     )
 
+    # Preserve Release 550's missing/malformed-port contract.
     if match is None:
         raise ValueError(
             "Tracker systemd ExecStart has no valid --port"
+        )
+
+    # Release 551: even identical duplicate declarations are unsafe.
+    if len(declarations) != 1 or len(matches) != 1:
+        raise ValueError(
+            "Tracker systemd ExecStart must specify exactly "
+            "one valid --port"
         )
 
     port = int(match.group(1))
