@@ -70,12 +70,30 @@ def read_env(path):
 
 
 def port_from_service():
+    """Resolve Tracker's configured port without unsafe fallback."""
     result = subprocess.run(
         ["systemctl", "show", "tracker", "-p", "ExecStart", "--value"],
         text=True, capture_output=True, check=True,
     )
-    match = re.search(r"--port(?:\s+|=)(\d+)", result.stdout)
-    return int(match.group(1)) if match else 8000
+
+    match = re.search(
+        r"(?<!\S)--port(?:\s+|=)(\d+)(?=\s|;|$)",
+        result.stdout,
+    )
+
+    if match is None:
+        raise ValueError(
+            "Tracker systemd ExecStart has no valid --port"
+        )
+
+    port = int(match.group(1))
+
+    if not 1 <= port <= 65535:
+        raise ValueError(
+            "Tracker systemd ExecStart port out of range"
+        )
+
+    return port
 
 
 def service_working_directory():
