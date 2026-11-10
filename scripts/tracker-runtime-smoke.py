@@ -12,6 +12,7 @@ import shlex
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 
@@ -225,6 +226,10 @@ class SmokeRequestError(ValueError):
     """HTTP failure or transport failure without leaking credentials."""
 
 
+class SmokeAuthenticationRedirect(SmokeRequestError):
+    """An authenticated request was redirected to login."""
+
+
 def fetch_page(opener, origin, path, headers, timeout=6):
     """Return successful page bytes or preserve the failure category."""
     request = urllib.request.Request(
@@ -236,7 +241,22 @@ def fetch_page(opener, origin, path, headers, timeout=6):
             body = response.read(3 * 1024 * 1024)
     except urllib.error.HTTPError as error:
         status = error.code
+        destination = error.headers.get("Location", "")
         error.close()
+
+        # Never display redirect query parameters, which may
+        # contain user-supplied URLs or other sensitive values.
+        redirect_path = urllib.parse.urlsplit(
+            destination
+        ).path
+
+        if status in (301, 302, 303, 307, 308) and (
+            redirect_path == "/login"
+        ):
+            raise SmokeAuthenticationRedirect(
+                f"AUTH_REDIRECT HTTP {status} to /login"
+            ) from None
+
         raise SmokeRequestError(
             f"HTTP {status}"
         ) from None
@@ -293,6 +313,11 @@ def wait_for_authenticated_readiness(opener, origin, headers):
             )
             return dashboard
 
+        except SmokeAuthenticationRedirect as error:
+            raise ValueError(
+                "Authenticated readiness rejected: "
+                + str(error)
+            ) from None
         except SmokeRequestError as error:
             last_failure = str(error)
 
