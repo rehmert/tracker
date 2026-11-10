@@ -230,6 +230,10 @@ class SmokeAuthenticationRedirect(SmokeRequestError):
     """An authenticated request was redirected to login."""
 
 
+class SmokeAuthenticationRejected(SmokeRequestError):
+    """An authenticated request was explicitly rejected."""
+
+
 def fetch_page(opener, origin, path, headers, timeout=6):
     """Return successful page bytes or preserve the failure category."""
     request = urllib.request.Request(
@@ -243,6 +247,13 @@ def fetch_page(opener, origin, path, headers, timeout=6):
         status = error.code
         destination = error.headers.get("Location", "")
         error.close()
+
+        # Never include response bodies, request credentials,
+        # or authorization headers in diagnostic messages.
+        if status in (401, 403):
+            raise SmokeAuthenticationRejected(
+                f"AUTH_REJECTED HTTP {status}"
+            ) from None
 
         # Never display redirect query parameters, which may
         # contain user-supplied URLs or other sensitive values.
@@ -313,7 +324,10 @@ def wait_for_authenticated_readiness(opener, origin, headers):
             )
             return dashboard
 
-        except SmokeAuthenticationRedirect as error:
+        except (
+            SmokeAuthenticationRedirect,
+            SmokeAuthenticationRejected,
+        ) as error:
             raise ValueError(
                 "Authenticated readiness rejected: "
                 + str(error)
