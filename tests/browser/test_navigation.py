@@ -1,5 +1,6 @@
 
 import os
+import re
 
 import pytest
 
@@ -277,3 +278,47 @@ def test_navigation_preferences_exist(page):
     assert tab.locator("#nav-sort-mode").count() == 1
     assert tab.locator("#nav-edit-toggle").count() == 1
     assert tab.locator("#nav-reset").count() == 1
+
+
+def test_dose_566_vial_ids_and_time_controls_at_desktop_and_mobile(page):
+    """Real Chromium layout, read-only; no dose is submitted."""
+    tab, errors = page
+    response = tab.goto(BASE_URL + "/doses", wait_until="networkidle", timeout=30000)
+    assert response is not None and response.status == 200
+
+    chooser = tab.locator('form[hx-post="/doses"] select[name="vial_id"]')
+    chooser.wait_for()
+    options = chooser.locator("option").all_inner_texts()
+    assert options, "The isolated candidate should have disposable vials."
+    assert all(re.search(r"\\s#\\d+", label) for label in options), options
+
+    form = tab.locator('form[hx-post="/doses"]')
+    original = form.locator('input[name="taken_at"]')
+    date = form.locator(".tracker-time24-date")
+    clock = form.locator(".tracker-time24-clock")
+    now = form.locator(".tracker-time24-now")
+    now.wait_for()
+
+    for width in (1440, 800, 390):
+        tab.set_viewport_size({"width": width, "height": 900})
+        box_date = date.bounding_box()
+        box_clock = clock.bounding_box()
+        box_now = now.bounding_box()
+        assert box_date and box_clock and box_now
+        if width > 720:
+            assert box_date["x"] + box_date["width"] <= box_clock["x"] + 2
+            assert box_clock["x"] + box_clock["width"] <= box_now["x"] + 2
+        else:
+            assert box_date["x"] + box_date["width"] <= box_clock["x"] + 2
+            assert box_now["y"] >= max(
+                box_date["y"] + box_date["height"],
+                box_clock["y"] + box_clock["height"],
+            ) - 2
+        assert box_now["x"] + box_now["width"] <= width + 1
+
+    now.click()
+    assert re.fullmatch(
+        r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}",
+        original.input_value(),
+    )
+    assert not errors, "\\n".join(errors)
