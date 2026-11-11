@@ -112,14 +112,24 @@ def ml_to_syringe_units(ml: float, units_per_ml: float = 100.0) -> float:
 
 
 def _num(x: float, digits: int = 4) -> str:
+    """Display at most three decimal places; never scientific notation.
+
+    Retain full precision in calculations and stored values. For nonzero
+    quantities too small to display, use a bound instead of misleading zero.
+    The legacy digits argument is accepted for API compatibility but capped.
+    """
+    if not math.isfinite(float(x)):
+        return "—"
+    x = float(x)
     if x == 0:
         return "0"
-    mag = math.floor(math.log10(abs(x)))
-    decimals = max(0, digits - 1 - mag)
+    if 0 < x < 0.0005:
+        return "<0.001"
+    if -0.0005 < x < 0:
+        return ">-0.001"
+    decimals = max(0, min(3, int(digits)))
     s = f"{x:,.{decimals}f}"
-    if "." in s:
-        s = s.rstrip("0").rstrip(".")
-    return s
+    return s.rstrip("0").rstrip(".") if "." in s else s
 
 
 def fmt_amount(base: float | None, dim: str | None, digits: int = 4) -> str:
@@ -131,11 +141,7 @@ def fmt_amount(base: float | None, dim: str | None, digits: int = 4) -> str:
         if a >= 1_000_000:
             return f"{_num(base / 1_000_000, digits)} g"
         if a > 100_000:
-            # Preserve sub-mg precision at the threshold (100,001 mcg = 100.001 mg).
-            from decimal import Decimal
-            mg = Decimal(str(base)) / Decimal(1000)
-            value = format(mg, ",f")
-            return f"{value.rstrip('0').rstrip('.') if '.' in value else value} mg"
+            return f"{_num(base / 1000, digits)} mg"
         return f"{_num(base, digits)} mcg"
     if dim == "iu":
         return f"{_num(base, digits)} IU"
