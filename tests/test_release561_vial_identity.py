@@ -58,7 +58,7 @@ def test_identity_fields_render_for_duplicate_labels():
     # Render the actual option fragment independently from the
     # broader template's unrelated page context.
     start = source.index(
-        '<option value="{{ v.id }}"'
+        '<option value="{{ v.id }}" data-unit='
     )
 
     stop = source.index(
