@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FEATURES = {
     "pk": 53,
     "vendor_prices": 18,
-    "blends": 6,
+    "blends": 9,
     "pages": 12,
     "reliability": 7,
     "search": 1,
@@ -93,7 +93,7 @@ def test_feature_database_dependencies_are_scoped(
 
 def test_total_converted_dependencies():
     assert len(FEATURES) == 12
-    assert sum(FEATURES.values()) == 105
+    assert sum(FEATURES.values()) == 108
 
 
 def test_fastapi_override_compatibility():
