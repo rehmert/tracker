@@ -7,11 +7,11 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import services, units as U, idempotency
 from ..scoped_db390 import get_scoped_db390
-from ..models import Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, SupplyCategory
+from ..models import Blend, Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, SupplyCategory
 from ..inventory_lock import reserve_inventory_write, require_inventory_write
 from .. import manual_supplies
 from ..templating import render
@@ -138,6 +138,24 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
+    # Release 564: blended/waterfall preparations are Blend records, not Vials.
+    # Surface them in the normal dose-entry navigation but keep their volume-
+    # based accounting and BlendDose endpoint, avoiding duplicate inventory.
+    blend_candidates = list(db.scalars(
+        select(Blend)
+        .options(selectinload(Blend.doses))
+        .where(Blend.status == "in_use")
+        .order_by(Blend.id.desc())
+    ))
+    active_blends = [
+        {"blend": b, "remaining_ml": max(
+            0.0, b.final_volume_ml - sum(d.volume_ml for d in b.doses)
+        )}
+        for b in blend_candidates
+    ]
+    active_blends = [
+        row for row in active_blends if row["remaining_ml"] > 1e-9
+    ]
     planned_handoff = bool(planned_date) and compound_id is not None
     recent_vial_ids = []
     if planned_handoff:
@@ -223,7 +241,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         select(SupplyCategory.key).where(SupplyCategory.unit == "count")
     ))
 
-    return render(request, "doses.html", rows=_rows(db, compound_id), vials=form_vials, views=views,
+    return render(request, "doses.html", rows=_rows(db, compound_id), vials=form_vials, views=views, active_blends=active_blends,
                   planned_handoff=planned_handoff,
                   planned_compound_name=planned_compound.name if planned_compound else "Planned compound",
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
