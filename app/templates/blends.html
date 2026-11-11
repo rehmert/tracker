@@ -1,29 +1,100 @@
-{% extends "base.html" %}{% block title %}Peptide blends{% endblock %}{% block content %}
+{% extends "base.html" %}{% block title %}Peptide blends
+<script>
+(()=>{
+const form=document.getElementById('waterfall-form'), rows=document.getElementById('waterfall-rows');
+const tmpl=document.getElementById('waterfall-row-template');
+const status=document.getElementById('waterfall-status'), result=document.getElementById('waterfall-result');
+const preview=document.getElementById('waterfall-preview-btn'), record=document.getElementById('waterfall-record-btn');
+let approved=null;
+function snapshot(){return JSON.stringify([...new FormData(form)].filter(([k])=>k!=='confirmed_actual'));}
+function invalidate(){approved=null;record.disabled=true;result.hidden=true;status.textContent='Preview the current vial order and quantities before recording.';form.querySelector('[name="confirmed_actual"]').value='';}
+function add(){
+ if(rows.children.length>=6)return;
+ const row=tmpl.content.firstElementChild.cloneNode(true);
+ row.querySelector('.waterfall-remove').onclick=()=>{if(rows.children.length>2){row.remove();invalidate();}};
+ rows.append(row);invalidate();
+}
+document.getElementById('waterfall-add').onclick=add;
+add();add();
+form.addEventListener('input',invalidate);
+form.addEventListener('change',invalidate);
+preview.onclick=async()=>{
+result.hidden=false;result.textContent='Calculating…';record.disabled=true;approved=null;preview.disabled=true;
+try{
+const response=await fetch('/blends/waterfall/preview',{method:'POST',body:new FormData(form)});
+result.innerHTML=await response.text();
+if(response.ok){approved=snapshot();record.disabled=false;status.textContent='Preview ready. Only record if the stated source order and actual transfer are correct.';}
+else{status.textContent='Correct the error shown in the preview.';}
+}catch(error){result.textContent='Preview failed: '+error.message;status.textContent='Preview request failed.'}
+finally{preview.disabled=false;}
+};
+form.addEventListener('submit',(event)=>{
+if(!approved||snapshot()!==approved){event.preventDefault();invalidate();alert('Preview the exact waterfall again.');return;}
+if(!confirm('Have you completed this physical waterfall transfer using the exact selected source vials and initial volume? All selected source inventory will be consumed and recorded as one blend.')){
+event.preventDefault();return;
+}
+form.querySelector('[name="confirmed_actual"]').value='yes';
+record.disabled=true;
+});
+})();
+</script>
+{% endblock %}{% block content %}
 <h1>Peptide blends</h1>
 <p><a href="/reconstitution-calculator">Single-vial and premixed-blend calculator →</a></p>
-<p>Record transfers from multiple source vials (including multiple vials of the same peptide) into destination vial(s). This is an inventory and arithmetic record, not a preparation or dosing recommendation. A blended vial is tracked separately from single-compound vials.</p>
-<div class="ux-callout"><strong>Before recording:</strong> The what-if calculators do not change stock. The final Record action creates destination vial records and deducts transferred inventory. Check all actual transfer amounts first.</div><section class="card"><h2>Create a blend</h2><p class="note">Step 1: Enter source transfers. Step 2: Preview and verify the resulting inventory. Step 3: Confirm the transfer.</p>
-<form method="post" action="/blends" class="grid" id="blend-form" data-confirm-inventory="true"><input type="hidden" name="submission_token" value="{{ submission_token }}">
+<p>Choose source vials, enter the target amount for each compound, preview, then record quantities you actually prepared. A preview never changes inventory. Recorded blends remain separate from original source vials.</p>
+<div class="ux-callout"><strong>Two steps:</strong> Select source vials and target amounts, then preview. When the displayed plan matches the volumes and transfers actually performed, choose Record. Recording deducts stock and, for dry sources, records the confirmed reconstitution volumes.</div><section class="card"><h2>Create a blend</h2><p class="note">1 · Choose sources and targets. 2 · Preview and confirm actual quantities, then record.</p>
+<form method="post" action="/blends" class="grid" id="blend-form" data-confirm-inventory="true"><input type="hidden" name="submission_token" value="{{ submission_token }}"><input type="hidden" name="confirmed_actual" value="">
 <label class="field"><span>Destination vial label</span><input name="label" required placeholder="Blend #1"></label>
 <label class="field"><span>Number of destination vials</span><input name="destination_count" type="number" min="1" max="100" step="1" value="1" required></label>
 <label class="field"><span>Additional diluent (mL, total across destinations)</span><input name="diluent_ml" type="number" min="0" step="any" value="0" required></label>
 <label class="field"><span>Capacity per destination vial (mL, optional)</span><input name="capacity_ml" type="number" min="0.001" step="any"></label>
 <label class="field wide"><span>Notes</span><input name="notes"></label>
-<div class="wide"><h3>Source vials and target dose for each compound</h3><p>Choose two or more source vials, including multiple vials of the same compound. Repeat the same total target per draw on every row for a compound. Enter target doses for the calculator; transfer amounts are calculated automatically in the what-if preview. For recording an actual blend, enter the measured total transfer amounts across all destination vials; Tracker splits the mixture evenly among them. The app checks whether all targets can be delivered by the same draw volume.</p>
+<div class="wide"><h3>Source vials and targets</h3><p>Choose two or more sources. For multiple vials of one compound, repeat the same total target amount per draw. Transfers are calculated from the plan. Use the advanced transfer fields only if you already measured transfers from liquid source vials.</p><button type="button" id="toggle-manual-blend" aria-pressed="false">Show manual transfer fields</button>
 <div class="scroll"><table class="blend-table blend-source-table"><thead><tr><th>Vial</th><th>Transfer</th><th>Unit</th><th>Target/draw</th><th>Unit</th><th>BAC (mL)</th><th></th></tr></thead><tbody id="blend-sources"></tbody></table></div>
 <button type="button" id="add-blend-source">+ Add source</button>
-</div><div class="wide card"><h3>Reconstitution / 3 mL cartridge what-if</h3><p>Each dry source vial is reconstituted first, before a measured portion is withdrawn for blending. Enter your target dose per peptide and desired blend draw volume. The planner maximizes the number of complete draws using available peptide content, per-vial capacity, and the maximum number of destination vials, automatically deriving each transfer amount. It calculates source-vial BAC volumes using an illustrative equal-withdrawal allocation; manual mode uses entered BAC values. Target dose ratios are maintained automatically. Preview only; no inventory changes.</p>
+</div><div class="wide card"><h3>Blend volume and source preparation</h3><p>Choose your recorded volumes and draw volume. The planner derives source transfers and complete draws. Automatically derived BAC allocations are illustrative: only record if these match the actual volumes used.</p>
 <label class="field"><span>Source BAC allocation</span><select name="planner_allocation" id="planner-allocation"><option value="equal" selected>Calculate BAC (equal source withdrawals)</option><option value="manual">Use entered BAC per source</option></select></label>
 <label class="field"><span>Desired draw volume (mL)</span><input name="planner_draw_ml" type="number" min="0.000001" step="any" value="0.1"></label>
 <label class="field"><span>Capacity per destination vial (mL)</span><input name="planner_capacity_ml" type="number" min="0.001" step="any" value="3"></label>
 <label class="field"><span>Maximum destination vials</span><input name="planner_max_destinations" type="number" min="1" max="100" step="1" value="1" required></label>
 <button type="button" id="preview-reconstitution">Calculate maximum complete draws (what-if)</button>
 <div id="reconstitution-preview" class="card" aria-live="polite" hidden></div></div>
-<div class="wide"><button type="button" id="preview-blend">Preview blend (what-if)</button> <button class="primary" id="record-blend" type="submit" disabled title="Preview the current entries first">Step 3 · Record verified transfer</button><p id="blend-review-status" class="note" role="status" aria-live="polite">Preview the current entries to enable recording.</p><div id="blend-preview" class="card" aria-live="polite" hidden></div></div>
+<div class="wide"><button type="button" id="preview-blend">Preview blend</button> <button class="primary" id="record-blend" type="submit" disabled title="Preview the current entries first">Record confirmed blend</button><p id="blend-review-status" class="note" role="status" aria-live="polite">Preview the current entries to enable recording.</p><div id="blend-preview" class="card" aria-live="polite" hidden></div></div>
 </form></section>
+<section class="card" id="waterfall">
+<h2>Waterfall reconstitution · 2–6 vials</h2>
+<p>Record one measured initial BAC volume carried through multiple <strong>dry, unused vials of the same compound</strong>. The resulting solution is represented by one blend record and the original vial inventory is consumed. Nominal math assumes complete transfers and ignores powder displacement and handling loss. This does not establish sterility or compatibility.</p>
+<form id="waterfall-form" method="post" action="/blends/waterfall/record" class="grid" data-confirm-inventory="true">
+<input type="hidden" name="submission_token" value="{{ waterfall_token }}">
+<input type="hidden" name="confirmed_actual" value="">
+<label class="field"><span>Resulting vial label</span><input name="label" required maxlength="160" placeholder="Waterfall result"></label>
+<label class="field"><span>Initial BAC volume (mL)</span><input name="waterfall_bac_ml" type="number" step="0.001" min="0.001" required></label>
+<label class="field"><span>Final vial capacity (mL)</span><input name="waterfall_capacity_ml" type="number" step="0.001" min="0.001" value="3" required></label>
+<label class="field"><span>Your target amount per draw</span><input name="waterfall_target_amount" type="number" step="any" min="0.000001" required></label>
+<label class="field"><span>Target unit</span><select name="waterfall_target_unit">{% for unit in units %}<option value="{{ unit }}" {% if unit == "mg" %}selected{% endif %}>{{ unit }}</option>{% endfor %}</select></label>
+<label class="field wide"><span>Notes</span><input name="notes"></label>
+<div class="wide"><h3>Source order</h3><p>First selected vial receives the initial BAC volume; each subsequent vial receives the preceding solution. The final physical container is the last selected vial.</p>
+<div id="waterfall-rows"></div>
+<button type="button" id="waterfall-add">+ Add vial</button></div>
+<div class="wide"><button type="button" id="waterfall-preview-btn">Preview waterfall</button>
+<button class="primary" id="waterfall-record-btn" type="submit" disabled>Record confirmed waterfall</button>
+<p id="waterfall-status" class="note" role="status" aria-live="polite">Preview the exact vial order and quantities before recording.</p>
+<div id="waterfall-result" class="card" aria-live="polite" hidden></div></div>
+</form>
+<template id="waterfall-row-template"><div class="waterfall-row"><label class="field"><span>Source vial</span><select name="waterfall_source_id" required>
+<option value="">Select dry source vial</option>
+{% for v in vials %}{% set d = views[v.id] %}{% if d.remaining_base > 0 and not v.volume_ml %}
+<option value="{{ v.id }}">#{{ v.id }} · {{ v.compound.name|truncate(15, True, "…") }} · {{ v.lot or "—" }} · {{ d.remaining_base|amt(d.dim) }}</option>
+{% endif %}{% endfor %}
+</select></label><button class="waterfall-remove" type="button">Remove</button></div></template>
+</section>
 <section class="card"><h2>Recorded blends</h2><div class="scroll"><table class="blend-table"><thead><tr><th>Blend</th><th>Compounds</th><th>Remaining</th><th>Status</th></tr></thead><tbody>{% for b in blends %}<tr><td><a href="/blends/{{ b.id }}">{{ b.label }}</a></td><td>{% for c in b.components %}{{ c.compound.name }}{% if not loop.last %}, {% endif %}{% endfor %}</td><td>{{ remaining[b.id]|num }} mL</td><td>{{ b.status }}</td></tr>{% else %}<tr><td colspan="4">No blends recorded.</td></tr>{% endfor %}</tbody></table></div></section>
 <template id="blend-row-template"><tr><td><select aria-label="Source vial" name="source_id" required><option value="">Select vial</option>{% for v in vials %}{% set d = views[v.id] %}{% if d.remaining_base > 0 %}<option value="{{ v.id }}" data-unit="{{ v.content_unit }}" data-liquid="{{ 1 if v.volume_ml else 0 }}">#{{ v.id }} · {{ {"tirzepatide":"Tirz","retatrutide":"Reta","semaglutide":"Sema","tesamorelin":"Tesa","ipamorelin":"Ipa","somatropin":"HGH","bpc-157":"BPC-157","ghk-cu":"GHK-Cu","mots-c":"MOTS-C","ss-31":"SS-31","nad+":"NAD+"}.get(v.compound.name|lower, v.compound.name|truncate(12, True, "…")) }} · {{ v.purchase.vendor if v.purchase and v.purchase.vendor else "—" }} · {{ v.lot or "—" }} · {{ d.remaining_base|amt(d.dim) }}</option>{% endif %}{% endfor %}</select></td><td><input aria-label="Transfer amount" type="number" name="transfer_amount" min="0.000001" step="any" placeholder="Calculated for preview"></td><td><select aria-label="Transfer unit" name="transfer_unit">{% for u in units %}<option value="{{ u }}">{{ u }}</option>{% endfor %}</select></td><td><input aria-label="Target amount" type="number" name="target_amount" min="0.000001" step="any" required></td><td><select aria-label="Target unit" name="target_unit">{% for u in units %}<option value="{{ u }}">{{ u }}</option>{% endfor %}</select></td><td><input type="number" name="source_bac_ml" min="0" step="any" value="0.5" title="BAC volume to reconstitute the entire dry source vial; enter 0 for an already-liquid vial"></td><td><button type="button" class="remove-source">Remove</button></td></tr></template>
 <style>
+.blend-source-table:not(.manual-mode) th:nth-child(2),.blend-source-table:not(.manual-mode) th:nth-child(3),.blend-source-table:not(.manual-mode) td:nth-child(2),.blend-source-table:not(.manual-mode) td:nth-child(3){display:none}
+.waterfall-row{display:flex;gap:.75rem;align-items:flex-end;margin:.5rem 0}
+.waterfall-row .field{width:min(480px,85%)}
+.waterfall-row select{max-width:100%;width:100%}
 .blend-source-table{width:auto;table-layout:fixed;min-width:0}
 .blend-source-table th,.blend-source-table td{padding:.35rem .4rem;white-space:nowrap}
 .blend-source-table th:first-child,.blend-source-table td:first-child{width:250px;max-width:250px}
@@ -38,8 +109,8 @@ const form=document.getElementById('blend-form'), preview=document.getElementByI
 const recon=document.getElementById('reconstitution-preview'), reconButton=document.getElementById('preview-reconstitution');
 const recordButton=document.getElementById('record-blend'),reviewStatus=document.getElementById('blend-review-status');
 let approvedSnapshot=null;
-function snapshot(){const data=new FormData(form);return JSON.stringify([...data.entries()].filter(([key])=>!key.startsWith('planner_')))}
-function invalidate(){approvedSnapshot=null;recordButton.disabled=true;reviewStatus.textContent='Inputs changed. Preview again before recording.';preview.hidden=true;recon.hidden=true;}
+function snapshot(){const data=new FormData(form);return JSON.stringify([...data.entries()].filter(([key])=>key!=='confirmed_actual'))}
+function invalidate(){approvedSnapshot=null;recordButton.disabled=true;form.action='/blends';form.querySelector('[name="confirmed_actual"]').value='';reviewStatus.textContent='Inputs changed. Preview again before recording.';preview.hidden=true;recon.hidden=true;}
 
 reconButton.onclick=async()=>{recon.hidden=false;recon.textContent='Calculating…';reconButton.disabled=true;try{const response=await fetch('/blends/reconstitution-preview',{method:'POST',body:new FormData(form)});recon.innerHTML=await response.text()}catch(error){recon.textContent='Unable to calculate: '+error.message}finally{reconButton.disabled=false}};
 button.onclick=async()=>{
@@ -55,10 +126,10 @@ const result=await response.text();
 preview.innerHTML=result;
 if(response.ok){
 if(hypothetical){
-reviewStatus.textContent='What-if calculation only. To record, reconstitute dry sources and enter actual measured transfer amounts, then preview again.';
+approvedSnapshot=snapshot();form.action='/blends/record-plan';recordButton.disabled=false;reviewStatus.textContent='Plan ready. Record only if the displayed source reconstitution, transfer, and final volumes match what you actually prepared.';
 }else{
-approvedSnapshot=snapshot();recordButton.disabled=false;
-reviewStatus.textContent='Preview complete. Review the source balances above, then record the transfer.';
+approvedSnapshot=snapshot();form.action='/blends';recordButton.disabled=false;
+reviewStatus.textContent='Preview ready. Check the measured transfers, then record.';
 }
 }else{
 reviewStatus.textContent='Preview could not be completed. Review the error shown below.';
@@ -69,7 +140,27 @@ reviewStatus.textContent='Preview request failed.';
 preview.textContent='Unable to load preview: '+error.message;
 }finally{button.disabled=false;}
 };
-form.addEventListener('submit',(event)=>{if(!approvedSnapshot||snapshot()!==approvedSnapshot){event.preventDefault();invalidate();alert('Preview the current blend entries before recording an inventory transfer.');return;}if(!confirm('Record this blend and deduct the displayed amounts from the source vials? This action changes inventory.')){event.preventDefault();return;}recordButton.disabled=true;if([...form.querySelectorAll('[name=transfer_amount]')].some(el=>!el.value||Number(el.value)<=0)){event.preventDefault();alert('Before recording, enter the actual measured transfer amount for each source vial. The what-if calculation does not transfer inventory.');}});
+form.addEventListener('submit',(event)=>{
+if(!approvedSnapshot||snapshot()!==approvedSnapshot){event.preventDefault();invalidate();alert('Preview the current entries before recording.');return;}
+const calculated=form.action.endsWith('/blends/record-plan');
+if(!calculated&&[...form.querySelectorAll('[name=transfer_amount]')].some(el=>!el.value||Number(el.value)<=0)){
+event.preventDefault();alert('Enter actual measured source transfers, or clear the transfer fields to use the calculated plan.');return;
+}
+if(!confirm(calculated?'Have you physically prepared the sources and transferred the displayed amounts? Record this exact plan and deduct inventory?':'Have you physically transferred the displayed measured amounts? Record this blend and deduct inventory?')){
+event.preventDefault();return;
+}
+form.querySelector('[name="confirmed_actual"]').value='yes';
+recordButton.disabled=true;
+});
+document.getElementById('toggle-manual-blend').addEventListener('click',function(){
+const table=document.querySelector('.blend-source-table'),active=table.classList.toggle('manual-mode');
+this.textContent=active?'Hide manual transfer fields':'Show manual transfer fields';
+this.setAttribute('aria-pressed',String(active));
+});
+form.querySelector('[name="destination_count"]').addEventListener('change',function(){
+form.querySelector('[name="planner_max_destinations"]').value=this.value;
+invalidate();
+});
 form.addEventListener('input',invalidate);
 form.addEventListener('change',invalidate);})();
 </script>
