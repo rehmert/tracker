@@ -20,7 +20,7 @@
       const per = Number(field('units_per_pack')?.value || 0);
       const units = bulk ? count * per : Number(field('quantity')?.value || 0);
       const price = bulk ? Number(field('package_price')?.value || 0) : units * Number(field('unit_price')?.value || 0);
-      summary.textContent = units > 0 ? `${Number(units.toFixed(4)).toLocaleString()} individual units added · ${money(price)} line total · ${money(price/units)} per unit` : 'Enter package quantities to preview inventory and costs.';
+      summary.textContent = units > 0 ? `${Number(units.toFixed(3)).toLocaleString()} individual units added · ${money(price)} line total · ${money(price/units)} per unit` : 'Enter package quantities to preview inventory and costs.';
     }
     picker?.addEventListener('change', () => {
       if (picker.value === '') return;
