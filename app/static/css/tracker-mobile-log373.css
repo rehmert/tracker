@@ -51,6 +51,29 @@
   white-space: nowrap;
 }
 
+/* Release 566: dose timestamp occupies its own full-width form row.
+ * The enhancer inserts Date + 24-hour Time + Use current time inside
+ * this label; the old one-column parent caused the controls to collide.
+ */
+form[hx-post="/doses"] .tracker-dose-when-field {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+}
+
+form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-controls {
+  grid-template-columns: minmax(0, 12rem) minmax(0, 9rem) max-content;
+  gap: .65rem;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-controls input {
+  min-width: 0;
+  max-width: 100%;
+}
+
 @media (max-width: 720px) {
   .tracker-mobile-log-links {
     display: grid;
@@ -90,6 +113,18 @@
     grid-column: 1 / -1;
     min-height: 48px;
   }
+
+  form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-now {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
+  }
+
 
   form[data-tracker-vitals-entry] button.primary[type="submit"],
   form[hx-post="/doses"] button.primary[type="submit"],
