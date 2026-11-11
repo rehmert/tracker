@@ -38,7 +38,7 @@
   <label class="field" for="dose-blend-select"><span>Finished preparation</span>
     <select id="dose-blend-select">
       {% for row in active_blends %}
-      <option value="{{ row.blend.id }}">{{ row.blend.label }} · #{{ row.blend.id }} · {{ row.remaining_display }} remaining{% if (row.blend.notes or '').startswith('Waterfall:') %} · waterfall{% endif %}</option>
+      <option value="{{ row.blend.id }}">{{ row.blend.label }} · #{{ row.blend.id }} · {{ row.remaining_display }}{% if (row.blend.notes or '').startswith('Waterfall:') %} · waterfall{% endif %}</option>
       {% endfor %}
     </select>
   </label>
@@ -155,7 +155,7 @@
           <option value="" selected disabled>Select a vial for this compound</option>
           {% endif %}
           {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
-          <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" data-vial-status="{{ v.status }}" {% if selected_vial_id is not none and v.id == selected_vial_id %}selected{% endif %}>{{ v.compound.name }} · #{{ v.id }}{% if v.label %} · {{ v.label }}{% endif %}{% if v.lot %} · Lot {{ v.lot }}{% endif %} · {{ v.status|replace('_',' ') }} · {{ d.remaining_base|amt(d.dim) }} left</option>
+          <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" data-vial-status="{{ v.status }}" {% if selected_vial_id is not none and v.id == selected_vial_id %}selected{% endif %}>{{ v.compound.name }} · #{{ v.id }}{% if v.label %} · {{ v.label }}{% endif %}{% if v.lot %} · Lot {{ v.lot }}{% endif %} · {{ v.status|replace('_',' ') }} · {{ d.remaining_base|amt(d.dim) }}</option>
           {% endfor %}
         </select></label>
       <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}" inputmode="decimal"></label>
