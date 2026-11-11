@@ -147,3 +147,56 @@ def test_readiness_report_is_safe_and_has_no_install_side_effects(tmp_path):
     assert cli.returncode == 0, cli.stderr
     assert '"instance": "DEV"' in cli.stdout
     assert '"packages"' in cli.stdout
+
+def test_default_mode_does_not_sign_push_or_deploy(monkeypatch, capsys):
+    tool = load(DEV, "dev_control568_dry_run")
+    invoked = []
+
+    def no_ops(*args):
+        invoked.append(args)
+
+    monkeypatch.setattr(tool, "preflight", no_ops)
+    monkeypatch.setattr(tool, "sign_and_transfer", lambda *_: pytest.fail("signed"))
+    monkeypatch.setattr(tool, "promote", lambda *_: pytest.fail("pushed"))
+    monkeypatch.setattr(tool, "deploy", lambda *_: pytest.fail("deployed"))
+    args = [
+        "--release", "568", "--target", "b" * 40,
+        "--prod-base", "a" * 40, "--ref", "release/568-safe",
+    ]
+    assert tool.main(args) == 0
+    assert len(invoked) == 1
+    assert "DRY_RUN=PASSED" in capsys.readouterr().out
+
+
+def test_execute_stops_before_push_if_signature_transfer_fails(monkeypatch):
+    tool = load(DEV, "dev_control568_fail_closed")
+    monkeypatch.setattr(tool, "preflight", lambda *_: None)
+
+    def reject(*_):
+        raise tool.ReleaseError("PROD signature rejected")
+
+    monkeypatch.setattr(tool, "sign_and_transfer", reject)
+    monkeypatch.setattr(tool, "promote", lambda *_: pytest.fail("pushed"))
+    monkeypatch.setattr(tool, "deploy", lambda *_: pytest.fail("deployed"))
+    args = [
+        "--release", "568", "--target", "b" * 40,
+        "--prod-base", "a" * 40, "--ref", "release/568-safe",
+        "--execute",
+    ]
+    assert tool.main(args) == 1
+
+
+def test_execute_invokes_signed_promotion_before_remote_deploy(monkeypatch):
+    tool = load(DEV, "dev_control568_order")
+    phases = []
+    monkeypatch.setattr(tool, "preflight", lambda *_: phases.append("preflight"))
+    monkeypatch.setattr(tool, "sign_and_transfer", lambda *_: phases.append("sign"))
+    monkeypatch.setattr(tool, "promote", lambda *_: phases.append("promote"))
+    monkeypatch.setattr(tool, "deploy", lambda *_: phases.append("deploy"))
+    args = [
+        "--release", "568", "--target", "b" * 40,
+        "--prod-base", "a" * 40, "--ref", "release/568-safe",
+        "--execute",
+    ]
+    assert tool.main(args) == 0
+    assert phases == ["preflight", "sign", "promote", "deploy"]
