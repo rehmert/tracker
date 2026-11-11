@@ -133,6 +133,41 @@ def _select_dose_vial(vials, views, compound_id, vial_id, planned_date,
     return None, warning
 
 
+def _blend_remaining_display(blend: Blend, remaining_ml: float) -> str:
+    """Human-readable stock for Dose Log, without changing inventory units.
+
+    Waterfall components store content in mcg or IU, while blend draws deplete
+    liquid volume. Convert the remaining fraction of the recorded contents to
+    the original quantity dimension. Never combine unlike compounds/units.
+    """
+    fallback = f"{U._num(remaining_ml)} mL"
+    if not (blend.notes or "").startswith("Waterfall:"):
+        return fallback
+    if not blend.final_volume_ml or blend.final_volume_ml <= 0 or not blend.components:
+        return fallback
+    if len({component.compound_id for component in blend.components}) != 1:
+        return fallback
+
+    try:
+        dimensions = {U.parse_unit(c.target_unit).dim for c in blend.components}
+    except U.UnitError:
+        return fallback
+    if len(dimensions) != 1:
+        return fallback
+
+    total_base = sum(c.transferred_base for c in blend.components)
+    remaining_base = total_base * remaining_ml / blend.final_volume_ml
+    if not isfinite(remaining_base) or remaining_base < 0:
+        return fallback
+    if dimensions == {"mass"}:
+        return (f"{U._num(remaining_base / 1000)} mg"
+                if remaining_base >= 1000
+                else f"{U._num(remaining_base)} mcg")
+    if dimensions == {"iu"}:
+        return f"{U._num(remaining_base)} IU"
+    return fallback
+
+
 @router.get("/doses")
 def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, db: Session = Depends(get_scoped_db390)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
@@ -143,7 +178,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
     # based accounting and BlendDose endpoint, avoiding duplicate inventory.
     blend_candidates = list(db.scalars(
         select(Blend)
-        .options(selectinload(Blend.doses))
+        .options(selectinload(Blend.doses), selectinload(Blend.components))
         .where(Blend.status == "in_use")
         .order_by(Blend.id.desc())
     ))
@@ -156,6 +191,10 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
     active_blends = [
         row for row in active_blends if row["remaining_ml"] > 1e-9
     ]
+    for row in active_blends:
+        row["remaining_display"] = _blend_remaining_display(
+            row["blend"], row["remaining_ml"]
+        )
     planned_handoff = bool(planned_date) and compound_id is not None
     recent_vial_ids = []
     if planned_handoff:
