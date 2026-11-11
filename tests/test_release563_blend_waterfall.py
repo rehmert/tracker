@@ -11,6 +11,9 @@ from app.blend_workflow563 import calculate_waterfall
 
 
 def _dry_vials(prefix, counts=(10, 20), compound_count=2):
+    # Initialize the disposable test database through the app lifespan.
+    with TestClient(app):
+        pass
     with SessionLocal() as db:
         groups = [
             Compound(name=f"{prefix}-{i}-{uuid4().hex[:8]}", primary_unit="mg")
