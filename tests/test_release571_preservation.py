@@ -170,3 +170,35 @@ def test_code_never_manages_services_or_live_dependencies():
         "os.replace(staging, final)",
     ):
         assert required in text
+
+
+def test_standalone_archive_verification_needs_no_dev_preflight(tool, monkeypatch):
+    actions = []
+    monkeypatch.setattr(tool, "preflight", lambda: pytest.fail("Unexpected DEV check"))
+    monkeypatch.setattr(tool, "verify_archive",
+                        lambda path: actions.append(path))
+    path = "/var/lib/tracker-reproducibility/saved"
+    assert tool.main(["--verify-archive", path]) == 0
+    assert actions == [Path(path)]
+
+
+def test_verified_archive_reports_corrupted_file(tool, tmp_path, monkeypatch):
+    monkeypatch.setattr(tool, "owner_checked", lambda *_args, **_kwargs: None)
+    archive = tmp_path / "saved"
+    payload = archive / "payload"
+    payload.mkdir(parents=True)
+    wheel = payload / "example.whl"
+    wheel.write_bytes(b"preserved")
+    manifest = {"schema_version": 1, "payload": tool.tree(payload)}
+    (archive / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    tool.verify_archive(archive)
+    wheel.write_bytes(b"altered")
+    with pytest.raises(tool.ArchiveError, match="integrity"):
+        tool.verify_archive(archive)
+
+
+def test_verify_mode_cannot_mutate_archive(tool):
+    with pytest.raises(SystemExit) as exc:
+        tool.main(["--verify-archive", "/tmp/archive",
+                   "--execute", "--replay-root", "/tmp/input"])
+    assert exc.value.code == 2
