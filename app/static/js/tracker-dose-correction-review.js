@@ -128,7 +128,7 @@
 
           // Limit floating-point display artifacts only.
           const display = number =>
-            String(Number(number.toFixed(6)));
+            String(Number(number.toFixed(3)));
 
           // Net change relative to inventory before correction:
           // restore old usage, then deduct corrected usage.
