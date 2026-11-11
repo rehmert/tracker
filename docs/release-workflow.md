@@ -7,6 +7,14 @@
 > non-deploying dry-run; `--execute` explicitly authorizes promotion.
 > See [Release 568 operations workflow](release-568-ops-tooling.md).
 
+> **Release 569 update:** The observed Python 3.13.5/SQLite 3.46.1
+> dependency baseline is recorded for both hosts. Run
+> `scripts/tracker_dependency_baseline569.py --instance DEV` locally on DEV,
+> and the same script with `--instance PROD` over key-based SSH for
+> read-only drift detection. It does not update installed packages or close
+> the fresh-install qualification work in issue #10.
+> See [Release 569 baseline](release-569-dependency-baseline.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
