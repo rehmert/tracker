@@ -30,9 +30,7 @@ def test_blend_source_option_keeps_original_id_value():
         '<option value="{{ v.id }}"'
     ) in source
 
-    assert (
-        '>#{{ v.id }} · {{ v.compound.name|truncate(18, True, "…") }}'
-    ) in source
+    assert '>#{{ v.id }} · {{ {"tirzepatide":"Tirz"' in source
 
     assert "{{ v.purchase.vendor if v.purchase and v.purchase.vendor else \"—\" }}" in source
     assert "{{ v.lot or \"—\" }}" in source
@@ -101,8 +99,8 @@ def test_identity_fields_render_for_duplicate_labels():
     first = render(142)
     second = render(143)
 
-    assert '#142 · Tirzepatide · APM · TZ-0926 · 30 mg' in first
-    assert '#143 · Tirzepatide · APM · TZ-0926 · 30 mg' in second
+    assert '#142 · Tirz · APM · TZ-0926 · 30 mg' in first
+    assert '#143 · Tirz · APM · TZ-0926 · 30 mg' in second
 
     assert 'value="142"' in first
     assert 'value="143"' in second
