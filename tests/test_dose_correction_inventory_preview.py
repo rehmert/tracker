@@ -79,7 +79,7 @@ def test_preview_is_read_only_and_escapes_names():
 
     assert "item.textContent = projection;" in js
     assert "panel.append(heading, list);" in js
-    assert "number.toFixed(6)" in js
+    assert "number.toFixed(3)" in js
 
     for forbidden in (
         "fetch(",
