@@ -47,7 +47,7 @@ def blends_page(request: Request, db: Session = Depends(get_scoped_db390)):
     views = services.vial_views(db, vials)
     blends = list(db.scalars(select(Blend).order_by(Blend.id.desc())))
     return render(request, 'blends.html', vials=vials, views=views, blends=blends,
-                  remaining={b.id: blend_remaining(b) for b in blends}, units=U.CONTENT_UNITS, submission_token=idempotency.new_token())
+                  remaining={b.id: blend_remaining(b) for b in blends}, units=U.CONTENT_UNITS, submission_token=idempotency.new_token(), waterfall_token=idempotency.new_token())
 
 
 def calculate_blend(form, db: Session):
@@ -376,6 +376,9 @@ async def record_calculated_blend(request: Request, db: Session = Depends(get_sc
         plan = calculate_reconstitution_plan(form, db)
         if not plan['rows']:
             raise ValueError('No source transfers in the calculated plan.')
+        # Preserve pre-transfer inventory for status and audit calculations.
+        # Querying after adding BlendComponent rows can autoflush them.
+        original_views = services.vial_views(db, [r['vial'] for r in plan['rows']])
         total_by_compound = {}
         for row in plan['rows']:
             vial = row['vial']
@@ -413,10 +416,7 @@ async def record_calculated_blend(request: Request, db: Session = Depends(get_sc
             })
         for row in plan['rows']:
             vial = row['vial']
-            view = services.vial_views(db, [vial])[vial.id]
-            # Use the previously validated view, before any pending INSERTs
-            # are flushed by the audit machinery.
-            base_remaining = view.remaining_base + row['base'] if view.remaining_base < row['base'] else view.remaining_base
+            base_remaining = original_views[vial.id].remaining_base
             if vial.volume_ml is None:
                 vial.volume_ml = row['bac']
                 vial.reconstituted_on = date.today()
