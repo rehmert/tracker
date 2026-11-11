@@ -38,7 +38,7 @@
   <label class="field" for="dose-blend-select"><span>Finished preparation</span>
     <select id="dose-blend-select">
       {% for row in active_blends %}
-      <option value="{{ row.blend.id }}">{{ row.blend.label }} · #{{ row.blend.id }} · {{ row.remaining_ml|num }} mL remaining{% if (row.blend.notes or '').startswith('Waterfall:') %} · waterfall{% endif %}</option>
+      <option value="{{ row.blend.id }}">{{ row.blend.label }} · #{{ row.blend.id }} · {{ row.remaining_display }} remaining{% if (row.blend.notes or '').startswith('Waterfall:') %} · waterfall{% endif %}</option>
       {% endfor %}
     </select>
   </label>
