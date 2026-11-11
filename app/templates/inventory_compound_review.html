@@ -93,18 +93,18 @@ gap:1rem;
 <td>{{ group.unit }}</td>
 
 <td>
-{{ "%.4f"|format(group.expired_quantity) }}
+{{ group.expired_quantity|num }}
 {{ group.unit }}
 </td>
 
 <td>
-{{ "%.4f"|format(group.undated_quantity) }}
+{{ group.undated_quantity|num }}
 {{ group.unit }}
 </td>
 
 <td>
 <strong>
-{{ "%.4f"|format(group.total_quantity) }}
+{{ group.total_quantity|num }}
 {{ group.unit }}
 </strong>
 </td>
@@ -273,7 +273,7 @@ Each row retains its original unit.
 <td>{{ row.status }}</td>
 
 <td>
-{{ "%.4f"|format(row.remaining) }}
+{{ row.remaining|num }}
 {{ row.unit }}
 </td>
 
