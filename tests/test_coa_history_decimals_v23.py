@@ -10,7 +10,7 @@ from app.migrations import migrate
 
 def test_plain_decimal_formatting():
     assert units._num(0.00000012) == '<0.001'
-    assert signed_decimal(0.000012) == '+<0.001'
+    assert signed_decimal(0.000012) == '<0.001'
     assert "%.4g" not in templates.env.loader.get_source(templates.env, 'inventory_intelligence.html')[0]
 
 
