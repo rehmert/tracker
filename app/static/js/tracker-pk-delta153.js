@@ -129,7 +129,7 @@
 
       $('pkDeltaMetrics').textContent=
         'B minus A · Mean delta: '+
-        data.mean_delta.toFixed(4)+
+        window.TrackerNumber563.format(data.mean_delta)+
         ' mg-eq; AUC delta: '+
         data.auc_delta.toFixed(3)+
         ' mg-eq·h; range: '+
