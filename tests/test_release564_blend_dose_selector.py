@@ -3,6 +3,7 @@
 Blend stock must remain separate from ordinary Vial/DoseLog accounting.
 """
 from uuid import uuid4
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
@@ -10,6 +11,7 @@ from app.db import SessionLocal
 from app.main import app
 from app.models import Blend, BlendComponent, BlendDose, Compound, DoseLog, Vial
 from app.routers.blends import blend_remaining
+from app.routers.doses import _blend_remaining_display
 
 
 def test_existing_waterfall_blend_can_be_selected_and_logged_from_doses_page():
@@ -57,7 +59,7 @@ def test_existing_waterfall_blend_can_be_selected_and_logged_from_doses_page():
         assert 'id="dose-blend-select"' in page.text
         assert f'<option value="{blend_id}">' in page.text
         assert name in page.text
-        assert "0.5 mL remaining" in page.text
+        assert "10 mg remaining" in page.text
         assert "window.location.assign('/blends/'" in page.text
 
         detail = client.get(f"/blends/{blend_id}")
@@ -80,6 +82,11 @@ def test_existing_waterfall_blend_can_be_selected_and_logged_from_doses_page():
             assert db.query(DoseLog).filter_by(vial_id=source_id).count() == 0
             assert db.get(Vial, source_id).status == "finished"
 
+        # The dropdown recomputes compound stock after a recorded withdrawal.
+        after = client.get("/doses")
+        assert after.status_code == 200
+        assert "8 mg remaining" in after.text
+
 
 def test_finished_blend_not_offered_for_new_dose():
     name = "Finished blend selection " + uuid4().hex[:10]
@@ -91,3 +98,32 @@ def test_finished_blend_not_offered_for_new_dose():
         page = client.get("/doses")
         assert page.status_code == 200
         assert name not in page.text
+
+
+def test_waterfall_remaining_label_uses_mcg_below_one_mg():
+    # A 0.75 mg reconstitution with 0.2/0.5 mL remaining is 300 mcg.
+    result = SimpleNamespace(
+        notes="Waterfall: source vials #1, #2",
+        final_volume_ml=0.5,
+        components=[
+            SimpleNamespace(compound_id=1, transferred_base=250, target_unit="mcg"),
+            SimpleNamespace(compound_id=1, transferred_base=500, target_unit="mg"),
+        ],
+    )
+    assert _blend_remaining_display(result, 0.2) == "300 mcg"
+
+    # Do not invent a mass conversion for compounds stored in IU.
+    result.components = [
+        SimpleNamespace(compound_id=1, transferred_base=10, target_unit="IU"),
+    ]
+    assert _blend_remaining_display(result, 0.2) == "4 IU"
+
+    # Do not aggregate different peptides into a misleading single mass.
+    result.components = [
+        SimpleNamespace(compound_id=1, transferred_base=5000, target_unit="mg"),
+        SimpleNamespace(compound_id=2, transferred_base=5000, target_unit="mg"),
+    ]
+    assert _blend_remaining_display(result, 0.2) == "0.2 mL"
+
+    result.notes = "Ordinary multi-compound blend"
+    assert _blend_remaining_display(result, 0.2) == "0.2 mL"
