@@ -1,44 +1,4 @@
-{% extends "base.html" %}{% block title %}Peptide blends
-<script>
-(()=>{
-const form=document.getElementById('waterfall-form'), rows=document.getElementById('waterfall-rows');
-const tmpl=document.getElementById('waterfall-row-template');
-const status=document.getElementById('waterfall-status'), result=document.getElementById('waterfall-result');
-const preview=document.getElementById('waterfall-preview-btn'), record=document.getElementById('waterfall-record-btn');
-let approved=null;
-function snapshot(){return JSON.stringify([...new FormData(form)].filter(([k])=>k!=='confirmed_actual'));}
-function invalidate(){approved=null;record.disabled=true;result.hidden=true;status.textContent='Preview the current vial order and quantities before recording.';form.querySelector('[name="confirmed_actual"]').value='';}
-function add(){
- if(rows.children.length>=6)return;
- const row=tmpl.content.firstElementChild.cloneNode(true);
- row.querySelector('.waterfall-remove').onclick=()=>{if(rows.children.length>2){row.remove();invalidate();}};
- rows.append(row);invalidate();
-}
-document.getElementById('waterfall-add').onclick=add;
-add();add();
-form.addEventListener('input',invalidate);
-form.addEventListener('change',invalidate);
-preview.onclick=async()=>{
-result.hidden=false;result.textContent='Calculating…';record.disabled=true;approved=null;preview.disabled=true;
-try{
-const response=await fetch('/blends/waterfall/preview',{method:'POST',body:new FormData(form)});
-result.innerHTML=await response.text();
-if(response.ok){approved=snapshot();record.disabled=false;status.textContent='Preview ready. Only record if the stated source order and actual transfer are correct.';}
-else{status.textContent='Correct the error shown in the preview.';}
-}catch(error){result.textContent='Preview failed: '+error.message;status.textContent='Preview request failed.'}
-finally{preview.disabled=false;}
-};
-form.addEventListener('submit',(event)=>{
-if(!approved||snapshot()!==approved){event.preventDefault();invalidate();alert('Preview the exact waterfall again.');return;}
-if(!confirm('Have you completed this physical waterfall transfer using the exact selected source vials and initial volume? All selected source inventory will be consumed and recorded as one blend.')){
-event.preventDefault();return;
-}
-form.querySelector('[name="confirmed_actual"]').value='yes';
-record.disabled=true;
-});
-})();
-</script>
-{% endblock %}{% block content %}
+{% extends "base.html" %}{% block title %}Peptide blends{% endblock %}{% block content %}
 <h1>Peptide blends</h1>
 <p><a href="/reconstitution-calculator">Single-vial and premixed-blend calculator →</a></p>
 <p>Choose source vials, enter the target amount for each compound, preview, then record quantities you actually prepared. A preview never changes inventory. Recorded blends remain separate from original source vials.</p>
@@ -163,5 +123,44 @@ invalidate();
 });
 form.addEventListener('input',invalidate);
 form.addEventListener('change',invalidate);})();
+</script>
+<script>
+(()=>{
+const form=document.getElementById('waterfall-form'), rows=document.getElementById('waterfall-rows');
+const tmpl=document.getElementById('waterfall-row-template');
+const status=document.getElementById('waterfall-status'), result=document.getElementById('waterfall-result');
+const preview=document.getElementById('waterfall-preview-btn'), record=document.getElementById('waterfall-record-btn');
+let approved=null;
+function snapshot(){return JSON.stringify([...new FormData(form)].filter(([k])=>k!=='confirmed_actual'));}
+function invalidate(){approved=null;record.disabled=true;result.hidden=true;status.textContent='Preview the current vial order and quantities before recording.';form.querySelector('[name="confirmed_actual"]').value='';}
+function add(){
+ if(rows.children.length>=6)return;
+ const row=tmpl.content.firstElementChild.cloneNode(true);
+ row.querySelector('.waterfall-remove').onclick=()=>{if(rows.children.length>2){row.remove();invalidate();}};
+ rows.append(row);invalidate();
+}
+document.getElementById('waterfall-add').onclick=add;
+add();add();
+form.addEventListener('input',invalidate);
+form.addEventListener('change',invalidate);
+preview.onclick=async()=>{
+result.hidden=false;result.textContent='Calculating…';record.disabled=true;approved=null;preview.disabled=true;
+try{
+const response=await fetch('/blends/waterfall/preview',{method:'POST',body:new FormData(form)});
+result.innerHTML=await response.text();
+if(response.ok){approved=snapshot();record.disabled=false;status.textContent='Preview ready. Only record if the stated source order and actual transfer are correct.';}
+else{status.textContent='Correct the error shown in the preview.';}
+}catch(error){result.textContent='Preview failed: '+error.message;status.textContent='Preview request failed.'}
+finally{preview.disabled=false;}
+};
+form.addEventListener('submit',(event)=>{
+if(!approved||snapshot()!==approved){event.preventDefault();invalidate();alert('Preview the exact waterfall again.');return;}
+if(!confirm('Have you completed this physical waterfall transfer using the exact selected source vials and initial volume? All selected source inventory will be consumed and recorded as one blend.')){
+event.preventDefault();return;
+}
+form.querySelector('[name="confirmed_actual"]').value='yes';
+record.disabled=true;
+});
+})();
 </script>
 {% endblock %}
