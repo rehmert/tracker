@@ -122,7 +122,7 @@ def test_script_keeps_live_environment_and_release_runner_unchanged():
     for present in (
         "--execute", "DRY_RUN=PASSED", "worktree", "venv",
         '"download"', '"--no-index"', '"--only-binary=:all:"',
-        '"pip", "check"', "tracker_dependency_baseline569.py",
+        "FRESHENV_PACKAGE_BASELINE=PASSED", "tracker_dependency_baseline569.py",
         "playwright", "install", "chromium",
         "FRESHENV_CHROMIUM_LAUNCH=PASSED",
         "FRESHENV_BACKEND_SUITE=PASSED",
