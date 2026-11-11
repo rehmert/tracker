@@ -3,6 +3,7 @@ import math
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from .models import Supply, SupplyUsage, InventoryAdjustment, Purchase, Vial, DoseLog
+from . import units as U
 
 
 def collect_inventory_health(db: Session):
@@ -26,7 +27,7 @@ def collect_inventory_health(db: Session):
             if all(math.isfinite(x) for x in (s.purchased_qty, s.remaining_qty)) and all(math.isfinite(u.amount) for u in usages):
                 expected = s.purchased_qty - sum(u.amount for u in usages)
                 if not math.isclose(expected, s.remaining_qty, rel_tol=1e-8, abs_tol=1e-5):
-                    findings.append(('Warning', f'Supply #{s.id} ({s.name}) balance differs from purchase minus recorded usage: expected {expected:.4f}, stored {s.remaining_qty:.4f}. Other stock operations may explain the difference; review before adjusting.', '/reconciliation'))
+                    findings.append(('Warning', f'Supply #{s.id} ({s.name}) balance differs from purchase minus recorded usage: expected {U._num(expected)}, stored {U._num(s.remaining_qty)}. Other stock operations may explain the difference; review before adjusting.', '/reconciliation'))
         else:
             for a in adjustments:
                 if not all(math.isfinite(x) and x >= 0 for x in (a.previous_qty, a.counted_qty)):
