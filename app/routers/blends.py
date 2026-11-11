@@ -1,5 +1,5 @@
 """Record physical vial transfers into a blend; no dosing recommendations."""
-from datetime import datetime
+from datetime import date, datetime
 from math import isfinite, floor
 
 from fastapi import APIRouter, Depends, Request
@@ -10,8 +10,9 @@ from .. import services, units as U, idempotency
 from ..audit_helpers import record
 from ..inventory_lock import reserve_inventory_write
 from ..scoped_db390 import get_scoped_db390
-from ..models import Blend, BlendComponent, BlendDose, Vial
+from ..models import Blend, BlendComponent, BlendDose, Vial, PreparationEvent
 from ..templating import render
+from ..blend_workflow563 import calculate_waterfall
 
 router = APIRouter()
 
@@ -345,6 +346,194 @@ async def create_blend(request: Request, db: Session = Depends(get_scoped_db390)
         db.commit()
         return services.flash_redirect(f'/blends/{blends[0].id}', msg=f'{destinations} destination vial(s) recorded; source inventory transferred.')
     except (ValueError, TypeError, U.UnitError) as exc:
+        db.rollback()
+        return services.flash_redirect('/blends', err=str(exc))
+
+
+
+# Release 563: the same what-if planner can be recorded after a separate
+# explicit confirmation. All quantities are recomputed and checked under the
+# inventory write lock; a preview itself never mutates stock.
+@router.post('/blends/record-plan')
+async def record_calculated_blend(request: Request, db: Session = Depends(get_scoped_db390)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect('/blends', err='Inventory is busy. Retry the record action.')
+    form = await request.form()
+    token = str(form.get('submission_token', ''))
+    state, digest = idempotency.check(
+        db, token, 'blend_calculated563',
+        sorted((key, str(value)) for key, value in form.multi_items() if key != 'submission_token')
+    )
+    if state != 'new':
+        db.rollback()
+        return services.flash_redirect('/blends', err='Already submitted or invalid submission. Refresh before retrying.')
+    try:
+        if form.get('confirmed_actual') != 'yes':
+            raise ValueError('Confirm that the displayed source preparation and transfer quantities actually occurred.')
+        label = str(form.get('label', '')).strip()
+        if not label or len(label) > 160:
+            raise ValueError('Enter a destination label (up to 160 characters).')
+        plan = calculate_reconstitution_plan(form, db)
+        if not plan['rows']:
+            raise ValueError('No source transfers in the calculated plan.')
+        total_by_compound = {}
+        for row in plan['rows']:
+            vial = row['vial']
+            total_by_compound[vial.compound_id] = total_by_compound.get(vial.compound_id, 0) + row['base']
+            if row['source_ml'] <= 0 or row['source_total_ml'] <= 0:
+                raise ValueError(f'Vial #{vial.id} has no recorded source liquid volume.')
+            if not vial.volume_ml and row['bac'] <= 0:
+                raise ValueError(f'Vial #{vial.id}: enter or confirm the full source reconstitution volume.')
+        notes = str(form.get('notes', '')).strip()
+        blends = []
+        for index, volume in enumerate(plan['destination_volumes']):
+            fraction = volume / plan['volume']
+            blend = Blend(
+                label=f'{label} ({index + 1}/{plan["destination_count"]})' if plan['destination_count'] > 1 else label,
+                final_volume_ml=volume, diluent_ml=plan['destination_bac'] * fraction,
+                capacity_ml=plan['capacity'],
+                notes=('Recorded from a confirmed calculated source preparation. ' + notes).strip()
+            )
+            db.add(blend)
+            db.flush()
+            blends.append(blend)
+            for row in plan['rows']:
+                vial = row['vial']
+                # Source component target is its proportional share of the
+                # compound's total target, regardless of source count.
+                share = row['target_base'] * row['base'] / total_by_compound[vial.compound_id]
+                db.add(BlendComponent(
+                    blend_id=blend.id, source_vial_id=vial.id, compound_id=vial.compound_id,
+                    transferred_base=row['base'] * fraction, transferred_ml=row['source_ml'] * fraction,
+                    target_dose_base=share, target_unit=row['target_unit']
+                ))
+            record(db, 'blend', blend.id, 'create_calculated563', after={
+                'source_vial_ids': [row['vial'].id for row in plan['rows']],
+                'final_volume_ml': volume
+            })
+        for row in plan['rows']:
+            vial = row['vial']
+            view = services.vial_views(db, [vial])[vial.id]
+            # Use the previously validated view, before any pending INSERTs
+            # are flushed by the audit machinery.
+            base_remaining = view.remaining_base + row['base'] if view.remaining_base < row['base'] else view.remaining_base
+            if vial.volume_ml is None:
+                vial.volume_ml = row['bac']
+                vial.reconstituted_on = date.today()
+                db.add(PreparationEvent(
+                    vial_id=vial.id, kind='reconstitution',
+                    notes=f'Confirmed source preparation for calculated blend: {U._num(row["bac"])} mL.'
+                ))
+            remaining_after = max(0.0, base_remaining - row['base'])
+            vial.status = 'finished' if remaining_after <= max(1e-6, base_remaining * 1e-8) else 'in_use'
+            record(db, 'vial', vial.id, 'blend_transfer_calculated563', after={
+                'transferred_base': row['base'],
+                'destination_blend_ids': [b.id for b in blends]
+            })
+        idempotency.record(db, token, 'blend_calculated563', digest)
+        db.commit()
+        return services.flash_redirect(f'/blends/{blends[0].id}', msg='Confirmed blend and source preparation recorded.')
+    except (ValueError, TypeError, U.UnitError, OverflowError, ZeroDivisionError) as exc:
+        db.rollback()
+        return services.flash_redirect('/blends', err=str(exc))
+
+
+@router.post('/blends/waterfall/preview')
+async def preview_waterfall(request: Request, db: Session = Depends(get_scoped_db390)):
+    from html import escape
+    from fastapi.responses import HTMLResponse
+    try:
+        plan = calculate_waterfall(await request.form(), db)
+        lines = [
+            '<h3>Waterfall preview — not recorded</h3>',
+            '<p><strong>No inventory was changed.</strong> The calculation assumes nominal additive content, '
+            'complete transfer at every stage, and no displacement or handling loss.</p>',
+            f'<p>Sources: <strong>{len(plan["vials"])}</strong> · '
+            f'Total content: <strong>{U._num(U.from_base(plan["total"], plan["vials"][0].content_unit))} '
+            f'{escape(plan["vials"][0].content_unit)}</strong> · '
+            f'Nominal final volume: <strong>{U._num(plan["volume"])} mL</strong> · '
+            f'Concentration: <strong>{U._num(plan["total"]/plan["volume"])} {escape(plan["unit"])}/mL</strong> · '
+            f'Chosen target: <strong>{U._num(plan["target_base"]/U.parse_unit(plan["target_unit"]).factor)} '
+            f'{escape(plan["target_unit"])}</strong> · '
+            f'Calculated draw: <strong>{U._num(plan["draw_ml"])} mL</strong></p>',
+            '<ol>'
+        ]
+        for index, vial in enumerate(plan['vials'], 1):
+            lines.append(
+                f'<li>Vial #{vial.id}: {escape(vial.compound.name)} · '
+                f'{U._num(U.from_base(plan["views"][vial.id].remaining_base, vial.content_unit))} '
+                f'{escape(vial.content_unit)}'
+                + (' · initial BAC enters this source' if index == 1 else ' · contents join the preceding solution')
+                + '</li>'
+            )
+        lines.append('</ol><p>Final physical container is the last selected source vial. '
+                     'Tracker records the resulting stock as a separate blend, and marks the source records consumed. '
+                     '<strong>Verify actual quantities and sterile preparation independently before recording.</strong></p>')
+        return HTMLResponse(''.join(lines), headers={'Cache-Control':'no-store'})
+    except (ValueError, TypeError, U.UnitError, OverflowError) as exc:
+        return HTMLResponse('<p role="alert"><strong>Cannot preview waterfall:</strong> ' +
+                            escape(str(exc)) + '</p>', status_code=422)
+
+
+@router.post('/blends/waterfall/record')
+async def record_waterfall(request: Request, db: Session = Depends(get_scoped_db390)):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect('/blends', err='Inventory is busy. Try again.')
+    form = await request.form()
+    token = str(form.get('submission_token', ''))
+    state, digest = idempotency.check(
+        db, token, 'waterfall563',
+        sorted((key, str(value)) for key, value in form.multi_items() if key != 'submission_token')
+    )
+    if state != 'new':
+        db.rollback()
+        return services.flash_redirect('/blends', err='Already submitted or invalid waterfall submission. Refresh.')
+    try:
+        if form.get('confirmed_actual') != 'yes':
+            raise ValueError('Confirm the selected source order, quantities and actual physical transfer before recording.')
+        plan = calculate_waterfall(form, db)
+        vials = plan['vials']
+        blend = Blend(
+            label=plan['label'], final_volume_ml=plan['volume'], diluent_ml=0,
+            capacity_ml=plan['capacity'],
+            notes=(f'Waterfall: source vials {", ".join("#"+str(v.id) for v in vials)}. '
+                   f'Initial BAC water: {U._num(plan["volume"])} mL. '
+                   f'Final physical container: vial #{vials[-1].id}. '
+                   + plan['note']).strip()
+        )
+        db.add(blend)
+        db.flush()
+        for index, vial in enumerate(vials):
+            content = plan['views'][vial.id].remaining_base
+            db.add(BlendComponent(
+                blend_id=blend.id, source_vial_id=vial.id, compound_id=vial.compound_id,
+                transferred_base=content, transferred_ml=plan['volume'] if index == 0 else 0.0,
+                target_dose_base=plan['target_base'] * content / plan['total'],
+                target_unit=plan['target_unit']
+            ))
+            if index == 0:
+                vial.volume_ml = plan['volume']
+                vial.reconstituted_on = date.today()
+            vial.status = 'finished'
+            db.add(PreparationEvent(
+                vial_id=vial.id, kind='reconstitution',
+                notes=(f'Waterfall step {index+1}/{len(vials)} recorded for blend #{blend.id}; '
+                       + (f'initial BAC {U._num(plan["volume"])} mL.' if index == 0
+                          else 'solution received from preceding source; no new BAC added.'))
+            ))
+            record(db, 'vial', vial.id, 'waterfall_transfer563', after={
+                'transferred_base': content, 'waterfall_step': index + 1,
+                'destination_blend_id': blend.id
+            })
+        record(db, 'blend', blend.id, 'create_waterfall563', after={
+            'source_vial_ids': [v.id for v in vials],
+            'final_volume_ml': plan['volume'],
+            'source_content_total_base': plan['total']
+        })
+        idempotency.record(db, token, 'waterfall563', digest)
+        db.commit()
+        return services.flash_redirect(f'/blends/{blend.id}', msg='Confirmed waterfall recorded; source stock transferred.')
+    except (ValueError, TypeError, U.UnitError, OverflowError) as exc:
         db.rollback()
         return services.flash_redirect('/blends', err=str(exc))
 
