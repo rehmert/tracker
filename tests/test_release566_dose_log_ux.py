@@ -2,6 +2,7 @@
 
 These tests use disposable test data and never record a real administration.
 """
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -103,14 +104,13 @@ def test_vial_id_and_full_width_time_controls_present_in_dose_log():
         assert 'class="field wide tracker-dose-when-field"' in html
         # Each vial option ends with the amount and unit, without "left"
         # or "remaining" after it.
-        import re
         vial_options = re.search(
             r'<select name="vial_id" required>(.*?)</select>', html, re.S
         )
         assert vial_options is not None
         choices = re.findall(r'<option[^>]*>(.*?)</option>', vial_options.group(1))
         assert choices
-        assert all(not re.search(r"\\b(left|remaining)\\b", choice, re.I)
+        assert all(not re.search(r"\b(left|remaining)\b", choice, re.I)
                    for choice in choices)
         assert "tracker-mobile-log373.css?v=566" in html
 
