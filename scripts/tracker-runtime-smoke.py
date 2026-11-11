@@ -23,12 +23,16 @@ class Links(HTMLParser):
     def __init__(self):
         super().__init__()
         self.sidebar_depth = 0
+        self.sidebar_containers = 0
         self.paths = []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
 
         if tag == "nav":
+            if attrs.get("id") == "app-sidebar":
+                self.sidebar_containers += 1
+
             if self.sidebar_depth:
                 self.sidebar_depth += 1
             elif attrs.get("id") == "app-sidebar":
@@ -426,6 +430,23 @@ def wait_for_authenticated_readiness(opener, origin, headers):
 
 
 
+
+def validate_sidebar_structure(parser):
+    """Require exactly one complete sidebar navigation container."""
+    if parser.sidebar_containers != 1:
+        raise ValueError(
+            "Expected exactly one app-sidebar navigation container: "
+            f"found {parser.sidebar_containers}"
+        )
+
+    if parser.sidebar_depth != 0:
+        raise ValueError(
+            "Sidebar navigation container is not closed"
+        )
+
+    print("SIDEBAR_STRUCTURE=PASS containers=1", flush=True)
+
+
 MIN_SIDEBAR_ENDPOINTS = 52
 
 
@@ -493,6 +514,9 @@ def run(instance, envfile):
         parser.feed(
             dashboard.decode("utf-8", errors="replace")
         )
+        parser.close()
+
+        validate_sidebar_structure(parser)
 
         paths = list(dict.fromkeys(parser.paths))
 
