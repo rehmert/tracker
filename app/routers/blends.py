@@ -452,7 +452,7 @@ async def preview_waterfall(request: Request, db: Session = Depends(get_scoped_d
             f'Total content: <strong>{U._num(U.from_base(plan["total"], plan["vials"][0].content_unit))} '
             f'{escape(plan["vials"][0].content_unit)}</strong> · '
             f'Nominal final volume: <strong>{U._num(plan["volume"])} mL</strong> · '
-            f'Concentration: <strong>{U._num(plan["total"]/plan["volume"])} {escape(plan["unit"])}/mL</strong> · '
+            f'Concentration: <strong>{U._num(U.from_base(plan["total"],plan["vials"][0].content_unit)/plan["volume"])} {escape(plan["vials"][0].content_unit)}/mL</strong> · '
             f'Chosen target: <strong>{U._num(plan["target_base"]/U.parse_unit(plan["target_unit"]).factor)} '
             f'{escape(plan["target_unit"])}</strong> · '
             f'Calculated draw: <strong>{U._num(plan["draw_ml"])} mL</strong></p>',
