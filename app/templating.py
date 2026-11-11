@@ -21,7 +21,7 @@ def money_precise(cents) -> str:
     """For per-unit costs that are fractions of a cent per mcg."""
     if cents is None:
         return "—"
-    return f"{config.CURRENCY}{cents / 100:,.3f}"
+    return f"{config.CURRENCY}{U._num(cents / 100)}"
 
 
 def amt(base, dim) -> str:
