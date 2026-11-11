@@ -115,8 +115,8 @@ def test_http_calendar_prefill_selects_correct_vial_and_does_not_log():
             db.commit()
 
         no_open = client.get(_url(cid))
-        assert _form_selection(no_open.text) == [""]
-        assert "Choose a vial manually" in no_open.text
+        assert _form_selection(no_open.text) == [str(ids[0])]
+        assert "Lowest-index eligible unopened vial" in no_open.text
 
         sealed = client.get(_url(cid, f"&vial_id={ids[0]}"))
         assert _form_selection(sealed.text) == [str(ids[0])]
