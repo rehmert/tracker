@@ -115,7 +115,7 @@
         ctx.fillStyle=ink;
         ctx.textAlign="right";
         ctx.fillText(
-          Number((min+fraction*(max-min)).toPrecision(4)),
+          window.TrackerNumber563.format(min+fraction*(max-min)),
           x0-10,y+4
         );
       }
