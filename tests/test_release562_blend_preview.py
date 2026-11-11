@@ -11,7 +11,9 @@ def test_compact_selector():
     assert 'name="source_id"' in HTML
     assert 'value="{{ v.id }}"' in HTML
     assert 'v.purchase.vendor' in HTML
-    assert 'v.compound.name|truncate(18' in HTML
+    assert '"tirzepatide":"Tirz"' in HTML
+    assert '"retatrutide":"Reta"' in HTML
+    assert 'v.compound.name|truncate(12' in HTML
     assert '{{ d.remaining_base|amt(d.dim) }} remaining' not in HTML
     assert '<th>Target/draw</th>' in HTML
 
