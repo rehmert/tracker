@@ -17,6 +17,27 @@ import urllib.parse
 import urllib.request
 
 
+def validate_sidebar_path(path):
+    """Reject malformed escapes and control bytes in local URLs."""
+    if any(ord(char) < 32 or ord(char) == 127 for char in path):
+        raise ValueError(
+            "Sidebar URL contains control characters"
+        )
+
+    if re.search(r"%(?![0-9A-Fa-f]{2})", path):
+        raise ValueError(
+            "Sidebar URL has malformed percent encoding"
+        )
+
+    decoded = urllib.parse.unquote_to_bytes(path)
+
+    if any(byte < 32 or byte == 127 for byte in decoded):
+        raise ValueError(
+            "Sidebar URL contains encoded control characters"
+        )
+
+
+
 class Links(HTMLParser):
     """Collect sidebar links without losing nested navigation."""
 
@@ -66,6 +87,17 @@ class Links(HTMLParser):
         if self.sidebar_depth and tag == "a":
             url = attrs.get("href") or ""
 
+            # Reject control characters before URL parsing can
+            # silently normalize them away.
+            if url.startswith("/") and not url.startswith("//"):
+                if any(
+                    ord(char) < 32 or ord(char) == 127
+                    for char in url
+                ):
+                    raise ValueError(
+                        "Sidebar URL contains control characters"
+                    )
+
             # Only local absolute paths represent sidebar pages.
             # Fragments and queries do not identify distinct pages.
             if not url.startswith("/") or url.startswith("//"):
@@ -82,6 +114,7 @@ class Links(HTMLParser):
                 and parsed.path.startswith("/")
                 and not parsed.path.startswith("//")
             ):
+                validate_sidebar_path(parsed.path)
                 self.paths.append(parsed.path)
 
     def handle_endtag(self, tag):
