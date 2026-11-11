@@ -138,7 +138,8 @@ templates.env.filters.update(n1=n1, n0=n0, signed=signed)
 def signed_decimal(x):
     if x is None:
         return "—"
-    return ("+" if x > 0 else "") + U._num(float(x))
+    value = U._num(float(x))
+    return value if value.startswith(("<", ">")) else ("+" if x > 0 else "") + value
 
 templates.env.filters["signed_decimal"] = signed_decimal
 
@@ -154,6 +155,7 @@ def num_input(x, digits=4) -> str:
     value = float(x)
     if not __import__("math").isfinite(value):
         return ""
-    return format(value, ".15f").rstrip("0").rstrip(".") if "." in format(value, ".15f") else format(value, ".15f")
+    raw = format(value, ".15f")
+    return raw.rstrip("0").rstrip(".") if "." in raw else raw
 
 templates.env.filters["num_input"] = num_input
