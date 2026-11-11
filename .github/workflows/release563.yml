@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      TRACKER_DATA_DIR: ${{ runner.temp }}/tracker-563-data
+      TRACKER_DATA_DIR: .ci-tracker-data
       TRACKER_INSTANCE: DEV
       PYTHONPATH: .
     steps:
