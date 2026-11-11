@@ -31,12 +31,13 @@ def test_blend_source_option_keeps_original_id_value():
     ) in source
 
     assert (
-        '>#{{ v.id }} · {{ v.compound.name }}'
+        '>#{{ v.id }} · {{ v.compound.name|truncate(18, True, "…") }}'
     ) in source
 
-    assert "· {{ v.label }}" in source
-    assert "· Lot {{ v.lot }}" in source
-    assert "{{ d.remaining_base|amt(d.dim) }} remaining" in source
+    assert "{{ v.purchase.vendor if v.purchase and v.purchase.vendor else \"—\" }}" in source
+    assert "{{ v.lot or \"—\" }}" in source
+    assert "{{ d.remaining_base|amt(d.dim) }}" in source
+    assert "{{ d.remaining_base|amt(d.dim) }} remaining" not in source
 
 
 def test_both_templates_parse():
@@ -83,6 +84,7 @@ def test_identity_fields_render_for_duplicate_labels():
             label="30 mg",
             lot="TZ-0926",
             compound=compound,
+            purchase=NS(vendor="APM"),
             content_unit="mg",
             volume_ml=None,
         )
@@ -99,8 +101,8 @@ def test_identity_fields_render_for_duplicate_labels():
     first = render(142)
     second = render(143)
 
-    assert '#142 · Tirzepatide · 30 mg · Lot TZ-0926' in first
-    assert '#143 · Tirzepatide · 30 mg · Lot TZ-0926' in second
+    assert '#142 · Tirzepatide · APM · TZ-0926 · 30 mg' in first
+    assert '#143 · Tirzepatide · APM · TZ-0926 · 30 mg' in second
 
     assert 'value="142"' in first
     assert 'value="143"' in second
