@@ -1,5 +1,12 @@
 # Tracker release workflow
 
+> **Release 568 update:** DEV remains the deployment control point. First
+> qualify the exact target with the guarded DEV runner and review it in the
+> DEV browser. Then run `scripts/tracker_promote568.py` from DEV for signed
+> promotion and remote guarded PROD deployment over SSH. The default is a
+> non-deploying dry-run; `--execute` explicitly authorizes promotion.
+> See [Release 568 operations workflow](release-568-ops-tooling.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
@@ -12,7 +19,7 @@ for each release (as root on the target instance):
       --ref release/reviewed-branch
 
 The tool checks clean-tree status, local instance, pinned SHAs and ancestry;
-fetches the exact ref; starts an independent, 1-GiB-capped systemd worker;
+fetches the exact ref; starts an independent systemd worker (currently capped at 6 GiB);
 compiles and tests an isolated checkout against a disposable SQLite database;
 takes private source/config and verified SQLite+uploads backups; performs an
 isolated restore simulation; checks the application service account's file
