@@ -1,0 +1,56 @@
+name: Tracker Release 563 candidate checks
+
+on:
+  push:
+    branches:
+      - release/563-blend-workflow-waterfall-format
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'tests/**'
+      - '.github/workflows/release563.yml'
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TRACKER_DATA_DIR: ${{ runner.temp }}/tracker-563-data
+      TRACKER_INSTANCE: DEV
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Syntax and template validation
+        run: |
+          python -m compileall -q app tests
+          python - <<'PY'
+          from pathlib import Path
+          from jinja2 import Environment
+          for file in Path("app/templates").rglob("*.html"):
+              Environment().parse(file.read_text())
+          print("PASS: Jinja templates parsed")
+          PY
+          node --check app/static/js/tracker-number-display563.js
+          node --check app/static/js/reconstitution-calculator.js
+          node --check app/static/pk.js
+          node --check app/static/js/tracker-dose-correction-review.js
+      - name: Focused blend and formatting regressions
+        run: |
+          mkdir -p "$TRACKER_DATA_DIR"
+          python -m pytest -q --tb=short --maxfail=1 \
+            tests/test_release563_blend_waterfall.py \
+            tests/test_release562_blend_preview.py \
+            tests/test_release561_vial_identity.py \
+            tests/test_blends.py \
+            tests/test_number_grouping_v23.py \
+            tests/test_coa_history_decimals_v23.py \
+            tests/test_dose_correction_inventory_preview.py
