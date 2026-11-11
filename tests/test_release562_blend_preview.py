@@ -21,6 +21,8 @@ def test_read_only_preview_with_dry_or_blank_transfer():
     assert "const hypothetical=hasDrySource||hasMissingTransfer;" in HTML
     assert "hypothetical?'/blends/reconstitution-preview':'/blends/preview'" in HTML
     assert "if(hypothetical){" in HTML
-    assert "approvedSnapshot=snapshot();recordButton.disabled=false;" in HTML
+    assert "approvedSnapshot=snapshot();" in HTML
+    assert "form.action='/blends/record-plan';recordButton.disabled=false;" in HTML
+    assert "form.action='/blends';recordButton.disabled=false;" in HTML
     assert "preview.innerHTML=result;" in HTML
     assert "reviewStatus.textContent='Preview could not be completed." in HTML
