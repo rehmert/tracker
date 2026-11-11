@@ -65,7 +65,7 @@
 
     const vals=rows.map(r=>r.planned).filter(Number.isFinite);
     const peak=Math.max(...vals), trough=Math.min(...vals), avg=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
-    const fmt=v=>Number.isFinite(v)?v.toPrecision(4)+' mg-eq':'—';
+    const fmt=v=>Number.isFinite(v)?window.TrackerNumber563.format(v)+' mg-eq':'—';
     $('pkPeak').textContent=fmt(peak);$('pkTrough').textContent=fmt(trough);
     $('pkRatio').textContent=trough>0?(peak/trough).toFixed(2)+'×':'N/A';$('pkAverage').textContent=fmt(avg);
     $('summary').textContent=`${data.model?.level||'approximate'} model. ${data.actual_doses} historical administrations, ${data.planned_doses} planned administrations. Units: ${data.units}.`;
