@@ -116,4 +116,3 @@ def test_vial_id_and_full_width_time_controls_present_in_dose_log():
     assert "tracker-dose-when-field .tracker-time24-controls" in css
     assert "tracker-dose-when-field .tracker-time24-now" in css
     assert "grid-column: 1 / -1" in css
-
