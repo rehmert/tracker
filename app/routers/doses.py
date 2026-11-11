@@ -58,10 +58,9 @@ def _select_dose_vial(vials, views, compound_id, vial_id, planned_date,
                       planned_amount, planned_unit, recent_vial_ids=()):
     """Choose one vial for a dose form; read only, never administers anything.
 
-    The oldest *usable* in-use vial means lowest inventory ID. A planned
-    amount must fit that vial; explicit selections are always respected
-    when available and the compound matches. The POST endpoint retains
-    its independent final inventory and quantity validation.
+    Prefer an eligible opened vial, then the lowest-ID eligible unopened
+    vial. A planned amount must fit one vial. An explicit matching selection
+    is retained; POST independently validates stock, unit and identity.
     """
     scheduled = compound_id is not None and bool(planned_date)
     warning = ""
@@ -79,27 +78,29 @@ def _select_dose_vial(vials, views, compound_id, vial_id, planned_date,
     if compound_id is None:
         return None, warning
 
-    opened = sorted(
-        (v for v in vials
-         if v.compound_id == compound_id and v.status == "in_use"
-         and views[v.id].remaining_base > 0),
-        key=lambda v: v.id,
-    )
-
-    if (scheduled and planned_amount is not None
-            and isfinite(planned_amount) and planned_amount > 0):
-        usable = []
-        for v in opened:
-            view = views[v.id]
+    def can_supply(v):
+        view = views[v.id]
+        if view.remaining_base <= 0:
+            return False
+        # A calendar plan may be expressed in mass, IU, or liquid volume.
+        # For all candidates, including unopened stock, ensure the entire
+        # planned amount fits *one* vial. Do not guess missing concentrations.
+        if (scheduled and planned_amount is not None
+                and isfinite(planned_amount) and planned_amount > 0):
             try:
-                amount = U.amount_to_vial_base(
-                    planned_amount, planned_unit, view.dim, view.conc_per_ml,
+                base = U.amount_to_vial_base(
+                    planned_amount, planned_unit, view.dim, view.conc_per_ml
                 )
             except (U.UnitError, ValueError, TypeError):
-                continue
-            if isfinite(amount) and 0 < amount <= view.remaining_base + 1e-7:
-                usable.append(v)
-        opened = usable
+                return False
+            return isfinite(base) and 0 < base <= view.remaining_base + 1e-7
+        return True
+
+    opened = sorted(
+        (v for v in vials if v.compound_id == compound_id
+         and v.status == "in_use" and can_supply(v)),
+        key=lambda v: v.id,
+    )
 
     if opened and scheduled:
         by_id = {v.id: v for v in opened}
@@ -117,19 +118,28 @@ def _select_dose_vial(vials, views, compound_id, vial_id, planned_date,
                        "details before recording.")
         return opened[0].id, warning
 
-    if not scheduled:
-        sealed = sorted(
-            (v for v in vials
-             if v.compound_id == compound_id and v.status == "sealed"
-             and views[v.id].remaining_base > 0),
-            key=lambda v: v.id,
-        )
-        if sealed:
-            return sealed[0].id, ""
+    # Release 566: calendar handoffs must fall back to available unopened
+    # stock rather than leaving the selection blank. Lowest permanent ID is
+    # the oldest stocked unopened vial, independent of dropdown ordering.
+    unopened = sorted(
+        (v for v in vials if v.compound_id == compound_id
+         and v.status == "sealed" and can_supply(v)),
+        key=lambda v: v.id,
+    )
+    if unopened:
+        if scheduled and not warning:
+            warning = (
+                "No eligible opened vial. Lowest-index eligible unopened "
+                f"vial #{unopened[0].id} selected automatically. "
+                "Confirm the physical vial before recording."
+            )
+        return unopened[0].id, warning
 
     if scheduled and not warning:
-        warning = ("No in-use vial with enough usable inventory was found "
-                   "for this scheduled compound. Choose a vial manually.")
+        warning = (
+            "No opened or unopened vial with enough compatible stock "
+            "was found for this planned dose. Choose a vial manually."
+        )
     return None, warning
 
 
