@@ -105,7 +105,8 @@ def wheel_receipt(wheels: Path) -> int:
     for path in items:
         if path.is_symlink() or not path.is_file():
             raise ReplayError("Unsafe wheelhouse entry")
-        digest = hashlib.file_digest(path.open("rb"), "sha256").hexdigest()
+        with path.open("rb") as stream:
+            digest = hashlib.file_digest(stream, "sha256").hexdigest()
         lines.append(f"{digest}  {path.name}")
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
     report.chmod(0o600)
