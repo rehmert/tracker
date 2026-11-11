@@ -98,6 +98,20 @@ and you've reviewed the archive path.** After success, the /tmp replay
 can be removed manually from DEV when it is no longer needed; the
 persistent archive will remain under the root-only directory.
 
+For a future **read-only** archive verification, including after copying
+the directory to a different root-owned system, run:
+
+```bash
+sudo /opt/tracker/.venv/bin/python \
+  /opt/tracker/scripts/tracker_preserve571.py \
+  --verify-archive /var/lib/tracker-reproducibility/baseline-<COMMIT>-<TIMESTAMP>
+```
+
+The verifier rehashes every archived payload file and checks the
+manifest. It does not contact PyPI, install Python wheels, or start
+Chromium. A verified archive is necessary but does not by itself prove
+that the copied browser can launch on a differently configured OS.
+
 ## Recovery use and remaining gates
 
 A copy of `wheelhouse` can be installed in a **disposable** compatible
