@@ -685,9 +685,9 @@ document.addEventListener("DOMContentLoaded", () => {
       data-attention-percent="{{ d.pct_remaining if d.pct_remaining is not none else '' }}"
       data-attention-expires="{{ v.expires_on.isoformat() if v.expires_on else '' }}"
       data-attention-beyond-use="{{ v.beyond_use_on.isoformat() if v.beyond_use_on else '' }}">
-    <td><input type="checkbox" class="bulk-vial-check" name="vial_ids" value="{{ v.id }}" form="bulk-vials" aria-label="Select vial {{ v.label or v.id }}"></td>
+    <td><input type="checkbox" class="bulk-vial-check" name="vial_ids" value="{{ v.id }}" form="bulk-vials" aria-label="Select vial #{{ v.id }}{% if v.label %} {{ v.label }}{% endif %}{% if v.lot %}, lot {{ v.lot }}{% endif %}"></td>
     <td>{{ v.compound.name }}</td>
-    <td><a href="/vials/{{ v.id }}">{{ v.label or ('#' ~ v.id) }}</a>{% if v.lot %}<br><small>lot {{ v.lot }}</small>{% endif %}</td>
+    <td><a href="/vials/{{ v.id }}">#{{ v.id }}{% if v.label %} · {{ v.label }}{% endif %}</a>{% if v.lot %}<br><small>Lot: {{ v.lot }}</small>{% endif %}</td>
     <td>{{ gauge(d.pct_remaining, v.status) }}</td>
     <td class="n">{{ d.remaining_base|amt(d.dim) }} <small>of {{ d.content_base|amt(d.dim) }}</small></td>
     <td class="n">{{ d.landed_cents|money }}</td>
