@@ -290,7 +290,7 @@ def test_dose_566_vial_ids_and_time_controls_at_desktop_and_mobile(page):
     chooser.wait_for()
     options = chooser.locator("option").all_inner_texts()
     assert options, "The isolated candidate should have disposable vials."
-    assert all(re.search(r"\\s#\\d+", label) for label in options), options
+    assert all(re.search(r"\s#\d+", label) for label in options), options
 
     form = tab.locator('form[hx-post="/doses"]')
     original = form.locator('input[name="taken_at"]')
@@ -318,7 +318,7 @@ def test_dose_566_vial_ids_and_time_controls_at_desktop_and_mobile(page):
 
     now.click()
     assert re.fullmatch(
-        r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}",
+        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}",
         original.input_value(),
     )
-    assert not errors, "\\n".join(errors)
+    assert not errors, "\n".join(errors)
