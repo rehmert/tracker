@@ -31,6 +31,35 @@
 {% endif %}
 {% if repeat_notice %}<p class="note" role="status" id="dose-repeat-notice">{{ repeat_notice }}</p>{% endif %}{% if calendar_vial_notice %}<p class="note" role="status" id="dose-calendar-vial-notice">{{ calendar_vial_notice }}</p>{% endif %}<p class="note">Use “Prepare similar” in History to load previous recorded details for review. It never records an administration, and does not copy the previous time, notes, or supplies.</p><p class="note">Record an actual administration here. To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Recording a dose may update inventory; merely opening a planned entry does not.</p><nav class="ux-shortcuts"><a href="/calendar">Log from calendar</a><a href="#dose-history">View history ↓</a></nav>
 
+{% if active_blends %}
+<section class="card" id="dose-blend-picker" aria-labelledby="dose-blend-heading">
+  <h2 id="dose-blend-heading">Prepared Blend / Waterfall Vial</h2>
+  <p class="note">Waterfall results are recorded as blended vials, not individual compound vials. Choose the finished preparation below to record an actual dose from its remaining liquid volume. Existing blend records and inventory stay unchanged until you submit a dose.</p>
+  <label class="field" for="dose-blend-select"><span>Finished preparation</span>
+    <select id="dose-blend-select">
+      {% for row in active_blends %}
+      <option value="{{ row.blend.id }}">{{ row.blend.label }} · #{{ row.blend.id }} · {{ row.remaining_ml|num }} mL remaining{% if row.blend.notes.startswith('Waterfall:') %} · waterfall{% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="button" id="dose-blend-open" class="primary">Log Dose from Selected Blend</button>
+  <p class="note">The blend dose form tracks withdrawals in mL and updates the blend's own recorded draw history. Single-vial dose entries remain below.</p>
+</section>
+<script>
+(() => {
+  const chooser = document.getElementById('dose-blend-select');
+  const button = document.getElementById('dose-blend-open');
+  if (!chooser || !button) return;
+  button.addEventListener('click', () => {
+    const id = chooser.value;
+    if (/^[1-9]\d*$/.test(id)) {
+      window.location.assign('/blends/' + encodeURIComponent(id) + '#log-blend-draw');
+    }
+  });
+})();
+</script>
+{% endif %}
+
 <section>
   <h2 id="quick-dose-entry">Add an entry</h2>
 <nav class="tracker-mobile-log-links" aria-label="Quick dose logging">
@@ -212,7 +241,11 @@
   {% if planned_handoff %}
   <p class="empty">No stocked vial is available for {{ planned_compound_name }}. <a href="/dose-workspace?compound_id={{ selected_compound_id }}">Review vial inventory</a> before recording.</p>
   {% else %}
+  {% if active_blends %}
+  <p class="empty">No individual vials are available. Use the prepared blend selector above to record from a waterfall or mixed vial.</p>
+  {% else %}
   <p class="empty">No vials in stock to log against. Add one from a <a href="/purchases">purchase</a>.</p>
+  {% endif %}
   {% endif %}
   {% endif %}
 </section>
