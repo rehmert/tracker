@@ -137,3 +137,30 @@ def test_script_keeps_live_environment_and_release_runner_unchanged():
         '"git", "push"',
     ):
         assert forbidden not in source
+
+def test_wrong_host_and_nonroot_are_rejected_before_any_work(tool, monkeypatch):
+    monkeypatch.setattr(tool.os, "geteuid", lambda: 0)
+    monkeypatch.setattr(tool.socket, "gethostname", lambda: "tracker-prod")
+    with pytest.raises(tool.ReplayError, match="tracker-dev"):
+        tool.preflight()
+    monkeypatch.setattr(tool.socket, "gethostname", lambda: "tracker-dev")
+    monkeypatch.setattr(tool.os, "geteuid", lambda: 1000)
+    with pytest.raises(tool.ReplayError, match="tracker-dev"):
+        tool.preflight()
+
+
+def test_failed_preflight_prevents_replay(tool, monkeypatch, capsys):
+    monkeypatch.setattr(
+        tool, "preflight",
+        lambda: (_ for _ in ()).throw(tool.ReplayError("blocked")),
+    )
+    monkeypatch.setattr(
+        tool, "execute", lambda *_args, **_kwargs: pytest.fail("must not execute"),
+    )
+    assert tool.main(["--execute"]) == 1
+    assert "FRESHENV_REPLAY=FAILED" in capsys.readouterr().err
+
+
+def test_failed_isolated_command_propagates_nonzero(tool):
+    with pytest.raises(tool.ReplayError, match="exit code 17"):
+        tool.call([sys.executable, "-c", "raise SystemExit(17)"], timeout=10)
