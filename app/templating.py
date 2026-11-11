@@ -21,7 +21,7 @@ def money_precise(cents) -> str:
     """For per-unit costs that are fractions of a cent per mcg."""
     if cents is None:
         return "—"
-    return f"{config.CURRENCY}{cents / 100:,.4f}"
+    return f"{config.CURRENCY}{cents / 100:,.3f}"
 
 
 def amt(base, dim) -> str:
@@ -144,9 +144,16 @@ templates.env.filters["signed_decimal"] = signed_decimal
 
 
 def num_input(x, digits=4) -> str:
-    """Unformatted numeric text for HTML number inputs (commas are invalid)."""
+    """Retain editable exact numbers; rounding inputs could change saved stock.
+
+    Read-only output uses the three-decimal rule. Input fields preserve an
+    existing value rather than silently replacing it with a rounded amount.
+    """
     if x is None:
         return ""
-    return U._num(float(x), digits).replace(",", "")
+    value = float(x)
+    if not __import__("math").isfinite(value):
+        return ""
+    return format(value, ".15f").rstrip("0").rstrip(".") if "." in format(value, ".15f") else format(value, ".15f")
 
 templates.env.filters["num_input"] = num_input
