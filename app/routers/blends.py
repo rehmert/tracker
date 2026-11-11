@@ -262,8 +262,9 @@ async def preview_reconstitution(request: Request, db: Session = Depends(get_sco
                      f'<p>Additional BAC in destination vial: <strong>{U._num(plan["destination_bac"])} mL</strong>. '
                      'Transfer quantities are calculated to maximize complete draws within the nominal capacity. Each dry source is reconstituted before its calculated withdrawal. '
                      'Source BAC values are calculated using an equal-withdrawal assumption or supplied manually; neither establishes a suitable preparation volume.</p>'
-                     '<p><strong>Preview only:</strong> To record a blend, first record source reconstitutions '
-                     'in the normal vial workflow, then use the existing blend form with the measured volumes.</p>')
+                     '<p><strong>Preview only:</strong> No inventory has changed. If the displayed BAC, '
+                     'withdrawal and final volumes match what you physically prepared, select '
+                     '<strong>Record confirmed blend</strong> to save the blend and deduct source stock.</p>')
         return HTMLResponse(''.join(lines))
     except (ValueError, TypeError, U.UnitError, OverflowError, ZeroDivisionError) as exc:
         return HTMLResponse('<p role="alert"><strong>Cannot calculate:</strong> '+escape(str(exc))+'</p>', status_code=422)
