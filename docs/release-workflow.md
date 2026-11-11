@@ -15,6 +15,14 @@
 > the fresh-install qualification work in issue #10.
 > See [Release 569 baseline](release-569-dependency-baseline.md).
 
+> **Release 570 update:** After a tooling-only deployment, the
+> operator may run `scripts/tracker_freshenv570.py` on DEV to replay
+> the recorded package versions into a disposable new venv, fetch a
+> separate Chromium and run isolated backend/browser QA. It is
+> **dry-run by default** and never changes the installed venv.
+> See [Release 570 disposable replay](release-570-disposable-replay.md).
+> Full cross-host reproducibility remains subject to separate validation.
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
