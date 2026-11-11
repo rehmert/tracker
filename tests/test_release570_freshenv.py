@@ -138,6 +138,7 @@ def test_script_keeps_live_environment_and_release_runner_unchanged():
     ):
         assert forbidden not in source
 
+
 def test_wrong_host_and_nonroot_are_rejected_before_any_work(tool, monkeypatch):
     monkeypatch.setattr(tool.os, "geteuid", lambda: 0)
     monkeypatch.setattr(tool.socket, "gethostname", lambda: "tracker-prod")
