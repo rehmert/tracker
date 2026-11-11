@@ -43,8 +43,8 @@
 </form>
 <template id="waterfall-row-template"><div class="waterfall-row"><label class="field"><span>Source vial</span><select name="waterfall_source_id" required>
 <option value="">Select dry source vial</option>
-{% for v in vials %}{% set d = views[v.id] %}{% if d.remaining_base > 0 and not v.volume_ml %}
-<option value="{{ v.id }}">#{{ v.id }} · {{ v.compound.name|truncate(15, True, "…") }} · {{ v.lot or "—" }} · {{ d.remaining_base|amt(d.dim) }}</option>
+{% for v in vials %}{% set d = views[v.id] %}{% if d.remaining_base > 0 and d.remaining_base == d.content_base and not v.volume_ml %}
+<option value="{{ v.id }}" data-compound="{{ v.compound_id }}">#{{ v.id }} · {{ v.compound.name|truncate(15, True, "…") }} · {{ v.lot or "—" }} · {{ d.remaining_base|amt(d.dim) }}</option>
 {% endif %}{% endfor %}
 </select></label><button class="waterfall-remove" type="button">Remove</button></div></template>
 </section>
@@ -133,16 +133,28 @@ const preview=document.getElementById('waterfall-preview-btn'), record=document.
 let approved=null;
 function snapshot(){return JSON.stringify([...new FormData(form)].filter(([k])=>k!=='confirmed_actual'));}
 function invalidate(){approved=null;record.disabled=true;result.hidden=true;status.textContent='Preview the current vial order and quantities before recording.';form.querySelector('[name="confirmed_actual"]').value='';}
+function syncOptions(){
+ const selects=[...rows.querySelectorAll('select[name="waterfall_source_id"]')];
+ const first=selects[0]?.selectedOptions[0]?.dataset.compound;
+ selects.forEach((select,index)=>{
+   const used=new Set(selects.filter(other=>other!==select).map(other=>other.value).filter(Boolean));
+   [...select.options].forEach(option=>{
+     option.disabled=!!option.value && (
+       used.has(option.value) || (index>0 && first && option.dataset.compound!==first)
+     );
+   });
+ });
+}
 function add(){
  if(rows.children.length>=6)return;
  const row=tmpl.content.firstElementChild.cloneNode(true);
- row.querySelector('.waterfall-remove').onclick=()=>{if(rows.children.length>2){row.remove();invalidate();}};
- rows.append(row);invalidate();
+ row.querySelector('.waterfall-remove').onclick=()=>{if(rows.children.length>2){row.remove();syncOptions();invalidate();}};
+ rows.append(row);syncOptions();invalidate();
 }
 document.getElementById('waterfall-add').onclick=add;
 add();add();
 form.addEventListener('input',invalidate);
-form.addEventListener('change',invalidate);
+form.addEventListener('change',()=>{syncOptions();invalidate();});
 preview.onclick=async()=>{
 result.hidden=false;result.textContent='Calculating…';record.disabled=true;approved=null;preview.disabled=true;
 try{
