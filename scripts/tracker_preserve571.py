@@ -315,10 +315,24 @@ def verify_archive(path: Path) -> None:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--replay-root", type=Path, required=True)
-    parser.add_argument("--replay-log", type=Path, required=True)
+    parser.add_argument("--replay-root", type=Path)
+    parser.add_argument("--replay-log", type=Path)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--verify-archive", type=Path,
+                        help="Verify a retained archive by its file-hash manifest")
     args = parser.parse_args(argv)
+    if args.verify_archive is not None:
+        if args.execute or args.replay_root or args.replay_log:
+            parser.error("--verify-archive cannot be combined with replay arguments")
+        try:
+            verify_archive(args.verify_archive)
+            return 0
+        except (ArchiveError, OSError, UnicodeError, ValueError) as exc:
+            print(f"RECOVERY_ARCHIVE_VERIFIED=FAILED ({type(exc).__name__}: {exc})",
+                  file=sys.stderr)
+            return 1
+    if args.replay_root is None or args.replay_log is None:
+        parser.error("--replay-root and --replay-log are required")
     try:
         commit = preflight()
         evidence = replay_evidence(args.replay_root, args.replay_log, commit)
