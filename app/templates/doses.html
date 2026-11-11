@@ -3,7 +3,7 @@
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-android-log374.css?v=374">
 <script src="/static/js/tracker-android-log374.js?v=374" defer></script>
-<link rel="stylesheet" href="/static/css/tracker-mobile-log373.css?v=373">
+<link rel="stylesheet" href="/static/css/tracker-mobile-log373.css?v=566">
 <script src="/static/js/tracker-time24-371.js?v=371" defer></script>
 <link rel="stylesheet"
       href="/static/css/tracker-dose-workflow-34119.css">
@@ -155,7 +155,7 @@
           <option value="" selected disabled>Select a vial for this compound</option>
           {% endif %}
           {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
-          <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" data-vial-status="{{ v.status }}" {% if selected_vial_id is not none and v.id == selected_vial_id %}selected{% endif %}>{{ v.compound.name }} · {{ v.label or ('#' ~ v.id) }} · {{ v.status|replace('_',' ') }} · {{ d.remaining_base|amt(d.dim) }} left</option>
+          <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" data-vial-status="{{ v.status }}" {% if selected_vial_id is not none and v.id == selected_vial_id %}selected{% endif %}>{{ v.compound.name }} · #{{ v.id }}{% if v.label %} · {{ v.label }}{% endif %}{% if v.lot %} · Lot {{ v.lot }}{% endif %} · {{ v.status|replace('_',' ') }} · {{ d.remaining_base|amt(d.dim) }} left</option>
           {% endfor %}
         </select></label>
       <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}" inputmode="decimal"></label>
@@ -203,7 +203,7 @@
   </p>
 </div>
 
-    <label class="field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ now }}"></label>
+    <label class="field wide tracker-dose-when-field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ now }}"></label>
     <label class="field"><span>Type</span><select name="kind"><option value="dose">Logged dose</option><option value="waste">Wasted or discarded</option></select></label>
     <label class="check"><input type="checkbox" name="use_remaining" value="yes"> Use all remaining vial contents</label>
     <label class="field"><span>Site</span><select name="site"><option value="">Not recorded</option>{% for site in sites %}<option value="{{ site }}" {% if repeat_site == site %}selected{% endif %}>{{ site }}</option>{% endfor %}</select></label>
