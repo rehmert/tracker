@@ -31,6 +31,15 @@ def validate_sidebar_path(path):
 
     decoded = urllib.parse.unquote_to_bytes(path)
 
+    # A decoded question mark or hash can be interpreted as
+    # a URL delimiter by another HTTP component. Ordinary
+    # query strings and fragments are already stripped by
+    # urlsplit before this validator receives the path.
+    if b"?" in decoded or b"#" in decoded:
+        raise ValueError(
+            "Sidebar URL contains encoded delimiters"
+        )
+
     if any(byte < 32 or byte == 127 for byte in decoded):
         raise ValueError(
             "Sidebar URL contains encoded control characters"
@@ -70,6 +79,8 @@ def validate_sidebar_path(path):
 
         if (
             any(byte < 32 or byte == 127 for byte in next_layer)
+            or b"?" in next_layer
+            or b"#" in next_layer
             or bytes((92,)) in next_layer
             or b"//" in next_layer
             or any(
