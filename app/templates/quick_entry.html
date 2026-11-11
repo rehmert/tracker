@@ -4,6 +4,8 @@
 
 <link rel="stylesheet"
       href="/static/css/tracker-quick-entry.css?v=20261103-fastpaths">
+<link rel="stylesheet"
+      href="/static/css/tracker-daily-flow559.css?v=559">
 <script defer
         src="/static/js/tracker-quick-entry.js?v=20261103-metrics"></script>
 
@@ -23,7 +25,11 @@
     <span class="tracker-quick-fast-heading">
       Fast paths
     </span>
-    <a href="/mobile">Mobile Today</a>
+    <a href="/mobile">Today</a>
+    <a href="/food#food-quick-log">Log Favorite Food</a>
+    <a href="/food#food-water">Log Water</a>
+    <a href="/health-insights">View Progress</a>
+    <a href="/replenishment-review">Inventory Needs</a>
     <a href="/mobile#mobile-quick-vitals">Quick Vital Capture</a>
     <a href="/doses#quick-dose-entry">Dose Entry</a>
     <a href="/vitals#quick-vitals-entry">Vital Reading</a>
@@ -75,6 +81,46 @@
 
   <div id="tracker-quick-actions"
        class="tracker-quick-entry-grid">
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="food favorite meal nutrition calorie protein breakfast lunch dinner"
+       href="/food#food-quick-log">
+      <strong>Log food</strong>
+      <span>Jump to saved foods and favorites in the Food Journal.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="record"
+       data-quick-keywords="water hydration ounces drink"
+       href="/food#food-water">
+      <strong>Log water</strong>
+      <span>Record water against your daily target.</span>
+      <small>Record</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="review"
+       data-quick-keywords="progress trend health weight blood pressure pulse laboratory labs charts"
+       href="/health-insights">
+      <strong>Review progress</strong>
+      <span>Compare your recorded vitals, labs, and events.</span>
+      <small>Review</small>
+    </a>
+
+    <a class="tracker-quick-entry-card"
+       data-quick-action
+       data-quick-category="review"
+       data-quick-keywords="inventory supply shortage depleted replenish order planning forecast"
+       href="/replenishment-review">
+      <strong>Review inventory needs</strong>
+      <span>Use the existing replenishment worklist.</span>
+      <small>Review</small>
+    </a>
 
     <a class="tracker-quick-entry-card"
        data-quick-action

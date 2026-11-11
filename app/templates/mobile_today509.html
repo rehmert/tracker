@@ -2,6 +2,7 @@
 {% block title %}Today{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-mobile-daily509.css?v=510">
+<link rel="stylesheet" href="/static/css/tracker-daily-flow559.css?v=559">
 <script defer src="/static/js/tracker-mobile-daily509.js?v=509"></script>
 
 <div class="tracker-daily509" data-mobile-daily509>
@@ -17,9 +18,20 @@
   </header>
 
   <nav class="tracker-daily-actions" aria-label="Common recording actions">
-    <a href="#mobile-quick-vitals" class="tracker-daily-action-primary">+ Log Vitals</a>
+    <a href="#mobile-quick-vitals"
+       class="tracker-daily-action-primary">+ Log Vitals</a>
     <a href="/doses#quick-dose-entry">+ Log Dose</a>
+    <a href="/food#food-quick-log">+ Log Food</a>
+    <a href="/food#food-water">+ Log Water</a>
     <a href="/quick-entry">More Actions</a>
+  </nav>
+
+  <nav class="tracker-daily-flow559-compact"
+       aria-label="Daily review shortcuts">
+    <a href="/health-insights">Progress</a>
+    <a href="/calendar">Calendar</a>
+    <a href="/replenishment-review">Inventory Needs</a>
+    <a href="/labs">Lab Results</a>
   </nav>
 
   <section class="tracker-daily-section" aria-labelledby="mobile-latest-heading">

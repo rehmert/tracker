@@ -13,12 +13,62 @@
 <link rel="stylesheet" href="/static/css/tracker-dashboard-status.css?v=34.32">
 
 <div class="dashboard-personalize"><button type="button" id="dashboard-customize" class="dashboard-action secondary" aria-expanded="false" aria-controls="dashboard-customize-panel">Customize dashboard</button><div id="dashboard-customize-panel" class="customize-panel" hidden><p>Show or hide sections. Use the arrows to reorder them. Your choices stay in this browser.</p><div id="dashboard-customize-list"></div><button type="button" id="dashboard-reset">Reset layout</button></div></div>
-<nav class="tracker-workflow-actions" aria-label="Everyday workflow shortcuts">
-  <a href="/dose-workspace">Review vials &amp; record dose →</a>
-  <a href="/calendar">View schedule →</a>
-  <a href="/vials">Manage inventory →</a>
-  <a href="/labs">Review lab results →</a>
-</nav>
+<link rel="stylesheet" href="/static/css/tracker-daily-flow559.css?v=559">
+<section class="tracker-daily-flow559"
+         aria-labelledby="tracker-daily-flow559-title">
+  <div class="tracker-daily-flow559-head">
+    <h2 id="tracker-daily-flow559-title">Your Daily Shortcuts</h2>
+    <p>Record the essentials or jump straight to the information you need.</p>
+  </div>
+
+  <nav class="tracker-daily-flow559-links"
+       aria-label="Everyday workflow shortcuts">
+    <a href="/mobile">
+      <strong>Today</strong>
+      <span>Readings and schedule</span>
+    </a>
+    <a href="/doses#quick-dose-entry">
+      <strong>Log Dose</strong>
+      <span>Record actual use</span>
+    </a>
+    <a href="/mobile#mobile-quick-vitals">
+      <strong>Log Vitals</strong>
+      <span>Weight, BP, pulse</span>
+    </a>
+    <a href="/food#food-quick-log">
+      <strong>Log Food</strong>
+      <span>Favorite meals and foods</span>
+    </a>
+    <a href="/food#food-water">
+      <strong>Log Water</strong>
+      <span>Daily hydration</span>
+    </a>
+    <a href="/calendar">
+      <strong>Calendar</strong>
+      <span>Review scheduled items</span>
+    </a>
+    <a href="/health-insights">
+      <strong>Progress</strong>
+      <span>Review recorded trends</span>
+    </a>
+    <a href="/replenishment-review">
+      <strong>Inventory</strong>
+      <span>See what needs attention</span>
+    </a>
+    <a href="/dose-workspace">
+      <strong>Dose Workspace</strong>
+      <span>Review vials and record a dose</span>
+    </a>
+    <a href="/vials">
+      <strong>Vial Inventory</strong>
+      <span>Manage individual vials</span>
+    </a>
+    <a href="/labs">
+      <strong>Lab Results</strong>
+      <span>Review laboratory records</span>
+    </a>
+  </nav>
+</section>
 <header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div><div class="hero-actions"><a class="dashboard-action" href="/doses">+ Record dose</a><a class="dashboard-action secondary" href="/vitals">+ Add vitals</a></div></header>
 
 {% set tracker_attention_due =

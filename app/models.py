@@ -87,11 +87,6 @@ class Vial(Base):
     @property
     def all_coas(self):
         return sorted({c.id: c for c in ([self.coa] if self.coa else []) + list(self.linked_coas)}.values(), key=lambda c: (c.tested_on or date.min, c.id), reverse=True)
-    linked_coas: Mapped[list["Coa"]] = relationship("Coa", secondary="coa_vial_links", back_populates="linked_vials")
-
-    @property
-    def all_coas(self):
-        return sorted({c.id: c for c in ([self.coa] if self.coa else []) + list(self.linked_coas)}.values(), key=lambda c: (c.tested_on or date.min, c.id), reverse=True)
 
 
 class Blend(Base):
