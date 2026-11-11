@@ -55,10 +55,12 @@ def test_reported_package_names_follow_normalized_pep503_spelling(audit):
 
 def test_constraint_parser_refuses_unpinned_and_duplicate_entries(tmp_path, audit):
     path = tmp_path / "constraints.txt"
+    # Foo and Foo_ canonicalize to different names; this is not a duplicate.
+    # PEP 503 normalizes Foo_Bar and foo-bar to the SAME package name.
     for unsafe in (
         "fastapi>=0.1\n",
         "--extra-index-url https://example.invalid\n",
-        "foo==1\nFoo_==2\n",
+        "Foo_Bar==1\nfoo-bar==2\n",
         "foo==1\nfoo==2\n",
     ):
         path.write_text(unsafe, encoding="utf-8")
