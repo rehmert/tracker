@@ -17,8 +17,46 @@
 <form id="protoform" method="post" action="/protocols/{{ p.id }}/save" novalidate
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
   <div class="grid">
-    <label class="field"><span>Protocol start date</span><input type="date" name="start_date" value="{{ p.start_date.isoformat() if p.start_date else '' }}"></label>
-    <label class="field"><span>End date (optional)</span><input type="date" name="end_date" value="{{ p.end_date.isoformat() if p.end_date else '' }}"></label>
+    <label class="field">
+      <span>Protocol start date</span>
+      <input type="date" name="start_date"
+             id="protocol-start560"
+             value="{{ p.start_date.isoformat() if p.start_date else '' }}">
+    </label>
+
+    <fieldset class="field wide">
+      <legend>Set protocol duration by</legend>
+      <label>
+        <input type="radio" name="duration_mode"
+               value="dates" checked>
+        Start and end dates
+      </label>
+      <label>
+        <input type="radio" name="duration_mode"
+               value="weeks">
+        Start date and number of weeks
+      </label>
+    </fieldset>
+
+    <label class="field" id="protocol-end-field560">
+      <span>End date (optional)</span>
+      <input type="date" name="end_date"
+             id="protocol-end560"
+             value="{{ p.end_date.isoformat() if p.end_date else '' }}">
+    </label>
+
+    <label class="field" id="protocol-weeks-field560" hidden>
+      <span>Duration (weeks)</span>
+      <input type="number" name="duration_weeks"
+             id="protocol-weeks560"
+             min="1" max="520" step="1"
+             inputmode="numeric" disabled>
+    </label>
+
+    <p class="note wide" id="protocol-duration-preview560"
+       role="status" aria-live="polite">
+      The protocol end date is inclusive.
+    </p>
     <label class="field"><span>Name</span><input name="name" value="{{ p.name }}"></label>
     <label class="field"><span>Look-ahead (weeks)</span><input type="number" name="horizon_weeks" step="any" min="0.1" max="520" value="{{ p.horizon_weeks|num_input }}"></label>
     <label class="field wide"><span>Notes</span><input name="notes" value="{{ p.notes }}"></label>
@@ -41,6 +79,94 @@
     <span id="save-msg" role="status"></span>
   </p>
 </form>
+
+<script>
+(function () {
+  'use strict';
+
+  const form = document.getElementById('protoform');
+  if (!form) return;
+
+  const start = document.getElementById('protocol-start560');
+  const end = document.getElementById('protocol-end560');
+  const weeks = document.getElementById('protocol-weeks560');
+  const endField = document.getElementById('protocol-end-field560');
+  const weeksField = document.getElementById('protocol-weeks-field560');
+  const preview = document.getElementById('protocol-duration-preview560');
+
+  if (!start || !end || !weeks ||
+      !endField || !weeksField || !preview) return;
+
+  function update() {
+    const selected = form.querySelector(
+      'input[name="duration_mode"]:checked'
+    );
+
+    const byWeeks = selected?.value === 'weeks';
+
+    endField.hidden = byWeeks;
+    weeksField.hidden = !byWeeks;
+
+    endField.style.display = byWeeks ? 'none' : '';
+    weeksField.style.display = byWeeks ? '' : 'none';
+
+    end.disabled = byWeeks;
+    weeks.disabled = !byWeeks;
+
+    if (!byWeeks) {
+      preview.textContent = end.value
+        ? 'End date is included in the protocol.'
+        : 'No end date means the protocol is open-ended.';
+      return;
+    }
+
+    const count = Number(weeks.value);
+
+    if (!start.value ||
+        !Number.isInteger(count) ||
+        count < 1 || count > 520) {
+      preview.textContent =
+        'Enter a start date and 1–520 whole weeks.';
+      return;
+    }
+
+    const first = new Date(start.value + 'T00:00:00Z');
+
+    if (!Number.isFinite(first.getTime())) {
+      preview.textContent = 'Invalid start date.';
+      return;
+    }
+
+    const last = new Date(
+      first.getTime() + (count * 7 - 1) * 86400000
+    );
+
+    if (!Number.isFinite(last.getTime()) ||
+        last.getUTCFullYear() > 9999) {
+      preview.textContent = 'End date is out of range.';
+      return;
+    }
+
+    preview.textContent =
+      count + (count === 1 ? ' week' : ' weeks') +
+      ' (' + (7 * count) + ' days); ' +
+      'last day: ' + last.toISOString().slice(0, 10);
+  }
+
+  form.querySelectorAll(
+    'input[name="duration_mode"]'
+  ).forEach(node => {
+    node.addEventListener('change', update);
+  });
+
+  [start, end, weeks].forEach(node => {
+    node.addEventListener('input', update);
+    node.addEventListener('change', update);
+  });
+
+  update();
+})();
+</script>
 
 <section>
   <h2>Results</h2>

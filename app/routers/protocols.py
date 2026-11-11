@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import json
 import math
 from html import escape
@@ -247,6 +247,8 @@ def protocol_calc(pid: int, request: Request, horizon_weeks: str = Form("12"),
 @router.post("/protocols/{pid}/save")
 def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
                   start_date: str = Form(""), end_date: str = Form(""),
+                  duration_mode: str = Form("dates"),
+                  duration_weeks: str = Form(""),
                   horizon_weeks: str = Form("12"), compound_id: list[str] = Form(default=[]),
                   amount: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
                   freq_count: list[str] = Form(default=[]),
@@ -259,7 +261,9 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
     if p is None:
         raise HTTPException(404, "Protocol not found")
     before = protocol_snapshot(p)
-    start, end = _parse_protocol_dates(start_date, end_date)
+    start, end = _parse_protocol_dates(
+        start_date, end_date, duration_mode, duration_weeks
+    )
     refs = services.compound_refs(db)
     parsed = _parse_rows(refs, compound_id, amount, unit, freq_count, freq_period)
     if any(isinstance(e, calc.ItemResult) for e in parsed):
@@ -290,6 +294,8 @@ def protocol_save(pid: int, name: str = Form(""), notes: str = Form(""),
 @router.post("/protocols/{pid}/add-item")
 def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
                       start_date: str = Form(""), end_date: str = Form(""),
+                      duration_mode: str = Form("dates"),
+                      duration_weeks: str = Form(""),
                       horizon_weeks: str = Form("12"), compound_id: list[str] = Form(default=[]),
                       amount: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
                       freq_count: list[str] = Form(default=[]),
@@ -303,7 +309,9 @@ def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
     Uses an ordinary HTML form submission; works even if HTMX or JS fails.
     """
     result = protocol_save(pid=pid, name=name, notes=notes, start_date=start_date,
-                           end_date=end_date, horizon_weeks=horizon_weeks,
+                           end_date=end_date, duration_mode=duration_mode,
+                           duration_weeks=duration_weeks,
+                           horizon_weeks=horizon_weeks,
                            compound_id=compound_id, amount=amount, unit=unit,
                            freq_count=freq_count, freq_period=freq_period,
                            start_week=start_week, end_week=end_week,
@@ -313,27 +321,77 @@ def protocol_add_item(pid: int, name: str = Form(""), notes: str = Form(""),
     return RedirectResponse(f"/protocols/{pid}?add=1&msg=Item+saved.+Enter+the+next+compound.", status_code=303)
 
 
-def _parse_protocol_dates(start_date: str, end_date: str):
+def _parse_protocol_dates(
+    start_date: str,
+    end_date: str,
+    duration_mode: str = "dates",
+    duration_weeks: str = "",
+):
+    """Resolve inclusive calendar bounds without changing the schema."""
+    if duration_mode not in ("dates", "weeks"):
+        raise HTTPException(400, "Invalid protocol duration mode")
+
     try:
         start = date.fromisoformat(start_date) if start_date else None
+    except ValueError:
+        raise HTTPException(400, "Enter a valid start date")
+
+    if duration_mode == "weeks":
+        if start is None:
+            raise HTTPException(400, "Start date is required")
+
+        raw = str(duration_weeks).strip()
+        if not raw.isascii() or not raw.isdecimal():
+            raise HTTPException(
+                400, "Duration must be a whole number of weeks"
+            )
+
+        weeks = int(raw)
+
+        if not 1 <= weeks <= 520:
+            raise HTTPException(
+                400, "Duration must be between 1 and 520 weeks"
+            )
+
+        try:
+            end = start + timedelta(days=7 * weeks - 1)
+        except OverflowError:
+            raise HTTPException(
+                400, "Calculated end date is out of range"
+            )
+
+        return start, end
+
+    try:
         end = date.fromisoformat(end_date) if end_date else None
     except ValueError:
-        raise HTTPException(400, "Enter valid ISO dates")
+        raise HTTPException(400, "Enter a valid end date")
+
     if end and not start:
-        raise HTTPException(400, "Set a start date before setting an end date")
+        raise HTTPException(
+            400, "Set a start date before setting an end date"
+        )
+
     if start and end and end < start:
-        raise HTTPException(400, "End date must be on or after start date")
+        raise HTTPException(
+            400, "End date must be on or after start date"
+        )
+
     return start, end
 
 
 @router.post("/protocols/{pid}/dates")
 def set_protocol_dates(pid: int, start_date: str = Form(""), end_date: str = Form(""),
+                       duration_mode: str = Form("dates"),
+                       duration_weeks: str = Form(""),
                        db: Session = Depends(get_scoped_db390)):
     p = db.get(Protocol, pid)
     if p is None:
         raise HTTPException(404, "Protocol not found")
     before = protocol_snapshot(p)
-    start, end = _parse_protocol_dates(start_date, end_date)
+    start, end = _parse_protocol_dates(
+        start_date, end_date, duration_mode, duration_weeks
+    )
     p.start_date, p.end_date = start, end
     _revision(db, p)
     record(db, "protocol", pid, "update_dates", before, protocol_snapshot(p))
