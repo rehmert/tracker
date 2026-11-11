@@ -54,3 +54,15 @@ jobs:
             tests/test_number_grouping_v23.py \
             tests/test_coa_history_decimals_v23.py \
             tests/test_dose_correction_inventory_preview.py
+      - name: Full isolated backend regressions (excluding browser mutations)
+        run: |
+          python -m pytest -q --tb=short --maxfail=1 --disable-warnings \
+            -n 4 --dist=loadfile tests \
+            --ignore=tests/browser \
+            --ignore=tests/test_bulk_vial_browser.py \
+            --ignore=tests/test_bulk_vial_guided_browser.py \
+            --ignore=tests/test_bulk_delete_browser.py \
+            --ignore=tests/test_purchase_vial_browser.py \
+            --ignore=tests/test_stage33_browser_sorting.py \
+            --ignore=tests/test_health_timeline_dates_browser.py \
+            --ignore=tests/test_vitals_csv_browser.py
