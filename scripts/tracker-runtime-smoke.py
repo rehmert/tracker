@@ -36,6 +36,27 @@ def validate_sidebar_path(path):
             "Sidebar URL contains encoded control characters"
         )
 
+    # Validate the decoded path without changing the URL that
+    # will be requested. Reject navigation that an HTTP client
+    # or reverse proxy could interpret differently.
+    if bytes((92,)) in decoded:
+        raise ValueError(
+            "Sidebar URL contains backslash separators"
+        )
+
+    if b"//" in decoded:
+        raise ValueError(
+            "Sidebar URL contains ambiguous separators"
+        )
+
+    if any(
+        segment in (b".", b"..")
+        for segment in decoded.split(b"/")
+    ):
+        raise ValueError(
+            "Sidebar URL contains dot path segments"
+        )
+
 
 
 class Links(HTMLParser):
