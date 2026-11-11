@@ -223,24 +223,30 @@ def replay_evidence(root: Path, log: Path, commit: str) -> dict:
 def host_facts() -> dict:
     os_info = {}
     os_release = Path("/etc/os-release")
+    if os_release.is_symlink():
+        os_release = Path("/usr/lib/os-release")
     if os_release.is_file() and not os_release.is_symlink():
         for line in os_release.read_text(encoding="utf-8").splitlines():
             name, sep, value = line.partition("=")
             if sep and name in ("ID", "VERSION_ID", "PRETTY_NAME"):
                 os_info[name] = value.strip().strip('"')
     format_string = "$" + "{binary:Package}\t$" + "{Version}\n"
-    result = subprocess.run(
-        ["dpkg-query", "-W", "-f=" + format_string],
-        text=True, capture_output=True, check=False,
-    )
+    try:
+        result = subprocess.run(
+            ["dpkg-query", "-W", "-f=" + format_string],
+            text=True, capture_output=True, check=False,
+        )
+    except OSError:
+        result = None
+    packages_ok = result is not None and result.returncode == 0
     return {
         "python": platform.python_version(),
         "architecture": platform.machine(),
         "platform": platform.platform(),
         "glibc": platform.libc_ver(),
         "os": os_info,
-        "os_package_inventory_available": result.returncode == 0,
-        "os_packages": result.stdout.splitlines() if result.returncode == 0 else [],
+        "os_package_inventory_available": packages_ok,
+        "os_packages": result.stdout.splitlines() if packages_ok else [],
     }
 
 
