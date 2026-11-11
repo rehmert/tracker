@@ -23,6 +23,12 @@
 > See [Release 570 disposable replay](release-570-disposable-replay.md).
 > Full cross-host reproducibility remains subject to separate validation.
 
+> **Release 571 update:** Once an isolated Release 570 replay is run
+> with `--execute --retain-artifacts`, DEV may validate its wheel
+> hashes and browser revisions, then preserve an independently verified,
+> root-only recovery directory. Default mode does not write an archive.
+> See [Release 571 recovery artifacts](release-571-recovery-artifacts.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
