@@ -27,6 +27,31 @@ class Links(HTMLParser):
         self.paths = []
 
     def handle_starttag(self, tag, attrs):
+        # HTML permits duplicate attribute syntax, but silently
+        # selecting one value makes sidebar discovery ambiguous.
+        if tag == "nav":
+            ids = [
+                value for name, value in attrs
+                if name == "id"
+            ]
+            if len(ids) > 1 and (
+                self.sidebar_depth
+                or "app-sidebar" in ids
+            ):
+                raise ValueError(
+                    "Ambiguous sidebar navigation id attributes"
+                )
+
+        if tag == "a" and self.sidebar_depth:
+            hrefs = [
+                value for name, value in attrs
+                if name == "href"
+            ]
+            if len(hrefs) > 1:
+                raise ValueError(
+                    "Ambiguous sidebar link href attributes"
+                )
+
         attrs = dict(attrs)
 
         if tag == "nav":
