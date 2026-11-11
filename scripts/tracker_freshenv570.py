@@ -30,8 +30,7 @@ class ReplayError(RuntimeError):
 
 def call(args: list[str], *, cwd=None, env=None, timeout=1200) -> None:
     """Stream output, preserve exit failures, terminate an entire timed-out group."""
-    print("RUNNING=" + " ".join(Path(arg).name if arg.startswith("/tmp/") else arg
-                                for arg in args[:4]), flush=True)
+    print(f"SUBPROCESS={Path(args[0]).name} arguments={len(args) - 1}", flush=True)
     process = subprocess.Popen(
         args, cwd=cwd, env=env, start_new_session=True,
     )
