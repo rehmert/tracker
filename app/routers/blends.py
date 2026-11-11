@@ -242,24 +242,24 @@ async def preview_reconstitution(request: Request, db: Session = Depends(get_sco
                  '<p><strong>No inventory has been changed.</strong> '
                  'Calculated liquid volumes assume additive volumes and ignore powder displacement, '
                  'solubility, compatibility, sterility and cartridge headspace.</p>',
-                 f'<p>Target final volume: <strong>{plan["volume"]:.4g} mL</strong> / '
-                 f'{plan["capacity"]:.4g} mL per vial · Remaining nominal space across destinations: '
-                 f'{plan["free_capacity"]:.4g} mL · '
-                 f'<strong>{plan["draws"]} complete draws across {plan["destination_count"]} destination vials</strong> · Draw: <strong>{plan["draw"]:.4g} mL</strong> '
-                 f'({plan["draw"]*100:.4g} U-100 units)</p>',
+                 f'<p>Target final volume: <strong>{U._num(plan["volume"])} mL</strong> / '
+                 f'{U._num(plan["capacity"])} mL per vial · Remaining nominal space across destinations: '
+                 f'{U._num(plan["free_capacity"])} mL · '
+                 f'<strong>{plan["draws"]} complete draws across {plan["destination_count"]} destination vials</strong> · Draw: <strong>{U._num(plan["draw"])} mL</strong> '
+                 f'({U._num(plan["draw"]*100)} U-100 units)</p>',
                  '<p><strong>Allocation:</strong> ' + ('Equal liquid withdrawal from each dry source (illustrative assumption)' if plan['allocation']=='equal' else 'Manually specified source BAC') + '</p>',
                  '<div class="scroll"><table><thead><tr><th>Peptide</th><th>Source BAC (mL)</th>'
                  '<th>Transfer content</th><th>Withdraw from source (mL)</th><th>Liquid left in source (mL)</th><th>Final concentration</th>'
                  '<th>Per draw (source share)</th></tr></thead><tbody>']
         for r in plan['rows']:
-            cells = (f'{r["vial"].compound.name} · {r["vial"].label or "#" + str(r["vial"].id)}', f'{r["bac"]:.4g}', f'{U.from_base(r["base"], r["vial"].content_unit):.4g} {r["vial"].content_unit}',
-                     f'{r["source_ml"]:.4g}', f'{r["source_left_ml"]:.4g}',
-                     f'{r["concentration"]:.4g} {r["base_unit"]}/mL',
-                     f'{U.from_base(r["actual_per_draw"],r["target_unit"]):.4g} {r["target_unit"]}')
+            cells = (f'{r["vial"].compound.name} · {r["vial"].label or "#" + str(r["vial"].id)}', f'{U._num(r["bac"])}', f'{U._num(U.from_base(r["base"], r["vial"].content_unit))} {r["vial"].content_unit}',
+                     f'{U._num(r["source_ml"])}', f'{U._num(r["source_left_ml"])}',
+                     f'{U._num(r["concentration"])} {r["base_unit"]}/mL',
+                     f'{U._num(U.from_base(r["actual_per_draw"],r["target_unit"]))} {r["target_unit"]}')
             lines.append('<tr>' + ''.join(f'<td>{escape(str(v))}</td>' for v in cells) + '</tr>')
         lines.append('</tbody></table></div><p><strong>Destination fill plan:</strong> ' +
-                     ', '.join(f'Vial {i}: {v:.4g} mL ({n} draws)' for i, (v, n) in enumerate(zip(plan['destination_volumes'], plan['destination_draws']), 1)) + '</p>'
-                     f'<p>Additional BAC in destination vial: <strong>{plan["destination_bac"]:.4g} mL</strong>. '
+                     ', '.join(f'Vial {i}: {U._num(v)} mL ({n} draws)' for i, (v, n) in enumerate(zip(plan['destination_volumes'], plan['destination_draws']), 1)) + '</p>'
+                     f'<p>Additional BAC in destination vial: <strong>{U._num(plan["destination_bac"])} mL</strong>. '
                      'Transfer quantities are calculated to maximize complete draws within the nominal capacity. Each dry source is reconstituted before its calculated withdrawal. '
                      'Source BAC values are calculated using an equal-withdrawal assumption or supplied manually; neither establishes a suitable preparation volume.</p>'
                      '<p><strong>Preview only:</strong> To record a blend, first record source reconstitutions '
@@ -283,12 +283,12 @@ async def preview_blend(request: Request, db: Session = Depends(get_scoped_db390
         draw = plan['draw_ml']
         lines = [f'<h3>What-if preview: {escape(plan["label"])}</h3>',
                  '<p><strong>Preview only.</strong> No blend has been saved and no inventory has been deducted.</p>',
-                 f'<p>Final volume: <strong>{volume:.4g} mL</strong> · '
-                 f'Common draw: <strong>{draw:.4g} mL</strong> '
-                 f'({draw * 100:.4g} U-100 units) · '
+                 f'<p>Final volume: <strong>{U._num(volume)} mL</strong> · '
+                 f'Common draw: <strong>{U._num(draw)} mL</strong> '
+                 f'({U._num(draw * 100)} U-100 units) · '
                  f'Estimated full draws: <strong>{int((volume + 1e-9) / draw)}</strong> · '
                  f'Destination vials: <strong>{plan["destinations"]}</strong> · '
-                 f'Volume per vial: <strong>{volume / plan["destinations"]:.4g} mL</strong></p>',
+                 f'Volume per vial: <strong>{U._num(volume / plan["destinations"])} mL</strong></p>',
                  '<div class="scroll"><table><thead><tr><th>Compound</th><th>Source</th><th>Transfer</th>'
                  '<th>Source liquid</th><th>Concentration</th><th>Per draw</th><th>Remaining in source after save</th>'
                  '</tr></thead><tbody>']
@@ -298,10 +298,10 @@ async def preview_blend(request: Request, db: Session = Depends(get_scoped_db390
             after = max(0, plan['views'][vial.id].remaining_base - base)
             lines.append('<tr>' + ''.join(f'<td>{escape(str(value))}</td>' for value in (
                 vial.compound.name, vial.label or f'#{vial.id}',
-                f'{base:.4g} {base_unit}', f'{transferred_ml:.4g} mL',
-                f'{base / volume:.4g} {base_unit}/mL',
-                f'{U.from_base(target_base, target_unit):.4g} {target_unit}',
-                f'{after:.4g} {base_unit}')) + '</tr>')
+                f'{U._num(base)} {base_unit}', f'{U._num(transferred_ml)} mL',
+                f'{U._num(base / volume)} {base_unit}/mL',
+                f'{U._num(U.from_base(target_base, target_unit))} {target_unit}',
+                f'{U._num(after)} {base_unit}')) + '</tr>')
         lines.append('</tbody></table></div><p>Review the calculations before recording the blend.</p>')
         return HTMLResponse(''.join(lines))
     except (ValueError, TypeError, U.UnitError, OverflowError) as exc:
