@@ -34,7 +34,7 @@
 {% if active_blends %}
 <section class="card" id="dose-blend-picker" aria-labelledby="dose-blend-heading">
   <h2 id="dose-blend-heading">Prepared Blend / Waterfall Vial</h2>
-  <p class="note">Waterfall results are recorded as blended vials, not individual compound vials. Choose the finished preparation below to record an actual dose from its remaining liquid volume. Existing blend records and inventory stay unchanged until you submit a dose.</p>
+  <p class="note">Waterfall results are recorded as blended vials, not individual compound vials. Choose the prepared vial below. For waterfall results, remaining stock is shown as compound content (mg or mcg); the recording form still uses the actual withdrawn volume (mL). Existing blend records and inventory stay unchanged until you submit a dose.</p>
   <label class="field" for="dose-blend-select"><span>Finished preparation</span>
     <select id="dose-blend-select">
       {% for row in active_blends %}
