@@ -55,7 +55,9 @@ def test_reported_package_names_follow_normalized_pep503_spelling(audit):
 
 def test_constraint_parser_refuses_unpinned_and_duplicate_entries(tmp_path, audit):
     path = tmp_path / "constraints.txt"
-    # Foo and Foo_ canonicalize to different names; this is not a duplicate.
+    # Distinct canonical project names are allowed together.
+    path.write_text("foo==1\nfoo-bar==2\n", encoding="utf-8")
+    assert audit.read_constraints(path) == {"foo": "1", "foo-bar": "2"}
     # PEP 503 normalizes Foo_Bar and foo-bar to the SAME package name.
     for unsafe in (
         "fastapi>=0.1\n",
