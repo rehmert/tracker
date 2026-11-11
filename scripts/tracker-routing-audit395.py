@@ -29,7 +29,7 @@ CORE = {
 BATCH = {
     "pk": 53,
     "vendor_prices": 18,
-    "blends": 6,
+    "blends": 9,
     "pages": 12,
     "reliability": 7,
     "search": 1,
