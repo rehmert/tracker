@@ -16,9 +16,7 @@
   let timer;
   let lastResult = null;
 
-  const number = (v) => Number(v).toLocaleString(
-    undefined, { maximumSignificantDigits: 7 }
-  );
+  const number = (v) => window.TrackerNumber563?.format(v) ?? Number(v).toLocaleString("en-US", {maximumFractionDigits:3, notation:"standard"});
 
   const element = (tag, className, text) => {
     const node = document.createElement(tag);
