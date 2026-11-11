@@ -155,7 +155,8 @@ def num_input(x, digits=4) -> str:
     value = float(x)
     if not __import__("math").isfinite(value):
         return ""
-    raw = format(value, ".15f")
+    from decimal import Decimal
+    raw = format(Decimal(str(value)), "f")
     return raw.rstrip("0").rstrip(".") if "." in raw else raw
 
 templates.env.filters["num_input"] = num_input
