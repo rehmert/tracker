@@ -57,6 +57,37 @@ def validate_sidebar_path(path):
             "Sidebar URL contains dot path segments"
         )
 
+    # Some intermediaries may decode an encoded URL more than
+    # once. Inspect further encoding layers without changing
+    # the actual path selected for the HTTP smoke request.
+    current = decoded
+
+    for _ in range(3):
+        if not re.search(rb"%[0-9A-Fa-f]{2}", current):
+            break
+
+        next_layer = urllib.parse.unquote_to_bytes(current)
+
+        if (
+            any(byte < 32 or byte == 127 for byte in next_layer)
+            or bytes((92,)) in next_layer
+            or b"//" in next_layer
+            or any(
+                segment in (b".", b"..")
+                for segment in next_layer.split(b"/")
+            )
+        ):
+            raise ValueError(
+                "Sidebar URL contains nested encoded unsafe path"
+            )
+
+        current = next_layer
+
+    if re.search(rb"%[0-9A-Fa-f]{2}", current):
+        raise ValueError(
+            "Sidebar URL percent encoding exceeds safe depth"
+        )
+
 
 
 class Links(HTMLParser):
