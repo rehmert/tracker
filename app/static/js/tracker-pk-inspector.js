@@ -19,7 +19,7 @@
   function number(value) {
     if (!Number.isFinite(value)) return "—";
     if (value === 0) return "0";
-    return Number(value.toPrecision(4)).toString();
+    return window.TrackerNumber563.format(value);
   }
 
   function trapezoid(times, values, start, end) {
