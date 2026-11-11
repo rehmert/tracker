@@ -222,20 +222,23 @@ def execute(source_sha: str, *, retain: bool) -> None:
         call(["bash", str(browser), str(source), python],
              cwd=source, env=environment, timeout=1200)
         print("FRESHENV_BROWSER_SUITE=PASSED", flush=True)
-        print("FRESHENV_REPLAY=SUCCESS", flush=True)
     finally:
+        worktree_cleanup_ok = True
         if worktree_added:
             try:
                 call(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
                       "worktree", "remove", "--force", str(source)], timeout=90)
             except ReplayError:
-                print("WARNING: Detached worktree cleanup failed", file=sys.stderr)
+                worktree_cleanup_ok = False
+                print("ERROR: Detached worktree cleanup failed", file=sys.stderr)
         if retain:
             print(f"ISOLATED_ARTIFACTS_RETAINED={runroot}", flush=True)
             print("Artifacts are under /tmp, not a durable backup", flush=True)
         else:
             shutil.rmtree(runroot)
             print("ISOLATED_ARTIFACTS_REMOVED=YES", flush=True)
+        if not worktree_cleanup_ok:
+            raise ReplayError("Detached worktree cleanup must be investigated")
 
 
 def main(argv=None) -> int:
@@ -253,6 +256,7 @@ def main(argv=None) -> int:
             print("DRY_RUN=PASSED; --execute required to download/test")
             return 0
         execute(sha, retain=args.retain_artifacts)
+        print("FRESHENV_REPLAY=SUCCESS", flush=True)
         return 0
     except (ReplayError, OSError, UnicodeError, subprocess.CalledProcessError) as exc:
         print(f"FRESHENV_REPLAY=FAILED ({type(exc).__name__}: {exc})",
