@@ -91,7 +91,7 @@ def main(argv=None):
         result = subprocess.run([
             sys.executable,
             str(ROOT / "scripts/tracker-security-audit536.py"),
-            "--instance", args.instance,
+            "--instance", args.instance, "--fail-on-risk",
         ], check=False)
         print(f"SECURITY_AUDIT_EXIT={result.returncode}")
         return result.returncode
