@@ -3,7 +3,7 @@ from app.templating import num, n0, n1, signed, num_input, templates
 
 def test_grouped_numbers_and_small_values():
     assert U._num(1234567.89, 9) == "1,234,567.89"
-    assert U._num(0.000125, 4) == "0.000125"
+    assert U._num(0.000125, 4) == "<0.001"\n    assert U._num(1.23456789, 9) == "1.235"\n    assert U._num(12345.9999) == "12,346"
     assert U._num(125000, 4) == "125,000"
     assert num(1234567.89, 9) == "1,234,567.89"
     assert n0(1234567) == "1,234,567"
