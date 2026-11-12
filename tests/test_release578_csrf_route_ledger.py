@@ -29,6 +29,14 @@ def test_578_all_existing_js_and_routes_preserved_without_false_clearance(ledger
     assert report["summary"]["unsafe_routes"] == len(report["routes"])
     assert report["summary"]["native_or_htmx_sites"] == len(report["native"])
     assert report["summary"]["js_runtime_verified"] == 0
+    assert report["summary"]["pending_manual_review"] == len(report["review_queue"])
+    assert all(row["priority"] in ("dynamic_or_unpaired_js",
+                                   "implicit_or_dynamic_native")
+               for row in report["review_queue"])
+    assert report["review_queue"] == sorted(
+        report["review_queue"],
+        key=lambda row: (row["priority"], row["file"], row["line"], row["kind"]),
+    )
     assert report["summary"]["runtime_qualified_routes"] == 0
     assert report["summary"]["js_literal_source_pair_hints"] + report["summary"]["js_unresolved"] == 46
     assert all(r["runtime_qualified"] is False and
