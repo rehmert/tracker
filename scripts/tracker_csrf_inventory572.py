@@ -54,14 +54,27 @@ def registered_writes(application) -> list[dict]:
         for route in routes:
             if isinstance(route, Mount) and hasattr(route.app, "routes"):
                 scan(route.app.routes, prefix + route.path.rstrip("/"), True)
-            elif isinstance(route, APIRoute):
+            else:
+                # Inspect registered routes by actual methods, not only one
+                # FastAPI route class. Never silently omit unsafe methods.
+                methods = {
+                    str(method).upper()
+                    for method in (getattr(route, "methods", None) or ())
+                } & UNSAFE
+                if not methods:
+                    continue
+                if not hasattr(route, "dependant"):
+                    raise ValueError(
+                        f"Unsafe non-FastAPI route cannot be classified: "
+                        f"{type(route).__name__} {getattr(route, 'path', '?')}"
+                    )
                 deps = dependency_calls(route)
                 source = inspect.getsourcefile(route.endpoint) or ""
                 try:
                     source = str(Path(source).resolve().relative_to(ROOT))
                 except ValueError:
                     source = "outside-tracked-source"
-                for method in sorted((route.methods or frozenset()) & UNSAFE):
+                for method in sorted(methods):
                     path = prefix + route.path
                     has_auth = any(d.endswith(".require_auth") for d in deps)
                     has_multipart = any(
@@ -87,7 +100,16 @@ def registered_writes(application) -> list[dict]:
                     }
                     found.append(report)
 
-    scan(application.routes)
+    routes = list(application.routes)
+    if not routes:
+        raise ValueError("FastAPI application registered no routes")
+    scan(routes)
+    if not found:
+        classes = sorted({type(r).__name__ for r in routes})
+        raise ValueError(
+            "No registered unsafe routes discovered; refusing empty report: "
+            + ", ".join(classes)
+        )
     return sorted(found, key=lambda x: (x["path"], x["method"], x["file"]))
 
 
