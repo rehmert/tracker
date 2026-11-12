@@ -17,13 +17,30 @@ def test_587_browser_gate_keeps_bulk_strict_only():
     script = QUALIFIER.read_text()
     standard, strict = script.split("# Release 521: a second browser gate", 1)
     assert standard.count("tests/browser/test_csrf_bulk587.py") == 0
-    assert strict.count("tests/browser/test_csrf_bulk587.py") == 1
     assert 'test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py' in standard
-    assert 'TARGETED_BULK587_PREFLIGHT=PASSED' in strict
-    assert 'tracker_csrf_runtime_report587.py' in strict
-    assert strict.index('tests/browser/test_csrf_bulk587.py') < strict.index(
+    # Release 589 adds an intentional targeted replay of the bulk module.
+    # Explicitly distinguish the targeted branch from the mandatory full
+    # qualification branch; never weaken the latter's once-only assertion.
+    batch_start = "# Release 589: one explicit fail-closed batch"
+    batch_end = "# Combined Release 587–588: isolate bulk inventory browser writes"
+    assert strict.count(batch_start) == 1
+    assert strict.count(batch_end) == 1
+    before, tail = strict.split(batch_start, 1)
+    batch, after = tail.split(batch_end, 1)
+    assert 'if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-batch589 ]]' in batch
+    assert batch.count("tests/browser/test_csrf_bulk587.py") == 1
+    assert batch.count("tests/browser/test_csrf_multipart588.py") == 1
+    assert "TARGETED_CSRF_BATCH589=PASSED" in batch
+    assert "ISOLATED_STRICT_CSRF_BROWSER=PASSED" not in batch
+    strict_full = before + batch_end + after
+    assert strict_full.count("tests/browser/test_csrf_bulk587.py") == 1
+    assert strict_full.count("tests/browser/test_csrf_multipart588.py") == 1
+    assert 'if [[ "$MODE" == full ]]; then' in after
+    assert 'TARGETED_BULK587_PREFLIGHT=PASSED' in strict_full
+    assert 'tracker_csrf_runtime_report587.py' in strict_full
+    assert strict_full.index('tests/browser/test_csrf_bulk587.py') < strict_full.index(
         'tracker_csrf_runtime_report587.py'
-    ) < strict.index('ISOLATED_STRICT_CSRF_BROWSER=PASSED')
+    ) < strict_full.index('ISOLATED_STRICT_CSRF_BROWSER=PASSED')
     assert "tests/browser/test_csrf_bulk587.py" in PREFLIGHT.read_text()
     assert "tests/browser/test_csrf_multipart588.py" in PREFLIGHT.read_text()
     result = subprocess.run(["bash", "-n", str(QUALIFIER)], capture_output=True)
