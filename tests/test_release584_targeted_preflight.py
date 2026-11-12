@@ -52,7 +52,7 @@ def test_584_targeted_qualification_is_strict_only_and_cannot_forge_full_pass():
     assert "ISOLATED_STRICT_CSRF_BROWSER=PASSED" in source
     assert source.index("ISOLATED_STRICT_CSRF_BROWSER=PASSED") < source.index(
         "TARGETED_STRICT_PREFLIGHT=PASSED")
-    assert '[[ "$TARGETED_MODULE" =~ ^tests/browser/test_csrf_preparations583[.]py$ ]]' in source
+    assert '[[ "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586)[.]py$ ]]' in source
     assert 'TARGETED_MODULE="$4"' in source
     assert 'TRACKER_CSRF_ENFORCE=1' in source
     standard, strict = source.split(
