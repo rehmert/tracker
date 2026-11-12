@@ -94,6 +94,14 @@ def reject_cross_origin_write(method, headers):
     if method.upper() not in UNSAFE_METHODS:
         return False
 
+    # Refuse ambiguous HTTP header representations on unsafe methods.
+    # A reverse proxy, middleware or backend could otherwise choose
+    # different values from duplicate Host/Origin/Fetch Metadata fields.
+    if hasattr(headers, "getlist"):
+        for field in ("host", "origin", "sec-fetch-site"):
+            if len(headers.getlist(field)) > 1:
+                return True
+
     fetch_site = headers.get("sec-fetch-site", "").strip().lower()
 
     # "same-site" is not "same-origin": sibling subdomains
