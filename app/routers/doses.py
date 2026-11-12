@@ -471,7 +471,24 @@ def edit_page(did: int, request: Request, db: Session = Depends(get_scoped_db390
         all_supplies, used
     )
 
-    return render(request, "dose_edit.html", dose=d, sites=INJECTION_SITES, supplies=supplies, used=used,
+    # Corrections may move an administration only between vials containing
+    # the same compound. Historical source vials remain visible even when
+    # finished; new destination vials must still be usable.
+    candidate_vials = list(db.scalars(
+        select(Vial).where(Vial.compound_id == d.vial.compound_id)
+        .order_by(Vial.id)
+    ))
+    vial_views = services.vial_views(db, candidate_vials)
+    correction_vials = [
+        {"vial": v, "remaining": vial_views[v.id].remaining_base}
+        for v in candidate_vials
+        if v.id == d.vial_id
+        or (v.status in ("sealed", "in_use")
+            and vial_views[v.id].remaining_base > 0)
+    ]
+
+    return render(request, "dose_edit.html", dose=d, correction_vials=correction_vials,
+                  sites=INJECTION_SITES, supplies=supplies, used=used,
                   history=list(db.scalars(select(ChangeAudit).where(ChangeAudit.entity_type == "dose", ChangeAudit.entity_id == did).order_by(ChangeAudit.id.desc()))),
                   counted_supply_kinds=counted_supply_kinds,
                   supply_names=supply_names)
@@ -479,7 +496,8 @@ def edit_page(did: int, request: Request, db: Session = Depends(get_scoped_db390
 @router.post("/doses/{did}/edit")
 async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amount: float = Form(...),
                unit: str = Form(...), kind: str = Form("dose"), site: str = Form(""),
-               notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
+               notes: str = Form(""), vial_id: int | None = Form(None),
+               db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         raise HTTPException(409, "Inventory is busy. Please retry.")
     d = db.get(DoseLog, did)
@@ -488,10 +506,19 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
     try:
         selected = await manual_supplies.selections(request, db, credits={u.supply_id:u.amount for u in db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did))})
         old_usage = list(db.scalars(select(SupplyUsage).where(SupplyUsage.dose_id == did)))
-        vd = services.vial_views(db, [d.vial])[d.vial_id]
+        destination_id = d.vial_id if vial_id is None else vial_id
+        destination = db.get(Vial, destination_id)
+        if destination is None or destination.compound_id != d.vial.compound_id:
+            raise ValueError("Choose a vial containing the same compound.")
+        if destination.id != d.vial_id and destination.status not in ("sealed", "in_use"):
+            raise ValueError("The destination vial is not available for dose corrections.")
+        vd = services.vial_views(db, [destination])[destination.id]
         base = U.amount_to_vial_base(amount, unit, vd.dim, vd.conc_per_ml)
-        if base <= 0 or base > vd.remaining_base + d.amount_base + 1e-7:
-            raise ValueError("Amount exceeds available vial contents.")
+        # On the source vial, this correction releases the old recorded
+        # quantity. The destination is only credited when it is the source.
+        available = vd.remaining_base + (d.amount_base if destination.id == d.vial_id else 0)
+        if not isfinite(base) or base <= 0 or base > available + 1e-7:
+            raise ValueError("Amount exceeds available destination vial contents.")
         if site and site not in INJECTION_SITES: raise ValueError("Unknown injection site.")
         # Validate against stock restored from this event before mutating anything.
         original = {u.supply_id: u.amount for u in old_usage}
@@ -507,6 +534,12 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
         for item, qty in selected:
             item.remaining_qty -= qty
             db.add(SupplyUsage(supply_id=item.id, dose_id=did, amount=qty))
+        # Reassigning this FK transfers consumption automatically: vial
+        # balances are calculated from their linked DoseLog rows, rather
+        # than stored counters. No new dose or duplicate supply usage.
+        d.vial_id = destination.id
+        if destination.status == "sealed":
+            destination.status = "in_use"
         d.amount_base, d.entered_value, d.entered_unit = base, amount, U.parse_unit(unit).name
         d.taken_at, d.kind, d.site, d.notes = when, ("waste" if kind == "waste" else "dose"), site, notes.strip()
         after = _dose_snapshot(d, [SupplyUsage(supply_id=item.id, amount=qty) for item, qty in selected])
