@@ -328,3 +328,105 @@ def test_573_strict_unsafe_unnsigned_requests_fail_on_both_schemes(tab, origin):
     assert denied.status == 403
     assert "CSRF token required" in denied.text()
     assert not errors, errors
+
+
+# Release 574: extend browser checks to write-heavy native form views that
+# were not included in the original Release 573 eight-page matrix.
+# Strict mode is ONLY enabled on the disposable candidate/HTTPS proxy.
+@pytest.mark.parametrize("origin", ("http", "https"))
+@pytest.mark.parametrize("path", (
+    "/vendor-prices", "/labs/new", "/coas/new", "/pages/new",
+))
+def test_574_more_native_forms_have_signed_token_fields(tab, origin, path):
+    page, errors = tab
+    base = URL if origin == "http" else HTTPS_URL
+    response = page.goto(base + path, wait_until="networkidle")
+    assert response is not None and response.status == 200, (origin, path)
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1."), (origin, path)
+
+    forms = page.locator('form[method="post" i]')
+    assert forms.count() >= 1, (origin, path, "Expected native write form")
+    checked = 0
+    for index in range(forms.count()):
+        form = forms.nth(index)
+        if not form.evaluate(
+            "form => new URL(form.action, location.href).origin === location.origin"
+        ):
+            continue
+        fields = form.locator('input[name="csrf_token"]')
+        assert fields.count() == 1, (origin, path, index)
+        assert fields.first.input_value() == token, (origin, path, index)
+        checked += 1
+    assert checked >= 1
+    assert not errors, (origin, path, errors)
+
+
+@pytest.mark.parametrize("origin", ("http", "https"))
+def test_574_rendered_dynamic_compound_action_is_tokenized_and_forgery_denied(
+    tab, origin,
+):
+    page, errors = tab
+    base = URL if origin == "http" else HTTPS_URL
+    response = page.goto(base + "/compounds", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    # The disposable browser QA runner creates QA Alpha/Zeta compounds.
+    # Inspect an actual Jinja-rendered delete route; do NOT delete anything.
+    forms = page.locator(
+        'form[method="post"][action^="/compounds/"][action$="/delete"]'
+    )
+    assert forms.count() >= 1, "Expected disposable compound delete form"
+    form = forms.first
+    action = form.get_attribute("action")
+    assert action and re.fullmatch(r"/compounds/[0-9]+/delete", action)
+    field = form.locator('input[name="csrf_token"]')
+    assert field.count() == 1
+    assert field.first.input_value() == token
+
+    # Bypass browser JS intentionally. Without the signed form field/header
+    # strict mode must block the destructive route before any mutation.
+    forged = page.request.post(base + action, data={}, max_redirects=0)
+    assert forged.status == 403
+    assert "CSRF token required" in forged.text()
+    assert not errors, errors
+
+
+@pytest.mark.parametrize("origin", ("http", "https"))
+def test_574_request_object_fetch_receives_signed_header_under_strict_csrf(
+    tab, origin,
+):
+    page, errors = tab
+    base = URL if origin == "http" else HTTPS_URL
+    response = page.goto(base + "/compounds", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    captures = []
+    def capture(request):
+        if (request.method == "POST" and
+                urlsplit(request.url).path == "/compounds"):
+            captures.append(request.all_headers())
+
+    page.on("request", capture)
+    # Testing fetch(Request), not fetch(url, options) as Release 573 did.
+    # Empty required name returns 422 without writing a record.
+    result = page.evaluate("""async () => {
+        const body = new URLSearchParams({name: ''});
+        const request = new Request('/compounds', {
+            method: 'POST',
+            body,
+            credentials: 'same-origin'
+        });
+        const response = await fetch(request);
+        return {
+            status: response.status,
+            csrf: response.headers.get('x-tracker-csrf-report')
+        };
+    }""")
+    assert result == {"status": 422, "csrf": "valid"}, result
+    assert captures and captures[-1].get("x-tracker-csrf") == token
+    assert not errors, errors
