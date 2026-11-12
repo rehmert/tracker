@@ -20,8 +20,8 @@ def test_586_shared_styles_load_last_and_preserve_other_stylesheets():
     css = CSS.read_text(encoding="utf-8")
     for expected in (
         "minmax(min(100%, 13rem), 1fr)",
-        "#main-content .grid > *",
-        "#main-content .field > select",
+        "#main-content form.grid > *",
+        "#main-content form .field > select",
         "min-width: 0;",
         "max-width: 100%;",
         'form#tracker-dose-correction-form .tracker-dose-when-field',
