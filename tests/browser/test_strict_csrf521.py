@@ -658,3 +658,57 @@ def test_576_preparation_implicit_action_positive_and_forgery(tab, scheme, fixtu
     expect(page.locator("body")).to_contain_text(corrected)
     assert forged not in page.locator("body").inner_text()
     assert not errors, errors
+
+# Release 577: browser-network negative matrices against only the isolated
+# localhost candidate. The signed token is deliberately supplied alongside
+# a hostile Origin, proving a valid token alone cannot override origin policy.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+@pytest.mark.parametrize("request_case", ("json", "multipart", "large-json"))
+def test_577_cross_site_signed_token_still_rejected(tab, scheme, request_case):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/compounds", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+    headers = {
+        "Origin": "https://untrusted.invalid",
+        "Sec-Fetch-Site": "cross-site",
+        "X-Tracker-CSRF": token,
+    }
+    if request_case == "multipart":
+        denied = page.request.post(
+            base + "/coas/new",
+            multipart={"lab_name": "QA rejected 577", "file": {
+                "name": "untrusted.pdf", "mimeType": "application/pdf",
+                "buffer": b"%PDF-1.4\\n%%EOF\\n",
+            }},
+            headers=headers, max_redirects=0,
+        )
+    else:
+        body = '{"name":"' + ("x" * 131072 if request_case == "large-json"
+                             else "QA untrusted 577") + '"}'
+        denied = page.request.post(
+            base + "/pk/compounds",
+            data=body,
+            headers={**headers, "Content-Type": "application/json"},
+            max_redirects=0,
+        )
+    assert denied.status == 403, (scheme, request_case, denied.status)
+    assert not errors, errors
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_577_same_origin_unsigned_large_json_denied(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/compounds", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    denied = page.request.post(
+        base + "/pk/compounds",
+        data='{"name":"' + "x" * 131072 + '"}',
+        headers={"Content-Type": "application/json"},
+        max_redirects=0,
+    )
+    assert denied.status == 403
+    assert not errors, errors
