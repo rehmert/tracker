@@ -12,7 +12,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586)[.]py$ ]] || {
-    echo "ERROR: Targeted mode only permits the audited Release 583 fixture" >&2
+    echo "ERROR: Targeted module must be one of the audited 583/586 fixtures" >&2
     exit 2
   }
 elif [[ $# != 2 ]]; then
