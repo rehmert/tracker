@@ -4,7 +4,21 @@
 set -Eeuo pipefail
 umask 077
 
-[[ $# == 2 ]] || { echo "Usage: tracker-browser-qualify.sh SOURCE PYTHON" >&2; exit 2; }
+# Release 584: an explicit, restricted fast path. The normal two-argument
+# guarded qualification retains its full set of browser gates unchanged.
+MODE=full
+TARGETED_MODULE=""
+if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
+  MODE=targeted
+  TARGETED_MODULE="$4"
+  [[ "$TARGETED_MODULE" == tests/browser/test_csrf_preparations583.py ]] || {
+    echo "ERROR: Targeted mode only permits the audited Release 583 fixture" >&2
+    exit 2
+  }
+elif [[ $# != 2 ]]; then
+  echo "Usage: tracker-browser-qualify.sh SOURCE PYTHON [--targeted-strict tests/browser/test_csrf_preparations583.py]" >&2
+  exit 2
+fi
 SOURCE="$(cd "$1" && pwd -P)"
 PY="$2"
 [[ "$SOURCE" != /opt/tracker && -f "$SOURCE/app/main.py" && -x "$PY" ]] || {
@@ -273,6 +287,7 @@ run_isolated_browser_module() {
     return "$rc"
 }
 
+if [[ "$MODE" == full ]]; then
 echo "=== OFFLINE FOOD AND LABS BROWSER TESTS + LIVE NAVIGATION ==="
 set +e
 env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
@@ -310,7 +325,7 @@ echo "=== REGULAR BROWSER SUITE PASSED ==="
 run_isolated_browser_module \
     tests/browser/test_labs_native_https501.py \
     0 "$ROOT/labs501-browser.log"
-
+fi
 
 # Release 521: a second browser gate runs the SAME isolated candidate
 # with global strict CSRF enabled. Existing report-only browser tests still
@@ -366,6 +381,7 @@ else:
     raise SystemExit("ERROR: strict candidate did not become ready or enforce CSRF")
 PY
 
+if [[ "$MODE" == full ]]; then
 # The HTTPS proxy continues to forward to the same loopback-only port.
 # Run real native browser forms/uploads, HTMX, fetch, and previously qualified
 # Labs/Food mutation workflows under strict mode. All data is disposable.
@@ -437,7 +453,12 @@ run_isolated_browser_module \
 
 "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report582.py" \
     --directory "$ROOT/csrf-runtime582"
+fi
 
+if [[ "$MODE" == targeted ]]; then
+  echo "TARGETED_STRICT_PREFLIGHT=ACTIVE"
+  echo "TARGETED_STRICT_MODULE=$TARGETED_MODULE"
+fi
 # Release 583: inject synthetic supplies only after previous gates finish.
 # Never touch installed DEV/PROD data. Strict mode remains confined to
 # the disposable QA localhost backend.
@@ -460,4 +481,9 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   PYTHONDONTWRITEBYTECODE=1 \
   "$PY" -B "$SOURCE/scripts/tracker_csrf_fixture583.py" verify
 
-echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
+if [[ "$MODE" == full ]]; then
+  echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
+else
+  echo "TARGETED_STRICT_PREFLIGHT=PASSED"
+  echo "TARGETED_STRICT_SCOPE=RELEASE_583_ONLY_NOT_FULL_QUALIFICATION"
+fi
