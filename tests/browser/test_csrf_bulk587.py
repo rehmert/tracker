@@ -118,6 +118,12 @@ def _browser_write(page, path, fields):
     assert signed.headers.get("x-tracker-csrf-report") == "valid", (path, signed.status)
     assert signed.request.all_headers().get("x-tracker-csrf", "").startswith("v1.")
     assert signed.status in (200, 303), (path, signed.status)
+    # Followed 303 responses become GETs, whose final response does not
+    # necessarily include the unsafe POST's CSRF-report header.
+    if signed.status == 200:
+        assert result["csrf"] == "valid", (path, result)
+    else:
+        assert result["status"] == 200, (path, result)
     return result
 
 
