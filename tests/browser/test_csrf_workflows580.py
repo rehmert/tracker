@@ -256,7 +256,6 @@ def test_580_notes_create_edit_delete_real_forms(tab, scheme):
     assert delete.count() == 1
     assert delete.locator('input[name="csrf_token"]').count() == 1
     _forgery(page, base, "POST", delete_path)
-    page.on("dialog", lambda dialog: dialog.accept())
     _submit(page, delete.get_by_role("button", name="Delete page"), "POST", delete_path, 303)
     expect(page.locator("body")).not_to_contain_text(changed)
     assert page.request.get(base + edit_path).status == 404
