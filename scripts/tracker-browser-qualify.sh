@@ -11,7 +11,7 @@ TARGETED_MODULE=""
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
-  [[ "$TARGETED_MODULE" =~ ^tests/browser/test_csrf_preparations583[.]py$ ]] || {
+  [[ "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586)[.]py$ ]] || {
     echo "ERROR: Targeted mode only permits the audited Release 583 fixture" >&2
     exit 2
   }
@@ -460,6 +460,15 @@ if [[ "$MODE" == targeted ]]; then
   echo "TARGETED_STRICT_PREFLIGHT=ACTIVE"
   echo "TARGETED_STRICT_MODULE=$TARGETED_MODULE"
 fi
+# Release 586: targeted layout module seeds its own synthetic dose.
+# This path is never a substitute for the full QA browser gate.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == tests/browser/test_form_overlap586.py ]]; then
+  run_isolated_browser_module "$TARGETED_MODULE" 1 "$ROOT/targeted-layout586.log"
+  echo "TARGETED_STRICT_PREFLIGHT=PASSED"
+  echo "TARGETED_STRICT_SCOPE=RELEASE_586_LAYOUT_ONLY_NOT_FULL_QUALIFICATION"
+  exit 0
+fi
+
 # Release 583: inject synthetic supplies only after previous gates finish.
 # Never touch installed DEV/PROD data. Strict mode remains confined to
 # the disposable QA localhost backend.
