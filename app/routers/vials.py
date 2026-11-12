@@ -985,14 +985,27 @@ def delete_preparation(vid: int, eid: int, db: Session = Depends(get_scoped_db39
         return services.flash_redirect(f"/vials/{vid}",err="Reconstitution records cannot be deleted here; correct the vial's recorded volume instead.")
     links = list(db.scalars(select(PreparationSupply).where(PreparationSupply.event_id == eid)))
     old = {}
+    usages = []
     for link in links:
-        u = db.get(SupplyUsage,link.usage_id)
+        u = db.get(SupplyUsage, link.usage_id)
         if u:
-            item = db.get(Supply,u.supply_id)
-            if item: item.remaining_qty += u.amount
-            old[str(u.supply_id)] = old.get(str(u.supply_id),0)+u.amount
-            db.delete(u)
+            item = db.get(Supply, u.supply_id)
+            if item:
+                item.remaining_qty += u.amount
+            old[str(u.supply_id)] = old.get(str(u.supply_id), 0) + u.amount
+            usages.append(u)
         db.delete(link)
-    db.add(ChangeAudit(entity_type="preparation",entity_id=eid,action="delete",before_json=json.dumps({"kind":event.kind,"supplies":old,"notes":event.notes})))
-    db.delete(event); db.commit()
+    # Explicitly flush child link removals before removing their referenced
+    # usage rows. The ORM does not infer ordering across these separate
+    # mapped classes without a declared relationship; SQLite FK enforcement
+    # otherwise rejects a DELETE of a still-referenced supply usage.
+    db.flush()
+    for usage in usages:
+        db.delete(usage)
+    db.flush()
+    db.add(ChangeAudit(entity_type="preparation", entity_id=eid, action="delete",
+                       before_json=json.dumps({"kind": event.kind, "supplies": old,
+                                               "notes": event.notes})))
+    db.delete(event)
+    db.commit()
     return services.flash_redirect(f"/vials/{vid}",msg="Preparation removed; supplies restored.")
