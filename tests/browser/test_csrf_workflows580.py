@@ -48,6 +48,8 @@ OPERATIONS = {
     "notes-lifecycle": (
         ("POST", "/pages", 303),
         ("POST", "/pages/{id}", 303),
+        ("POST", "/pages/{id}/sources", 303),
+        ("POST", "/sources/{id}/delete", 303),
         ("POST", "/pages/{id}/delete", 303),
     ),
 }
@@ -225,6 +227,30 @@ def test_580_notes_create_edit_delete_real_forms(tab, scheme):
     edit.locator('input[name="title"]').fill(changed)
     _submit(page, edit.get_by_role("button", name="Save page"), "POST", edit_path, 303)
     expect(page.locator("h1")).to_contain_text(changed)
+
+    # Add a source through the actual Notes UI, then confirm unsigned
+    # deletion is denied and signed deletion succeeds.
+    source_path = edit_path + "/sources"
+    source_form = page.locator('form[method="post"][action="' + source_path + '"]')
+    assert source_form.count() == 1
+    assert source_form.locator('input[name="csrf_token"]').count() == 1
+    _forgery(page, base, "POST", source_path, data={"title": "forged source"})
+    source_title = "QA source 580 " + uuid4().hex[:10]
+    source_form.locator('input[name="title"]').fill(source_title)
+    _submit(page, source_form.get_by_role("button", name="Add source"),
+            "POST", source_path, 303)
+    expect(page.locator("body")).to_contain_text(source_title)
+    source_row = page.locator("li").filter(has_text=source_title)
+    expect(source_row).to_have_count(1)
+    source_delete = source_row.locator('form[action$="/delete"]')
+    source_delete_path = source_delete.get_attribute("action")
+    assert source_delete_path and re.fullmatch(r"/sources/[0-9]+/delete",
+                                                 source_delete_path)
+    _forgery(page, base, "POST", source_delete_path)
+    page.on("dialog", lambda dialog: dialog.accept())
+    _submit(page, source_delete.get_by_role("button", name="Remove"),
+            "POST", source_delete_path, 303)
+    expect(page.locator("body")).not_to_contain_text(source_title)
     delete_path = edit_path + "/delete"
     delete = page.locator('form[method="post"][action="' + delete_path + '"]')
     assert delete.count() == 1
