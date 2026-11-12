@@ -17,6 +17,7 @@ FLOWS = {
     "mobile-bp": ("/vitals", 200),
     "mobile-water": ("/food/water", 200),
     "notes-preview": ("/pages/preview", 200),
+    "notes-visual-fetch": ("/pages/preview", 200),
     "native-compound": ("/compounds", 303),
 }
 SCHEMES = ("http", "https")
@@ -72,7 +73,7 @@ def analyze(directory: Path) -> dict:
         "status": "isolated_strict_browser_witnesses_verified",
         "observed_write_scenarios": len(rows),
         "distinct_tested_paths": sorted({row["path"] for row in rows}),
-        "javascript_flows": len([r for r in rows if r["flow"].startswith("mobile")]),
+        "javascript_flows": len([r for r in rows if r["flow"].startswith("mobile") or r["flow"] == "notes-visual-fetch"]),
         "htmx_flows": len([r for r in rows if r["flow"] == "notes-preview"]),
         "native_flows": len([r for r in rows if r["flow"] == "native-compound"]),
         "limits": [
