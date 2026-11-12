@@ -429,4 +429,13 @@ run_isolated_browser_module \
 "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report581.py" \
     --directory "$ROOT/csrf-runtime581"
 
+# Release 582: signed dose create/correct/delete using the real browser UI,
+# with paired unsigned denial and a private, fail-closed witness ledger.
+run_isolated_browser_module \
+    tests/browser/test_csrf_dose_lifecycle582.py \
+    1 "$ROOT/strict-dose-lifecycle582.log"
+
+"$PY" "$SOURCE/scripts/tracker_csrf_runtime_report582.py" \
+    --directory "$ROOT/csrf-runtime582"
+
 echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
