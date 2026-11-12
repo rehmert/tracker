@@ -61,7 +61,10 @@ def synthetic_edit_id():
 PAGES = (
     "/doses", "/vials", "/purchases", "/supplies",
     "/compounds", "/vitals", "/labs", "/protocols",
-    "/dose-workspace", "/calendar",
+    "/dose-workspace", "/calendar", "/food", "/blends",
+    "/quick-entry", "/protocol-tools", "/pages",
+    "/inventory-health", "/inventory-alerts", "/reconciliation",
+    "/vendor-prices", "/health-timeline",
 )
 
 
