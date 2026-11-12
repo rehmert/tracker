@@ -123,6 +123,19 @@ def test_582_dose_create_correct_delete_with_forgery_rejection(tab, scheme):
     form.locator('select[name="vial_id"]').select_option("1")
     form.locator('input[name="amount"]').fill("1")
     form.locator('select[name="unit"]').select_option("mg")
+    # The application enhances the datetime-local input with a visible
+    # date + 24-hour clock. Use the real UI's current-time control so the
+    # enhanced fields and original submitted timestamp remain synchronized.
+    form.get_by_role("button", name="Use current time").click()
+    expect(form.locator('input[name="taken_at"]')).not_to_have_value("")
+    # Fail immediately with the invalid field names rather than waiting
+    # 30 seconds for a POST that HTML constraint validation prevented.
+    invalid = form.evaluate("""form => [...form.elements]
+        .filter(el => el.willValidate && !el.checkValidity())
+        .map(el => ({name: el.name || el.getAttribute('aria-label'),
+                     message: el.validationMessage}))""")
+    assert not invalid, ("dose form has invalid browser fields", invalid)
+    assert form.evaluate("form => form.checkValidity()")
     # HTMX form, not a native POST: verify emitted request CSRF header.
     response = _witness(
         page, form.get_by_role("button", name="Add to log"),
