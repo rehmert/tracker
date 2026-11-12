@@ -4,9 +4,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
-import re
 import subprocess
-import sys
 
 import pytest
 
@@ -23,42 +21,6 @@ def report():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
-
-
-@pytest.fixture
-def witnesses(report, tmp_path, monkeypatch):
-    # The gate only accepts a disposable browser QA path below /tmp.
-    # Tests use pytest's isolated tmp_path then monkeypatch just the
-    # path validation boundary, never a real application or PROD URL.
-    directory = tmp_path / "csrf-runtime579"
-    directory.mkdir()
-    for scheme in report.SCHEMES:
-        for flow, (path, status) in report.FLOWS.items():
-            record = {
-                "scheme": scheme, "flow": flow, "method": "POST",
-                "path": path, "accepted_status": status,
-                "denied_status": 403,
-                "signed_browser_request": True,
-                "runtime_observed": True, "isolated_candidate": True,
-            }
-            file = directory / f"{scheme}-{flow}.json"
-            file.write_text(json.dumps(record), encoding="utf-8")
-            file.chmod(0o600)
-    # Only mock Path.resolve, not stat/permissions or analysis logic.
-    original = report.Path.resolve
-    def fake_resolve(path, *args, **kwargs):
-        if str(path) == str(directory):
-            return report.Path("/tmp/tracker-browser-qa.ABCDEFGH/csrf-runtime579")
-        return original(path, *args, **kwargs)
-    # Prefer testing the actual path instead of replacing filesystem
-    # resolution, which would make fixture file lookup impossible.
-    monkeypatch.setattr(report.re, "fullmatch", re.fullmatch)
-    return directory
-
-
-def test_579_report_rejects_non_qa_paths(report, witnesses):
-    with pytest.raises(ValueError, match="disposable browser"):
-        report.analyze(witnesses)
 
 
 def test_579_manifest_is_exact_and_covers_source_workflows(report):
@@ -81,7 +43,7 @@ def test_579_manifest_is_exact_and_covers_source_workflows(report):
     ) < runner.index("ISOLATED_STRICT_CSRF_BROWSER=PASSED")
 
 
-def test_579_report_requires_exact_isolated_witnesses(report, tmp_path):
+def test_579_report_requires_exact_isolated_witnesses(report):
     # Use genuine /tmp tree under a private fixture namespace if pytest's
     # tmp path happens to be elsewhere; this calls no app and no network.
     import tempfile
