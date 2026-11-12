@@ -17,10 +17,6 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 CALL = re.compile(r"\b(?:fetch|htmx\.ajax)\s*\(")
-METHOD = re.compile(
-    r"""\bmethod\s*:\s*(?P<quote>['"])(?P<method>GET|POST|PUT|PATCH|DELETE)(?P=quote)""",
-    re.I,
-)
 LITERAL = re.compile(r"""\A(?P<quote>['"])(?P<url>/[^'"]*)(?P=quote)\Z""")
 UNSAFE = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
@@ -179,19 +175,46 @@ def analyze_callsite(row: dict, root: Path = ROOT) -> dict:
             literal = LITERAL.fullmatch(first)
             target = literal.group("url") if literal else None
             options = args[1] if len(args) > 1 else ""
-            explicit = METHOD.search(options) if options.startswith("{") else None
-            if explicit:
-                method = explicit.group("method").upper()
-                category = ("explicit_unsafe" if method in UNSAFE
-                            else "explicit_get")
-            elif options.startswith("{") and re.search(r"\bmethod\s*:", options):
-                category = "dynamic_method"
-            elif (len(args) == 1 or options.startswith("{")) and first[:1] in ("'", '"'):
+            if len(args) == 1 and first[:1] in ("'", '"'):
                 method = "GET"
                 category = "implicit_get_url_expression"
+            elif options.startswith("{") and options.endswith("}"):
+                # Only the actual TOP-LEVEL RequestInit method is evidence.
+                # A nested object's method or a later object spread may
+                # override it; never count those as an explicit write.
+                properties = _arguments(options[1:-1])
+                spread = any(
+                    field.startswith("...") or field.startswith("[")
+                    for field in properties
+                )
+                values = [
+                    field.split(":", 1)[1].strip()
+                    for field in properties
+                    if re.match(r"""^(?:method|['"]method['"])\s*:""", field)
+                ]
+                if spread or len(values) > 1:
+                    category = "dynamic_method"
+                elif values:
+                    match_method = re.fullmatch(
+                        r"""['"](GET|POST|PUT|PATCH|DELETE)['"]""",
+                        values[0], re.I,
+                    )
+                    if match_method:
+                        method = match_method.group(1).upper()
+                        category = (
+                            "explicit_unsafe" if method in UNSAFE
+                            else "explicit_get"
+                        )
+                    else:
+                        category = "dynamic_method"
+                elif first[:1] in ("'", '"'):
+                    method = "GET"
+                    category = "implicit_get_url_expression"
+                else:
+                    category = "request_or_options_unresolved"
             else:
-                # Input can be Request with an unsafe method, or options can
-                # be constructed outside the call. Never claim implicit GET.
+                # Input may be Request with an unsafe method or options may
+                # be constructed outside the call. Never assume GET.
                 category = "request_or_options_unresolved"
 
     return {
