@@ -12,10 +12,10 @@ by Issue #9.
    Chromium suite now visits the mobile view in a narrow viewport,
    inspects the three implicit-action forms (Weight, Blood Pressure,
    Water), verifies they each have exactly one signed field, and
-   performs an actual Water write via the application's fetch/FormData
-   interception. It verifies the response's signed report and the
-   outgoing `X-Tracker-CSRF` header. Both HTTP and host-rewriting HTTPS
-   paths are exercised.
+   performs real positive writes for all three via the application's
+   fetch/FormData interception. It verifies the response's signed
+   report and the outgoing `X-Tracker-CSRF` header. Both HTTP and
+   host-rewriting HTTPS paths are exercised.
 2. **Notes create/edit Jinja action:** A new disposable page is created
    through the real HTML form, then its generated `/pages/{id}`
    editing action is inspected and used for an authorized edit.
@@ -43,8 +43,8 @@ by Issue #9.
 
 ## Limits: what this does not prove
 
-- The three mobile forms are token-inspected, but only Water is
-  submitted as a positive write in this release.
+- The three mobile forms are token-inspected and exercised as
+  positive writes against the disposable strict-mode backend.
 - The `preparation_edit.html` implicit-action form still requires
   a disposable preparation event and an authorized correction test.
 - Some JS callsites are read-only GET requests, some are unsafe
@@ -96,8 +96,6 @@ operator-controlled DEV action through
 
 - Construct a disposable prepared vial fixture to test
   `preparation_edit.html` positive correction under strict mode.
-- Test positive Weight and Blood Pressure quick entry, not merely
-  token injection.
 - Resolve the JS callsite review categories with specific
   executable positive/negative browser cases, prioritizing
   actual unsafe HTTP methods.
