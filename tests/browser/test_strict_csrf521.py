@@ -9,6 +9,7 @@ import os
 import re
 from pathlib import Path
 from urllib.parse import urlsplit
+from uuid import uuid4
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
@@ -429,4 +430,146 @@ def test_574_request_object_fetch_receives_signed_header_under_strict_csrf(
     }""")
     assert result == {"status": 422, "csrf": "valid"}, result
     assert captures and captures[-1].get("x-tracker-csrf") == token
+    assert not errors, errors
+
+
+# Release 575: executable positive-write tests for previously unresolved
+# Jinja actions and mobile quick-entry forms. All activity is confined to
+# the browser runner's disposable strict-CSRF localhost backend.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_575_mobile_quick_entry_signed_fetch_and_implicit_forms(tab, scheme):
+    page, errors = tab
+    page.set_viewport_size({"width": 390, "height": 844})
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/mobile", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    # These forms intentionally omit action=; JavaScript sends them to their
+    # data-quick528-endpoint. CSRF must survive that fetch/FormData path.
+    for kind, endpoint in (
+        ("weight", "/vitals"), ("bp", "/vitals"), ("water", "/food/water"),
+    ):
+        form = page.locator(f'form[data-quick528-form="{kind}"]')
+        assert form.count() == 1
+        assert form.get_attribute("action") is None
+        assert form.get_attribute("data-quick528-endpoint") == endpoint
+        field = form.locator('input[name="csrf_token"]')
+        assert field.count() == 1, kind
+        assert field.input_value() == token, kind
+
+    requests = []
+    page.on("request", lambda req: requests.append(
+        (req.method, urlsplit(req.url).path, req.all_headers())
+    ) if req.method == "POST" and
+        urlsplit(req.url).path == "/food/water" else None)
+
+    trigger = page.locator("#tracker-mobile-add528")
+    assert trigger.count() == 1
+    trigger.click()
+    page.locator('[data-quick528-choice="water"]').click()
+    water = page.locator('form[data-quick528-form="water"]')
+    water.locator('input[name="ounces"]').fill("6.5")
+    with page.expect_response(_post_response(page, "/food/water")) as pending:
+        water.locator('button[type="submit"]').click()
+    _verified(pending.value, status=200)
+    expect(page.locator("[data-quick528-success]")).to_be_visible()
+    assert requests and requests[-1][2].get("x-tracker-csrf") == token
+    assert not errors, errors
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_575_create_and_edit_notes_with_rendered_dynamic_action(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/pages/new", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    form = page.locator('form[method="post"][action="/pages"]')
+    assert form.count() == 1
+    assert form.locator('input[name="csrf_token"]').input_value() == token
+
+    title = "QA CSRF note 575 " + uuid4().hex[:12]
+    form.locator('input[name="title"]').fill(title)
+    with page.expect_response(_post_response(page, "/pages")) as pending:
+        form.get_by_role("button", name="Save page").click()
+    _verified(pending.value, status=303)
+
+    page.wait_for_url(re.compile(re.escape(base) + r"/pages/[0-9]+(?:\?.*)?$"))
+    pid = urlsplit(page.url).path.rsplit("/", 1)[-1]
+    assert pid.isdecimal()
+    edit_url = base + "/pages/" + pid + "/edit"
+    response = page.goto(edit_url, wait_until="networkidle")
+    assert response is not None and response.status == 200
+    form = page.locator(f'form[method="post"][action="/pages/{pid}"]')
+    assert form.count() == 1
+    assert form.locator('input[name="csrf_token"]').input_value() == token
+
+    # Forged native edit must not touch the just-created QA page.
+    denied = page.request.post(
+        base + "/pages/" + pid,
+        data={"title": "Forged CSRF 575"},
+        max_redirects=0,
+    )
+    assert denied.status == 403
+
+    updated = title + " edited"
+    form.locator('input[name="title"]').fill(updated)
+    with page.expect_response(_post_response(page, "/pages/" + pid)) as pending:
+        form.get_by_role("button", name="Save page").click()
+    _verified(pending.value, status=303)
+    page.wait_for_url(re.compile(re.escape(base) + r"/pages/[0-9]+(?:\?.*)?$"))
+    expect(page.locator("body")).to_contain_text(updated)
+    assert "Forged CSRF 575" not in page.locator("body").inner_text()
+    assert not errors, errors
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_575_coa_create_edit_rendered_action_and_multipart_positive(
+    tab, scheme,
+):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/coas/new", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+    form = page.locator('form[method="post"][action="/coas/new"]')
+    assert form.count() == 1
+    assert form.locator('input[name="csrf_token"]').input_value() == token
+    choices = form.locator('select[name="vial_id"] option:not([value=""])')
+    assert choices.count() >= 1, "Isolated COA vial fixtures missing"
+    vial = choices.first.get_attribute("value")
+    assert vial and vial.isdecimal()
+    form.locator('select[name="vial_id"]').select_option(vial)
+    lab = "QA CSRF 575 " + uuid4().hex[:12]
+    form.locator('input[name="lab_name"]').fill(lab)
+    with page.expect_response(_post_response(page, "/coas/new")) as pending:
+        form.get_by_role("button", name="Create COA").click()
+    _verified(pending.value, status=303)
+    page.wait_for_url(re.compile(re.escape(base) + r"/coas/[0-9]+(?:\?.*)?$"))
+    cid = urlsplit(page.url).path.rsplit("/", 1)[-1]
+    assert cid.isdecimal()
+
+    # The same template chooses a completely different Jinja action on edit.
+    form = page.locator(f'form[method="post"][action="/coas/{cid}/edit"]')
+    assert form.count() == 1
+    assert form.locator('input[name="csrf_token"]').input_value() == token
+    denied = page.request.post(
+        base + "/coas/" + cid + "/edit",
+        multipart={"lab_name": "Forged COA 575"},
+        max_redirects=0,
+    )
+    assert denied.status == 403
+
+    lab_updated = lab + " edit"
+    form.locator('input[name="lab_name"]').fill(lab_updated)
+    with page.expect_response(_post_response(page, "/coas/" + cid + "/edit")) as pending:
+        form.get_by_role("button", name="Save changes").click()
+    _verified(pending.value, status=303)
+    expect(page.locator("body")).to_contain_text(lab_updated)
+    assert "Forged COA 575" not in page.locator("body").inner_text()
     assert not errors, errors
