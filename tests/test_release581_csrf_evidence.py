@@ -110,7 +110,7 @@ def test_581_rejects_wrong_and_symlinked_export_roots(report, tmp_path):
         report.analyze(wrong)
     link = tmp_path / "linked"
     link.symlink_to(wrong, target_is_directory=True)
-    with pytest.raises(ValueError, match="Symlinked"):
+    with pytest.raises(ValueError, match="(?i)symlinked"):
         report.analyze(link)
 
 
