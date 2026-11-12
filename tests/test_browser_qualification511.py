@@ -41,6 +41,22 @@ def test_511_every_browser_module_in_disposable_qualification():
     source = QUALIFIER.read_text(encoding="utf-8")
     assert source.count(STRICT_PASS_MARKER) == 1
     standard, strict = source.split(STRICT_PASS_MARKER, 1)
+    # Release 589 intentionally replays the 587/588 modules in one
+    # *targeted-only* batch. Count only the guarded full-mode source
+    # when asserting each required browser module is scheduled once.
+    batch_start = "# Release 589: one explicit fail-closed batch"
+    batch_end = "# Combined Release 587–588: isolate bulk inventory browser writes"
+    assert strict.count(batch_start) == 1
+    assert strict.count(batch_end) == 1
+    before_batch, tail = strict.split(batch_start, 1)
+    targeted_batch, after_batch = tail.split(batch_end, 1)
+    assert 'if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-batch589 ]]' in targeted_batch
+    assert targeted_batch.count("run_isolated_browser_module") == 2
+    assert targeted_batch.count("tests/browser/test_csrf_bulk587.py") == 1
+    assert targeted_batch.count("tests/browser/test_csrf_multipart588.py") == 1
+    assert "TARGETED_CSRF_BATCH589=PASSED" in targeted_batch
+    assert 'ISOLATED_STRICT_CSRF_BROWSER=PASSED' not in targeted_batch
+    strict = before_batch + batch_end + after_batch
 
     browser_paths = sorted((ROOT / "tests/browser").glob("test_*.py"))
     required = [str(path.relative_to(ROOT)) for path in browser_paths]
