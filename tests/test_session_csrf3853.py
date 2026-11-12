@@ -209,3 +209,42 @@ def test_logout_requires_csrf(browser):
 
     assert denied.status_code == 403
     assert browser.cookies.get(session_auth385.COOKIE)
+
+
+# Release 575: the global strict-CSRF rollout must not break the
+# independently signed session-login flow through a TLS Host-rewrite proxy.
+def test_575_strict_mode_keeps_signed_login_functional(browser, monkeypatch):
+    monkeypatch.setenv("TRACKER_CSRF_ENFORCE", "1")
+    token = login_token(browser)
+    response = browser.post(
+        "/login",
+        headers={
+            "Origin": "https://tracker-dev.example",
+            "Sec-Fetch-Site": "same-origin",
+        },
+        data=credentials(token),
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert response.headers["location"] == "/"
+    assert browser.cookies.get(session_auth385.COOKIE)
+
+
+def test_575_strict_mode_keeps_unsigned_login_forbidden(browser, monkeypatch):
+    monkeypatch.setenv("TRACKER_CSRF_ENFORCE", "1")
+    login_token(browser)
+    response = browser.post(
+        "/login",
+        headers={
+            "Origin": "https://tracker-dev.example",
+            "Sec-Fetch-Site": "same-origin",
+        },
+        data={
+            "username": "operator",
+            "password": "test-password-3853",
+            "next": "/",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 403
+    assert not browser.cookies.get(session_auth385.COOKIE)
