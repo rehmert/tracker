@@ -136,6 +136,15 @@ def test_587_588_bulk_vial_preview_update_delete_strict(tab, synthetic_vial, sch
     token = page.evaluate("window.trackerCsrfToken?.() || ''")
     assert token.startswith("v1.")
     vial_id = synthetic_vial
+    # SQLite may recycle a deleted vial ID across parametrized transports.
+    # Capture the append-only audit high-water mark before this case writes,
+    # so old HTTP audit entries cannot be mistaken for HTTPS events.
+    db_file = (DATA / "tracker.db").resolve()
+    assert db_file.parent == DATA and db_file.is_file() and not db_file.is_symlink()
+    with sqlite3.connect(db_file) as db:
+        audit_start = db.execute(
+            "SELECT COALESCE(MAX(id), 0) FROM change_audit"
+        ).fetchone()[0]
     ids = [["vial_ids", str(vial_id)]]
     for path, _ in ROUTES:
         rejected = page.request.post(base + path, data=dict(ids), max_redirects=0)
@@ -176,15 +185,16 @@ def test_587_588_bulk_vial_preview_update_delete_strict(tab, synthetic_vial, sch
     assert page.request.get(base + "/vials/" + str(vial_id)).status == 404
     # Independently reconcile the disposable server database after the
     # HTTP lifecycle. A 303 alone is not evidence that writes persisted.
-    db_file = (DATA / "tracker.db").resolve()
-    assert db_file.parent == DATA and db_file.is_file() and not db_file.is_symlink()
     with sqlite3.connect(db_file) as db:
         assert db.execute("SELECT COUNT(*) FROM vials WHERE id=?", (vial_id,)).fetchone()[0] == 0
-        actions = [row[0] for row in db.execute(
-            "SELECT action FROM change_audit WHERE entity_type='vial' "
-            "AND entity_id=? ORDER BY id", (vial_id,)
-        )]
-        assert actions == ["bulk_update", "bulk_delete"], actions
+        events = db.execute(
+            "SELECT action, before_json, after_json FROM change_audit "
+            "WHERE entity_type='vial' AND entity_id=? AND id>? ORDER BY id",
+            (vial_id, audit_start),
+        ).fetchall()
+        assert [event[0] for event in events] == ["bulk_update", "bulk_delete"], events
+        assert json.loads(events[0][2])["label"] == "QA bulk edited " + scheme
+        assert json.loads(events[1][1])["label"] == "QA bulk edited " + scheme
     assert not errors, errors
 
     folder = DATA.parent / "csrf-runtime587"
