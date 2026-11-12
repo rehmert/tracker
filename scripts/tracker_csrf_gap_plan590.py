@@ -63,13 +63,20 @@ def build() -> dict:
     if strict.count(full_marker) < 1 or "ISOLATED_STRICT_CSRF_BROWSER=PASSED" not in strict:
         raise ValueError("Full strict gate missing")
     required = sorted(set(EVIDENCE_MODULES.values()))
+    # Delimit the actual combined 587/588 full-only gate. A targeted-only
+    # replay cannot satisfy the qualification requirement.
+    full_section_start = "# Combined Release 587–588: isolate bulk inventory browser writes"
+    full_section_end = 'if [[ "$MODE" == targeted && "${TARGETED_MODULE##*/}" == test_csrf_multipart588.py ]]; then'
+    if strict.count(full_section_start) != 1 or strict.count(full_section_end) != 1:
+        raise ValueError("Full 587/588 browser gate boundaries changed")
+    full_section = strict.split(full_section_start, 1)[1].split(full_section_end, 1)[0]
+    if full_marker not in full_section:
+        raise ValueError("Witness section not full-mode guarded")
     for module in required:
         if not (ROOT / module).is_file():
             raise ValueError("Missing browser witness: " + module)
-        # Exact presence is checked within the explicitly full-mode portion,
-        # not in the optional targeted batch.
-        if module not in runner:
-            raise ValueError("Witness not scheduled: " + module)
+        if full_section.count(module) != 1:
+            raise ValueError("Witness not scheduled exactly once in full gate: " + module)
     uncovered = []
     covered = []
     for row in routes:
