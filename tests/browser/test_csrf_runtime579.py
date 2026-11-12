@@ -104,8 +104,7 @@ def test_579_real_mobile_js_write_and_forged_replay_denied(
     assert headers.get("x-tracker-csrf") == token
     assert headers.get("x-tracker-mobile-quick") == "528"
     assert headers.get("accept") == "application/json"
-    assert wire.post_data is not None
-    assert "csrf_token" in wire.post_data
+    assert form.locator('input[name="csrf_token"]').input_value() == token
 
     # Bypass the application's browser fetch/FormData wrapper using
     # Playwright's separate API request. An unsigned replay MUST fail.
