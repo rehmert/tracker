@@ -35,6 +35,13 @@
 > tests. Neither DEV nor PROD is switched to strict CSRF by this
 > tooling-only release. See [Release 572 inventory](release-572-csrf-inventory.md).
 
+> **Release 573 update:** A bundled strict-CSRF compatibility release
+> hardens duplicate headers and ambiguous browser origin metadata,
+> extends native-form Chromium checks across HTTP/HTTPS, and classifies
+> forms and HTMX targets against registered unsafe routes. Global
+> enforcement is **not** enabled on installed DEV or PROD.
+> [Release 573 review](release-573-csrf-compatibility-bundle.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
