@@ -464,8 +464,8 @@ fi
 # This path is never a substitute for the full QA browser gate.
 if [[ "$MODE" == targeted && "${TARGETED_MODULE##*/}" == test_form_overlap586.py ]]; then
   run_isolated_browser_module "$TARGETED_MODULE" 1 "$ROOT/targeted-layout586.log"
-  echo "TARGETED_STRICT_PREFLIGHT=PASSED"
-  echo "TARGETED_STRICT_SCOPE=RELEASE_586_LAYOUT_ONLY_NOT_FULL_QUALIFICATION"
+  echo "TARGETED_LAYOUT_PREFLIGHT=PASSED"
+  echo "TARGETED_LAYOUT_SCOPE=RELEASE_586_ONLY_NOT_FULL_QUALIFICATION"
   exit 0
 fi
 
