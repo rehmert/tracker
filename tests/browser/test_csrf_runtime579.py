@@ -54,7 +54,7 @@ def _record_evidence(scheme, flow, path, accepted_status, denied_status):
     # Never retain cookie, signed CSRF token, request body, or user data.
     with destination.open("x", encoding="utf-8") as output:
         json.dump(payload, output, sort_keys=True)
-        output.write("\\n")
+        output.write("\n")
     destination.chmod(0o600)
 
 
