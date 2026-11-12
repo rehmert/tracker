@@ -3,6 +3,7 @@ from pathlib import Path
 import ast
 import subprocess
 import sys
+import sqlite3
 
 ROOT = Path(__file__).resolve().parents[1]
 QUALIFIER = ROOT / "scripts/tracker-browser-qualify.sh"
@@ -81,3 +82,31 @@ def test_588_source_route_report_executes_and_remains_blocked():
     assert "CSRF_588_READINESS=BLOCKED_INCOMPLETE_RUNTIME_CLEARANCE" in result.stdout
     assert "CSRF_588_UNQUALIFIED_ROUTES=" in result.stdout
     assert "CSRF_588_INSTALLED_ENFORCEMENT=UNCHANGED_REPORT_ONLY" in result.stdout
+
+
+def test_587_audit_reconciliation_ignores_prior_lifecycle_with_reused_vial_id():
+    """A deleted SQLite vial ID can be reused, but audit IDs are append-only."""
+    browser_source = BROWSER.read_text()
+    assert 'SELECT COALESCE(MAX(id), 0) FROM change_audit' in browser_source
+    assert 'AND entity_id=? AND id>? ORDER BY id' in browser_source
+    assert '(vial_id, audit_start)' in browser_source
+    with sqlite3.connect(":memory:") as db:
+        db.execute("CREATE TABLE change_audit (id INTEGER PRIMARY KEY, entity_id INTEGER, action TEXT)")
+        db.executemany(
+            "INSERT INTO change_audit (entity_id, action) VALUES (1, ?)",
+            [("bulk_update",), ("bulk_delete",)],
+        )
+        audit_start = db.execute(
+            "SELECT COALESCE(MAX(id), 0) FROM change_audit"
+        ).fetchone()[0]
+        db.executemany(
+            "INSERT INTO change_audit (entity_id, action) VALUES (1, ?)",
+            [("bulk_update",), ("bulk_delete",)],
+        )
+        actions = [
+            row[0] for row in db.execute(
+                "SELECT action FROM change_audit WHERE entity_id=? AND id>? ORDER BY id",
+                (1, audit_start),
+            )
+        ]
+        assert actions == ["bulk_update", "bulk_delete"]
