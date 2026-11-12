@@ -97,4 +97,5 @@ def test_573_real_inventory_includes_browser_review_categories(audit573):
         "literal_route_matched", "literal_route_not_matched",
         "manual_dynamic_or_implicit",
         "manual_absolute_or_external", "manual_relative_or_fragment",
+        "templated_route_shape_matched",
     } for row in report["browser_entrypoint_triage"])
