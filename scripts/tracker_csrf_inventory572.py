@@ -157,14 +157,23 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", type=Path, help="Optional output file in /tmp")
     args = parser.parse_args(argv)
-    data_dir = os.environ.get("TRACKER_DATA_DIR")
-    if not data_dir or not Path(data_dir).is_absolute() or not Path(data_dir).is_dir():
-        parser.error("Set TRACKER_DATA_DIR to a pre-created disposable absolute directory")
+    data_dir = os.environ.get("TRACKER_DATA_DIR", "")
+    data = Path(data_dir)
+    sandbox = data.parent
+    if not (
+        data.is_absolute()
+        and data.name == "data"
+        and sandbox.parent == Path("/tmp")
+        and sandbox.name.startswith("tracker-csrf572.")
+        and data.is_dir() and not data.is_symlink()
+        and sandbox.is_dir() and not sandbox.is_symlink()
+    ):
+        parser.error("TRACKER_DATA_DIR must be /tmp/tracker-csrf572.*/data")
     if args.json is not None and (
-        args.json.parent != Path("/tmp") or args.json.exists()
+        args.json.parent != sandbox or args.json.exists()
         or args.json.is_symlink()
     ):
-        parser.error("--json destination must be a new direct /tmp file")
+        parser.error("--json destination must be a new file inside the sandbox")
     # Importing app.main does not run startup lifespan. No server is started.
     from app.main import app
     report = build(app)
