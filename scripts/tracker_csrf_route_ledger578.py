@@ -137,6 +137,31 @@ def build(root: Path = ROOT) -> dict:
         })
 
     counts = Counter(row["route_attribution"] for row in js_rows)
+    # Explicit, source-addressed human review queue. It is not a
+    # demonstration that an unsafe route is reachable in a browser.
+    review_queue = [
+        {
+            "priority": "dynamic_or_unpaired_js",
+            "file": row["file"], "line": row["line"],
+            "kind": row["kind"], "method_hint": row["callsite_line_method"],
+            "path_hint": row["callsite_line_path"],
+        }
+        for row in js_rows
+        if row["route_attribution"] == "unresolved_dynamic_or_unpaired_request"
+    ]
+    review_queue += [
+        {
+            "priority": "implicit_or_dynamic_native",
+            "file": row["file"], "line": row["line"],
+            "kind": row["kind"], "method_hint": row.get("method"),
+            "path_hint": row.get("action", row.get("target", "")),
+        }
+        for row in native
+        if row["route_attribution"] == "unresolved_dynamic_or_implicit_action"
+    ]
+    review_queue.sort(key=lambda row: (
+        row["priority"], row["file"], row["line"], row["kind"]
+    ))
     return {
         "status": "source_only_not_strict_csrf_clearance",
         "summary": {
@@ -147,6 +172,7 @@ def build(root: Path = ROOT) -> dict:
             "js_unresolved": counts["unresolved_dynamic_or_unpaired_request"],
             "runtime_qualified_routes": 0,
             "js_runtime_verified": 0,
+            "pending_manual_review": len(review_queue),
         },
         "limitations": [
             "Syntactically paired path/method remains a source hint, not executed request evidence",
@@ -158,6 +184,7 @@ def build(root: Path = ROOT) -> dict:
         "routes": route_rows,
         "javascript": js_rows,
         "native": native,
+        "review_queue": review_queue,
     }
 
 
