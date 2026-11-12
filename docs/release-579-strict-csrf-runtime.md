@@ -25,8 +25,11 @@ replay denial. Cases run separately for HTTP and host-rewriting HTTPS:
 These are **12 executable write-flow scenarios** across **four endpoint
 paths**, not 12 distinct JavaScript callsites. The Notes visual fetch
 probes a tracked callsite; the mobile fetch is one shared tracked
-callsite serving three UI entry flows. Existing browser suites cover
-additional routes, but this report does not infer their clearance.
+callsite serving three UI entry flows. The report independently
+cross-checks **two distinct tracked JS fetch callsites** against the
+existing 46-entry source inventory and leaves **44 not witnessed in
+this release**. Existing browser suites cover additional routes, but
+this report does not infer their clearance.
 
 ## Fail-closed evidence gate
 
@@ -54,7 +57,8 @@ unresolved.
 
 1. Run the existing pinned guarded DEV deployment to qualify.
 2. Review the complete browser log for `CSRF_579_STRICT_RUNTIME_EVIDENCE=VERIFIED`
-   and `CSRF_579_OBSERVED_SCENARIOS=12`, alongside full backend and
+   and `CSRF_579_OBSERVED_SCENARIOS=12`, plus
+   `CSRF_579_TRACKED_JS_CALLSITES_WITNESSED=2`, alongside backend and
    isolated restore markers.
 3. Verify automatic root-only DEV qualification receipt and conduct a
    separate human DEV UI review.
