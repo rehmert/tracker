@@ -420,4 +420,13 @@ run_isolated_browser_module \
 "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report580.py" \
     --directory "$ROOT/csrf-runtime580"
 
+# Release 581: qualified synthetic-vial native update and genuine HTMX
+# dose-preview writes; keep forged-only cases explicitly separate.
+run_isolated_browser_module \
+    tests/browser/test_csrf_inventory581.py \
+    1 "$ROOT/strict-inventory-dose581.log"
+
+"$PY" "$SOURCE/scripts/tracker_csrf_runtime_report581.py" \
+    --directory "$ROOT/csrf-runtime581"
+
 echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
