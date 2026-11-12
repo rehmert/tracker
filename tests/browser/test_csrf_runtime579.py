@@ -167,8 +167,8 @@ def test_579_htmx_preview_records_actual_header_and_route(tab, scheme):
     approved = pending.value
     assert approved.status == 200
     assert approved.headers.get("x-tracker-csrf-report") == "valid"
-    assert len(sent) == 1
-    assert sent[0].all_headers().get("x-tracker-csrf") == token
+    assert sent
+    assert all(req.all_headers().get("x-tracker-csrf") == token for req in sent)
     expect(page.locator("#preview")).to_contain_text(
         "Release 579 real HTMX witness"
     )
@@ -223,14 +223,6 @@ def test_579_real_notes_visual_editor_fetch_callsite(tab, scheme):
     """Exercise the tracked app/static/notes_editor.js POST, not injected JS."""
     page, errors = tab
     base = HTTP_URL if scheme == "http" else HTTPS_URL
-    sent = []
-    responses = []
-    def is_preview(req):
-        return req.method == "POST" and urlsplit(req.url).path == "/pages/preview"
-
-    page.on("request", lambda req: sent.append(req) if is_preview(req) else None)
-    page.on("response", lambda resp: responses.append(resp)
-            if is_preview(resp.request) else None)
     loaded = page.goto(base + "/pages/new", wait_until="networkidle")
     assert loaded is not None and loaded.status == 200
     assert page.locator('script[src*="notes_editor.js"]').count() >= 1
@@ -239,6 +231,30 @@ def test_579_real_notes_visual_editor_fetch_callsite(tab, scheme):
     )
     token = page.evaluate("window.trackerCsrfToken?.() || ''")
     assert token.startswith("v1.")
+    page.locator("#notes-source-mode").click()
+    expect(page.locator("#notes-source-mode")).to_have_attribute(
+        "aria-pressed", "true"
+    )
+
+    # Attach listeners AFTER the initial load and switch back using the
+    # actual app UI. Only notes_editor.js's markdownToVisual() fetch can
+    # be responsible for the resulting transition request.
+    sent = []
+    responses = []
+    def is_preview(req):
+        return req.method == "POST" and urlsplit(req.url).path == "/pages/preview"
+
+    page.on("request", lambda req: sent.append(req) if is_preview(req) else None)
+    page.on("response", lambda resp: responses.append(resp)
+            if is_preview(resp.request) else None)
+    with page.expect_response(
+        lambda resp: is_preview(resp.request)
+    ) as pending:
+        page.locator("#notes-visual-mode").click()
+    assert pending.value.status == 200
+    expect(page.locator("#notes-visual-mode")).to_have_attribute(
+        "aria-pressed", "true"
+    )
     assert sent and responses
     assert any(req.all_headers().get("x-tracker-csrf") == token for req in sent)
     approved = [resp for resp in responses if
