@@ -14,9 +14,11 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-# Explicit verified-through-browser scope from 579–583, and new 587 case.
+# Explicit source-listed browser-witness candidates, including the 588 COA upload.
+# This report never claims that a browser run occurred on this invocation.
 # Per-path evidence is qualified only after the relevant disposable gates pass.
 BROWSER_WITNESS_CANDIDATES = frozenset({
+    ("POST", "/coas/new"),
     ("POST", "/compounds"),
     ("POST", "/compounds/{cid}/edit"),
     ("POST", "/compounds/{cid}/delete"),
