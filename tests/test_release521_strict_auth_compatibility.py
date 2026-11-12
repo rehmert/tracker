@@ -157,3 +157,86 @@ def test_521_strict_secondary_login_security_and_logout_work(strict_host521):
     )
     assert logout.status_code == 303
     assert client.cookies.get(SECONDARY_COOKIE) is None
+
+
+# Release 576: expand strict-mode session security negative coverage on a
+# disposable TestClient host. Do not touch installed accounts or passwords.
+def test_576_admin_password_rejects_absent_and_forged_signed_token(strict_host521):
+    client = strict_host521
+    page = client.get("/login")
+    token = _form_token(page.text)
+    login = client.post(
+        "/login",
+        data={
+            "username": "operator",
+            "password": "administrator-secure-password-521",
+            "csrf_token": token,
+            "next": "/account/security",
+        },
+        follow_redirects=False,
+    )
+    assert login.status_code == 303
+    assert client.get("/account/security").status_code == 200
+    fields = {
+        "current_password": "administrator-secure-password-521",
+        "new_password": "unwanted-admin-password-change-576",
+        "confirm_password": "unwanted-admin-password-change-576",
+    }
+    for submitted in (None, "v1.forged"):
+        data = dict(fields)
+        if submitted is not None:
+            data["csrf_token"] = submitted
+        denied = client.post("/account/password", data=data, follow_redirects=False)
+        assert denied.status_code == 403
+    assert auth.session_user(client.cookies.get(auth.COOKIE)) == 1
+    assert client.get("/account/security").status_code == 200
+
+
+def test_576_secondary_security_forgery_and_cross_site_are_denied(strict_host521):
+    client = strict_host521
+    page = client.get("/secondary/login")
+    token = _form_token(page.text)
+    login = client.post(
+        "/secondary/login",
+        data={
+            "username": "member-2",
+            "password": "secondary-secure-password-521",
+            "csrf_token": token,
+        },
+        follow_redirects=False,
+    )
+    assert login.status_code == 303
+    security = client.get("/secondary/security")
+    assert security.status_code == 200
+    signed = _form_token(security.text)
+
+    fields = {
+        "current_password": "secondary-secure-password-521",
+        "new_password": "unwanted-secondary-password-change-576",
+        "confirm_password": "unwanted-secondary-password-change-576",
+    }
+    for submitted in (None, "v1.forged"):
+        data = dict(fields)
+        if submitted is not None:
+            data["csrf_token"] = submitted
+        denied = client.post(
+            "/secondary/security/password", data=data, follow_redirects=False
+        )
+        assert denied.status_code == 403
+
+    denied_logout = client.post(
+        "/secondary/logout",
+        data={"csrf_token": "v1.forged"},
+        follow_redirects=False,
+    )
+    assert denied_logout.status_code == 403
+
+    denied_cross_site = client.post(
+        "/secondary/security/revoke-others",
+        data={"csrf_token": signed},
+        headers={"Sec-Fetch-Site": "cross-site"},
+        follow_redirects=False,
+    )
+    assert denied_cross_site.status_code == 403
+    assert client.cookies.get(SECONDARY_COOKIE)
+    assert client.get("/secondary/security").status_code == 200
