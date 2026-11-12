@@ -64,7 +64,7 @@ def test_579_report_requires_exact_isolated_witnesses(report):
                 file.write_text(json.dumps(value) + "\n", encoding="utf-8")
                 file.chmod(0o600)
         result = report.analyze(directory)
-        assert result["observed_write_scenarios"] == 10
+        assert result["observed_write_scenarios"] == 12
         assert result["distinct_tested_paths"] == [
             "/compounds", "/food/water", "/pages/preview", "/vitals",
         ]
