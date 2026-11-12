@@ -165,8 +165,14 @@ def test_583_reconstitution_filter_correction_delete_with_stock(tab, scheme, vid
     delete_path = edit_href.removesuffix("/edit") + "/delete"
 
     token = _visit(page, base, edit_href)
-    correction = page.locator("form[method='post']")
+    # The shared layout includes other POST forms (e.g. navigation/logout).
+    # Anchor the correction form to its unique submit control, not every
+    # form on the page.
+    save_correction = page.get_by_role("button", name="Save correction", exact=True)
+    expect(save_correction).to_have_count(1)
+    correction = save_correction.locator("xpath=ancestor::form[1]")
     assert correction.count() == 1
+    assert correction.get_attribute("method").lower() == "post"
     assert correction.locator('input[name="csrf_token"]').input_value() == token
     _rejected(page, base, edit_href)
     changed = "QA 583 corrected " + scheme
