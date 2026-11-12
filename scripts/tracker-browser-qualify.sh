@@ -409,4 +409,15 @@ run_isolated_browser_module \
 "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report579.py" \
     --directory "$ROOT/csrf-runtime579"
 
+# Release 580: the distinct compound, vitals and Notes lifecycle gate
+# exercises signed create/edit/delete with negative forged replays.
+# Neither a failed browser scenario nor incomplete receipt is allowed
+# to produce the strict browser success marker.
+run_isolated_browser_module \
+    tests/browser/test_csrf_workflows580.py \
+    1 "$ROOT/strict-workflows580.log"
+
+"$PY" "$SOURCE/scripts/tracker_csrf_runtime_report580.py" \
+    --directory "$ROOT/csrf-runtime580"
+
 echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
