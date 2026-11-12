@@ -109,3 +109,20 @@ def test_578_private_report_path_and_permissions(ledger, tmp_path):
         assert output.stat().st_mode & 0o077 == 0
         with pytest.raises(SystemExit):
             ledger.main(["--json", str(output)])
+
+
+
+def test_580_ledger_accepts_python_tempfile_underscore_suffix(ledger):
+    # tempfile's random alphabet includes underscores, so the protected
+    # /tmp allowlist must accept that valid character without broadening
+    # its fixed root, prefix, or exclusive-create requirement.
+    with tempfile.TemporaryDirectory(
+        dir="/tmp", prefix="tracker-csrf578.________"
+    ) as directory:
+        path = Path(directory) / "ledger.json"
+        assert ledger.main(["--json", str(path)]) == 0
+        result = json.loads(path.read_text(encoding="utf-8"))
+        assert result["status"] == "source_only_not_strict_csrf_clearance"
+        assert path.stat().st_mode & 0o077 == 0
+        with pytest.raises(SystemExit):
+            ledger.main(["--json", str(path)])
