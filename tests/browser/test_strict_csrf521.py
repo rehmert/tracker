@@ -758,3 +758,27 @@ def test_578_native_compound_write_negative_matrix(tab, scheme, scenario):
     )
     assert denied.status == 403, (scheme, scenario, denied.status)
     assert not errors, errors
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+@pytest.mark.parametrize("method", ("POST", "PUT", "PATCH", "DELETE"))
+def test_578_unsafe_method_without_csrf_never_mutates_compounds(
+    tab, scheme, method,
+):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/compounds", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    # POST is a declared write. Other methods may be unimplemented; 405
+    # is acceptable for those and is NOT counted as CSRF route clearance.
+    denied = page.request.fetch(
+        base + "/compounds",
+        method=method,
+        data={"name": "QA forbidden alternate method 578"},
+        max_redirects=0,
+    )
+    if method == "POST":
+        assert denied.status == 403
+    else:
+        assert denied.status in (403, 405), (method, denied.status)
+    assert not errors, errors
