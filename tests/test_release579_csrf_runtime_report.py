@@ -26,9 +26,9 @@ def report():
 def test_579_manifest_is_exact_and_covers_source_workflows(report):
     assert set(report.FLOWS) == {
         "mobile-weight", "mobile-bp", "mobile-water",
-        "notes-preview", "native-compound",
+        "notes-preview", "notes-visual-fetch", "native-compound",
     }
-    assert len(report.FLOWS) * len(report.SCHEMES) == 10
+    assert len(report.FLOWS) * len(report.SCHEMES) == 12
     text = BROWSER.read_text(encoding="utf-8")
     assert "_record_evidence" in text
     assert 'TRACKER_TEST_STRICT_CSRF' in text
@@ -68,7 +68,7 @@ def test_579_report_requires_exact_isolated_witnesses(report):
         assert result["distinct_tested_paths"] == [
             "/compounds", "/food/water", "/pages/preview", "/vitals",
         ]
-        assert result["javascript_flows"] == 6
+        assert result["javascript_flows"] == 8
         assert result["htmx_flows"] == 2
         assert result["native_flows"] == 2
         first = directory / "http-mobile-weight.json"
