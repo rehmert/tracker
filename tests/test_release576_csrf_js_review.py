@@ -49,6 +49,14 @@ def review576():
         "fetch('/vitals', {method: 'GET'});",
         "explicit_get", "GET", "/vitals",
     ),
+    (
+        "fetch('/vitals', {headers: {method:'POST'}, cache: 'no-store'});",
+        "implicit_get_url_expression", "GET", "/vitals",
+    ),
+    (
+        "fetch('/vitals', {method:'POST', ...overrides});",
+        "dynamic_method", None, "/vitals",
+    ),
 ])
 def test_576_callsite_parsing_does_not_borrow_unrelated_methods(
     review576, tmp_path, snippet, expected, method, target,
