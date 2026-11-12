@@ -160,7 +160,7 @@ def test_580_compound_create_edit_delete_real_native_forms(tab, scheme):
     # A successful deletion leaves a flash notification containing the
     # deleted name; assert against the table, not the entire page body.
     expect(page.locator("tr").filter(has_text=changed)).to_have_count(0)
-    assert page.request.get(base + edit_path).status == 303
+    assert page.request.get(base + edit_path, max_redirects=0).status == 303
     assert not errors, errors
     _record(scheme, "compound-lifecycle", OPERATIONS["compound-lifecycle"])
 
