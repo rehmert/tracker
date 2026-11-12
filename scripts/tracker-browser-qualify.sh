@@ -399,4 +399,14 @@ run_isolated_browser_module \
     tests/browser/test_labs_native_https501.py \
     1 "$ROOT/strict-labs501.log"
 
+# Release 579: pair executable browser write + unsigned replay tests
+# with a strict, closed-schema private evidence receipt. A missing
+# browser witness or unexpected response blocks the entire DEV gate.
+run_isolated_browser_module \
+    tests/browser/test_csrf_runtime579.py \
+    1 "$ROOT/strict-runtime579.log"
+
+"$PY" "$SOURCE/scripts/tracker_csrf_runtime_report579.py" \
+    --directory "$ROOT/csrf-runtime579"
+
 echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
