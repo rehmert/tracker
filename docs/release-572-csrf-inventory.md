@@ -17,8 +17,10 @@ Release 572 adds:
   dependencies, body field types, session-signature exceptions,
   file-upload endpoints, and gaps against the existing static
   `scripts/tracker-csrf-readiness.py` scan. The collector inspects
-  actual unsafe HTTP methods and refuses an empty inventory or an
-  unsafe route whose dependencies cannot be classified.
+  actual unsafe HTTP methods and expands FastAPI 0.162's lazy
+  `_IncludedRouter.effective_candidates()` contexts (including the
+  inherited dependencies and effective paths). It refuses an empty
+  inventory or an unsafe route whose dependencies cannot be classified.
 - `tests/test_release572_csrf_inventory.py`: validates the inventory
   against real application routes and synthetic unprotected/mounted apps.
 - `tests/test_release572_csrf_negative_matrix.py`: enables strict mode
