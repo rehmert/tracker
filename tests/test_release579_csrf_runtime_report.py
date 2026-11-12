@@ -85,6 +85,19 @@ def test_579_report_requires_exact_isolated_witnesses(report):
         first.unlink()
         with pytest.raises(ValueError, match="Missing or unexpected"):
             report.analyze(directory)
+        first.write_text(json.dumps({
+            "scheme": "http", "flow": "mobile-weight", "method": "POST",
+            "path": "/vitals", "accepted_status": 200,
+            "denied_status": 403, "signed_browser_request": True,
+            "runtime_observed": True, "isolated_candidate": True,
+        }), encoding="utf-8")
+        first.chmod(0o644)
+        with pytest.raises(ValueError, match="Unsafe browser witness"):
+            report.analyze(directory)
+        first.chmod(0o600)
+        (directory / "unexpected.json").write_text("{}", encoding="utf-8")
+        with pytest.raises(ValueError, match="Missing or unexpected"):
+            report.analyze(directory)
 
 
 def test_579_runner_shell_syntax_is_valid():
