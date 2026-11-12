@@ -713,3 +713,48 @@ def test_577_same_origin_unsigned_large_json_denied(tab, scheme):
     )
     assert denied.status in (403, 413)
     assert not errors, errors
+
+
+# Release 578: explicit browser-bound unsafe-route negative compatibility
+# matrix. No installed routes or data are contacted; this test is executed
+# only after the isolated strict-CSRF startup probe.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+@pytest.mark.parametrize("scenario", (
+    "missing-token", "forged-token", "cross-site-valid-token",
+    "cross-site-no-token", "wrong-origin-valid-token", "tampered-form-token",
+))
+def test_578_native_compound_write_negative_matrix(tab, scheme, scenario):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/compounds", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+    name = "QA denied strict 578 " + scheme + " " + scenario
+    data = {"name": name}
+    headers = {}
+    if scenario == "forged-token":
+        data["csrf_token"] = "not-a-signed-token"
+    elif scenario == "cross-site-valid-token":
+        data["csrf_token"] = token
+        headers = {
+            "Origin": "https://attacker.invalid",
+            "Sec-Fetch-Site": "cross-site",
+        }
+    elif scenario == "cross-site-no-token":
+        headers = {
+            "Origin": "https://attacker.invalid",
+            "Sec-Fetch-Site": "cross-site",
+        }
+    elif scenario == "wrong-origin-valid-token":
+        data["csrf_token"] = token
+        headers = {"Origin": "https://attacker.invalid"}
+    elif scenario == "tampered-form-token":
+        data["csrf_token"] = token[:-1] + ("A" if token[-1] != "A" else "B")
+
+    denied = page.request.post(
+        base + "/compounds", data=data, headers=headers,
+        max_redirects=0,
+    )
+    assert denied.status == 403, (scheme, scenario, denied.status)
+    assert not errors, errors
