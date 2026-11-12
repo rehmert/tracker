@@ -204,22 +204,29 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" TRACKER_INSTANCE=DEV \
   PYTHONDONTWRITEBYTECODE=1 "$PY" -B - <<'PY'
 from app.db import SessionLocal
-from app.models import Compound, Vial
+from app.models import Compound, Vial, PreparationEvent
 
 with SessionLocal() as db:
     for compound_name in ("QA Alpha 511", "QA Zeta 511"):
         compound = Compound(name=compound_name, category="peptide")
         db.add(compound)
         db.flush()
-        db.add(Vial(
+        vial = Vial(
             compound_id=compound.id,
             label=compound_name + " vial",
             status="in_use",
             content_value=100,
             content_unit="mg",
+        )
+        db.add(vial)
+        db.flush()
+        db.add(PreparationEvent(
+            vial_id=vial.id, kind="filtering",
+            notes="QA disposable preparation 576 " + compound_name,
         ))
     db.commit()
 print("DISPOSABLE_INVENTORY_FIXTURES=2")
+print("DISPOSABLE_PREPARATION_FIXTURES=2")
 PY
 
 # Release 524: preserve parallel execution without overlapping
