@@ -49,6 +49,14 @@
 > on HTTP and HTTPS. Live CSRF policy remains unchanged.
 > [Release 574 review](release-574-csrf-dynamic-form-coverage.md).
 
+> **Release 575 update:** A larger disposable strict-CSRF browser matrix
+> exercises mobile quick-entry, conditional COA and Notes create/edit
+> actions on HTTP and host-rewriting HTTPS, including forged-write
+> rejection. Signed session login is also checked under strict mode.
+> A read-only JS source queue retains all 46 callsites for review;
+> neither environment's global strict setting is changed.
+> [Release 575 qualification](release-575-csrf-executable-compatibility.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
