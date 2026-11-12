@@ -93,6 +93,25 @@ def collisions(page):
           }
         }
       }
+      // Labels must not overlap sibling labels in the same form grid.
+      for (const grid of document.querySelectorAll('#main-content form .grid, #main-content form.grid')) {
+        const fields = [...grid.children].filter(node =>
+          node.matches('label.field') && visible(node));
+        for (let i = 0; i < fields.length; i++) {
+          for (let j = i + 1; j < fields.length; j++) {
+            const a = fields[i].getBoundingClientRect();
+            const b = fields[j].getBoundingClientRect();
+            if (a.left < b.right - epsilon &&
+                b.left < a.right - epsilon &&
+                a.top < b.bottom - epsilon &&
+                b.top < a.bottom - epsilon) {
+              failures.push('Sibling form fields overlap: ' +
+                (fields[i].textContent || '').trim().slice(0, 25) + ' / ' +
+                (fields[j].textContent || '').trim().slice(0, 25));
+            }
+          }
+        }
+      }
       const enhanced = document.querySelectorAll('.tracker-time24-controls');
       for (const group of enhanced) {
         if (!visible(group)) continue;
