@@ -305,7 +305,7 @@ def test_dose_566_vial_ids_and_time_controls_at_desktop_and_mobile(page):
         box_clock = clock.bounding_box()
         box_now = now.bounding_box()
         assert box_date and box_clock and box_now
-        if width > 720:
+        if width > 960:
             assert box_date["x"] + box_date["width"] <= box_clock["x"] + 2
             assert box_clock["x"] + box_clock["width"] <= box_now["x"] + 2
         else:
