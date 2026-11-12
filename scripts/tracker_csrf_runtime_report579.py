@@ -7,10 +7,17 @@ Does not inspect installed data, secrets, cookies, CSRF tokens, or payloads.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import stat
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+TRACKED_FETCH_SOURCES = frozenset({
+    "app/static/js/tracker-mobile-quick528.js",
+    "app/static/notes_editor.js",
+})
 
 FLOWS = {
     "mobile-weight": ("/vitals", 200),
@@ -26,6 +33,38 @@ KEYS = frozenset({
     "denied_status", "signed_browser_request", "runtime_observed",
     "isolated_candidate",
 })
+
+
+def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
+    """Cross-check witnessed source files against the complete JS queue.
+
+    This is not a claim that other callsites have been cleared.
+    """
+    source = root / "scripts/tracker_csrf_js_triage576.py"
+    spec = importlib.util.spec_from_file_location("csrf579_source_triage", source)
+    if spec is None or spec.loader is None:
+        raise ValueError("Missing Release 576 JavaScript source inventory")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    inventory = module.build(root)
+    items = inventory["callsites"]
+    selected = [
+        item for item in items
+        if item["file"] in TRACKED_FETCH_SOURCES
+        and item["kind"] == "fetch_callsite"
+    ]
+    if len(items) != 46 or len(selected) != 2:
+        raise ValueError("JavaScript source inventory changed; re-review witnesses")
+    if {item["file"] for item in selected} != TRACKED_FETCH_SOURCES:
+        raise ValueError("Missing tracked JS source witness")
+    return {
+        "tracked_js_callsites": len(items),
+        "witnessed_js_callsites": len(selected),
+        "not_witnessed_in_579": len(items) - len(selected),
+        "source_refs": sorted(
+            f"{item['file']}:{item['line']}" for item in selected
+        ),
+    }
 
 
 def analyze(directory: Path) -> dict:
@@ -93,8 +132,11 @@ def main(argv=None) -> int:
         result = analyze(args.directory)
     except (ValueError, OSError, UnicodeError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
+    source = reviewed_js_source_callsites()
     print("CSRF_579_STRICT_RUNTIME_EVIDENCE=VERIFIED")
     print(f"CSRF_579_OBSERVED_SCENARIOS={result['observed_write_scenarios']}")
+    print(f"CSRF_579_TRACKED_JS_CALLSITES_WITNESSED={source['witnessed_js_callsites']}")
+    print(f"CSRF_579_TRACKED_JS_CALLSITES_NOT_WITNESSED={source['not_witnessed_in_579']}")
     print("CSRF_579_TESTED_PATHS=" + ",".join(result["distinct_tested_paths"]))
     return 0
 
