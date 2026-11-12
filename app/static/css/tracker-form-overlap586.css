@@ -1,0 +1,75 @@
+/* Release 586: shared intrinsic sizing guard for Tracker forms.
+   Grid and flex children can otherwise retain the default min-width:auto,
+   allowing date/time widgets and long select values to paint over adjacent
+   fields. Keep deliberate table horizontal scrolling, not clipped fields. */
+#main-content .grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+#main-content .grid > *,
+#main-content .grid .field,
+#main-content .grid .inline,
+#main-content .grid .inner,
+#main-content .field,
+#main-content fieldset,
+#main-content details,
+#main-content .tracker-time24-controls {
+  min-width: 0;
+}
+#main-content .field > input:not([type="checkbox"]),
+#main-content .field > select,
+#main-content .field > textarea,
+#main-content .tracker-time24-controls > input {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+#main-content .field > select {
+  text-overflow: ellipsis;
+}
+/* Both edit and create dose forms enhance the original When field
+   into Date / 24h Time / Use current time. That group must own a full
+   grid row in either form. */
+#main-content form#tracker-dose-correction-form .tracker-dose-when-field,
+#main-content form[hx-post="/doses"] .tracker-dose-when-field {
+  grid-column: 1 / -1;
+  min-width: 0;
+  width: 100%;
+}
+#main-content form#tracker-dose-correction-form .tracker-time24-controls,
+#main-content form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 9rem) max-content;
+  gap: .65rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#main-content .tracker-dose-vial-meta {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* Switch BEFORE the three-column date/time controls can run out of space.
+   Prevent the button from painting on top of adjacent date/time controls. */
+@media (max-width: 960px) {
+  #main-content form#tracker-dose-correction-form .tracker-time24-controls,
+  #main-content form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #main-content form#tracker-dose-correction-form .tracker-time24-now,
+  #main-content form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-now {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
+  }
+}
+@media (max-width: 450px) {
+  #main-content form#tracker-dose-correction-form .tracker-time24-controls,
+  #main-content form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #main-content form#tracker-dose-correction-form .tracker-time24-now,
+  #main-content form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-now {
+    grid-column: 1;
+  }
+}
