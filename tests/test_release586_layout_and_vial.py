@@ -66,6 +66,8 @@ def test_586_real_chromium_gate_covers_responsive_form_pages():
     browser = BROWSER.read_text(encoding="utf-8")
     for expected in (
         'TRACKER_TEST_ISOLATED', 'tracker-browser-qa',
+        'Path(engine.url.database).resolve() == DATA / "tracker.db"',
+        'Base.metadata.create_all(bind=engine)',
         'test_586_key_form_pages_have_no_field_overlaps',
         'test_586_dose_edit_datetime_and_fields_do_not_overlap',
         'test_586_dose_history_shows_vial_identity',
