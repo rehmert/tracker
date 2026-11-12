@@ -60,6 +60,14 @@ on these source-only statistics.
    An empty required compound name deliberately returns 422 after
    CSRF validation without creating user data.
 
+7. **Eleven-route multipart fail-closed matrix.** The new
+   `tests/test_release574_csrf_multipart_matrix.py` enumerates every
+   currently registered File/UploadFile write route and sends real
+   multipart requests with missing and forged CSRF proof. Each must
+   return HTTP 403 before endpoint mutation. The matrix does not send
+   successful unknown uploads. A separate invalid Labs CSV checks
+   the signed-header positive compatibility path.
+
 All HTTP requests and browser mutations run against the runner's
 existing `/tmp/tracker-browser-qa.*/data` disposable candidate.
 No installed DEV/PROD service, live user data or external browser
