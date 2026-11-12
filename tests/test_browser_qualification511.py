@@ -21,6 +21,9 @@ ISOLATED_ROOT = (
 STRICT_PASS_MARKER = "# Release 521: a second browser gate"
 STRICT_ONLY = frozenset({
     "tests/browser/test_strict_csrf521.py",
+    # Release 579 gathers evidence only while the disposable candidate has
+    # strict CSRF enabled, never on the report-only standard pass.
+    "tests/browser/test_csrf_runtime579.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",
