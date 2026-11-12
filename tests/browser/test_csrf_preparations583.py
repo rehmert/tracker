@@ -124,6 +124,11 @@ def test_583_reconstitution_filter_correction_delete_with_stock(tab, scheme, vid
     _rejected(page, base, reconst_path)
     reconst.locator('input[name="volume_ml"]').fill("2")
     reconst.locator('select[name="supply_id"]').select_option(str(ids["water"]))
+    # The genuine form keeps optional disposables inside a closed details
+    # disclosure. Open it through the real UI before checking the item.
+    reconst.locator("details").filter(
+        has=page.locator('input[name="supply_id_used"][value="' + str(ids["needle"]) + '"]')
+    ).locator("summary").click()
     reconst.locator('input[name="supply_id_used"][value="' + str(ids["needle"]) + '"]').check()
     _submit(page, reconst.get_by_role("button", name="Record", exact=True),
             reconst_path)
@@ -138,6 +143,13 @@ def test_583_reconstitution_filter_correction_delete_with_stock(tab, scheme, vid
     _rejected(page, base, filter_path)
     note = "QA 583 filtering " + scheme
     filtering.locator('input[name="notes"]').fill(note)
+    # Both the parent filtering section and its optional supply picker
+    # start collapsed. Expand both via the actual summaries.
+    filter_details = filtering.locator("xpath=parent::details")
+    filter_details.locator(":scope > summary").click()
+    filtering.locator("details").filter(
+        has=page.locator('input[name="supply_id_used"][value="' + str(ids["swab"]) + '"]')
+    ).locator("summary").click()
     filtering.locator('input[name="supply_id_used"][value="' + str(ids["swab"]) + '"]').check()
     _submit(page, filtering.get_by_role("button", name="Record filtering supplies"),
             filter_path)
@@ -172,6 +184,11 @@ def test_583_reconstitution_filter_correction_delete_with_stock(tab, scheme, vid
     expect(history).to_have_count(1)
     delete_form = history.locator(f'form[action="{delete_path}"]')
     assert delete_form.count() == 1
+    # Preparation history is collapsed on reload; open it before using
+    # the actual Delete button (never force a hidden element click).
+    history_details = history.locator("xpath=ancestor::details[1]")
+    if not history_details.get_attribute("open") == "":
+        history_details.locator(":scope > summary").click()
     assert delete_form.locator('input[name="csrf_token"]').count() == 1
     _submit(page, delete_form.get_by_role("button", name="Delete"),
             delete_path, dialog=True)
