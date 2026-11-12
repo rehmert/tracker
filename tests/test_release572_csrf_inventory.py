@@ -126,3 +126,19 @@ def test_environment_gate_rejects_relative_data_dir(audit, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         audit.main([])
     assert exc.value.code == 2
+
+def test_environment_gate_refuses_live_data_directory(audit, monkeypatch):
+    monkeypatch.setenv("TRACKER_DATA_DIR", "/opt/tracker/data")
+    with pytest.raises(SystemExit) as exc:
+        audit.main([])
+    assert exc.value.code == 2
+
+
+def test_environment_gate_refuses_unrelated_tmp_directory(audit, monkeypatch,
+                                                           tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    monkeypatch.setenv("TRACKER_DATA_DIR", str(data))
+    with pytest.raises(SystemExit) as exc:
+        audit.main([])
+    assert exc.value.code == 2
