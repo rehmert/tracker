@@ -58,6 +58,11 @@ def test_583_exact_scope_and_isolated_gate(reporter):
         "csrf_token", "max_redirects=0",
     ):
         assert needle in browser
+    # Shared base layout has multiple POST forms. A browser test must
+    # resolve the unique correction form through its Save control.
+    assert 'correction = page.locator("form[method=' not in browser
+    assert 'get_by_role("button", name="Save correction", exact=True)' in browser
+    assert 'xpath=ancestor::form[1]' in browser
     fixture = FIXTURE.read_text(encoding="utf-8")
     for needle in (
         "TRACKER_TEST_ISOLATED", "TRACKER_TEST_STRICT_CSRF",
