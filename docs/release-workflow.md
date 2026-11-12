@@ -29,6 +29,12 @@
 > root-only recovery directory. Default mode does not write an archive.
 > See [Release 571 recovery artifacts](release-571-recovery-artifacts.md).
 
+> **Release 572 update:** Source-only read-only CSRF coverage tooling
+> compares registered unsafe FastAPI routes with the static source
+> scanner and runs a broad missing-token denial matrix in disposable
+> tests. Neither DEV nor PROD is switched to strict CSRF by this
+> tooling-only release. See [Release 572 inventory](release-572-csrf-inventory.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
