@@ -57,6 +57,17 @@
 > neither environment's global strict setting is changed.
 > [Release 575 qualification](release-575-csrf-executable-compatibility.md).
 
+> **Release 577 update:** After successful guarded DEV tests, restore
+> verification, installation and runtime smoke, the runner now preserves
+> the exact qualification log in a root-only
+> `/etc/tracker-release/release-<number>-dev.log`. The receipt is
+> checked against the exact candidate SHA and existing qualification
+> markers; a missing, unsafe or conflicting receipt fails closed and
+> triggers the existing code-only rollback check. Do not append approval
+> markers manually. Signed PROD promotion remains a separate
+> DEV-controlled preflight and explicit `--execute` action.
+> [Release 577 review](release-577-qualification-and-csrf.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
