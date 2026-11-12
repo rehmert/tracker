@@ -182,9 +182,9 @@ def classify_browser_entrypoints(static: dict, writes: list[dict]) -> list[dict]
     for row in writes:
         if row["mounted"]:
             continue
-        candidate = re.sub(r"\\{[^{}]+\\}", "__ROUTE_PARAM__", row["path"])
+        candidate = re.sub(r"\{[^{}]+\}", "__ROUTE_PARAM__", row["path"])
         pattern = re.escape(candidate).replace("__ROUTE_PARAM__", r"[^/]+")
-        patterns.append((row["method"], re.compile(r"\\A" + pattern + r"\\Z")))
+        patterns.append((row["method"], re.compile(r"\A" + pattern + r"\Z")))
 
     findings = []
     for entry in static["html_and_htmx"]:
