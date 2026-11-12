@@ -44,7 +44,13 @@ def test_584_source_pinning_and_no_deployment_actions():
 
 def test_584_targeted_qualification_is_strict_only_and_cannot_forge_full_pass():
     source = BROWSER.read_text(encoding="utf-8")
-    assert source.count('if [[ "$MODE" == full ]]; then') == 3
+    # The 587–588 isolated bulk/multipart gate adds a fourth full-mode
+    # section. Guard the mode boundaries and the full success marker
+    # instead of pinning this contract to the old three-section count.
+    assert source.count('if [[ "$MODE" == full ]]; then') == 4
+    assert source.count('ISOLATED_STRICT_CSRF_BROWSER=PASSED') == 1
+    assert source.index('tests/browser/test_csrf_bulk587.py') < source.index(
+        'ISOLATED_STRICT_CSRF_BROWSER=PASSED')
     assert '[[ "$MODE" == targeted ]]' in source
     assert 'TARGETED_STRICT_PREFLIGHT=ACTIVE' in source
     assert 'TARGETED_STRICT_PREFLIGHT=PASSED' in source
