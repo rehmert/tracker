@@ -8,8 +8,7 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
-from fastapi.routing import APIRoute
+from fastapi import FastAPI
 from starlette.routing import Route
 import pytest
 
@@ -34,11 +33,14 @@ def report(audit):
 def test_known_write_routes_registered(report):
     from app.main import app
     keys = {(entry["method"], entry["path"]) for entry in report["routes"]}
+    sample = [
+        (type(route).__name__, getattr(route, "path", ""),
+         sorted(getattr(route, "methods", ()) or ()))
+        for route in app.routes[:8]
+    ]
     assert ("POST", "/compounds") in keys, (
         f"Inventory registered {len(report['routes'])} unsafe routes; "
-        f"FastAPI app has {len(app.routes)} routes: "
-        f"{[(type(r).__name__, getattr(r, 'path', ''), "
-        f"list(getattr(r, 'methods', ()) or ())) for r in app.routes[:8]]}"
+        f"FastAPI app has {len(app.routes)} routes: {sample}"
     )
     assert ("POST", "/coas/new") in keys
     assert ("POST", "/labs/import-csv") in keys
