@@ -25,6 +25,7 @@ STRICT_ONLY = frozenset({
     # strict CSRF enabled, never on the report-only standard pass.
     "tests/browser/test_csrf_runtime579.py",
     "tests/browser/test_csrf_workflows580.py",
+    "tests/browser/test_csrf_inventory581.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",
