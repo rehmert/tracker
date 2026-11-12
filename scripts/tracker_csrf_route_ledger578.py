@@ -199,7 +199,7 @@ def main(argv=None) -> int:
     if args.json is not None:
         dest = args.json
         if (dest.parent.parent != Path("/tmp")
-                or not re.fullmatch(r"tracker-csrf578\.[A-Za-z0-9]{8,}", dest.parent.name)
+                or not re.fullmatch(r"tracker-csrf578\.[A-Za-z0-9_]{8,}", dest.parent.name)
                 or not dest.parent.is_dir() or dest.parent.is_symlink()
                 or dest.exists() or dest.is_symlink()):
             parser.error("JSON export requires a fresh /tmp/tracker-csrf578.*/ file")
