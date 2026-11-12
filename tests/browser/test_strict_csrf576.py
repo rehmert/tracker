@@ -114,7 +114,9 @@ def test_576_real_preparation_correction_signed_and_forged(tab, scheme, marker):
 
     signed = _visit(page, base, action)
     assert signed == token
-    form = page.locator('form[method="post"]')
+    # Base navigation also contains a logout POST form; target only the
+    # correction form rather than assuming one POST on the entire page.
+    form = page.locator('form[method="post"].grid').filter(has_text="Save correction")
     assert form.count() == 1
     assert form.get_attribute("action") is None  # implicit current-page action
     assert form.locator('input[name="csrf_token"]').input_value() == signed
