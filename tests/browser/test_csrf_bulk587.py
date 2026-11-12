@@ -95,7 +95,11 @@ def synthetic_vial():
 
 def _browser_write(page, path, fields):
     """Use the page's actual patched fetch() and a native FormData body."""
-    result = page.evaluate("""async ({path, fields}) => {
+    with page.expect_response(lambda response: (
+        response.request.method == "POST"
+        and urlsplit(response.url).path == path
+    )) as pending:
+        result = page.evaluate("""async ({path, fields}) => {
       const data = new FormData();
       for (const [key, value] of fields) data.append(key, String(value));
       const response = await fetch(path, {
@@ -109,7 +113,10 @@ def _browser_write(page, path, fields):
         destination: response.url,
       };
     }""", {"path": path, "fields": fields})
-    assert result["csrf"] == "valid", (path, result)
+    signed = pending.value
+    assert signed.headers.get("x-tracker-csrf-report") == "valid", (path, signed.status)
+    assert signed.request.all_headers().get("x-tracker-csrf", "").startswith("v1.")
+    assert signed.status in (200, 303), (path, signed.status)
     return result
 
 
