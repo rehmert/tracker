@@ -16,9 +16,9 @@ from pathlib import Path
 ROUTES = (
     ("/vials/bulk/validate-selection", 200),
     ("/vials/bulk/preview", 200),
-    ("/vials/bulk", 200),
+    ("/vials/bulk", 303),
     ("/vials/bulk/delete-preview", 200),
-    ("/vials/bulk/delete", 200),
+    ("/vials/bulk/delete", 303),
 )
 
 
