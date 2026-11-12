@@ -38,9 +38,15 @@ def browser():
 
 @pytest.fixture(scope="module")
 def synthetic_edit_id():
-    from app.db import SessionLocal
+    from app.db import Base, SessionLocal, engine
     from app.models import Compound, DoseLog, Vial
 
+    # Browser pytest workers may import this module before the isolated
+    # candidate server has initialized its own SQLite schema. Prepare the
+    # same disposable QA database explicitly, as the existing HTTP dose
+    # regression fixtures do; never use an installed DB.
+    assert Path(engine.url.database).resolve() == DATA / "tracker.db"
+    Base.metadata.create_all(bind=engine)
     with SessionLocal() as db:
         compound = Compound(name="QA geometry 586 " + uuid4().hex, category="peptide")
         db.add(compound)
