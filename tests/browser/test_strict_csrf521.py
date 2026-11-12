@@ -609,7 +609,7 @@ def test_576_preparation_implicit_action_positive_and_forgery(tab, scheme, fixtu
     for candidate in candidate_paths:
         response = page.goto(base + candidate, wait_until="networkidle")
         assert response is not None and response.status == 200
-        if expected_note in page.locator("body").inner_text():
+        if expected_note in (page.locator("body").text_content() or ""):
             matches.append(candidate)
     assert len(matches) == 1, (
         "Expected exactly one isolated preparation fixture", fixture_name, matches
