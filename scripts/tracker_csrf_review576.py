@@ -18,12 +18,6 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 CALL = re.compile(r"\b(?:fetch|htmx\.ajax)\s*\(")
 METHOD = re.compile(
-    r"""\bmethod\s*:\s*(?P<quote>['"])(?P<method>GET|POST|PUT|PATCH|DELETE)(?P=quote)\b?""",
-    re.I,
-)
-# The optional \b following a closing quote isn't useful: use exact
-# string-boundary matching instead of searching adjacent source lines.
-METHOD = re.compile(
     r"""\bmethod\s*:\s*(?P<quote>['"])(?P<method>GET|POST|PUT|PATCH|DELETE)(?P=quote)""",
     re.I,
 )
