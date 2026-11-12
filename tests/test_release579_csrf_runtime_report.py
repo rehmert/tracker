@@ -43,6 +43,18 @@ def test_579_manifest_is_exact_and_covers_source_workflows(report):
     ) < runner.index("ISOLATED_STRICT_CSRF_BROWSER=PASSED")
 
 
+def test_579_two_tracked_javascript_callsites_not_overclaimed(report):
+    source = report.reviewed_js_source_callsites(ROOT)
+    assert source["tracked_js_callsites"] == 46
+    assert source["witnessed_js_callsites"] == 2
+    assert source["not_witnessed_in_579"] == 44
+    assert len(source["source_refs"]) == 2
+    assert any("tracker-mobile-quick528.js:" in ref
+               for ref in source["source_refs"])
+    assert any("notes_editor.js:" in ref
+               for ref in source["source_refs"])
+
+
 def test_579_report_requires_exact_isolated_witnesses(report):
     # Use genuine /tmp tree under a private fixture namespace if pytest's
     # tmp path happens to be elsewhere; this calls no app and no network.
