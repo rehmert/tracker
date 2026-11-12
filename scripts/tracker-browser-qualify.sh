@@ -11,8 +11,8 @@ TARGETED_MODULE=""
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
-  [[ "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586)[.]py$ ]] || {
-    echo "ERROR: Targeted module must be one of the audited 583/586 fixtures" >&2
+  [[ "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587)[.]py$ ]] || {
+    echo "ERROR: Targeted module must be one of the audited 583/586/587 fixtures" >&2
     exit 2
   }
 elif [[ $# != 2 ]]; then
@@ -467,6 +467,24 @@ if [[ "$MODE" == targeted && "${TARGETED_MODULE##*/}" == test_form_overlap586.py
   echo "TARGETED_LAYOUT_PREFLIGHT=PASSED"
   echo "TARGETED_LAYOUT_SCOPE=RELEASE_586_ONLY_NOT_FULL_QUALIFICATION"
   exit 0
+fi
+
+# Combined Release 587–588: isolate bulk inventory browser writes
+# and unsigned denials without touching installed data. This is a
+# separate security witness, not global strict-CSRF clearance.
+if [[ "$MODE" == targeted && "${TARGETED_MODULE##*/}" == test_csrf_bulk587.py ]]; then
+  run_isolated_browser_module "$TARGETED_MODULE" 1 "$ROOT/targeted-bulk587.log"
+  echo "TARGETED_BULK587_PREFLIGHT=PASSED"
+  echo "TARGETED_BULK587_SCOPE=SYNTHETIC_BROWSER_FETCH_NOT_GLOBAL_CLEARANCE"
+  exit 0
+fi
+
+if [[ "$MODE" == full ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_csrf_bulk587.py \
+      1 "$ROOT/strict-bulk587.log"
+  "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report587.py" \
+      --directory "$ROOT/csrf-runtime587"
 fi
 
 # Release 583: inject synthetic supplies only after previous gates finish.
