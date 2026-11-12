@@ -26,6 +26,7 @@ STRICT_ONLY = frozenset({
     "tests/browser/test_csrf_runtime579.py",
     "tests/browser/test_csrf_workflows580.py",
     "tests/browser/test_csrf_inventory581.py",
+    "tests/browser/test_csrf_dose_lifecycle582.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",
