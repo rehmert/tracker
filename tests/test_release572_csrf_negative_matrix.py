@@ -7,6 +7,8 @@ and existing dedicated tests. No live setting is changed.
 from __future__ import annotations
 
 import re
+import importlib.util
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,7 +17,15 @@ from app import config
 from app.main import app
 from app.csrf_runtime import COOKIE_NAME, HEADER_NAME
 
-from test_release572_csrf_inventory import audit as audit_fixture
+SCRIPT = Path(__file__).resolve().parents[1] / "scripts/tracker_csrf_inventory572.py"
+
+
+@pytest.fixture(scope="module")
+def audit572():
+    spec = importlib.util.spec_from_file_location("csrf_negative572", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 @pytest.fixture
@@ -34,8 +44,8 @@ def _sample_path(path):
 
 
 def test_all_registered_root_writes_reject_missing_csrf(strict_client572,
-                                                         audit_fixture):
-    route_data = audit_fixture.registered_writes(app)
+                                                         audit572):
+    route_data = audit572.registered_writes(app)
     target = [row for row in route_data
               if not row["mounted"]
               and not row["signed_session_exception"]]
