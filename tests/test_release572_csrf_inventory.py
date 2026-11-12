@@ -10,6 +10,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI
 from fastapi.routing import APIRoute
+from starlette.routing import Route
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,8 +32,14 @@ def report(audit):
 
 
 def test_known_write_routes_registered(report):
+    from app.main import app
     keys = {(entry["method"], entry["path"]) for entry in report["routes"]}
-    assert ("POST", "/compounds") in keys
+    assert ("POST", "/compounds") in keys, (
+        f"Inventory registered {len(report['routes'])} unsafe routes; "
+        f"FastAPI app has {len(app.routes)} routes: "
+        f"{[(type(r).__name__, getattr(r, 'path', ''), "
+        f"list(getattr(r, 'methods', ()) or ())) for r in app.routes[:8]]}"
+    )
     assert ("POST", "/coas/new") in keys
     assert ("POST", "/labs/import-csv") in keys
     assert ("POST", "/pk/compounds") in keys
@@ -104,6 +111,23 @@ def test_mounted_subapp_is_explicit_and_not_assumed_global(audit):
     assert rows[0]["mounted"] is True
 
 
+def test_unsafe_starlette_route_is_not_silently_ignored(audit):
+    fake = FastAPI()
+
+    async def handler(request):
+        return {"ok": True}
+
+    fake.router.routes.append(Route("/plain", handler, methods=["POST"]))
+    with pytest.raises(ValueError, match="cannot be classified"):
+        audit.registered_writes(fake)
+
+
+def test_empty_unsafe_inventory_is_not_silent_success(audit):
+    fake = FastAPI()
+    with pytest.raises(ValueError, match="No registered unsafe routes"):
+        audit.registered_writes(fake)
+
+
 def test_source_avoid_service_and_live_secret_access():
     source = SCRIPT.read_text(encoding="utf-8")
     for forbidden in (
@@ -126,6 +150,7 @@ def test_environment_gate_rejects_relative_data_dir(audit, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         audit.main([])
     assert exc.value.code == 2
+
 
 def test_environment_gate_refuses_live_data_directory(audit, monkeypatch):
     monkeypatch.setenv("TRACKER_DATA_DIR", "/opt/tracker/data")
