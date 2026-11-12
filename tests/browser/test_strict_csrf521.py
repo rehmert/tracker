@@ -246,3 +246,85 @@ def test_521_htmx_delete_vitals_needs_token_and_preserves_other_records(tab):
     _verified(pending.value, status=200)
     expect(page.locator("tr").filter(has_text="QA STRICT VITAL 521")).to_have_count(0)
     assert not errors, errors
+
+
+# Release 573: broader real browser coverage. These tests are automatically
+# run by the existing strict browser worker against disposable HTTP and
+# host-rewriting HTTPS candidates. No installed Tracker URL is permitted.
+@pytest.mark.parametrize("origin", ("http", "https"))
+@pytest.mark.parametrize("path", (
+    "/compounds", "/vials", "/purchases", "/supplies",
+    "/vitals", "/blends", "/food", "/protocols",
+))
+def test_573_native_write_forms_have_signed_tokens_on_http_and_https(
+    tab, origin, path,
+):
+    page, errors = tab
+    base = URL if origin == "http" else HTTPS_URL
+    response = page.goto(base + path, wait_until="networkidle")
+    assert response is not None and response.status == 200, (origin, path)
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1."), (origin, path)
+
+    forms = page.locator('form[method="post" i]')
+    assert forms.count() >= 1, ("Missing expected native POST form", path)
+    for index in range(forms.count()):
+        form = forms.nth(index)
+        own_origin = form.evaluate(
+            "form => new URL(form.action, location.href).origin === location.origin"
+        )
+        if not own_origin:
+            continue
+        fields = form.locator('input[name="csrf_token"]')
+        assert fields.count() == 1, (origin, path, index)
+        assert fields.first.input_value() == token, (origin, path, index)
+    assert not errors, (origin, path, errors)
+
+
+@pytest.mark.parametrize("origin", ("http", "https"))
+def test_573_valid_signed_fetch_works_on_both_localhost_schemes(tab, origin):
+    page, errors = tab
+    base = URL if origin == "http" else HTTPS_URL
+    response = page.goto(base + "/compounds", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    intercepted = []
+    page.on("request", lambda request: intercepted.append(request.all_headers())
+            if request.method == "POST" and
+               urlsplit(request.url).path == "/compounds" else None)
+
+    # Missing required compound name makes this a no-mutation positive
+    # CSRF proof: the existing endpoint returns 422 after token validation.
+    outcome = page.evaluate("""async () => {
+        const fields = new URLSearchParams({name: ''});
+        const response = await fetch('/compounds', {
+            method: 'POST', body: fields
+        });
+        return {
+            status: response.status,
+            report: response.headers.get('x-tracker-csrf-report')
+        };
+    }""")
+    assert outcome == {"status": 422, "report": "valid"}, outcome
+    assert intercepted and intercepted[-1].get("x-tracker-csrf") == token
+    assert not errors, errors
+
+
+@pytest.mark.parametrize("origin", ("http", "https"))
+def test_573_strict_unsafe_unnsigned_requests_fail_on_both_schemes(tab, origin):
+    page, errors = tab
+    base = URL if origin == "http" else HTTPS_URL
+    response = page.goto(base + "/compounds", wait_until="networkidle")
+    assert response is not None and response.status == 200
+
+    # Playwright API requests bypass Tracker's browser fetch wrapper. This
+    # deliberately omits the signed header/form token and must be denied.
+    denied = page.request.post(
+        base + "/compounds", data={"name": ""},
+        max_redirects=0,
+    )
+    assert denied.status == 403
+    assert "CSRF token required" in denied.text()
+    assert not errors, errors
