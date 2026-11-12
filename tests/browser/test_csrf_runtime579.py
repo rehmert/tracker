@@ -39,7 +39,7 @@ pytestmark = pytest.mark.browser
 def _record_evidence(scheme, flow, path, accepted_status, denied_status):
     """Emit only whitelisted metadata under the disposable browser QA root."""
     if flow not in ("mobile-weight", "mobile-bp", "mobile-water",
-                   "notes-preview", "native-compound"):
+                   "notes-preview", "notes-visual-fetch", "native-compound"):
         raise ValueError("Unknown runtime witness flow")
     folder = DATA.parent / "csrf-runtime579"
     folder.mkdir(mode=0o700, exist_ok=True)
@@ -216,3 +216,40 @@ def test_579_native_compound_positive_and_unsigned_negative(tab, scheme):
     assert not errors, errors
     _record_evidence(scheme, "native-compound", "/compounds",
                      approved.status, denied.status)
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_579_real_notes_visual_editor_fetch_callsite(tab, scheme):
+    """Exercise the tracked app/static/notes_editor.js POST, not injected JS."""
+    page, errors = tab
+    base = HTTP_URL if scheme == "http" else HTTPS_URL
+    sent = []
+    responses = []
+    def is_preview(req):
+        return req.method == "POST" and urlsplit(req.url).path == "/pages/preview"
+
+    page.on("request", lambda req: sent.append(req) if is_preview(req) else None)
+    page.on("response", lambda resp: responses.append(resp)
+            if is_preview(resp.request) else None)
+    loaded = page.goto(base + "/pages/new", wait_until="networkidle")
+    assert loaded is not None and loaded.status == 200
+    assert page.locator('script[src*="notes_editor.js"]').count() >= 1
+    expect(page.locator("#notes-visual-mode")).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+    assert sent and responses
+    assert any(req.all_headers().get("x-tracker-csrf") == token for req in sent)
+    approved = [resp for resp in responses if
+                resp.status == 200 and
+                resp.headers.get("x-tracker-csrf-report") == "valid"]
+    assert approved, [resp.status for resp in responses]
+    denied = page.request.post(
+        base + "/pages/preview", data={"body": "unsigned 579"},
+        max_redirects=0,
+    )
+    assert denied.status == 403
+    assert not errors, errors
+    _record_evidence(scheme, "notes-visual-fetch", "/pages/preview",
+                     approved[-1].status, denied.status)
