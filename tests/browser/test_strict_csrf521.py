@@ -580,3 +580,63 @@ def test_575_coa_create_edit_rendered_action_and_multipart_positive(
     expect(page.locator("body")).to_contain_text(lab_updated)
     assert "Forged COA 575" not in page.locator("body").inner_text()
     assert not errors, errors
+
+
+# Release 576: positive + forged-native correction against disposable
+# preparation fixtures, on HTTP and host-rewriting HTTPS.
+@pytest.mark.parametrize("scheme,fixture_name", (
+    ("http", "QA Alpha 511"),
+    ("https", "QA Zeta 511"),
+))
+def test_576_preparation_implicit_action_positive_and_forgery(tab, scheme, fixture_name):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/vials?status=all", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    links = page.locator('a[href^="/vials/"]').filter(has_text=fixture_name + " vial")
+    assert links.count() == 1, fixture_name
+    vial_path = links.first.get_attribute("href")
+    assert vial_path and re.fullmatch(r"/vials/[0-9]+", vial_path)
+    response = page.goto(base + vial_path, wait_until="networkidle")
+    assert response is not None and response.status == 200
+    events = page.locator(
+        'a[href^="' + vial_path + '/preparations/"][href$="/edit"]'
+    )
+    assert events.count() >= 1
+    edit_path = events.first.get_attribute("href")
+    assert edit_path and re.fullmatch(
+        re.escape(vial_path) + r"/preparations/[0-9]+/edit", edit_path
+    )
+    response = page.goto(base + edit_path, wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    # Native form intentionally has no action= attribute: browser sends
+    # the request to the current rendered edit URL.
+    form = page.locator('form[method="post"].grid')
+    assert form.count() == 1
+    assert form.get_attribute("action") is None
+    assert form.locator('input[name="csrf_token"]').input_value() == token
+    original = form.locator('input[name="notes"]').input_value()
+    assert "QA disposable preparation 576" in original
+
+    forged = "QA forged preparation 576"
+    denied = page.request.post(
+        base + edit_path, data={"notes": forged}, max_redirects=0,
+    )
+    assert denied.status == 403
+    response = page.reload(wait_until="networkidle")
+    assert response is not None and response.status == 200
+    form = page.locator('form[method="post"].grid')
+    assert form.locator('input[name="notes"]').input_value() == original
+
+    corrected = original + " corrected"
+    form.locator('input[name="notes"]').fill(corrected)
+    with page.expect_response(_post_response(page, edit_path)) as pending:
+        form.get_by_role("button", name="Save correction").click()
+    _verified(pending.value, status=303)
+    page.wait_for_url(re.compile(re.escape(base + vial_path) + r"(?:\\?.*)?$"))
+    expect(page.locator("body")).to_contain_text(corrected)
+    assert forged not in page.locator("body").inner_text()
+    assert not errors, errors
