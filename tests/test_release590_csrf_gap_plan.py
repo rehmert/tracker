@@ -43,8 +43,11 @@ def test_590_gap_counts_are_complete_disjoint_and_deterministic():
     assert plan["manual_review_queue_size"] >= 0
     assert all(row["global_enforcement_cleared"] is False
                for row in plan["unqualified_routes"] + plan["candidate_routes"])
-    keys1 = {(row["method"], row["path"]) for row in plan["unqualified_routes"]}
-    keys2 = {(row["method"], row["path"]) for row in plan["candidate_routes"]}
+    # Distinct source declarations may share a method/path. Verify the full
+    # source identity, not a deduplicated URL pair.
+    identity = lambda row: (row["method"], row["path"], row["file"], row["line"])
+    keys1 = {identity(row) for row in plan["unqualified_routes"]}
+    keys2 = {identity(row) for row in plan["candidate_routes"]}
     assert not keys1.intersection(keys2)
     assert len(keys1) + len(keys2) == plan["total_unsafe_routes"]
     assert [(-batch["unqualified_routes"], batch["workstream"])
