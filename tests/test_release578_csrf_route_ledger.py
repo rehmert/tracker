@@ -45,7 +45,7 @@ def test_578_all_existing_js_and_routes_preserved_without_false_clearance(ledger
                r["csrf_compatible"] is None for r in report["javascript"] + report["native"])
 
 
-@pytest.mark.parametrize("route,request,match", [
+@pytest.mark.parametrize("route,candidate_path,match", [
     ("/vials/{vial_id}", "/vials/123", True),
     ("/vials/{vial_id}", "/vials/123/edit", False),
     ("/vials/{vial_id}/preparations/{event_id}/edit",
@@ -55,10 +55,10 @@ def test_578_all_existing_js_and_routes_preserved_without_false_clearance(ledger
     ("/vials/{vial_id}", "/vials/123?status=all", False),
     ("/vials/{vial_id}", "/vials/123/evil", False),
 ])
-def test_578_route_pattern_is_conservative(ledger, route, request, match):
+def test_578_route_pattern_is_conservative(ledger, route, candidate_path, match):
     regex = ledger.route_pattern(route)
     assert regex is not None
-    assert bool(regex.fullmatch(request)) is match
+    assert bool(regex.fullmatch(candidate_path)) is match
 
 
 @pytest.mark.parametrize("path", [
