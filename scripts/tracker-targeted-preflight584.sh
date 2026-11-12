@@ -23,7 +23,7 @@ while (( $# )); do
 done
 [[ "$BASE" =~ ^[0-9a-f]{40}$ && "$TARGET" =~ ^[0-9a-f]{40}$ && "$BASE" != "$TARGET" ]] || usage
 [[ "$REF" =~ ^release/[a-zA-Z0-9][a-zA-Z0-9._/-]*$ && "$REF" != *..* ]] || usage
-[[ "$MODULE" == tests/browser/test_csrf_preparations583.py || "$MODULE" == tests/browser/test_form_overlap586.py ]] || usage
+[[ "$MODULE" == tests/browser/test_csrf_preparations583.py || "$MODULE" == tests/browser/test_form_overlap586.py || "$MODULE" == tests/browser/test_csrf_bulk587.py ]] || usage
 [[ "$(id -u)" == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Root on configured Tracker host required"
 "$PY" - <<'PY'
 import re
