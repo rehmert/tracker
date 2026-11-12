@@ -52,13 +52,12 @@ def test_584_targeted_qualification_is_strict_only_and_cannot_forge_full_pass():
     assert "ISOLATED_STRICT_CSRF_BROWSER=PASSED" in source
     assert source.index("ISOLATED_STRICT_CSRF_BROWSER=PASSED") < source.index(
         "TARGETED_STRICT_PREFLIGHT=PASSED")
-    assert '[[ "$TARGETED_MODULE" =~ ^tests/browser/test_csrf_' in source
-    assert '"${TARGETED_MODULE##*/}" == test_csrf_preparations583.py' in source
+    assert '[[ "$TARGETED_MODULE" =~ ^tests/browser/test_csrf_preparations583[.]py$ ]]' in source
     assert 'TARGETED_MODULE="$4"' in source
     assert 'TRACKER_CSRF_ENFORCE=1' in source
     standard, strict = source.split(
         "# Release 521: a second browser gate", 1)
-    assert "tests/browser/test_csrf_preparations583.py" not in standard
+    assert "test_csrf_preparations583.py" not in standard
     assert strict.count("tests/browser/test_csrf_preparations583.py") == 1
     assert strict.index("tracker_csrf_fixture583.py\" seed") < strict.index(
         "tests/browser/test_csrf_preparations583.py"
