@@ -437,7 +437,14 @@ def test_574_request_object_fetch_receives_signed_header_under_strict_csrf(
 # Jinja actions and mobile quick-entry forms. All activity is confined to
 # the browser runner's disposable strict-CSRF localhost backend.
 @pytest.mark.parametrize("scheme", ("http", "https"))
-def test_575_mobile_quick_entry_signed_fetch_and_implicit_forms(tab, scheme):
+@pytest.mark.parametrize("kind,endpoint,values", (
+    ("weight", "/vitals", {"weight": "212.5"}),
+    ("bp", "/vitals", {"systolic": "122", "diastolic": "78"}),
+    ("water", "/food/water", {"ounces": "6.5"}),
+))
+def test_575_mobile_quick_entry_signed_fetch_and_implicit_forms(
+    tab, scheme, kind, endpoint, values,
+):
     page, errors = tab
     page.set_viewport_size({"width": 390, "height": 844})
     base = URL if scheme == "http" else HTTPS_URL
@@ -448,36 +455,36 @@ def test_575_mobile_quick_entry_signed_fetch_and_implicit_forms(tab, scheme):
 
     # These forms intentionally omit action=; JavaScript sends them to their
     # data-quick528-endpoint. CSRF must survive that fetch/FormData path.
-    for kind, endpoint in (
+    for entry_kind, entry_endpoint in (
         ("weight", "/vitals"), ("bp", "/vitals"), ("water", "/food/water"),
     ):
-        form = page.locator(f'form[data-quick528-form="{kind}"]')
+        form = page.locator(f'form[data-quick528-form="{entry_kind}"]')
         assert form.count() == 1
         assert form.get_attribute("action") is None
-        assert form.get_attribute("data-quick528-endpoint") == endpoint
+        assert form.get_attribute("data-quick528-endpoint") == entry_endpoint
         field = form.locator('input[name="csrf_token"]')
-        assert field.count() == 1, kind
-        assert field.input_value() == token, kind
+        assert field.count() == 1, entry_kind
+        assert field.input_value() == token, entry_kind
 
     requests = []
-    page.on("request", lambda req: requests.append(
-        (req.method, urlsplit(req.url).path, req.all_headers())
-    ) if req.method == "POST" and
-        urlsplit(req.url).path == "/food/water" else None)
+    def capture(request):
+        if request.method == "POST" and urlsplit(request.url).path == endpoint:
+            requests.append(request.all_headers())
 
+    page.on("request", capture)
     trigger = page.locator("#tracker-mobile-add528")
     assert trigger.count() == 1
     trigger.click()
-    page.locator('[data-quick528-choice="water"]').click()
-    water = page.locator('form[data-quick528-form="water"]')
-    water.locator('input[name="ounces"]').fill("6.5")
-    with page.expect_response(_post_response(page, "/food/water")) as pending:
-        water.locator('button[type="submit"]').click()
+    page.locator(f'[data-quick528-choice="{kind}"]').click()
+    form = page.locator(f'form[data-quick528-form="{kind}"]')
+    for field, value in values.items():
+        form.locator(f'input[name="{field}"]').fill(value)
+    with page.expect_response(_post_response(page, endpoint)) as pending:
+        form.locator('button[type="submit"]').click()
     _verified(pending.value, status=200)
     expect(page.locator("[data-quick528-success]")).to_be_visible()
-    assert requests and requests[-1][2].get("x-tracker-csrf") == token
+    assert requests and requests[-1].get("x-tracker-csrf") == token
     assert not errors, errors
-
 
 @pytest.mark.parametrize("scheme", ("http", "https"))
 def test_575_create_and_edit_notes_with_rendered_dynamic_action(tab, scheme):
