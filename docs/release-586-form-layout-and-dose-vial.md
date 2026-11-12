@@ -19,13 +19,15 @@
 ## Layout audit and testing
 
 The change targets shared form controls, not an isolated one-off date
-input. A new isolated Playwright module navigates the following real
+input. A new isolated Playwright module navigates 20 real
 form-heavy pages under disposable QA and checks field containment at
 desktop, tablet and mobile widths:
 
 `/doses`, `/vials`, `/purchases`, `/supplies`,
 `/compounds`, `/vitals`, `/labs`, `/protocols`,
-`/dose-workspace`, and `/calendar`.
+`/dose-workspace`, `/calendar`, `/food`, `/blends`, `/quick-entry`,
+`/protocol-tools`, `/pages`, `/inventory-health`, `/inventory-alerts`,
+`/reconciliation`, `/vendor-prices`, and `/health-timeline`.
 
 An independently seeded, synthetic Dose Edit screen is checked at
 1440, 800, 390 and 320 pixels, including rendered date/time-control
