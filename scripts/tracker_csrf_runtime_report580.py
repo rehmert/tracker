@@ -27,6 +27,8 @@ EXPECTED = {
     "notes-lifecycle": (
         ("POST", "/pages", 303),
         ("POST", "/pages/{id}", 303),
+        ("POST", "/pages/{id}/sources", 303),
+        ("POST", "/sources/{id}/delete", 303),
         ("POST", "/pages/{id}/delete", 303),
     ),
 }
