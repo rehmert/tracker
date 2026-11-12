@@ -28,14 +28,16 @@ KEYS = frozenset({
 
 
 def analyze(directory: Path) -> dict:
+    # Check the original path BEFORE resolving; resolution would hide a
+    # symlinked witness folder and make this test-only boundary ineffective.
+    if directory.is_symlink() or directory.parent.is_symlink():
+        raise ValueError("Refuse symlinked witness workspace")
     directory = directory.resolve(strict=True)
     if (directory.name != "csrf-runtime579"
             or directory.parent.parent != Path("/tmp")
-            or not re.fullmatch(r"tracker-browser-qa\.[A-Za-z0-9]{8}",
+            or not re.fullmatch(r"tracker-browser-qa\.[A-Za-z0-9_]{8}",
                                 directory.parent.name)):
         raise ValueError("Witness folder is not a disposable browser QA directory")
-    if directory.is_symlink():
-        raise ValueError("Refuse symlinked witness directory")
 
     expected = {
         f"{scheme}-{flow}.json" for scheme in SCHEMES for flow in FLOWS
