@@ -6,6 +6,7 @@ candidate. No installed DEV/PROD route or user database can be targeted.
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -33,6 +34,28 @@ if not (
     raise RuntimeError("Release 579 runtime tests require isolated strict localhost")
 
 pytestmark = pytest.mark.browser
+
+
+def _record_evidence(scheme, flow, path, accepted_status, denied_status):
+    """Emit only whitelisted metadata under the disposable browser QA root."""
+    if flow not in ("mobile-weight", "mobile-bp", "mobile-water",
+                   "notes-preview", "native-compound"):
+        raise ValueError("Unknown runtime witness flow")
+    folder = DATA.parent / "csrf-runtime579"
+    folder.mkdir(mode=0o700, exist_ok=True)
+    destination = folder / (scheme + "-" + flow + ".json")
+    payload = {
+        "scheme": scheme, "flow": flow, "method": "POST",
+        "path": path, "accepted_status": accepted_status,
+        "denied_status": denied_status,
+        "signed_browser_request": True,
+        "runtime_observed": True, "isolated_candidate": True,
+    }
+    # Never retain cookie, signed CSRF token, request body, or user data.
+    with destination.open("x", encoding="utf-8") as output:
+        json.dump(payload, output, sort_keys=True)
+        output.write("\\n")
+    destination.chmod(0o600)
 
 
 @pytest.fixture(scope="module")
@@ -115,6 +138,8 @@ def test_579_real_mobile_js_write_and_forged_replay_denied(
     )
     assert denied.status == 403, (kind, scheme, denied.status)
     assert not errors, errors
+    _record_evidence(scheme, "mobile-" + kind, endpoint, response.status,
+                     denied.status)
 
 
 @pytest.mark.parametrize("scheme", ("http", "https"))
@@ -154,6 +179,8 @@ def test_579_htmx_preview_records_actual_header_and_route(tab, scheme):
     )
     assert denied.status == 403
     assert not errors, errors
+    _record_evidence(scheme, "notes-preview", "/pages/preview",
+                     approved.status, denied.status)
 
 
 @pytest.mark.parametrize("scheme", ("http", "https"))
@@ -187,3 +214,5 @@ def test_579_native_compound_positive_and_unsigned_negative(tab, scheme):
         base + "/compounds"
     ).text()
     assert not errors, errors
+    _record_evidence(scheme, "native-compound", "/compounds",
+                     approved.status, denied.status)
