@@ -49,7 +49,7 @@ def route_pattern(path: str) -> re.Pattern | None:
     parts = []
     for seg in segments:
         if PATH_PARAMETER.fullmatch(seg):
-            parts.append(r"[^/]+")
+            parts.append(r"[^/{}$?#]+")
         elif PATH_PARAMETER.search(seg):
             return None
         else:
