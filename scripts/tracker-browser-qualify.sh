@@ -462,7 +462,7 @@ if [[ "$MODE" == targeted ]]; then
 fi
 # Release 586: targeted layout module seeds its own synthetic dose.
 # This path is never a substitute for the full QA browser gate.
-if [[ "$MODE" == targeted && "$TARGETED_MODULE" == tests/browser/test_form_overlap586.py ]]; then
+if [[ "$MODE" == targeted && "${TARGETED_MODULE##*/}" == test_form_overlap586.py ]]; then
   run_isolated_browser_module "$TARGETED_MODULE" 1 "$ROOT/targeted-layout586.log"
   echo "TARGETED_STRICT_PREFLIGHT=PASSED"
   echo "TARGETED_STRICT_SCOPE=RELEASE_586_LAYOUT_ONLY_NOT_FULL_QUALIFICATION"
