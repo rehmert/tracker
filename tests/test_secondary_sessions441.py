@@ -339,3 +339,40 @@ def test_source_exempts_only_secondary_security_posts_with_preview_gate():
         "/secondary/security/password",
     ]
     assert "and not secondary_form_post433" in source
+
+
+# Release 577: independent secondary-session signed CSRF behavior when the
+# global strict setting is on. This is an isolated TestClient with disposable
+# account state, not a live secondary browser acceptance claim.
+def test_577_secondary_session_signed_revoke_under_strict_flag(
+    browsers, monkeypatch,
+):
+    monkeypatch.setenv("TRACKER_CSRF_ENFORCE", "1")
+    clients, root = browsers
+    _login_all(browsers)
+    assert (_count(root, 2), _count(root, 3)) == (2, 1)
+    page = clients[0].get("/secondary/security")
+    assert page.status_code == 200
+    token = _csrf(page.text)
+
+    for data, headers in (
+        ({}, {}),
+        ({"csrf_token": "forged"}, {}),
+        ({"csrf_token": token}, {
+            "Origin": "https://attacker.invalid",
+            "Sec-Fetch-Site": "cross-site",
+        }),
+    ):
+        rejected = clients[0].post(
+            "/secondary/security/revoke-others",
+            data=data, headers=headers, follow_redirects=False,
+        )
+        assert rejected.status_code in (403, 422)
+        assert (_count(root, 2), _count(root, 3)) == (2, 1)
+
+    accepted = clients[0].post(
+        "/secondary/security/revoke-others",
+        data={"csrf_token": token}, follow_redirects=False,
+    )
+    assert accepted.status_code == 303
+    assert (_count(root, 2), _count(root, 3), _admin_count(root)) == (1, 1, 1)
