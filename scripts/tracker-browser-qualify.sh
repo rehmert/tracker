@@ -438,4 +438,26 @@ run_isolated_browser_module \
 "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report582.py" \
     --directory "$ROOT/csrf-runtime582"
 
+# Release 583: inject synthetic supplies only after previous gates finish.
+# Never touch installed DEV/PROD data. Strict mode remains confined to
+# the disposable QA localhost backend.
+env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+  PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" TRACKER_INSTANCE=DEV \
+  TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
+  PYTHONDONTWRITEBYTECODE=1 \
+  "$PY" -B "$SOURCE/scripts/tracker_csrf_fixture583.py" seed
+
+run_isolated_browser_module \
+    tests/browser/test_csrf_preparations583.py \
+    1 "$ROOT/strict-preparations583.log"
+
+"$PY" "$SOURCE/scripts/tracker_csrf_runtime_report583.py" \
+    --directory "$ROOT/csrf-runtime583"
+
+env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+  PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" TRACKER_INSTANCE=DEV \
+  TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
+  PYTHONDONTWRITEBYTECODE=1 \
+  "$PY" -B "$SOURCE/scripts/tracker_csrf_fixture583.py" verify
+
 echo "ISOLATED_STRICT_CSRF_BROWSER=PASSED"
