@@ -42,6 +42,13 @@
 > enforcement is **not** enabled on installed DEV or PROD.
 > [Release 573 review](release-573-csrf-compatibility-bundle.md).
 
+> **Release 574 update:** CSRF inventory now distinguishes simple Jinja
+> ID-path route-shape matches from unresolved dynamic targets, retaining
+> all of them for manual browser security review. The disposable strict
+> Chromium matrix expands to additional native forms and fetch(Request)
+> on HTTP and HTTPS. Live CSRF policy remains unchanged.
+> [Release 574 review](release-574-csrf-dynamic-form-coverage.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
