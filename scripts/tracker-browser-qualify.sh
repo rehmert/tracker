@@ -11,8 +11,8 @@ TARGETED_MODULE=""
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
-  [[ "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
-    echo "ERROR: Targeted module must be one of the audited 583/586/587/588 fixtures" >&2
+  [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
+    echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
 elif [[ $# != 2 ]]; then
@@ -466,6 +466,23 @@ if [[ "$MODE" == targeted && "${TARGETED_MODULE##*/}" == test_form_overlap586.py
   run_isolated_browser_module "$TARGETED_MODULE" 1 "$ROOT/targeted-layout586.log"
   echo "TARGETED_LAYOUT_PREFLIGHT=PASSED"
   echo "TARGETED_LAYOUT_SCOPE=RELEASE_586_ONLY_NOT_FULL_QUALIFICATION"
+  exit 0
+fi
+
+# Release 589: one explicit fail-closed batch replaces duplicate server startup
+# and backend tests for the two established strict browser modules.
+# This is targeted evidence only; never claim full browser qualification.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-batch589 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_csrf_bulk587.py \
+      1 "$ROOT/batch589-bulk.log"
+  "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report587.py" \
+      --directory "$ROOT/csrf-runtime587"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_multipart588.py \
+      1 "$ROOT/batch589-multipart.log"
+  echo "TARGETED_CSRF_BATCH589=PASSED"
+  echo "TARGETED_CSRF_BATCH589_SCOPE=BULK587_MULTIPART588_ONLY_NOT_FULL_QUALIFICATION"
   exit 0
 fi
 
