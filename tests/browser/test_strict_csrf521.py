@@ -750,7 +750,7 @@ def test_578_native_compound_write_negative_matrix(tab, scheme, scenario):
         data["csrf_token"] = token
         headers = {"Origin": "https://attacker.invalid"}
     elif scenario == "tampered-form-token":
-        data["csrf_token"] = token[:-1] + ("A" if token[-1] != "A" else "B")
+        data["csrf_token"] = token[:6] + ("A" if token[6] != "A" else "B") + token[7:]
 
     denied = page.request.post(
         base + "/compounds", data=data, headers=headers,
