@@ -63,13 +63,3 @@
     max-width: 100%;
   }
 }
-@media (max-width: 450px) {
-  #main-content form#tracker-dose-correction-form .tracker-time24-controls,
-  #main-content form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-controls {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  #main-content form#tracker-dose-correction-form .tracker-time24-now,
-  #main-content form[hx-post="/doses"] .tracker-dose-when-field .tracker-time24-now {
-    grid-column: 1;
-  }
-}
