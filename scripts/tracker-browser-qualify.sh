@@ -11,8 +11,8 @@ TARGETED_MODULE=""
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
-  [[ "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587)[.]py$ ]] || {
-    echo "ERROR: Targeted module must be one of the audited 583/586/587 fixtures" >&2
+  [[ "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
+    echo "ERROR: Targeted module must be one of the audited 583/586/587/588 fixtures" >&2
     exit 2
   }
 elif [[ $# != 2 ]]; then
@@ -481,10 +481,21 @@ fi
 
 if [[ "$MODE" == full ]]; then
   run_isolated_browser_module \
+      tests/browser/test_csrf_multipart588.py \
+      1 "$ROOT/strict-multipart588.log"
+  echo "CSRF_588_NATIVE_MULTIPART_HTTP_HTTPS=PASSED"
+  run_isolated_browser_module \
       tests/browser/test_csrf_bulk587.py \
       1 "$ROOT/strict-bulk587.log"
   "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report587.py" \
       --directory "$ROOT/csrf-runtime587"
+fi
+
+if [[ "$MODE" == targeted && "${TARGETED_MODULE##*/}" == test_csrf_multipart588.py ]]; then
+  run_isolated_browser_module "$TARGETED_MODULE" 1 "$ROOT/targeted-multipart588.log"
+  echo "TARGETED_MULTIPART588_PREFLIGHT=PASSED"
+  echo "TARGETED_MULTIPART588_SCOPE=NATIVE_COA_UPLOAD_ONLY_NOT_GLOBAL_CLEARANCE"
+  exit 0
 fi
 
 # Release 583: inject synthetic supplies only after previous gates finish.
