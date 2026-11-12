@@ -71,3 +71,13 @@ def test_588_installed_enforcement_default_unmodified():
     csrf = (ROOT / "app/csrf_enforcement520.py").read_text()
     assert 'os.environ.get("TRACKER_CSRF_ENFORCE", "0") == "1"' in csrf
     assert 'TRACKER_CSRF_ENFORCE=1' not in PREFLIGHT.read_text()
+
+def test_588_source_route_report_executes_and_remains_blocked():
+    result = subprocess.run(
+        [sys.executable, str(READINESS)],
+        cwd=ROOT, text=True, capture_output=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "CSRF_588_READINESS=BLOCKED_INCOMPLETE_RUNTIME_CLEARANCE" in result.stdout
+    assert "CSRF_588_UNQUALIFIED_ROUTES=" in result.stdout
+    assert "CSRF_588_INSTALLED_ENFORCEMENT=UNCHANGED_REPORT_ONLY" in result.stdout
