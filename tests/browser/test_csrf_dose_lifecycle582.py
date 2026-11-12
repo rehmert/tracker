@@ -82,7 +82,8 @@ def _witness(page, selector, method, path, expected, *, dialog=False):
     response = pending.value
     assert response.status == expected, (method, path, response.status)
     assert response.headers.get("x-tracker-csrf-report") == "valid"
-    assert response.request.all_headers().get("x-tracker-csrf", "").startswith("v1.") if method == "DELETE" else True
+    if method == "DELETE":
+        assert response.request.all_headers().get("x-tracker-csrf", "").startswith("v1.")
     return response
 
 
