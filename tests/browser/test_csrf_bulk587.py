@@ -37,9 +37,9 @@ pytestmark = pytest.mark.browser
 ROUTES = (
     ("/vials/bulk/validate-selection", 200),
     ("/vials/bulk/preview", 200),
-    ("/vials/bulk", 303),
+    ("/vials/bulk", 200),
     ("/vials/bulk/delete-preview", 200),
-    ("/vials/bulk/delete", 303),
+    ("/vials/bulk/delete", 200),
 )
 
 
@@ -100,12 +100,13 @@ def _browser_write(page, path, fields):
       for (const [key, value] of fields) data.append(key, String(value));
       const response = await fetch(path, {
         method: 'POST', body: data, credentials: 'same-origin',
-        redirect: 'manual'
+        redirect: 'follow'
       });
       return {
         status: response.status,
         csrf: response.headers.get('x-tracker-csrf-report'),
         body: await response.text(),
+        destination: response.url,
       };
     }""", {"path": path, "fields": fields})
     assert result["csrf"] == "valid", (path, result)
@@ -140,7 +141,8 @@ def test_587_588_bulk_vial_preview_update_delete_strict(tab, synthetic_vial, sch
         page, ROUTES[2][0],
         changes + [["bulk_preview_snapshot", preview_json["snapshot"]]]
     )
-    assert updated["status"] == 303, updated
+    assert updated["status"] == 200 and "msg=" in updated["destination"], updated
+    assert "err=" not in updated["destination"]
 
     detail = page.request.get(base + "/vials/" + str(vial_id))
     assert detail.status == 200
@@ -155,7 +157,8 @@ def test_587_588_bulk_vial_preview_update_delete_strict(tab, synthetic_vial, sch
         page, ROUTES[4][0],
         ids + [["delete_preview_snapshot", deletion["snapshot"]]]
     )
-    assert removed["status"] == 303, removed
+    assert removed["status"] == 200 and "msg=" in removed["destination"], removed
+    assert "err=" not in removed["destination"]
     assert page.request.get(base + "/vials/" + str(vial_id)).status == 404
     assert not errors, errors
 
@@ -172,6 +175,7 @@ def test_587_588_bulk_vial_preview_update_delete_strict(tab, synthetic_vial, sch
         ],
         "synthetic_qa_data_only": True,
         "signed_browser_fetch": True,
+        "redirects_followed_and_success_flash_verified": True,
         "native_bulk_form_submission_tested": False,
         "csrf_enforcement_installed": False,
         "persisted_update_and_delete_verified": True,
