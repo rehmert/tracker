@@ -172,6 +172,47 @@ def static_inventory(root: Path) -> dict:
 
 
 
+# Only a whole Jinja path segment whose last attribute is an ID is
+# shape-matchable. Never evaluate template code or interpolate values.
+_JINJA_ID_SEGMENT574 = re.compile(
+    r"\{\{\s*[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*\."
+    r"(?:id|[A-Za-z_]\w*_id)\s*\}\}\Z"
+)
+_ROUTE_PARAM_SEGMENT574 = re.compile(r"\{[^{}]+\}\Z")
+
+
+def _templated_route_shape574(method: str, target: str, writes: list[dict]) -> bool:
+    """Heuristically pair template-only ID segments to route parameters.
+
+    A match means the route *shape* exists; NOT that Jinja rendered the
+    correct ID or that CSRF/header submission succeeds in a browser.
+    """
+    if not target.startswith("/") or target.startswith("//") or "{%" in target:
+        return False
+    path = urlsplit(target).path
+    segments = path.split("/")
+    if not any(_JINJA_ID_SEGMENT574.fullmatch(seg) for seg in segments):
+        return False
+    for route in writes:
+        if route["mounted"] or route["method"] != method:
+            continue
+        route_segments = route["path"].split("/")
+        if len(route_segments) != len(segments):
+            continue
+        matched = True
+        for actual, expected in zip(segments, route_segments):
+            if _JINJA_ID_SEGMENT574.fullmatch(actual):
+                if not _ROUTE_PARAM_SEGMENT574.fullmatch(expected):
+                    matched = False
+                    break
+            elif actual != expected:
+                matched = False
+                break
+        if matched:
+            return True
+    return False
+
+
 def classify_browser_entrypoints(static: dict, writes: list[dict]) -> list[dict]:
     """Match literal static form/HTMX actions against effective write routes.
 
@@ -191,18 +232,18 @@ def classify_browser_entrypoints(static: dict, writes: list[dict]) -> list[dict]
         method = entry.get("method", "").upper()
         target = (entry.get("action", "") if entry["kind"] == "html_form"
                   else entry.get("target", "")) or ""
-        if (
-            method not in UNSAFE
-            or not target
-            or "{{" in target
-            or "{%" in target
-            or method == "DYNAMIC"
-        ):
+        if method not in UNSAFE or not target or method == "DYNAMIC":
             category = "manual_dynamic_or_implicit"
         elif target.startswith(("http://", "https://", "//")):
             category = "manual_absolute_or_external"
         elif not target.startswith("/"):
             category = "manual_relative_or_fragment"
+        elif "{{" in target or "{%" in target:
+            category = (
+                "templated_route_shape_matched"
+                if _templated_route_shape574(method, target, writes)
+                else "manual_dynamic_or_implicit"
+            )
         else:
             path = urlsplit(target).path
             category = (
@@ -256,9 +297,17 @@ def build(application, root: Path = ROOT) -> dict:
             "js_request_callsites": len(static["javascript"]),
             "literal_browser_write_routes_matched": browser_status["literal_route_matched"],
             "literal_browser_write_routes_unmatched": browser_status["literal_route_not_matched"],
+            "templated_route_shapes_matched": browser_status["templated_route_shape_matched"],
+            "browser_targets_unresolved_without_shape_match": sum(
+                count for status, count in browser_status.items()
+                if status.startswith("manual_")
+            ),
+            # A source-shape match still requires real rendered browser QA;
+            # do not reduce the outstanding compatibility review count.
             "browser_writes_needing_manual_resolution": sum(
                 count for status, count in browser_status.items()
                 if status.startswith("manual_")
+                or status == "templated_route_shape_matched"
             ),
         },
         "global_dependency_gaps": missing_dependency,
@@ -277,6 +326,7 @@ def build(application, root: Path = ROOT) -> dict:
             "Mounted subapps require separate middleware and token review",
             "Static scanner misses dynamic routes and non-router files; differences must be triaged",
             "Browser examples are not a complete coverage matrix",
+            "Templated ID segment shape matching does not verify rendered URLs or CSRF",
             "Static browser action-to-route matching is heuristic, not token validation",
             "Dynamic JS, template inheritance and mounted app routing require manual review",
             "Every unsafe endpoint still requires auth, proxy-origin and CSRF behavior review",
