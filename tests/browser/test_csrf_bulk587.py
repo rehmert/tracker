@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sqlite3
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import uuid4
@@ -167,6 +168,17 @@ def test_587_588_bulk_vial_preview_update_delete_strict(tab, synthetic_vial, sch
     assert removed["status"] == 200 and "msg=" in removed["destination"], removed
     assert "err=" not in removed["destination"]
     assert page.request.get(base + "/vials/" + str(vial_id)).status == 404
+    # Independently reconcile the disposable server database after the
+    # HTTP lifecycle. A 303 alone is not evidence that writes persisted.
+    db_file = (DATA / "tracker.db").resolve()
+    assert db_file.parent == DATA and db_file.is_file() and not db_file.is_symlink()
+    with sqlite3.connect(db_file) as db:
+        assert db.execute("SELECT COUNT(*) FROM vials WHERE id=?", (vial_id,)).fetchone()[0] == 0
+        actions = [row[0] for row in db.execute(
+            "SELECT action FROM change_audit WHERE entity_type='vial' "
+            "AND entity_id=? ORDER BY id", (vial_id,)
+        )]
+        assert actions == ["bulk_update", "bulk_delete"], actions
     assert not errors, errors
 
     folder = DATA.parent / "csrf-runtime587"
