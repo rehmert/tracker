@@ -11,12 +11,12 @@ TARGETED_MODULE=""
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
-  [[ "$TARGETED_MODULE" == tests/browser/test_csrf_preparations583.py ]] || {
+  [[ "$TARGETED_MODULE" =~ ^tests/browser/test_csrf_[a-z0-9_]+\.py$ && "${TARGETED_MODULE##*/}" == test_csrf_preparations583.py ]] || {
     echo "ERROR: Targeted mode only permits the audited Release 583 fixture" >&2
     exit 2
   }
 elif [[ $# != 2 ]]; then
-  echo "Usage: tracker-browser-qualify.sh SOURCE PYTHON [--targeted-strict tests/browser/test_csrf_preparations583.py]" >&2
+  echo "Usage: tracker-browser-qualify.sh SOURCE PYTHON [--targeted-strict MODULE]" >&2
   exit 2
 fi
 SOURCE="$(cd "$1" && pwd -P)"
