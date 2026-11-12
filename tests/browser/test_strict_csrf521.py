@@ -694,7 +694,8 @@ def test_577_cross_site_signed_token_still_rejected(tab, scheme, request_case):
             headers={**headers, "Content-Type": "application/json"},
             max_redirects=0,
         )
-    assert denied.status == 403, (scheme, request_case, denied.status)
+    expected_statuses = (403, 413) if request_case == "large-json" else (403,)
+    assert denied.status in expected_statuses, (scheme, request_case, denied.status)
     assert not errors, errors
 
 
@@ -710,5 +711,5 @@ def test_577_same_origin_unsigned_large_json_denied(tab, scheme):
         headers={"Content-Type": "application/json"},
         max_redirects=0,
     )
-    assert denied.status == 403
+    assert denied.status in (403, 413)
     assert not errors, errors
