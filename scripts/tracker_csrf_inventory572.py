@@ -47,70 +47,118 @@ def dependency_calls(route: APIRoute) -> set[str]:
 
 
 def registered_writes(application) -> list[dict]:
-    """Include real APIRoutes in nested mounted FastAPI applications."""
+    """Walk actual FastAPI 0.162 included-router contexts, preserving scopes.
+
+    This FastAPI version stores included APIRouters lazily as _IncludedRouter,
+    rather than copying every APIRoute into app.routes. The library's
+    effective_candidates() returns resolved _EffectiveRouteContext objects
+    with inherited dependencies, full paths and HTTP methods. Never infer
+    that a wrapper with no .methods has no unsafe child endpoints.
+    """
     found = []
 
     def scan(routes, prefix="", mounted=False):
         for route in routes:
-            if isinstance(route, Mount) and hasattr(route.app, "routes"):
-                scan(route.app.routes, prefix + route.path.rstrip("/"), True)
-            else:
-                # Inspect registered routes by actual methods, not only one
-                # FastAPI route class. Never silently omit unsafe methods.
+            if type(route).__name__ == "_IncludedRouter":
+                expand = getattr(route, "effective_candidates", None)
+                if not callable(expand):
+                    raise ValueError("FastAPI included-router expansion unavailable")
+                candidates = expand()
+                if not isinstance(candidates, list):
+                    raise ValueError("FastAPI included-router expansion changed")
+                scan(candidates, prefix=prefix, mounted=mounted)
+                continue
+
+            original = getattr(route, "original_route", route)
+            effective = route if original is not route else None
+
+            if isinstance(original, Mount):
+                mount = getattr(effective, "starlette_route", None) or original
+                mount_path = getattr(mount, "path", None)
+                if not isinstance(mount_path, str):
+                    raise ValueError("Mounted route has no effective path")
+                if hasattr(original.app, "routes"):
+                    scan(original.app.routes,
+                         prefix=prefix + mount_path.rstrip("/"),
+                         mounted=True)
+                continue
+
+            if effective is not None and not isinstance(original, APIRoute):
+                # A context representing a plain Starlette Route can be unsafe;
+                # reject it instead of claiming complete FastAPI coverage.
                 methods = {
                     str(method).upper()
-                    for method in (getattr(route, "methods", None) or ())
+                    for method in (getattr(route, "methods", None)
+                                   or getattr(original, "methods", None) or ())
                 } & UNSAFE
-                if not methods:
-                    continue
-                if not hasattr(route, "dependant"):
+                if methods:
                     raise ValueError(
-                        f"Unsafe non-FastAPI route cannot be classified: "
-                        f"{type(route).__name__} {getattr(route, 'path', '?')}"
+                        "Unsafe effective non-FastAPI route cannot be classified: "
+                        + type(original).__name__
                     )
-                deps = dependency_calls(route)
-                source = inspect.getsourcefile(route.endpoint) or ""
-                try:
-                    source = str(Path(source).resolve().relative_to(ROOT))
-                except ValueError:
-                    source = "outside-tracked-source"
-                for method in sorted(methods):
-                    path = prefix + route.path
-                    has_auth = any(d.endswith(".require_auth") for d in deps)
-                    has_multipart = any(
-                        d.endswith(".enforce_multipart_csrf520") for d in deps
-                    )
-                    report = {
-                        "method": method,
-                        "path": path,
-                        "file": source,
-                        "line": getattr(route.endpoint, "__code__", None).co_firstlineno
-                        if hasattr(route.endpoint, "__code__") else None,
-                        "mounted": mounted,
-                        "global_auth_dependency": has_auth,
-                        "global_multipart_dependency": has_multipart,
-                        "signed_session_exception": method == "POST"
-                        and path in SESSION,
-                        "body_fields": [
-                            {"name": p.name,
-                             "type": type(p.field_info).__name__}
-                            for p in route.dependant.body_params
-                        ],
-                        "needs_manual_endpoint_review": True,
-                    }
-                    found.append(report)
+                continue
+
+            methods = {
+                str(method).upper()
+                for method in (getattr(route, "methods", None) or ())
+            } & UNSAFE
+            if not methods:
+                continue
+            if not isinstance(original, APIRoute) or not hasattr(route, "dependant"):
+                raise ValueError(
+                    f"Unsafe non-FastAPI route cannot be classified: "
+                    f"{type(original).__name__} {getattr(original, 'path', '?')}"
+                )
+
+            path = getattr(route, "path", None)
+            if not isinstance(path, str) or not path.startswith("/"):
+                raise ValueError("Unsafe route has no resolved absolute path")
+
+            deps = dependency_calls(route)
+            source = inspect.getsourcefile(original.endpoint) or ""
+            try:
+                source = str(Path(source).resolve().relative_to(ROOT))
+            except ValueError:
+                source = "outside-tracked-source"
+            for method in sorted(methods):
+                full_path = prefix + path
+                has_auth = any(d.endswith(".require_auth") for d in deps)
+                has_multipart = any(
+                    d.endswith(".enforce_multipart_csrf520") for d in deps
+                )
+                report = {
+                    "method": method,
+                    "path": full_path,
+                    "file": source,
+                    "line": getattr(original.endpoint, "__code__", None).co_firstlineno
+                    if hasattr(original.endpoint, "__code__") else None,
+                    "mounted": mounted,
+                    "global_auth_dependency": has_auth,
+                    "global_multipart_dependency": has_multipart,
+                    "signed_session_exception": method == "POST"
+                    and full_path in SESSION,
+                    "body_fields": [
+                        {"name": p.name,
+                         "type": type(p.field_info).__name__}
+                        for p in route.dependant.body_params
+                    ],
+                    "needs_manual_endpoint_review": True,
+                }
+                found.append(report)
 
     routes = list(application.routes)
     if not routes:
         raise ValueError("FastAPI application registered no routes")
     scan(routes)
     if not found:
-        classes = sorted({type(r).__name__ for r in routes})
+        classes = sorted({type(route).__name__ for route in routes})
         raise ValueError(
             "No registered unsafe routes discovered; refusing empty report: "
             + ", ".join(classes)
         )
-    return sorted(found, key=lambda x: (x["path"], x["method"], x["file"]))
+    return sorted(found, key=lambda item: (
+        item["path"], item["method"], item["file"],
+    ))
 
 
 def static_inventory(root: Path) -> dict:
