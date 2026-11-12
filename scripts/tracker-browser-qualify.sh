@@ -313,6 +313,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
     tests/browser/test_food_labs_mutations500.py \
     tests/browser/test_vitals_proxy_host522.py \
     tests/browser/test_navigation.py \
+    tests/browser/test_form_overlap586.py \
     tests/browser/test_pk_smoke_281.py \
     tests/browser/test_stage33_live_sorting.py 2>&1 | tee "$TEST_LOG"
 BROWSER_EXIT=${PIPESTATUS[0]}
