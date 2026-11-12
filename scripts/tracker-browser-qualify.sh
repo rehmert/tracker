@@ -218,20 +218,8 @@ with SessionLocal() as db:
             content_value=100,
             content_unit="mg",
         ))
-    for name in ("QA preparation HTTP 576", "QA preparation HTTPS 576"):
-        compound = Compound(name=name, category="peptide")
-        db.add(compound)
-        db.flush()
-        db.add(Vial(
-            compound_id=compound.id,
-            label=name,
-            status="sealed",
-            content_value=10,
-            content_unit="mg",
-        ))
     db.commit()
 print("DISPOSABLE_INVENTORY_FIXTURES=2")
-print("DISPOSABLE_PREPARATION_FIXTURES=2")
 PY
 
 # Release 524: preserve parallel execution without overlapping
@@ -316,6 +304,24 @@ run_isolated_browser_module \
     tests/browser/test_labs_native_https501.py \
     0 "$ROOT/labs501-browser.log"
 
+# Seed Release 576 fixtures ONLY AFTER the ordinary browser suite. This
+# prevents strict-mode preparation fixtures from changing earlier QA lists.
+echo "=== PREPARE DISPOSABLE STRICT-CSRF CORRECTION VIALS ==="
+env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+  PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" TRACKER_INSTANCE=DEV \
+  PYTHONDONTWRITEBYTECODE=1 "$PY" -B - <<'PY'
+from app.db import SessionLocal
+from app.models import Compound, Vial
+with SessionLocal() as db:
+    for name in ("QA preparation HTTP 576", "QA preparation HTTPS 576"):
+        compound = Compound(name=name, category="peptide")
+        db.add(compound)
+        db.flush()
+        db.add(Vial(compound_id=compound.id, label=name, status="sealed",
+                    content_value=10, content_unit="mg"))
+    db.commit()
+print("DISPOSABLE_PREPARATION_FIXTURES=2")
+PY
 
 # Release 521: a second browser gate runs the SAME isolated candidate
 # with global strict CSRF enabled. Existing report-only browser tests still
