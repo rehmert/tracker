@@ -66,7 +66,7 @@ def test_583_exact_scope_and_isolated_gate(reporter):
     fixture = FIXTURE.read_text(encoding="utf-8")
     for needle in (
         "TRACKER_TEST_ISOLATED", "TRACKER_TEST_STRICT_CSRF",
-        "TRACKER_INSTANCE", "tracker-browser-qa.", "remaining_qty",
+        "TRACKER_INSTANCE", r"tracker-browser-qa\\.", "remaining_qty",
         "PreparationSupply", "SupplyUsage",
     ):
         assert needle in fixture
