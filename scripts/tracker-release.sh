@@ -31,6 +31,21 @@ changed() { g diff --name-only --diff-filter=ACMR "$BASE" "$TARGET" -- app/; }
 cleanup() {
  code=$?
  trap - EXIT
+ # Release 577: persist independently verified exact-commit DEV evidence
+ # before returning success. A receipt failure becomes a deployment failure,
+ # preserving the existing code-only rollback guard.
+ if ((code==0)) && [[ "$INSTANCE" == DEV ]]; then
+  echo "EXIT_STATUS=0"
+  echo "Finished: $(date -Is)"
+  local release_number="${REF#release/}"
+  release_number="${release_number%%-*}"
+  if ! "$PY" "$QA/scripts/tracker_dev_log577.py" \
+       --source "$RUN/deployment.log" \
+       --release "$release_number" --target "$TARGET"; then
+   echo "ERROR: DEV qualification evidence was not preserved" >&2
+   code=1
+  fi
+ fi
  if ((code!=0 && INSTALLED==1)); then
   echo "Post-deploy failure: attempting code-only rollback"
   cd "$APP"
@@ -53,8 +68,10 @@ cleanup() {
   else echo "Rollback withheld: checkout not in expected clean state"; fi
  fi
  if [[ -d "$QA" ]]; then g worktree remove --force "$QA" >/dev/null 2>&1 || true; fi
- echo "EXIT_STATUS=$code"
- echo "Finished: $(date -Is)"
+ if ((code!=0)) || [[ "$INSTANCE" != DEV ]]; then
+  echo "EXIT_STATUS=$code"
+  echo "Finished: $(date -Is)"
+ fi
  exit "$code"
 }
 worker() {
