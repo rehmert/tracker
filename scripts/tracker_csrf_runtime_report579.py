@@ -77,7 +77,7 @@ def analyze(directory: Path) -> dict:
         "htmx_flows": len([r for r in rows if r["flow"] == "notes-preview"]),
         "native_flows": len([r for r in rows if r["flow"] == "native-compound"]),
         "limits": [
-            "Witnesses cover five named browser workflows, not all JS callsites",
+            "Witnesses cover six named browser workflows, not all JS callsites",
             "Evidence files are test-produced metadata; not a substitute for full test logs",
             "No coverage is asserted for other unsafe route declarations",
             "No installed DEV or PROD strict-CSRF policy changes",
