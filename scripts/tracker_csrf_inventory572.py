@@ -12,6 +12,8 @@ import importlib.util
 import inspect
 import json
 import os
+import re
+from urllib.parse import urlsplit
 from pathlib import Path
 from collections import Counter
 
@@ -169,9 +171,60 @@ def static_inventory(root: Path) -> dict:
     return module.build(root)
 
 
+
+def classify_browser_entrypoints(static: dict, writes: list[dict]) -> list[dict]:
+    """Match literal static form/HTMX actions against effective write routes.
+
+    This is triage, NOT executable-browser proof. Dynamic template actions,
+    external URLs, empty actions and unrelated HTMX targets remain manual.
+    """
+    patterns = []
+    for row in writes:
+        if row["mounted"]:
+            continue
+        candidate = re.sub(r"\\{[^{}]+\\}", "__ROUTE_PARAM__", row["path"])
+        pattern = re.escape(candidate).replace("__ROUTE_PARAM__", r"[^/]+")
+        patterns.append((row["method"], re.compile(r"\\A" + pattern + r"\\Z")))
+
+    findings = []
+    for entry in static["html_and_htmx"]:
+        method = entry.get("method", "").upper()
+        target = (entry.get("action", "") if entry["kind"] == "html_form"
+                  else entry.get("target", "")) or ""
+        if (
+            method not in UNSAFE
+            or not target
+            or "{{" in target
+            or "{%" in target
+            or method == "DYNAMIC"
+        ):
+            category = "manual_dynamic_or_implicit"
+        elif target.startswith(("http://", "https://", "//")):
+            category = "manual_absolute_or_external"
+        elif not target.startswith("/"):
+            category = "manual_relative_or_fragment"
+        else:
+            path = urlsplit(target).path
+            category = (
+                "literal_route_matched"
+                if any(m == method and rx.fullmatch(path) for m, rx in patterns)
+                else "literal_route_not_matched"
+            )
+        findings.append({
+            "kind": entry["kind"],
+            "file": entry["file"],
+            "line": entry["line"],
+            "method": method,
+            "target": target,
+            "classification": category,
+        })
+    return findings
+
 def build(application, root: Path = ROOT) -> dict:
     writes = registered_writes(application)
     static = static_inventory(root)
+    browser_entries = classify_browser_entrypoints(static, writes)
+    browser_status = Counter(x["classification"] for x in browser_entries)
     static_keys = {(r["method"], r["path"]) for r in static["routes"]}
     runtime_keys = {(r["method"], r["path"]) for r in writes}
     unlisted_runtime = sorted(runtime_keys - static_keys)
@@ -201,11 +254,19 @@ def build(application, root: Path = ROOT) -> dict:
             "file_upload_writes_detected": len(upload_writes),
             "html_htmx_write_sites": len(static["html_and_htmx"]),
             "js_request_callsites": len(static["javascript"]),
+            "literal_browser_write_routes_matched": browser_status["literal_route_matched"],
+            "literal_browser_write_routes_unmatched": browser_status["literal_route_not_matched"],
+            "browser_writes_needing_manual_resolution": sum(
+                count for status, count in browser_status.items()
+                if status.startswith("manual_")
+            ),
         },
         "global_dependency_gaps": missing_dependency,
         "runtime_not_in_static_scanner": unlisted_runtime,
         "static_not_registered_in_this_configuration": not_registered,
         "file_upload_writes": sorted(upload_writes),
+        "browser_entrypoint_triage": browser_entries,
+        "javascript_request_callsites": static["javascript"],
         "strict_browser_example_paths": sorted(
             p for p in KNOWN_STRICT_BROWSER_EXAMPLES
             if any(r["path"] == p for r in writes)
@@ -216,6 +277,8 @@ def build(application, root: Path = ROOT) -> dict:
             "Mounted subapps require separate middleware and token review",
             "Static scanner misses dynamic routes and non-router files; differences must be triaged",
             "Browser examples are not a complete coverage matrix",
+            "Static browser action-to-route matching is heuristic, not token validation",
+            "Dynamic JS, template inheritance and mounted app routing require manual review",
             "Every unsafe endpoint still requires auth, proxy-origin and CSRF behavior review",
             "No installed DEV/PROD policy change is authorized by this inventory",
         ],
