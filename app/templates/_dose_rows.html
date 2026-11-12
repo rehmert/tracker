@@ -1,9 +1,10 @@
 {% for r in rows %}<tr data-dose-compound="{{ r.vial.compound_id }}" data-dose-kind="{{ r.dose.kind|e }}" data-dose-site="{{ (r.dose.site or "")|e }}">
   <td>{{ r.dose.taken_at|dt }}</td>
   <td><a href="/vials/{{ r.vial.id }}">{{ r.vial.compound.name }}</a>{% if r.dose.kind == 'waste' %} <span class="tag">waste</span>{% endif %}</td>
+  <td><a href="/vials/{{ r.vial.id }}">#{{ r.vial.id }}</a>{% if r.vial.label %}<span class="tracker-dose-vial-meta"> · {{ r.vial.label }}</span>{% endif %}{% if r.vial.lot %}<span class="tracker-dose-vial-meta"> · Lot {{ r.vial.lot }}</span>{% endif %}</td>
   <td class="n">{{ r.dose.entered_value|num }} {{ r.dose.entered_unit }}</td>
   <td class="n">{{ r.dose.amount_base|amt(r.vd.dim) }}</td>
   <td class="n">{{ r.cost|money }}</td>
   <td>{{ r.dose.site or '—' }}</td>
   <td>{% if r.dose.kind == "dose" %}<a href="/doses?repeat_from={{ r.dose.id }}">Prepare similar</a> · {% endif %}<a href="/doses/{{ r.dose.id }}/edit">Edit</a> <button class="link danger" hx-delete="/doses/{{ r.dose.id }}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this entry?">Delete</button></td>
-</tr>{% else %}<tr><td colspan="7" class="empty">No entries yet.</td></tr>{% endfor %}
+</tr>{% else %}<tr><td colspan="8" class="empty">No entries yet.</td></tr>{% endfor %}
