@@ -112,7 +112,7 @@ def test_581_signed_native_vial_details_update_and_unsigned_rejection(tab, schem
     form = page.locator('form[method="post"][action="/vials/1"]')
     assert form.count() == 1
     assert form.locator('input[name="csrf_token"]').input_value() == token
-    assert form.locator('input[name="content_value"]').input_value() == "100.0"
+    assert float(form.locator('input[name="content_value"]').input_value()) == 100.0
     _unsigned(page, base, "POST", "/vials/1")
     # Set a harmless QA-only note; leave amount, inventory, status unchanged.
     note = "Release 581 signed native vial " + scheme
