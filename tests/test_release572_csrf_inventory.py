@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi import FastAPI
 from starlette.routing import Route
@@ -111,6 +112,50 @@ def test_mounted_subapp_is_explicit_and_not_assumed_global(audit):
     assert len(rows) == 1
     assert rows[0]["path"] == "/private/write"
     assert rows[0]["mounted"] is True
+
+
+def test_lazy_included_router_effective_context_is_scanned(audit):
+    # Reproduce FastAPI 0.162's _IncludedRouter/effective_candidates API,
+    # independent of the runner's FastAPI version. Never infer that a
+    # lazy wrapper without .methods has no write endpoints.
+    child = FastAPI()
+
+    @child.post("/write")
+    def write():
+        return {"ok": True}
+
+    original = next(
+        route for route in child.routes
+        if getattr(route, "path", "") == "/write"
+    )
+    effective = SimpleNamespace(
+        original_route=original,
+        methods={"POST"},
+        path="/from-lazy-router/write",
+        dependant=original.dependant,
+    )
+
+    class _IncludedRouter:
+        def effective_candidates(self):
+            return [effective]
+
+    parent = FastAPI()
+    parent.router.routes.append(_IncludedRouter())
+    rows = audit.registered_writes(parent)
+    assert len(rows) == 1
+    assert rows[0]["method"] == "POST"
+    assert rows[0]["path"] == "/from-lazy-router/write"
+    assert rows[0]["global_auth_dependency"] is False
+
+
+def test_lazy_included_router_refuses_unusable_expansion(audit):
+    class _IncludedRouter:
+        pass
+
+    parent = FastAPI()
+    parent.router.routes.append(_IncludedRouter())
+    with pytest.raises(ValueError, match="expansion unavailable"):
+        audit.registered_writes(parent)
 
 
 def test_unsafe_starlette_route_is_not_silently_ignored(audit):
