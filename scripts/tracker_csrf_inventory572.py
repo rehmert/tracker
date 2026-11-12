@@ -189,7 +189,13 @@ def _templated_route_shape574(method: str, target: str, writes: list[dict]) -> b
     """
     if not target.startswith("/") or target.startswith("//") or "{%" in target:
         return False
-    path = urlsplit(target).path
+    parsed = urlsplit(target)
+    # A dynamic query or fragment may alter submission semantics, even
+    # when the path segment resembles a registered route. Review manually.
+    if any(marker in value for value in (parsed.query, parsed.fragment)
+           for marker in ("{{", "{%")):
+        return False
+    path = parsed.path
     segments = path.split("/")
     if not any(_JINJA_ID_SEGMENT574.fullmatch(seg) for seg in segments):
         return False
