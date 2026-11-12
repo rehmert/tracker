@@ -229,9 +229,12 @@ def test_580_notes_create_edit_delete_real_forms(tab, scheme):
     changed = title + " updated"
     edit.locator('input[name="title"]').fill(changed)
     _submit(page, edit.get_by_role("button", name="Save page"), "POST", edit_path, 303)
-    # The shared page-title script title-cases displayed headings.
-    # Preserve the exact saved model value and ignore display-only casing.
-    expect(page.locator("h1")).to_contain_text(re.compile(re.escape(changed), re.I))
+    # Headings are presentation-only; independent title display scripts
+    # may format or abbreviate them. Verify the exact persisted record
+    # through its server-rendered edit form instead.
+    _visit(page, base, edit_path + "/edit")
+    expect(page.locator('form[action="' + edit_path + '"] input[name="title"]')).to_have_value(changed)
+    _visit(page, base, edit_path)
 
     # Add a source through the actual Notes UI, then confirm unsigned
     # deletion is denied and signed deletion succeeds.
