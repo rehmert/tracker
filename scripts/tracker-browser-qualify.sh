@@ -218,8 +218,20 @@ with SessionLocal() as db:
             content_value=100,
             content_unit="mg",
         ))
+    for name in ("QA preparation HTTP 576", "QA preparation HTTPS 576"):
+        compound = Compound(name=name, category="peptide")
+        db.add(compound)
+        db.flush()
+        db.add(Vial(
+            compound_id=compound.id,
+            label=name,
+            status="sealed",
+            content_value=10,
+            content_unit="mg",
+        ))
     db.commit()
 print("DISPOSABLE_INVENTORY_FIXTURES=2")
+print("DISPOSABLE_PREPARATION_FIXTURES=2")
 PY
 
 # Release 524: preserve parallel execution without overlapping
@@ -383,6 +395,13 @@ if (( STRICT_EXIT != 0 )); then
 fi
 
 echo "=== STRICT CSRF CORE TESTS PASSED ==="
+
+# Release 576: the guarded, disposable HTTP/HTTPS strict-CSRF addition.
+run_isolated_browser_module \
+    tests/browser/test_strict_csrf576.py \
+    1 "$ROOT/strict-576-browser.log"
+
+echo "=== RELEASE 576 STRICT CSRF BROWSER CHECKS PASSED ==="
 
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
