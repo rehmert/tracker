@@ -37,17 +37,31 @@ def browser():
 
 
 @pytest.fixture(scope="module")
-def synthetic_edit_id():
-    from app.db import Base, SessionLocal, engine
+def browser_db():
+    # tests/conftest.py intentionally overrides TRACKER_DATA_DIR for every
+    # pytest worker. It must stay that way. Explicitly connect only to the
+    # independently guarded disposable *server* DB for browser fixtures.
+    from sqlalchemy import create_engine, event
+    from sqlalchemy.orm import sessionmaker
+
+    db_file = (DATA / "tracker.db").resolve()
+    assert db_file.parent == DATA
+    assert db_file.is_file() and not db_file.is_symlink()
+    engine = create_engine(f"sqlite:///{db_file}", connect_args={"check_same_thread": False})
+    @event.listens_for(engine, "connect")
+    def _foreign_keys(connection, _record):
+        connection.execute("PRAGMA foreign_keys=ON")
+    try:
+        yield sessionmaker(engine, expire_on_commit=False)
+    finally:
+        engine.dispose()
+
+
+@pytest.fixture(scope="module")
+def synthetic_edit_id(browser_db):
     from app.models import Compound, DoseLog, Vial
 
-    # Browser pytest workers may import this module before the isolated
-    # candidate server has initialized its own SQLite schema. Prepare the
-    # same disposable QA database explicitly, as the existing HTTP dose
-    # regression fixtures do; never use an installed DB.
-    assert Path(engine.url.database).resolve() == DATA / "tracker.db"
-    Base.metadata.create_all(bind=engine)
-    with SessionLocal() as db:
+    with browser_db() as db:
         compound = Compound(name="QA geometry 586 " + uuid4().hex, category="peptide")
         db.add(compound)
         db.flush()
@@ -178,10 +192,9 @@ def test_586_dose_edit_datetime_and_fields_do_not_overlap(browser, synthetic_edi
         context.close()
 
 
-def test_586_dose_history_shows_vial_identity(browser, synthetic_edit_id):
-    from app.db import SessionLocal
+def test_586_dose_history_shows_vial_identity(browser, browser_db, synthetic_edit_id):
     from app.models import DoseLog, Vial
-    with SessionLocal() as db:
+    with browser_db() as db:
         vial_id = db.get(DoseLog, synthetic_edit_id).vial_id
         compound_id = db.get(Vial, vial_id).compound_id
     context = browser.new_context()
