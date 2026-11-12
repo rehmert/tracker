@@ -17,13 +17,14 @@ def test_587_browser_gate_keeps_bulk_strict_only():
     standard, strict = script.split("# Release 521: a second browser gate", 1)
     assert standard.count("tests/browser/test_csrf_bulk587.py") == 0
     assert strict.count("tests/browser/test_csrf_bulk587.py") == 1
-    assert 'test_(csrf_preparations583|form_overlap586|csrf_bulk587)[.]py' in standard
+    assert 'test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py' in standard
     assert 'TARGETED_BULK587_PREFLIGHT=PASSED' in strict
     assert 'tracker_csrf_runtime_report587.py' in strict
     assert strict.index('tests/browser/test_csrf_bulk587.py') < strict.index(
         'tracker_csrf_runtime_report587.py'
     ) < strict.index('ISOLATED_STRICT_CSRF_BROWSER=PASSED')
     assert "tests/browser/test_csrf_bulk587.py" in PREFLIGHT.read_text()
+    assert "tests/browser/test_csrf_multipart588.py" in PREFLIGHT.read_text()
     result = subprocess.run(["bash", "-n", str(QUALIFIER)], capture_output=True)
     assert result.returncode == 0
 
