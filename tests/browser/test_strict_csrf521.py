@@ -593,10 +593,28 @@ def test_576_preparation_implicit_action_positive_and_forgery(tab, scheme, fixtu
     base = URL if scheme == "http" else HTTPS_URL
     response = page.goto(base + "/vials?status=all", wait_until="networkidle")
     assert response is not None and response.status == 200
+    # Other disposable browser tests may create additional vials with
+    # similar names. Identify the preparation fixture by its unique
+    # event marker, not by an assumed unique human-readable vial label.
     links = page.locator('a[href^="/vials/"]').filter(has_text=fixture_name + " vial")
-    assert links.count() == 1, fixture_name
-    vial_path = links.first.get_attribute("href")
-    assert vial_path and re.fullmatch(r"/vials/[0-9]+", vial_path)
+    candidate_paths = sorted({
+        value for value in links.evaluate_all(
+            "elements => elements.map(element => element.getAttribute('href'))"
+        )
+        if value and re.fullmatch(r"/vials/[0-9]+", value)
+    })
+    assert candidate_paths, ("Missing disposable vial candidates", fixture_name)
+    expected_note = "QA disposable preparation 576 " + fixture_name
+    matches = []
+    for candidate in candidate_paths:
+        response = page.goto(base + candidate, wait_until="networkidle")
+        assert response is not None and response.status == 200
+        if expected_note in page.locator("body").inner_text():
+            matches.append(candidate)
+    assert len(matches) == 1, (
+        "Expected exactly one isolated preparation fixture", fixture_name, matches
+    )
+    vial_path = matches[0]
     response = page.goto(base + vial_path, wait_until="networkidle")
     assert response is not None and response.status == 200
     events = page.locator(
