@@ -141,12 +141,14 @@ def test_583_reconstitution_filter_correction_delete_with_stock(tab, scheme, vid
     assert filtering.count() == 1
     assert filtering.locator('input[name="csrf_token"]').input_value() == token
     _rejected(page, base, filter_path)
-    note = "QA 583 filtering " + scheme
-    filtering.locator('input[name="notes"]').fill(note)
-    # Both the parent filtering section and its optional supply picker
-    # start collapsed. Expand both via the actual summaries.
+    # The entire filtering form sits in a closed outer <details>. Open
+    # the parent BEFORE touching Notes or any child control.
     filter_details = filtering.locator("xpath=parent::details")
     filter_details.locator(":scope > summary").click()
+    expect(filtering.locator('input[name="notes"]')).to_be_visible()
+    note = "QA 583 filtering " + scheme
+    filtering.locator('input[name="notes"]').fill(note)
+    # Its optional supply selector is a separate nested disclosure.
     filtering.locator("details").filter(
         has=page.locator('input[name="supply_id_used"][value="' + str(ids["swab"]) + '"]')
     ).locator("summary").click()
