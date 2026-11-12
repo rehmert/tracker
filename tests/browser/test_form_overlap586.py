@@ -152,13 +152,15 @@ def test_586_dose_edit_datetime_and_fields_do_not_overlap(browser, synthetic_edi
 
 def test_586_dose_history_shows_vial_identity(browser, synthetic_edit_id):
     from app.db import SessionLocal
-    from app.models import DoseLog
+    from app.models import DoseLog, Vial
     with SessionLocal() as db:
         vial_id = db.get(DoseLog, synthetic_edit_id).vial_id
+        compound_id = db.get(Vial, vial_id).compound_id
     context = browser.new_context()
     page = context.new_page()
     try:
-        response = page.goto(URL + "/doses", wait_until="networkidle")
+        response = page.goto(URL + f"/doses?compound_id={compound_id}",
+                             wait_until="networkidle")
         assert response is not None and response.status == 200
         assert page.locator("#dose-history thead th").all_text_contents().count("Vial") == 1
         assert page.locator(
