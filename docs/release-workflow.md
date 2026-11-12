@@ -57,6 +57,13 @@
 > neither environment's global strict setting is changed.
 > [Release 575 qualification](release-575-csrf-executable-compatibility.md).
 
+> **Release 576 candidate update:** Source-only JavaScript call-expression triage,
+> per-static-route evidence and disposable strict-CSRF browser tests now
+> cover preparation correction, high-risk vial previews, large bodies,
+> cross-site denials and additional signed session negative cases.
+> Live DEV/PROD strict-CSRF enforcement is still report-only; Issue #9
+> remains open. [Release 576 review](release-576-csrf-acceptance-and-js-review.md).
+
 Tracker DEV and PROD run the same Git history; local /etc/tracker.env has
 TRACKER_INSTANCE=DEV or TRACKER_INSTANCE=PROD. No releases deploy themselves.
 
