@@ -636,7 +636,7 @@ def test_576_preparation_implicit_action_positive_and_forgery(tab, scheme, fixtu
     with page.expect_response(_post_response(page, edit_path)) as pending:
         form.get_by_role("button", name="Save correction").click()
     _verified(pending.value, status=303)
-    page.wait_for_url(re.compile(re.escape(base + vial_path) + r"(?:\\?.*)?$"))
+    page.wait_for_url(re.compile(re.escape(base + vial_path) + r"(?:\?.*)?$"))
     expect(page.locator("body")).to_contain_text(corrected)
     assert forged not in page.locator("body").inner_text()
     assert not errors, errors
