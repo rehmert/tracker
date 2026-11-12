@@ -35,11 +35,11 @@ def _proxy_browser_metadata522(method, headers):
     if headers.get("sec-fetch-site", "").strip().lower() != "same-origin":
         return False
 
-    if not _single_header522(headers, "origin"):
-        return False
-
-    if not _single_header522(headers, HEADER_NAME):
-        return False
+    # The proxy exception must not override the main origin guard's
+    # rejection of ambiguous multi-valued browser metadata.
+    for field in ("host", "origin", "sec-fetch-site", HEADER_NAME):
+        if not _single_header522(headers, field):
+            return False
 
     origin = headers.get("origin")
     if not isinstance(origin, str):
