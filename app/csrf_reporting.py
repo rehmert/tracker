@@ -55,12 +55,19 @@ async def report_status(request):
         "content-type", ""
     ).split(";", 1)[0].strip().lower()
 
-    submitted = request.headers.get(HEADER_NAME)
+    submitted_headers = request.headers.getlist(HEADER_NAME)
     cookie = request.cookies.get(COOKIE_NAME)
 
-    # A header takes precedence. Do not read or alter the body.
-    if submitted:
-        return _verify(cookie, submitted)
+    # A single submitted header takes precedence over form fields.
+    # Duplicate (or explicitly blank) headers must NEVER fall back to
+    # the form body: ambiguous header selection differs across proxies.
+    # Keep multipart streams untouched even for these invalid requests.
+    if len(submitted_headers) > 1:
+        return "invalid"
+    if submitted_headers:
+        if not submitted_headers[0]:
+            return "invalid"
+        return _verify(cookie, submitted_headers[0])
 
     if content_type == "application/x-www-form-urlencoded":
         # Avoid reading unbounded request streams in middleware.
