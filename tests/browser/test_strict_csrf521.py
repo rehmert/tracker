@@ -2612,3 +2612,42 @@ def test_603_vials_navigation_and_daily_action_filter(tab, scheme):
         "a[data-quick-action]:not([hidden])"
     ).count() == all_actions.count()
     assert not errors, errors
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_604_navigation_shortcuts_are_collapsed_but_preserved(tab, scheme):
+    """Real rendered pages, no data changes or forced pointer clicks."""
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 390, "height": 844})
+
+    response = page.goto(base + "/quick-entry", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    quick = page.locator("nav.tracker-quick-fast-paths")
+    assert quick.locator("a").count() == 15
+    assert quick.locator(".tracker-quick-fast-primary604 a").count() == 6
+    assert quick.locator(".tracker-quick-fast-secondary604 a").count() == 9
+    for link in quick.locator(".tracker-quick-fast-primary604 a").all():
+        expect(link).to_be_visible()
+    for link in quick.locator(".tracker-quick-fast-secondary604 a").all():
+        expect(link).to_be_hidden()
+
+    details = quick.locator("details.tracker-quick-fast-more604")
+    expect(details).not_to_have_attribute("open", "")
+    summary = details.locator("summary")
+    summary.click()
+    expect(details).to_have_attribute("open", "")
+    for link in quick.locator(".tracker-quick-fast-secondary604 a").all():
+        expect(link).to_be_visible()
+    expect(quick.locator('a[href="/labs/new#lab-csv-entry"]')).to_be_visible()
+
+    response = page.goto(base + "/vials", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    nav = page.locator("nav.tracker-vial-jumps603")
+    assert nav.count() == 1
+    assert nav.locator("a").count() == 9
+    assert page.locator('nav.ux-shortcuts a[href="/inventory-alerts"]').count() == 0
+    for route in ("/inventory-intelligence", "/inventory-alerts",
+                  "/reconciliation"):
+        assert nav.locator(f'a[href="{route}"]').count() == 1
+    assert not errors, errors
