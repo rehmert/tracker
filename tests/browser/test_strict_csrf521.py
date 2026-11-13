@@ -2482,11 +2482,16 @@ def test_602_food_and_quick_entry_phone_density(tab, scheme):
     expect(page.locator(".tracker-quick-entry-card").first).to_be_visible()
     assert page.evaluate("""() => {
       const grid = document.querySelector('.tracker-quick-entry-grid');
-      const links = document.querySelector('.tracker-quick-fast-paths');
-      return grid && links &&
+      const nav = document.querySelector('.tracker-quick-fast-paths');
+      const links = nav?.querySelector('.tracker-quick-fast-primary604');
+      const more = nav?.querySelector('.tracker-quick-fast-more604');
+      return grid && nav && links && more &&
         getComputedStyle(grid).gridTemplateColumns.split(' ').length === 2 &&
-        links.scrollWidth > links.clientWidth;
-    }""")
+        getComputedStyle(links).overflowX === 'auto' &&
+        links.scrollWidth > links.clientWidth &&
+        more.getBoundingClientRect().width > 0 &&
+        more.getBoundingClientRect().left >= nav.getBoundingClientRect().left;
+    }"""), "Quick Entry must keep two-column cards, swipeable primary links and visible More control"
     page.set_viewport_size({"width": 320, "height": 844})
     assert page.evaluate("""() => {
       const grid = document.querySelector('.tracker-quick-entry-grid');
@@ -2627,6 +2632,10 @@ def test_604_navigation_shortcuts_are_collapsed_but_preserved(tab, scheme):
     assert quick.locator("a").count() == 15
     assert quick.locator(".tracker-quick-fast-primary604 a").count() == 6
     assert quick.locator(".tracker-quick-fast-secondary604 a").count() == 9
+    assert quick.locator(".tracker-quick-fast-primary604").evaluate(
+        """el => getComputedStyle(el).overflowX === 'auto'
+          && el.scrollWidth > el.clientWidth"""
+    ), "Primary shortcuts must remain horizontally swipeable at 390px"
     for link in quick.locator(".tracker-quick-fast-primary604 a").all():
         expect(link).to_be_visible()
     for link in quick.locator(".tracker-quick-fast-secondary604 a").all():
