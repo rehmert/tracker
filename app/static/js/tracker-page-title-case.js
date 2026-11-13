@@ -48,7 +48,7 @@
   });
 
   function titleCase(value) {
-    return value.replace(/[A-Za-z]+/g, function (word) {
+    const cased = value.replace(/[A-Za-z]+/g, function (word) {
       const lower = word.toLowerCase();
 
       if (Object.prototype.hasOwnProperty.call(
@@ -68,8 +68,9 @@
 
       return lower.charAt(0).toUpperCase() +
         lower.slice(1);
-    // Apostrophes split words in the matcher above; avoid "Today'S".
-    }).replace(/(['’])S\b/g, '$1s');
+    });
+    // Possessive apostrophe-s remains lowercase after title casing.
+    return cased.replace(/(['’])S\b/g, '$1s');
   }
 
   function formatTextNodes(element) {
