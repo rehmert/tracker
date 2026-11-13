@@ -45,9 +45,9 @@ def test_593_full_pk_route_inventory_is_source_candidate_not_runtime_clearance()
     assert report["strict_csrf_enforce_installed"] is False
     assert report["status"] == "BLOCKED_INCOMPLETE_RUNTIME_CLEARANCE"
     plan = gap.build()
-    assert plan["source_witness_candidates"] == 77
-    assert plan["remaining_without_source_witness"] == 67
-    assert len(plan["source_witness_manifest"]) == 64
+    assert plan["source_witness_candidates"] == 83
+    assert plan["remaining_without_source_witness"] == 61
+    assert len(plan["source_witness_manifest"]) == 70
     assert not any(r["workstream"] == "pk" for r in plan["unqualified_routes"])
     assert plan["strict_csrf_enforcement_change_authorized"] is False
     assert plan["runtime_verified_by_this_report"] is False
