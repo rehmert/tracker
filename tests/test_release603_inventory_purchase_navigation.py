@@ -266,9 +266,8 @@ def test_603_all_legacy_asset_version_contracts_match_live_templates():
             "tests/test_mobile_app_shell507.py",
         ), "tracker-mobile-shell507.js?v=603",
          "tracker-mobile-shell507.js?v=507"),
-        ("app/templates/quick_entry.html", (
-            "tests/test_release603_inventory_purchase_navigation.py",
-        ), "tracker-quick-entry.js?v=603",
+        ("app/templates/quick_entry.html", (),
+         "tracker-quick-entry.js?v=603",
          "tracker-quick-entry.js?v=20261103-metrics"),
     )
     for template_path, test_paths, current, obsolete in cases:
