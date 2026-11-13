@@ -1146,3 +1146,183 @@ def test_592_pk_schedule_batch_import_calendar_and_transform_signed(tab, scheme)
     assert not any(x["id"] in (sid, copy_id, imported_id)
                    for x in scenarios(cid))
     assert not errors, errors
+
+
+# Release 593: signed, persistence-checked PK guarded edits and historical
+# restoration. All writes target the disposable strict-CSRF browser database.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_593_pk_checked_batch_guarded_edit_and_revision_restore(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    landed = page.goto(base + "/pk", wait_until="networkidle")
+    assert landed is not None and landed.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    def signed(method, path, payload, expected=200, extra_headers=None):
+        sent = []
+        def capture(request):
+            if request.method == method and urlsplit(request.url).path == path:
+                sent.append(request.all_headers())
+        page.on("request", capture)
+        try:
+            result = page.evaluate("""async ({method,path,payload,headers}) => {
+                const response = await fetch(path, {
+                    method, credentials: 'same-origin',
+                    headers: {'Content-Type':'application/json', ...headers},
+                    body:JSON.stringify(payload)
+                });
+                return {status:response.status,
+                    csrf:response.headers.get('x-tracker-csrf-report'),
+                    data:await response.json()};
+            }""", {"method":method, "path":path, "payload":payload,
+                    "headers":extra_headers or {}})
+        finally:
+            page.remove_listener("request", capture)
+        assert result["status"] == expected, (method,path,result)
+        assert result["csrf"] == "valid", (method,path,result)
+        assert sent and sent[-1].get("x-tracker-csrf") == token
+        return result["data"]
+
+    def denied(method, path):
+        result = page.request.fetch(
+            base + path, method=method, data="{}",
+            headers={"Content-Type":"application/json"},
+            max_redirects=0)
+        assert result.status == 403, (scheme,method,path,result.status)
+
+    compound = signed("POST", "/pk/compounds",
+                      {"name":"Testosterone Cypionate"}, 201)
+    cid = compound["id"]
+    name = "QA guarded 593 " + scheme + " " + uuid4().hex[:8]
+    created = signed("POST","/pk/scenarios",{
+        "compound_id":cid, "name":name,
+        "half_life_hours":120, "absorption_half_life_hours":24
+    },201)
+    sid = created["id"]
+    base_path = f"/pk/scenarios/{sid}"
+    listing = base + f"/pk/scenarios?compound_id={cid}"
+
+    def saved():
+        response = page.request.get(listing)
+        assert response.status == 200
+        return next(row for row in response.json() if row["id"] == sid)
+
+    def revision():
+        response = page.request.get(base + base_path + "/revision")
+        assert response.status == 200
+        return response.json()["version"]
+
+    checked = base_path + "/doses/create-batch-checked"
+    denied("POST", checked)
+    created_batch = signed("POST",checked,{
+        "start_at":"2030-05-01T12:00:00", "amount_mg":1.0,
+        "interval_days":7, "count":2
+    },200,{"X-PK-Expected-Version":revision()})
+    assert created_batch["created"] == 2
+    assert len(saved()["doses"]) == 2
+    first = saved()["doses"][0]
+    edit = f"/pk/workspace/{sid}/edit-dose"
+    denied("POST",edit)
+    updated = signed("POST",edit,{
+        "dose_id":first["id"],"planned_at":"2030-05-02T12:00:00",
+        "amount_mg":5.0,"expected_version":revision()
+    })
+    assert updated["ok"] is True
+    assert any(d["amount_mg"] == 5.0 for d in saved()["doses"])
+
+    history_path = f"/pk/workspace/{sid}/revisions"
+    history = page.request.get(base + history_path)
+    assert history.status == 200
+    eligible = [h for h in history.json()
+                if h["restorable"] and h["action"] == "bulk_create"]
+    assert eligible, history.text()
+    audit_id = eligible[0]["id"]
+    preview_path = history_path + f"/{audit_id}/preview"
+    preview = page.request.get(base + preview_path)
+    assert preview.status == 200
+    assert preview.json()["restorable"] is True
+    restore_path = history_path + f"/{audit_id}/restore"
+    denied("POST",restore_path)
+    restored = signed("POST",restore_path,{"expected_version":revision()})
+    assert restored["audit_source"] == audit_id
+    assert any(d["amount_mg"] == 1.0 for d in saved()["doses"])
+    assert not any(d["amount_mg"] == 5.0 for d in saved()["doses"])
+    signed("DELETE",base_path,{},200)
+    assert not errors, errors
+
+
+# Release 593: stateless what-if previews and save, with persisted PK scenario.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_593_pk_what_if_preview_multi_and_save(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    landing = page.goto(base + "/pk", wait_until="networkidle")
+    assert landing is not None and landing.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    def signed(path, payload, status=200):
+        seen = []
+        def capture(request):
+            if request.method == "POST" and urlsplit(request.url).path == path:
+                seen.append(request.all_headers())
+        page.on("request",capture)
+        try:
+            result = page.evaluate("""async ({path,payload}) => {
+                const response = await fetch(path, {
+                    method:'POST',credentials:'same-origin',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify(payload)
+                });
+                return {status:response.status,
+                    csrf:response.headers.get('x-tracker-csrf-report'),
+                    data:await response.json()};
+            }""",{"path":path,"payload":payload})
+        finally:
+            page.remove_listener("request",capture)
+        assert result["status"] == status, (path,result)
+        assert result["csrf"] == "valid"
+        assert seen and seen[-1].get("x-tracker-csrf") == token
+        return result["data"]
+
+    def denied(path):
+        r = page.request.post(base+path, data="{}",
+                              headers={"Content-Type":"application/json"},
+                              max_redirects=0)
+        assert r.status == 403, (path,r.status)
+
+    cid = signed("/pk/compounds",
+                 {"name":"Testosterone Cypionate"},201)["id"]
+    schedule = {
+        "compound_id":cid,"name":"QA hypothetical 593 "+uuid4().hex[:8],
+        "start_at":"2030-01-01T12:00:00","interval_days":3,
+        "duration_days":21,"offset_days":0,
+        "stages":[{"week":1,"amount_mg":1.0,"interval_days":3}],
+        "half_life_hours":120,"absorption_half_life_hours":24
+    }
+    preview_path = "/pk/what-if/preview"
+    denied(preview_path)
+    preview = signed(preview_path,schedule)
+    assert preview["planned_doses"] > 0
+
+    multi_path = "/pk/what-if/multi-preview"
+    denied(multi_path)
+    multi = signed(multi_path,{"schedules":[schedule]})
+    assert len(multi["series"]) == 1
+    assert multi["series"][0]["dose_count"] > 0
+
+    save_path = "/pk/what-if/save"
+    denied(save_path)
+    created = signed(save_path,schedule,201)
+    assert created["planned_doses"] > 0
+    sid = created["id"]
+    scenarios = page.request.get(base+f"/pk/scenarios?compound_id={cid}")
+    assert scenarios.status == 200
+    assert any(x["id"] == sid for x in scenarios.json())
+    removed = page.evaluate("""async id => {
+        const r = await fetch('/pk/scenarios/'+id, {method:'DELETE'});
+        return {status:r.status,csrf:r.headers.get('x-tracker-csrf-report')};
+    }""",sid)
+    assert removed == {"status":200,"csrf":"valid"}
+    assert not errors, errors
