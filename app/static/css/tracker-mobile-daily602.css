@@ -100,6 +100,12 @@
     display: none;
   }
 
+  /* Dose History is the last section of this page. Reserve real scrollable
+     room AFTER the last card, so its bottom actions can move above the fixed
+     dock. scroll-padding/scroll-margin alone cannot create scroll range. */
+  #main-content #dose-history {
+    padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
+  }
   /* A horizontal .scroll wrapper becomes a vertical scroll container when
      overflow-y is hidden; that traps bottom-row controls behind the fixed
      mobile dock. Cards have no horizontal table to scroll, so let the page
