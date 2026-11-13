@@ -32,6 +32,7 @@ def test_600_density_is_phone_only_keeps_forms_and_dock_usable():
     assert ":root[data-density] #main-content" in css
     assert "--tracker-mobile600-gap" in css
     assert "--tracker-mobile600-pad" in css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in css
     assert "data-density=\"comfortable\"" in css
     assert "data-density=\"compact\"" in css
     assert "min-height: 44px" in css
