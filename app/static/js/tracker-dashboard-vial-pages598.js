@@ -10,7 +10,11 @@
     const previous = control.querySelector('[data-inventory-prev598]');
     const next = control.querySelector('[data-inventory-next598]');
     const status = control.querySelector('[data-inventory-status598]');
-    const search = document.querySelector('input[data-filter-target="inventory-rows"]');
+    // Pair each stock table with the search field in its own section.
+    // A global selector can bind another panel's search input instead.
+    const search = table.closest('section')?.querySelector(
+      'input[data-filter-target="inventory-rows"]')
+      || document.querySelector('input[data-filter-target="inventory-rows"]');
     const rows = Array.from(table.querySelectorAll(':scope > tr'));
     let page = 0;
 
