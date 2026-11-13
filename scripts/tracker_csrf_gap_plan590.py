@@ -18,6 +18,21 @@ ROOT = Path(__file__).resolve().parents[1]
 # Evidence points to explicit browser modules in the FULL strict qualification
 # gate. A strict-only targeted preflight never constitutes full clearance.
 EVIDENCE_MODULES = {
+    # Release 592: signed schedule and import workflows share the same
+    # mandatory full strict Chromium module; negative-only probes are excluded.
+    ("POST", "/pk/scenarios/{sid}/doses/generate-preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/doses/create-batch"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/doses/delete-batch"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/doses/undo-delete"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/staged-preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/staged-replace"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/calendar-preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/calendar-replace"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/workspace/{sid}/transform-preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/workspace/{sid}/transform-apply"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/duplicate"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/import-preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/import-confirm"): "tests/browser/test_strict_csrf521.py",
     # Release 591: same mandatory strict Chromium module already wired
     # into the full qualification. These seven routes have real signed
     # lifecycle tests, not just unsigned denial checks.
@@ -79,7 +94,8 @@ def build() -> dict:
     pk_module = "tests/browser/test_strict_csrf521.py"
     if pk_module in required:
         pk_source = (ROOT / pk_module).read_text()
-        if "def test_591_pk_scenario_json_lifecycle_signed_and_unsigned_rejected(" not in pk_source:
+        if ("def test_591_pk_scenario_json_lifecycle_signed_and_unsigned_rejected(" not in pk_source
+                or "def test_592_pk_schedule_batch_import_calendar_and_transform_signed(" not in pk_source):
             raise ValueError("PK 591 browser witness missing")
         if strict.count(pk_module) != 1:
             raise ValueError("PK 591 witness not exactly once in full strict gate")
