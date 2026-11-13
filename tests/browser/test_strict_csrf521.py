@@ -2344,6 +2344,15 @@ def test_602_mobile_dose_guidance_and_history_are_read_only(tab, scheme):
     assert row.locator("td:nth-child(6)").evaluate(
         "(el) => getComputedStyle(el).display"
     ) == "none"
+    # Mobile cards no longer require horizontal table scrolling. The
+    # wrapper must not silently become a nested vertical scroll container.
+    overflow = page.locator("#dose-history .scroll").evaluate(
+        """el => ({
+            x: getComputedStyle(el).overflowX,
+            y: getComputedStyle(el).overflowY
+        })"""
+    )
+    assert overflow == {"x": "visible", "y": "visible"}, overflow
     # This row is injected at the tail of the isolated test's history.
     # Align it in the usable part of the phone viewport before testing
     # a real pointer click; Playwright's automatic scroll checks only the
