@@ -40,6 +40,7 @@ def test_598_dashboard_vial_page_sizes_controls_and_search():
     assert 'tracker-dashboard-vial-pages598.js?v=598' in template
     assert 'tracker-dashboard-vial-pages598.css?v=598' in template
     assert "search?.addEventListener('input'" in js
+    assert "table.closest('section')?.querySelector(" in js
     assert "page = 0; render()" in js
     assert "row.hidden = !visible.has(row)" in js
     assert "sizeInput.value === 'all'" in js
@@ -63,6 +64,7 @@ def test_598_browser_gate_contains_real_http_and_https_ui_interactions():
         'selector.select_option("10")',
         'selector.select_option("all")',
         '.fill("vial 11")',
+        "decoy.id = 'tracker-qa-598-decoy'",
         'assert not errors, errors',
     ):
         assert phrase in body
