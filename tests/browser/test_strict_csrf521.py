@@ -1973,3 +1973,85 @@ def test_597_purchase_and_supply_inventory_signed(tab, scheme):
     assert query("SELECT count(*),sum(amount) FROM supply_usages WHERE supply_id=?",
                  (pill_id,)) == (1,3.0)
     assert not errors, errors
+
+
+# Release 598: end-to-end DOM behavior for the shared section-description
+# expander and dashboard in-stock vial pagination in real Chromium.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_598_explanation_expand_and_vial_pages(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 600, "height": 850})
+    response = page.goto(base + "/", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    page.wait_for_function("""() => [...document.querySelectorAll(
+      '.tracker-explanation598-toggle')].some(el => !el.hidden)""")
+    more = page.locator(".tracker-explanation598-toggle:visible").first
+    assert more.count() == 1
+    assert more.inner_text() == "More"
+    more.click()
+    assert more.inner_text() == "Less"
+    assert more.get_attribute("aria-expanded") == "true"
+    more.click()
+    assert more.inner_text() == "More"
+    assert more.get_attribute("aria-expanded") == "false"
+
+    # Strict QA may begin with no vials. Populate *only the DOM*, without
+    # altering or depending on another worker's database state.
+    page.evaluate("""() => {
+      document.querySelector('#tracker-qa-598')?.remove();
+      document.querySelector('#inventory-rows')?.removeAttribute('id');
+      document.querySelector('[data-inventory-pages598]')?.removeAttribute(
+        'data-inventory-pages598');
+      const section = document.createElement('section');
+      section.id = 'tracker-qa-598';
+      const search = document.createElement('input');
+      search.setAttribute('data-filter-target','inventory-rows');
+      section.appendChild(search);
+      const table = document.createElement('table');
+      const body = document.createElement('tbody');
+      body.id = 'inventory-rows';
+      for (let index=1; index<=13; index++) {
+        const row = document.createElement('tr');
+        row.dataset.search = 'test stock vial ' + index;
+        const cell = document.createElement('td');
+        cell.textContent = 'Vial ' + index;
+        row.appendChild(cell);
+        body.appendChild(row);
+      }
+      table.appendChild(body);
+      section.appendChild(table);
+      const nav = document.createElement('nav');
+      nav.setAttribute('data-inventory-pages598','');
+      nav.innerHTML =
+        '<select data-inventory-size598>' +
+        '<option value="5" selected>5</option>' +
+        '<option value="10">10</option>' +
+        '<option value="25">25</option>' +
+        '<option value="50">50</option>' +
+        '<option value="all">All</option></select>' +
+        '<button data-inventory-prev598>Previous</button>' +
+        '<output data-inventory-status598></output>' +
+        '<button data-inventory-next598>Next</button>';
+      section.appendChild(nav);
+      document.querySelector('main').appendChild(section);
+    }""")
+    page.add_script_tag(url=base + "/static/js/tracker-dashboard-vial-pages598.js?v=598")
+    assert page.locator("#inventory-rows > tr:visible").count() == 5
+    status = page.locator("#tracker-qa-598 [data-inventory-status598]")
+    assert "Showing 1–5 of 13" in status.inner_text()
+    page.locator("#tracker-qa-598 [data-inventory-next598]").click()
+    assert "Showing 6–10 of 13" in status.inner_text()
+    page.locator("#tracker-qa-598 [data-inventory-next598]").click()
+    assert page.locator("#inventory-rows > tr:visible").count() == 3
+    assert "Showing 11–13 of 13" in status.inner_text()
+    assert page.locator("#tracker-qa-598 [data-inventory-next598]").is_disabled()
+    selector=page.locator("#tracker-qa-598 [data-inventory-size598]")
+    selector.select_option("10")
+    assert page.locator("#inventory-rows > tr:visible").count() == 10
+    selector.select_option("all")
+    assert page.locator("#inventory-rows > tr:visible").count() == 13
+    page.locator("#tracker-qa-598 input[data-filter-target]").fill("vial 11")
+    assert page.locator("#inventory-rows > tr:visible").count() == 1
+    assert "Showing 1–1 of 1" in status.inner_text()
+    assert not errors, errors
