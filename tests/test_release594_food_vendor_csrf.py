@@ -36,9 +36,9 @@ def test_594_scope_and_route_counts_remain_source_only():
     assert report["strict_csrf_enforce_installed"] is False
     plan = gap.build()
     assert plan["status"] == "BLOCKED_SOURCE_ONLY_NOT_GLOBAL_CLEARANCE"
-    assert plan["source_witness_candidates"] == 70
-    assert plan["remaining_without_source_witness"] == 74
-    assert len(plan["source_witness_manifest"]) == 57
+    assert plan["source_witness_candidates"] == 77
+    assert plan["remaining_without_source_witness"] == 67
+    assert len(plan["source_witness_manifest"]) == 64
     assert plan["runtime_verified_by_this_report"] is False
     assert plan["strict_csrf_enforcement_change_authorized"] is False
     # No accidental blanket clearance for remaining food/vendor operations.
