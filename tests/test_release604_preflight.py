@@ -175,8 +175,29 @@ def test_604_release_gate_runs_before_expensive_qualification():
     assert script.index("RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER") < (
         script.index("ISOLATED BROWSER QUALIFICATION")
     )
-    assert "tests/test_release604_navigation_browser.py" in script
-    assert "tests/test_release604_preflight.py" in script
+    helper = source("scripts/tracker-focused-regression604.sh")
+    assert 'timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"' in script
+    for required in (
+        "tests/test_release_workflow.py",
+        "tests/test_release604_navigation_browser.py",
+        "tests/test_release604_preflight.py",
+        "tests/test_release603_inventory_purchase_navigation.py",
+        "tests/test_quick_entry_fast_paths.py",
+        "tests/test_long_page_navigation.py",
+    ):
+        assert required in helper, required
+    assert 'set -Eeuo pipefail' in helper
+    assert 'RELEASE_604_FOCUSED_PREFLIGHT=PASSED' in helper
+    assert script.count('"$PY" -m pytest') == 1
+    assert '--durations=20 tests ' in script
+    for filename in ("test_navigation_http_smoke.py",
+                     "test_restore_verification.py"):
+        assert f"--ignore=tests/{filename}" not in script
+    result = subprocess.run(
+        ["bash", "-n", str(ROOT / "scripts/tracker-focused-regression604.sh")],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
     assert "timeout 600 bash" in script
     assert 'bash "$QA/scripts/tracker-browser-qualify.sh"' in script
     assert "timeout 1200" in script
