@@ -63,7 +63,7 @@
   function headingSlug(value) {
     const normalized = value
       .normalize("NFKD")
-      .replace(/[\\u0300-\\u036f]/g, "")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
@@ -79,7 +79,7 @@
       if (heading.id) return;
 
       const title = heading.textContent
-        .replace(/\\s+/g, " ")
+        .replace(/\s+/g, " ")
         .trim();
 
       const base = "tracker-heading-" +
@@ -101,7 +101,7 @@
   function legacySectionTarget(id) {
     // Previously shared links used heading order.
     // Keep those URLs functional after this update.
-    const match = /^tracker-section-(\\d+)$/.exec(id);
+    const match = /^tracker-section-(\d+)$/.exec(id);
     if (!match) return null;
 
     const index = Number(match[1]) - 1;
