@@ -1706,3 +1706,147 @@ def test_595_food_templates_corrections_and_vendor_sheets(tab, scheme):
     assert query("SELECT count(*) FROM vendor_price_sheets WHERE id=?",(sid,))[0] == 0
     assert query("SELECT count(*) FROM vendor_price_entries WHERE sheet_id=?",(sid,))[0] == 0
     assert not errors, errors
+
+
+# Release 596: signed native multipart vendor-price archive and CSV import
+# workflows, with persisted-byte verification in the disposable database.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_596_vendor_multipart_and_csv_roundtrip_signed(tab, scheme):
+    import sqlite3
+
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    assert DATA.name == "data" and DATA.parent.parent == Path("/tmp").resolve()
+    assert re.fullmatch(r"tracker-browser-qa[.][A-Za-z0-9_]{8}", DATA.parent.name)
+    database = (DATA / "tracker.db").resolve()
+    assert database.parent == DATA and database.is_file() and not database.is_symlink()
+
+    def query(sql, params=()):
+        with sqlite3.connect(database) as connection:
+            return connection.execute(sql, params).fetchone()
+
+    landing = page.goto(base + "/vendor-prices", wait_until="networkidle")
+    assert landing is not None and landing.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+    vendor = "QA csv 596 " + uuid4().hex[:8]
+
+    def signed(route, fields, status=303, *, upload=None):
+        # Real browser fetch wrapper must sign both URL-encoded and multipart
+        # requests. Capture the original POST, not its eventual redirect.
+        with page.expect_response(lambda response: (
+            response.request.method == "POST"
+            and urlsplit(response.url).path == route
+        )) as pending:
+            result = page.evaluate("""async ({route,fields,upload}) => {
+                let body, headers = {};
+                if (upload) {
+                    body = new FormData();
+                    for (const [key,value] of Object.entries(fields))
+                        body.append(key,value);
+                    body.append('upload',new File([upload.content],
+                        upload.filename,{type:upload.mimeType}));
+                } else {
+                    body = new URLSearchParams(fields);
+                    headers['Content-Type']='application/x-www-form-urlencoded';
+                }
+                const response=await fetch(route,{
+                    method:'POST',credentials:'same-origin',headers,body
+                });
+                return {status:response.status,text:(await response.text()).slice(0,60000)};
+            }""", {"route":route,"fields":fields,"upload":upload})
+        response = pending.value
+        assert response.status == status, (scheme,route,response.status)
+        assert response.headers.get("x-tracker-csrf-report") == "valid", (
+            scheme,route,response.headers
+        )
+        assert response.request.all_headers().get("x-tracker-csrf") == token
+        assert result["status"] == 200, (scheme,route,result["status"])
+        return result["text"]
+
+    def denied_form(route, fields):
+        response = page.request.post(base+route,data=fields,max_redirects=0)
+        assert response.status == 403, (scheme,route,response.status)
+
+    def denied_upload(route, fields, content, filename="qa.csv"):
+        payload = dict(fields)
+        payload["upload"] = {
+            "name":filename,"mimeType":"text/csv",
+            "buffer":content.encode("utf-8")
+        }
+        response=page.request.post(base+route,multipart=payload,max_redirects=0)
+        assert response.status == 403, (scheme,route,response.status)
+
+    csv_text = ("vendor,item_name,content_amount,content_unit,package_type,"
+                "package_price,product_url\n"
+                f"{vendor},QA structured item,10,mg,vial,12.50,\n")
+    upload = {"filename":"qa-596.csv","mimeType":"text/csv","content":csv_text}
+
+    archive="/vendor-prices/attachments/upload"
+    fields={"vendor":vendor,"title":"Original source evidence 596"}
+    denied_upload(archive,fields,csv_text)
+    signed(archive,fields,upload=upload)
+    row=query("""SELECT id,filename,content FROM vendor_price_attachments
+        WHERE vendor=? ORDER BY id DESC LIMIT 1""",(vendor,))
+    assert row is not None
+    attachment_id, filename, saved_bytes = row
+    assert filename == "qa-596.csv" and saved_bytes == csv_text.encode()
+    download=page.request.get(base+f"/vendor-prices/attachments/{attachment_id}/download")
+    assert download.status == 200
+    assert download.body() == saved_bytes
+    assert download.headers.get("x-content-type-options") == "nosniff"
+
+    attachment_delete=f"/vendor-prices/attachments/{attachment_id}/delete"
+    denied_form(attachment_delete,{})
+    signed(attachment_delete,{})
+    assert query("SELECT count(*) FROM vendor_price_attachments WHERE id=?",
+                 (attachment_id,))[0] == 0
+
+    items_preview="/vendor-prices/items-csv/preview"
+    denied_upload(items_preview,{},csv_text)
+    preview_html=signed(items_preview,{},status=200,upload=upload)
+    assert "QA structured item" in preview_html
+    assert query("SELECT count(*) FROM vendor_price_entries WHERE item_name=?",
+                 ("QA structured item",))[0] == 0
+
+    items_save="/vendor-prices/items-csv/save"
+    review=("vendor\titem_name\tcontent_amount\tcontent_unit\tpackage_type"
+            "\tpackage_price\tproduct_url\n"
+            f"{vendor}\tQA structured item\t10\tmg\tvial\t12.50\t\n")
+    denied_form(items_save,{"review_text":review})
+    signed(items_save,{"review_text":review})
+    structured=query("""SELECT e.id,e.total_price_cents,e.vial_count
+      FROM vendor_price_entries e JOIN vendor_price_sheets s ON e.sheet_id=s.id
+      WHERE s.vendor=? AND e.item_name=?""",(vendor,"QA structured item"))
+    assert structured is not None and structured[1:] == (1250,1)
+
+    bulk_preview="/vendor-prices/bulk/preview"
+    bulk=("id,vendor,item_name,content_amount,content_unit,package,vial_count,"
+          "total_price,product_url\n"
+          f",{vendor},QA bulk new 596,15,mg,vial,1,19.75,\n")
+    denied_upload(bulk_preview,{},bulk)
+    bulk_html=signed(bulk_preview,{},status=200,upload={
+        "filename":"qa-596-bulk.csv","mimeType":"text/csv","content":bulk})
+    assert "QA bulk new 596" in bulk_html
+    assert query("SELECT count(*) FROM vendor_price_entries WHERE item_name=?",
+                 ("QA bulk new 596",))[0] == 0
+
+    bulk_save="/vendor-prices/bulk/save"
+    denied_form(bulk_save,{"review_text":bulk})
+    signed(bulk_save,{"review_text":bulk})
+    assert query("""SELECT e.total_price_cents FROM vendor_price_entries e
+        JOIN vendor_price_sheets s ON s.id=e.sheet_id
+        WHERE s.vendor=? AND e.item_name=?""",
+        (vendor,"QA bulk new 596")) == (1975,)
+
+    legacy_preview="/vendor-prices/preview"
+    legacy_text="QA Legacy Item,10 mg/vial,vial,1,24.00\n"
+    denied_upload(legacy_preview,{"vendor":vendor},legacy_text)
+    legacy_html=signed(legacy_preview,{"vendor":vendor,"sheet_name":"QA Legacy 596"},
+                       status=200,upload={
+                           "filename":"qa-596-legacy.csv",
+                           "mimeType":"text/csv","content":legacy_text})
+    assert "QA Legacy Item" in legacy_html
+    assert query("SELECT count(*) FROM vendor_price_sheets WHERE vendor=? AND name=?",
+                 (vendor,"QA Legacy 596"))[0] == 0
+    assert not errors, errors
