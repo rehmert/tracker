@@ -145,6 +145,8 @@ def test_602_mobile_density_and_existing_quick_navigation():
     assert css.count("{") == css.count("}")
     assert "scroll-padding-bottom: calc(5.4rem" in css
     assert "scroll-margin-bottom: calc(5.4rem" in css
+    assert "#main-content #dose-history .scroll {" in css
+    assert "overflow: visible;" in css
     assert quick.count("tracker-mobile-daily602.css?v=602") == 1
     assert 'data-quick-search' in quick
     assert 'data-quick-action' in quick
@@ -173,4 +175,14 @@ def test_602_no_backend_mutations_and_browser_matrix():
     assert "tracker-dose-fast602" in test
     assert "tracker-dose-history602" in test
     assert "document.elementFromPoint(x, y)" in test
+    assert 'overflow == {"x": "visible", "y": "visible"}' in test
     assert "toggle.click(force=True)" not in test
+
+
+def test_602_notes_user_titles_are_not_reformatted():
+    template = source("app/templates/page_view.html")
+    browser = BROWSER.read_text()
+    assert '<h1 data-no-title-case>{{ p.title }}</h1>' in template
+    assert 'expect(heading).to_have_text(updated)' in browser
+    assert "to_have_value(updated)" in browser
+    templates.env.get_template("page_view.html")
