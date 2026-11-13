@@ -18,6 +18,16 @@ ROOT = Path(__file__).resolve().parents[1]
 # Evidence points to explicit browser modules in the FULL strict qualification
 # gate. A strict-only targeted preflight never constitutes full clearance.
 EVIDENCE_MODULES = {
+    # Release 591: same mandatory strict Chromium module already wired
+    # into the full qualification. These seven routes have real signed
+    # lifecycle tests, not just unsigned denial checks.
+    ("POST", "/pk/compounds"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios"): "tests/browser/test_strict_csrf521.py",
+    ("PUT", "/pk/scenarios/{sid}"): "tests/browser/test_strict_csrf521.py",
+    ("DELETE", "/pk/scenarios/{sid}"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/scenarios/{sid}/doses"): "tests/browser/test_strict_csrf521.py",
+    ("PUT", "/pk/scenarios/{sid}/doses/{did}"): "tests/browser/test_strict_csrf521.py",
+    ("DELETE", "/pk/scenarios/{sid}/doses/{did}"): "tests/browser/test_strict_csrf521.py",
     ("POST", "/coas/new"): "tests/browser/test_csrf_multipart588.py",
     ("POST", "/vials/bulk/validate-selection"): "tests/browser/test_csrf_bulk587.py",
     ("POST", "/vials/bulk/preview"): "tests/browser/test_csrf_bulk587.py",
@@ -63,6 +73,16 @@ def build() -> dict:
     if strict.count(full_marker) < 1 or "ISOLATED_STRICT_CSRF_BROWSER=PASSED" not in strict:
         raise ValueError("Full strict gate missing")
     required = sorted(set(EVIDENCE_MODULES.values()))
+    # Release 521 is mandatory in the standard full strict pass, not in
+    # the optional 589 replay. Verify both its runner wiring and the
+    # concrete 591 PK test function before counting these routes.
+    pk_module = "tests/browser/test_strict_csrf521.py"
+    if pk_module in required:
+        pk_source = (ROOT / pk_module).read_text()
+        if "def test_591_pk_scenario_json_lifecycle_signed_and_unsigned_rejected(" not in pk_source:
+            raise ValueError("PK 591 browser witness missing")
+        if strict.count(pk_module) != 1:
+            raise ValueError("PK 591 witness not exactly once in full strict gate")
     # Delimit the actual combined 587/588 full-only gate. A targeted-only
     # replay cannot satisfy the qualification requirement.
     full_section_start = "# Combined Release 587–588: isolate bulk inventory browser writes"
@@ -75,7 +95,7 @@ def build() -> dict:
     for module in required:
         if not (ROOT / module).is_file():
             raise ValueError("Missing browser witness: " + module)
-        if full_section.count(module) != 1:
+        if module != pk_module and full_section.count(module) != 1:
             raise ValueError("Witness not scheduled exactly once in full gate: " + module)
     uncovered = []
     covered = []
