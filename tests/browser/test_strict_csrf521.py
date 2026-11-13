@@ -1326,3 +1326,126 @@ def test_593_pk_what_if_preview_multi_and_save(tab, scheme):
     }""",sid)
     assert removed == {"status":200,"csrf":"valid"}
     assert not errors, errors
+
+
+# Release 593: saved-protocol experiment library over real signed Chromium.
+# A purpose-built Protocol and ProtocolItem live only in the isolated
+# /tmp/tracker-browser-qa.* SQLite database, never the installed app.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_593_pk_workbench_and_experiment_library_signed(tab, scheme):
+    from datetime import date
+    from sqlalchemy import create_engine, event
+    from sqlalchemy.orm import Session
+    from app.models import Protocol, ProtocolItem
+
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    assert DATA.name == "data" and DATA.parent.parent == Path("/tmp").resolve()
+    assert re.fullmatch(r"tracker-browser-qa[.][A-Za-z0-9_]{8}", DATA.parent.name)
+    path = (DATA / "tracker.db").resolve()
+    assert path.parent == DATA and path.is_file() and not path.is_symlink()
+    landed = page.goto(base + "/pk", wait_until="networkidle")
+    assert landed is not None and landed.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    def signed(method, route, payload, status=200):
+        captured = []
+        def capture(request):
+            if request.method == method and urlsplit(request.url).path == route:
+                captured.append(request.all_headers())
+        page.on("request",capture)
+        try:
+            result = page.evaluate("""async ({method,route,payload}) => {
+                const response=await fetch(route,{
+                    method,credentials:'same-origin',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify(payload)
+                });
+                return {status:response.status,
+                    csrf:response.headers.get('x-tracker-csrf-report'),
+                    data:await response.json()};
+            }""",{"method":method,"route":route,"payload":payload})
+        finally:
+            page.remove_listener("request",capture)
+        assert result["status"] == status, (scheme,method,route,result)
+        assert result["csrf"] == "valid", (method,route,result)
+        assert captured and captured[-1].get("x-tracker-csrf") == token
+        return result["data"]
+
+    def denied(method,route):
+        response=page.request.fetch(
+            base+route,method=method,data="{}",
+            headers={"Content-Type":"application/json"},
+            max_redirects=0)
+        assert response.status == 403, (method,route,response.status)
+
+    compound=signed("POST","/pk/compounds",
+                    {"name":"Testosterone Cypionate"},201)
+    cid=compound["id"]
+
+    engine=create_engine(f"sqlite:///{path}",
+                         connect_args={"check_same_thread":False})
+    @event.listens_for(engine,"connect")
+    def pragmas(connection, record):
+        connection.execute("PRAGMA foreign_keys=ON")
+    try:
+        with Session(engine) as db:
+            protocol=Protocol(
+                name="QA experiment 593 "+uuid4().hex[:8],
+                start_date=date(2030,1,1),is_active=True,
+                horizon_weeks=12)
+            db.add(protocol)
+            db.flush()
+            pid=protocol.id
+            db.add(ProtocolItem(
+                protocol_id=pid,compound_id=cid,position=0,
+                amount_value=2.0,amount_unit="mg",
+                freq_count=1,freq_period="week",
+                start_week=1,dose_days="",dose_time="12:00"))
+            db.commit()
+        assert pid > 0
+        workbench=f"/pk/workbench/{pid}"
+        settings={"compound_id":cid,"horizon_days":28}
+        denied("POST",workbench)
+        output=signed("POST",workbench,settings)
+        assert output["protocol"] == protocol.name
+
+        library=f"/pk/library/{pid}"
+        def listing():
+            response=page.request.get(base+library)
+            assert response.status == 200
+            return response.json()
+
+        data={"name":"QA saved 593 A "+uuid4().hex[:8],
+              "notes":"initial","settings":settings}
+        denied("POST",library)
+        first=signed("POST",library,data)
+        first_id=first["id"]
+        assert re.fullmatch(r"[0-9a-f]{32}",first_id)
+        assert any(x["id"] == first_id for x in listing())
+
+        another=signed("POST",library,{**data,"name":data["name"]+" B"})
+        second_id=another["id"]
+        assert second_id != first_id
+
+        revise=f"{library}/{first_id}"
+        denied("PUT",revise)
+        changed=signed("PUT",revise,{**data,"name":data["name"]+" revised"})
+        assert changed["name"] == data["name"]+" revised"
+        saved=next(x for x in listing() if x["id"] == first_id)
+        assert len(saved["revisions"]) == 1
+
+        compare=library+"/compare"
+        denied("POST",compare)
+        result=signed("POST",compare,{"ids":[first_id,second_id]})
+        assert len(result["experiments"]) == 2
+
+        for ident in (first_id,second_id):
+            delete=f"{library}/{ident}"
+            denied("DELETE",delete)
+            assert signed("DELETE",delete,{})["ok"] is True
+        assert listing() == []
+        assert not errors, errors
+    finally:
+        engine.dispose()
