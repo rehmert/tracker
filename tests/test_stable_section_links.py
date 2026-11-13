@@ -59,9 +59,9 @@ def test_global_script_version():
         ROOT / "app/templates/base.html"
     ).read_text()
 
-    assert (
-        "tracker-section-deep-links.js"
-        "?v=20261103-stable"
-    ) in html
+    # The global script must load the current, cache-busted Release 601
+    # version so users do not keep the pre-fix legacy-anchor regexes.
+    assert html.count("tracker-section-deep-links.js?v=601") == 1
+    assert "tracker-section-deep-links.js?v=20261103-stable" not in html
 
     templates.env.get_template("base.html")
