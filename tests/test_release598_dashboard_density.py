@@ -57,7 +57,7 @@ def test_598_browser_gate_contains_real_http_and_https_ui_interactions():
     assert '@pytest.mark.parametrize("scheme", ("http", "https"))' in before[-140:]
     for phrase in (
         'page.set_viewport_size({"width": 600, "height": 850})',
-        '"tracker-explanation598-toggle:visible"',
+        'page.locator(".tracker-explanation598-toggle:visible").first',
         'more.click()',
         'page.add_script_tag(url=base + "/static/js/tracker-dashboard-vial-pages598.js?v=598")',
         'selector.select_option("10")',
