@@ -2302,3 +2302,138 @@ def test_601_mobile_today_and_legacy_section_navigation(tab, scheme):
         "() => !!document.getElementById('tracker-heading-creme-brulee')"
     )
     assert not errors, errors
+
+
+# Release 602: canonical dose form remains the only write path. The phone
+# guide and responsive history decorate existing DOM without a request.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_602_mobile_dose_guidance_and_history_are_read_only(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 390, "height": 844})
+    response = page.goto(base + "/doses", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    assert page.locator(
+        'script[src*="tracker-dose-fast602.js"]'
+    ).count() == 1
+    assert page.locator(
+        'script[src*="tracker-dose-history602.js"]'
+    ).count() == 1
+    assert page.locator('form[hx-post="/doses"]').count() <= 1
+
+    page.evaluate("""() => {
+      const row = document.createElement('tr');
+      row.id = 'tracker-qa-dose602';
+      row.innerHTML =
+        '<td>2026-11-13 10:00</td><td>QA compound</td>' +
+        '<td>QA vial</td><td>1 mg</td><td>1 mg</td>' +
+        '<td>$0</td><td>Abdomen</td><td><a href="#dose-history">View</a></td>';
+      const body = document.getElementById('dose-body');
+      body.append(row);
+      body.dispatchEvent(new Event('htmx:afterSwap', {bubbles:true}));
+    }""")
+    row = page.locator("#tracker-qa-dose602")
+    toggle = row.locator(".tracker-dose-history-toggle602")
+    expect(toggle).to_be_visible()
+    expect(toggle).to_have_attribute("aria-expanded", "false")
+    assert row.locator("td:nth-child(6)").evaluate(
+        "(el) => getComputedStyle(el).display"
+    ) == "none"
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-expanded", "true")
+    assert row.locator("td:nth-child(6)").evaluate(
+        "(el) => getComputedStyle(el).display"
+    ) != "none"
+
+    page.set_viewport_size({"width": 1024, "height": 900})
+    expect(toggle).to_be_hidden()
+    assert row.locator("td:nth-child(6)").evaluate(
+        "(el) => getComputedStyle(el).display"
+    ) != "none"
+
+    # A synthetic isolated form proves the progress component reads values
+    # but never submits them, even with all three details present.
+    response = page.goto(base + "/quick-entry", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    page.set_viewport_size({"width": 390, "height": 844})
+    posts = []
+    page.on("request", lambda request: (
+        posts.append(request.url) if request.method == "POST" else None
+    ))
+    page.evaluate("""() => {
+      const host = document.createElement('section');
+      host.id = 'tracker-qa-602-progress';
+      host.innerHTML =
+        '<div data-dose-fast602>' +
+        '<a data-dose-step602="vial" href="#v">Vial</a>' +
+        '<a data-dose-step602="amount" href="#a">Amount</a>' +
+        '<a data-dose-step602="when" href="#w">Time</a>' +
+        '<a data-dose-step602="review" href="#r">Review</a>' +
+        '<p data-dose-progress602 role="status"></p></div>' +
+        '<form hx-post="/doses">' +
+        '<select name="vial_id"><option value="">None</option>' +
+        '<option value="1">QA vial</option></select>' +
+        '<input name="amount" type="number" value="0">' +
+        '<input name="taken_at" type="datetime-local">' +
+        '<input name="use_remaining" type="checkbox"></form>';
+      document.getElementById('main-content').append(host);
+    }""")
+    page.add_script_tag(url=base + "/static/js/tracker-dose-fast602.js?v=602")
+    status = page.locator("#tracker-qa-602-progress [data-dose-progress602]")
+    expect(status).to_contain_text("0 of 3")
+    form = page.locator("#tracker-qa-602-progress form")
+    form.locator('select[name="vial_id"]').select_option("1")
+    form.locator('input[name="amount"]').fill("0.25")
+    form.locator('input[name="taken_at"]').fill("2026-11-13T10:30")
+    expect(status).to_contain_text("3 of 3")
+    expect(page.locator(
+        '#tracker-qa-602-progress [data-dose-step602="review"]'
+    )).to_have_attribute("data-complete602", "false")
+    assert not posts, posts
+    assert not errors, errors
+
+
+# Release 602: phone Food Journal should lead to reusable foods without
+# hiding nutrient data or altering the native form and quick-log semantics.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_602_food_and_quick_entry_phone_density(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 390, "height": 844})
+    response = page.goto(base + "/food", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    expect(page.locator("#food-quick-log")).to_have_attribute("open", "")
+    expect(page.locator(".food-mobile-actions602")).to_be_visible()
+    expect(page.locator("#food500-quick-search")).to_be_visible()
+    assert page.evaluate("""() => {
+      const grid = document.querySelector('.food423-macros');
+      return grid && getComputedStyle(grid).gridTemplateColumns.split(' ').length === 2;
+    }""")
+    page.locator("#food500-quick-search").fill("qa-no-match-602")
+    expect(page.locator("#food500-quick-count")).to_contain_text(
+        "reusable food entries"
+    )
+
+    page.set_viewport_size({"width": 320, "height": 844})
+    assert page.evaluate("""() => {
+      const grid = document.querySelector('.food423-macros');
+      return grid && getComputedStyle(grid).gridTemplateColumns.split(' ').length === 1;
+    }""")
+    page.set_viewport_size({"width": 390, "height": 844})
+    response = page.goto(base + "/quick-entry", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    expect(page.locator(".tracker-quick-entry-card").first).to_be_visible()
+    assert page.evaluate("""() => {
+      const grid = document.querySelector('.tracker-quick-entry-grid');
+      const links = document.querySelector('.tracker-quick-fast-paths');
+      return grid && links &&
+        getComputedStyle(grid).gridTemplateColumns.split(' ').length === 2 &&
+        links.scrollWidth > links.clientWidth;
+    }""")
+    page.set_viewport_size({"width": 320, "height": 844})
+    assert page.evaluate("""() => {
+      const grid = document.querySelector('.tracker-quick-entry-grid');
+      return grid &&
+        getComputedStyle(grid).gridTemplateColumns.split(' ').length === 1;
+    }""")
+    assert not errors, errors
