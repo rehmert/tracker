@@ -41,9 +41,21 @@ def test_594_scope_and_route_counts_remain_source_only():
     assert len(plan["source_witness_manifest"]) == 64
     assert plan["runtime_verified_by_this_report"] is False
     assert plan["strict_csrf_enforcement_change_authorized"] is False
-    # No accidental blanket clearance for remaining food/vendor operations.
-    assert any(row["path"].startswith("/food/") for row in plan["unqualified_routes"])
-    assert any(row["path"].startswith("/vendor-prices/") for row in plan["unqualified_routes"])
+    # Release 596 has source witnesses for every vendor-price unsafe route.
+    # This is not runtime/global clearance: other routes remain unqualified.
+    assert any(x["path"].startswith("/food/") for x in plan["unqualified_routes"])
+    vendor_routes = {
+        (route["method"], route["path"])
+        for route in report["routes"]
+        if route["path"].startswith("/vendor-prices/")
+    }
+    assert len(vendor_routes) == 14
+    assert vendor_routes <= readiness.BROWSER_WITNESS_CANDIDATES
+    assert vendor_routes <= set(gap.EVIDENCE_MODULES)
+    assert not any(
+        x["path"].startswith("/vendor-prices/")
+        for x in plan["unqualified_routes"]
+    )
 
 
 def test_594_real_chromium_signed_form_witness_and_disposable_db():
