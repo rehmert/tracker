@@ -1,0 +1,13 @@
+/* Release 598: Dashboard vial stock pager. */
+.tracker-inventory-pages598 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-top: .75rem;
+}
+.tracker-inventory-pages598 label { display: inline-flex; align-items: center; gap: .4rem; }
+.tracker-inventory-pages598 select { width: auto; min-width: 5rem; }
+.tracker-inventory-pages598 [data-inventory-status598] { margin-inline: auto; }
+.tracker-inventory-pages598 button:disabled { opacity: .45; cursor: default; }
+#inventory-rows > tr[hidden] { display: none !important; }
