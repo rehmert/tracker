@@ -188,7 +188,7 @@ def test_500_quick_food_filters_preserve_existing_submit_forms():
         'data-food500-scope="favorites"',
         'data-food500-scope="recent"',
         'id="food500-recent"',
-        'tracker-food500.js?v=500',
+        'tracker-food500.js?v=602',
     ):
         assert marker in markup, marker
     assert 'action="/food/quick/{{ item.id }}"' in markup
