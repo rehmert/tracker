@@ -29,7 +29,7 @@ def test_600_mobile_assets_are_loaded_after_existing_global_styles():
 def test_600_density_is_phone_only_keeps_forms_and_dock_usable():
     css = CSS.read_text()
     assert "@media screen and (max-width: 760px)" in css
-    assert ":root #main-content" in css
+    assert ":root[data-density] #main-content" in css
     assert "--tracker-mobile600-gap" in css
     assert "--tracker-mobile600-pad" in css
     assert "data-density=\"comfortable\"" in css
