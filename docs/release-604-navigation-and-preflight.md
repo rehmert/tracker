@@ -37,7 +37,9 @@ candidate Git worktree* after source parsing and before browser qualification:
 4. For changed asset URLs, scan **unchanged** test files for positive
    assertions requiring obsolete version strings. Negative/historical fixtures
    and modified tests are not treated as stale positive contracts.
-5. Return nonzero with exact paths and reasons before the costly browser and
+5. Run the focused Release 604 source, navigation and isolated Chromium
+   tests (with a 180-second cap) before the complete browser suite on DEV.
+6. Return nonzero with exact paths and reasons before the costly browser and
    backend gates. Does not change the strict-CSRF, qualification, signing,
    backup, rollback or deployment procedures.
 
