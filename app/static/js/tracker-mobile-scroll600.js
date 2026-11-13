@@ -53,6 +53,7 @@
       hash: location.hash,
       id: select.id || '',
       name: select.name,
+      action: form.getAttribute('action') || '',
       peer: peers.indexOf(select),
       top: Math.round(top),
       savedAt: Date.now()
@@ -109,7 +110,8 @@
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const peers = Array.from(document.querySelectorAll('select')).filter(
         select => eligible(select) && select.name === item.name &&
-          select.form && select.form.method.toLowerCase() === 'get'
+          select.form && select.form.method.toLowerCase() === 'get' &&
+          (select.form.getAttribute('action') || '') === item.action
       );
       const select = (item.id && document.getElementById(item.id)) ||
         peers[item.peer];
