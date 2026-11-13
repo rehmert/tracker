@@ -74,3 +74,22 @@ The strict HTTP/HTTPS browser check continues to require **genuine** overflow
 scroll container rather than the outer navigation node. The isolated Chromium
 fixture also loads the Release 602 styling alongside Release 604 and checks
 overflow at 320 and 390px. The full DEV gate must still pass before promotion.
+
+## Regression addressed in third DEV qualification
+
+The second DEV run passed the strict browser gate and reached 2,165 backend
+passes before the old `tests/test_release_workflow.py` safety contract caught a
+second `"$PY" -m pytest` invocation inside `tracker-release.sh`.
+That contract intentionally verifies that the canonical full backend suite
+remains the **single** pytest command in the deployment script.
+
+The focused regression is now delegated to
+`scripts/tracker-focused-regression604.sh` (180-second outer timeout)
+without modifying the canonical complete-suite invocation. The helper
+also runs `tests/test_release_workflow.py` **before** the expensive browser
+suite. `tests/test_release604_preflight.py` checks the helper's presence,
+the safety tests, the exact one-command legacy contract, shell syntax, and
+the preserved full backend collection.
+
+These are source/test-runner changes only; the application templates and
+styling from the corrected mobile layout remain unchanged.
