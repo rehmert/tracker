@@ -33,3 +33,15 @@ Full DEV qualification must pass before these new browser witnesses
 are runtime-verified. The source planner is not runtime evidence;
 global CSRF stays report-only. Promote with the existing guarded
 dry-run and authorized execute only after DEV succeeds.
+
+## OOM recovery adjustment
+
+The first DEV attempt was terminated by the LXC/systemd OOM killer before
+ordinary browser qualification completed (exit 143). The worker peaked at
+3.2 GiB, under its own 6 GiB MemoryMax, while host swap was exhausted.
+The candidate's isolated browser runner now caps its three pytest-xdist
+invocations to **four** workers instead of 16. This retains every test,
+transport, required marker, and fail-closed response check. The installed
+release-controller copy still uses its existing backend regression behavior;
+no deployed application or service configuration is changed by this patch.
+Do not treat the previous failure as a failed CSRF compatibility assertion.
