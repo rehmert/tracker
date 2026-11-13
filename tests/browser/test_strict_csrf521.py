@@ -2063,3 +2063,32 @@ def test_598_explanation_expand_and_vial_pages(tab, scheme):
     assert page.locator("#inventory-rows > tr:visible").count() == 1
     assert "Showing 1–1 of 1" in status.inner_text()
     assert not errors, errors
+
+# Release 599: actual dashboard headings must be correctly title-cased
+# on both isolated HTTP and HTTPS Chromium candidates.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_599_dashboard_headings_http_https(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    today_heading = page.locator(
+        'section[data-dashboard-panel="2"] .today-card h3'
+    ).first
+    expect(today_heading).to_have_text("Today's Administrations")
+    expect(page.locator(
+        'section[data-dashboard-panel="2"] .today-card h3'
+    ).nth(1)).to_have_text("Upcoming · Next 3 Days")
+
+    # Test both straight and curly apostrophes on an inserted heading.
+    page.evaluate("""() => {
+      document.querySelector('#tracker-qa-599-possessives')?.remove();
+      const heading = document.createElement('h3');
+      heading.id = 'tracker-qa-599-possessives';
+      heading.textContent = "Today's tasks · Tomorrow’s doses";
+      document.querySelector('#main-content').appendChild(heading);
+    }""")
+    expect(page.locator('#tracker-qa-599-possessives')).to_have_text(
+        "Today's Tasks · Tomorrow’s Doses"
+    )
+    assert not errors, errors
