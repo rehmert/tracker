@@ -2335,7 +2335,12 @@ def test_602_mobile_dose_guidance_and_history_are_read_only(tab, scheme):
         '<td>$0</td><td>Abdomen</td><td><a href="#dose-history">View</a></td>';
       const body = document.getElementById('dose-body');
       body.append(row);
-      body.dispatchEvent(new Event('htmx:afterSwap', {bubbles:true}));
+      // HTMX emits a CustomEvent with detail.target. A plain Event lacks
+      // detail and breaks existing dose_context.js observers.
+      body.dispatchEvent(new CustomEvent('htmx:afterSwap', {
+        bubbles: true,
+        detail: {target: body}
+      }));
     }""")
     row = page.locator("#tracker-qa-dose602")
     toggle = row.locator(".tracker-dose-history-toggle602")
