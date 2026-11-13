@@ -2224,6 +2224,10 @@ def test_601_mobile_vial_cards_preserve_table_controls(tab, scheme):
         expect(row).to_have_attribute("data-vial-expanded601", "true")
         control.click()
         expect(control).to_have_attribute("aria-expanded", "false")
+        # Selection must survive a presentation change without a POST.
+        check = row.locator("input.bulk-vial-check")
+        check.check()
+        expect(check).to_be_checked()
 
     toggle.click()
     expect(toggle).to_have_attribute("aria-pressed", "false")
@@ -2233,6 +2237,8 @@ def test_601_mobile_vial_cards_preserve_table_controls(tab, scheme):
     assert table.locator("thead").evaluate(
         "(el) => getComputedStyle(el).display"
     ) != "none"
+    if rows.count():
+        expect(rows.first.locator("input.bulk-vial-check")).to_be_checked()
 
     toggle.click()
     expect(toggle).to_have_attribute("aria-pressed", "true")
