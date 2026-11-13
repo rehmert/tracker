@@ -2107,7 +2107,8 @@ def test_600_mobile_get_filter_preserves_dropdown_position(tab, scheme):
       const install = () => {
         const style = document.createElement('style');
         style.textContent =
-          '#main-content::before {content:"";display:block;height:1050px}';
+          '#main-content::before {content:"";display:block;height:1050px}' +
+          '#main-content::after {content:"";display:block;height:900px}';
         document.head.appendChild(style);
       };
       if (document.readyState === 'loading') {
