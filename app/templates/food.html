@@ -14,13 +14,15 @@
 <link rel="stylesheet" href="/static/css/tracker-food423.css?v=423">
 <link rel="stylesheet" href="/static/css/tracker-food424.css?v=424">
 <link rel="stylesheet" href="/static/css/tracker-food425.css?v=425">
+<link rel="stylesheet" href="/static/css/tracker-mobile-daily602.css?v=602">
+<script defer src="/static/js/tracker-food-mobile602.js?v=602"></script>
 <script src="/static/js/tracker-food424.js?v=424" defer></script>
 <script src="/static/js/tracker-food384.js?v=384" defer></script>
 <script src="/static/js/tracker-food382.js?v=382" defer></script>
 <script src="/static/js/tracker-food380.js?v=499" defer></script>
 <script src="/static/js/tracker-food374.js?v=499" defer></script>
 <script src="/static/js/tracker-food499.js?v=499" defer></script>
-<script src="/static/js/tracker-food500.js?v=500" defer></script>
+<script src="/static/js/tracker-food500.js?v=602" defer></script>
 <h1>Food Journal</h1>
 <p class="note">Tap a section below to expand it.
 Daily totals remain visible; nutrient values can be incomplete.
@@ -31,7 +33,7 @@ Confirm package-label values before saving.</p>
 <a href="/food?day={{ next_day }}">Next →</a>
 </nav>
 <form method="get" action="/food" class="food-date"><label>Day <input type="date" name="day" value="{{ day }}"></label><button>Show</button></form>
-<nav class="food424-actions" aria-label="Fast food logging actions">
+<nav class="food424-actions food-mobile-actions602" aria-label="Fast food logging actions">
 <a href="#food-quick-log">Log Favorite</a>
 <a href="#food-add">Scan / Add</a>
 <a href="#food-search">Saved Foods</a>
