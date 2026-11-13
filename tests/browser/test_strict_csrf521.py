@@ -2494,3 +2494,100 @@ def test_602_food_and_quick_entry_phone_density(tab, scheme):
         getComputedStyle(grid).gridTemplateColumns.split(' ').length === 1;
     }""")
     assert not errors, errors
+
+
+# Release 603: the existing purchase filter and POST form stay authoritative.
+# Phone cards only change CSS on the exact server-rendered table rows.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_603_purchase_phone_cards_dates_and_native_order_fields(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 390, "height": 844})
+    response = page.goto(base + "/purchases", wait_until="networkidle")
+    assert response is not None and response.status == 200
+
+    table = page.locator("#purchase-history-table")
+    controls = page.locator(".tracker-purchase-mobile-controls603")
+    expect(controls).to_be_visible()
+    expect(table).to_have_class(re.compile("tracker-purchase-cards603"))
+    assert page.locator("#purchase-history .scroll").evaluate(
+        "(el) => getComputedStyle(el).overflowY"
+    ) == "visible"
+
+    order = page.locator('form[action="/purchases"][method="post"]')
+    assert order.count() == 1
+    assert order.locator('input[name="submission_token"]').count() == 1
+    details = order.locator(".purchase-optional603")
+    assert details.evaluate("(el) => el.open") is False
+    # Closed native details do not disable any form fields, and therefore
+    # cannot accidentally omit shipping, tax, discount, or notes on save.
+    assert order.evaluate("""form => {
+      const data = new FormData(form);
+      return ['vendor','purchased_on','order_ref','shipping','tax',
+              'discount','notes','submission_token']
+        .every(name => data.has(name));
+    }""")
+    details.locator("summary").click()
+    expect(details.locator('input[name="shipping"]')).to_be_visible()
+
+    advanced = page.locator(".purchase-review-more603")
+    assert advanced.evaluate("(el) => el.open") is False
+    advanced.locator("summary").click()
+    page.locator("[data-purchase-from]").fill("2026-01-01")
+    expect(page.locator("[data-purchase-date-active603]")).to_be_visible()
+    page.locator("[data-purchase-reset]").click()
+    expect(page.locator("[data-purchase-date-active603]")).to_be_hidden()
+
+    controls.get_by_role("button", name="Full sortable table").click()
+    assert "tracker-purchase-cards603" not in (
+        table.get_attribute("class") or ""
+    )
+    expect(controls.get_by_role("button", name="Card view")).to_be_visible()
+    controls.get_by_role("button", name="Card view").click()
+    expect(table).to_have_class(re.compile("tracker-purchase-cards603"))
+
+    page.set_viewport_size({"width": 1024, "height": 900})
+    expect(controls).to_be_hidden()
+    assert advanced.evaluate("(el) => el.open") is True
+    assert details.evaluate("(el) => el.open") is True
+    assert not errors, errors
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_603_vials_navigation_and_daily_action_filter(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 390, "height": 844})
+    response = page.goto(base + "/vials", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    navigation = page.locator(".tracker-vial-jumps603")
+    expect(navigation).to_be_visible()
+    assert navigation.locator(
+        'a[href="#tracker-vials-sortable"]'
+    ).count() == 1
+    assert page.locator("#tracker-vials-sortable").count() == 1
+    assert page.locator("#bulk-selection-toolbar").count() == 1
+    assert page.locator("#bulk-delete-selected").count() == 1
+    reports = page.locator("#tracker-inventory-reports")
+    navigation.locator('a[href="#tracker-inventory-reports"]').click()
+    assert reports.evaluate("(el) => el.open") is True
+
+    response = page.goto(base + "/quick-entry", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    all_actions = page.locator("a[data-quick-action]")
+    daily = page.locator('button[data-quick-category="daily"]')
+    expect(daily).to_be_visible()
+    daily.click()
+    expect(daily).to_have_attribute("aria-pressed", "true")
+    assert page.locator(
+        "a[data-quick-action]:not([hidden])"
+    ).count() == 5
+    page.locator("[data-quick-search]").fill("water")
+    assert page.locator(
+        "a[data-quick-action]:not([hidden])"
+    ).count() == 1
+    page.locator("[data-quick-reset]").click()
+    assert page.locator(
+        "a[data-quick-action]:not([hidden])"
+    ).count() == all_actions.count()
+    assert not errors, errors
