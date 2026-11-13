@@ -2361,13 +2361,27 @@ def test_602_mobile_dose_guidance_and_history_are_read_only(tab, scheme):
         window.scrollBy({top: -clearance, behavior: 'instant'});
       }
     }""")
-    assert toggle.evaluate("""el => {
+    hit = toggle.evaluate("""el => {
       const r = el.getBoundingClientRect();
       const x = r.left + r.width / 2;
       const y = r.top + r.height / 2;
-      const hit = document.elementFromPoint(x, y);
-      return hit === el || el.contains(hit);
-    }"""), "Dose history action is covered by the mobile dock"
+      const target = document.elementFromPoint(x, y);
+      const dock = document.querySelector('.tracker-mobile-dock');
+      const wrapper = el.closest('.scroll');
+      return {
+        clear: target === el || el.contains(target),
+        coveringTag: target?.tagName || 'none',
+        coveringClass: String(target?.className || '').slice(0, 150),
+        buttonTop: Math.round(r.top),
+        buttonBottom: Math.round(r.bottom),
+        dockTop: Math.round(dock.getBoundingClientRect().top),
+        wrapperOverflowY: wrapper && getComputedStyle(wrapper).overflowY,
+        scrollY: Math.round(window.scrollY),
+        scrollMaximum: Math.round(document.documentElement.scrollHeight -
+                                  window.innerHeight)
+      };
+    }""")
+    assert hit["clear"], ("Mobile Dose History button obstructed", hit)
     toggle.click()
     expect(toggle).to_have_attribute("aria-expanded", "true")
     assert row.locator("td:nth-child(6)").evaluate(
