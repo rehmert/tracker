@@ -2191,3 +2191,101 @@ def test_600_mobile_in_place_select_keeps_viewport_and_density(tab, scheme):
     )
     assert page.evaluate("scrollY") > 250
     assert not errors, errors
+
+
+# Release 601: phone-first vial presentation must use the canonical table
+# and keep the existing pagination and selection controls on both schemes.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_601_mobile_vial_cards_preserve_table_controls(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 390, "height": 844})
+    response = page.goto(base + "/vials", wait_until="networkidle")
+    assert response is not None and response.status == 200
+
+    table = page.locator("#tracker-vials-sortable")
+    controls = page.locator(".tracker-vial-mobile-controls601")
+    toggle = controls.locator("button")
+    expect(controls).to_be_visible()
+    expect(toggle).to_have_attribute("aria-pressed", "true")
+    expect(table).to_have_class(re.compile(r"tracker-vials-as-cards601"))
+    assert page.locator("#bulk-vials").count() == 1
+    assert page.locator("#tracker-vial-pager448").count() == 1
+    assert table.locator("tbody > tr").count() >= 1
+
+    rows = table.locator("tbody > tr:has(input.bulk-vial-check)")
+    if rows.count():
+        row = rows.first
+        assert row.locator("input.bulk-vial-check").get_attribute("form") == "bulk-vials"
+        control = row.locator(".tracker-vial-detail-toggle601")
+        expect(control).to_have_attribute("aria-expanded", "false")
+        control.click()
+        expect(control).to_have_attribute("aria-expanded", "true")
+        expect(row).to_have_attribute("data-vial-expanded601", "true")
+        control.click()
+        expect(control).to_have_attribute("aria-expanded", "false")
+
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-pressed", "false")
+    assert "tracker-vials-as-cards601" not in (
+        table.get_attribute("class") or ""
+    )
+    assert table.locator("thead").evaluate(
+        "(el) => getComputedStyle(el).display"
+    ) != "none"
+
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-pressed", "true")
+    expect(table).to_have_class(re.compile(r"tracker-vials-as-cards601"))
+
+    # Switching to a larger viewport restores the unmodified table.
+    page.set_viewport_size({"width": 1024, "height": 900})
+    expect(controls).to_be_hidden()
+    assert "tracker-vials-as-cards601" not in (
+        table.get_attribute("class") or ""
+    )
+    assert not errors, errors
+
+
+# Release 601: mobile daily actions remain prominent at narrow widths.
+# Legacy section links and accented heading IDs must remain valid.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_601_mobile_today_and_legacy_section_navigation(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    for width in (320, 390, 430):
+        page.set_viewport_size({"width": width, "height": 844})
+        response = page.goto(
+            base + "/mobile#tracker-section-2", wait_until="networkidle"
+        )
+        assert response is not None and response.status == 200
+        expect(page.locator(".tracker-daily-glance601 a")).to_have_count(3)
+        assert page.evaluate("""() => {
+          const first = document.querySelector(
+            '[aria-labelledby="mobile-schedule-heading"]');
+          const second = document.querySelector(
+            '[aria-labelledby="mobile-latest-heading"]');
+          return first && second && Boolean(
+            first.compareDocumentPosition(second) &
+              Node.DOCUMENT_POSITION_FOLLOWING
+          );
+        }""")
+        # The legacy #tracker-section-2 target is the second visible heading.
+        page.wait_for_function("""() => {
+          const headings = [...document.querySelectorAll(
+            '#main-content h2, #main-content h3')].filter(el =>
+            !!el.getClientRects().length && !el.closest('details:not([open])'));
+          return headings.length > 2 &&
+            headings[1].getBoundingClientRect().top < 500;
+        }""")
+
+    page.evaluate("""() => {
+      const h = document.createElement('h3');
+      h.textContent = 'Crème   Brûlée';
+      document.querySelector('#main-content').appendChild(h);
+      document.dispatchEvent(new Event('htmx:afterSwap'));
+    }""")
+    page.wait_for_function(
+        "() => !!document.getElementById('tracker-heading-creme-brulee')"
+    )
+    assert not errors, errors
