@@ -35,7 +35,7 @@ def test_591_pk_routes_are_exact_browser_witness_candidates_not_clearance():
     plan = gap.build()
     assert plan["strict_csrf_enforcement_change_authorized"] is False
     assert plan["runtime_verified_by_this_report"] is False
-    assert len(plan["source_witness_manifest"]) == 37
+    assert len(plan["source_witness_manifest"]) == 47
     actual = { (r["method"], r["path"]) for r in plan["candidate_routes"]}
     assert PK_ROUTES <= actual
     remaining_pk = [r for r in plan["unqualified_routes"]
