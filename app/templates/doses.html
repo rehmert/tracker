@@ -18,6 +18,8 @@
 <script src="/static/js/tracker-dose-sequential-20261102.js" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-dose-final-review.css?v=20261103">
 <script defer src="/static/js/tracker-dose-final-review.js?v=20261103g"></script>
+<link rel="stylesheet" href="/static/css/tracker-mobile-daily602.css?v=602">
+<script defer src="/static/js/tracker-dose-fast602.js?v=602"></script>
 
 <link rel="stylesheet"
  href="/static/css/tracker-dose-mobile104.css?v=bundle104">
@@ -62,6 +64,32 @@
 
 <section>
   <h2 id="quick-dose-entry">Add an entry</h2>
+  {% if vials %}
+  <div class="tracker-dose-fast602" data-dose-fast602>
+    <nav class="tracker-dose-steps602" aria-label="Dose entry steps">
+      <a href="#calendar-vial-picker" data-dose-step602="vial"><span>1</span> Vial</a>
+      <a href="#tracker-dose-amount602" data-dose-step602="amount"><span>2</span> Amount</a>
+      <a href="#tracker-dose-final-review" data-dose-step602="review"><span>3</span> Review</a>
+    </nav>
+    <p class="tracker-dose-progress602" data-dose-progress602 role="status"
+       aria-live="polite">Select the actual vial and enter the recorded amount.</p>
+    {% set recent_actual602 = rows | selectattr('dose.kind', 'equalto', 'dose') | list %}
+    {% if recent_actual602 %}
+    <details class="tracker-dose-recent602">
+      <summary>Prepare from a recent entry ({{ [recent_actual602|length, 3]|min }})</summary>
+      <div class="tracker-dose-recent-links602">
+        {% for r in recent_actual602[:3] %}
+        <a href="/doses?repeat_from={{ r.dose.id }}#quick-dose-entry">
+          <strong>{{ r.vial.compound.name }}</strong>
+          <span>{{ r.dose.entered_value|num }} {{ r.dose.entered_unit }} · {{ r.dose.taken_at|dt }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <p class="note">This prepares a draft only. Confirm the current vial, amount, time, and supplies before saving.</p>
+    </details>
+    {% endif %}
+  </div>
+  {% endif %}
 <nav class="tracker-mobile-log-links" aria-label="Quick dose logging">
   <a href="#calendar-vial-picker">Confirm vial</a>
   <a href="#tracker-dose-final-review">Review entry</a>
@@ -158,7 +186,7 @@
           <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" data-vial-status="{{ v.status }}" {% if selected_vial_id is not none and v.id == selected_vial_id %}selected{% endif %}>{{ v.compound.name }} · #{{ v.id }}{% if v.label %} · {{ v.label }}{% endif %}{% if v.lot %} · Lot {{ v.lot }}{% endif %} · {{ v.status|replace('_',' ') }} · {{ d.remaining_base|amt(d.dim) }}</option>
           {% endfor %}
         </select></label>
-      <label class="field"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}" inputmode="decimal"></label>
+      <label class="field" id="tracker-dose-amount602"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}" inputmode="decimal"></label>
       <label class="field"><span>Unit</span>
         <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == (planned_unit if planned_unit in DOSE_UNITS else 'mg') %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
     </div>
