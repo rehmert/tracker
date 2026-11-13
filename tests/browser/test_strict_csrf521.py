@@ -2558,8 +2558,9 @@ def test_603_purchase_phone_cards_dates_and_native_order_fields(tab, scheme):
 
     page.set_viewport_size({"width": 1024, "height": 900})
     expect(controls).to_be_hidden()
-    assert advanced.evaluate("(el) => el.open") is True
-    assert details.evaluate("(el) => el.open") is True
+    # Wait for matchMedia's queued resize event, rather than racing it.
+    expect(advanced).to_have_attribute("open", "")
+    expect(details).to_have_attribute("open", "")
     assert not errors, errors
 
 
