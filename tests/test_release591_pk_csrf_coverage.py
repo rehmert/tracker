@@ -99,16 +99,16 @@ def test_591_unsigned_pk_matrix_matches_all_declared_router_handlers():
     source = (ROOT / "app/routers/pk.py").read_text()
     assert "PK_UNSIGNED_ROUTES_591 = (" in browser_text
     between = browser_text.split("PK_UNSIGNED_ROUTES_591 = (", 1)[1].split(
-        "\\n)\\n", 1
+        chr(10) + ")" + chr(10), 1
     )[0]
-    cases = re.findall(r'\\("([A-Z]+)", "(/pk/[^"]+)"\\)', between)
+    cases = re.findall(r'[(]"([A-Z]+)", "(/pk/[^"]+)"[)]', between)
     declared = re.findall(
-        r'@router\\.(post|put|patch|delete)\\("([^"]+)"', source
+        r'@router[.](post|put|patch|delete)[(]"([^"]+)"', source
     )
     shape = lambda path: re.sub(r"/[0-9]+(?=/|$)", "/{}", path)
     actual = {(method, shape(path)) for method, path in cases}
     expected = {
-        (method.upper(), re.sub(r"\\{[^}]+\\}", "{}", "/pk" + path))
+        (method.upper(), re.sub(r"[{][^}]+[}]", "{}", "/pk" + path))
         for method, path in declared
     }
     assert len(cases) == len(declared) == 30
