@@ -2159,7 +2159,10 @@ def test_600_mobile_in_place_select_keeps_viewport_and_density(tab, scheme):
     assert response is not None and response.status == 200
     assert page.evaluate("""() => {
       const panel = document.querySelector('#main-content .dashboard-panel');
-      return panel && parseFloat(getComputedStyle(panel).paddingTop) < 13;
+      const grid = document.querySelector('#main-content .tracker-status-grid');
+      return panel && grid &&
+        parseFloat(getComputedStyle(panel).paddingTop) < 13 &&
+        getComputedStyle(grid).gridTemplateColumns.split(' ').length === 2;
     }""")
 
     page.evaluate("""() => {
