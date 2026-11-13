@@ -34,7 +34,7 @@
   function submittedGetFilter(select) {
     const form = select.form;
     if (!form || form.method.toLowerCase() !== 'get') return false;
-    if (!/\\b(?:requestSubmit|submit)\\s*\\(/.test(
+    if (!/\b(?:requestSubmit|submit)\s*\(/.test(
       select.getAttribute('onchange') || ''
     )) return false;
     const action = new URL(form.getAttribute('action') || location.href, location.href);
