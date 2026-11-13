@@ -68,7 +68,8 @@
 
       return lower.charAt(0).toUpperCase() +
         lower.slice(1);
-    });
+    // Apostrophes split words in the matcher above; avoid "Today'S".
+    }).replace(/(['’])S\\b/g, '$1s');
   }
 
   function formatTextNodes(element) {
