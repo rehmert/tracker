@@ -923,6 +923,7 @@ PK_UNSIGNED_ROUTES_591 = (
     ("POST", "/pk/scenarios/1/staged-preview"),
     ("POST", "/pk/scenarios/1/staged-replace"),
     ("POST", "/pk/scenarios/import-preview"),
+    ("POST", "/pk/scenarios/import-confirm"),
     ("POST", "/pk/scenarios/1/doses/create-batch-checked"),
     ("POST", "/pk/scenarios/1/calendar-preview"),
     ("POST", "/pk/scenarios/1/calendar-replace"),
@@ -941,7 +942,7 @@ def test_591_pk_unsafe_route_forgery_matrix_negative_only(tab, scheme):
     assert response is not None and response.status == 200
     token = page.evaluate("window.trackerCsrfToken?.() || ''")
     assert token.startswith("v1.")
-    assert len(PK_UNSIGNED_ROUTES_591) == 30
+    assert len(PK_UNSIGNED_ROUTES_591) == 31
     for method, route in PK_UNSIGNED_ROUTES_591:
         denied = page.request.fetch(
             base + route, method=method, data="{}",
