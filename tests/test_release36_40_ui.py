@@ -31,7 +31,7 @@ def test_purchases_use_dedicated_review_instead_of_generic_table_tools():
     assert 'data-enhanced-table' not in purchases
     assert 'data-purchase-history' in purchases
     assert 'data-purchase-review-toolbar' in purchases
-    assert 'tracker-purchase-history-review.js?v=20261103' in purchases
+    assert 'tracker-purchase-history-review.js?v=603' in purchases
     assert 'tracker-purchase-history-review.css?v=20261103' in purchases
     # The Purchase creation form must remain untouched by the review controls.
     assert '<form method="post" action="/purchases"' in purchases
