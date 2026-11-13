@@ -45,7 +45,8 @@
       button.className = 'tracker-vial-detail-toggle601';
       button.setAttribute('aria-expanded', 'false');
       button.setAttribute('aria-label', 'Show details for vial #' + id);
-      button.textContent = 'More details';
+      // CSS renders the label; textContent stays untouched for sorting/search.
+      button.dataset.text = 'More details';
       cells[2].append(button);
       button.addEventListener('click', () => {
         const expanded = row.dataset.vialExpanded601 !== 'true';
@@ -53,7 +54,7 @@
         button.setAttribute('aria-expanded', String(expanded));
         button.setAttribute('aria-label',
           (expanded ? 'Hide' : 'Show') + ' details for vial #' + id);
-        button.textContent = expanded ? 'Less details' : 'More details';
+        button.dataset.text = expanded ? 'Less details' : 'More details';
       });
     });
 
