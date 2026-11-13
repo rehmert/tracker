@@ -2339,6 +2339,30 @@ def test_602_mobile_dose_guidance_and_history_are_read_only(tab, scheme):
     assert row.locator("td:nth-child(6)").evaluate(
         "(el) => getComputedStyle(el).display"
     ) == "none"
+    # This row is injected at the tail of the isolated test's history.
+    # Align it in the usable part of the phone viewport before testing
+    # a real pointer click; Playwright's automatic scroll checks only the
+    # viewport and does not account for the fixed bottom navigation dock.
+    toggle.evaluate("""el => el.scrollIntoView({
+        block: 'center', behavior: 'instant'
+    })""")
+    page.evaluate("""() => {
+      const button = document.querySelector(
+        '#tracker-qa-dose602 .tracker-dose-history-toggle602');
+      const dock = document.querySelector('.tracker-mobile-dock');
+      const clearance = dock.getBoundingClientRect().top -
+        button.getBoundingClientRect().bottom - 16;
+      if (clearance < 0) {
+        window.scrollBy({top: -clearance, behavior: 'instant'});
+      }
+    }""")
+    assert toggle.evaluate("""el => {
+      const r = el.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      return hit === el || el.contains(hit);
+    }"""), "Dose history action is covered by the mobile dock"
     toggle.click()
     expect(toggle).to_have_attribute("aria-expanded", "true")
     assert row.locator("td:nth-child(6)").evaluate(
