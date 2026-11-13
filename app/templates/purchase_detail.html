@@ -3,6 +3,8 @@
 {% block content %}
 <script src="/static/bulk_purchase_ux.js?v=purchase-fix-20261101" defer></script>
 <script src="/static/js/tracker-purchase-vials.js?v=20261101" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
+<script defer src="/static/js/tracker-purchase-mobile603.js?v=603"></script>
 <style>
 #purchase-vial-form [hidden] { display: none !important; }
 #purchase-vial-preview { margin: 0; }
@@ -59,7 +61,6 @@
       <span>Number of kits</span>
       <input name="kit_count" type="number" value="1" min="1" max="100" disabled>
     </label>
-    <label class="field"><span>Cap color</span><input name="cap_color"></label>
     <label class="field" id="purchase-vial-quantity-field">
       <span>Number of identical vials</span>
       <input type="number" name="quantity" min="1" max="200" value="1">
@@ -82,10 +83,16 @@
     </label>
     <input type="hidden" name="unit_price" value="0">
 
-    <label class="field"><span>Label</span><input name="label" placeholder="e.g. 10 mg vial"></label>
-    <label class="field"><span>Lot / batch</span><input name="lot"></label>
-    <label class="field"><span>Expires</span><input type="date" name="expires_on"></label>
-    <label class="field wide"><span>Notes</span><input name="notes"></label>
+    <details class="purchase-optional603 wide" data-mobile-optional603 open>
+      <summary>Optional vial identity, lot, expiry &amp; notes</summary>
+      <div class="purchase-optional-grid603">
+        <label class="field"><span>Cap color</span><input name="cap_color"></label>
+        <label class="field"><span>Label</span><input name="label" placeholder="e.g. 10 mg vial"></label>
+        <label class="field"><span>Lot / batch</span><input name="lot"></label>
+        <label class="field"><span>Expires</span><input type="date" name="expires_on"></label>
+        <label class="field wide"><span>Notes</span><input name="notes"></label>
+      </div>
+    </details>
     <p class="note wide" id="purchase-vial-preview" role="status" aria-live="polite">
       1 individual vial · Line total: {{ currency }}0.00
     </p>
