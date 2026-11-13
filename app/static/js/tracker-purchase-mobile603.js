@@ -19,6 +19,26 @@
       }
     });
 
+    const more = document.querySelector('.purchase-review-more603');
+    const active = more?.querySelector('[data-purchase-date-active603]');
+    const from = more?.querySelector('[data-purchase-from]');
+    const through = more?.querySelector('[data-purchase-through]');
+    if (active && from && through) {
+      const updateDateMarker = () => {
+        active.hidden = !Boolean(from.value || through.value);
+      };
+      for (const field of [from, through]) {
+        field.addEventListener('input', updateDateMarker);
+        field.addEventListener('change', updateDateMarker);
+      }
+      // Reset is owned by the original purchase-review module. Run after
+      // its synchronous input reset without interfering with its handlers.
+      document.querySelector('[data-purchase-reset]')?.addEventListener(
+        'click', () => requestAnimationFrame(updateDateMarker)
+      );
+      updateDateMarker();
+    }
+
     const table = document.querySelector('[data-purchase-history]');
     if (!table || table.dataset.mobile603) return;
     const wrapper = table.closest('.scroll');
