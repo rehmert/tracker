@@ -55,6 +55,13 @@ def test_596_browser_signed_multipart_and_csv_import_coverage():
     assert "new URLSearchParams(fields)" in body
     assert 'DATA.parent.parent == Path("/tmp").resolve()' in body
     assert "database.is_file() and not database.is_symlink()" in body
+    # Preview fixtures must not collide between parallel HTTP/HTTPS cases.
+    assert 'structured_item = "QA structured 596 " + uuid4().hex[:8]' in body
+    assert 'bulk_item = "QA bulk 596 " + uuid4().hex[:8]' in body
+    assert 'legacy_item = "QA legacy 596 " + uuid4().hex[:8]' in body
+    assert "new DOMParser().parseFromString(html,'text/html')" in body
+    assert "'textarea[name=\"review_text\"]'" in body
+    assert 'Item,Strength,Package,Vials,Price' in body
     assert "download.body() == saved_bytes" in body
     for endpoint in (
         "/vendor-prices/attachments/upload",
