@@ -143,6 +143,8 @@ def test_602_mobile_density_and_existing_quick_navigation():
     ):
         assert marker in css, marker
     assert css.count("{") == css.count("}")
+    assert "scroll-padding-bottom: calc(5.4rem" in css
+    assert "scroll-margin-bottom: calc(5.4rem" in css
     assert quick.count("tracker-mobile-daily602.css?v=602") == 1
     assert 'data-quick-search' in quick
     assert 'data-quick-action' in quick
@@ -170,3 +172,5 @@ def test_602_no_backend_mutations_and_browser_matrix():
     assert "390" in test
     assert "tracker-dose-fast602" in test
     assert "tracker-dose-history602" in test
+    assert "document.elementFromPoint(x, y)" in test
+    assert "toggle.click(force=True)" not in test
