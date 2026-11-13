@@ -104,7 +104,10 @@
      overflow-y is hidden; that traps bottom-row controls behind the fixed
      mobile dock. Cards have no horizontal table to scroll, so let the page
      own vertical scrolling and preserve pointer/focus hit testing. */
-  #dose-history .scroll {
+  /* Two IDs out-rank the older :root[data-density] #main-content .scroll
+     selector from Release 600; otherwise overflow-x:auto persists and
+     silently creates a nested vertical scroll container. */
+  #main-content #dose-history .scroll {
     overflow: visible;
     max-width: 100%;
   }
