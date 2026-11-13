@@ -1753,7 +1753,14 @@ def test_596_vendor_multipart_and_csv_roundtrip_signed(tab, scheme):
                 const response=await fetch(route,{
                     method:'POST',credentials:'same-origin',headers,body
                 });
-                return {status:response.status,text:(await response.text()).slice(0,60000)};
+                const html = await response.text();
+                const document = new DOMParser().parseFromString(html,'text/html');
+                // Read the actual reviewed CSV value, not a truncated page
+                // whose pricing table can be longer than 60k characters.
+                const reviews = [...document.querySelectorAll(
+                    'textarea[name="review_text"]'
+                )].map(field => field.value);
+                return {status:response.status,text:reviews.join('\n')};
             }""", {"route":route,"fields":fields,"upload":upload})
         response = pending.value
         assert response.status == status, (scheme,route,response.status)
@@ -1777,9 +1784,12 @@ def test_596_vendor_multipart_and_csv_roundtrip_signed(tab, scheme):
         response=page.request.post(base+route,multipart=payload,max_redirects=0)
         assert response.status == 403, (scheme,route,response.status)
 
+    structured_item = "QA structured 596 " + uuid4().hex[:8]
+    bulk_item = "QA bulk 596 " + uuid4().hex[:8]
+    legacy_item = "QA legacy 596 " + uuid4().hex[:8]
     csv_text = ("vendor,item_name,content_amount,content_unit,package_type,"
                 "package_price,product_url\n"
-                f"{vendor},QA structured item,10,mg,vial,12.50,\n")
+                f"{vendor},{structured_item},10,mg,vial,12.50,\n")
     upload = {"filename":"qa-596.csv","mimeType":"text/csv","content":csv_text}
 
     archive="/vendor-prices/attachments/upload"
@@ -1805,31 +1815,31 @@ def test_596_vendor_multipart_and_csv_roundtrip_signed(tab, scheme):
     items_preview="/vendor-prices/items-csv/preview"
     denied_upload(items_preview,{},csv_text)
     preview_html=signed(items_preview,{},status=200,upload=upload)
-    assert "QA structured item" in preview_html
+    assert structured_item in preview_html
     assert query("SELECT count(*) FROM vendor_price_entries WHERE item_name=?",
-                 ("QA structured item",))[0] == 0
+                 (structured_item,))[0] == 0
 
     items_save="/vendor-prices/items-csv/save"
     review=("vendor\titem_name\tcontent_amount\tcontent_unit\tpackage_type"
             "\tpackage_price\tproduct_url\n"
-            f"{vendor}\tQA structured item\t10\tmg\tvial\t12.50\t\n")
+            f"{vendor}\t{structured_item}\t10\tmg\tvial\t12.50\t\n")
     denied_form(items_save,{"review_text":review})
     signed(items_save,{"review_text":review})
     structured=query("""SELECT e.id,e.total_price_cents,e.vial_count
       FROM vendor_price_entries e JOIN vendor_price_sheets s ON e.sheet_id=s.id
-      WHERE s.vendor=? AND e.item_name=?""",(vendor,"QA structured item"))
+      WHERE s.vendor=? AND e.item_name=?""",(vendor,structured_item))
     assert structured is not None and structured[1:] == (1250,1)
 
     bulk_preview="/vendor-prices/bulk/preview"
     bulk=("id,vendor,item_name,content_amount,content_unit,package,vial_count,"
           "total_price,product_url\n"
-          f",{vendor},QA bulk new 596,15,mg,vial,1,19.75,\n")
+          f",{vendor},{bulk_item},15,mg,vial,1,19.75,\n")
     denied_upload(bulk_preview,{},bulk)
     bulk_html=signed(bulk_preview,{},status=200,upload={
         "filename":"qa-596-bulk.csv","mimeType":"text/csv","content":bulk})
-    assert "QA bulk new 596" in bulk_html
+    assert bulk_item in bulk_html
     assert query("SELECT count(*) FROM vendor_price_entries WHERE item_name=?",
-                 ("QA bulk new 596",))[0] == 0
+                 (bulk_item,))[0] == 0
 
     bulk_save="/vendor-prices/bulk/save"
     denied_form(bulk_save,{"review_text":bulk})
@@ -1837,16 +1847,17 @@ def test_596_vendor_multipart_and_csv_roundtrip_signed(tab, scheme):
     assert query("""SELECT e.total_price_cents FROM vendor_price_entries e
         JOIN vendor_price_sheets s ON s.id=e.sheet_id
         WHERE s.vendor=? AND e.item_name=?""",
-        (vendor,"QA bulk new 596")) == (1975,)
+        (vendor,bulk_item)) == (1975,)
 
     legacy_preview="/vendor-prices/preview"
-    legacy_text="QA Legacy Item,10 mg/vial,vial,1,24.00\n"
+    legacy_text=("Item,Strength,Package,Vials,Price\n"
+                 f"{legacy_item},10 mg/vial,vial,1,24.00\n")
     denied_upload(legacy_preview,{"vendor":vendor},legacy_text)
     legacy_html=signed(legacy_preview,{"vendor":vendor,"sheet_name":"QA Legacy 596"},
                        status=200,upload={
                            "filename":"qa-596-legacy.csv",
                            "mimeType":"text/csv","content":legacy_text})
-    assert "QA Legacy Item" in legacy_html
+    assert legacy_item in legacy_html
     assert query("SELECT count(*) FROM vendor_price_sheets WHERE vendor=? AND name=?",
                  (vendor,"QA Legacy 596"))[0] == 0
     assert not errors, errors
