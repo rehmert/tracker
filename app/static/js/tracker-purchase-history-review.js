@@ -27,6 +27,14 @@
     if (!body) return;
     const rows = [...body.querySelectorAll('[data-purchase-row]')];
     const original = new Map(rows.map((row, i) => [row, i]));
+    // Server-rendered purchase identity fields never change on this page.
+    // Index once instead of normalizing them again on every keystroke.
+    const searchableByRow = new Map(rows.map(row => [
+      row,
+      [row.dataset.purchaseDate, row.dataset.purchaseVendor,
+       row.dataset.purchaseOrder, row.dataset.purchaseId]
+        .join(' ').toLocaleLowerCase()
+    ]));
     const collator = new Intl.Collator(undefined,
       {numeric:true, sensitivity:'base'});
     const currency = table.dataset.currency || '';
@@ -127,8 +135,7 @@
 
       for (const row of [...rows].sort(compare)) {
         const d = row.dataset;
-        const searchable = [d.purchaseDate, d.purchaseVendor,
-          d.purchaseOrder, d.purchaseId].join(' ').toLocaleLowerCase();
+        const searchable = searchableByRow.get(row);
         const match = !invalidDate &&
           (!text || searchable.includes(text)) &&
           (!selectedVendor || d.purchaseVendor.trim().toLocaleLowerCase() === selectedVendor) &&
