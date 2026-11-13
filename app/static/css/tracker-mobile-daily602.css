@@ -5,6 +5,14 @@
 .tracker-dose-history-toggle602 { display: none; }
 
 @media screen and (max-width: 760px) {
+  /* Fixed dock must not cover anchor/focus targets near the page bottom.
+     Scrolling offset only: no extra visible whitespace or dock interaction changes. */
+  html {
+    scroll-padding-bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px));
+  }
+  #dose-history #dose-body .tracker-dose-history-toggle602 {
+    scroll-margin-bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px));
+  }
   .tracker-dose-fast602 {
     display: block;
     min-width: 0;
