@@ -2259,11 +2259,18 @@ def test_601_mobile_vial_cards_preserve_table_controls(tab, scheme):
 def test_601_mobile_today_and_legacy_section_navigation(tab, scheme):
     page, errors = tab
     base = URL if scheme == "http" else HTTPS_URL
-    for width in (320, 390, 430):
+    for index, width in enumerate((320, 390, 430)):
         page.set_viewport_size({"width": width, "height": 844})
-        response = page.goto(
-            base + "/mobile#tracker-section-2", wait_until="networkidle"
-        )
+        # Navigating to the same URL, including the same fragment, is a
+        # same-document operation in Chromium. Playwright correctly returns
+        # None instead of an HTTP Response. Reload for subsequent widths so
+        # each iteration exercises real page initialization and hash handling.
+        if index == 0:
+            response = page.goto(
+                base + "/mobile#tracker-section-2", wait_until="networkidle"
+            )
+        else:
+            response = page.reload(wait_until="networkidle")
         assert response is not None and response.status == 200
         expect(page.locator(".tracker-daily-glance601 a")).to_have_count(3)
         assert page.evaluate("""() => {
