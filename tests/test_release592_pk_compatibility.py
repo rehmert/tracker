@@ -42,7 +42,7 @@ def test_592_all_new_positive_routes_are_source_witnesses_not_clearance():
     assert plan["status"] == "BLOCKED_SOURCE_ONLY_NOT_GLOBAL_CLEARANCE"
     assert plan["strict_csrf_enforcement_change_authorized"] is False
     assert plan["runtime_verified_by_this_report"] is False
-    assert len(plan["source_witness_manifest"]) == 37
+    assert len(plan["source_witness_manifest"]) == 47
     assert PK_592 <= {
         (row["method"], row["path"]) for row in plan["candidate_routes"]
     }
