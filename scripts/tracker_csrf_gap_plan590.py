@@ -18,6 +18,13 @@ ROOT = Path(__file__).resolve().parents[1]
 # Evidence points to explicit browser modules in the FULL strict qualification
 # gate. A strict-only targeted preflight never constitutes full clearance.
 EVIDENCE_MODULES = {
+    # Release 597: signed purchase and supply inventory lifecycle.
+    ("POST", "/purchases"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/purchases/{pid}"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/supplies"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/supplies/{sid}/use"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/supplies/{sid}/dose"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/supplies/categories"): "tests/browser/test_strict_csrf521.py",
     # Release 596: signed vendor multipart, import and preview workflows.
     ("POST", "/vendor-prices/attachments/upload"): "tests/browser/test_strict_csrf521.py",
     ("POST", "/vendor-prices/attachments/{attachment_id}/delete"): "tests/browser/test_strict_csrf521.py",
@@ -154,6 +161,13 @@ def build() -> dict:
                 or "def test_595_food_templates_corrections_and_vendor_sheets(" not in browser_source
                 or "def test_596_vendor_multipart_and_csv_roundtrip_signed(" not in browser_source):
             raise ValueError("Food/vendor 594 browser witness missing")
+    # Source-only route qualification must include a real Chromium purchase
+    # and supply-inventory lifecycle, not negative-only CSRF probes.
+    if any(path.startswith(("/purchases", "/supplies"))
+           for _, path in EVIDENCE_MODULES):
+        browser_source = (ROOT / "tests/browser/test_strict_csrf521.py").read_text()
+        if "def test_597_purchase_and_supply_inventory_signed(" not in browser_source:
+            raise ValueError("Purchase/supply 597 browser witness missing")
     # Delimit the actual combined 587/588 full-only gate. A targeted-only
     # replay cannot satisfy the qualification requirement.
     full_section_start = "# Combined Release 587–588: isolate bulk inventory browser writes"
