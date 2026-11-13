@@ -837,6 +837,17 @@ def test_591_pk_scenario_json_lifecycle_signed_and_unsigned_rejected(tab, scheme
     assert isinstance(cid, int) and cid > 0
 
     unsigned("POST", "/pk/scenarios")
+    # Even a genuine signed token must not authorize a cross-site origin.
+    cross_site = page.request.post(
+        base + "/pk/scenarios", data="{}",
+        headers={
+            "Content-Type": "application/json",
+            "X-Tracker-CSRF": token,
+            "Origin": "https://attacker.invalid",
+            "Sec-Fetch-Site": "cross-site",
+        }, max_redirects=0,
+    )
+    assert cross_site.status == 403, (scheme, cross_site.status)
     scenario_name = "QA 591 isolated " + scheme + " " + uuid4().hex[:8]
     payload = {
         "compound_id": cid, "name": scenario_name,
