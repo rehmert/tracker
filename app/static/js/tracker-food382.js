@@ -14,7 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (scroll) {
       section.scrollIntoView({
-        behavior: 'smooth',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'instant' : 'smooth',
         block: 'start'
       });
     }
@@ -49,9 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Honor bookmarked section links.
-  const hash = decodeURIComponent(
-    location.hash.replace(/^#/, '')
-  );
+  // Malformed URL fragments must not disable food logging controls.
+  let hash = '';
+  try {
+    hash = decodeURIComponent(location.hash.replace(/^#/, ''));
+  } catch (_) {
+    hash = '';
+  }
 
   if (hash) {
     const target = document.getElementById(hash);
