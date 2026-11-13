@@ -126,6 +126,10 @@ from pathlib import Path
 assert Path(app.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve())
 print('PASS: Isolated source import')
 PY
+ echo "=== RELEASE 604 STATIC CHANGE IMPACT PREFLIGHT ==="
+ "$PY" "$QA/scripts/tracker-impact-preflight604.py" \
+   --base "$BASE" --target "$TARGET" --root "$QA"
+ echo "=== RELEASE 604 CHANGE IMPACT PASSED ==="
  if [[ "$INSTANCE" == DEV ]]; then
   echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
   timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
