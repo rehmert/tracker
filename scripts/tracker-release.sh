@@ -131,6 +131,14 @@ PY
    --base "$BASE" --target "$TARGET" --root "$QA"
  echo "=== RELEASE 604 CHANGE IMPACT PASSED ==="
  if [[ "$INSTANCE" == DEV ]]; then
+  echo "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ==="
+  timeout 180 "$PY" -m pytest -q --tb=short --maxfail=1 \
+    tests/test_release604_preflight.py \
+    tests/test_release604_navigation_browser.py \
+    tests/test_release603_inventory_purchase_navigation.py \
+    tests/test_quick_entry_fast_paths.py \
+    tests/test_long_page_navigation.py
+  echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
   echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
   timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
   echo "=== BROWSER GATE PASSED ==="
