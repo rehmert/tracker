@@ -1,0 +1,173 @@
+/* Release 602: compact daily recording, shared focus affordances and touch
+ * targets. Existing form submissions, values and validation are unchanged.
+ */
+.tracker-dose-fast602 { display: none; }
+
+@media screen and (max-width: 760px) {
+  .tracker-dose-fast602 {
+    display: block;
+    min-width: 0;
+    margin: .45rem 0 .35rem;
+    padding: .42rem .48rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .75rem;
+    background: var(--surface, #fff);
+  }
+  .tracker-dose-steps602 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .25rem;
+  }
+  .tracker-dose-steps602 a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .13rem;
+    min-width: 0;
+    min-height: 48px;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .58rem;
+    color: var(--ink, #192c31);
+    text-decoration: none;
+    font-size: .82rem;
+    font-weight: 650;
+    background: var(--surface, #fff);
+  }
+  .tracker-dose-steps602 a > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.18rem;
+    height: 1.18rem;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    line-height: 1;
+    font-size: .73rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .tracker-dose-steps602 a[data-complete602="true"] {
+    border-color: var(--accent, #2870ae);
+    font-weight: 750;
+  }
+  .tracker-dose-progress602 {
+    margin: .4rem .08rem .25rem;
+    font-size: .83rem;
+    line-height: 1.4;
+    color: var(--muted, #62717d);
+  }
+  .tracker-dose-recent602 { margin-top: .4rem; }
+  .tracker-dose-recent602 > summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tracker-dose-recent-links602 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: .32rem;
+    padding: .25rem 0;
+  }
+  .tracker-dose-recent-links602 a {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 48px;
+    padding: .35rem .4rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .6rem;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  .tracker-dose-recent-links602 span {
+    color: var(--muted, #62717d);
+    font-size: .76rem;
+  }
+  /* The existing mobile shortcut bar is redundant with the guided steps.
+     Keep it in markup and on desktop for compatibility. */
+  .tracker-dose-fast602 ~ .tracker-mobile-log-links {
+    display: none;
+  }
+
+  .food-mobile-actions602 {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: .32rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    padding: 0 .12rem .3rem;
+    margin: .4rem 0;
+    scroll-snap-type: x proximity;
+  }
+  .food-mobile-actions602 a {
+    flex: 0 0 auto;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    padding: .4rem .58rem;
+    font-size: .82rem;
+  }
+  #food-quick-log .food382-content {
+    padding: .45rem .5rem .6rem;
+  }
+  #food-quick-log .food375-list {
+    gap: .35rem;
+  }
+  #food-quick-log .food375-item {
+    padding: .42rem .48rem;
+    border-radius: .62rem;
+  }
+  #food-quick-log .food375-name { margin-bottom: .25rem; }
+  #food-quick-log .food384-preview { margin: .24rem 0 .35rem; }
+  #food-quick-log .food375-quick-form {
+    gap: .32rem;
+  }
+  #food-quick-log .food375-quick-form :is(input, select, button) {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  :is(
+    .tracker-dose-steps602 a, .tracker-dose-recent602 summary,
+    .tracker-dose-recent-links602 a, .food-mobile-actions602 a,
+    #food-quick-log .food375-quick-form button
+  ):focus-visible {
+    outline: 3px solid var(--accent, #2870ae);
+    outline-offset: 2px;
+  }
+  :is(#tracker-dose-amount602, #tracker-dose-when602,
+      #tracker-dose-final-review, #calendar-vial-picker,
+      #food-quick-log, #food-water) {
+    scroll-margin-top: 1rem;
+  }
+}
+@media screen and (min-width: 360px) and (max-width: 760px) {
+  .food423-macros { grid-template-columns: repeat(2, minmax(0,1fr)); gap: .32rem; }
+  .food423-macro { padding: .42rem; }
+  .food423-values { gap: .1rem; }
+  .food425-water-presets {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .3rem;
+  }
+  .food425-water-presets button { min-height: 44px; padding: .26rem .1rem; }
+  #food-quick-log .food375-quick-form {
+    grid-template-columns: minmax(0,.75fr) minmax(0,1.2fr) auto;
+  }
+  #food-quick-log .food375-quick-form button {
+    grid-column: auto;
+    width: auto;
+    padding: .3rem .65rem;
+  }
+}
+@media screen and (max-width: 359px) {
+  .tracker-dose-recent-links602 { grid-template-columns: 1fr; }
+}
+@media print {
+  .tracker-dose-fast602 { display: none !important; }
+}
