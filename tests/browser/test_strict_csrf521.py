@@ -2546,6 +2546,16 @@ def test_603_purchase_phone_cards_dates_and_native_order_fields(tab, scheme):
     controls.get_by_role("button", name="Card view").click()
     expect(table).to_have_class(re.compile("tracker-purchase-cards603"))
 
+    # A very narrow phone uses one-column filters; 430px uses two.
+    page.set_viewport_size({"width": 320, "height": 844})
+    assert page.locator(".purchase-review-toolbar").evaluate(
+        "(el) => getComputedStyle(el).gridTemplateColumns.split(' ').length"
+    ) == 1
+    page.set_viewport_size({"width": 430, "height": 844})
+    assert page.locator(".purchase-review-toolbar").evaluate(
+        "(el) => getComputedStyle(el).gridTemplateColumns.split(' ').length"
+    ) == 2
+
     page.set_viewport_size({"width": 1024, "height": 900})
     expect(controls).to_be_hidden()
     assert advanced.evaluate("(el) => el.open") is True
