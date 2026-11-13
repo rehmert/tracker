@@ -71,6 +71,15 @@
     margin-top: .3rem;
     margin-bottom: var(--tracker-mobile600-gap);
   }
+  /* Phone dashboard: four status cards in two concise rows, not four. */
+  :root[data-density] #main-content .tracker-status-card {
+    gap: .16rem;
+    padding: .52rem .58rem;
+    min-height: 72px;
+  }
+  :root[data-density] #main-content .tracker-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   :root[data-density] #main-content .today-card h3,
   :root[data-density] #main-content .protocol-card h3 {
     margin-bottom: .25rem;
@@ -93,6 +102,12 @@
   :root[data-density] #main-content .scroll {
     max-width: 100%;
     overflow-x: auto;
+  }
+}
+
+@media screen and (max-width: 359px) {
+  :root[data-density] #main-content .tracker-status-grid {
+    grid-template-columns: 1fr;
   }
 }
 
