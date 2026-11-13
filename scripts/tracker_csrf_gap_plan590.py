@@ -18,6 +18,14 @@ ROOT = Path(__file__).resolve().parents[1]
 # Evidence points to explicit browser modules in the FULL strict qualification
 # gate. A strict-only targeted preflight never constitutes full clearance.
 EVIDENCE_MODULES = {
+    # Release 596: signed vendor multipart, import and preview workflows.
+    ("POST", "/vendor-prices/attachments/upload"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/attachments/{attachment_id}/delete"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/items-csv/preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/items-csv/save"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/bulk/preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/bulk/save"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/preview"): "tests/browser/test_strict_csrf521.py",
     # Release 595: signed food journal and vendor-sheet lifecycle witnesses.
     ("POST", "/food/entry/{entry_id}/edit"): "tests/browser/test_strict_csrf521.py",
     ("POST", "/food/entry/{entry_id}/nutrition"): "tests/browser/test_strict_csrf521.py",
@@ -143,7 +151,8 @@ def build() -> dict:
            for route in EVIDENCE_MODULES):
         browser_source = (ROOT / "tests/browser/test_strict_csrf521.py").read_text()
         if ("def test_594_food_vendor_signed_forms_and_unsigned_denial(" not in browser_source
-                or "def test_595_food_templates_corrections_and_vendor_sheets(" not in browser_source):
+                or "def test_595_food_templates_corrections_and_vendor_sheets(" not in browser_source
+                or "def test_596_vendor_multipart_and_csv_roundtrip_signed(" not in browser_source):
             raise ValueError("Food/vendor 594 browser witness missing")
     # Delimit the actual combined 587/588 full-only gate. A targeted-only
     # replay cannot satisfy the qualification requirement.
