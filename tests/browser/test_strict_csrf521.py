@@ -2092,3 +2092,98 @@ def test_599_dashboard_headings_http_https(tab, scheme):
         "Today's Tasks · Tomorrow’s Doses"
     )
     assert not errors, errors
+
+
+# Release 600: phone-size navigation must not jump to the top when a GET
+# dropdown filter submits. The pseudo-element provides deterministic height
+# on both sides of the reload without touching isolated database records.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_600_mobile_get_filter_preserves_dropdown_position(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.add_init_script("""(() => {
+      if (location.pathname !== '/consumption') return;
+      const install = () => {
+        const style = document.createElement('style');
+        style.textContent =
+          '#main-content::before {content:"";display:block;height:1050px}';
+        document.head.appendChild(style);
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', install, {once:true});
+      } else { install(); }
+    })();""")
+
+    response = page.goto(base + "/consumption", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    select = page.locator("#supply-consumption-period select[name=days]")
+    expect(select).to_be_visible()
+    select.evaluate("(el) => el.scrollIntoView({block:'center',behavior:'instant'})")
+    initial = select.evaluate(
+        "(el) => ({top:el.getBoundingClientRect().top, y:scrollY})"
+    )
+    assert initial["y"] > 350, initial
+
+    chosen = "90" if select.input_value() != "90" else "180"
+    with page.expect_navigation(wait_until="networkidle") as navigation:
+        select.select_option(chosen)
+    assert navigation.value is not None and navigation.value.status == 200
+    select = page.locator("#supply-consumption-period select[name=days]")
+    expect(select).to_have_value(chosen)
+    page.wait_for_function(
+        """expected => {
+          const el = document.querySelector(
+            '#supply-consumption-period select[name=days]');
+          return el && Math.abs(el.getBoundingClientRect().top - expected) < 65;
+        }""",
+        arg=initial["top"],
+    )
+    restored = select.evaluate(
+        "(el) => ({top:el.getBoundingClientRect().top, y:scrollY})"
+    )
+    assert restored["y"] > 350, restored
+    assert abs(restored["top"] - initial["top"]) < 65, (
+        initial, restored
+    )
+    assert not errors, errors
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_600_mobile_in_place_select_keeps_viewport_and_density(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    page.set_viewport_size({"width": 390, "height": 844})
+    response = page.goto(base + "/", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    assert page.evaluate("""() => {
+      const panel = document.querySelector('#main-content .dashboard-panel');
+      return panel && parseFloat(getComputedStyle(panel).paddingTop) < 13;
+    }""")
+
+    page.evaluate("""() => {
+      const section = document.createElement('section');
+      section.id = 'tracker-qa-600-local';
+      section.innerHTML =
+        '<div id="tracker-qa-600-before" style="height:1000px"></div>' +
+        '<select aria-label="Local mobile filter">' +
+        '<option value="a">A</option><option value="b">B</option></select>' +
+        '<div style="height:1200px"></div>';
+      document.querySelector('#main-content').appendChild(section);
+      section.querySelector('select').addEventListener('change', () => {
+        section.querySelector('#tracker-qa-600-before').style.height = '350px';
+      });
+    }""")
+    select = page.locator("#tracker-qa-600-local select")
+    select.evaluate("(el) => el.scrollIntoView({block:'center',behavior:'instant'})")
+    top = select.evaluate("(el) => el.getBoundingClientRect().top")
+    assert page.evaluate("scrollY") > 500
+    select.select_option("b")
+    page.wait_for_function(
+        """expected => Math.abs(document.querySelector(
+          '#tracker-qa-600-local select').getBoundingClientRect().top -
+          expected) < 65""",
+        arg=top,
+    )
+    assert page.evaluate("scrollY") > 250
+    assert not errors, errors
