@@ -50,7 +50,30 @@
     const finishPointer = () => {
       requestAnimationFrame(() => {
         pointerInFlight = false;
+        const previouslyEditing = document.documentElement.classList.contains(
+          "tracker-mobile-editing"
+        );
         refreshKeyboardState();
+        // When the dock returns, keep the just-tapped button above it.
+        // This prevents a second tap from being intercepted after a
+        // search field has closed the virtual keyboard.
+        if (previouslyEditing &&
+            !document.documentElement.classList.contains("tracker-mobile-editing") &&
+            getComputedStyle(dock).display !== "none") {
+          const active = document.activeElement;
+          if (active?.matches?.('button, a, [role="button"]') &&
+              !dock.contains(active)) {
+            const rect = active.getBoundingClientRect();
+            const dockBounds = dock.getBoundingClientRect();
+            if (rect.top < dockBounds.bottom &&
+                rect.bottom > dockBounds.top - 12) {
+              window.scrollBy({
+                top: rect.bottom - dockBounds.top + 16,
+                behavior: "instant"
+              });
+            }
+          }
+        }
       });
     };
     document.addEventListener("pointerup", finishPointer, true);
