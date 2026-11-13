@@ -43,6 +43,10 @@ def home(request: Request, db: Session = Depends(get_scoped_db390)):
     weekly_use = defaultdict(float)
     now = datetime.now()
     for protocol in protocols:
+        # Dashboard cards show active protocols only; saved what-if plans
+        # remain available in the full protocol manager.
+        if not protocol.is_active:
+            continue
         items = []
         for item in protocol.items:
             remaining = doses_remaining = None
@@ -142,6 +146,12 @@ def home(request: Request, db: Session = Depends(get_scoped_db390)):
     ).order_by(DoseLog.taken_at.desc())))
     today_summary = schedule_summary(protocols, recent_week, today_date,
                                      exclusions=exclusions_for(db, [item.id for p in protocols for item in p.items]))
+    # Dashboard only: tomorrow through the following three calendar days.
+    # Keep schedule_summary's seven-day projection for mobile and calendar.
+    dashboard_upcoming = [
+        (day, event) for day, event in today_summary['upcoming']
+        if today_date < day <= today_date + timedelta(days=3)
+    ]
     recent_administrations = recent_week[:5]
 
     recent = []
@@ -170,6 +180,7 @@ def home(request: Request, db: Session = Depends(get_scoped_db390)):
         protocol_summaries=protocol_summaries, forecasts=forecasts,
         vital_trends=vital_trends, charts_by_range=charts_by_range,
         metric_sparklines=metric_sparklines,
-        today_summary=today_summary, recent_administrations=recent_administrations,
+        today_summary=today_summary, dashboard_upcoming=dashboard_upcoming,
+        recent_administrations=recent_administrations,
         now_date=today_date,
     )
