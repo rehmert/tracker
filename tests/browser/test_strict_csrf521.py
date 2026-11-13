@@ -804,28 +804,24 @@ def test_591_pk_scenario_json_lifecycle_signed_and_unsigned_rejected(tab, scheme
         assert denied.status == 403, (scheme, method, route, denied.status)
 
     def signed(method, route, payload, expected):
-        captured = []
-        def capture(request):
-            if request.method == method and urlsplit(request.url).path == route:
-                captured.append(request.all_headers())
-        page.on("request", capture)
-        result = page.evaluate("""async ({method, route, payload}) => {
-            const response = await fetch(route, {
-                method, headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload), credentials: 'same-origin',
-            });
-            return {
-                status: response.status,
-                csrf: response.headers.get('x-tracker-csrf-report'),
-                payload: await response.json(),
-            };
-        }""", {"method": method, "route": route, "payload": payload})
-        page.remove_listener("request", capture)
+        with page.expect_response(lambda response: (
+            response.request.method == method
+            and urlsplit(response.url).path == route
+        )) as pending:
+            result = page.evaluate("""async ({method, route, payload}) => {
+                const response = await fetch(route, {
+                    method, headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload), credentials: 'same-origin',
+                });
+                return {
+                    status: response.status,
+                    csrf: response.headers.get('x-tracker-csrf-report'),
+                    payload: await response.json(),
+                };
+            }""", {"method": method, "route": route, "payload": payload})
         assert result["status"] == expected, (scheme, method, route, result)
         assert result["csrf"] == "valid", (scheme, method, route, result)
-        assert captured and captured[-1].get("x-tracker-csrf") == token, (
-            scheme, method, route, captured,
-        )
+        assert pending.value.request.all_headers().get("x-tracker-csrf") == token
         return result["payload"]
 
     # A real PK-enabled compound is required to demonstrate a successful,
@@ -969,30 +965,24 @@ def test_592_pk_schedule_batch_import_calendar_and_transform_signed(tab, scheme)
     assert token.startswith("v1.")
 
     def signed(method, route, payload, expected):
-        captured = []
-        def capture(request):
-            if request.method == method and urlsplit(request.url).path == route:
-                captured.append(request.all_headers())
-        page.on("request", capture)
-        try:
-            result = page.evaluate("""async ({method, route, payload}) => {
-                const response = await fetch(route, {
-                    method, headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload), credentials: 'same-origin',
-                });
-                return {
-                    status: response.status,
-                    csrf: response.headers.get('x-tracker-csrf-report'),
-                    body: await response.json(),
-                };
-            }""", {"method": method, "route": route, "payload": payload})
-        finally:
-            page.remove_listener("request", capture)
+        with page.expect_response(lambda response: (
+            response.request.method == method
+            and urlsplit(response.url).path == route
+        )) as pending:
+                result = page.evaluate("""async ({method, route, payload}) => {
+                    const response = await fetch(route, {
+                        method, headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload), credentials: 'same-origin',
+                    });
+                    return {
+                        status: response.status,
+                        csrf: response.headers.get('x-tracker-csrf-report'),
+                        body: await response.json(),
+                    };
+                }""", {"method": method, "route": route, "payload": payload})
         assert result["status"] == expected, (scheme, method, route, result)
         assert result["csrf"] == "valid", (scheme, method, route, result)
-        assert captured and captured[-1].get("x-tracker-csrf") == token, (
-            scheme, method, route, captured,
-        )
+        assert pending.value.request.all_headers().get("x-tracker-csrf") == token
         return result["body"]
 
     def denied(method, route):
@@ -1160,28 +1150,24 @@ def test_593_pk_checked_batch_guarded_edit_and_revision_restore(tab, scheme):
     assert token.startswith("v1.")
 
     def signed(method, path, payload, expected=200, extra_headers=None):
-        sent = []
-        def capture(request):
-            if request.method == method and urlsplit(request.url).path == path:
-                sent.append(request.all_headers())
-        page.on("request", capture)
-        try:
-            result = page.evaluate("""async ({method,path,payload,headers}) => {
-                const response = await fetch(path, {
-                    method, credentials: 'same-origin',
-                    headers: {'Content-Type':'application/json', ...headers},
-                    body:JSON.stringify(payload)
-                });
-                return {status:response.status,
-                    csrf:response.headers.get('x-tracker-csrf-report'),
-                    data:await response.json()};
-            }""", {"method":method, "path":path, "payload":payload,
-                    "headers":extra_headers or {}})
-        finally:
-            page.remove_listener("request", capture)
+        with page.expect_response(lambda response: (
+            response.request.method == method
+            and urlsplit(response.url).path == path
+        )) as pending:
+                result = page.evaluate("""async ({method,path,payload,headers}) => {
+                    const response = await fetch(path, {
+                        method, credentials: 'same-origin',
+                        headers: {'Content-Type':'application/json', ...headers},
+                        body:JSON.stringify(payload)
+                    });
+                    return {status:response.status,
+                        csrf:response.headers.get('x-tracker-csrf-report'),
+                        data:await response.json()};
+                }""", {"method":method, "path":path, "payload":payload,
+                        "headers":extra_headers or {}})
         assert result["status"] == expected, (method,path,result)
         assert result["csrf"] == "valid", (method,path,result)
-        assert sent and sent[-1].get("x-tracker-csrf") == token
+        assert pending.value.request.all_headers().get("x-tracker-csrf") == token
         return result["data"]
 
     def denied(method, path):
@@ -1264,27 +1250,24 @@ def test_593_pk_what_if_preview_multi_and_save(tab, scheme):
     assert token.startswith("v1.")
 
     def signed(path, payload, status=200):
-        seen = []
-        def capture(request):
-            if request.method == "POST" and urlsplit(request.url).path == path:
-                seen.append(request.all_headers())
-        page.on("request",capture)
-        try:
-            result = page.evaluate("""async ({path,payload}) => {
-                const response = await fetch(path, {
-                    method:'POST',credentials:'same-origin',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify(payload)
-                });
-                return {status:response.status,
-                    csrf:response.headers.get('x-tracker-csrf-report'),
-                    data:await response.json()};
-            }""",{"path":path,"payload":payload})
-        finally:
+        with page.expect_response(lambda response: (
+            response.request.method == "POST"
+            and urlsplit(response.url).path == path
+        )) as pending:
+                result = page.evaluate("""async ({path,payload}) => {
+                    const response = await fetch(path, {
+                        method:'POST',credentials:'same-origin',
+                        headers:{'Content-Type':'application/json'},
+                        body:JSON.stringify(payload)
+                    });
+                    return {status:response.status,
+                        csrf:response.headers.get('x-tracker-csrf-report'),
+                        data:await response.json()};
+                }""",{"path":path,"payload":payload})
             page.remove_listener("request",capture)
         assert result["status"] == status, (path,result)
         assert result["csrf"] == "valid"
-        assert seen and seen[-1].get("x-tracker-csrf") == token
+        assert pending.value.request.all_headers().get("x-tracker-csrf") == token
         return result["data"]
 
     def denied(path):
@@ -1352,27 +1335,24 @@ def test_593_pk_workbench_and_experiment_library_signed(tab, scheme):
     assert token.startswith("v1.")
 
     def signed(method, route, payload, status=200):
-        captured = []
-        def capture(request):
-            if request.method == method and urlsplit(request.url).path == route:
-                captured.append(request.all_headers())
-        page.on("request",capture)
-        try:
-            result = page.evaluate("""async ({method,route,payload}) => {
-                const response=await fetch(route,{
-                    method,credentials:'same-origin',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify(payload)
-                });
-                return {status:response.status,
-                    csrf:response.headers.get('x-tracker-csrf-report'),
-                    data:await response.json()};
-            }""",{"method":method,"route":route,"payload":payload})
-        finally:
+        with page.expect_response(lambda response: (
+            response.request.method == method
+            and urlsplit(response.url).path == route
+        )) as pending:
+                result = page.evaluate("""async ({method,route,payload}) => {
+                    const response=await fetch(route,{
+                        method,credentials:'same-origin',
+                        headers:{'Content-Type':'application/json'},
+                        body:JSON.stringify(payload)
+                    });
+                    return {status:response.status,
+                        csrf:response.headers.get('x-tracker-csrf-report'),
+                        data:await response.json()};
+                }""",{"method":method,"route":route,"payload":payload})
             page.remove_listener("request",capture)
         assert result["status"] == status, (scheme,method,route,result)
         assert result["csrf"] == "valid", (method,route,result)
-        assert captured and captured[-1].get("x-tracker-csrf") == token
+        assert pending.value.request.all_headers().get("x-tracker-csrf") == token
         return result["data"]
 
     def denied(method,route):
