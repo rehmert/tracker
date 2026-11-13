@@ -6,6 +6,9 @@
   const SELECTOR = [
     'main section > p.note',
     'main section > p.section-description',
+    'main section > h2 + p',
+    'main section > h3 + p',
+    'main section > .panel-heading + p',
     'main section > p.tracker-attention-note',
     'main section > header p',
     'main section > .section-intro p',
