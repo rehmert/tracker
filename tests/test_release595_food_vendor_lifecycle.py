@@ -40,8 +40,21 @@ def test_595_exact_witness_scope_and_no_clearance():
     assert len(plan["source_witness_manifest"]) == 64
     assert plan["runtime_verified_by_this_report"] is False
     assert plan["strict_csrf_enforcement_change_authorized"] is False
+    # Release 596 has source witnesses for every vendor-price unsafe route.
+    # This is not runtime/global clearance: other routes remain unqualified.
     assert any(x["path"].startswith("/food/") for x in plan["unqualified_routes"])
-    assert any(x["path"].startswith("/vendor-prices/") for x in plan["unqualified_routes"])
+    vendor_routes = {
+        (route["method"], route["path"])
+        for route in report["routes"]
+        if route["path"].startswith("/vendor-prices/")
+    }
+    assert len(vendor_routes) == 14
+    assert vendor_routes <= readiness.BROWSER_WITNESS_CANDIDATES
+    assert vendor_routes <= set(gap.EVIDENCE_MODULES)
+    assert not any(
+        x["path"].startswith("/vendor-prices/")
+        for x in plan["unqualified_routes"]
+    )
 
 
 def test_595_browser_fixture_runs_both_transports_and_checks_persistence():
