@@ -190,3 +190,28 @@ def test_604_current_worktree_has_clean_asset_contracts():
     if head == BASE_603:
         pytest.skip("Running against installed Release 603, not the candidate")
     assert impact.check(ROOT, BASE_603, head) == []
+
+
+def test_604_primary_shortcuts_preserve_release602_mobile_scrolling():
+    """Protect the 602 phone overflow contract after changing the DOM nesting."""
+    css = source("app/static/css/tracker-navigation604.css")
+    original = source("app/static/css/tracker-mobile-daily602.css")
+    html = source("app/templates/quick_entry.html")
+    strict = source("tests/browser/test_strict_csrf521.py")
+    fixture = source("tests/test_release604_navigation_browser.py")
+
+    assert 'tracker-navigation604.css?v=604b' in html
+    assert ".tracker-quick-fast-paths {" in original
+    assert "overflow-x: auto;" in original
+    assert ".tracker-quick-fast-primary604 {" in css
+    assert "flex-wrap: nowrap;" in css
+    assert "overflow-x: auto;" in css
+    assert "overscroll-behavior-x: contain;" in css
+    assert ".tracker-quick-fast-paths {" in css
+    assert "overflow: visible;" in css
+    assert "tracker-mobile-daily602.css" in fixture
+    assert "el.scrollWidth > el.clientWidth" in fixture
+    assert "test_602_food_and_quick_entry_phone_density" in strict
+    assert "links.scrollWidth > links.clientWidth" in strict
+    assert "getComputedStyle(links).overflowX === 'auto'" in strict
+    assert "gridTemplateColumns.split(' ').length === 2" in strict
