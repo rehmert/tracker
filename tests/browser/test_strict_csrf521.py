@@ -2000,6 +2000,14 @@ def test_598_explanation_expand_and_vial_pages(tab, scheme):
     # altering or depending on another worker's database state.
     page.evaluate("""() => {
       document.querySelector('#tracker-qa-598')?.remove();
+      // Always present a misleading earlier match, even with empty stock.
+      // Pagination must bind the synthetic section's search instead.
+      document.querySelector('#tracker-qa-598-decoy')?.remove();
+      const decoy = document.createElement('input');
+      decoy.id = 'tracker-qa-598-decoy';
+      decoy.setAttribute('data-filter-target', 'inventory-rows');
+      decoy.value = 'unrelated earlier search';
+      document.querySelector('main').prepend(decoy);
       document.querySelector('#inventory-rows')?.removeAttribute('id');
       document.querySelector('[data-inventory-pages598]')?.removeAttribute(
         'data-inventory-pages598');
