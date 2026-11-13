@@ -1561,3 +1561,148 @@ def test_594_food_vendor_signed_forms_and_unsigned_denial(tab, scheme):
     signed(delete_rule,{})
     assert count("SELECT count(*) FROM vendor_shipping_rules WHERE id=?",(rule_id,)) == 0
     assert not errors, errors
+
+
+# Release 595: full positive signed food lifecycle and vendor-sheet edits.
+# Both transport variants operate only on the disposable browser QA database.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_595_food_templates_corrections_and_vendor_sheets(tab, scheme):
+    import sqlite3
+    from datetime import date
+
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    assert DATA.name == "data" and DATA.parent.parent == Path("/tmp").resolve()
+    assert re.fullmatch(r"tracker-browser-qa[.][A-Za-z0-9_]{8}", DATA.parent.name)
+    database = (DATA / "tracker.db").resolve()
+    assert database.parent == DATA and database.is_file() and not database.is_symlink()
+
+    def query(sql, params=()):
+        with sqlite3.connect(database) as connection:
+            return connection.execute(sql, params).fetchone()
+
+    def signed(route, fields):
+        with page.expect_response(lambda response: (
+            response.request.method == "POST"
+            and urlsplit(response.url).path == route
+        )) as pending:
+            result = page.evaluate("""async ({route,fields}) => {
+                const response = await fetch(route, {
+                    method:'POST',credentials:'same-origin',
+                    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                    body:new URLSearchParams(fields),
+                });
+                return {status:response.status};
+            }""",{"route":route,"fields":fields})
+        response = pending.value
+        assert response.status == 303, (scheme,route,response.status)
+        assert response.headers.get("x-tracker-csrf-report") == "valid"
+        assert response.request.all_headers().get("x-tracker-csrf") == token
+        assert result["status"] == 200, (scheme,route,result)
+
+    def unsigned(route, fields):
+        response = page.request.post(base+route,data=fields,max_redirects=0)
+        assert response.status == 403, (scheme,route,response.status)
+
+    day = date.today().isoformat()
+    landing=page.goto(base+"/food?day="+day,wait_until="networkidle")
+    assert landing is not None and landing.status == 200
+    token=page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    name="QA food 595 "+uuid4().hex[:8]
+    create="/food/entry"
+    signed(create,{"name":name,"day":day,"servings":"1",
+                   "meal":"Lunch","energy":"100","proteins":"8",
+                   "serving_description":"1 serving"})
+    product = query("""SELECT e.id,e.product_id FROM tracker_food_entries e
+      JOIN tracker_food_products p ON p.id=e.product_id
+      WHERE p.name=? AND e.eaten_on=?""",(name,day))
+    assert product is not None
+    entry_id,product_id=product
+
+    edit=f"/food/entry/{entry_id}/edit"
+    change={"day":day,"original_day":day,"servings":"2","meal":"Lunch"}
+    unsigned(edit,change)
+    signed(edit,change)
+    assert query("SELECT servings,meal FROM tracker_food_entries WHERE id=?",
+                 (entry_id,)) == (2.0,"Lunch")
+
+    nutrition=f"/food/entry/{entry_id}/nutrition"
+    revised={"day":day,"name":name+" corrected","serving_description":"1 serving",
+             "energy":"135","proteins":"11"}
+    unsigned(nutrition,revised)
+    signed(nutrition,revised)
+    revised_id=query("SELECT product_id FROM tracker_food_entries WHERE id=?",
+                     (entry_id,))[0]
+    assert revised_id != product_id
+    assert query("SELECT name FROM tracker_food_products WHERE id=?",(product_id,))[0] == name
+    assert query("SELECT name FROM tracker_food_products WHERE id=?",(revised_id,))[0] == name+" corrected"
+
+    favorite=f"/food/favorite/{revised_id}"
+    unsigned(favorite,{"day":day})
+    signed(favorite,{"day":day})
+    assert query("SELECT product_id FROM tracker_food_favorites WHERE product_id=?",
+                 (revised_id,)) == (revised_id,)
+
+    quick=f"/food/quick/{revised_id}"
+    unsigned(quick,{"day":day,"servings":"1","meal":"Lunch"})
+    before=query("SELECT count(*) FROM tracker_food_entries WHERE product_id=? AND eaten_on=?",
+                 (revised_id,day))[0]
+    signed(quick,{"day":day,"servings":"1","meal":"Lunch"})
+    assert query("SELECT count(*) FROM tracker_food_entries WHERE product_id=? AND eaten_on=?",
+                 (revised_id,day))[0] == before+1
+
+    template="/food/template/save"
+    template_name="QA meal 595 "+uuid4().hex[:8]
+    form={"day":day,"meal":"Lunch","name":template_name}
+    unsigned(template,form)
+    signed(template,form)
+    tid=query("SELECT id FROM tracker_food_meal_templates WHERE name=?",
+              (template_name,))[0]
+    assert query("SELECT count(*) FROM tracker_food_meal_template_items WHERE template_id=?",
+                 (tid,))[0] >= 1
+
+    rename=f"/food/template/{tid}/rename"
+    unsigned(rename,{"day":day,"name":template_name+" revised"})
+    signed(rename,{"day":day,"name":template_name+" revised"})
+    assert query("SELECT name FROM tracker_food_meal_templates WHERE id=?",
+                 (tid,))[0] == template_name+" revised"
+
+    log=f"/food/template/{tid}/log"
+    unsigned(log,{"day":day})
+    before=query("SELECT count(*) FROM tracker_food_entries WHERE eaten_on=?",(day,))[0]
+    signed(log,{"day":day})
+    assert query("SELECT count(*) FROM tracker_food_entries WHERE eaten_on=?",(day,))[0] > before
+
+    delete=f"/food/template/{tid}/delete"
+    unsigned(delete,{"day":day})
+    signed(delete,{"day":day})
+    assert query("SELECT count(*) FROM tracker_food_meal_templates WHERE id=?",(tid,))[0] == 0
+    assert query("SELECT count(*) FROM tracker_food_entries WHERE eaten_on=?",(day,))[0] > before
+
+    vendor_page=page.goto(base+"/vendor-prices",wait_until="networkidle")
+    assert vendor_page is not None and vendor_page.status == 200
+    token=page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    vendor="QA sheet 595 "+uuid4().hex[:8]
+    sheet_name="QA import 595"
+    review="Item\\tStrength\\tPackage\\tVials\\tTotal USD\\nQA Test Item\\t10 mg/vial\\tvial\\t1\\t14.50\\n"
+    save="/vendor-prices/save"
+    data={"vendor":vendor,"sheet_name":sheet_name,"review_text":review}
+    unsigned(save,data)
+    signed(save,data)
+    sheet=query("SELECT id FROM vendor_price_sheets WHERE vendor=? AND name=?",
+                (vendor,sheet_name))
+    assert sheet is not None
+    sid=sheet[0]
+    assert query("SELECT total_price_cents FROM vendor_price_entries WHERE sheet_id=?",
+                 (sid,))[0] == 1450
+
+    delete_sheet=f"/vendor-prices/{sid}/delete"
+    unsigned(delete_sheet,{})
+    signed(delete_sheet,{})
+    assert query("SELECT count(*) FROM vendor_price_sheets WHERE id=?",(sid,))[0] == 0
+    assert query("SELECT count(*) FROM vendor_price_entries WHERE sheet_id=?",(sid,))[0] == 0
+    assert not errors, errors
