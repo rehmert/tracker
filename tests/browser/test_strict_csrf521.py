@@ -2544,16 +2544,16 @@ def test_603_purchase_phone_cards_dates_and_native_order_fields(tab, scheme):
     expect(controls.get_by_role("button", name="Card view")).to_be_visible()
     expect(controls.locator("button")).to_have_attribute("aria-pressed", "false")
     expect(table).not_to_have_class(
-        re.compile(r"(?:^|\\s)tracker-purchase-cards603(?:\\s|$)")
+        re.compile(r"(?:^|\s)tracker-purchase-cards603(?:\s|$)")
     )
     expect(page.locator("#purchase-history .scroll")).not_to_have_class(
-        re.compile(r"(?:^|\\s)tracker-purchase-card-wrap603(?:\\s|$)")
+        re.compile(r"(?:^|\s)tracker-purchase-card-wrap603(?:\s|$)")
     )
     controls.get_by_role("button", name="Card view").click()
     expect(controls.get_by_role("button", name="Full sortable table")).to_be_visible()
     expect(controls.locator("button")).to_have_attribute("aria-pressed", "true")
     expect(table).to_have_class(
-        re.compile(r"(?:^|\\s)tracker-purchase-cards603(?:\\s|$)")
+        re.compile(r"(?:^|\s)tracker-purchase-cards603(?:\s|$)")
     )
 
     # A very narrow phone uses one-column filters; 430px uses two.
