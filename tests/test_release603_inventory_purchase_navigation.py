@@ -253,3 +253,29 @@ def test_603_mobile_dock_pointer_focus_safety():
                    'getComputedStyle(document.querySelector'):
         assert marker in browser, marker
     assert "force=True" not in browser
+
+def test_603_all_legacy_asset_version_contracts_match_live_templates():
+    """Prevent later-stage test failures from stale exact asset versions."""
+    cases = (
+        ("app/templates/purchases.html", (
+            "tests/test_release36_40_ui.py",
+            "tests/test_purchase_history_review.py",
+        ), "tracker-purchase-history-review.js?v=603",
+         "tracker-purchase-history-review.js?v=20261103"),
+        ("app/templates/base.html", (
+            "tests/test_mobile_app_shell507.py",
+        ), "tracker-mobile-shell507.js?v=603",
+         "tracker-mobile-shell507.js?v=507"),
+        ("app/templates/quick_entry.html", (
+            "tests/test_release603_inventory_purchase_navigation.py",
+        ), "tracker-quick-entry.js?v=603",
+         "tracker-quick-entry.js?v=20261103-metrics"),
+    )
+    for template_path, test_paths, current, obsolete in cases:
+        html = source(template_path)
+        assert html.count(current) == 1, template_path
+        assert obsolete not in html, template_path
+        for test_path in test_paths:
+            test = source(test_path)
+            assert current in test, test_path
+            assert obsolete not in test, test_path
