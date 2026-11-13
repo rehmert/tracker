@@ -1760,7 +1760,7 @@ def test_596_vendor_multipart_and_csv_roundtrip_signed(tab, scheme):
                 const reviews = [...document.querySelectorAll(
                     'textarea[name="review_text"]'
                 )].map(field => field.value);
-                return {status:response.status,text:reviews.join('\n')};
+                return {status:response.status,text:reviews.join(' ')};
             }""", {"route":route,"fields":fields,"upload":upload})
         response = pending.value
         assert response.status == status, (scheme,route,response.status)
