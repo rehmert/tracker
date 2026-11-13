@@ -101,11 +101,14 @@ def test_click_above_dock_survives_search_blur(width):
             page.wait_for_function(
                 "getComputedStyle(document.querySelector('.tracker-mobile-dock')).display !== 'none'"
             )
+            # The dock must not return over the just-tapped control.
+            assert toggle.evaluate("""el => {
+                const dock = document.querySelector('.tracker-mobile-dock');
+                return el.getBoundingClientRect().bottom <=
+                    dock.getBoundingClientRect().top - 10;
+            }""")
 
-            # After returning to normal layout, the reverse switch also works.
-            toggle.evaluate(
-                "el => el.scrollIntoView({block:'center',behavior:'instant'})"
-            )
+            # Reverse direction without manually scrolling or forcing a tap.
             toggle.click()
             expect(toggle).to_have_text("Full sortable table")
             expect(toggle).to_have_attribute("aria-pressed", "true")
