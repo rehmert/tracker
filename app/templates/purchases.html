@@ -3,6 +3,8 @@
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-purchase-history-review.css?v=20261103">
 <script src="/static/js/tracker-purchase-history-review.js?v=20261103" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
+<script defer src="/static/js/tracker-purchase-mobile603.js?v=603"></script>
 <h1>Purchases</h1><nav class="ux-shortcuts" aria-label="Purchase actions"><a href="#new-purchase">+ Record a purchase</a><a href="#purchase-history">Purchase history</a><a href="/vials">Vials</a><a href="/supplies">Supplies</a><a href="/vendor-prices">Compare prices</a></nav><p class="note">Workflow: create the order below, then open it to add purchased vials or supplies. Inventory is not created by the order header alone.</p>
 <section id="purchase-history" aria-labelledby="purchase-history-title">
   <h2 id="purchase-history-title">Purchase history</h2>
@@ -94,10 +96,15 @@
     <label class="field"><span>Vendor</span><input name="vendor" required></label>
     <label class="field"><span>Date</span><input type="date" name="purchased_on" value="{{ today }}"></label>
     <label class="field"><span>Order reference</span><input name="order_ref"></label>
-    <label class="field"><span>Shipping ({{ currency }})</span><input name="shipping" type="number" step="0.01" min="0" value="0"></label>
-    <label class="field"><span>Tax ({{ currency }})</span><input name="tax" type="number" step="0.01" min="0" value="0"></label>
-    <label class="field"><span>Discount ({{ currency }})</span><input name="discount" type="number" step="0.01" min="0" value="0"></label>
-    <label class="field wide"><span>Notes</span><input name="notes"></label>
+    <details class="purchase-optional603 wide" data-mobile-optional603 open>
+      <summary>Shipping, tax, discount &amp; notes (optional)</summary>
+      <div class="purchase-optional-grid603">
+        <label class="field"><span>Shipping ({{ currency }})</span><input name="shipping" type="number" step="0.01" min="0" value="0"></label>
+        <label class="field"><span>Tax ({{ currency }})</span><input name="tax" type="number" step="0.01" min="0" value="0"></label>
+        <label class="field"><span>Discount ({{ currency }})</span><input name="discount" type="number" step="0.01" min="0" value="0"></label>
+        <label class="field wide"><span>Notes</span><input name="notes"></label>
+      </div>
+    </details>
     <div><button class="primary">Save, then add items</button></div>
   </form>
 </section>
