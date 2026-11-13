@@ -103,7 +103,7 @@ def test_591_unsigned_pk_matrix_matches_all_declared_router_handlers():
     )[0]
     cases = re.findall(r'[(]"([A-Z]+)", "(/pk/[^"]+)"[)]', between)
     declared = re.findall(
-        r'@router[.](post|put|patch|delete)[(]"([^"]+)"', source
+        r'@router[.](post|put|patch|delete)[(]\\s*"([^"]+)"', source
     )
     shape = lambda path: re.sub(r"/[0-9]+(?=/|$)", "/{}", path)
     actual = {(method, shape(path)) for method, path in cases}
@@ -111,7 +111,7 @@ def test_591_unsigned_pk_matrix_matches_all_declared_router_handlers():
         (method.upper(), re.sub(r"[{][^}]+[}]", "{}", "/pk" + path))
         for method, path in declared
     }
-    assert len(cases) == len(declared) == 30
+    assert len(cases) == len(declared) == 31
     assert len(actual) == len(cases)
     assert actual == expected, (sorted(actual - expected), sorted(expected - actual))
     matrix = browser_text.split(
