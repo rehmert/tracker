@@ -18,6 +18,17 @@ ROOT = Path(__file__).resolve().parents[1]
 # Evidence points to explicit browser modules in the FULL strict qualification
 # gate. A strict-only targeted preflight never constitutes full clearance.
 EVIDENCE_MODULES = {
+    # Release 595: signed food journal and vendor-sheet lifecycle witnesses.
+    ("POST", "/food/entry/{entry_id}/edit"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/entry/{entry_id}/nutrition"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/favorite/{product_id}"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/quick/{product_id}"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/template/save"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/template/{template_id}/rename"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/template/{template_id}/log"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/template/{template_id}/delete"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/save"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/{sheet_id}/delete"): "tests/browser/test_strict_csrf521.py",
     # Release 594: HTTP/HTTPS signed native food and vendor-pricing forms.
     ("POST", "/food/water"): "tests/browser/test_strict_csrf521.py",
     ("POST", "/food/water/{entry_id}/delete"): "tests/browser/test_strict_csrf521.py",
@@ -131,7 +142,8 @@ def build() -> dict:
     if any(route[1].startswith(("/food/", "/vendor-prices/"))
            for route in EVIDENCE_MODULES):
         browser_source = (ROOT / "tests/browser/test_strict_csrf521.py").read_text()
-        if "def test_594_food_vendor_signed_forms_and_unsigned_denial(" not in browser_source:
+        if ("def test_594_food_vendor_signed_forms_and_unsigned_denial(" not in browser_source
+                or "def test_595_food_templates_corrections_and_vendor_sheets(" not in browser_source):
             raise ValueError("Food/vendor 594 browser witness missing")
     # Delimit the actual combined 587/588 full-only gate. A targeted-only
     # replay cannot satisfy the qualification requirement.
