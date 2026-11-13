@@ -91,6 +91,88 @@
     display: none;
   }
 
+  /* Canonical dose history, presented as compact phone cards. No row clones. */
+  #dose-history table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+  #dose-history table thead { display: none; }
+  #dose-history #dose-body {
+    display: grid;
+    gap: .4rem;
+    width: 100%;
+  }
+  #dose-history #dose-body tr[data-dose-history602] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    padding: .4rem .48rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .7rem;
+    background: var(--surface, #fff);
+    min-width: 0;
+  }
+  #dose-history #dose-body tr[hidden] { display: none !important; }
+  #dose-history #dose-body tr[data-dose-history602] td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .12rem;
+    min-width: 0;
+    padding: .24rem .15rem;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  #dose-history #dose-body tr[data-dose-history602] td::before {
+    color: var(--muted, #62717d);
+    font-weight: 650;
+    font-size: .75rem;
+  }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(1)::before { content: "When"; }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(2)::before { content: "Compound"; }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(3)::before { content: "Vial"; }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(4)::before { content: "Entered"; }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(5)::before { content: "Counted"; }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(6)::before { content: "Cost"; }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(7)::before { content: "Site"; }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(5),
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(6),
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(7) {
+    display: none;
+  }
+  #dose-history #dose-body tr[data-dose-history602][data-expanded602="true"] td:nth-child(5),
+  #dose-history #dose-body tr[data-dose-history602][data-expanded602="true"] td:nth-child(6),
+  #dose-history #dose-body tr[data-dose-history602][data-expanded602="true"] td:nth-child(7) {
+    display: flex;
+  }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(8) {
+    grid-column: 1 / -1;
+    display: block;
+    border-top: 1px solid var(--rule, #cbd5e1);
+    margin-top: .22rem;
+    line-height: 2;
+  }
+  #dose-history #dose-body tr[data-dose-history602] td:nth-child(8)::before {
+    content: "Actions";
+    display: block;
+    line-height: 1.35;
+  }
+  #dose-history #dose-body .tracker-dose-history-toggle602 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: .3rem .5rem;
+    margin-left: .4rem;
+    font-size: .85rem;
+  }
+  #dose-history #dose-body tr[data-dose-history602]:focus-within {
+    outline: 2px solid var(--accent, #2870ae);
+    outline-offset: 1px;
+  }
+
   .food-mobile-actions602 {
     display: flex;
     flex-wrap: nowrap;
