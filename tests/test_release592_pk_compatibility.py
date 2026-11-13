@@ -62,7 +62,7 @@ def test_592_browser_witness_has_signed_and_forged_full_workflows():
     assert 'assert response.status == 403' in body
     assert "await fetch(route, {" in body
     assert 'assert result["csrf"] == "valid"' in body
-    assert 'captured[-1].get("x-tracker-csrf") == token' in body
+    assert 'pending.value.request.all_headers().get("x-tracker-csrf") == token' in body
     for operation in (
         'generate-preview', 'create-batch', 'delete-batch', 'undo-delete',
         'staged-preview', 'staged-replace',
