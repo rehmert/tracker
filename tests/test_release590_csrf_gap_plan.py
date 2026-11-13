@@ -60,7 +60,7 @@ def test_590_gap_counts_are_complete_disjoint_and_deterministic():
 def test_590_evidence_manifest_is_exact_and_excludes_unqualified_routes():
     plan = gap.build()
     manifest = plan["source_witness_manifest"]
-    assert len(manifest) == 57
+    assert len(manifest) == 64
     assert {(r["method"], r["path"]) for r in manifest} == set(gap.EVIDENCE_MODULES)
     assert all(r["runtime_verified_by_this_report"] is False for r in manifest)
     assert {r["module"] for r in manifest} == {
