@@ -26,14 +26,19 @@
         <option value="has-items">Items recorded</option>
       </select>
     </label>
-    <label class="field"><span>From date</span>
-      <input type="date" data-purchase-from aria-controls="purchase-history-table">
-    </label>
-    <label class="field"><span>Through date</span>
-      <input type="date" data-purchase-through aria-controls="purchase-history-table">
-    </label>
     <button type="button" data-purchase-reset>Reset</button>
-    <button type="button" data-purchase-export>Export filtered CSV</button>
+    <details class="purchase-review-more603" data-mobile-optional603 open>
+      <summary>Dates &amp; export <span data-purchase-date-active603 hidden>· Date filter active</span></summary>
+      <div class="purchase-review-advanced-grid603">
+        <label class="field"><span>From date</span>
+          <input type="date" data-purchase-from aria-controls="purchase-history-table">
+        </label>
+        <label class="field"><span>Through date</span>
+          <input type="date" data-purchase-through aria-controls="purchase-history-table">
+        </label>
+        <button type="button" data-purchase-export>Export filtered CSV</button>
+      </div>
+    </details>
   </div>
 
   <p class="note" data-purchase-date-error hidden role="status">Through date precedes From date. Adjust the dates to show matching purchases.</p>
