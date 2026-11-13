@@ -1,0 +1,56 @@
+/* Release 604: compact navigation only. No controls or endpoints removed. */
+.tracker-quick-fast-primary604,
+.tracker-quick-fast-secondary604 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem;
+  min-width: 0;
+}
+.tracker-quick-fast-primary604 {
+  flex: 1 1 100%;
+}
+.tracker-quick-fast-more604 {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin: .12rem 0;
+  padding: 0;
+}
+.tracker-quick-fast-more604 > summary {
+  display: list-item;
+  width: fit-content;
+  min-height: 44px;
+  padding: .55rem .65rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: .55rem;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  cursor: pointer;
+  font-size: .86rem;
+  font-weight: 650;
+  box-sizing: border-box;
+}
+.tracker-quick-fast-more604 > summary:hover {
+  border-color: var(--teal, #1265ad);
+  background: var(--wash, #f4f8fc);
+}
+.tracker-quick-fast-more604 > summary:focus-visible {
+  outline: 3px solid var(--teal, #1265ad);
+  outline-offset: 2px;
+}
+.tracker-quick-fast-secondary604 {
+  margin: .5rem 0 .2rem;
+  padding: .15rem 0 .35rem;
+}
+@media screen and (max-width: 760px) {
+  .tracker-quick-fast-primary604 { gap: .32rem; }
+  .tracker-quick-fast-primary604 a,
+  .tracker-quick-fast-secondary604 a {
+    min-height: 44px;
+    align-items: center;
+    box-sizing: border-box;
+  }
+}
+@media print {
+  .tracker-quick-fast-more604 { display: none !important; }
+}
