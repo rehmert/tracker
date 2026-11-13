@@ -170,6 +170,13 @@ def test_604_release_gate_runs_before_expensive_qualification():
     assert script.index("tracker-impact-preflight604.py") < script.index(
         "COMPLETE REGRESSION SUITE"
     )
+    assert "timeout 180" in script
+    assert "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ===" in script
+    assert script.index("RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER") < (
+        script.index("ISOLATED BROWSER QUALIFICATION")
+    )
+    assert "tests/test_release604_navigation_browser.py" in script
+    assert "tests/test_release604_preflight.py" in script
     assert "timeout 600 bash" in script
     assert 'bash "$QA/scripts/tracker-browser-qualify.sh"' in script
     assert "timeout 1200" in script
