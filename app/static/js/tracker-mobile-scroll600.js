@@ -30,6 +30,16 @@
   document.addEventListener('focusin', event => {
     if (opening?.select !== event.target) capture(event);
   }, true);
+  // A cancelled native picker may blur without dispatching a change.
+  document.addEventListener('focusout', event => {
+    const snapshot = opening;
+    if (!snapshot || snapshot.select !== event.target) return;
+    requestAnimationFrame(() => {
+      if (opening !== snapshot) return; // change already handled it
+      opening = null;
+      preserveInPlace(snapshot.select, snapshot);
+    });
+  }, true);
 
   function submittedGetFilter(select) {
     const form = select.form;
