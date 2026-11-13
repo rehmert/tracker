@@ -18,6 +18,20 @@ ROOT = Path(__file__).resolve().parents[1]
 # This report never claims that a browser run occurred on this invocation.
 # Per-path evidence is qualified only after the relevant disposable gates pass.
 BROWSER_WITNESS_CANDIDATES = frozenset({
+    # Release 592: signed batch, staged, calendar, import and transform flows.
+    ("POST", "/pk/scenarios/{sid}/doses/generate-preview"),
+    ("POST", "/pk/scenarios/{sid}/doses/create-batch"),
+    ("POST", "/pk/scenarios/{sid}/doses/delete-batch"),
+    ("POST", "/pk/scenarios/{sid}/doses/undo-delete"),
+    ("POST", "/pk/scenarios/{sid}/staged-preview"),
+    ("POST", "/pk/scenarios/{sid}/staged-replace"),
+    ("POST", "/pk/scenarios/{sid}/calendar-preview"),
+    ("POST", "/pk/scenarios/{sid}/calendar-replace"),
+    ("POST", "/pk/workspace/{sid}/transform-preview"),
+    ("POST", "/pk/workspace/{sid}/transform-apply"),
+    ("POST", "/pk/scenarios/{sid}/duplicate"),
+    ("POST", "/pk/scenarios/import-preview"),
+    ("POST", "/pk/scenarios/import-confirm"),
     # Release 591: isolated HTTP/HTTPS real-browser PK scenario lifecycle.
     ("POST", "/pk/compounds"),
     ("POST", "/pk/scenarios"),
