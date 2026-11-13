@@ -1,0 +1,32 @@
+/* Release 598: inline single-line explanations, accessible expansion. */
+.tracker-explanation598 {
+  display: flex;
+  align-items: baseline;
+  gap: .45rem;
+  min-width: 0;
+}
+.tracker-explanation598-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.tracker-explanation598-open .tracker-explanation598-text {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+.tracker-explanation598-toggle {
+  flex: 0 0 auto;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--accent, #1265ad);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+.tracker-explanation598-toggle[hidden] { display: none !important; }
