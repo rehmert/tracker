@@ -1430,3 +1430,134 @@ def test_593_pk_workbench_and_experiment_library_signed(tab, scheme):
         assert not errors, errors
     finally:
         engine.dispose()
+
+
+# Release 594: guarded signed form fetch and persisted food / vendor
+# mutations. Both HTTP and HTTPS use the isolated strict QA database.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_594_food_vendor_signed_forms_and_unsigned_denial(tab, scheme):
+    import sqlite3
+    from datetime import date
+
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    assert DATA.parent.parent == Path("/tmp").resolve()
+    assert re.fullmatch(r"tracker-browser-qa[.][A-Za-z0-9_]{8}", DATA.parent.name)
+    database = (DATA / "tracker.db").resolve()
+    assert database.parent == DATA and database.is_file() and not database.is_symlink()
+
+    def count(sql, params=()):
+        with sqlite3.connect(database) as connection:
+            return connection.execute(sql, params).fetchone()[0]
+
+    def signed(route, fields, expected=303, extra_headers=None):
+        with page.expect_response(lambda response: (
+            response.request.method == "POST"
+            and urlsplit(response.url).path == route
+        )) as pending:
+            result = page.evaluate("""async ({route,fields,headers}) => {
+                const body = new URLSearchParams(fields);
+                const response = await fetch(route, {
+                    method:'POST',credentials:'same-origin',
+                    headers:{'Content-Type':'application/x-www-form-urlencoded',...headers},
+                    body,
+                });
+                return {status:response.status,url:response.url};
+            }""",{"route":route,"fields":fields,"headers":extra_headers or {}})
+        response = pending.value
+        assert response.status == expected, (scheme, route, response.status)
+        assert response.headers.get("x-tracker-csrf-report") == "valid", (
+            scheme, route, response.headers
+        )
+        assert response.request.all_headers().get("x-tracker-csrf") == token
+        assert result["status"] == 200, (scheme,route,result)
+        return response
+
+    def unsigned(route, fields):
+        response=page.request.post(base+route,data=fields,max_redirects=0)
+        assert response.status == 403, (scheme,route,response.status)
+
+    day = date.today().isoformat()
+    landing = page.goto(base+"/food?day="+day, wait_until="networkidle")
+    assert landing is not None and landing.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    # Water addition / deletion verify the same stored row rather than merely
+    # accepting a CSRF-positive POST.
+    water="/food/water"
+    unsigned(water,{"day":day,"ounces":"8"})
+    signed(water,{"day":day,"ounces":"8"})
+    water_id=count("SELECT max(id) FROM tracker_water_entries WHERE logged_on=?",(day,))
+    assert isinstance(water_id,int)
+    assert count("SELECT ounces FROM tracker_water_entries WHERE id=?",(water_id,)) == 8
+    delete_water=f"/food/water/{water_id}/delete"
+    unsigned(delete_water,{"day":day})
+    signed(delete_water,{"day":day})
+    assert count("SELECT count(*) FROM tracker_water_entries WHERE id=?",(water_id,)) == 0
+
+    # Native food entry and target writes; direct SQLite reads are restricted
+    # to the disposable /tmp QA database above.
+    name="QA food 594 "+uuid4().hex[:8]
+    food="/food/entry"
+    unsigned(food,{"name":name,"day":day,"servings":"1"})
+    signed(food,{"name":name,"day":day,"servings":"1",
+                 "meal":"Snack","energy":"90","proteins":"10"})
+    entry_id=count("""SELECT max(e.id)
+        FROM tracker_food_entries e JOIN tracker_food_products p
+          ON e.product_id=p.id WHERE p.name=? AND e.eaten_on=?""",(name,day))
+    assert isinstance(entry_id,int)
+    assert count("SELECT servings FROM tracker_food_entries WHERE id=?",(entry_id,)) == 1
+    targets="/food/targets"
+    unsigned(targets,{"day":day,"energy":"1800"})
+    signed(targets,{"day":day,"energy":"1800","proteins":"140"})
+    assert count("SELECT value FROM tracker_food_targets WHERE nutrient='energy'") == 1800
+    delete_food=f"/food/entry/{entry_id}/delete"
+    unsigned(delete_food,{"day":day})
+    signed(delete_food,{"day":day})
+    assert count("SELECT count(*) FROM tracker_food_entries WHERE id=?",(entry_id,)) == 0
+
+    vendor="QA Vendor 594 "+uuid4().hex[:8]
+    vendor_page=page.goto(base+"/vendor-prices",wait_until="networkidle")
+    assert vendor_page is not None and vendor_page.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    shipping="/vendor-prices/shipping/save"
+    fields={"vendor":vendor,"flat_shipping":"7.50",
+            "free_shipping_threshold":"99.00"}
+    unsigned(shipping,fields)
+    signed(shipping,fields)
+    rule_id=count("SELECT id FROM vendor_shipping_rules WHERE vendor=?",(vendor,))
+    assert isinstance(rule_id,int)
+    assert count("SELECT flat_shipping_cents FROM vendor_shipping_rules WHERE id=?",(rule_id,)) == 750
+
+    manual="/vendor-prices/manual"
+    item="QA offer "+uuid4().hex[:8]
+    details={"vendor":vendor,"item_name":item,"content_amount":"10",
+             "content_unit":"mg","package_type":"vial",
+             "package_price":"12.50"}
+    unsigned(manual,details)
+    signed(manual,details)
+    entry_id=count("SELECT max(id) FROM vendor_price_entries WHERE item_name=?",(item,))
+    assert isinstance(entry_id,int)
+    assert count("SELECT total_price_cents FROM vendor_price_entries WHERE id=?",(entry_id,)) == 1250
+
+    edit=f"/vendor-prices/entries/{entry_id}/edit"
+    edit_data={"vendor":vendor,"item_name":item+" revised",
+               "content_amount":"10","content_unit":"mg",
+               "package":"vial","vial_count":"1","total_price":"13.50"}
+    unsigned(edit,edit_data)
+    signed(edit,edit_data)
+    assert count("SELECT total_price_cents FROM vendor_price_entries WHERE id=?",(entry_id,)) == 1350
+
+    delete_entry=f"/vendor-prices/entries/{entry_id}/delete"
+    unsigned(delete_entry,{})
+    signed(delete_entry,{})
+    assert count("SELECT count(*) FROM vendor_price_entries WHERE id=?",(entry_id,)) == 0
+
+    delete_rule=f"/vendor-prices/shipping/{rule_id}/delete"
+    unsigned(delete_rule,{})
+    signed(delete_rule,{})
+    assert count("SELECT count(*) FROM vendor_shipping_rules WHERE id=?",(rule_id,)) == 0
+    assert not errors, errors
