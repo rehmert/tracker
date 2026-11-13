@@ -76,7 +76,7 @@ def test_592_browser_witness_has_signed_and_forged_full_workflows():
         'assert current(sid, cid)["doses"] == []',
         'assert restored["restored"] == 2',
         'assert after != before',
-        'assert projected["saved"] is False',
+        'projected["saved"] is False',
         'assert applied["updated"] == 2',
         'assert copy_id != sid',
         'assert [x["amount_mg"] for x in current(imported_id, cid)["doses"]]',
