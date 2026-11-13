@@ -953,3 +953,195 @@ def test_591_pk_unsafe_route_forgery_matrix_negative_only(tab, scheme):
             scheme, method, route, denied.text()[:160],
         )
     assert not errors, errors
+
+
+# Release 592: representative positive PK schedule compatibility across the
+# remaining high-impact workstreams. This is genuine browser fetch (not an
+# HTTP-only TestClient) on the disposable strict-CSRF HTTP + HTTPS servers.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_592_pk_schedule_batch_import_calendar_and_transform_signed(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    landing = page.goto(base + "/pk", wait_until="networkidle")
+    assert landing is not None and landing.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    def signed(method, route, payload, expected):
+        captured = []
+        def capture(request):
+            if request.method == method and urlsplit(request.url).path == route:
+                captured.append(request.all_headers())
+        page.on("request", capture)
+        try:
+            result = page.evaluate("""async ({method, route, payload}) => {
+                const response = await fetch(route, {
+                    method, headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload), credentials: 'same-origin',
+                });
+                return {
+                    status: response.status,
+                    csrf: response.headers.get('x-tracker-csrf-report'),
+                    body: await response.json(),
+                };
+            }""", {"method": method, "route": route, "payload": payload})
+        finally:
+            page.remove_listener("request", capture)
+        assert result["status"] == expected, (scheme, method, route, result)
+        assert result["csrf"] == "valid", (scheme, method, route, result)
+        assert captured and captured[-1].get("x-tracker-csrf") == token, (
+            scheme, method, route, captured,
+        )
+        return result["body"]
+
+    def denied(method, route):
+        response = page.request.fetch(
+            base + route, method=method, data="{}",
+            headers={"Content-Type": "application/json"},
+            max_redirects=0,
+        )
+        assert response.status == 403, (scheme, method, route, response.status)
+        assert "CSRF token required" in response.text()
+
+    def scenarios(cid):
+        response = page.request.get(base + f"/pk/scenarios?compound_id={cid}")
+        assert response.status == 200
+        return response.json()
+
+    def current(sid, cid):
+        return next(x for x in scenarios(cid) if x["id"] == sid)
+
+    compound = signed("POST", "/pk/compounds",
+                      {"name": "Testosterone Cypionate"}, 201)
+    cid = compound["id"]
+    name = "QA 592 " + scheme + " " + uuid4().hex[:8]
+    definition = {
+        "compound_id": cid, "name": name,
+        "half_life_hours": 120, "absorption_half_life_hours": 24,
+    }
+    created = signed("POST", "/pk/scenarios", definition, 201)
+    sid = created["id"]
+    route = f"/pk/scenarios/{sid}"
+    batch = route + "/doses"
+    sequence = {
+        "start_at": "2030-01-01T12:00:00",
+        "amount_mg": 1.5, "interval_days": 3, "count": 2,
+    }
+
+    preview_path = batch + "/generate-preview"
+    denied("POST", preview_path)
+    projected = signed("POST", preview_path, sequence, 200)
+    assert len(projected["doses"]) == 2
+    assert current(sid, cid)["doses"] == [], "Preview modified the scenario"
+
+    create_path = batch + "/create-batch"
+    denied("POST", create_path)
+    assert signed("POST", create_path, sequence, 200)["created"] == 2
+    saved = current(sid, cid)
+    assert len(saved["doses"]) == 2
+    ids = [x["id"] for x in saved["doses"]]
+
+    state = page.request.get(base + route + "/dose-state")
+    assert state.status == 200
+    version = state.json()["version"]
+    delete_path = batch + "/delete-batch"
+    denied("POST", delete_path)
+    deleted = signed("POST", delete_path, {"ids": ids, "expected_version": version}, 200)
+    assert deleted["deleted"] == 2
+    assert current(sid, cid)["doses"] == []
+
+    undo_path = batch + "/undo-delete"
+    denied("POST", undo_path)
+    restored = signed("POST", undo_path, {
+        "audit_id": deleted["audit_id"], "expected_version": deleted["version"],
+    }, 200)
+    assert restored["restored"] == 2
+    assert len(current(sid, cid)["doses"]) == 2
+
+    staged_path = route + "/staged-preview"
+    staged = {"start_at": "2030-02-04T12:00:00", "stages": [
+        {"amount_mg": 2.0, "count": 2, "interval_days": 7},
+    ]}
+    denied("POST", staged_path)
+    projected = signed("POST", staged_path, staged, 200)
+    assert len(projected["doses"]) == 2
+    before = current(sid, cid)["doses"]
+    revision = page.request.get(base + route + "/revision")
+    assert revision.status == 200
+    replace_path = route + "/staged-replace"
+    denied("POST", replace_path)
+    assert signed("POST", replace_path, {
+        **staged, "expected_version": revision.json()["version"],
+    }, 200)["replaced"] == 2
+    after = current(sid, cid)["doses"]
+    assert after != before
+    assert [x["amount_mg"] for x in after] == [2.0, 2.0]
+
+    calendar = {
+        "start": "2030-03-04", "end": "2030-03-11",
+        "weekdays": [0], "local_time": "12:00:00",
+        "amount_mg": 3.0, "timezone_name": "America/New_York",
+    }
+    calendar_path = route + "/calendar-preview"
+    denied("POST", calendar_path)
+    projected = signed("POST", calendar_path, calendar, 200)
+    assert len(projected["doses"]) == 2 and not projected["warnings"]
+    revision = page.request.get(base + route + "/revision")
+    assert revision.status == 200
+    replace_path = route + "/calendar-replace"
+    denied("POST", replace_path)
+    assert signed("POST", replace_path, {
+        **calendar, "expected_version": revision.json()["version"],
+    }, 200)["replaced"] == 2
+    assert [x["amount_mg"] for x in current(sid, cid)["doses"]] == [3.0, 3.0]
+
+    revision = page.request.get(base + route + "/revision")
+    assert revision.status == 200
+    transformation = {
+        "shift_hours": 24, "amount_multiplier": 2,
+        "expected_version": revision.json()["version"],
+    }
+    transform_path = f"/pk/workspace/{sid}/transform-preview"
+    denied("POST", transform_path)
+    projected = signed("POST", transform_path, transformation, 200)
+    assert len(projected["doses"]) == 2 and projected["saved"] is False
+    assert [x["amount_mg"] for x in current(sid, cid)["doses"]] == [3.0, 3.0]
+
+    apply_path = f"/pk/workspace/{sid}/transform-apply"
+    denied("POST", apply_path)
+    applied = signed("POST", apply_path, transformation, 200)
+    assert applied["updated"] == 2
+    assert [x["amount_mg"] for x in current(sid, cid)["doses"]] == [6.0, 6.0]
+
+    duplicate_path = route + "/duplicate"
+    denied("POST", duplicate_path)
+    copied = signed("POST", duplicate_path, {}, 201)
+    copy_id = copied["id"]
+    assert copy_id != sid
+    assert [x["amount_mg"] for x in current(copy_id, cid)["doses"]] == [6.0, 6.0]
+
+    template = {
+        "format": "tracker-pk-scenario-template-v1",
+        "compound_id": cid, "compound_name": "Testosterone Cypionate",
+        "name": name + " imported", "half_life_hours": 120,
+        "absorption_half_life_hours": 24,
+        "doses": [{"planned_at": "2030-04-01T12:00:00", "amount_mg": 4.0}],
+    }
+    import_path = "/pk/scenarios/import-preview"
+    denied("POST", import_path)
+    result = signed("POST", import_path, template, 200)
+    assert result["count"] == 1 and result["compound"] == "Testosterone Cypionate"
+    confirm_path = "/pk/scenarios/import-confirm"
+    denied("POST", confirm_path)
+    result = signed("POST", confirm_path, template, 201)
+    imported_id = result["id"]
+    assert result["count"] == 1
+    assert [x["amount_mg"] for x in current(imported_id, cid)["doses"]] == [4.0]
+
+    for candidate in (imported_id, copy_id, sid):
+        delete_path = f"/pk/scenarios/{candidate}"
+        denied("DELETE", delete_path)
+        signed("DELETE", delete_path, {}, 200)
+    assert not any(x["id"] in (sid, copy_id, imported_id)
+                   for x in scenarios(cid))
+    assert not errors, errors
