@@ -782,3 +782,104 @@ def test_578_unsafe_method_without_csrf_never_mutates_compounds(
     else:
         assert denied.status in (403, 405), (method, denied.status)
     assert not errors, errors
+
+
+# Release 591: end-to-end PK JSON lifecycle in the already-required full
+# strict Chromium browser gate. The installed service is never contacted.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_591_pk_scenario_json_lifecycle_signed_and_unsigned_rejected(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/pk", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+
+    def unsigned(method, route):
+        # APIRequestContext bypasses the browser's signed fetch wrapper.
+        denied = page.request.fetch(
+            base + route, method=method, data="{}",
+            headers={"Content-Type": "application/json"}, max_redirects=0,
+        )
+        assert denied.status == 403, (scheme, method, route, denied.status)
+
+    def signed(method, route, payload, expected):
+        captured = []
+        def capture(request):
+            if request.method == method and urlsplit(request.url).path == route:
+                captured.append(request.all_headers())
+        page.on("request", capture)
+        result = page.evaluate("""async ({method, route, payload}) => {
+            const response = await fetch(route, {
+                method, headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload), credentials: 'same-origin',
+            });
+            return {
+                status: response.status,
+                csrf: response.headers.get('x-tracker-csrf-report'),
+                payload: await response.json(),
+            };
+        }""", {"method": method, "route": route, "payload": payload})
+        page.remove_listener("request", capture)
+        assert result["status"] == expected, (scheme, method, route, result)
+        assert result["csrf"] == "valid", (scheme, method, route, result)
+        assert captured and captured[-1].get("x-tracker-csrf") == token, (
+            scheme, method, route, captured,
+        )
+        return result["payload"]
+
+    # A real PK-enabled compound is required to demonstrate a successful,
+    # audited scenario lifecycle, rather than just CSRF-positive 422s.
+    unsigned("POST", "/pk/compounds")
+    compound = signed("POST", "/pk/compounds",
+                      {"name": "Testosterone Cypionate"}, 201)
+    cid = compound["id"]
+    assert isinstance(cid, int) and cid > 0
+
+    unsigned("POST", "/pk/scenarios")
+    scenario_name = "QA 591 isolated " + scheme + " " + uuid4().hex[:8]
+    payload = {
+        "compound_id": cid, "name": scenario_name,
+        "half_life_hours": 120, "absorption_half_life_hours": 24,
+    }
+    created = signed("POST", "/pk/scenarios", payload, 201)
+    sid = created["id"]
+    assert isinstance(sid, int) and sid > 0
+    scenarios_url = base + "/pk/scenarios?compound_id=" + str(cid)
+    saved = page.request.get(scenarios_url)
+    assert saved.status == 200
+    assert any(x["id"] == sid and x["name"] == scenario_name
+               for x in saved.json()), saved.text()
+
+    scenario_route = "/pk/scenarios/" + str(sid)
+    unsigned("PUT", scenario_route)
+    updated_name = scenario_name + " revised"
+    signed("PUT", scenario_route, {**payload, "name": updated_name}, 200)
+    assert any(x["id"] == sid and x["name"] == updated_name
+               for x in page.request.get(scenarios_url).json())
+
+    doses_route = scenario_route + "/doses"
+    unsigned("POST", doses_route)
+    dose = signed("POST", doses_route,
+                  {"planned_at": "2030-01-01T12:00:00", "amount_mg": 1.5}, 201)
+    did = dose["id"]
+    assert isinstance(did, int) and did > 0
+    dose_route = doses_route + "/" + str(did)
+    unsigned("PUT", dose_route)
+    signed("PUT", dose_route,
+           {"planned_at": "2030-01-02T12:00:00", "amount_mg": 2.5}, 200)
+    current = next(x for x in page.request.get(scenarios_url).json()
+                   if x["id"] == sid)
+    assert any(x["id"] == did and x["amount_mg"] == 2.5
+               for x in current["doses"])
+
+    unsigned("DELETE", dose_route)
+    signed("DELETE", dose_route, {}, 200)
+    current = next(x for x in page.request.get(scenarios_url).json()
+                   if x["id"] == sid)
+    assert current["doses"] == []
+
+    unsigned("DELETE", scenario_route)
+    signed("DELETE", scenario_route, {}, 200)
+    assert all(x["id"] != sid for x in page.request.get(scenarios_url).json())
+    assert not errors, errors
