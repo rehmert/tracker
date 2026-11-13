@@ -883,3 +883,62 @@ def test_591_pk_scenario_json_lifecycle_signed_and_unsigned_rejected(tab, scheme
     signed("DELETE", scenario_route, {}, 200)
     assert all(x["id"] != sid for x in page.request.get(scenarios_url).json())
     assert not errors, errors
+
+
+# Release 591: the rest of the PK unsafe-route matrix is *negative only*.
+# These forgery checks do not qualify signed endpoint compatibility and
+# therefore do not add routes to BROWSER_WITNESS_CANDIDATES.
+PK_UNSIGNED_ROUTES_591 = (
+    ("POST", "/pk/what-if/multi-preview"),
+    ("POST", "/pk/what-if/preview"),
+    ("POST", "/pk/what-if/save"),
+    ("POST", "/pk/compounds"),
+    ("POST", "/pk/scenarios"),
+    ("PUT", "/pk/scenarios/1"),
+    ("DELETE", "/pk/scenarios/1"),
+    ("POST", "/pk/scenarios/1/doses"),
+    ("PUT", "/pk/scenarios/1/doses/1"),
+    ("DELETE", "/pk/scenarios/1/doses/1"),
+    ("POST", "/pk/workbench/1"),
+    ("POST", "/pk/library/1"),
+    ("DELETE", "/pk/library/1/1"),
+    ("POST", "/pk/library/1/compare"),
+    ("PUT", "/pk/library/1/1"),
+    ("POST", "/pk/scenarios/1/doses/generate-preview"),
+    ("POST", "/pk/scenarios/1/doses/create-batch"),
+    ("POST", "/pk/scenarios/1/doses/delete-batch"),
+    ("POST", "/pk/scenarios/1/doses/undo-delete"),
+    ("POST", "/pk/scenarios/1/duplicate"),
+    ("POST", "/pk/scenarios/1/staged-preview"),
+    ("POST", "/pk/scenarios/1/staged-replace"),
+    ("POST", "/pk/scenarios/import-preview"),
+    ("POST", "/pk/scenarios/1/doses/create-batch-checked"),
+    ("POST", "/pk/scenarios/1/calendar-preview"),
+    ("POST", "/pk/scenarios/1/calendar-replace"),
+    ("POST", "/pk/workspace/1/edit-dose"),
+    ("POST", "/pk/workspace/1/transform-preview"),
+    ("POST", "/pk/workspace/1/transform-apply"),
+    ("POST", "/pk/workspace/1/revisions/1/restore"),
+)
+
+
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_591_pk_unsafe_route_forgery_matrix_negative_only(tab, scheme):
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    response = page.goto(base + "/pk", wait_until="networkidle")
+    assert response is not None and response.status == 200
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+    assert len(PK_UNSIGNED_ROUTES_591) == 30
+    for method, route in PK_UNSIGNED_ROUTES_591:
+        denied = page.request.fetch(
+            base + route, method=method, data="{}",
+            headers={"Content-Type": "application/json"},
+            max_redirects=0,
+        )
+        assert denied.status == 403, (scheme, method, route, denied.status)
+        assert "CSRF token required" in denied.text(), (
+            scheme, method, route, denied.text()[:160],
+        )
+    assert not errors, errors
