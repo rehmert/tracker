@@ -1,0 +1,101 @@
+/* Release 600: tighter phone rhythm, without smaller type or clipped data.
+   The dock, sheets, desktop layout, and existing density preference remain intact. */
+@media screen and (max-width: 760px) {
+  :root {
+    --tracker-mobile600-gap: .38rem;
+    --tracker-mobile600-pad: .52rem;
+  }
+  :root[data-density="comfortable"] {
+    --tracker-mobile600-gap: .55rem;
+    --tracker-mobile600-pad: .67rem;
+  }
+  :root[data-density="compact"] {
+    --tracker-mobile600-gap: .25rem;
+    --tracker-mobile600-pad: .42rem;
+  }
+
+  /* Reclaim vertical space above the actual work; keep the bottom dock clear. */
+  :root #main-content {
+    padding-top: .3rem;
+    padding-left: max(.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(.5rem, env(safe-area-inset-right, 0px));
+    padding-bottom: calc(6.6rem + env(safe-area-inset-bottom, 0px));
+  }
+  :root #main-content > .workspace-toolbar {
+    margin: 0 0 var(--tracker-mobile600-gap);
+    padding: .18rem 0 .32rem;
+    row-gap: .28rem;
+    column-gap: .4rem;
+  }
+  :root #main-content > .ux-breadcrumbs:not([hidden]),
+  :root #tracker-page-jump-slot:not(:empty) {
+    margin-top: .12rem;
+    margin-bottom: var(--tracker-mobile600-gap);
+  }
+  :root #main-content > h1,
+  :root #main-content .dashboard-hero {
+    margin-top: .18rem;
+    margin-bottom: var(--tracker-mobile600-gap);
+  }
+  :root #main-content > :is(h1, .dashboard-hero) + :is(p, .note) {
+    margin-top: 0;
+    margin-bottom: var(--tracker-mobile600-gap);
+  }
+
+  /* Space goes between groups, not repeatedly inside nested cards. */
+  :root #main-content :is(
+    .dashboard-panel, .today-card, .protocol-card,
+    .inventory-card, .inventory-kpi, .insight-card, .export-card,
+    .tracker-daily-section
+  ) {
+    padding: var(--tracker-mobile600-pad) .62rem;
+  }
+  :root #main-content .dashboard-panel {
+    margin-top: var(--tracker-mobile600-gap);
+    margin-bottom: var(--tracker-mobile600-gap);
+  }
+  :root #main-content :is(
+    .today-cards, .protocol-card-list, .insight-grid, .inventory-kpis,
+    .tracker-status-grid, .tracker-daily509
+  ) {
+    gap: var(--tracker-mobile600-gap);
+  }
+  :root #main-content :is(.grid, .inline) {
+    gap: var(--tracker-mobile600-gap) .48rem;
+    margin-top: var(--tracker-mobile600-gap);
+    margin-bottom: var(--tracker-mobile600-gap);
+  }
+  :root #main-content .field { gap: .12rem; }
+  :root #main-content :is(.dashboard-search, .ux-shortcuts) {
+    gap: .34rem;
+    margin-top: .3rem;
+    margin-bottom: var(--tracker-mobile600-gap);
+  }
+  :root #main-content .today-card h3,
+  :root #main-content .protocol-card h3 {
+    margin-bottom: .25rem;
+  }
+  :root #main-content .today-card li { margin: .2rem 0; }
+  :root #main-content .chartbox { padding: .4rem; }
+
+  /* Native pickers should not zoom on iOS. Keep controls tappable. */
+  :root #main-content select,
+  :root #main-content textarea,
+  :root #main-content input:not(
+    [type="checkbox"], [type="radio"], [type="hidden"],
+    [type="range"], [type="color"], [type="file"]
+  ) {
+    font-size: max(16px, 1em);
+    min-height: 44px;
+  }
+
+  /* Preserve the existing intentional horizontally scrollable tables. */
+  :root #main-content .scroll {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media print {
+  :root #main-content { padding-bottom: initial; }
+}
