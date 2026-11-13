@@ -55,6 +55,7 @@
     const form = select.form;
     const peers = Array.from(document.querySelectorAll('select')).filter(
       other => other.name === select.name && other.form &&
+        other.form.method.toLowerCase() === 'get' &&
         (other.form.getAttribute('action') || '') ===
         (form.getAttribute('action') || '')
     );
