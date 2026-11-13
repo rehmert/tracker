@@ -525,10 +525,15 @@ def test_575_create_and_edit_notes_with_rendered_dynamic_action(tab, scheme):
 
     updated = title + " edited"
     form.locator('input[name="title"]').fill(updated)
+    expect(form.locator('input[name="title"]')).to_have_value(updated)
     with page.expect_response(_post_response(page, "/pages/" + pid)) as pending:
         form.get_by_role("button", name="Save page").click()
     _verified(pending.value, status=303)
     page.wait_for_url(re.compile(re.escape(base) + r"/pages/[0-9]+(?:\?.*)?$"))
+    # User-authored titles must be visible exactly as stored: the global
+    # heading-title formatter must not rewrite capitalization or identifiers.
+    heading = page.locator(".notes-page-heading h1[data-no-title-case]")
+    expect(heading).to_have_text(updated)
     expect(page.locator("body")).to_contain_text(updated)
     assert "Forged CSRF 575" not in page.locator("body").inner_text()
     assert not errors, errors
