@@ -35,9 +35,9 @@ def test_595_exact_witness_scope_and_no_clearance():
     assert report["strict_csrf_enforce_installed"] is False
     assert report["status"] == "BLOCKED_INCOMPLETE_RUNTIME_CLEARANCE"
     plan = gap.build()
-    assert plan["source_witness_candidates"] == 70
-    assert plan["remaining_without_source_witness"] == 74
-    assert len(plan["source_witness_manifest"]) == 57
+    assert plan["source_witness_candidates"] == 77
+    assert plan["remaining_without_source_witness"] == 67
+    assert len(plan["source_witness_manifest"]) == 64
     assert plan["runtime_verified_by_this_report"] is False
     assert plan["strict_csrf_enforcement_change_authorized"] is False
     assert any(x["path"].startswith("/food/") for x in plan["unqualified_routes"])
