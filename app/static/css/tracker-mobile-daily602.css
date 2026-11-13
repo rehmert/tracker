@@ -100,6 +100,14 @@
     display: none;
   }
 
+  /* A horizontal .scroll wrapper becomes a vertical scroll container when
+     overflow-y is hidden; that traps bottom-row controls behind the fixed
+     mobile dock. Cards have no horizontal table to scroll, so let the page
+     own vertical scrolling and preserve pointer/focus hit testing. */
+  #dose-history .scroll {
+    overflow: visible;
+    max-width: 100%;
+  }
   /* Canonical dose history, presented as compact phone cards. No row clones. */
   #dose-history table {
     display: block;
