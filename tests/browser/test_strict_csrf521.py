@@ -1932,7 +1932,7 @@ def test_597_purchase_and_supply_inventory_signed(tab, scheme):
 
     token=navigate("/supplies")
     category="/supplies/categories"
-    label="QA supply category 597 "+uuid4().hex[:8]
+    label="QA"+uuid4().hex[:12]+" supply category 597"
     denied(category,{"label":label,"unit":"count"})
     signed(category,{"label":label,"unit":"count"})
     cat=query("SELECT key,unit FROM supply_categories WHERE label=?",(label,))
