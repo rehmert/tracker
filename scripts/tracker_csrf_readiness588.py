@@ -18,6 +18,17 @@ ROOT = Path(__file__).resolve().parents[1]
 # This report never claims that a browser run occurred on this invocation.
 # Per-path evidence is qualified only after the relevant disposable gates pass.
 BROWSER_WITNESS_CANDIDATES = frozenset({
+    # Release 594: HTTP/HTTPS signed native food and vendor-pricing forms.
+    ("POST", "/food/water"),
+    ("POST", "/food/water/{entry_id}/delete"),
+    ("POST", "/food/entry"),
+    ("POST", "/food/targets"),
+    ("POST", "/food/entry/{entry_id}/delete"),
+    ("POST", "/vendor-prices/shipping/save"),
+    ("POST", "/vendor-prices/shipping/{rule_id}/delete"),
+    ("POST", "/vendor-prices/manual"),
+    ("POST", "/vendor-prices/entries/{entry_id}/edit"),
+    ("POST", "/vendor-prices/entries/{entry_id}/delete"),
     # Release 593: remaining PK guarded edits, what-if and protocol library.
     ("POST", "/pk/scenarios/{sid}/doses/create-batch-checked"),
     ("POST", "/pk/workspace/{sid}/edit-dose"),
