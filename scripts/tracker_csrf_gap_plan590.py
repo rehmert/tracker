@@ -126,6 +126,13 @@ def build() -> dict:
             raise ValueError("PK 591 browser witness missing")
         if strict.count(pk_module) != 1:
             raise ValueError("PK 591 witness not exactly once in full strict gate")
+    # Release 594: validate the actual positive form witness, not just a
+    # tokenless rejection matrix. Full Chromium still supplies runtime proof.
+    if any(route[1].startswith(("/food/", "/vendor-prices/"))
+           for route in EVIDENCE_MODULES):
+        browser_source = (ROOT / "tests/browser/test_strict_csrf521.py").read_text()
+        if "def test_594_food_vendor_signed_forms_and_unsigned_denial(" not in browser_source:
+            raise ValueError("Food/vendor 594 browser witness missing")
     # Delimit the actual combined 587/588 full-only gate. A targeted-only
     # replay cannot satisfy the qualification requirement.
     full_section_start = "# Combined Release 587–588: isolate bulk inventory browser writes"
