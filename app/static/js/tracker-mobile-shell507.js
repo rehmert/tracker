@@ -39,10 +39,34 @@
         Boolean(isEditingField(document.activeElement))
       );
     }
-    // Focus events allow the action dock to step aside for the on-screen keyboard.
-    document.addEventListener("focusin", refreshKeyboardState);
+    // Keep the dock hidden until a pointer interaction finishes. Otherwise
+    // focusing a button blurs the search input, reveals the fixed dock on the
+    // next animation frame, and covers the button between pointerdown and
+    // click. This can silently swallow the intended button action.
+    let pointerInFlight = false;
+    document.addEventListener("pointerdown", () => {
+      pointerInFlight = true;
+    }, true);
+    const finishPointer = () => {
+      requestAnimationFrame(() => {
+        pointerInFlight = false;
+        refreshKeyboardState();
+      });
+    };
+    document.addEventListener("pointerup", finishPointer, true);
+    document.addEventListener("pointercancel", finishPointer, true);
+
+    // Keyboard-driven focus changes still update immediately. During a
+    // pointer transition, defer revealing the dock until the click finishes;
+    // moving focus INTO an editable field can hide it right away.
+    document.addEventListener("focusin", () => {
+      if (pointerInFlight && !isEditingField(document.activeElement)) return;
+      refreshKeyboardState();
+    });
     document.addEventListener("focusout", () => {
-      requestAnimationFrame(refreshKeyboardState);
+      requestAnimationFrame(() => {
+        if (!pointerInFlight) refreshKeyboardState();
+      });
     });
     window.addEventListener("pageshow", () => {
       updateMenu();
