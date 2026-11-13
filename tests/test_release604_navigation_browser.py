@@ -14,6 +14,8 @@ VIALS = (ROOT / "app/templates/vials.html").read_text(encoding="utf-8")
 QUICK_CSS = (
     (ROOT / "app/static/css/tracker-quick-entry.css").read_text()
     + "\n" +
+    (ROOT / "app/static/css/tracker-mobile-daily602.css").read_text()
+    + "\n" +
     (ROOT / "app/static/css/tracker-navigation604.css").read_text()
 )
 VIAL_CSS = (ROOT / "app/static/css/tracker-inventory-mobile603.css").read_text()
@@ -55,6 +57,11 @@ def test_604_quick_entry_shortcuts_disclose_without_losing_links(browser, width)
         extra = nav.locator(".tracker-quick-fast-secondary604 a")
         assert primary.count() == 6
         assert extra.count() == 9
+        if width <= 760:
+            assert nav.locator(".tracker-quick-fast-primary604").evaluate(
+                """el => getComputedStyle(el).overflowX === 'auto'
+                   && el.scrollWidth > el.clientWidth"""
+            ), "Expected genuine swipeable primary shortcut row"
         for link in primary.all():
             expect(link).to_be_visible()
         for link in extra.all():
