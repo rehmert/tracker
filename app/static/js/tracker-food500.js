@@ -13,16 +13,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const cards = [...root.querySelectorAll('[data-food500-quick-card]')];
   const normalize = text => String(text || '').normalize('NFKC')
     .toLocaleLowerCase().trim();
+  // Index stable labels once, rather than normalize every card on every
+  // mobile keystroke. Server-supplied products remain the only source.
+  const entries = cards.map(card => ({
+    card,
+    searchable: normalize(
+      card.dataset.food500Name + ' ' + card.dataset.food500Serving
+    )
+  }));
+  let pending = false;
 
   function update() {
     const term = normalize(search.value);
     const section = scope.value;
     let matches = 0;
     let recentMatches = 0;
-    for (const card of cards) {
-      const searchable = normalize(
-        card.dataset.food500Name + ' ' + card.dataset.food500Serving
-      );
+    for (const {card, searchable} of entries) {
       const isRecent = card.dataset.food500Scope === 'recent';
       const allowed = section === 'all' || card.dataset.food500Scope === section;
       const visible = allowed && (!term || searchable.includes(term));
@@ -41,7 +47,16 @@ document.addEventListener('DOMContentLoaded', () => {
     reset.disabled = !term && section === 'all';
   }
 
-  search.addEventListener('input', update);
+  function scheduleUpdate() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      update();
+    });
+  }
+
+  search.addEventListener('input', scheduleUpdate);
   scope.addEventListener('change', update);
   reset.addEventListener('click', () => {
     search.value = '';
