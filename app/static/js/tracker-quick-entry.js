@@ -36,6 +36,13 @@
 
     root.dataset.ready = 'true';
     let category = 'all';
+    // The action directory is static for the page lifetime; index its
+    // keywords once instead of normalizing all labels on every keystroke.
+    const searchableByAction = new Map(actions.map(action => [
+      action,
+      (action.textContent + ' ' +
+        (action.dataset.quickKeywords || '')).toLocaleLowerCase()
+    ]));
 
     function update() {
       const words = search.value
@@ -48,13 +55,12 @@
 
       actions.forEach(action => {
         const inCategory =
-          category === 'all' ||
-          action.dataset.quickCategory === category;
+          category === 'daily'
+            ? action.hasAttribute('data-quick-daily')
+            : category === 'all' ||
+              action.dataset.quickCategory === category;
 
-        const searchable = (
-          action.textContent + ' ' +
-          (action.dataset.quickKeywords || '')
-        ).toLocaleLowerCase();
+        const searchable = searchableByAction.get(action);
 
         const matches = words.every(
           word => searchable.includes(word)
