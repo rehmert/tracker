@@ -243,7 +243,9 @@ print("DISPOSABLE_INVENTORY_FIXTURES=2")
 print("DISPOSABLE_PREPARATION_FIXTURES=2")
 PY
 
-# Release 524: preserve parallel execution without overlapping
+# Release 594: cap Chromium pytest parallelism at four workers to avoid
+# OOM kills inside the 8 GiB LXC while preserving every browser test.
+# Preserve parallel execution without overlapping
 # conflicting mutations against the same disposable SQLite database.
 run_isolated_browser_module() {
     local module="$1"
@@ -270,13 +272,13 @@ run_isolated_browser_module() {
 
     echo
     echo "=== BROWSER MODULE: $module (strict=$strict) ==="
-    echo "WORKERS=16"
+    echo "WORKERS=4"
     echo "MODULE_LOG=$logfile"
 
     set +e
     env -i "${envvars[@]}" \
         "$PY" -B -m pytest \
-        -n 16 --dist=loadfile \
+        -n 4 --dist=loadfile \
         -q --tb=short "$module" \
         2>&1 | tee "$logfile"
 
@@ -295,7 +297,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
   TRACKER_TEST_ISOLATED=1 TRACKER_BROWSER_QA_DATA_DIR="$DATA" \
   PYTHONDONTWRITEBYTECODE=1 \
-  "$PY" -B -m pytest -n 16 --dist=loadfile -q --tb=short \
+  "$PY" -B -m pytest -n 4 --dist=loadfile -q --tb=short \
     tests/browser/test_food_search_ui.py \
     tests/browser/test_inventory_alert_csv_review.py \
     tests/browser/test_lab_compare_review.py \
@@ -392,7 +394,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
   TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
   TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
-  "$PY" -B -m pytest -n 16 --dist=loadfile -q --tb=short \
+  "$PY" -B -m pytest -n 4 --dist=loadfile -q --tb=short \
     tests/browser/test_strict_csrf521.py \
     2>&1 | tee "$STRICT_TEST_LOG"
 STRICT_EXIT=${PIPESTATUS[0]}
