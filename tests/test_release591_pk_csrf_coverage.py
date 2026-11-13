@@ -24,7 +24,7 @@ PK_ROUTES = frozenset({
 
 
 def test_591_pk_routes_are_exact_browser_witness_candidates_not_clearance():
-    assert {key for key in gap.EVIDENCE_MODULES if key[1].startswith("/pk/")} == PK_ROUTES
+    # The 591 seven-route witness remains required as 592 adds more PK routes.\n    assert PK_ROUTES <= {key for key in gap.EVIDENCE_MODULES if key[1].startswith("/pk/")}
     assert PK_ROUTES <= readiness.BROWSER_WITNESS_CANDIDATES
     report = readiness.report()
     assert not report["missing_witness_source_routes"]
