@@ -67,14 +67,8 @@
     min-width: 0;
   }
   #tracker-vials-sortable.tracker-vials-as-cards601 thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
+    /* Sort controls remain available when switching back to Full table. */
+    display: none;
   }
   #tracker-vials-sortable.tracker-vials-as-cards601 tbody {
     display: grid;
@@ -164,8 +158,13 @@
     grid-template-columns: minmax(5.3rem, 34%) minmax(0, 1fr);
   }
   #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  td:nth-child(3) br { display: none; }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  td:nth-child(3) small { grid-column: 2; }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
   td:nth-child(3) .tracker-vial-detail-toggle601 {
     grid-column: 2;
+    justify-self: start;
   }
   #tracker-vials-sortable.tracker-vials-as-cards601 tbody
   tr:focus-within {
