@@ -1255,6 +1255,7 @@ def test_593_pk_checked_batch_guarded_edit_and_revision_restore(tab, scheme):
 # Release 593: stateless what-if previews and save, with persisted PK scenario.
 @pytest.mark.parametrize("scheme", ("http", "https"))
 def test_593_pk_what_if_preview_multi_and_save(tab, scheme):
+    from datetime import datetime, timedelta
     page, errors = tab
     base = URL if scheme == "http" else HTTPS_URL
     landing = page.goto(base + "/pk", wait_until="networkidle")
@@ -1296,7 +1297,8 @@ def test_593_pk_what_if_preview_multi_and_save(tab, scheme):
                  {"name":"Testosterone Cypionate"},201)["id"]
     schedule = {
         "compound_id":cid,"name":"QA hypothetical 593 "+uuid4().hex[:8],
-        "start_at":"2030-01-01T12:00:00","interval_days":3,
+        "start_at":(datetime.now()+timedelta(days=7)).replace(microsecond=0).isoformat(),
+        "interval_days":3,
         "duration_days":21,"offset_days":0,
         "stages":[{"week":1,"amount_mg":1.0,"interval_days":3}],
         "half_life_hours":120,"absorption_half_life_hours":24
