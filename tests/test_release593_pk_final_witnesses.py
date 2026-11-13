@@ -74,7 +74,7 @@ def test_593_three_positive_browser_workflows_cover_new_routes_and_fail_closed()
     for evidence in (
         'assert result["csrf"] == "valid"',
         'assert response.status == 403',
-        'captured[-1].get("x-tracker-csrf") == token',
+        'pending.value.request.all_headers().get("x-tracker-csrf") == token',
         'assert len(saved()["doses"]) == 2',
         'assert restored["audit_source"] == audit_id',
         'assert not any(d["amount_mg"] == 5.0',
