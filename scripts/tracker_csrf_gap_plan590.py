@@ -18,6 +18,19 @@ ROOT = Path(__file__).resolve().parents[1]
 # Evidence points to explicit browser modules in the FULL strict qualification
 # gate. A strict-only targeted preflight never constitutes full clearance.
 EVIDENCE_MODULES = {
+    # Release 593: actual browser-signed guarded scenario, what-if and
+    # experiment library operations, including persisted revisions.
+    ("POST", "/pk/scenarios/{sid}/doses/create-batch-checked"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/workspace/{sid}/edit-dose"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/workspace/{sid}/revisions/{audit_id}/restore"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/what-if/preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/what-if/multi-preview"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/what-if/save"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/workbench/{pid}"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/library/{pid}"): "tests/browser/test_strict_csrf521.py",
+    ("PUT", "/pk/library/{pid}/{experiment_id}"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/pk/library/{pid}/compare"): "tests/browser/test_strict_csrf521.py",
+    ("DELETE", "/pk/library/{pid}/{experiment_id}"): "tests/browser/test_strict_csrf521.py",
     # Release 592: signed schedule and import workflows share the same
     # mandatory full strict Chromium module; negative-only probes are excluded.
     ("POST", "/pk/scenarios/{sid}/doses/generate-preview"): "tests/browser/test_strict_csrf521.py",
@@ -95,7 +108,10 @@ def build() -> dict:
     if pk_module in required:
         pk_source = (ROOT / pk_module).read_text()
         if ("def test_591_pk_scenario_json_lifecycle_signed_and_unsigned_rejected(" not in pk_source
-                or "def test_592_pk_schedule_batch_import_calendar_and_transform_signed(" not in pk_source):
+                or "def test_592_pk_schedule_batch_import_calendar_and_transform_signed(" not in pk_source
+                or "def test_593_pk_checked_batch_guarded_edit_and_revision_restore(" not in pk_source
+                or "def test_593_pk_what_if_preview_multi_and_save(" not in pk_source
+                or "def test_593_pk_workbench_and_experiment_library_signed(" not in pk_source):
             raise ValueError("PK 591 browser witness missing")
         if strict.count(pk_module) != 1:
             raise ValueError("PK 591 witness not exactly once in full strict gate")
