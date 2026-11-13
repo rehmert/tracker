@@ -43,7 +43,32 @@
   padding: .15rem 0 .35rem;
 }
 @media screen and (max-width: 760px) {
-  .tracker-quick-fast-primary604 { gap: .32rem; }
+  /* Release 602 relied on a horizontally scrollable shortcut row. Keep the
+     swipeable row inside the navigation so the disclosure can open *below*
+     it without being clipped by the horizontal scroll container. */
+  .tracker-quick-fast-paths {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .tracker-quick-fast-primary604 {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    padding: .12rem .1rem .45rem;
+    gap: .32rem;
+  }
+  .tracker-quick-fast-primary604 a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .tracker-quick-fast-more604 {
+    flex: 1 1 100%;
+  }
   .tracker-quick-fast-primary604 a,
   .tracker-quick-fast-secondary604 a {
     min-height: 44px;
