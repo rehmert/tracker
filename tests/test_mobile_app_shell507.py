@@ -22,7 +22,7 @@ def test_507_single_canonical_manifest_and_mobile_safe_viewport():
     assert html.count('name="theme-color"') == 1
     assert 'viewport-fit=cover' in html
     assert 'tracker-mobile-shell507.css?v=507' in html
-    assert 'tracker-mobile-shell507.js?v=507' in html
+    assert 'tracker-mobile-shell507.js?v=603' in html
     assert html.index("tracker-compact-layout.css") < html.index(
         "tracker-mobile-shell507.css"
     )
