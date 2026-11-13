@@ -1861,3 +1861,115 @@ def test_596_vendor_multipart_and_csv_roundtrip_signed(tab, scheme):
     assert query("SELECT count(*) FROM vendor_price_sheets WHERE vendor=? AND name=?",
                  (vendor,"QA Legacy 596"))[0] == 0
     assert not errors, errors
+
+
+# Release 597: real signed Chromium purchase and disposable supplies
+# mutations, including inventory counts and isolated usage records.
+@pytest.mark.parametrize("scheme", ("http", "https"))
+def test_597_purchase_and_supply_inventory_signed(tab, scheme):
+    import sqlite3
+
+    page, errors = tab
+    base = URL if scheme == "http" else HTTPS_URL
+    assert DATA.name == "data" and DATA.parent.parent == Path("/tmp").resolve()
+    assert re.fullmatch(r"tracker-browser-qa[.][A-Za-z0-9_]{8}", DATA.parent.name)
+    database = (DATA / "tracker.db").resolve()
+    assert database.parent == DATA and database.is_file() and not database.is_symlink()
+
+    def query(sql, params=()):
+        with sqlite3.connect(database) as connection:
+            return connection.execute(sql, params).fetchone()
+
+    def navigate(route):
+        response = page.goto(base+route, wait_until="networkidle")
+        assert response is not None and response.status == 200, route
+        value=page.evaluate("window.trackerCsrfToken?.() || ''")
+        assert value.startswith("v1.")
+        return value
+
+    token=navigate("/purchases")
+
+    def denied(route, fields):
+        response=page.request.post(base+route,data=fields,max_redirects=0)
+        assert response.status == 403, (scheme,route,response.status)
+
+    def signed(route, fields):
+        with page.expect_response(lambda response: (
+            response.request.method == "POST"
+            and urlsplit(response.url).path == route
+        )) as pending:
+            result=page.evaluate("""async ({route,fields}) => {
+                const response=await fetch(route,{
+                    method:'POST',credentials:'same-origin',
+                    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                    body:new URLSearchParams(fields),
+                });
+                return {status:response.status};
+            }""", {"route":route,"fields":fields})
+        response=pending.value
+        assert response.status == 303, (scheme,route,response.status)
+        assert response.headers.get("x-tracker-csrf-report") == "valid"
+        assert response.request.all_headers().get("x-tracker-csrf") == token
+        assert result["status"] == 200, (scheme,route,result)
+
+    vendor="QA supply purchase 597 "+uuid4().hex[:8]
+    create="/purchases"
+    purchase_fields={"vendor":vendor,"purchased_on":"2026-11-13",
+                     "order_ref":"QA597","shipping":"1.25",
+                     "tax":"0","discount":"0","notes":"disposable CSRF QA"}
+    denied(create,purchase_fields)
+    signed(create,purchase_fields)
+    purchased=query("""SELECT id,shipping_cents FROM purchases
+                         WHERE vendor=? ORDER BY id DESC LIMIT 1""",(vendor,))
+    assert purchased is not None and purchased[1] == 125
+    pid=purchased[0]
+
+    update=f"/purchases/{pid}"
+    update_fields={**purchase_fields,"notes":"signed update 597"}
+    denied(update,update_fields)
+    signed(update,update_fields)
+    assert query("SELECT notes FROM purchases WHERE id=?",(pid,)) == ("signed update 597",)
+
+    token=navigate("/supplies")
+    category="/supplies/categories"
+    label="QA supply category 597 "+uuid4().hex[:8]
+    denied(category,{"label":label,"unit":"count"})
+    signed(category,{"label":label,"unit":"count"})
+    cat=query("SELECT key,unit FROM supply_categories WHERE label=?",(label,))
+    assert cat is not None and cat[1] == "count"
+    kind=cat[0]
+
+    supply_name="QA disposable 597 "+uuid4().hex[:8]
+    create_supply="/supplies"
+    supply_fields={"purchase_id":str(pid),"name":supply_name,"kind":kind,
+                   "quantity":"8","unit_price":"0.75"}
+    denied(create_supply,supply_fields)
+    signed(create_supply,supply_fields)
+    supply=query("""SELECT id,purchased_qty,remaining_qty FROM supplies
+                    WHERE purchase_id=? AND name=?""",(pid,supply_name))
+    assert supply is not None and supply[1:] == (8.0,8.0)
+    sid=supply[0]
+
+    use=f"/supplies/{sid}/use"
+    denied(use,{"quantity":"2"})
+    signed(use,{"quantity":"2"})
+    assert query("SELECT remaining_qty FROM supplies WHERE id=?",(sid,)) == (6.0,)
+    assert query("""SELECT count(*),sum(amount) FROM supply_usages
+                    WHERE supply_id=?""",(sid,)) == (1,2.0)
+
+    pill_name="QA pill supply 597 "+uuid4().hex[:8]
+    signed(create_supply,{"purchase_id":str(pid),"name":pill_name,
+                          "kind":"pill","quantity":"10","unit_price":"0.50"})
+    pill=query("SELECT id,remaining_qty FROM supplies WHERE purchase_id=? AND name=?",
+               (pid,pill_name))
+    assert pill is not None and pill[1] == 10.0
+    pill_id=pill[0]
+    dose=f"/supplies/{pill_id}/dose"
+    dose_fields={"quantity":"3","taken_at":"2026-11-13T09:00","notes":"qa"}
+    denied(dose,dose_fields)
+    signed(dose,dose_fields)
+    assert query("SELECT remaining_qty FROM supplies WHERE id=?",
+                 (pill_id,)) == (7.0,)
+    assert query("SELECT count(*),sum(amount) FROM supply_usages WHERE supply_id=?",
+                 (pill_id,)) == (1,3.0)
+    assert not errors, errors
