@@ -69,7 +69,8 @@
     <nav class="tracker-dose-steps602" aria-label="Dose entry steps">
       <a href="#calendar-vial-picker" data-dose-step602="vial"><span>1</span> Vial</a>
       <a href="#tracker-dose-amount602" data-dose-step602="amount"><span>2</span> Amount</a>
-      <a href="#tracker-dose-final-review" data-dose-step602="review"><span>3</span> Review</a>
+      <a href="#tracker-dose-when602" data-dose-step602="when"><span>3</span> Time</a>
+      <a href="#tracker-dose-final-review" data-dose-step602="review"><span>4</span> Review</a>
     </nav>
     <p class="tracker-dose-progress602" data-dose-progress602 role="status"
        aria-live="polite">Select the actual vial and enter the recorded amount.</p>
@@ -231,7 +232,7 @@
   </p>
 </div>
 
-    <label class="field wide tracker-dose-when-field"><span>When</span><input type="datetime-local" name="taken_at" value="{{ now }}"></label>
+    <label class="field wide tracker-dose-when-field" id="tracker-dose-when602"><span>When</span><input type="datetime-local" name="taken_at" value="{{ now }}"></label>
     <label class="field"><span>Type</span><select name="kind"><option value="dose">Logged dose</option><option value="waste">Wasted or discarded</option></select></label>
     <label class="check"><input type="checkbox" name="use_remaining" value="yes"> Use all remaining vial contents</label>
     <label class="field"><span>Site</span><select name="site"><option value="">Not recorded</option>{% for site in sites %}<option value="{{ site }}" {% if repeat_site == site %}selected{% endif %}>{{ site }}</option>{% endfor %}</select></label>
