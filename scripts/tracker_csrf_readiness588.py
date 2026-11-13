@@ -18,6 +18,14 @@ ROOT = Path(__file__).resolve().parents[1]
 # This report never claims that a browser run occurred on this invocation.
 # Per-path evidence is qualified only after the relevant disposable gates pass.
 BROWSER_WITNESS_CANDIDATES = frozenset({
+    # Release 591: isolated HTTP/HTTPS real-browser PK scenario lifecycle.
+    ("POST", "/pk/compounds"),
+    ("POST", "/pk/scenarios"),
+    ("PUT", "/pk/scenarios/{sid}"),
+    ("DELETE", "/pk/scenarios/{sid}"),
+    ("POST", "/pk/scenarios/{sid}/doses"),
+    ("PUT", "/pk/scenarios/{sid}/doses/{did}"),
+    ("DELETE", "/pk/scenarios/{sid}/doses/{did}"),
     ("POST", "/coas/new"),
     ("POST", "/compounds"),
     ("POST", "/compounds/{cid}/edit"),
