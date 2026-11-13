@@ -156,7 +156,7 @@ def test_604_quick_shortcuts_still_have_exact_original_destinations():
     assert fast.count('<a href=') == 15
     assert html.count('data-quick-daily') == 5
     assert "tracker-quick-entry.js?v=603" in html
-    assert "tracker-navigation604.css?v=604" in html
+    assert "tracker-navigation604.css?v=604b" in html
     assert "<form" not in html
     templates.env.get_template("quick_entry.html")
 
