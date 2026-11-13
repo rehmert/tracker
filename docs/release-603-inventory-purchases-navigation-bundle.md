@@ -65,3 +65,24 @@
   would change event ownership and regression risk; it is deferred rather
   than bundled without dedicated integration tests.
 - No wholesale removal of sidebar pages or navigation capabilities.
+
+## Fixed-dock pointer safety (added after DEV browser failure)
+
+The two failing HTTP/HTTPS Purchase History toggle cases were a real mobile
+interaction defect, not a timing assertion. The Purchase History Reset button
+focuses its search input. While the search field has focus, the fixed mobile
+dock is hidden. Pointer-down on the card/table toggle blurs search; the dock
+previously reappeared before pointer-up and intercepted the click.
+
+Release 603 now defers revealing the mobile dock until the in-flight pointer
+sequence finishes. Keyboard focus and editing behavior remain supported.
+The shared mobile-dock JavaScript is cache-busted as `?v=603`.
+
+A new *independent Chromium* regression uses actual Tracker JS, a fixed dock,
+and a button deliberately located in the dock hit area. It was verified locally
+at 320, 390 and 430px: the original implementation failed 3/3; the corrected
+implementation passed 3/3, with real pointer clicks and no forced interactions.
+
+Run the targeted regression first on a candidate worktree:
+`pytest -q tests/test_mobile_dock_pointer603.py`.
+The guarded DEV release still runs the entire HTTP/HTTPS qualification gate.
