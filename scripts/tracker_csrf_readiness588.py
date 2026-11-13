@@ -18,6 +18,14 @@ ROOT = Path(__file__).resolve().parents[1]
 # This report never claims that a browser run occurred on this invocation.
 # Per-path evidence is qualified only after the relevant disposable gates pass.
 BROWSER_WITNESS_CANDIDATES = frozenset({
+    # Release 596: signed vendor multipart, import and preview workflows.
+    ("POST", "/vendor-prices/attachments/upload"),
+    ("POST", "/vendor-prices/attachments/{attachment_id}/delete"),
+    ("POST", "/vendor-prices/items-csv/preview"),
+    ("POST", "/vendor-prices/items-csv/save"),
+    ("POST", "/vendor-prices/bulk/preview"),
+    ("POST", "/vendor-prices/bulk/save"),
+    ("POST", "/vendor-prices/preview"),
     # Release 595: signed food journal and vendor-sheet lifecycle witnesses.
     ("POST", "/food/entry/{entry_id}/edit"),
     ("POST", "/food/entry/{entry_id}/nutrition"),
