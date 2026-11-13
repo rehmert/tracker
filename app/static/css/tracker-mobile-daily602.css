@@ -1,7 +1,8 @@
 /* Release 602: compact daily recording, shared focus affordances and touch
  * targets. Existing form submissions, values and validation are unchanged.
  */
-.tracker-dose-fast602 { display: none; }
+.tracker-dose-fast602,
+.tracker-dose-history-toggle602 { display: none; }
 
 @media screen and (max-width: 760px) {
   .tracker-dose-fast602 {
@@ -173,6 +174,49 @@
     outline-offset: 1px;
   }
 
+  /* The Quick Entry hub remains a complete action directory, but its
+     shortcut row no longer consumes many vertical phone screens. */
+  .tracker-quick-entry-header .note { margin: .2rem 0; }
+  .tracker-quick-fast-paths {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: .3rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    padding: .25rem .1rem .45rem;
+    margin: .32rem 0;
+  }
+  .tracker-quick-fast-paths .tracker-quick-fast-heading {
+    flex: 0 0 auto;
+    align-self: center;
+  }
+  .tracker-quick-fast-paths a {
+    flex: 0 0 auto;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .tracker-quick-entry-toolbar {
+    margin: .35rem 0;
+    padding: .45rem;
+    gap: .35rem;
+  }
+  .tracker-quick-entry-toolbar label { flex: 1 1 70%; }
+  .tracker-quick-entry-toolbar button { min-height: 44px; }
+  .tracker-quick-entry-hint { display: none; }
+  .tracker-quick-entry-tabs { gap: .3rem; margin: .35rem 0; }
+  .tracker-quick-entry-tabs button { flex: 1 1 auto; min-height: 44px; }
+  .tracker-quick-entry-grid { gap: .4rem; }
+  .tracker-quick-entry-card {
+    min-height: 84px;
+    gap: .25rem;
+    padding: .55rem;
+    border-radius: .7rem;
+  }
+  .tracker-quick-entry-card span { font-size: .8rem; line-height: 1.3; }
+
   .food-mobile-actions602 {
     display: flex;
     flex-wrap: nowrap;
@@ -249,6 +293,11 @@
 }
 @media screen and (max-width: 359px) {
   .tracker-dose-recent-links602 { grid-template-columns: 1fr; }
+}
+@media screen and (min-width: 380px) and (max-width: 760px) {
+  .tracker-quick-entry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media print {
   .tracker-dose-fast602 { display: none !important; }
