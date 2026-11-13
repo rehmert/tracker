@@ -280,7 +280,7 @@
       | length %}
 
   {% set upcoming_count =
-      today_summary.upcoming | length %}
+      dashboard_upcoming | length %}
 
   {% set low_stock_count =
       forecasts
@@ -306,7 +306,7 @@
         {{ active_protocol_count }}
       </span>
       <span class="tracker-status-detail">
-        {{ protocol_summaries | length }} total saved
+        Active plans only
       </span>
     </a>
 
@@ -331,7 +331,7 @@
     <a class="tracker-status-card"
        href="/calendar">
       <span class="tracker-status-label">
-        Next 7 days
+        Next 3 days
       </span>
       <span class="tracker-status-value">
         {{ upcoming_count }}
@@ -427,12 +427,12 @@
       {% else %}<p class="empty">No administrations scheduled or recorded today.</p>{% endif %}
     </div>
     <div class="today-card">
-      <h3>Upcoming · next 7 days</h3>
-      {% if today_summary.upcoming %}
-      <ul>{% for day, e in today_summary.upcoming %}
+      <h3>Upcoming · next 3 days</h3>
+      {% if dashboard_upcoming %}
+      <ul>{% for day, e in dashboard_upcoming %}
         <li><strong>{{ day.strftime('%b %d') }}</strong> — {{ e.name }} {{ e.dose }} <small>{{ e.protocol }}</small> <a href="/doses?compound_id={{ e.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ e.dose_time or '' }}&amp;planned_amount={{ e.amount_value }}&amp;planned_unit={{ e.amount_unit }}">Log dose</a> <a class="tag" data-dashboard-dose-handoff="1" href="/dose-workspace?compound_id={{ e.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ e.dose_time or '' }}&amp;planned_amount={{ e.amount_value }}&amp;planned_unit={{ e.amount_unit }}">Choose vial first</a></li>
       {% endfor %}</ul>
-      {% else %}<p class="empty">No projected administrations in the next 7 days.</p>{% endif %}
+      {% else %}<p class="empty">No projected administrations in the next 3 days.</p>{% endif %}
     </div>
     <div class="today-card">
       <h3>Recently recorded</h3>
@@ -460,7 +460,7 @@
 
 <section data-dashboard-panel="3" data-dashboard-title="Current protocols" class="dashboard-panel" id="current-protocols">
   <div class="panel-heading"><h2>Current Protocols</h2><a href="/protocols">Manage protocols →</a></div>
-  <p class="note">Only active protocols contribute to inventory forecasts. Saved what-if plans do not.</p>
+  <p class="note">Showing active protocols only. Their projected use contributes to inventory forecasts.</p>
 
   {% if protocol_summaries %}
     <label class="dashboard-search"><span>Find protocol or compound</span><input type="search" placeholder="Search protocols…" data-filter-target="protocol-cards" aria-label="Filter protocols"></label>
@@ -468,7 +468,7 @@
     {% for protocol in protocol_summaries %}
 
     <article class="protocol-card" data-search="{{ protocol.name }} {% for item in protocol.compounds %} {{ item.compound }} {% endfor %}">
-    <h3><a href="/protocols/{{ protocol.id }}">{{ protocol.name }}</a> <span class="tag {{ 'tag-active' if protocol.is_active else 'tag-muted' }}">{{ "Active" if protocol.is_active else "What-if" }}</span></h3>
+    <h3><a href="/protocols/{{ protocol.id }}">{{ protocol.name }}</a> <span class="tag tag-active">Active</span></h3>
 
     <div class="scroll">
       <table>
@@ -506,8 +506,8 @@
     </div>
   {% else %}
     <p class="empty">
-      No protocols configured.
-      <a href="/protocols">Create a protocol</a>.
+      No active protocols.
+      <a href="/protocols">Create or activate a protocol</a>.
     </p>
   {% endif %}
 </section>
