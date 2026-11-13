@@ -35,12 +35,13 @@ def test_591_pk_routes_are_exact_browser_witness_candidates_not_clearance():
     plan = gap.build()
     assert plan["strict_csrf_enforcement_change_authorized"] is False
     assert plan["runtime_verified_by_this_report"] is False
-    assert len(plan["source_witness_manifest"]) == 26
+    assert len(plan["source_witness_manifest"]) == 37
     actual = { (r["method"], r["path"]) for r in plan["candidate_routes"]}
     assert PK_ROUTES <= actual
     remaining_pk = [r for r in plan["unqualified_routes"]
                     if r["path"].startswith("/pk/")]
-    assert remaining_pk, "PK is not globally cleared by seven witnesses"
+    # Release 593 completes source candidates, not runtime or global clearance.
+    assert remaining_pk == []
 
 
 def test_591_real_browser_test_exercises_signed_crud_and_forgery_over_both_schemes():
