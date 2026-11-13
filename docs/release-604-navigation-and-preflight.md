@@ -15,9 +15,12 @@ Base: Release 603 (`ca746febdc037676ca9af9b08fa5cc5ac52a4cfc`).
 ### Quick Entry
 - Preserve all 15 direct links and the independent searchable action cards.
 - Display six daily recording destinations immediately: Today, favorite food,
-  water, dose, vital reading and supply use.
+  water, dose, vital reading and supply use. The six links occupy a horizontally
+  swipeable row on phones, preserving Release 602's scroll behavior without
+  forcing the entire page wider.
 - Group the other nine links under an accessible native **More direct shortcuts**
-  disclosure. All original URLs and hash fragments stay exactly the same.
+  disclosure *below* the scrollable row, not clipped inside it. All original URLs
+  and hash fragments stay exactly the same.
 - Add scoped `tracker-navigation604.css`; do not alter the existing quick-entry
   JavaScript, action filters or forms.
 - No persistence, network calls, auto-submission or record writes.
@@ -56,3 +59,18 @@ claim to detect every possible stale test or all dynamically constructed URLs.
 - Full guarded DEV Chromium HTTP/HTTPS and complete backend regression must
   pass before signing or promoting Release 604 to PROD.
 - No standalone tool or local source check is a substitute for the guarded gate.
+
+## Regression addressed in second DEV qualification
+
+The first Release 604 Chromium pass found two failures in the older Release 602
+mobile-density test. The original shortcut bar itself no longer overflowed
+horizontally after grouping the links, because the six primary links wrapped.
+The corrected `tracker-navigation604.css?v=604b` gives the six-link group its
+own horizontal scroll container, leaves the native disclosure visible below,
+and preserves two Quick Entry card columns at 390px.
+
+The strict HTTP/HTTPS browser check continues to require **genuine** overflow
+(`scrollWidth > clientWidth`) and two columns. It now measures the primary
+scroll container rather than the outer navigation node. The isolated Chromium
+fixture also loads the Release 602 styling alongside Release 604 and checks
+overflow at 320 and 390px. The full DEV gate must still pass before promotion.
