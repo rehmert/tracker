@@ -231,3 +231,25 @@ def test_603_mobile_styles_and_browser_matrix():
     assert 'new FormData(form)' in browser
     assert 'a[data-quick-action]:not([hidden])' in browser
     assert "controls.get_by_role" in browser
+
+
+def test_603_mobile_dock_pointer_focus_safety():
+    shell = source("app/static/js/tracker-mobile-shell507.js")
+    base = source("app/templates/base.html")
+    browser = source("tests/test_mobile_dock_pointer603.py")
+    for marker in (
+        "let pointerInFlight = false",
+        'document.addEventListener("pointerdown"',
+        'document.addEventListener("pointerup", finishPointer, true)',
+        'document.addEventListener("pointercancel", finishPointer, true)',
+        "if (pointerInFlight && !isEditingField(document.activeElement)) return",
+        "if (!pointerInFlight) refreshKeyboardState()",
+        "requestAnimationFrame",
+    ):
+        assert marker in shell, marker
+    assert "tracker-mobile-shell507.js?v=603" in base
+    assert "tracker-mobile-shell507.js?v=507" not in base
+    for marker in ("[320, 390, 430]", "toggle.click()", "data-purchase-reset",
+                   'getComputedStyle(document.querySelector'):
+        assert marker in browser, marker
+    assert "force=True" not in browser
