@@ -57,7 +57,7 @@ def test_591_real_browser_test_exercises_signed_crud_and_forgery_over_both_schem
         'page.request.fetch(', 'assert denied.status == 403',
         'await fetch(route, {', 'response.headers.get(\'x-tracker-csrf-report\')',
         'assert result["csrf"] == "valid"',
-        'assert captured and captured[-1].get("x-tracker-csrf") == token',
+        'assert pending.value.request.all_headers().get("x-tracker-csrf") == token',
         'unsigned("POST", "/pk/compounds")',
         'unsigned("POST", "/pk/scenarios")',
         'unsigned("PUT", scenario_route)', 'unsigned("DELETE", scenario_route)',
