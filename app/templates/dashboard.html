@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="/static/css/tracker-dashboard-attention.css?v=34.33">
 <link rel="stylesheet" href="/static/tracker_dose_workspace.css?v=1">
 <link rel="stylesheet" href="/static/css/tracker-dashboard-status.css?v=34.32">
+<link rel="stylesheet" href="/static/css/tracker-dashboard-vial-pages598.css?v=598">
+<script defer src="/static/js/tracker-dashboard-vial-pages598.js?v=598"></script>
 
 <div class="dashboard-personalize"><button type="button" id="dashboard-customize" class="dashboard-action secondary" aria-expanded="false" aria-controls="dashboard-customize-panel">Customize dashboard</button><div id="dashboard-customize-panel" class="customize-panel" hidden><p>Show or hide sections. Use the arrows to reorder them. Your choices stay in this browser.</p><div id="dashboard-customize-list"></div><button type="button" id="dashboard-reset">Reset layout</button></div></div>
 <link rel="stylesheet" href="/static/css/tracker-daily-flow559.css?v=559">
@@ -582,6 +584,20 @@
     {% endfor %}
     </tbody>
   </table></div>
+  <nav class="tracker-inventory-pages598" data-inventory-pages598 aria-label="Dashboard vial stock pages">
+    <label for="tracker-inventory-size598">Vials per page
+      <select id="tracker-inventory-size598" data-inventory-size598>
+        <option value="5" selected>5</option>
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="all">All</option>
+      </select>
+    </label>
+    <button type="button" data-inventory-prev598 aria-label="Previous vial stock page">Previous</button>
+    <output data-inventory-status598 aria-live="polite"></output>
+    <button type="button" data-inventory-next598 aria-label="Next vial stock page">Next</button>
+  </nav>
   {% else %}
   <p class="empty">Nothing in stock yet. Add a <a href="/compounds">compound</a>, then record a <a href="/purchases">purchase</a> with its vials.</p>
   {% endif %}
