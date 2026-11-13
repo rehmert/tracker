@@ -6,6 +6,8 @@
 <script defer src="/static/js/tracker-mobile-daily509.js?v=509"></script>
 
 <div class="tracker-daily509" data-mobile-daily509>
+  {% set due = summary.today | selectattr('status', 'equalto', 'due') | list %}
+  {% set recorded = summary.today | selectattr('status', 'equalto', 'recorded') | list %}
   <header class="tracker-daily-hero">
     <div>
       <p class="tracker-daily-eyebrow">DAILY WORKSPACE</p>
@@ -16,6 +18,12 @@
     <strong class="tracker-daily-dev" aria-label="Tracker development environment">DEV · Test Workspace</strong>
     {% endif %}
   </header>
+
+  <nav class="tracker-daily-glance601" aria-label="Today's status">
+    <a href="#mobile-schedule-heading"><strong>{{ due|length }}</strong> due today</a>
+    <a href="#mobile-schedule-heading"><strong>{{ recorded|length }}</strong> recorded today</a>
+    <a href="#mobile-upcoming-heading"><strong>{{ summary.upcoming|length }}</strong> projected next 7 days</a>
+  </nav>
 
   <nav class="tracker-daily-actions" aria-label="Common recording actions">
     <a href="#mobile-quick-vitals"
@@ -33,6 +41,38 @@
     <a href="/replenishment-review">Inventory Needs</a>
     <a href="/labs">Lab Results</a>
   </nav>
+
+  <section class="tracker-daily-section" aria-labelledby="mobile-schedule-heading">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-schedule-heading">Today's Administrations</h2>
+      <a href="/calendar">Calendar</a>
+    </div>
+    <p class="tracker-daily-note">Scheduled items are projections only. A dose is recorded only when you save it in the dose log.</p>
+    <p class="tracker-daily-summary">{{ recorded|length }} matched recorded · {{ due|length }} due</p>
+    {% if summary.today %}
+      <ul class="tracker-daily-list">
+        {% for item in summary.today %}
+        <li>
+          <div>
+            <strong>{{ item.name }}</strong>
+            <span>{{ item.dose }}{% if item.dose_time %} · {{ item.dose_time }}{% endif %}</span>
+            {% if item.protocol %}<small>{{ item.protocol }}</small>{% endif %}
+          </div>
+          {% if item.status == 'due' %}
+          <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ today.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review &amp; Log</a>
+          {% else %}
+          <span class="tracker-daily-pill">{{ 'Recorded' if item.status == 'recorded' else 'Unscheduled record' }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="tracker-daily-empty">No administrations scheduled or recorded today.</p>
+    {% endif %}
+    {% if summary.missing_start %}
+      <p class="tracker-daily-note">Some active protocols have no start date and cannot be projected. <a href="/protocols">Review protocols</a>.</p>
+    {% endif %}
+  </section>
 
   <section class="tracker-daily-section" aria-labelledby="mobile-latest-heading">
     <div class="tracker-daily-heading">
@@ -117,40 +157,6 @@
     </form>
   </section>
 
-  <section class="tracker-daily-section" aria-labelledby="mobile-schedule-heading">
-    <div class="tracker-daily-heading">
-      <h2 id="mobile-schedule-heading">Today's Administrations</h2>
-      <a href="/calendar">Calendar</a>
-    </div>
-    <p class="tracker-daily-note">Scheduled items are projections only. A dose is recorded only when you save it in the dose log.</p>
-    {% set due = summary.today | selectattr('status', 'equalto', 'due') | list %}
-    {% set recorded = summary.today | selectattr('status', 'equalto', 'recorded') | list %}
-    <p class="tracker-daily-summary">{{ recorded|length }} matched recorded · {{ due|length }} due</p>
-    {% if summary.today %}
-      <ul class="tracker-daily-list">
-        {% for item in summary.today %}
-        <li>
-          <div>
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.dose }}{% if item.dose_time %} · {{ item.dose_time }}{% endif %}</span>
-            {% if item.protocol %}<small>{{ item.protocol }}</small>{% endif %}
-          </div>
-          {% if item.status == 'due' %}
-          <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ today.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review &amp; Log</a>
-          {% else %}
-          <span class="tracker-daily-pill">{{ 'Recorded' if item.status == 'recorded' else 'Unscheduled record' }}</span>
-          {% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="tracker-daily-empty">No administrations scheduled or recorded today.</p>
-    {% endif %}
-    {% if summary.missing_start %}
-      <p class="tracker-daily-note">Some active protocols have no start date and cannot be projected. <a href="/protocols">Review protocols</a>.</p>
-    {% endif %}
-  </section>
-
   <section class="tracker-daily-section" aria-labelledby="mobile-recent-heading">
     <div class="tracker-daily-heading">
       <h2 id="mobile-recent-heading">Recent Doses</h2>
@@ -180,6 +186,7 @@
       <a href="/calendar">Full Calendar</a>
     </div>
     {% if summary.upcoming %}
+    <p class="tracker-daily-note">{{ summary.upcoming|length }} projected administration{{ '' if summary.upcoming|length == 1 else 's' }} over the next 7 days{% if summary.upcoming|length > 8 %} · First 8 shown below{% endif %}.</p>
     <ul class="tracker-daily-list tracker-daily-upcoming">
       {% for day, item in summary.upcoming[:8] %}
       <li>
@@ -191,6 +198,22 @@
       </li>
       {% endfor %}
     </ul>
+    {% if summary.upcoming|length > 8 %}
+    <details class="tracker-daily-upcoming-more601">
+      <summary>Show remaining {{ summary.upcoming|length - 8 }} projected administrations</summary>
+      <ul class="tracker-daily-list tracker-daily-upcoming">
+        {% for day, item in summary.upcoming[8:] %}
+        <li>
+          <div>
+            <strong>{{ day.strftime('%a %b %-d') }} · {{ item.name }}</strong>
+            <span>{{ item.dose }} · {{ item.protocol }}</span>
+          </div>
+          <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
     {% else %}
     <p class="tracker-daily-empty">Nothing projected for the coming week.</p>
     {% endif %}
