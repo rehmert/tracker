@@ -2538,13 +2538,23 @@ def test_603_purchase_phone_cards_dates_and_native_order_fields(tab, scheme):
     page.locator("[data-purchase-reset]").click()
     expect(page.locator("[data-purchase-date-active603]")).to_be_hidden()
 
+    # The native click must visibly switch BOTH its accessible state and
+    # the exact existing table, without a forced click or direct JS mutation.
     controls.get_by_role("button", name="Full sortable table").click()
-    assert "tracker-purchase-cards603" not in (
-        table.get_attribute("class") or ""
-    )
     expect(controls.get_by_role("button", name="Card view")).to_be_visible()
+    expect(controls.locator("button")).to_have_attribute("aria-pressed", "false")
+    expect(table).not_to_have_class(
+        re.compile(r"(?:^|\\s)tracker-purchase-cards603(?:\\s|$)")
+    )
+    expect(page.locator("#purchase-history .scroll")).not_to_have_class(
+        re.compile(r"(?:^|\\s)tracker-purchase-card-wrap603(?:\\s|$)")
+    )
     controls.get_by_role("button", name="Card view").click()
-    expect(table).to_have_class(re.compile("tracker-purchase-cards603"))
+    expect(controls.get_by_role("button", name="Full sortable table")).to_be_visible()
+    expect(controls.locator("button")).to_have_attribute("aria-pressed", "true")
+    expect(table).to_have_class(
+        re.compile(r"(?:^|\\s)tracker-purchase-cards603(?:\\s|$)")
+    )
 
     # A very narrow phone uses one-column filters; 430px uses two.
     page.set_viewport_size({"width": 320, "height": 844})
