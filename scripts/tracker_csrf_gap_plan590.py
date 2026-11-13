@@ -18,6 +18,17 @@ ROOT = Path(__file__).resolve().parents[1]
 # Evidence points to explicit browser modules in the FULL strict qualification
 # gate. A strict-only targeted preflight never constitutes full clearance.
 EVIDENCE_MODULES = {
+    # Release 594: HTTP/HTTPS signed native food and vendor-pricing forms.
+    ("POST", "/food/water"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/water/{entry_id}/delete"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/entry"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/targets"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/food/entry/{entry_id}/delete"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/shipping/save"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/shipping/{rule_id}/delete"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/manual"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/entries/{entry_id}/edit"): "tests/browser/test_strict_csrf521.py",
+    ("POST", "/vendor-prices/entries/{entry_id}/delete"): "tests/browser/test_strict_csrf521.py",
     # Release 593: actual browser-signed guarded scenario, what-if and
     # experiment library operations, including persisted revisions.
     ("POST", "/pk/scenarios/{sid}/doses/create-batch-checked"): "tests/browser/test_strict_csrf521.py",
