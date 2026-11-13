@@ -1688,7 +1688,7 @@ def test_595_food_templates_corrections_and_vendor_sheets(tab, scheme):
 
     vendor="QA sheet 595 "+uuid4().hex[:8]
     sheet_name="QA import 595"
-    review="Item\\tStrength\\tPackage\\tVials\\tTotal USD\\nQA Test Item\\t10 mg/vial\\tvial\\t1\\t14.50\\n"
+    review="Item\tStrength\tPackage\tVials\tTotal USD\nQA Test Item\t10 mg/vial\tvial\t1\t14.50\n"
     save="/vendor-prices/save"
     data={"vendor":vendor,"sheet_name":sheet_name,"review_text":review}
     unsigned(save,data)
