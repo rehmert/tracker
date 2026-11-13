@@ -146,6 +146,8 @@ def test_602_mobile_density_and_existing_quick_navigation():
     assert "scroll-padding-bottom: calc(5.4rem" in css
     assert "scroll-margin-bottom: calc(5.4rem" in css
     assert "#main-content #dose-history .scroll {" in css
+    assert "#main-content #dose-history {" in css
+    assert "padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));" in css
     assert "overflow: visible;" in css
     assert quick.count("tracker-mobile-daily602.css?v=602") == 1
     assert 'data-quick-search' in quick
