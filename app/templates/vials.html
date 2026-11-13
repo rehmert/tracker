@@ -3,6 +3,7 @@
 {% block title %}Vials{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-mobile-workflows601.css?v=601">
+<link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
 <script defer src="/static/js/tracker-vial-mobile601.js?v=601"></script>
 <script defer src="/static/js/tracker-bulk-selection.js?v=bulk-selection-batch-20261101"></script>
 <script defer src="/static/js/tracker-vial-label-sheets447.js?v=447"></script>
@@ -14,6 +15,14 @@
 <script defer src="/static/js/tracker-bulk-field-finder.js?v=20261104-b37"></script>
 <!-- TRACKER_BULK_CONSOLIDATED -->
 <h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
+<nav class="tracker-vial-jumps603" aria-label="Vials quick sections">
+  <a href="#tracker-vials-sortable">Inventory list</a>
+  <a href="#tracker-vial-find-panel">Find vial</a>
+  <a href="#bulk-selection-toolbar">Selection actions</a>
+  <a href="#tracker-inventory-reports">Reports</a>
+  <a href="#tracker-vial-lifecycle">Lifecycle</a>
+  <a href="/purchases#new-purchase">Add purchased stock</a>
+</nav>
 <form method="get" class="inline" id="vial-filter-form">
   <input type="hidden" name="status" value="{{ status }}">
   <label class="field"><span>Compound</span>
