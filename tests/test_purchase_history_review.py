@@ -100,7 +100,7 @@ def test_purchase_history_shows_missing_items_and_allocated_totals(purchase_hist
         "Needs items · Add inventory",
         "Review items",
         "Filters, sorting and CSV exports do not change purchases or inventory.",
-        'tracker-purchase-history-review.js?v=20261103',
+        'tracker-purchase-history-review.js?v=603',
         'tracker-purchase-history-review.css?v=20261103'
     ):
         assert marker in markup, marker
