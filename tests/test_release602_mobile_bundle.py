@@ -176,6 +176,11 @@ def test_602_no_backend_mutations_and_browser_matrix():
     assert "390" in test
     assert "tracker-dose-fast602" in test
     assert "tracker-dose-history602" in test
+    # Synthetic HTMX browser events must carry the same detail.target
+    # shape expected by the existing dose_context.js observer.
+    assert "new CustomEvent('htmx:afterSwap', {" in test
+    assert "detail: {target: body}" in test
+    assert "new Event('htmx:afterSwap', {bubbles:true})" not in test
     assert "document.elementFromPoint(x, y)" in test
     assert 'overflow == {"x": "visible", "y": "visible"}' in test
     assert "toggle.click(force=True)" not in test
