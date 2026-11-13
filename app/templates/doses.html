@@ -74,6 +74,7 @@
     </nav>
     <p class="tracker-dose-progress602" data-dose-progress602 role="status"
        aria-live="polite">Select the actual vial and enter the recorded amount.</p>
+    <a class="tracker-dose-vitals602" href="/vitals#quick-vitals-entry">Log vitals instead</a>
     {% set recent_actual602 = rows | selectattr('dose.kind', 'equalto', 'dose') | list %}
     {% if recent_actual602 %}
     <details class="tracker-dose-recent602">
