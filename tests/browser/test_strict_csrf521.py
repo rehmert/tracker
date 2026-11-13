@@ -1391,8 +1391,9 @@ def test_593_pk_workbench_and_experiment_library_signed(tab, scheme):
         connection.execute("PRAGMA foreign_keys=ON")
     try:
         with Session(engine) as db:
+            protocol_name="QA experiment 593 "+uuid4().hex[:8]
             protocol=Protocol(
-                name="QA experiment 593 "+uuid4().hex[:8],
+                name=protocol_name,
                 start_date=date(2030,1,1),is_active=True,
                 horizon_weeks=12)
             db.add(protocol)
@@ -1409,7 +1410,7 @@ def test_593_pk_workbench_and_experiment_library_signed(tab, scheme):
         settings={"compound_id":cid,"horizon_days":28}
         denied("POST",workbench)
         output=signed("POST",workbench,settings)
-        assert output["protocol"] == protocol.name
+        assert output["protocol"] == protocol_name
 
         library=f"/pk/library/{pid}"
         def listing():
