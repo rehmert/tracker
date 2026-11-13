@@ -81,3 +81,16 @@ def test_594_real_chromium_signed_form_witness_and_disposable_db():
     _, strict = runner.split("# Release 521: a second browser gate", 1)
     assert strict.count("tests/browser/test_strict_csrf521.py") == 1
     assert runner.count("ISOLATED_STRICT_CSRF_BROWSER=PASSED") == 1
+
+
+def test_594_oom_recovery_keeps_every_browser_gate_with_bounded_parallelism():
+    runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
+    assert runner.count("-n 4 --dist=loadfile") == 3
+    assert "-n 16 --dist=loadfile" not in runner
+    assert 'echo "WORKERS=4"' in runner
+    assert "tests/browser/test_strict_csrf521.py" in runner
+    assert "tests/browser/test_food_search_ui.py" in runner
+    assert "ISOLATED_BROWSER=PASSED" in runner
+    assert "ISOLATED_STRICT_CSRF_BROWSER=PASSED" in runner
+    assert "STRICT_BROWSER_PYTEST_EXIT=" in runner
+    assert "BROWSER_PYTEST_EXIT=" in runner
