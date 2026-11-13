@@ -18,6 +18,18 @@ ROOT = Path(__file__).resolve().parents[1]
 # This report never claims that a browser run occurred on this invocation.
 # Per-path evidence is qualified only after the relevant disposable gates pass.
 BROWSER_WITNESS_CANDIDATES = frozenset({
+    # Release 593: remaining PK guarded edits, what-if and protocol library.
+    ("POST", "/pk/scenarios/{sid}/doses/create-batch-checked"),
+    ("POST", "/pk/workspace/{sid}/edit-dose"),
+    ("POST", "/pk/workspace/{sid}/revisions/{audit_id}/restore"),
+    ("POST", "/pk/what-if/preview"),
+    ("POST", "/pk/what-if/multi-preview"),
+    ("POST", "/pk/what-if/save"),
+    ("POST", "/pk/workbench/{pid}"),
+    ("POST", "/pk/library/{pid}"),
+    ("PUT", "/pk/library/{pid}/{experiment_id}"),
+    ("POST", "/pk/library/{pid}/compare"),
+    ("DELETE", "/pk/library/{pid}/{experiment_id}"),
     # Release 592: signed batch, staged, calendar, import and transform flows.
     ("POST", "/pk/scenarios/{sid}/doses/generate-preview"),
     ("POST", "/pk/scenarios/{sid}/doses/create-batch"),
