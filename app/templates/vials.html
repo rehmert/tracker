@@ -15,14 +15,17 @@
 <link rel="stylesheet" href="/static/css/tracker-bulk-field-finder.css?v=20261103">
 <script defer src="/static/js/tracker-bulk-field-finder.js?v=20261104-b37"></script>
 <!-- TRACKER_BULK_CONSOLIDATED -->
-<h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p><nav class="ux-shortcuts"><a href="/inventory-intelligence">Inventory health</a><a href="/inventory-alerts">Alerts</a><a href="/reconciliation">Reconcile</a></nav>
-<nav class="tracker-vial-jumps603" aria-label="Vials quick sections">
+<h1>Vials</h1><p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p>
+<nav class="tracker-vial-jumps603" aria-label="Vials actions and sections">
   <a href="#tracker-vials-sortable">Inventory list</a>
   <a href="#tracker-vial-find-panel">Find vial</a>
   <a href="#bulk-selection-toolbar">Selection actions</a>
   <a href="#tracker-inventory-reports">Reports</a>
   <a href="#tracker-vial-lifecycle">Lifecycle</a>
   <a href="/purchases#new-purchase">Add purchased stock</a>
+  <a href="/inventory-intelligence">Inventory health</a>
+  <a href="/inventory-alerts">Alerts</a>
+  <a href="/reconciliation">Reconcile</a>
 </nav>
 <form method="get" class="inline" id="vial-filter-form">
   <input type="hidden" name="status" value="{{ status }}">
