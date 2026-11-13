@@ -8,7 +8,7 @@
       href="/static/css/tracker-daily-flow559.css?v=559">
 <link rel="stylesheet" href="/static/css/tracker-mobile-daily602.css?v=602">
 <script defer
-        src="/static/js/tracker-quick-entry.js?v=20261103-metrics"></script>
+        src="/static/js/tracker-quick-entry.js?v=603"></script>
 
 <div class="tracker-quick-entry" data-quick-entry>
   <header class="tracker-quick-entry-header">
@@ -68,6 +68,9 @@
             data-quick-category="all"
             aria-pressed="true">All Actions</button>
     <button type="button"
+            data-quick-category="daily"
+            aria-pressed="false">Daily</button>
+    <button type="button"
             data-quick-category="record"
             aria-pressed="false">Record</button>
     <button type="button"
@@ -87,6 +90,7 @@
        data-quick-action
        data-quick-category="record"
        data-quick-keywords="food favorite meal nutrition calorie protein breakfast lunch dinner"
+       data-quick-daily
        href="/food#food-quick-log">
       <strong>Log food</strong>
       <span>Jump to saved foods and favorites in the Food Journal.</span>
@@ -97,6 +101,7 @@
        data-quick-action
        data-quick-category="record"
        data-quick-keywords="water hydration ounces drink"
+       data-quick-daily
        href="/food#food-water">
       <strong>Log water</strong>
       <span>Record water against your daily target.</span>
@@ -127,6 +132,7 @@
        data-quick-action
        data-quick-category="record"
        data-quick-keywords="dose injection administration log"
+       data-quick-daily
        href="/doses">
       <strong>Record dose</strong>
       <span>Log an actual administration with vial and amount details.</span>
@@ -137,6 +143,7 @@
        data-quick-action
        data-quick-category="record"
        data-quick-keywords="vitals weight blood pressure pulse"
+       data-quick-daily
        href="/vitals">
       <strong>Record vitals</strong>
       <span>Enter weight, blood pressure, or pulse.</span>
@@ -147,6 +154,7 @@
        data-quick-action
        data-quick-category="record"
        data-quick-keywords="supplies pill syringe needle inventory consumption"
+       data-quick-daily
        href="/supplies">
       <strong>Record supply usage</strong>
       <span>Review remaining supplies and record what was used.</span>
