@@ -1,0 +1,187 @@
+/* Release 601: phone-focused daily review and vial cards.
+ * Never changes the desktop table or the underlying form data.
+ */
+.tracker-vial-mobile-controls601 { display: none; }
+
+@media screen and (max-width: 760px) {
+  .tracker-daily-glance601 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .3rem;
+  }
+  .tracker-daily-glance601 a {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    min-height: 56px;
+    padding: .4rem .28rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .7rem;
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    text-decoration: none;
+    text-align: center;
+    font-size: .75rem;
+    line-height: 1.25;
+  }
+  .tracker-daily-glance601 strong {
+    font-size: 1.22rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .tracker-daily-upcoming-more601 {
+    margin-top: .45rem;
+    border-top: 1px solid var(--rule, #cbd5e1);
+  }
+  .tracker-daily-upcoming-more601 > summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tracker-vial-mobile-controls601 {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    justify-content: space-between;
+    margin: .45rem 0;
+    padding: .5rem .6rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .65rem;
+    background: var(--surface, #fff);
+  }
+  .tracker-vial-mobile-controls601 > span {
+    font-size: .85rem;
+    font-weight: 650;
+  }
+  .tracker-vial-mobile-controls601 button {
+    min-height: 44px;
+    font-size: .92rem;
+    padding: .45rem .65rem;
+  }
+
+  #tracker-vials-sortable.tracker-vials-as-cards601 {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody {
+    display: grid;
+    gap: .48rem;
+    width: 100%;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody > tr {
+    display: grid;
+    min-width: 0;
+    padding: .25rem .54rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .8rem;
+    background: var(--surface, #fff);
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody > tr[hidden] {
+    display: none !important;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td {
+    display: grid;
+    grid-template-columns: minmax(5.3rem, 34%) minmax(0, 1fr);
+    align-items: center;
+    gap: .25rem .5rem;
+    width: 100%;
+    padding: .28rem .18rem;
+    border-bottom: 1px solid var(--rule, #cbd5e1);
+    line-height: 1.35;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td::before {
+    content: attr(data-label);
+    color: var(--muted, #62717d);
+    font-size: .8rem;
+    font-weight: 650;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td:first-child {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td:first-child::before {
+    content: "Select";
+    order: -1;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td:first-child input {
+    width: 22px;
+    height: 22px;
+    margin-left: auto;
+    margin-right: .3rem;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td:nth-child(6),
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td:nth-child(7),
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td:nth-child(8),
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody td:nth-child(10) {
+    display: none;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  tr[data-vial-expanded601="true"] td:nth-child(6),
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  tr[data-vial-expanded601="true"] td:nth-child(7),
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  tr[data-vial-expanded601="true"] td:nth-child(8),
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  tr[data-vial-expanded601="true"] td:nth-child(10) {
+    display: grid;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  td:last-child {
+    border-bottom: 0;
+  }
+  .tracker-vial-detail-toggle601 {
+    display: none;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601
+  .tracker-vial-detail-toggle601 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: .28rem .5rem;
+    margin-top: .2rem;
+    font-size: .84rem;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  td:nth-child(3) {
+    grid-template-columns: minmax(5.3rem, 34%) minmax(0, 1fr);
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  td:nth-child(3) .tracker-vial-detail-toggle601 {
+    grid-column: 2;
+  }
+  #tracker-vials-sortable.tracker-vials-as-cards601 tbody
+  tr:focus-within {
+    outline: 2px solid var(--teal, #1265ad);
+    outline-offset: 1px;
+  }
+}
+@media screen and (max-width: 359px) {
+  .tracker-daily-glance601 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tracker-daily-glance601 a:last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media print {
+  .tracker-vial-mobile-controls601,
+  .tracker-vial-detail-toggle601 { display: none !important; }
+}
