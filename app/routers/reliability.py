@@ -83,7 +83,7 @@ def collect_integrity_issues(db:Session):
     return issues
 
 @router.get('/inventory-health')
-def inventory_health(request:Request, db:Session=Depends(get_scoped_db390)):
+def inventory_health(request:Request, severity:str='all', db:Session=Depends(get_scoped_db390)):
     
     issues = collect_integrity_issues(db) + collect_inventory_health(db)
 
@@ -123,7 +123,15 @@ def inventory_health(request:Request, db:Session=Depends(get_scoped_db390)):
         issues.append((severity, explanation, review_url))
     errors=sum(level=='Error' for level,_,_ in issues)
     warnings=sum(level=='Warning' for level,_,_ in issues)
-    return render(request,'inventory_health.html',issues=issues,errors=errors,warnings=warnings)
+    if severity not in ('all', 'error', 'warning'):
+        severity = 'all'
+    visible_issues = (
+        issues if severity == 'all'
+        else [row for row in issues if row[0].lower() == severity]
+    )
+    return render(request,'inventory_health.html',issues=visible_issues,
+                  total_findings=len(issues), severity=severity,
+                  errors=errors,warnings=warnings)
 
 @router.get('/data-integrity')
 def integrity(request:Request,db:Session=Depends(get_scoped_db390)):
