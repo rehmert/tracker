@@ -180,7 +180,7 @@ def _blend_remaining_display(blend: Blend, remaining_ml: float) -> str:
 
 
 @router.get("/doses")
-def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, db: Session = Depends(get_scoped_db390)):
+def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, history_date: str = "", history_source: str = "all", history_kind: str = "all", db: Session = Depends(get_scoped_db390)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
@@ -297,7 +297,40 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         select(SupplyCategory.key).where(SupplyCategory.unit == "count")
     ))
 
-    return render(request, "doses.html", rows=_rows(db, compound_id), blend_rows=blend_history(db, compound_id), vials=form_vials, views=views, active_blends=active_blends,
+    # Read-only combined recent history. Never synthesize a new DoseLog for
+    # a blend: one physical BlendDose remains one display row.
+    vial_rows = _rows(db, compound_id)
+    blend_rows = blend_history(db, compound_id)
+    combined = [
+        {"source": "vial", "when": row["dose"].taken_at, "vial": row,
+         "kind": row["dose"].kind, "id": row["dose"].id}
+        for row in vial_rows
+    ] + [
+        {"source": "blend", "when": row["draw"].taken_at, "blend": row,
+         "kind": row["draw"].kind, "id": row["draw"].id}
+        for row in blend_rows
+    ]
+    from datetime import date as _date
+    if history_date:
+        try:
+            _date.fromisoformat(history_date)
+        except ValueError:
+            history_date = ""
+    if history_source not in ("all", "vial", "blend"):
+        history_source = "all"
+    if history_kind not in ("all", "dose", "waste"):
+        history_kind = "all"
+    combined = [
+        row for row in combined
+        if (history_source == "all" or row["source"] == history_source)
+        and (history_kind == "all" or row["kind"] == history_kind)
+        and (not history_date or row["when"].date().isoformat() == history_date)
+    ]
+    combined.sort(key=lambda row: (row["when"], row["id"]), reverse=True)
+    return render(request, "doses.html", rows=vial_rows, blend_rows=blend_rows,
+                  combined_history=combined, history_date=history_date,
+                  history_source=history_source, history_kind=history_kind,
+                  vials=form_vials, views=views, active_blends=active_blends,
                   planned_handoff=planned_handoff, planned_date=planned_date, planned_time=planned_time,
                   planned_compound_name=planned_compound.name if planned_compound else "Planned compound",
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
