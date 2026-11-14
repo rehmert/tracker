@@ -22,6 +22,7 @@ def test_605_sources_keep_canonical_forms_exports_and_data():
     for marker in (
         'id="vendor-offer-pager605"',
         'id="vendor-name-filter609"',
+        'id="vendor-reset-filters610"',
         'id="vendor-offer-page-size605"',
         'id="vendor-offer-prev605"',
         'id="vendor-offer-next605"',
@@ -105,6 +106,7 @@ def test_605_vendor_paging_survives_filter_and_sort(browser, width):
     markup = (
         '<select id="vendor-compound-filter"><option value="">All compounds</option></select>'
         '<input id="vendor-name-filter609" type="search">'
+        '<button type="button" id="vendor-reset-filters610" disabled>Clear filters</button>'
         '<p id="vendor-compound-count"></p>'
         '<div id="vendor-offer-pager605" hidden>'
         '<select id="vendor-offer-page-size605">'
@@ -166,6 +168,25 @@ def test_605_vendor_paging_survives_filter_and_sort(browser, width):
         vendor.fill("vendor 01")
         assert visible().count() == 10
         assert all("Vendor 01" in text for text in visible().locator("td:nth-child(3)").all_inner_texts())
+
+        # Reset must clear both text/compound filters and restore the default
+        # first page and 25-per-page view without reloading or network calls.
+        reset = page.locator("#vendor-reset-filters610")
+        assert reset.is_enabled()
+        reset.click()
+        assert vendor.input_value() == ""
+        assert page.locator("#vendor-compound-filter").input_value() == ""
+        assert page.locator("#vendor-offer-page-size605").input_value() == "25"
+        assert visible().count() == 25
+        assert "1–25 of 61" in page.locator("#vendor-offer-page-info605").inner_text()
+        assert reset.is_disabled()
+        assert vendor.evaluate("(el) => document.activeElement === el")
+        # Page-size changes alone can be returned to the default as well.
+        page.locator("#vendor-offer-page-size605").select_option("all")
+        assert reset.is_enabled()
+        reset.click()
+        assert visible().count() == 25
+        assert reset.is_disabled()
         assert not errors, errors
     finally:
         page.close()
