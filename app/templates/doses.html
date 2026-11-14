@@ -56,7 +56,16 @@
   button.addEventListener('click', () => {
     const id = chooser.value;
     if (/^[1-9]\d*$/.test(id)) {
-      window.location.assign('/blends/' + encodeURIComponent(id) + '#log-blend-draw');
+      const scheduledDate = {{ (planned_date if planned_handoff else '')|tojson }};
+      const scheduledTime = {{ (planned_time if planned_handoff else '')|tojson }};
+      const params = new URLSearchParams();
+      if (scheduledDate) {
+        params.set('planned_date', scheduledDate);
+        if (scheduledTime) params.set('planned_time', scheduledTime);
+      }
+      const query = params.toString();
+      window.location.assign('/blends/' + encodeURIComponent(id) +
+        (query ? '?' + query : '') + '#log-blend-draw');
     }
   });
 })();
@@ -293,6 +302,28 @@
   <div class="scroll"><table>
     <thead><tr><th>When</th><th>Compound</th><th>Vial</th><th class="n">Entered</th<th class="n">Counted</th><th class="n">Cost</th><th>Site</th><th></th></tr></thead>
     <tbody id="dose-body">{% include "_dose_rows.html" %}</tbody>
+  </table></div>
+</section>
+
+<section id="blend-dose-history611">
+  <h2>Prepared blend administrations and discards</h2>
+  <p class="note">These are actual blend withdrawals, stored separately from individual-vial doses. Each draw is shown once with its constituent amounts; source-vial inventory was already deducted when the blend was prepared.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>When</th><th>Blend</th><th>Type</th><th>Withdrawn</th><th>Constituents</th><th>Details</th></tr></thead>
+    <tbody>
+    {% for row in blend_rows %}
+      <tr data-blend-dose-id="{{ row.draw.id }}" data-blend-dose-kind="{{ row.draw.kind }}">
+        <td>{{ row.draw.taken_at|dt }}</td>
+        <td><a href="/blends/{{ row.blend.id }}">{{ row.blend.label }} · #{{ row.blend.id }}</a></td>
+        <td>{{ 'Administered' if row.draw.kind == 'dose' else 'Discarded' }}</td>
+        <td>{{ row.draw.volume_ml|num }} mL</td>
+        <td>{% for item in row.components %}{{ item.name }}: {{ item.amount|num }} {{ item.unit }}{% if not loop.last %}; {% endif %}{% endfor %}</td>
+        <td>{{ row.draw.notes or '—' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="empty">No prepared blend draws recorded.</td></tr>
+    {% endfor %}
+    </tbody>
   </table></div>
 </section>
 {% endblock %}
