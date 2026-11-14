@@ -11,7 +11,7 @@ TARGETED_MODULE=""
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
-  [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
+  [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -481,6 +481,23 @@ if [[ "$MODE" == targeted ]]; then
   echo "TARGETED_STRICT_PREFLIGHT=ACTIVE"
   echo "TARGETED_STRICT_MODULE=$TARGETED_MODULE"
 fi
+# Release 627: one disposable targeted smoke for only the new consolidated
+# browser modules. Not a full QA run and never a promotion receipt.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-batch627 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_csrf_gap627.py \
+      1 "$ROOT/batch627-negative.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_signed_lifecycles627.py \
+      1 "$ROOT/batch627-positive.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_purchase_children627.py \
+      1 "$ROOT/batch627-purchases.log"
+  echo "TARGETED_CSRF_BATCH627=PASSED"
+  echo "TARGETED_CSRF_BATCH627_SCOPE=NEW_BROWSER_ONLY_NOT_FULL_QUALIFICATION"
+  exit 0
+fi
+
 # Release 586: targeted layout module seeds its own synthetic dose.
 # This path is never a substitute for the full QA browser gate.
 if [[ "$MODE" == targeted && "${TARGETED_MODULE##*/}" == test_form_overlap586.py ]]; then
