@@ -254,3 +254,37 @@ DEV qualification, account isolation, remaining route coverage and manual
 queue disposition remain required before a separate, explicitly authorized
 enforcement rollout. PROD remains on Release 626; this candidate makes no
 application or dependency changes.
+
+## Protocol and blend preview coverage added — source only, not yet executed
+
+The guarded Release 627 branch now includes two additional isolated strict
+Chromium suites: `test_csrf_protocol_remaining627.py` and
+`test_csrf_blend_previews627.py`.
+
+The protocol suite signs and rejects forged requests for calculation
+(read-only), date updates, save, save-and-add-item and duplicate. It
+asserts unchanged inventory on calculation, SQLite field persistence for
+saved changes, retained row count, duplicate creation and deletion of
+synthetic protocol records. Both HTTP and HTTPS are parametrized.
+
+The blend suite signs three *read-only* preview workflows: normal
+liquid-source, dry-source reconstitution what-if and same-compound
+waterfall preview. It creates its own strictly disposable synthetic
+vials and asserts stock remains sealed, dry vials remain dry, and no
+blend was recorded. These previews are **not** evidence for the four
+blend recording endpoints. Source and destination values are synthetic
+test fixtures only.
+
+The 627 source overlay now maps **27 of the historic 61 gaps**, with
+**34 routes without source-mapped positive witnesses**. Of those
+27 mapped routes, 19 have passed the previously reported targeted
+positive-only browser run; the 5 added protocol and 3 blend-preview
+routes have *not* yet been executed on DEV. The historic 590 plan
+continues to report 61 gaps because it is an immutable baseline, not
+a current qualification receipt.
+
+A lightweight `--targeted-strict csrf-new627` option runs only these
+two new suites with one worker per suite. Its result must be observed
+before treating any of the eight additions as positive runtime evidence.
+The separate full guarded DEV QA and 110 manual-review items remain
+outstanding. Strict global enforcement and PROD are unchanged.
