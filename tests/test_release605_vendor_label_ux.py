@@ -21,6 +21,7 @@ def test_605_sources_keep_canonical_forms_exports_and_data():
     Environment().parse(LABEL)
     for marker in (
         'id="vendor-offer-pager605"',
+        'id="vendor-name-filter609"',
         'id="vendor-offer-page-size605"',
         'id="vendor-offer-prev605"',
         'id="vendor-offer-next605"',
@@ -103,6 +104,7 @@ def test_605_vendor_paging_survives_filter_and_sort(browser, width):
     )
     markup = (
         '<select id="vendor-compound-filter"><option value="">All compounds</option></select>'
+        '<input id="vendor-name-filter609" type="search">'
         '<p id="vendor-compound-count"></p>'
         '<div id="vendor-offer-pager605" hidden>'
         '<select id="vendor-offer-page-size605">'
@@ -147,6 +149,23 @@ def test_605_vendor_paging_survives_filter_and_sort(browser, width):
         page.locator("#vendor-offer-page-size605").select_option("all")
         assert visible().count() == 40
         assert page.locator("#vendor-offer-pager605").is_hidden()
+
+        # Search is case-insensitive, spans all underlying rows, and combines
+        # with the compound filter without cloning any edit/delete controls.
+        vendor = page.locator("#vendor-name-filter609")
+        vendor.fill("  vEnDoR 02  ")
+        assert visible().count() == 9
+        assert visible().first.locator("td").nth(2).inner_text() == "Vendor 021"
+        assert "9 of 61 offers match filter" in page.locator("#vendor-compound-count").inner_text()
+        vendor.fill("nonexistent vendor")
+        assert visible().count() == 0
+        assert "No matching offers" in page.locator("#vendor-offer-page-info605").inner_text()
+        vendor.fill("")
+        assert visible().count() == 40
+        page.locator("#vendor-compound-filter").select_option("B")
+        vendor.fill("vendor 01")
+        assert visible().count() == 10
+        assert all("Vendor 01" in text for text in visible().locator("td:nth-child(3)").all_inner_texts())
         assert not errors, errors
     finally:
         page.close()
