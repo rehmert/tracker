@@ -104,10 +104,13 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
         page.goto(base + route, wait_until="networkidle")
         select = page.locator(f'form[action="{route}/verify"] select[name="status"]')
         assert select.count() == 1
-        chosen = select.locator("option").first.get_attribute("value")
-        assert chosen is not None
-        signed(route + "/verify", {"status": chosen})
-        assert page.request.get(base + route).status == 200
+        assert select.locator('option[value="verified"]').count() == 1
+        signed(route + "/verify", {
+            "status": "verified", "verification_notes": "QA627 verified",
+        })
+        verified = page.request.get(base + route)
+        assert verified.status == 200
+        assert "QA627 verified" in verified.text()
 
         signed(route + "/delete", {})
         assert page.request.get(base + route).status == 404
