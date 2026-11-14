@@ -4,8 +4,6 @@ These are deterministic unit tests of existing behavior, not claims that
 global strict CSRF enforcement is safe or already enabled.
 """
 import asyncio
-from types import SimpleNamespace
-
 from app import csrf_reporting as csrf
 
 
