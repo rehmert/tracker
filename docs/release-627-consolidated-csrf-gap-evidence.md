@@ -135,3 +135,18 @@ detached worktree. Only after all targeted failures are resolved should the
 ordinary one-time guarded DEV qualification begin. The full strict browser
 gate still runs all existing browser modules, including new 627 modules,
 and PROD remains unchanged until signed approval.
+
+## COA signed multipart browser lifecycle extension
+
+A fourth targeted/new full-gate module,
+`tests/browser/test_csrf_coa_lifecycle627.py`, now covers actual
+native signed PDF upload to `/coas/new` and browser-context signed
+edits, verification (persisted notes/status) and deletion of the
+synthetic certificate. Each write has an unsigned 403 counterpart, and
+the entire lifecycle runs over both HTTP and the isolated HTTPS
+host-rewriting proxy. It reuses only synthetic vial fixtures from the
+isolated browser runner. The two remaining COA assignment/unlink
+operations still require explicit positive witness mapping.
+
+The newly added tests are candidate source only: neither targeted nor
+full Chromium execution has yet been observed for Release 627.
