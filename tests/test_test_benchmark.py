@@ -107,8 +107,8 @@ def test_guarded_release_keeps_all_safety_gates_with_bounded_dev_parallelism():
     assert source.count('"$PY" -m pytest') == 1
     assert 'timeout 1200 "$PY" -m pytest' in source
 
-    assert 'TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)' in source
-    assert 'BACKEND_TEST_MODE=PARALLEL workers=4' in source
+    assert 'TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)' in source
+    assert 'BACKEND_TEST_MODE=PARALLEL workers=16' in source
     assert "import xdist" in source
     assert 'fail "pytest-xdist missing; serial fallback prohibited"' in source
     assert 'TEST_PYTEST_EXTRA=()' not in source
@@ -118,7 +118,7 @@ def test_guarded_release_keeps_all_safety_gates_with_bounded_dev_parallelism():
     assert '[[ "$SERIAL_TESTS" == 0 ]]' in source
     assert '"$REF" "$SERIAL_TESTS"' in source
     assert '--durations=20 tests' in source
-    assert 'MEMORY_PROPERTY="MemoryMax=2G"' in source
+    assert 'MEMORY_PROPERTY="MemoryMax=16G"' in source
     assert 'verify_prod_approval' in source
     assert 'flock -n 9' in source
     assert 'INSTALLED_BYTECODE_REFRESH=PASSED' in source
