@@ -11,7 +11,7 @@ TARGETED_MODULE=""
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
-  [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
+  [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -546,6 +546,21 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive627 ]]; then
       1 "$ROOT/positive627-blend-previews.log"
   echo "TARGETED_CSRF_POSITIVE627=PASSED"
   echo "TARGETED_CSRF_POSITIVE627_SCOPE=NEW_POSITIVE_BROWSER_ONLY"
+  exit 0
+fi
+
+# Release 627: only the eight newly added protocol and preview routes.
+# Keep the already-passed 19-route positive modules and negative suite out
+# of this cheap diagnostic; a later full release qualification still runs all.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-new627 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_csrf_protocol_remaining627.py \
+      1 "$ROOT/new627-protocol.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_blend_previews627.py \
+      1 "$ROOT/new627-blend-previews.log"
+  echo "TARGETED_CSRF_NEW627=PASSED"
+  echo "TARGETED_CSRF_NEW627_SCOPE=EIGHT_NEW_ROUTES_NOT_FULL_QA"
   exit 0
 fi
 
