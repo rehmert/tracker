@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import re
+import sqlite3
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import uuid4
@@ -121,13 +122,15 @@ def test_627_signed_native_create_persists_and_forgery_denied(
         assert accepted.status == 303, (kind, scheme, accepted.status)
         assert accepted.headers.get("x-tracker-csrf-report") == "valid"
         page.wait_for_url(re.compile(re.escape(base + write_path) + r"/[0-9]+(?:[?].*)?$"))
-        expect(page.locator("body")).to_contain_text(name)
+        # Tracker applies visual title casing on some page/list labels.
+        # Compare normalized text here and assert persisted values in SQLite.
+        assert name.casefold() in page.locator("body").inner_text().casefold()
         created_path = urlsplit(page.url).path
         assert re.fullmatch(re.escape(write_path) + r"/[0-9]+", created_path)
 
         page.goto(base + verify_path, wait_until="networkidle")
-        expect(page.locator("body")).to_contain_text(name)
-        assert name + " unsigned" not in page.locator("body").inner_text()
+        assert name.casefold() in page.locator("body").inner_text().casefold()
+        assert (name + " unsigned").casefold() not in page.locator("body").inner_text().casefold()
 
         # Extend the real signed native creation with browser-context API
         # updates, then delete only the synthetic record created above.
@@ -159,11 +162,28 @@ def test_627_signed_native_create_persists_and_forgery_denied(
 
         persisted = page.request.get(base + created_path)
         assert persisted.status == 200
-        if kind != "protocols":
-            assert marker in persisted.text()
-        else:
-            # Protocol active status is a state change, not a label edit.
-            assert "Active" in persisted.text()
+        # Check persisted fields directly, independent of display formatting
+        # and whether a lab UI collapses or transforms rows.
+        database = (DATA / "tracker.db").resolve()
+        assert database.parent == DATA and database.is_file() and not database.is_symlink()
+        record_id = int(created_path.rsplit("/", 1)[-1])
+        with sqlite3.connect(database) as connection:
+            if kind == "pages":
+                actual = connection.execute(
+                    "SELECT title,body FROM pages WHERE id=?", (record_id,),
+                ).fetchone()
+                assert actual == (marker, "QA627 revised text")
+            elif kind == "labs":
+                actual = connection.execute(
+                    "SELECT analyte,value,unit FROM lab_results WHERE report_id=? "
+                    "AND analyte='QA627 Extra'", (record_id,),
+                ).fetchone()
+                assert actual == ("QA627 Extra", 9.1, "mg/dL")
+            else:
+                actual = connection.execute(
+                    "SELECT is_active FROM protocols WHERE id=?", (record_id,),
+                ).fetchone()
+                assert actual == (1,)
 
         delete_path = created_path + "/delete"
         denied_delete = page.request.post(
