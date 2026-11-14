@@ -290,8 +290,56 @@
   {% endif %}
 </section>
 
-<section id="dose-history">
-  <h2>History</h2>
+<section id="dose-history-unified614">
+  <h2>Administration timeline</h2>
+  <p class="note">Recent individual-vial and prepared-blend withdrawals, combined in chronological order. A blended withdrawal is shown once, not as duplicate individual-vial doses. This table is read-only; corrections use the original record links.</p>
+  <form method="get" action="/doses" class="inline" aria-label="Administration history filters">
+    {% if compound_id is not none %}<input type="hidden" name="compound_id" value="{{ compound_id }}">{% endif %}
+    <label class="field"><span>Date</span><input type="date" name="history_date" value="{{ history_date }}"></label>
+    <label class="field"><span>Source</span><select name="history_source">
+      <option value="all" {% if history_source == 'all' %}selected{% endif %}>All sources</option>
+      <option value="vial" {% if history_source == 'vial' %}selected{% endif %}>Individual vials</option>
+      <option value="blend" {% if history_source == 'blend' %}selected{% endif %}>Prepared blends</option>
+    </select></label>
+    <label class="field"><span>Type</span><select name="history_kind">
+      <option value="all" {% if history_kind == 'all' %}selected{% endif %}>All types</option>
+      <option value="dose" {% if history_kind == 'dose' %}selected{% endif %}>Administered</option>
+      <option value="waste" {% if history_kind == 'waste' %}selected{% endif %}>Discarded</option>
+    </select></label>
+    <button type="submit">Apply filters</button>
+    <a href="/doses#dose-history-unified614">Clear history filters</a>
+  </form>
+  <p role="status" aria-live="polite">{{ combined_history|length }} recent entries shown (up to 60 from each source before filters).</p>
+  <div class="scroll"><table>
+    <thead><tr><th>When</th><th>Source</th><th>Type</th><th>Compound(s)</th><th>Amount</th><th>Record</th></tr></thead>
+    <tbody>
+    {% for item in combined_history %}
+      {% if item.source == 'vial' %}{% set r = item.vial %}
+      <tr data-timeline-source="vial" data-timeline-kind="{{ item.kind }}">
+        <td>{{ item.when|dt }}</td>
+        <td>Individual vial</td><td>{{ 'Administered' if item.kind == 'dose' else 'Discarded' }}</td>
+        <td>{{ r.vial.compound.name }}</td>
+        <td>{{ r.dose.entered_value|num }} {{ r.dose.entered_unit }}</td>
+        <td><a href="/vials/{{ r.vial.id }}">Vial #{{ r.vial.id }}</a> · <a href="/doses/{{ r.dose.id }}/edit">Review entry</a></td>
+      </tr>
+      {% else %}{% set r = item.blend %}
+      <tr data-timeline-source="blend" data-timeline-kind="{{ item.kind }}">
+        <td>{{ item.when|dt }}</td>
+        <td>Prepared blend</td><td>{{ 'Administered' if item.kind == 'dose' else 'Discarded' }}</td>
+        <td>{% for component in r.components %}{{ component.name }}{% if not loop.last %}; {% endif %}{% endfor %}</td>
+        <td>{{ r.draw.volume_ml|num }} mL</td>
+        <td><a href="/blends/{{ r.blend.id }}">Blend #{{ r.blend.id }}</a></td>
+      </tr>
+      {% endif %}
+    {% else %}
+      <tr><td colspan="6" class="empty">No recent entries match these filters.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<details id="dose-history">
+  <summary>Individual-vial history and correction controls</summary>
   <form method="get" class="inline">
     <label class="field"><span>Compound</span>
       <select name="compound_id" onchange="this.form.submit()">
@@ -303,9 +351,9 @@
     <thead><tr><th>When</th><th>Compound</th><th>Vial</th><th class="n">Entered</th<th class="n">Counted</th><th class="n">Cost</th><th>Site</th><th></th></tr></thead>
     <tbody id="dose-body">{% include "_dose_rows.html" %}</tbody>
   </table></div>
-</section>
+</details>
 
-<section id="blend-dose-history611">
+<details id="blend-dose-history611"><summary>Prepared-blend history (detailed)</summary>
   <h2>Prepared blend administrations and discards</h2>
   <p class="note">These are actual blend withdrawals, stored separately from individual-vial doses. Each draw is shown once with its constituent amounts; source-vial inventory was already deducted when the blend was prepared.</p>
   <div class="scroll"><table>
@@ -325,5 +373,5 @@
     {% endfor %}
     </tbody>
   </table></div>
-</section>
+</details>
 {% endblock %}
