@@ -272,13 +272,19 @@ run_isolated_browser_module() {
 
     echo
     echo "=== BROWSER MODULE: $module (strict=$strict) ==="
-    echo "WORKERS=4"
+    local workers=4
+    # Release 627: minimize RAM pressure for targeted disposable QA only.
+    # The normal full release gate must keep its original four workers.
+    if [[ "$MODE" == targeted ]]; then
+        workers=1
+    fi
+    echo "WORKERS=$workers"
     echo "MODULE_LOG=$logfile"
 
     set +e
     env -i "${envvars[@]}" \
         "$PY" -B -m pytest \
-        -n 4 --dist=loadfile \
+        -n "$workers" --dist=loadfile \
         -q --tb=short "$module" \
         2>&1 | tee "$logfile"
 
