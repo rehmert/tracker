@@ -1,4 +1,4 @@
-"""Release 605: source and isolated behavioral tests for memory-safe release gate.
+"""Release 605/607: source and isolated behavioral tests for guarded release gate.
 
 Never invoke the live deployment CLI or alter runtime files.
 """
@@ -10,11 +10,13 @@ SOURCE = (ROOT / "scripts/tracker-release.sh").read_text(encoding="utf-8")
 HELPER = (ROOT / "scripts/tracker-focused-regression604.sh").read_text(encoding="utf-8")
 
 
-def test_605_parallel_release_preserves_full_gate_with_host_safe_limits():
-    assert 'TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)' in SOURCE
-    assert 'BACKEND_TEST_MODE=PARALLEL workers=4' in SOURCE
-    assert 'MEMORY_PROPERTY="MemoryMax=2G"' in SOURCE
-    assert 'MEMORY_PROPERTY="MemoryMax=1G"' in SOURCE
+def test_605_parallel_release_preserves_full_gate_with_operator_resource_limits():
+    assert 'TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)' in SOURCE
+    assert 'BACKEND_TEST_MODE=PARALLEL workers=16' in SOURCE
+    assert 'MEMORY_PROPERTY="MemoryMax=16G"' in SOURCE
+    assert SOURCE.count('MEMORY_PROPERTY=') == 1
+    assert 'MEMORY_PROPERTY="MemoryMax=2G"' not in SOURCE
+    assert 'MEMORY_PROPERTY="MemoryMax=1G"' not in SOURCE
     assert "timeout 1200" in SOURCE
     assert '--durations=20 tests ' in SOURCE
     assert 'timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh"' in SOURCE
