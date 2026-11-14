@@ -72,3 +72,53 @@ The interactive guarded DEV deployer, 16 workers, 16 GB memory limit,
 HTTP/HTTPS Chromium qualification, immutable DEV receipts, exact-commit
 promotion, and independent PROD approval are unchanged. Strict-CSRF
 activation remains a separate security issue (#9).
+
+
+## Consolidated phases 2–4: one qualification run
+
+The same Release 626 candidate also includes the offline operational
+diagnostics and reporting work previously planned for Releases 627 and 628.
+These are read-only tools and are not exposed as new application endpoints.
+
+### Phase 3: sanitized deployment evidence and SSH diagnostics
+
+```sh
+/opt/tracker/.venv/bin/python /opt/tracker/scripts/tracker_release_diagnostics626.py \
+  --log /etc/tracker-release/release-625-dev.log
+```
+
+This parses a supplied transcript, reports recognized status markers only,
+never echoes arbitrary log content, hostnames, credentials or receipt paths,
+and refuses to infer why an SSH connection closed. Operators must still
+correlate privileged `journalctl`, `sshd` and kernel messages if an actual
+disconnect occurs. No service restart, logging configuration or release
+runner is changed.
+
+### Phase 4: unified read-only operations summary
+
+```sh
+/opt/tracker/.venv/bin/python /opt/tracker/scripts/tracker_operations_review626.py
+```
+
+Optionally pass `--release-log /path/to/transcript` to include sanitized
+release markers. The JSON combines source-only CSRF review totals,
+historical dependency baseline information and optional release evidence.
+The output **does not** certify live host health, complete CSRF protection,
+fresh-environment reproducibility, active dependency drift or deployment
+success without independently verified receipts. No new admin web route
+is deployed: authenticated in-app administrative visibility remains an
+optional future feature requiring an authorization review.
+
+### Consolidated release gating
+
+We will **not** run a separate full QA/deployment for nominal Releases
+627 and 628. All source-only changes in this bundle will qualify together
+under Release 626, preserving the existing original interactive DEV runner,
+the full 16-worker regression suite, isolated Chromium HTTP/HTTPS gates,
+immutable receipts and the explicitly approved PROD promotion.
+
+The outstanding **operational acceptance** for issue #10 remains separate:
+host inventories, trusted lock resolution, fresh disposable environment
+replay, security advisory evaluation and rollback proof are not supplied
+by this source-only candidate. Likewise issue #9 strict enforcement
+remains subject to separate approval and complete compatibility coverage.
