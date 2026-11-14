@@ -1,5 +1,6 @@
 {% extends "base.html" %}{% block title %}Blend {{ blend.label }}{% endblock %}{% block content %}
-<h1>{{ blend.label }}</h1><p><a href="/blends">← All blends</a></p>
+<h1>{{ blend.label }}</h1><p><a href="/blends">← All blends</a>{% if calendar_date %} · <a href="/calendar?month={{ calendar_date[:7] }}#calendar-day-{{ calendar_date }}">Return to calendar</a>{% endif %}</p>
+{% if calendar_date %}<p class="note" role="status">From calendar: {{ calendar_date }}. Confirm the actual administration time and amount before recording. A discarded draw does not count as an administration.</p>{% endif %}
 <p><strong>Final recorded volume:</strong> {{ blend.final_volume_ml|num }} mL · <strong>Remaining:</strong> {{ remaining|num }} mL · <strong>Status:</strong> {{ blend.status }}</p>
 <p><strong>Additional diluent:</strong> {{ blend.diluent_ml|num }} mL · <strong>Prepared:</strong> {{ blend.created_at|dt }}</p>
 {% if blend.notes %}<p>{{ blend.notes }}</p>{% endif %}
