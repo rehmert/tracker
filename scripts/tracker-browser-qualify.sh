@@ -11,7 +11,7 @@ TARGETED_MODULE=""
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
-  [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
+  [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -510,6 +510,24 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-batch627 ]]; then
       1 "$ROOT/batch627-coa.log"
   echo "TARGETED_CSRF_BATCH627=PASSED"
   echo "TARGETED_CSRF_BATCH627_SCOPE=NEW_BROWSER_ONLY_NOT_FULL_QUALIFICATION"
+  exit 0
+fi
+
+# Release 627: only rerun the three positive modules after correcting their
+# form encoding. Previously qualified negative probes need not be repeated
+# in a debugging smoke. This remains NOT full qualification.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive627 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_csrf_signed_lifecycles627.py \
+      1 "$ROOT/positive627-native.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_purchase_children627.py \
+      1 "$ROOT/positive627-purchase.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_coa_lifecycle627.py \
+      1 "$ROOT/positive627-coa.log"
+  echo "TARGETED_CSRF_POSITIVE627=PASSED"
+  echo "TARGETED_CSRF_POSITIVE627_SCOPE=NEW_POSITIVE_BROWSER_ONLY"
   exit 0
 fi
 
