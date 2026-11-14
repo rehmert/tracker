@@ -152,8 +152,8 @@ PY
  echo "Critical safety tests are included in full-suite collection."
  "$PY" -c 'import xdist' >/dev/null ||
   fail "pytest-xdist missing; serial fallback prohibited"
- TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)
- echo "BACKEND_TEST_MODE=PARALLEL workers=4"
+ TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)
+ echo "BACKEND_TEST_MODE=PARALLEL workers=16"
  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
@@ -298,15 +298,11 @@ bash -n "$RUN/worker.sh"
 UNIT="tracker-release-$(date +%s)-$$"
 # Make the log available before the worker starts; no source/data changes.
 touch "$RUN/deployment.log"
-# DEV and PROD have 8 GiB LXC allocations. Cap parallel release workers
-# at 2 GiB so an OOM in disposable qualification fails within its own unit
-# instead of competing aggressively with the live Tracker service and OS.
-# Full backend coverage remains mandatory; only xdist concurrency is reduced.
-if [[ "$SERIAL_TESTS" == 0 ]]; then
- MEMORY_PROPERTY="MemoryMax=2G"
-else
- MEMORY_PROPERTY="MemoryMax=1G"
-fi
+# Dedicated hosts: 18 vCPUs and 18 GiB RAM allocated per LXC.
+# Operator-required full parallel qualification: 16 pytest workers and
+# a 16 GiB systemd release-worker memory ceiling on both DEV and PROD.
+# Do not silently lower either bound or introduce a serial fallback.
+MEMORY_PROPERTY="MemoryMax=16G"
 echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
 systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
  /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS"
