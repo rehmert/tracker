@@ -108,7 +108,7 @@ def test_627_signed_native_create_persists_and_forgery_denied(
         else:
             denied = page.request.post(
                 base + write_path,
-                data=forged_fields,
+                form=forged_fields,
                 max_redirects=0,
             )
         assert denied.status == 403, (kind, scheme, denied.status)
@@ -147,12 +147,12 @@ def test_627_signed_native_create_persists_and_forgery_denied(
             marker = "QA627 Extra"
 
         unsigned_update = page.request.post(
-            base + next_path, data=fields, max_redirects=0,
+            base + next_path, form=fields, max_redirects=0,
         )
         assert unsigned_update.status == 403, (kind, scheme, "update forgery")
 
         signed_update = page.request.post(
-            base + next_path, data=fields,
+            base + next_path, form=fields,
             headers={"X-Tracker-CSRF": token}, max_redirects=0,
         )
         assert signed_update.status == 303, (
@@ -187,11 +187,11 @@ def test_627_signed_native_create_persists_and_forgery_denied(
 
         delete_path = created_path + "/delete"
         denied_delete = page.request.post(
-            base + delete_path, data={}, max_redirects=0,
+            base + delete_path, form={}, max_redirects=0,
         )
         assert denied_delete.status == 403, (kind, scheme, "delete forgery")
         signed_delete = page.request.post(
-            base + delete_path, data={},
+            base + delete_path, form={},
             headers={"X-Tracker-CSRF": token}, max_redirects=0,
         )
         assert signed_delete.status == 303, (
