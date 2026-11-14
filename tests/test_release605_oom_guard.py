@@ -29,6 +29,7 @@ def test_605_parallel_release_preserves_full_gate_with_host_safe_limits():
     assert "tests/test_release605_oom_guard.py" in HELPER
     assert "tests/test_test_benchmark.py" in HELPER
     assert "tests/test_prod_parallel_release508.py" in HELPER
+    assert "tests/test_secondary440_shard_safety503.py" in HELPER
     assert "tests/test_release_workflow.py" in HELPER
     assert 'set -Eeuo pipefail' in HELPER
     for script in ("scripts/tracker-release.sh",
