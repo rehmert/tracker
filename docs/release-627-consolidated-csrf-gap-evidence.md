@@ -205,3 +205,52 @@ The new `--targeted-strict csrf-positive627` mode reruns only
 the three previously unqualified positive Chromium modules, one
 worker each; it does not repeat the 111/30 passed cases. This
 is not a complete release qualification or deployment approval.
+
+## Latest observed operator result — targeted positive modules PASSED
+
+The operator reported these exact terminal markers for the corrected
+positive-only candidate `e32515600c06626fece3168ed231e5d706e2b0cb`:
+
+```
+MODULE_EXIT=0
+TARGETED_CSRF_POSITIVE627=PASSED
+TARGETED_CSRF_POSITIVE627_SCOPE=NEW_POSITIVE_BROWSER_ONLY
+ISOLATED_SERVER_STOPPED=YES
+ISOLATED_BROWSER=PASSED
+RELEASE_627_TARGETED_PREFLIGHT=PASSED
+```
+
+This is operator-provided targeted browser evidence, not a full DEV release
+receipt or independent re-execution by the reconciliation script.
+
+## Source-qualified route inventory — conservative reconciliation
+
+`python -m scripts.tracker_csrf_reconcile627 --json` is a deterministic
+read-only route-to-positive-test reconciliation. The historic 590 inventory
+continues to report 144 unsafe routes, 83 earlier source candidate witnesses,
+and 61 routes without earlier mapped positive witnesses. The new 627 modules
+have 19 disjoint additional normalized route witnesses, leaving **42 routes**
+without mapped positive lifecycle evidence. None of the 19 is promoted to
+full runtime qualification merely by its source reference.
+
+The 19 are precisely:
+
+- Protocols: 3 (create, toggle active, delete)
+- Pages: 3 (create, edit, delete)
+- Labs: 3 (create report, add result, delete report)
+- Purchases: 7 (BAC-water, purchase delete, supply create/edit/delete, vial
+  create/delete)
+- COAs: 3 (edit, verify, delete)
+
+The 6 independently session-protected account/login/logout routes are
+among the 42 and still need identity-aware browser evidence. The original
+110 dynamic-JavaScript/implicit-form review items also remain open; no
+automatic inference or dismissal occurred. The 590 inventory is preserved
+as a historical conservative baseline. The 627 reconciler is a new
+overlay, not a rewrite of that historical inventory.
+
+**Release 627 remains blocked for global CSRF enforcement.** Full guarded
+DEV qualification, account isolation, remaining route coverage and manual
+queue disposition remain required before a separate, explicitly authorized
+enforcement rollout. PROD remains on Release 626; this candidate makes no
+application or dependency changes.
