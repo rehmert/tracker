@@ -83,10 +83,16 @@ def test_625_multipart_native_signed_field_reaches_validation(strict_client):
 
 def test_625_multipart_duplicate_field_rejected(strict_client):
     token = signed_cookie(strict_client)
+    boundary = "tracker-csrf-double-field"
+    payload = (
+        f'--{boundary}\\r\\nContent-Disposition: form-data; name="csrf_token"'
+        f'\\r\\n\\r\\n{token}\\r\\n'
+        f'--{boundary}\\r\\nContent-Disposition: form-data; name="csrf_token"'
+        f'\\r\\n\\r\\n{token}\\r\\n--{boundary}--\\r\\n'
+    ).encode()
     response = strict_client.post(
-        "/compounds",
-        data=[("csrf_token", token), ("csrf_token", token)],
-        files={"placeholder": ("empty.txt", b"", "text/plain")},
+        "/compounds", content=payload,
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
         follow_redirects=False,
     )
     assert response.status_code == 403
