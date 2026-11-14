@@ -178,6 +178,10 @@ def test_580_vitals_create_edit_htmx_delete(tab, scheme):
     form.locator('input[name="weight"]').fill("191.5")
     form.locator('input[name="context"]').fill(label)
     _submit(page, form.get_by_role("button", name="Save reading"), "POST", "/vitals", 303)
+    # A 303 is observed before Chromium necessarily finishes following the
+    # redirect. Independently reload the complete persisted vitals history,
+    # avoiding response/navigation races and the default 90-day view.
+    _visit(page, base, "/vitals?days=3650&events=0")
     row = page.locator("tr").filter(has_text=label)
     expect(row).to_have_count(1)
     edit_url = row.locator('a[href*="/edit"]').get_attribute("href")
@@ -192,6 +196,7 @@ def test_580_vitals_create_edit_htmx_delete(tab, scheme):
     changed = label + " updated"
     edit.locator('input[name="context"]').fill(changed)
     _submit(page, edit.get_by_role("button", name="Save Changes"), "POST", edit_path, 303)
+    _visit(page, base, "/vitals?days=3650&events=0")
     row = page.locator("tr").filter(has_text=changed)
     expect(row).to_have_count(1)
     delete_path = row.locator('button[hx-delete]').get_attribute("hx-delete")
