@@ -606,6 +606,17 @@ async def record_blend_dose(blend_id: int, request: Request, db: Session = Depen
         if token:
             idempotency.record(db, token, 'blend_draw', digest)
         db.commit()
+        calendar_date = str(form.get('calendar_date', ''))
+        if calendar_date:
+            try:
+                datetime.strptime(calendar_date, '%Y-%m-%d')
+            except ValueError:
+                calendar_date = ''
+        if calendar_date:
+            return services.flash_redirect(
+                f'/calendar?month={calendar_date[:7]}#calendar-day-{calendar_date}',
+                msg='Blend draw recorded.',
+            )
         return services.flash_redirect(f'/blends/{blend.id}', msg='Blend draw recorded.')
     except (ValueError, TypeError) as exc:
         db.rollback()
