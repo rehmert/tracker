@@ -18,7 +18,6 @@ FETCH = re.compile(r"\bfetch\s*\(", re.I)
 XHR = re.compile(r"\.open\s*\(\s*(" + METHOD + r")\s*,", re.I)
 HTMX = re.compile(r"\bhtmx\.ajax\s*\(\s*(" + METHOD + r")\s*,", re.I)
 METHOD_FIELD = re.compile(r"""\bmethod\s*:\s*(""" + METHOD + r")", re.I)
-URL_LITERAL = re.compile(r"""^\s*['"](/[^'"\n]*)['"]""")
 MAX_WINDOW = 500
 
 
