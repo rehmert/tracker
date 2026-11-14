@@ -6,7 +6,8 @@ umask 077
 APP=/opt/tracker
 ROOT=/etc/tracker-release
 fail() { echo "REMOTE_FAIL: $*" >&2; exit 1; }
-trap 'rc=$?; echo "REMOTE_DEPLOY_EXIT_STATUS=$rc"' EXIT
+STAGE=""
+trap 'rc=$?; if [[ -n "$STAGE" ]]; then rm -f -- "$STAGE/runner.sh" || true; rmdir -- "$STAGE" || true; fi; echo "REMOTE_DEPLOY_EXIT_STATUS=$rc"' EXIT
 
 [[ $# -eq 3 ]] || fail "Expected exact base, target and release"
 BASE="$1"
@@ -59,11 +60,29 @@ if [[ "$HEAD" == "$TARGET" ]]; then
 fi
 [[ "$HEAD" == "$BASE" ]] || fail "Unexpected installed PROD commit"
 
+# PROD still has the previous release installed. Never invoke its local
+# deployment runner. Extract the exact Git object from the signed target,
+# before any installed source or data is changed.
+EXPECTED_RUNNER="$(git rev-parse "$TARGET:scripts/tracker-release.sh")" ||
+  fail "Signed target has no deployment runner"
+[[ "$EXPECTED_RUNNER" =~ ^[0-9a-f]{40}$ ]] || fail "Invalid target runner blob"
+STAGE="$(mktemp -d /tmp/tracker-prod-runner.XXXXXXXX)" ||
+  fail "Unable to stage target runner"
+chmod 700 "$STAGE"
+RUNNER="$STAGE/runner.sh"
+git show "$TARGET:scripts/tracker-release.sh" > "$RUNNER" ||
+  fail "Unable to extract signed target runner"
+[[ -f "$RUNNER" && ! -L "$RUNNER" ]] || fail "Unsafe staged runner"
+[[ "$(git hash-object "$RUNNER")" == "$EXPECTED_RUNNER" ]] ||
+  fail "Staged runner does not match signed target Git blob"
+bash -n "$RUNNER" || fail "Signed runner has invalid shell syntax"
+echo "PROD_PINNED_RUNNER_BLOB=$EXPECTED_RUNNER"
+
 : > "$LOG"
 chmod 600 "$LOG"
-# Existing guarded runner owns backups, parallel backend tests, signed
-# approval verification, fast-forward, runtime checks and rollback.
-bash scripts/tracker-release.sh \
+# Exact-target guarded runner owns backups, backend tests, approval
+# verification, fast-forward, runtime checks and rollback.
+bash "$RUNNER" \
   --instance PROD \
   --base "$BASE" \
   --target "$TARGET" \
