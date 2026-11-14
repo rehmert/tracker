@@ -63,10 +63,10 @@ def test_627_purchase_children_signed_create_edit_delete_and_forgery(browser, sc
         assert token.startswith("v1.")
 
         def write(path, data):
-            forged = page.request.post(base + path, data=data, max_redirects=0)
+            forged = page.request.post(base + path, form=data, max_redirects=0)
             assert forged.status == 403, ("missing token", path, forged.status)
             accepted = page.request.post(
-                base + path, data=data, max_redirects=0,
+                base + path, form=data, max_redirects=0,
                 headers={"X-Tracker-CSRF": token},
             )
             assert accepted.status == 303, ("signed", path, accepted.status)
