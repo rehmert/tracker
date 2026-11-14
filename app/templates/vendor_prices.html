@@ -9,10 +9,27 @@
 <select id="vendor-compound-filter"><option value="">All compounds</option></select></label>
 </div>
 <p id="vendor-compound-count" class="muted" aria-live="polite"></p>
+<div id="vendor-offer-pager605" class="vendor-offer-pager605" aria-label="Vendor offer pages" hidden>
+  <label for="vendor-offer-page-size605">Offers per page</label>
+  <select id="vendor-offer-page-size605" aria-label="Offers per page">
+    <option value="25" selected>25</option>
+    <option value="50">50</option>
+    <option value="100">100</option>
+    <option value="all">All</option>
+  </select>
+  <button type="button" id="vendor-offer-prev605">Previous</button>
+  <span id="vendor-offer-page-info605" role="status" aria-live="polite"></span>
+  <button type="button" id="vendor-offer-next605">Next</button>
+</div>
 <div class="table-wrap"><table id="vendor-offers-table"><thead><tr><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="0" aria-label="Sort by Compound" aria-sort-direction="none">Compound <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="1" aria-label="Sort by Content" aria-sort-direction="none">Content <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="2" aria-label="Sort by Vendor" aria-sort-direction="none">Vendor <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="3" aria-label="Sort by Package" aria-sort-direction="none">Package <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="4" aria-label="Sort by Vials" aria-sort-direction="none">Vials <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="5" aria-label="Sort by Total" aria-sort-direction="none">Total <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="6" aria-label="Sort by Per vial" aria-sort-direction="none">Per vial <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="7" aria-label="Sort by Landed / unit" aria-sort-direction="none">Landed / unit <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="8" aria-label="Sort by Shipping*" aria-sort-direction="none">Shipping* <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="9" aria-label="Sort by Delivered total*" aria-sort-direction="none">Delivered total* <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th scope="col"><button type="button" class="vendor-sort-heading" data-sort-column="10" aria-label="Sort by Delivered / vial*" aria-sort-direction="none">Delivered / vial* <span class="vendor-sort-indicator" aria-hidden="true">↕</span></button></th><th>Product link</th><th>Actions</th></tr></thead><tbody>
 {% for group in comparisons %}{% for e in group|sort(attribute='per_vial_cents') %}<tr data-offer-row="1" data-compound="{{ e.item_name|trim|lower|e }}" data-strength="{{ e.content_amount if e.content_amount is not none else '' }}:{{ e.content_unit or '' }}" data-vials="{{ e.vial_count }}"><td>{{ e.item_name }}</td><td data-sort="{{ e.content_amount if e.content_amount is not none else '' }}">{% if e.content_amount is not none and e.content_unit %}{{ '%g'|format(e.content_amount) }} {{ e.content_unit }}{% else %}⚠ Review content{% endif %}</td><td>{{ e.sheet.vendor }}</td><td>{{ e.package or '—' }}</td><td class="n" data-sort="{{ e.vial_count }}">{{ e.vial_count }}</td><td class="n" data-sort="{{ e.total_price_cents }}">{{ e.total_price_cents|money }}</td><td class="n" data-sort="{{ e.per_vial_cents }}">{{ '%.2f'|format(e.per_vial_cents / 100) }} USD{% if loop.first and group|length > 1 %} ★{% endif %}</td>{% set ship = shipping_by_entry[e.id] %}<td class="n vendor-price-per-unit" data-sort="{% if ship.configured and e.content_amount is not none and e.content_amount > 0 and e.content_unit %}{{ ship.landed_cents / (e.vial_count * e.content_amount) }}{% endif %}">{% if ship.configured and e.content_amount is not none and e.content_amount > 0 and e.content_unit %}${{ '%.2f'|format(ship.landed_cents / (100 * e.vial_count * e.content_amount)) }}/{{ e.content_unit }}{% else %}—{% endif %}</td><td class="n" data-sort="{% if ship.configured %}{{ ship.shipping_cents }}{% endif %}">{% if ship.configured %}{{ ship.shipping_cents|money }}{% else %}Not set{% endif %}</td><td class="n vendor-delivered-total" data-sort="{% if ship.configured %}{{ ship.landed_cents }}{% endif %}">{% if ship.configured %}{{ ship.landed_cents|money }}{% else %}—{% endif %}</td><td class="n" data-sort="{% if ship.configured %}{{ ship.landed_per_vial_cents }}{% endif %}">{% if ship.configured %}{{ '%.2f'|format(ship.landed_per_vial_cents / 100) }} USD{% else %}—{% endif %}</td><td>{% if e.product_url %}<a href="{{ e.product_url }}" target="_blank" rel="noopener noreferrer">View product ↗</a>{% else %}—{% endif %}</td><td><a href="/vendor-prices/entries/{{ e.id }}/edit#edit-offer" class="button" role="button" style="display:inline-block;padding:.35rem .75rem;border:1px solid currentColor;border-radius:6px;text-decoration:none;margin-right:.35rem">Edit</a> <form method="post" action="/vendor-prices/entries/{{ e.id }}/delete" style="display:inline" onsubmit="return confirm('Delete this vendor price offer? This cannot be undone.')"><button type="submit">Delete</button></form></td></tr>{% endfor %}{% else %}<tr><td colspan="13">No offers imported yet.</td></tr>{% endfor %}
 </tbody></table></div><p class="muted">Landed / unit = delivered total (package price + estimated shipping) ÷ (vials × content per vial). Values use two decimal places for numeric mg or IU contents; units are not interchangeable. Unconfigured shipping is shown as unavailable.</p><p class="muted">* Shipping is estimated for a single-package order. “Not set” means no vendor shipping policy has been entered; it does not mean free shipping.</p></section>
 <style>
+.vendor-offer-pager605 { display:flex;flex-wrap:wrap;align-items:center;gap:.65rem;margin:.65rem 0 1rem; }
+.vendor-offer-pager605[hidden] { display:none!important; }
+.vendor-offer-pager605 button,.vendor-offer-pager605 select { min-height:44px; }
+.vendor-offer-pager605 button:focus-visible,.vendor-offer-pager605 select:focus-visible { outline:2px solid currentColor;outline-offset:3px; }
+#vendor-offers-table tr[hidden] { display:none!important; }
 #vendor-offers-table .vendor-sort-heading { background: transparent; border: 0; padding: .25rem 0; color: inherit; font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; }
 #vendor-offers-table .vendor-sort-heading:hover { text-decoration: underline; }
 #vendor-offers-table .vendor-sort-heading:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
@@ -29,7 +46,13 @@
   // Unit prices are calculated from structured database values on the server.
   const filter = document.getElementById('vendor-compound-filter');
   const count = document.getElementById('vendor-compound-count');
+  const pager = document.getElementById('vendor-offer-pager605');
+  const sizeSelect = document.getElementById('vendor-offer-page-size605');
+  const previous = document.getElementById('vendor-offer-prev605');
+  const next = document.getElementById('vendor-offer-next605');
+  const pageInfo = document.getElementById('vendor-offer-page-info605');
   const offerRows = Array.from(body.querySelectorAll('tr[data-offer-row]'));
+  let page = 0;
   const compounds = new Map();
   offerRows.forEach(row => {
     const key = row.dataset.compound;
@@ -46,16 +69,33 @@
       filter.appendChild(option);
     });
   const applyCompoundFilter = () => {
-    let visible = 0;
+    // Always page the current DOM order, so column sorting spans all offers.
+    // The original rows and their edit/delete forms are never cloned or removed.
+    const matches = Array.from(body.querySelectorAll('tr[data-offer-row]'))
+      .filter(row => !filter.value || row.dataset.compound === filter.value);
+    const size = sizeSelect.value === 'all'
+      ? Math.max(matches.length, 1) : Number(sizeSelect.value);
+    const pages = Math.max(1, Math.ceil(matches.length / size));
+    page = Math.min(page, pages - 1);
+    const start = page * size;
+    const shown = new Set(matches.slice(start, start + size));
     offerRows.forEach(row => {
-      const matches = !filter.value || row.dataset.compound === filter.value;
-      row.hidden = !matches;
-      row.style.display = matches ? '' : 'none';
-      if (matches) visible += 1;
+      const visible = shown.has(row);
+      row.hidden = !visible;
+      row.style.display = visible ? '' : 'none';
     });
-    count.textContent = `${visible} of ${offerRows.length} offers shown`;
+    count.textContent = `${matches.length} of ${offerRows.length} offers match filter`;
+    pager.hidden = matches.length <= size;
+    previous.disabled = page === 0;
+    next.disabled = page >= pages - 1;
+    pageInfo.textContent = matches.length
+      ? `Showing ${start + 1}–${Math.min(start + size, matches.length)} of ${matches.length} matching offers`
+      : 'No matching offers';
   };
-  filter.addEventListener('change', applyCompoundFilter);
+  filter.addEventListener('change', () => { page = 0; applyCompoundFilter(); });
+  sizeSelect.addEventListener('change', () => { page = 0; applyCompoundFilter(); });
+  previous.addEventListener('click', () => { if (page > 0) { page -= 1; applyCompoundFilter(); } });
+  next.addEventListener('click', () => { page += 1; applyCompoundFilter(); });
   applyCompoundFilter();
   // Compare only identical compound, strength, and vial quantity. Shipping
   // must be configured, otherwise the delivered total is unknown.
@@ -103,6 +143,8 @@
       return collator.compare(av, bv) * direction;
     });
     rows.forEach(row => body.appendChild(row));
+    page = 0;
+    applyCompoundFilter();
     buttons.forEach(other => {
       const active = other === button;
       const th = other.closest('th');
