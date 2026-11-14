@@ -10,9 +10,21 @@
     <select name="tag"><option value="">Any</option>{% for t in all_tags %}<option {% if t == tag %}selected{% endif %}>{{ t }}</option>{% endfor %}</select></label>
   <label class="field"><span>Compound</span>
     <select name="compound_id"><option value="">Any</option>{% for c in compounds %}<option value="{{ c.id }}" {% if compound_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+  <label class="field"><span>Saved view</span><select name="view">
+    <option value="all" {% if view == 'all' %}selected{% endif %}>All notes</option>
+    <option value="with-sources" {% if view == 'with-sources' %}selected{% endif %}>With sources</option>
+    <option value="without-sources" {% if view == 'without-sources' %}selected{% endif %}>Needs sources</option>
+  </select></label>
   <button>Filter</button>
   <a class="btn primary" href="/pages/new">New page</a>
 </form>
+<nav aria-label="Bookmarkable Notes views" class="ux-shortcuts" id="notes-saved-views617">
+  <a href="/pages?view=all">All notes</a>
+  <a href="/pages?view=with-sources">With sources</a>
+  <a href="/pages?view=without-sources">Needs sources</a>
+</nav>
+<p class="note">These are bookmarkable URL-based views, not server-stored personal presets. Search, tag, compound and source filters only change the displayed notes.</p>
+<p role="status">{{ pages|length }} of {{ total }} notes shown.</p>
 
 {% if pages %}
 <ul class="cards">
