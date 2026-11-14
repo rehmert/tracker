@@ -63,19 +63,19 @@ def test_vial_move_restores_source_and_consumes_destination_once():
         # independent form controls may legitimately use the same numeric
         # value as an unrelated vial ID (e.g. unit/quantity fields).
         selection = re.search(
-            r'<select\\b[^>]*\\bname="vial_id"[^>]*>(.*?)</select>',
+            r'<select\b[^>]*\bname="vial_id"[^>]*>(.*?)</select>',
             page.text, re.DOTALL,
         )
         assert selection is not None, "Dose correction vial selector missing"
         choices = re.findall(
-            r'<option\\b[^>]*\\bvalue="([0-9]+)"[^>]*>',
+            r'<option\b[^>]*\bvalue="([0-9]+)"[^>]*>',
             selection.group(1),
         )
         assert str(source) in choices
         assert str(dest) in choices
         assert str(other) not in choices
         assert re.search(
-            rf'<option\\b[^>]*\\bvalue="{source}"\\s+selected\\b',
+            rf'<option\b[^>]*\bvalue="{source}"\s+selected\b',
             selection.group(1),
         ), "Original vial must be selected"
         response = correct(client, did, dest)
