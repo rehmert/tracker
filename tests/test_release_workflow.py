@@ -34,7 +34,7 @@ def test_release_rejects_unpinned_or_invalid_inputs():
 def test_release_safety_stages_exist():
     source = SCRIPT.read_text(encoding="utf-8")
     for marker in (
-        "systemd-run", "MemoryMax=1G", "merge --ff-only",
+        "systemd-run", "MemoryMax=16G", "merge --ff-only",
         "worktree add --detach", "umask 022", "umask 077",
         "tracker-deployment-guard.py", "tracker-runtime-smoke.py",
         "tracker-restore-verify.py", "create_backup(",
@@ -182,3 +182,18 @@ def test_501_https_fixture_is_loopback_only_and_preserves_security_headers():
     assert '"Sec-Fetch-Site": "cross-site"' in native
     assert '"Origin": "https://attacker.invalid"' in native
     assert "response.status == 403" in native
+
+
+def test_full_parallel_resources_are_mandatory_on_dev_and_prod():
+    """Regression: never silently reduce pytest workers or systemd RAM."""
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert 'TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)' in source
+    assert 'BACKEND_TEST_MODE=PARALLEL workers=16' in source
+    assert 'MEMORY_PROPERTY="MemoryMax=16G"' in source
+    assert source.count('MEMORY_PROPERTY=') == 1
+    assert '--property="$MEMORY_PROPERTY"' in source
+    assert 'serial fallback prohibited' in source
+    assert '--serial-tests) fail "Serial testing prohibited"' in source
+    assert 'MemoryMax=2G' not in source
+    assert 'MemoryMax=1G' not in source
+    assert 'TEST_PYTEST_EXTRA=(-n 4' not in source
