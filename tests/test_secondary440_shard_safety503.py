@@ -42,7 +42,7 @@ def test_503_secondary440_security_gates_stay_in_independent_test_files():
     assert "tests/test_secondary_private_workflow440.py" in script
 
     runner = RELEASE.read_text(encoding="utf-8")
-    assert 'TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)' in runner
+    assert 'TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)' in runner
     assert "BACKEND_TEST_MODE=SERIAL reason=" not in runner
     assert "--ignore=tests/test_secondary_private_workflow440.py" not in runner
     assert "--ignore=tests/test_secondary_integration440.py" not in runner
