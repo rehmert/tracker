@@ -422,6 +422,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-signed-lifecycles627.log"
 echo "STRICT_CSRF_627_SIGNED_LIFECYCLES=PASSED"
 
+echo "=== STRICT CSRF PURCHASE CHILD LIFECYCLES ==="
+run_isolated_browser_module \
+    tests/browser/test_csrf_purchase_children627.py \
+    1 "$ROOT/strict-purchase-children627.log"
+echo "STRICT_CSRF_627_PURCHASE_CHILDREN=PASSED"
+
 
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
