@@ -118,6 +118,27 @@ def test_627_purchase_children_signed_create_edit_delete_and_forgery(browser, sc
         write(f"/purchases/{pid}/supplies/{water[0]}/delete", {})
         assert query("SELECT COUNT(*) FROM supplies WHERE id=?", (water[0],)) == (0,)
 
+        # Reuse only the two synthetic compound fixtures established by the
+        # full isolated Chromium runner; never query installed inventory.
+        compound = query(
+            "SELECT id FROM compounds WHERE name='QA Alpha 511' LIMIT 1"
+        )
+        assert compound is not None
+        vial_label = "QA627 vial " + unique
+        write(f"/purchases/{pid}/vials", {
+            "compound_id": str(compound[0]),
+            "quantity": "1", "content_value": "10",
+            "content_unit": "mg", "form": "lyophilized",
+            "unit_price": "0", "label": vial_label,
+        })
+        vial = query(
+            "SELECT id,content_value FROM vials WHERE purchase_id=? AND label=?",
+            (pid, vial_label),
+        )
+        assert vial is not None and vial[1] == 10.0
+        write(f"/purchases/{pid}/vials/{vial[0]}/delete", {})
+        assert query("SELECT COUNT(*) FROM vials WHERE id=?", (vial[0],)) == (0,)
+
         write(f"/purchases/{pid}/delete", {})
         assert query("SELECT COUNT(*) FROM purchases WHERE id=?", (pid,)) == (0,)
     finally:
