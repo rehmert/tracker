@@ -2,6 +2,12 @@
 <h1>Peptide blends</h1>
 <p><a href="/reconstitution-calculator">Single-vial and premixed-blend calculator →</a></p>
 <p>Choose source vials, enter the target amount for each compound, preview, then record quantities you actually prepared. A preview never changes inventory. Recorded blends remain separate from original source vials.</p>
+<details class="card" id="blend-review-guide618">
+  <summary><strong>Blend workflow · guided review</strong></summary>
+  <p class="note">1. Select actual source vials. 2. Enter the intended quantities and transfer volumes. 3. Preview the calculation and compare it against what was physically prepared. 4. Review the destination volume, remaining inventory and recorded transfers before confirming.</p>
+  <p><a href="#blend-form">Open blend form</a> · <a href="/vials">Review source vials</a> · <a href="/inventory-health">Review inventory findings</a> · <a href="/calendar">Calendar</a></p>
+  <p class="note">Preview is not a transaction. Only the existing confirmed recording action updates inventory; this guide cannot submit the form.</p>
+</details>
 <div class="ux-callout"><strong>Two steps:</strong> Select source vials and target amounts, then preview. When the displayed plan matches the volumes and transfers actually performed, choose Record. Recording deducts stock and, for dry sources, records the confirmed reconstitution volumes.</div><section class="card"><h2>Create a blend</h2><p class="note">1 · Choose sources and targets. 2 · Preview and confirm actual quantities, then record.</p>
 <form method="post" action="/blends" class="grid" id="blend-form" data-confirm-inventory="true"><input type="hidden" name="submission_token" value="{{ submission_token }}"><input type="hidden" name="confirmed_actual" value="">
 <label class="field"><span>Destination vial label</span><input name="label" required placeholder="Blend #1"></label>
