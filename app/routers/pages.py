@@ -43,7 +43,7 @@ def _matches(p: Page, q: str) -> bool:
 
 @router.get("/pages")
 def pages_list(request: Request, q: str = "", tag: str = "", compound_id: int | None = None,
-               db: Session = Depends(get_scoped_db390)):
+               view: str = "all", db: Session = Depends(get_scoped_db390)):
     all_pages = list(db.scalars(select(Page).order_by(Page.updated_at.desc(), Page.id.desc())))
     pages = all_pages
     if q.strip():
@@ -53,7 +53,15 @@ def pages_list(request: Request, q: str = "", tag: str = "", compound_id: int | 
         pages = [p for p in pages if tag in p.tag_list]
     if compound_id:
         pages = [p for p in pages if any(c.id == compound_id for c in p.compounds)]
-    return render(request, "pages.html", pages=pages, q=q, tag=tag, compound_id=compound_id,
+    # Named, bookmarkable read-only views: no per-user storage or migrations.
+    if view not in ("all", "with-sources", "without-sources"):
+        view = "all"
+    if view == "with-sources":
+        pages = [p for p in pages if p.sources]
+    elif view == "without-sources":
+        pages = [p for p in pages if not p.sources]
+    return render(request, "pages.html", pages=pages, q=q, tag=tag,
+                  compound_id=compound_id, view=view,
                   all_tags=sorted({t for p in all_pages for t in p.tag_list}),
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   snippet=_snippet, total=len(all_pages))
