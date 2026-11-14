@@ -2,8 +2,8 @@
 """Conservative Release 627 positive-route reconciliation (source only).
 
 Never claims global enforcement readiness, and never invents runtime evidence.
-Only the 24 remaining routes explicitly mapped to four 627 signed
-lifecycle modules are source-mapped; five newer protocol cases remain unexecuted.
+Only the 27 remaining routes explicitly mapped to five 627 signed
+lifecycle modules are source-mapped; eight newer protocol/preview cases remain unexecuted.
 All other unsafe routes keep their original source/manual review status.
 """
 from __future__ import annotations
@@ -40,6 +40,11 @@ WITNESSES = {
         ("POST", "/purchases/{pid}/supplies/{sid}/edit"),
         ("POST", "/purchases/{pid}/vials"),
         ("POST", "/purchases/{pid}/vials/{vid}/delete"),
+    ),
+    "tests/browser/test_csrf_blend_previews627.py": (
+        ("POST", "/blends/preview"),
+        ("POST", "/blends/reconstitution-preview"),
+        ("POST", "/blends/waterfall/preview"),
     ),
     "tests/browser/test_csrf_protocol_remaining627.py": (
         ("POST", "/protocols/{pid}/calc"),
@@ -79,6 +84,14 @@ MODULE_MARKERS = {
         'f"/purchases/{pid}/vials/{vial[0]}/delete"',
         'f"/purchases/{pid}/delete"',
         'SELECT id,purchased_qty FROM supplies',
+    ),
+    "tests/browser/test_csrf_blend_previews627.py": (
+        'preview("/blends/preview",',
+        'preview("/blends/reconstitution-preview",',
+        'preview("/blends/waterfall/preview",',
+        'assert db.query(Blend).count() == baseline_blends',
+        'denied.status == 403',
+        'result["status"] == 200',
     ),
     "tests/browser/test_csrf_protocol_remaining627.py": (
         'signed(location + "/calc",',
@@ -125,7 +138,7 @@ def build() -> dict:
                 raise ValueError("Duplicate positive route: " + str(key))
             mapped[key] = module
 
-    if len(mapped) != 24 or not set(mapped) <= remaining or set(mapped) & known:
+    if len(mapped) != 27 or not set(mapped) <= remaining or set(mapped) & known:
         raise ValueError("Release 627 source witnesses differ from baseline gap")
     if report["total_unsafe_routes"] != 144 or len(known) != 83 or len(remaining) != 61:
         raise ValueError("Baseline unsafe-route inventory changed; manual reassessment required")
@@ -146,6 +159,7 @@ def build() -> dict:
         "new_627_source_mapped_routes": len(mapped),
         "previously_observed_targeted_positive_routes": 19,
         "new_unexecuted_protocol_route_tests": 5,
+        "new_unexecuted_blend_preview_route_tests": 3,
         "new_627_positive_routes": [
             {"method": method, "path": path, "test_module": module,
              "full_dev_runtime_qualified": False}
