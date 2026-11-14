@@ -298,7 +298,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
     ))
 
     return render(request, "doses.html", rows=_rows(db, compound_id), blend_rows=blend_history(db, compound_id), vials=form_vials, views=views, active_blends=active_blends,
-                  planned_handoff=planned_handoff,
+                  planned_handoff=planned_handoff, planned_date=planned_date, planned_time=planned_time,
                   planned_compound_name=planned_compound.name if planned_compound else "Planned compound",
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
                   compound_id=compound_id, sites=INJECTION_SITES,
