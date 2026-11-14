@@ -116,7 +116,9 @@ def test_582_dose_create_correct_delete_with_forgery_rejection(tab, scheme):
     _open(page, base, "/doses")
     form = page.locator('form[hx-post="/doses"]')
     assert form.count() == 1
-    before = set(page.locator('a[href^="/doses/"][href$="/edit"]').evaluate_all(
+    # Release 616 adds a read-only unified timeline with another link to each
+    # vial record. Count only canonical mutation rows refreshed by HTMX.
+    before = set(page.locator('#dose-body a[href^="/doses/"][href$="/edit"]').evaluate_all(
         "(nodes) => nodes.map(n => n.getAttribute('href'))"
     ))
     _forged(page, base, "POST", "/doses")
@@ -142,7 +144,7 @@ def test_582_dose_create_correct_delete_with_forgery_rejection(tab, scheme):
         "POST", "/doses", 200
     )
     assert response.request.all_headers().get("x-tracker-csrf", "").startswith("v1.")
-    new_link = page.locator('a[href^="/doses/"][href$="/edit"]')
+    new_link = page.locator('#dose-body a[href^="/doses/"][href$="/edit"]')
     expect(new_link).to_have_count(len(before) + 1)
     created = set(new_link.evaluate_all(
         "(nodes) => nodes.map(n => n.getAttribute('href'))"
@@ -151,7 +153,7 @@ def test_582_dose_create_correct_delete_with_forgery_rejection(tab, scheme):
     edit_path = created.pop()
     assert re.fullmatch(r"/doses/[0-9]+/edit", edit_path)
     delete_path = edit_path.removesuffix("/edit")
-    row = page.locator("tr").filter(
+    row = page.locator("#dose-body tr").filter(
         has=page.locator('a[href="' + edit_path + '"]')
     )
     expect(row).to_have_count(1)
@@ -174,13 +176,13 @@ def test_582_dose_create_correct_delete_with_forgery_rejection(tab, scheme):
     )
     _forged(page, base, "DELETE", delete_path)
     _open(page, base, "/doses")
-    row = page.locator("tr").filter(
+    row = page.locator("#dose-body tr").filter(
         has=page.locator('a[href="' + edit_path + '"]')
     )
     expect(row).to_have_count(1)
     _witness(page, row.locator('button[hx-delete="' + delete_path + '"]'),
              "DELETE", delete_path, 200, dialog=True)
-    expect(page.locator('a[href="' + edit_path + '"]')).to_have_count(0)
+    expect(page.locator('#dose-body a[href="' + edit_path + '"]')).to_have_count(0)
     assert page.request.get(base + edit_path).status == 404
     assert not errors, errors
     _receipt(scheme)
