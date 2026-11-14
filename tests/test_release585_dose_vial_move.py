@@ -1,6 +1,7 @@
 """Release 585: correction can reassign a dose to a different same-compound vial."""
 from uuid import uuid4
 import json
+import re
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -58,10 +59,25 @@ def test_vial_move_restores_source_and_consumes_destination_once():
         did = add_dose(client, source)
         page = client.get(f"/doses/{did}/edit")
         assert page.status_code == 200
-        assert 'name="vial_id"' in page.text
-        assert f'value="{source}" selected' in page.text
-        assert f'value="{dest}"' in page.text
-        assert f'value="{other}"' not in page.text
+        # Only the correction-vial selector is security-relevant. Other
+        # independent form controls may legitimately use the same numeric
+        # value as an unrelated vial ID (e.g. unit/quantity fields).
+        selection = re.search(
+            r'<select\\b[^>]*\\bname="vial_id"[^>]*>(.*?)</select>',
+            page.text, re.DOTALL,
+        )
+        assert selection is not None, "Dose correction vial selector missing"
+        choices = re.findall(
+            r'<option\\b[^>]*\\bvalue="([0-9]+)"[^>]*>',
+            selection.group(1),
+        )
+        assert str(source) in choices
+        assert str(dest) in choices
+        assert str(other) not in choices
+        assert re.search(
+            rf'<option\\b[^>]*\\bvalue="{source}"\\s+selected\\b',
+            selection.group(1),
+        ), "Original vial must be selected"
         response = correct(client, did, dest)
         assert response.status_code == 303
         assert "err=" not in response.headers["location"]
