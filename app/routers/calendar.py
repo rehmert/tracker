@@ -35,7 +35,13 @@ def reconcile(planned, actual, today):
                             if idx not in used and a['compound_id'] == p['compound_id']), None)
             if matched is not None:
                 used.add(matched)
-                events.append(dict(p, status='recorded', actual_dose=recordings[matched]['dose']))
+                # Preserve the source blend only when the matched recording
+                # actually originated from a prepared blend.
+                events.append(dict(
+                    p, status='recorded',
+                    actual_dose=recordings[matched]['dose'],
+                    actual_blend_id=recordings[matched].get('blend_id'),
+                ))
             else:
                 status = 'unrecorded' if day < today else ('due' if day == today else 'upcoming')
                 events.append(dict(p, status=status, actual_dose=None))
