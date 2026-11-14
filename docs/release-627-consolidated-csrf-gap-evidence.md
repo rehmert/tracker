@@ -150,3 +150,32 @@ operations still require explicit positive witness mapping.
 
 The newly added tests are candidate source only: neither targeted nor
 full Chromium execution has yet been observed for Release 627.
+
+## First targeted run evidence — failed, not qualified (2026-11-14)
+
+Operator log `/etc/tracker-release/release-627-targeted-20261114T230201Z-50dIfh.log`
+used candidate `2a3996778735eeb1ff2ed3409c49f69f2cb690a4`.
+The isolated backend matrix passed 111/111, and 30/30 Chromium
+workstream-forgery probes passed. The first positive lifecycle module
+passed two protocol cases but failed four cases:
+
+- Notes/page HTTP and HTTPS creations succeeded; the test compared a
+  machine-generated title to Tracker's title-cased UI output.
+- Lab HTTP and HTTPS signed update returned 303, but an exact-text HTML
+  assertion did not find the analyte and did not establish persistence.
+
+The candidate test now compares displayed titles case-insensitively
+and asserts the changed pages/lab analytes/protocol state directly in the
+disposable SQLite database. This is an **unexecuted corrective commit**;
+there is no rerun evidence yet.
+
+The operator-created external script `/root/tracker-627-safe-preflight.sh`
+has a separate shell bug: `qa` was declared `local` inside worker, but
+the EXIT trap runs when local function scope has ended and raised an
+unbound-variable error under `set -u`. This script is not part of the
+repository. Operator must initialize the worktree variable in global
+scope before a new run, and inspect/remove any orphan disposable
+worktree from the first run. No installed DEV/PROD app code changed.
+
+The previous failed QA must not be counted as a passing Release 627
+qualification. Purchase and COA modules did not execute.
