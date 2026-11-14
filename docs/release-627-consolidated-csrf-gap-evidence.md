@@ -73,3 +73,33 @@ suite, HTTP/HTTPS Chromium, immutable receipts, and explicit signed PROD
 promotion after preflight and visual approval. The previous 626 deployment
 is the exact base for both environments. No PROD changes are authorized
 solely by passing these negative tests.
+
+## New positive browser lifecycle evidence (same candidate)
+
+The full guarded browser gate now also schedules
+`tests/browser/test_csrf_signed_lifecycles627.py`: six independent
+HTTP/HTTPS Chromium cases. Each creates its own synthetic protocol,
+page or lab report through a **real native signed HTML form** and
+requires a 303 redirect and persisted record. The same browser context
+then sends a properly signed application edit/state-change request,
+verifies persisted changes, and deletes that synthetic record, with
+unsigned forged update and deletion attempts rejected (403).
+Tests never operate on existing user data.
+
+These cases provide real positive lifecycle evidence for a subset of
+previously unqualified routes:
+
+- `POST /protocols`, `POST /protocols/{pid}/active`,
+  `POST /protocols/{pid}/delete`
+- `POST /pages`, `POST /pages/{pid}`,
+  `POST /pages/{pid}/delete`
+- `POST /labs`, `POST /labs/{rid}/results`,
+  `POST /labs/{rid}/delete`
+
+Edit/delete requests are signed through Chromium's isolated request
+context, not native button clicks. These declarations have NOT been
+automatically added to the historical 590 manifest. Runtime execution
+must pass and its evidence must be reviewed before qualifying any route.
+Additional purchase, blend, COA and other high-priority workstreams,
+plus the 110 manual-review records, are still outstanding; do not
+enable global enforcement based on these subset tests.
