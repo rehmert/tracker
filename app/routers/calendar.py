@@ -8,9 +8,10 @@ from io import StringIO
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from sqlalchemy import select
 from fastapi.responses import RedirectResponse, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from ..scoped_db390 import get_scoped_db390
-from ..models import Protocol, ProtocolItem, ProjectionExclusion, DoseLog, Vial
+from ..models import Protocol, ProtocolItem, ProjectionExclusion, DoseLog, Vial, Blend, BlendDose, BlendComponent
+from ..blend_administration_view import blend_dose_components
 from ..projection_exclusions import exclusions_for, excluded
 from ..templating import render
 from .. import calendar as cal
@@ -136,6 +137,35 @@ def _month_events(shown: date, db: Session):
             'compound_id': dose.vial.compound_id,
             'name': dose.vial.compound.name,
             'dose': f'{dose.entered_value:g} {dose.entered_unit}'})
+    # Blend draws are stored separately from ordinary vial DoseLogs.
+    # One administered draw contributes a recorded occurrence for each
+    # constituent compound, but never creates duplicate DoseLog rows.
+    blend_draws = db.scalars(
+        select(BlendDose)
+        .where(
+            BlendDose.kind == 'dose',
+            BlendDose.taken_at >= datetime.combine(first, datetime.min.time()),
+            BlendDose.taken_at < datetime.combine(end, datetime.min.time()),
+        )
+        .options(
+            selectinload(BlendDose.blend)
+            .selectinload(Blend.components)
+            .selectinload(BlendComponent.compound),
+            selectinload(BlendDose.blend)
+            .selectinload(Blend.components)
+            .selectinload(BlendComponent.source_vial),
+        )
+        .order_by(BlendDose.taken_at, BlendDose.id)
+    )
+    for draw in blend_draws:
+        for component in blend_dose_components(draw):
+            actual.setdefault(draw.taken_at.date(), []).append({
+                'compound_id': component['compound_id'],
+                'name': component['name'],
+                'dose': f"{component['amount']:g} {component['unit']} (blend #{draw.blend_id})",
+                'dose_time': draw.taken_at.strftime('%H:%M'),
+                'blend_id': draw.blend_id,
+            })
     events = reconcile(planned, actual, today)
     return first, end, events, missing_start
 
