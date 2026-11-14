@@ -92,3 +92,28 @@ The first attempt's tests were not complete. No post-OOM release success or
 new evidence receipt may be claimed until the replacement exact-commit DEV
 qualification finishes with `EXIT_STATUS=0` and the independent evidence
 preserver accepts the complete log.
+
+## Second DEV attempt — legacy source-contract assertion
+
+The second guarded attempt used the verified candidate runner with four pytest
+workers and a 2 GiB systemd unit memory limit. Focused preflight and full
+browser gates passed. The complete backend suite executed **2,696 passes**
+before stopping at `tests/test_test_benchmark.py`, whose static safety
+contract still required `-n 16`. Final exit was nonzero; no complete DEV
+qualification or PROD promotion occurred.
+
+A follow-up source audit identified three existing tests with stale literal
+expectations after the runner's resource correction:
+
+- `tests/test_test_benchmark.py`
+- `tests/test_prod_parallel_release508.py`
+- `tests/test_secondary440_shard_safety503.py`
+
+These now check the bounded `-n 4` and 2 GiB settings while retaining the
+existing complete-suite, xdist-required, fail-closed, isolation and signed
+promotion conditions. All three are included in the focused regression helper
+before the expensive browser and backend gates, and the Release 605 guard test
+requires that early coverage.
+
+The revised candidate must undergo a fresh complete guarded DEV qualification;
+the earlier 2,696 partial passes are not a substitute for a complete run.
