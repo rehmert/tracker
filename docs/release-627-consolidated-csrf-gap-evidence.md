@@ -103,3 +103,19 @@ must pass and its evidence must be reviewed before qualifying any route.
 Additional purchase, blend, COA and other high-priority workstreams,
 plus the 110 manual-review records, are still outstanding; do not
 enable global enforcement based on these subset tests.
+
+## Purchase-specific positive lifecycle extension
+
+The full strict Chromium runner now also executes
+`tests/browser/test_csrf_purchase_children627.py` against both isolated
+schemes. Using a synthetic purchase and the existing synthetic compound
+fixture, it verifies signed create/edit/delete of purchased supplies,
+creation and deletion of BAC-water inventory, child-vial creation/deletion,
+and deletion of the emptied purchase. Each write is paired with a
+tokenless 403 attempt and checks persisted SQLite values/absence. This
+extends evidence for seven purchase-specific routes without depending
+on production inventory. It is scoped to the disposable browser QA
+database, and is not a general authorization to enable strict CSRF.
+
+The candidate remains unqualified on DEV. Full backend and browser
+passes—including the new suites—are mandatory before promotion.
