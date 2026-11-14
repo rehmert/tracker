@@ -540,7 +540,9 @@ async def record_waterfall(request: Request, db: Session = Depends(get_scoped_db
 
 
 @router.get('/blends/{blend_id}')
-def blend_detail(blend_id: int, request: Request, db: Session = Depends(get_scoped_db390)):
+def blend_detail(blend_id: int, request: Request, planned_date: str = "",
+                 planned_time: str = "",
+                 db: Session = Depends(get_scoped_db390)):
     blend = db.get(Blend, blend_id)
     if blend is None:
         return services.flash_redirect('/blends', err='Blend not found.')
@@ -549,11 +551,22 @@ def blend_detail(blend_id: int, request: Request, db: Session = Depends(get_scop
         c = row['item']
         entry = dose_compounds.setdefault(c.compound_id, dict(name=c.compound.name, unit=row['unit'], concentration=0.0))
         entry['concentration'] += row['concentration']
+    planned_at = None
+    if planned_date:
+        try:
+            planned_at = datetime.strptime(
+                planned_date + 'T' + (planned_time or '00:00'),
+                '%Y-%m-%dT%H:%M',
+            )
+        except ValueError:
+            planned_at = None
     return render(request, 'blend_detail.html', blend=blend, components=component_rows(blend),
                   dose_compounds=list(dose_compounds.values()),
                   remaining=blend_remaining(blend),
                   common_draw=component_rows(blend)[0]['draw_ml'] if blend.components else None,
-                  now=datetime.now().strftime('%Y-%m-%dT%H:%M'), submission_token=idempotency.new_token())
+                  now=(planned_at or datetime.now()).strftime('%Y-%m-%dT%H:%M'),
+                  calendar_date=planned_date if planned_at else '',
+                  submission_token=idempotency.new_token())
 
 
 @router.post('/blends/{blend_id}/doses')
