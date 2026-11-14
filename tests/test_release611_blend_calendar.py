@@ -17,7 +17,7 @@ from app.models import (
     ProtocolItem, Vial,
 )
 from app.blend_administration_view import blend_dose_components
-from app.routers.calendar import _month_events
+from app.routers.calendar import _month_events, reconcile
 
 
 def _seed():
@@ -90,6 +90,14 @@ def test_611_blend_admin_visible_on_calendar_and_dose_log():
         assert parse_qs(urlsplit(location).query)["month"] == [scheduled[:7]]
         assert urlsplit(location).fragment == "calendar-day-" + scheduled
 
+        calendar = client.get(f"/calendar?month={scheduled[:7]}")
+        assert calendar.status_code == 200
+        # The recorded first constituent matches a protocol item; the
+        # second constituent is an unmatched actual administration.
+        # Both must offer a direct link to the same physical source blend.
+        assert calendar.text.count(f'href="/blends/{blend_id}"') >= 2
+        assert f"View source blend #{blend_id}" in calendar.text
+
         history = client.get("/doses")
         assert history.status_code == 200
         assert f'href="/blends/{blend_id}"' in history.text
@@ -145,3 +153,24 @@ def test_611_blend_waste_is_visible_in_history_but_not_calendar_admin():
             event["status"] == "extra" and event["compound_id"] in compound_ids
             for event in events.get(today, [])
         )
+
+
+def test_613_reconcile_does_not_mislabel_ordinary_vial_dose_as_blend():
+    planned = {date(2026, 11, 14): [
+        {"compound_id": 11, "name": "Example", "dose": "1 mg"},
+        {"compound_id": 12, "name": "Other", "dose": "2 mg"},
+    ]}
+    actual = {date(2026, 11, 14): [
+        {"compound_id": 11, "name": "Example", "dose": "1 mg"},
+        {"compound_id": 12, "name": "Other", "dose": "2 mg (blend #51)",
+         "blend_id": 51},
+        {"compound_id": 13, "name": "Extra", "dose": "0.5 mg (blend #51)",
+         "blend_id": 51},
+    ]}
+    entries = reconcile(planned, actual, date(2026, 11, 15))[date(2026, 11, 14)]
+    assert entries[0]["status"] == "recorded"
+    assert entries[0]["actual_blend_id"] is None
+    assert entries[1]["status"] == "recorded"
+    assert entries[1]["actual_blend_id"] == 51
+    assert entries[2]["status"] == "extra"
+    assert entries[2]["blend_id"] == 51
