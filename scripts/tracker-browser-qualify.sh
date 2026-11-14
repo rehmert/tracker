@@ -428,6 +428,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-purchase-children627.log"
 echo "STRICT_CSRF_627_PURCHASE_CHILDREN=PASSED"
 
+echo "=== STRICT CSRF COA MULTIPART LIFECYCLES ==="
+run_isolated_browser_module \
+    tests/browser/test_csrf_coa_lifecycle627.py \
+    1 "$ROOT/strict-coa-lifecycle627.log"
+echo "STRICT_CSRF_627_COA_LIFECYCLE=PASSED"
+
 
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
@@ -493,6 +499,9 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-batch627 ]]; then
   run_isolated_browser_module \
       tests/browser/test_csrf_purchase_children627.py \
       1 "$ROOT/batch627-purchases.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_coa_lifecycle627.py \
+      1 "$ROOT/batch627-coa.log"
   echo "TARGETED_CSRF_BATCH627=PASSED"
   echo "TARGETED_CSRF_BATCH627_SCOPE=NEW_BROWSER_ONLY_NOT_FULL_QUALIFICATION"
   exit 0
