@@ -9,6 +9,7 @@
 <select id="vendor-compound-filter"><option value="">All compounds</option></select></label>
 <label class="field" for="vendor-name-filter609"><span>Search vendor names</span>
 <input id="vendor-name-filter609" type="search" placeholder="Filter vendors" autocomplete="off"></label>
+<button type="button" id="vendor-reset-filters610" disabled>Clear filters</button>
 </div>
 <p id="vendor-compound-count" class="muted" aria-live="polite"></p>
 <div id="vendor-offer-pager605" class="vendor-offer-pager605" aria-label="Vendor offer pages" hidden>
@@ -48,6 +49,7 @@
   // Unit prices are calculated from structured database values on the server.
   const filter = document.getElementById('vendor-compound-filter');
   const vendorFilter = document.getElementById('vendor-name-filter609');
+  const resetFilters = document.getElementById('vendor-reset-filters610');
   const count = document.getElementById('vendor-compound-count');
   const pager = document.getElementById('vendor-offer-pager605');
   const sizeSelect = document.getElementById('vendor-offer-page-size605');
@@ -90,6 +92,7 @@
       row.style.display = visible ? '' : 'none';
     });
     count.textContent = `${matches.length} of ${offerRows.length} offers match filter`;
+    resetFilters.disabled = !filter.value && !vendorFilter.value.trim() && sizeSelect.value === '25';
     pager.hidden = matches.length <= size;
     previous.disabled = page === 0;
     next.disabled = page >= pages - 1;
@@ -99,6 +102,14 @@
   };
   filter.addEventListener('change', () => { page = 0; applyCompoundFilter(); });
   vendorFilter.addEventListener('input', () => { page = 0; applyCompoundFilter(); });
+  resetFilters.addEventListener('click', () => {
+    filter.value = '';
+    vendorFilter.value = '';
+    sizeSelect.value = '25';
+    page = 0;
+    applyCompoundFilter();
+    vendorFilter.focus();
+  });
   sizeSelect.addEventListener('change', () => { page = 0; applyCompoundFilter(); });
   previous.addEventListener('click', () => { if (page > 0) { page -= 1; applyCompoundFilter(); } });
   next.addEventListener('click', () => { page += 1; applyCompoundFilter(); });
