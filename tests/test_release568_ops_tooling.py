@@ -95,7 +95,7 @@ def test_remote_runner_keeps_prod_approval_and_rollback_guards():
         'tracker-prod',
         'tracker-verify-dev-approval',
         'git merge-base --is-ancestor "$BASE" "$TARGET"',
-        'bash scripts/tracker-release.sh',
+        'bash "$RUNNER"',
         '--instance PROD',
         '--ref main',
         'TRACKER RELEASE DEPLOYMENT SUCCESS',
@@ -119,6 +119,33 @@ def test_remote_runner_keeps_prod_approval_and_rollback_guards():
     assert controller.index("sign_and_transfer(args.target)") < (
         controller.index("promote(args.target, args.prod_base)")
     ) < controller.index("deploy(args.release, args.target, args.prod_base)")
+
+
+
+def test_prod_runner_is_exact_signed_target_blob_not_installed_launcher():
+    source = PROD.read_text(encoding="utf-8")
+    assert 'bash scripts/tracker-release.sh' not in source
+    assert 'git rev-parse "$TARGET:scripts/tracker-release.sh"' in source
+    assert 'git show "$TARGET:scripts/tracker-release.sh" > "$RUNNER"' in source
+    assert 'git hash-object "$RUNNER"' in source
+    assert '"$EXPECTED_RUNNER"' in source
+    assert 'bash -n "$RUNNER"' in source
+    assert 'STAGE="$(mktemp -d /tmp/tracker-prod-runner.XXXXXXXX)"' in source
+    assert 'chmod 700 "$STAGE"' in source
+    assert 'PROD_PINNED_RUNNER_BLOB=' in source
+    # All content and syntax checks must precede the deployment log reset
+    # and exact-target runner execution, so failure cannot trigger a deploy.
+    assert source.index('git show "$TARGET:scripts/tracker-release.sh"') < (
+        source.index('git hash-object "$RUNNER"')
+    ) < source.index('bash -n "$RUNNER"') < (
+        source.index(': > "$LOG"')
+    ) < source.index('bash "$RUNNER"')
+    # Keep all existing production gates and cleanup evidence intact.
+    assert source.index('tracker-verify-dev-approval "$TARGET"') < (
+        source.index('git show "$TARGET:scripts/tracker-release.sh"')
+    )
+    assert 'REMOTE_DEPLOY_EXIT_STATUS=$rc' in source
+    assert 'rmdir -- "$STAGE"' in source
 
 
 def test_readiness_report_is_safe_and_has_no_install_side_effects(tmp_path):
