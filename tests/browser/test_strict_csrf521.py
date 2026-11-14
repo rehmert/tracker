@@ -529,7 +529,14 @@ def test_575_create_and_edit_notes_with_rendered_dynamic_action(tab, scheme):
     with page.expect_response(_post_response(page, "/pages/" + pid)) as pending:
         form.get_by_role("button", name="Save page").click()
     _verified(pending.value, status=303)
-    page.wait_for_url(re.compile(re.escape(base) + r"/pages/[0-9]+(?:\?.*)?$"))
+    # A 303 confirms the signed write, not that the following browser
+    # navigation has finished rendering the persisted Notes record.
+    # Re-fetch both the source edit form and the canonical view explicitly.
+    saved_edit = page.goto(edit_url, wait_until="networkidle")
+    assert saved_edit is not None and saved_edit.status == 200
+    expect(page.locator(f'form[action="/pages/{pid}"] input[name="title"]')).to_have_value(updated)
+    saved_view = page.goto(base + "/pages/" + pid, wait_until="networkidle")
+    assert saved_view is not None and saved_view.status == 200
     # User-authored titles must be visible exactly as stored: the global
     # heading-title formatter must not rewrite capitalization or identifiers.
     heading = page.locator(".notes-page-heading h1[data-no-title-case]")
