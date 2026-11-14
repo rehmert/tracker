@@ -416,6 +416,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-gap627.log"
 echo "STRICT_CSRF_627_GAP_NEGATIVE_PROBES=PASSED"
 
+echo "=== STRICT CSRF SIGNED NATIVE CREATE LIFECYCLES ==="
+run_isolated_browser_module \
+    tests/browser/test_csrf_signed_lifecycles627.py \
+    1 "$ROOT/strict-signed-lifecycles627.log"
+echo "STRICT_CSRF_627_SIGNED_LIFECYCLES=PASSED"
+
 
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
