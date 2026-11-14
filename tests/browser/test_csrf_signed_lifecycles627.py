@@ -88,6 +88,9 @@ def test_627_signed_native_create_persists_and_forgery_denied(
         else:
             form.locator('input[name="drawn_on"]').fill("2026-11-12")
             form.locator('input[name="lab_name"]').fill(name)
+            form.locator('input[name="analyte"]').first.fill("QA627 Marker")
+            form.locator('input[name="value"]').first.fill("23.5")
+            form.locator('input[name="unit"]').first.fill("ng/mL")
             forged_fields = {"drawn_on": "2026-11-12",
                              "lab_name": name + " unsigned"}
             verify_path = "/labs"
