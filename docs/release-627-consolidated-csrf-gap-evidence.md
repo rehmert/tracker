@@ -119,3 +119,19 @@ database, and is not a general authorization to enable strict CSRF.
 
 The candidate remains unqualified on DEV. Full backend and browser
 passes—including the new suites—are mandatory before promotion.
+
+## Low-cost targeted validation before the single full release
+
+Release 627 explicitly adds
+`scripts/tracker-browser-qualify.sh WORKTREE PYTHON --targeted-strict csrf-batch627`.
+It launches the same disposable localhost backend/TLS proxy and exercises
+only the three new 627 browser modules. It emits
+`TARGETED_CSRF_BATCH627_SCOPE=NEW_BROWSER_ONLY_NOT_FULL_QUALIFICATION`.
+This mode is restricted to a detached candidate worktree and must never
+be interpreted as a full DEV release receipt or permission to promote.
+
+Run focused Python regressions for the route matrix separately in the same
+detached worktree. Only after all targeted failures are resolved should the
+ordinary one-time guarded DEV qualification begin. The full strict browser
+gate still runs all existing browser modules, including new 627 modules,
+and PROD remains unchanged until signed approval.
