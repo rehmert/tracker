@@ -25,8 +25,8 @@ def test_508_release_script_remains_valid_bash():
 def test_508_prod_and_dev_share_parallel_eligibility():
     source = _source()
 
-    assert 'TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)' in source
-    assert 'BACKEND_TEST_MODE=PARALLEL workers=4' in source
+    assert 'TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)' in source
+    assert 'BACKEND_TEST_MODE=PARALLEL workers=16' in source
     assert "import xdist" in source
     assert 'fail "pytest-xdist missing; serial fallback prohibited"' in source
     assert 'TEST_PYTEST_EXTRA=()' not in source
@@ -42,7 +42,7 @@ def test_508_prod_parallel_has_bounded_memory_and_override_retains_serial():
     assert '--serial-tests) fail "Serial testing prohibited"' in source
     assert '[[ "$SERIAL_TESTS" == 0 ]]' in source
     assert 'BACKEND_TEST_MODE=SERIAL reason=' not in source
-    assert 'MEMORY_PROPERTY="MemoryMax=2G"' in source
+    assert 'MEMORY_PROPERTY="MemoryMax=16G"' in source
     assert 'systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY"' in source
     assert 'worker "$@"' in source
     assert 'if [[ "$INSTANCE" == PROD ]]; then' in source
