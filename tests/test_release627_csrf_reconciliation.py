@@ -10,7 +10,9 @@ def test_627_signed_route_reconciliation_stays_blocked():
     assert report["original_unsafe_routes"] == 144
     assert report["pre_627_candidate_routes"] == 83
     assert report["pre_627_unqualified_routes"] == 61
-    assert report["new_627_source_mapped_routes"] == 24\n    assert report["previously_observed_targeted_positive_routes"] == 19\n    assert report["new_unexecuted_protocol_route_tests"] == 5
+    assert report["new_627_source_mapped_routes"] == 24
+    assert report["previously_observed_targeted_positive_routes"] == 19
+    assert report["new_unexecuted_protocol_route_tests"] == 5
     assert report["remaining_without_positive_source_witness"] == 37
     assert report["manual_review_items_unchanged"] == 110
     assert report["session_account_routes_not_certified"] == 6
