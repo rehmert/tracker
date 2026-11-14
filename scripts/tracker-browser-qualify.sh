@@ -440,6 +440,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-coa-lifecycle627.log"
 echo "STRICT_CSRF_627_COA_LIFECYCLE=PASSED"
 
+echo "=== STRICT CSRF REMAINING PROTOCOL SIGNED LIFECYCLES ==="
+run_isolated_browser_module \
+    tests/browser/test_csrf_protocol_remaining627.py \
+    1 "$ROOT/strict-protocol-remaining627.log"
+echo "STRICT_CSRF_627_PROTOCOL_REMAINING=PASSED"
+
 
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
@@ -526,6 +532,9 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive627 ]]; then
   run_isolated_browser_module \
       tests/browser/test_csrf_coa_lifecycle627.py \
       1 "$ROOT/positive627-coa.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_protocol_remaining627.py \
+      1 "$ROOT/positive627-protocol.log"
   echo "TARGETED_CSRF_POSITIVE627=PASSED"
   echo "TARGETED_CSRF_POSITIVE627_SCOPE=NEW_POSITIVE_BROWSER_ONLY"
   exit 0
