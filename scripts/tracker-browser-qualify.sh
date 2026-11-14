@@ -410,6 +410,13 @@ fi
 
 echo "=== STRICT CSRF CORE TESTS PASSED ==="
 
+echo "=== STRICT CSRF UNQUALIFIED WORKSTREAM NEGATIVE PROBES ==="
+run_isolated_browser_module \\
+    tests/browser/test_csrf_gap627.py \\
+    1 "$ROOT/strict-gap627.log"
+echo "STRICT_CSRF_627_GAP_NEGATIVE_PROBES=PASSED"
+
+
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
     1 "$ROOT/strict-labs500.log"
