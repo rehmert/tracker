@@ -2,7 +2,7 @@
 """Conservative Release 627 positive-route reconciliation (source only).
 
 Never claims global enforcement readiness, and never invents runtime evidence.
-Only the 19 remaining routes explicitly exercised by the three 627 signed
+Only the 24 remaining routes explicitly mapped to four 627 signed
 lifecycle modules may be moved to an observed-in-targeted-run bucket.
 All other unsafe routes keep their original source/manual review status.
 """
@@ -41,6 +41,13 @@ WITNESSES = {
         ("POST", "/purchases/{pid}/vials"),
         ("POST", "/purchases/{pid}/vials/{vid}/delete"),
     ),
+    "tests/browser/test_csrf_protocol_remaining627.py": (
+        ("POST", "/protocols/{pid}/calc"),
+        ("POST", "/protocols/{pid}/dates"),
+        ("POST", "/protocols/{pid}/save"),
+        ("POST", "/protocols/{pid}/add-item"),
+        ("POST", "/protocols/{pid}/duplicate"),
+    ),
     "tests/browser/test_csrf_coa_lifecycle627.py": (
         ("POST", "/coas/{cid}/delete"),
         ("POST", "/coas/{cid}/edit"),
@@ -72,6 +79,15 @@ MODULE_MARKERS = {
         'f"/purchases/{pid}/vials/{vial[0]}/delete"',
         'f"/purchases/{pid}/delete"',
         'SELECT id,purchased_qty FROM supplies',
+    ),
+    "tests/browser/test_csrf_protocol_remaining627.py": (
+        'signed(location + "/calc",',
+        'signed(location + "/dates",',
+        'signed(location + "/save",',
+        'signed(location + "/add-item",',
+        'signed(location + "/duplicate",',
+        'SELECT amount_value,amount_unit FROM protocol_items',
+        'SELECT count(*) FROM protocol_items',
     ),
     "tests/browser/test_csrf_coa_lifecycle627.py": (
         'form.get_by_role("button", name="Create COA").click()',
@@ -109,7 +125,7 @@ def build() -> dict:
                 raise ValueError("Duplicate positive route: " + str(key))
             mapped[key] = module
 
-    if len(mapped) != 19 or not set(mapped) <= remaining or set(mapped) & known:
+    if len(mapped) != 24 or not set(mapped) <= remaining or set(mapped) & known:
         raise ValueError("Release 627 source witnesses differ from baseline gap")
     if report["total_unsafe_routes"] != 144 or len(known) != 83 or len(remaining) != 61:
         raise ValueError("Baseline unsafe-route inventory changed; manual reassessment required")
@@ -127,13 +143,15 @@ def build() -> dict:
         "original_unsafe_routes": 144,
         "pre_627_candidate_routes": 83,
         "pre_627_unqualified_routes": 61,
-        "new_627_targeted_positive_route_witnesses": len(mapped),
+        "new_627_source_mapped_routes": len(mapped),
+        "previously_observed_targeted_positive_routes": 19,
+        "new_unexecuted_protocol_route_tests": 5,
         "new_627_positive_routes": [
             {"method": method, "path": path, "test_module": module,
              "full_dev_runtime_qualified": False}
             for (method, path), module in sorted(mapped.items())
         ],
-        "remaining_without_positive_route_witness": len(uncovered),
+        "remaining_without_positive_source_witness": len(uncovered),
         "remaining_route_workstreams": [
             {"workstream": group, "routes": number}
             for group, number in sorted(count.items(), key=lambda row: (-row[1], row[0]))
@@ -154,9 +172,9 @@ def main() -> int:
     else:
         print("CSRF_627_STATUS=" + result["status"])
         print("CSRF_627_TARGETED_POSITIVE_ROUTES=" +
-              str(result["new_627_targeted_positive_route_witnesses"]))
+              str(result["new_627_source_mapped_routes"]))
         print("CSRF_627_STILL_WITHOUT_POSITIVE_WITNESS=" +
-              str(result["remaining_without_positive_route_witness"]))
+              str(result["remaining_without_positive_source_witness"]))
         print("CSRF_627_MANUAL_REVIEW_UNCHANGED=" +
               str(result["manual_review_items_unchanged"]))
         print("CSRF_627_GLOBAL_ENFORCEMENT=BLOCKED")
