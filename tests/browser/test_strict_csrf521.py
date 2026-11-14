@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
 import pytest
@@ -529,6 +529,10 @@ def test_575_create_and_edit_notes_with_rendered_dynamic_action(tab, scheme):
     with page.expect_response(_post_response(page, "/pages/" + pid)) as pending:
         form.get_by_role("button", name="Save page").click()
     _verified(pending.value, status=303)
+    # Prove the actual signed browser request preserved the unique title,
+    # and that the response redirects to this exact Notes record.
+    assert parse_qs(pending.value.request.post_data or "").get("title") == [updated]
+    assert urlsplit(pending.value.headers.get("location", "")).path == f"/pages/{pid}"
     # A 303 confirms the signed write, not that the following browser
     # navigation has finished rendering the persisted Notes record.
     # Re-fetch both the source edit form and the canonical view explicitly.
