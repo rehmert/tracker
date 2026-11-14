@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 from .. import services, units as U, idempotency
 from ..scoped_db390 import get_scoped_db390
 from ..models import Blend, Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, SupplyCategory
+from ..blend_administration_view import blend_history
 from ..inventory_lock import reserve_inventory_write, require_inventory_write
 from .. import manual_supplies
 from ..templating import render
@@ -206,6 +207,12 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
             row["blend"], row["remaining_ml"]
         )
     planned_handoff = bool(planned_date) and compound_id is not None
+    if planned_handoff:
+        active_blends = [
+            row for row in active_blends
+            if any(component.compound_id == compound_id
+                   for component in row["blend"].components)
+        ]
     recent_vial_ids = []
     if planned_handoff:
         in_use_ids = [
@@ -290,7 +297,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         select(SupplyCategory.key).where(SupplyCategory.unit == "count")
     ))
 
-    return render(request, "doses.html", rows=_rows(db, compound_id), vials=form_vials, views=views, active_blends=active_blends,
+    return render(request, "doses.html", rows=_rows(db, compound_id), blend_rows=blend_history(db, compound_id), vials=form_vials, views=views, active_blends=active_blends,
                   planned_handoff=planned_handoff,
                   planned_compound_name=planned_compound.name if planned_compound else "Planned compound",
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
