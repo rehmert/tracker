@@ -117,7 +117,7 @@ def test_627_signed_native_create_persists_and_forgery_denied(
         accepted = pending.value
         assert accepted.status == 303, (kind, scheme, accepted.status)
         assert accepted.headers.get("x-tracker-csrf-report") == "valid"
-        page.wait_for_url(re.compile(re.escape(base + write_path) + r"/[0-9]+(?:\\?.*)?$"))
+        page.wait_for_url(re.compile(re.escape(base + write_path) + r"/[0-9]+(?:[?].*)?$"))
         expect(page.locator("body")).to_contain_text(name)
 
         page.goto(base + verify_path, wait_until="networkidle")
