@@ -10,8 +10,8 @@ def test_627_signed_route_reconciliation_stays_blocked():
     assert report["original_unsafe_routes"] == 144
     assert report["pre_627_candidate_routes"] == 83
     assert report["pre_627_unqualified_routes"] == 61
-    assert report["new_627_targeted_positive_route_witnesses"] == 19
-    assert report["remaining_without_positive_route_witness"] == 42
+    assert report["new_627_source_mapped_routes"] == 24\n    assert report["previously_observed_targeted_positive_routes"] == 19\n    assert report["new_unexecuted_protocol_route_tests"] == 5
+    assert report["remaining_without_positive_source_witness"] == 37
     assert report["manual_review_items_unchanged"] == 110
     assert report["session_account_routes_not_certified"] == 6
 
@@ -22,9 +22,9 @@ def test_627_signed_route_manifest_has_no_duplicate_or_unmapped_routes():
     remaining = report["remaining_routes"]
     pkeys = {(r["method"], r["path"]) for r in positive}
     rkeys = {(r["method"], r["path"]) for r in remaining}
-    assert len(pkeys) == len(positive) == 19
-    assert len(rkeys) == len(remaining) == 42
+    assert len(pkeys) == len(positive) == 24
+    assert len(rkeys) == len(remaining) == 37
     assert pkeys.isdisjoint(rkeys)
     assert len(pkeys | rkeys) == 61
     assert all(not row["full_dev_runtime_qualified"] for row in positive)
-    assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == 42
+    assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == 37
