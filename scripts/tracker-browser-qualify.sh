@@ -446,6 +446,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-protocol-remaining627.log"
 echo "STRICT_CSRF_627_PROTOCOL_REMAINING=PASSED"
 
+echo "=== STRICT CSRF SIGNED READ-ONLY BLEND PREVIEWS ==="
+run_isolated_browser_module \
+    tests/browser/test_csrf_blend_previews627.py \
+    1 "$ROOT/strict-blend-previews627.log"
+echo "STRICT_CSRF_627_BLEND_PREVIEWS=PASSED"
+
 
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
@@ -535,6 +541,9 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive627 ]]; then
   run_isolated_browser_module \
       tests/browser/test_csrf_protocol_remaining627.py \
       1 "$ROOT/positive627-protocol.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_blend_previews627.py \
+      1 "$ROOT/positive627-blend-previews.log"
   echo "TARGETED_CSRF_POSITIVE627=PASSED"
   echo "TARGETED_CSRF_POSITIVE627_SCOPE=NEW_POSITIVE_BROWSER_ONLY"
   exit 0
