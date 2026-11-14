@@ -122,10 +122,63 @@ def test_627_signed_native_create_persists_and_forgery_denied(
         assert accepted.headers.get("x-tracker-csrf-report") == "valid"
         page.wait_for_url(re.compile(re.escape(base + write_path) + r"/[0-9]+(?:[?].*)?$"))
         expect(page.locator("body")).to_contain_text(name)
+        created_path = urlsplit(page.url).path
+        assert re.fullmatch(re.escape(write_path) + r"/[0-9]+", created_path)
 
         page.goto(base + verify_path, wait_until="networkidle")
         expect(page.locator("body")).to_contain_text(name)
         assert name + " unsigned" not in page.locator("body").inner_text()
+
+        # Extend the real signed native creation with browser-context API
+        # updates, then delete only the synthetic record created above.
+        # The API calls are independently signed but not native-form clicks.
+        if kind == "protocols":
+            next_path, fields, marker = created_path + "/active", {}, "protocol"
+        elif kind == "pages":
+            next_path = created_path
+            fields = {"title": name + " revised", "body": "QA627 revised text"}
+            marker = name + " revised"
+        else:
+            next_path = created_path + "/results"
+            fields = {"analyte": "QA627 Extra", "value": "9.1", "unit": "mg/dL"}
+            marker = "QA627 Extra"
+
+        unsigned_update = page.request.post(
+            base + next_path, data=fields, max_redirects=0,
+        )
+        assert unsigned_update.status == 403, (kind, scheme, "update forgery")
+
+        signed_update = page.request.post(
+            base + next_path, data=fields,
+            headers={"X-Tracker-CSRF": token}, max_redirects=0,
+        )
+        assert signed_update.status == 303, (
+            kind, scheme, "signed update", signed_update.status,
+        )
+        assert signed_update.headers.get("x-tracker-csrf-report") == "valid"
+
+        persisted = page.request.get(base + created_path)
+        assert persisted.status == 200
+        if kind != "protocols":
+            assert marker in persisted.text()
+        else:
+            # Protocol active status is a state change, not a label edit.
+            assert "Active" in persisted.text()
+
+        delete_path = created_path + "/delete"
+        denied_delete = page.request.post(
+            base + delete_path, data={}, max_redirects=0,
+        )
+        assert denied_delete.status == 403, (kind, scheme, "delete forgery")
+        signed_delete = page.request.post(
+            base + delete_path, data={},
+            headers={"X-Tracker-CSRF": token}, max_redirects=0,
+        )
+        assert signed_delete.status == 303, (
+            kind, scheme, "signed delete", signed_delete.status,
+        )
+        assert signed_delete.headers.get("x-tracker-csrf-report") == "valid"
+        assert page.request.get(base + created_path).status == 404
         assert not errors, (kind, scheme, errors)
     finally:
         context.close()
