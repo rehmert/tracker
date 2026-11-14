@@ -31,6 +31,12 @@ changed() { g diff --name-only --diff-filter=ACMR "$BASE" "$TARGET" -- app/; }
 cleanup() {
  code=$?
  trap - EXIT
+ # Never report success if the worker was terminated before its complete
+ # backend/restore/install/runtime qualification sequence finished.
+ if ((code==0 && QUALIFICATION_COMPLETE!=1)); then
+  echo "ERROR: Release worker exited without completing qualification" >&2
+  code=1
+ fi
  # Release 577: persist independently verified exact-commit DEV evidence
  # before returning success. A receipt failure becomes a deployment failure,
  # preserving the existing code-only rollback guard.
@@ -77,13 +83,15 @@ cleanup() {
 worker() {
  RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
- QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0
+ QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0
  export GIT_CONFIG_COUNT=2
  export GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
  export GIT_CONFIG_KEY_1=safe.directory GIT_CONFIG_VALUE_1="$QA"
  umask 022
  exec >> "$RUN/deployment.log" 2>&1
  trap cleanup EXIT
+ trap 'exit 143' TERM
+ trap 'exit 130' INT
  echo "Started: $(date -Is); instance: $INSTANCE"
  exec 9>/run/lock/tracker-db-sync.lock
  flock -n 9 || fail "Database replication active"
@@ -144,8 +152,8 @@ PY
  echo "Critical safety tests are included in full-suite collection."
  "$PY" -c 'import xdist' >/dev/null ||
   fail "pytest-xdist missing; serial fallback prohibited"
- TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)
- echo "BACKEND_TEST_MODE=PARALLEL workers=16"
+ TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)
+ echo "BACKEND_TEST_MODE=PARALLEL workers=4"
  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
@@ -216,6 +224,7 @@ PY
  echo "======================================"
  g log -1 --oneline
  echo "Verified recovery archive: $ARCHIVE"
+ QUALIFICATION_COMPLETE=1
 }
 follow_deployment_log() {
  local unit="$1" log="$2" pid="" i final
@@ -289,11 +298,12 @@ bash -n "$RUN/worker.sh"
 UNIT="tracker-release-$(date +%s)-$$"
 # Make the log available before the worker starts; no source/data changes.
 touch "$RUN/deployment.log"
-# DEV and PROD have matching 8 GiB LXC allocations. Parallel release
-# workers get 6 GiB, leaving 2 GiB for the running Tracker service and OS.
-# --serial-tests retains the original conservative 1 GiB release limit.
+# DEV and PROD have 8 GiB LXC allocations. Cap parallel release workers
+# at 2 GiB so an OOM in disposable qualification fails within its own unit
+# instead of competing aggressively with the live Tracker service and OS.
+# Full backend coverage remains mandatory; only xdist concurrency is reduced.
 if [[ "$SERIAL_TESTS" == 0 ]]; then
- MEMORY_PROPERTY="MemoryMax=6G"
+ MEMORY_PROPERTY="MemoryMax=2G"
 else
  MEMORY_PROPERTY="MemoryMax=1G"
 fi
