@@ -94,7 +94,7 @@ def stale_positive_assertion(text: str, needle: str) -> bool:
 # narrower than an arbitrary source-string search, which would mistake fixture
 # examples, comments, or legitimate compatibility assertions for obsolete gates.
 RUNNER_CONTRACT = re.compile(
-    r'TEST_PYTEST_EXTRA=\\(-n [0-9]+ --dist=[a-z]+\\)'
+    r'TEST_PYTEST_EXTRA=\(-n [0-9]+ --dist=[a-z]+\)'
     r'|BACKEND_TEST_MODE=PARALLEL workers=[0-9]+'
     r'|MEMORY_PROPERTY="MemoryMax=[0-9]+[GM]"'
 )
