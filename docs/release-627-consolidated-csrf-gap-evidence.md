@@ -179,3 +179,29 @@ worktree from the first run. No installed DEV/PROD app code changed.
 
 The previous failed QA must not be counted as a passing Release 627
 qualification. Purchase and COA modules did not execute.
+
+## Second operator run (2026-11-14 23:13 UTC) — failed, root cause fixed in source
+
+Candidate `f774f2e123c64ebe33fd2d92f4d42c70039d1b81`:
+111/111 backend tests and 30/30 HTTP/HTTPS negative Chromium
+tests passed; 2 protocol lifecycle cases passed, 4 pages/lab
+cases failed. The direct SQLite checks established the source of
+the false "success": `page.request.post(data=fields)` submits JSON
+rather than the `application/x-www-form-urlencoded` required by
+FastAPI's `Form` parameters. The routes returned a 303 validation
+redirect while leaving data unchanged. This was a test-client bug,
+not demonstrated CSRF acceptance. Corrected all such posts in the
+native lifecycle, purchase-child and COA modules to
+`page.request.post(form=fields)`. Success now requires actual
+persisted data and field values, not just HTTP 303.
+
+The external root launcher also has a second variable-lifetime error:
+`local log="$1"` inside `worker` is out of scope when the EXIT
+handler executes. Change that to a global assignment as well.
+These two local launcher repairs (`qa` and `log`) are distinct
+from the GitHub candidate and must be made before rerunning.
+
+The new `--targeted-strict csrf-positive627` mode reruns only
+the three previously unqualified positive Chromium modules, one
+worker each; it does not repeat the 111/30 passed cases. This
+is not a complete release qualification or deployment approval.
