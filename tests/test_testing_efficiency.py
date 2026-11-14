@@ -78,6 +78,6 @@ def test_recovery_and_rollback_preserved():
         "git diff --check",
         "merge --ff-only",
         "reset --hard",
-        "MemoryMax=1G",
+        "MemoryMax=16G",
     ):
         assert marker in source
