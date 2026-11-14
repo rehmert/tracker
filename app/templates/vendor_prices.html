@@ -7,6 +7,8 @@
 <div style="margin: .75rem 0 1rem; max-width: 360px;">
 <label class="field" for="vendor-compound-filter"><span>Filter by compound</span>
 <select id="vendor-compound-filter"><option value="">All compounds</option></select></label>
+<label class="field" for="vendor-name-filter609"><span>Search vendor names</span>
+<input id="vendor-name-filter609" type="search" placeholder="Filter vendors" autocomplete="off"></label>
 </div>
 <p id="vendor-compound-count" class="muted" aria-live="polite"></p>
 <div id="vendor-offer-pager605" class="vendor-offer-pager605" aria-label="Vendor offer pages" hidden>
@@ -45,6 +47,7 @@
   const body = table.tBodies[0];
   // Unit prices are calculated from structured database values on the server.
   const filter = document.getElementById('vendor-compound-filter');
+  const vendorFilter = document.getElementById('vendor-name-filter609');
   const count = document.getElementById('vendor-compound-count');
   const pager = document.getElementById('vendor-offer-pager605');
   const sizeSelect = document.getElementById('vendor-offer-page-size605');
@@ -71,8 +74,10 @@
   const applyCompoundFilter = () => {
     // Always page the current DOM order, so column sorting spans all offers.
     // The original rows and their edit/delete forms are never cloned or removed.
+    const vendorQuery = vendorFilter.value.trim().toLocaleLowerCase();
     const matches = Array.from(body.querySelectorAll('tr[data-offer-row]'))
-      .filter(row => !filter.value || row.dataset.compound === filter.value);
+      .filter(row => (!filter.value || row.dataset.compound === filter.value)
+        && (!vendorQuery || row.cells[2].textContent.toLocaleLowerCase().includes(vendorQuery)));
     const size = sizeSelect.value === 'all'
       ? Math.max(matches.length, 1) : Number(sizeSelect.value);
     const pages = Math.max(1, Math.ceil(matches.length / size));
@@ -93,6 +98,7 @@
       : 'No matching offers';
   };
   filter.addEventListener('change', () => { page = 0; applyCompoundFilter(); });
+  vendorFilter.addEventListener('input', () => { page = 0; applyCompoundFilter(); });
   sizeSelect.addEventListener('change', () => { page = 0; applyCompoundFilter(); });
   previous.addEventListener('click', () => { if (page > 0) { page -= 1; applyCompoundFilter(); } });
   next.addEventListener('click', () => { page += 1; applyCompoundFilter(); });
