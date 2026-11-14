@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Vial Labels — {{ v.compound.name }}{% endblock %}
 {% block content %}
+<style>
+:root{--label-preview-scale:3}
+.single-label-preview-controls605{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;margin:1rem 0}
+.single-label-preview-controls605 select{min-height:44px;padding:.4rem;font:inherit}
+.single-label-preview-controls605 select:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.single-label-preview-scroll605{overflow:auto;max-width:100%}
+.single-label-preview-image605{display:block;width:auto;height:auto;max-width:none!important;zoom:var(--label-preview-scale)}
+@media print{.single-label-preview-controls605{display:none!important}.single-label-preview-image605{zoom:1!important}}
+</style>
 
 <h1>Vial Labels <small class="sub">{{ v.compound.name }} #{{ v.id }}</small></h1>
 
@@ -62,9 +71,20 @@ the 20 mm edge. The SVG preview and PNG export use the same direction.
     Record the reconstitution date on this vial before exporting its mixed label.
   </p>
 {% else %}
-  <div class="scroll" style="padding:1rem;background:#fff;max-width:100%">
-    <img
-      style="max-width:100%;height:auto"
+  <div class="single-label-preview-controls605">
+    <label for="label-preview-zoom449">Preview zoom</label>
+    <select id="label-preview-zoom449" aria-label="Preview zoom, screen only">
+      <option value="1">100%</option>
+      <option value="1.5">150%</option>
+      <option value="2">200%</option>
+      <option value="3" selected>300% (default)</option>
+      <option value="4">400%</option>
+      <option value="5">500%</option>
+    </select>
+    <span id="label-preview-zoom-status449" class="muted" role="status" aria-live="polite">Screen only — exports remain original size.</span>
+  </div>
+  <div class="scroll single-label-preview-scroll605" style="padding:1rem;background:#fff;max-width:100%">
+    <img class="single-label-preview-image605"
       alt="Vial label preview"
       src="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}">
   </div>
@@ -87,4 +107,5 @@ explicitly identified, never calculated or inferred.
 
 <p><a href="/vials/{{ v.id }}">← Back to vial</a></p>
 
+<script src="/static/js/tracker-label-preview-zoom449.js?v=449" defer></script>
 {% endblock %}
