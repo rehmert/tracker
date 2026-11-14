@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed on stale positive asset-version tests before a release gate.
+"""Fail closed on stale asset-version and deployment-runner contracts before release.
 
 Read-only, stdlib only. Examines exact base..target diffs inside an isolated
 candidate worktree; never touches running services or application data.
@@ -90,6 +90,41 @@ def stale_positive_assertion(text: str, needle: str) -> bool:
     return False
 
 
+# Only these exact resource contracts are compared. This is deliberately
+# narrower than an arbitrary source-string search, which would mistake fixture
+# examples, comments, or legitimate compatibility assertions for obsolete gates.
+RUNNER_CONTRACT = re.compile(
+    r'TEST_PYTEST_EXTRA=\\(-n [0-9]+ --dist=[a-z]+\\)'
+    r'|BACKEND_TEST_MODE=PARALLEL workers=[0-9]+'
+    r'|MEMORY_PROPERTY="MemoryMax=[0-9]+[GM]"'
+)
+
+
+def stale_runner_contracts(root: Path, base: str, tests: list[Path],
+                           tests_changed: set[str]) -> list[str]:
+    """Reject unchanged positive test assertions about removed runner limits."""
+    rel = "scripts/tracker-release.sh"
+    before = git(root, "show", f"{base}:{rel}", missing_ok=True)
+    if not before:
+        return []
+    after = (root / rel).read_text(encoding="utf-8")
+    removed = set(RUNNER_CONTRACT.findall(before)) - set(
+        RUNNER_CONTRACT.findall(after)
+    )
+    errors: list[str] = []
+    for needle in sorted(removed):
+        for path in tests:
+            test_rel = path.relative_to(root).as_posix()
+            if test_rel in tests_changed:
+                continue
+            if stale_positive_assertion(path.read_text(encoding="utf-8"), needle):
+                errors.append(
+                    f"{test_rel}: unchanged positive assertion requires removed "
+                    f"deployment-runner contract {needle!r}"
+                )
+    return errors
+
+
 def check(root: Path, base: str, target: str) -> list[str]:
     if git(root, "rev-parse", "HEAD").strip() != target:
         raise RuntimeError("Candidate checkout is not the pinned target commit")
@@ -141,6 +176,8 @@ def check(root: Path, base: str, target: str) -> list[str]:
                 version_changes.add((template, old_url))
 
     tests = sorted((root / "tests").rglob("test_*.py"))
+    if "scripts/tracker-release.sh" in changed:
+        errors.extend(stale_runner_contracts(root, base, tests, tests_changed))
     for template, old_url in sorted(version_changes):
         # Existing tests typically assert basename?v=..., not /static/....
         needle = old_url.removeprefix("/static/").split("/")[-1]
