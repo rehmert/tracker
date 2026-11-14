@@ -3,7 +3,7 @@
 
 Never claims global enforcement readiness, and never invents runtime evidence.
 Only the 24 remaining routes explicitly mapped to four 627 signed
-lifecycle modules may be moved to an observed-in-targeted-run bucket.
+lifecycle modules are source-mapped; five newer protocol cases remain unexecuted.
 All other unsafe routes keep their original source/manual review status.
 """
 from __future__ import annotations
