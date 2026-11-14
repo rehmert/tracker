@@ -6,6 +6,12 @@
 <link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
 <script defer src="/static/js/tracker-purchase-mobile603.js?v=603"></script>
 <h1>Purchases</h1><nav class="ux-shortcuts" aria-label="Purchase actions"><a href="#new-purchase">+ Record a purchase</a><a href="#purchase-history">Purchase history</a><a href="/vials">Vials</a><a href="/supplies">Supplies</a><a href="/vendor-prices">Compare prices</a></nav><p class="note">Workflow: create the order below, then open it to add purchased vials or supplies. Inventory is not created by the order header alone.</p>
+<details id="purchase-review-guide618" class="card">
+  <summary><strong>Purchase workflow · review before recording</strong></summary>
+  <p class="note">1. Review the vendor, order date and reference. 2. Save the purchase header. 3. Open the saved purchase and add the actual vials or supplies. 4. Confirm the recorded inventory and allocated costs in the purchase details.</p>
+  <p><a href="#new-purchase">Review purchase form</a> · <a href="#purchase-history">Review existing purchases</a> · <a href="/vendor-prices">Compare vendor prices</a> · <a href="/inventory-health">Inventory health</a></p>
+  <p class="note">A purchase header alone does not create inventory. These links do not save or modify records.</p>
+</details>
 <section id="purchase-history" aria-labelledby="purchase-history-title">
   <h2 id="purchase-history-title">Purchase history</h2>
   <p class="note">Order headers without any vials or supplies are flagged as <strong>Needs items</strong>. An order header alone does not add inventory, and its allocated line-item total may show zero until items are recorded.</p>
