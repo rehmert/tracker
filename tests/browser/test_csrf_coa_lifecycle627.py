@@ -86,10 +86,10 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
         expect(page.locator("body")).to_contain_text(lab)
 
         def signed(path, data):
-            bad = page.request.post(base + path, data=data, max_redirects=0)
+            bad = page.request.post(base + path, form=data, max_redirects=0)
             assert bad.status == 403, (scheme, path, "forged")
             good = page.request.post(
-                base + path, data=data, max_redirects=0,
+                base + path, form=data, max_redirects=0,
                 headers={"X-Tracker-CSRF": token},
             )
             assert good.status == 303, (scheme, path, good.status)
