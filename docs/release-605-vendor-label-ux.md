@@ -47,3 +47,48 @@
   fail-closed queueing, physical printer tests and an isolated authorization
   boundary. No printer discovery or direct-device calls were introduced.
 - No database, schema, dependency, authentication or systemd changes.
+
+## First DEV attempt — OOM termination and fail-closed remediation
+
+The first guarded attempt from Release 604 to `23a33195f2ab7093ae5f09ac9086e358cd51fb0f`
+passed source preflight, focused Release 604 regressions, regular browser and
+strict CSRF HTTP/HTTPS browser gates. The full backend run (`-n 16`) was
+killed at about 68% of progress. The transient systemd unit reported
+`Failed with result 'oom-kill'` with a 3.1 GiB unit peak. The 8 GiB host
+also reported full swap. The existing DEV checkout stayed at Release 604;
+the release did **not** qualify, and no PROD promotion was made.
+
+The previous exit handler emitted a misleading intermediate `EXIT_STATUS=0`
+during cleanup even though the backend-pass marker was missing; the evidence
+verifier correctly rejected the incomplete log. Candidate changes:
+
+- Bound the complete backend suite to **4 pytest-xdist workers**. The full
+  test inventory and canonical single pytest invocation are unchanged.
+- Reduce transient worker `MemoryMax` from 6 GiB to **2 GiB** to fail
+  within the disposable release unit under memory pressure rather than
+  aggressively consuming host memory. This is conservative, not a promise
+  that 2 GiB will always be sufficient.
+- Register nonzero signal exits and mark the worker complete only *after*
+  the restore, install, runtime smoke and deployment-success stages.
+  Incomplete worker exits cannot be accepted as successful qualification.
+- Run new 605 UI Chromium witnesses and the memory-guard source tests during
+  the existing isolated focused regression **before** costly full browser
+  and backend suites.
+
+**Important bootstrap constraint:** The installed Release 604 launcher
+copies its *own* on-disk `tracker-release.sh` into the transient worker.
+Merely updating a newer runner on the GitHub Release 605 branch is not
+sufficient: directly invoking the installed Release 604 launcher again
+still uses `-n 16` and `MemoryMax=6G`. To qualify the new source safely,
+the operator must first extract `scripts/tracker-release.sh` from the
+exact pinned candidate Git tree into a root-owned private scratch directory
+and check its Git blob hash and shell syntax, then invoke *that* candidate
+runner against the clean, still-installed Release 604 baseline. The
+candidate runner retains the same SHA guards, isolated tests, backup/restore,
+signing separation and source-only install/rollback. Never patch the live
+Release 604 installation or disable the existing gates.
+
+The first attempt's tests were not complete. No post-OOM release success or
+new evidence receipt may be claimed until the replacement exact-commit DEV
+qualification finishes with `EXIT_STATUS=0` and the independent evidence
+preserver accepts the complete log.
