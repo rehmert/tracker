@@ -12,22 +12,22 @@ from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
+import sys
 from urllib.parse import urlsplit
 
-from scripts.tracker_csrf_route_inventory620 import inventory
-
 ROOT = Path(__file__).resolve().parents[1]
+# Absolute-path CLI invocation must locate the repository-local scripts package.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts.tracker_csrf_route_inventory620 import inventory
 UNSAFE = {"POST", "PUT", "PATCH", "DELETE"}
 HTMX = {"hx-post": "POST", "hx-put": "PUT", "hx-patch": "PATCH", "hx-delete": "DELETE"}
-PARAM = re.compile(r"\{[^{}]+\}")
 
 
 class WriteControls(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.controls = []
-        self.form_stack = []
-        self.line = 0
 
     def handle_starttag(self, tag, attrs):
         values = dict(attrs)
@@ -35,7 +35,6 @@ class WriteControls(HTMLParser):
         if tag == "form":
             method = (values.get("method") or "get").upper()
             action = values.get("action") or "<implicit-current-url>"
-            self.form_stack.append({"method": method, "action": action, "line": line})
             if method in UNSAFE:
                 self.controls.append({"line": line, "tag": tag, "method": method, "path": action,
                                       "kind": "native-form"})
@@ -44,10 +43,6 @@ class WriteControls(HTMLParser):
                 self.controls.append({"line": line, "tag": tag, "method": method,
                                       "path": values[attr] or "<dynamic>",
                                       "kind": "htmx"})
-
-    def handle_endtag(self, tag):
-        if tag == "form" and self.form_stack:
-            self.form_stack.pop()
 
 
 def controls(root: Path) -> list[dict]:
