@@ -117,6 +117,65 @@ def test_604_ignores_negative_historical_examples(tmp_path):
     assert impact.check(root, base, bump(root)) == []
 
 
+def _resource_contract_repo(tmp_path, assertion):
+    root, _ = repo_fixture(tmp_path, test_source=assertion)
+    runner = root / "scripts/tracker-release.sh"
+    runner.parent.mkdir()
+    runner.write_text(
+        'TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)\\n'
+        'echo "BACKEND_TEST_MODE=PARALLEL workers=4"\\n'
+        'MEMORY_PROPERTY="MemoryMax=2G"\\n', encoding="utf-8"
+    )
+    run_git(root, "add", "-A")
+    run_git(root, "commit", "-qm", "previous resource runner")
+    base = run_git(root, "rev-parse", "HEAD")
+    runner.write_text(
+        'TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)\\n'
+        'echo "BACKEND_TEST_MODE=PARALLEL workers=16"\\n'
+        'MEMORY_PROPERTY="MemoryMax=16G"\\n', encoding="utf-8"
+    )
+    run_git(root, "add", "-A")
+    run_git(root, "commit", "-qm", "updated resource runner")
+    return root, base, run_git(root, "rev-parse", "HEAD")
+
+
+def test_608_preflight_rejects_stale_positive_worker_and_ram_contracts(tmp_path):
+    root, base, target = _resource_contract_repo(
+        tmp_path,
+        'def test_old():\\n'
+        '    source = "runner"\\n'
+        '    assert "TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)" in source\\n'
+        '    assert "BACKEND_TEST_MODE=PARALLEL workers=4" in source\\n'
+        '    assert \'MEMORY_PROPERTY="MemoryMax=2G"\' in source\\n',
+    )
+    errors = impact.check(root, base, target)
+    assert len([x for x in errors if "deployment-runner contract" in x]) == 3
+    assert all("tests/test_old.py" in x for x in errors)
+
+
+def test_608_preflight_does_not_reject_negative_or_historical_contracts(tmp_path):
+    root, base, target = _resource_contract_repo(
+        tmp_path,
+        'def test_old():\\n'
+        '    source = "runner"\\n'
+        '    assert "TEST_PYTEST_EXTRA=(-n 4 --dist=loadfile)" not in source\\n'
+        '    assert \'MEMORY_PROPERTY="MemoryMax=2G"\' not in source\\n'
+        '    old_example = "BACKEND_TEST_MODE=PARALLEL workers=4"\\n',
+    )
+    assert impact.check(root, base, target) == []
+
+
+def test_608_preflight_allows_updated_positive_resource_assertions(tmp_path):
+    root, base, target = _resource_contract_repo(
+        tmp_path,
+        'def test_new():\\n'
+        '    source = "runner"\\n'
+        '    assert "TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)" in source\\n'
+        '    assert \'MEMORY_PROPERTY="MemoryMax=16G"\' in source\\n',
+    )
+    assert impact.check(root, base, target) == []
+
+
 def test_604_vial_workflows_all_have_one_toolbar():
     html = source("app/templates/vials.html")
     start = html.index('<h1>Vials</h1>')
