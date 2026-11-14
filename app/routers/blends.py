@@ -613,10 +613,12 @@ async def record_blend_dose(blend_id: int, request: Request, db: Session = Depen
             except ValueError:
                 calendar_date = ''
         if calendar_date:
-            return services.flash_redirect(
-                f'/calendar?month={calendar_date[:7]}#calendar-day-{calendar_date}',
+            response = services.flash_redirect(
+                f'/calendar?month={calendar_date[:7]}',
                 msg='Blend draw recorded.',
             )
+            response.headers['location'] += f'#calendar-day-{calendar_date}'
+            return response
         return services.flash_redirect(f'/blends/{blend.id}', msg='Blend draw recorded.')
     except (ValueError, TypeError) as exc:
         db.rollback()
