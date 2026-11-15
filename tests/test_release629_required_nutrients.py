@@ -52,7 +52,7 @@ def test_all_sixteen_nutrients_required():
         with pytest.raises(HTTPException) as caught:
             food.required_food_nutrients629(data)
         assert caught.value.status_code == 422
-        assert key.replace("-", "") or key
+        assert food.NUTRIENTS[key][0] in caught.value.detail
 
 
 @pytest.mark.parametrize("bad", ["", " ", "unknown", "Unknown", "nan",
@@ -127,7 +127,7 @@ def test_entry_and_correction_forms_require_all_nutrients():
     assert 'placeholder="Unknown"' not in add
     assert add.count("required></label>") == 2
     assert 'id="food-nutrient-{{ key }}"' in add
-    assert 'id="food-nutrient-{{ key }}"' in add
+    assert 'name="{{ key }}"' in add
     assert "id=\"food-review-warning\"" in source
     assert "All macro- and micronutrients are required" in source
     assert source.count('placeholder="Required" required>') >= 2
