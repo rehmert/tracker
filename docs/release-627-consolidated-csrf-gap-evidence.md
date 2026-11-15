@@ -359,3 +359,33 @@ guards both modules against the misleading body-text check.
 The correction has not yet been runtime-tested. This failure occurred
 before installation; no full DEV qualification receipt or PROD
 authorization is claimed.
+
+## Fourth guarded DEV attempt — Release 511 inventory gate (2026-11-15)
+
+The next operator run stopped in the full backend suite at
+`3362 passed, 1 failed, 16 warnings`. The failing
+`test_511_every_browser_module_in_disposable_qualification`
+test classifies browser modules not explicitly marked strict-only as
+belonging to the standard report-only browser gate. The six newly
+introduced `tests/browser/test_csrf_*627.py` modules are strictly
+dependent on a separate disposable CSRF-enforcing backend and were
+already correctly scheduled once in the full strict gate. The prior
+Release 511 source-contract test had not been extended to recognize
+them and incorrectly expected them in the report-only section.
+
+The Release 511 contract now explicitly classifies those six as
+strict-only and removes the three carefully delimited Release 627
+targeted-only replay blocks from source counting. It still enforces
+exactly one occurrence of every discovered module in its mandatory
+full-mode section, and separately checks that targeted sections cannot
+emit the full clearance marker. All 35 browser entry points (including
+the separate root browser modules) reconciled against the pinned
+runner source under the source-audit logic.
+
+To prevent another expensive full-suite failure, the existing Release
+604 focused regression list now includes the Release 511 browser
+inventory test and the Release 584 targeted allowlist test; an
+additional Release 627 regression directly invokes the full 511
+inventory contract. These source checks are **not** a substitute for
+running the actual guarded Chromium and full backend suites on DEV.
+No PROD or global strict-CSRF rollout is authorized.
