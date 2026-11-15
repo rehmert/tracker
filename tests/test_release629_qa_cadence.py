@@ -34,7 +34,9 @@ def test_629_fifth_release_cadence_and_exceptions_are_fail_closed():
         'if (( QA_FULL_REQUIRED == 1 )); then')
     assert source.index('if (( QA_FULL_REQUIRED == 1 )); then') < source.index(
         '=== COMPLETE REGRESSION SUITE ===')
-    assert '=== Verified source and data recovery backup ===' in source
+    assert '=== Source and configuration recovery snapshot ===' in source
+    assert 'DATABASE_BACKUP=SKIPPED_NO_MIGRATION' in source
+    assert 'DATABASE_BACKUP=VERIFIED_FOR_MIGRATION' in source
     assert '=== ISOLATED RESTORE VERIFICATION PASSED ===' in source
     assert 'tracker-runtime-smoke.py' in source
     assert 'QUALIFICATION_COMPLETE=1' in source
