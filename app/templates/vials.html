@@ -819,7 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
             {% if kind not in ('status','boolean','compound') %}<option value="clear">Clear existing value</option>{% endif %}
           </select>
           {% if kind == 'compound' %}
-            <select name="value_{{ key }}" aria-label="New {{ title }}" required>
+            <select name="value_{{ key }}" aria-label="New {{ title }}">
               <option value="">Choose destination compound</option>
               {% for compound in compounds %}
               <option value="{{ compound.id }}">{{ compound.name }} ({{ compound.primary_unit }})</option>
