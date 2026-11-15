@@ -62,8 +62,14 @@
           option.type = 'button';
           option.className = 'reg636-option';
           option.setAttribute('role', 'option');
-          const detail = [match.brand, match.strength, match.form]
-            .filter(Boolean).join(' · ');
+          const detail = [
+            match.brand,
+            match.serving_preview ? 'Serving ' + match.serving_preview : '',
+            match.label_date ? 'Label ' + match.label_date : '',
+            match.upc ? 'UPC ' + match.upc : '',
+            match.strength, match.form,
+            match.source_id ? 'ID ' + match.source_id : ''
+          ].filter(Boolean).join(' · ');
           const title = document.createElement('strong');
           title.textContent = match.name || '';
           const secondary = document.createElement('small');
