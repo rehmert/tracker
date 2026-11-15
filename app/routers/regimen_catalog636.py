@@ -261,56 +261,91 @@ def supplement_label(label_id: str = ""):
     if not isinstance(rows, list):
         rows = []
     ingredients = []
-    truncated = len(rows) > 300
-    for row in rows[:300]:
-        if not isinstance(row, dict):
-            continue
-        name = _clean(row.get("name"), 160)
-        if not name:
-            continue
-        quantities = row.get("quantity") or []
-        if not isinstance(quantities, list):
-            quantities = []
-        if row.get("nestedRows"):
-            # Hierarchical blends cannot be flattened accurately by this
-            # simple table. Refuse a claim of complete import.
-            truncated = True
-        if len(quantities) > 8:
-            truncated = True
-        if not quantities:
-            ingredients.append({
-                "name": name, "amount": "", "unit": "",
-                "basis": "", "daily_value": "",
-            })
-        else:
-            for qty in quantities[:8]:
-                if not isinstance(qty, dict):
-                    continue
-                targets = qty.get("dailyValueTargetGroup") or []
-                dv = ""
-                if isinstance(targets, list):
-                    dv = "; ".join(
-                        (str(t.get("name") or "") + ": " +
-                         str(t.get("percent")) + "%").strip()
-                        for t in targets if isinstance(t, dict)
-                        and t.get("percent") is not None
-                    )[:160]
-                basis_quantity = qty.get("servingSizeQuantity")
-                basis = (
-                    (_clean(basis_quantity, 40) + " " +
-                     _clean(qty.get("servingSizeUnit"), 60)).strip()
-                    if basis_quantity is not None else ""
-                )
+    incomplete_reasons = []
+
+    def mark(reason):
+        if reason not in incomplete_reasons:
+            incomplete_reasons.append(reason)
+
+    def parse_rows(entries, parents=(), depth=0):
+        """Preserve nested ingredient hierarchies without silently losing leaves."""
+        if depth > 12:
+            mark("ingredient nesting exceeds supported depth")
+            return
+        for row in entries:
+            if len(ingredients) >= 300:
+                mark("more than 300 ingredient entries")
+                return
+            if not isinstance(row, dict):
+                mark("unrecognized ingredient row")
+                continue
+            name = str(row.get("name") or "").strip()
+            if len(name) > 160:
+                mark("ingredient name exceeds field length")
+            if not name:
+                mark("ingredient row has no name")
+                continue
+            name = name[:160]
+            nested = row.get("nestedRows") or []
+            if not isinstance(nested, list):
+                mark("unrecognized nested ingredient rows")
+                nested = []
+            quantities = row.get("quantity") or []
+            if not isinstance(quantities, list):
+                mark("unrecognized ingredient quantities")
+                quantities = []
+            if len(quantities) > 8:
+                mark("more than 8 quantities for one ingredient")
+            # Preserve a parent ingredient even if it also has children.
+            # A parent with no stated quantity is represented as a
+            # non-quantified group, not an invented numeric zero.
+            if not quantities:
                 ingredients.append({
-                    "name": name,
-                    "amount": _clean(qty.get("quantity"), 40),
-                    "unit": _clean(qty.get("unit"), 40),
-                    "basis": basis,
-                    "daily_value": dv,
+                    "name": " / ".join((*parents, name))[:160],
+                    "amount": "", "unit": "", "basis": "", "daily_value": "",
                 })
-    if len(ingredients) > 300:
-        truncated = True
-        ingredients = ingredients[:300]
+                if len(" / ".join((*parents, name))) > 160:
+                    mark("nested ingredient path exceeds field length")
+            else:
+                for qty in quantities[:8]:
+                    if not isinstance(qty, dict):
+                        mark("unrecognized ingredient quantity")
+                        continue
+                    targets = qty.get("dailyValueTargetGroup") or []
+                    dv = ""
+                    if isinstance(targets, list):
+                        dv_text = "; ".join(
+                            (str(t.get("name") or "") + ": " +
+                             str(t.get("percent")) + "%").strip()
+                            for t in targets if isinstance(t, dict)
+                            and t.get("percent") is not None
+                        )
+                        if len(dv_text) > 160:
+                            mark("daily value text exceeds field length")
+                        dv = dv_text[:160]
+                    elif targets:
+                        mark("unrecognized daily value data")
+                    basis_quantity = qty.get("servingSizeQuantity")
+                    basis = (
+                        (_clean(basis_quantity, 40) + " " +
+                         _clean(qty.get("servingSizeUnit"), 60)).strip()
+                        if basis_quantity is not None else ""
+                    )
+                    full_name = " / ".join((*parents, name))
+                    if len(full_name) > 160:
+                        mark("nested ingredient path exceeds field length")
+                    ingredients.append({
+                        "name": full_name[:160],
+                        "amount": _clean(qty.get("quantity"), 40),
+                        "unit": _clean(qty.get("unit"), 40),
+                        "basis": basis[:100],
+                        "daily_value": dv,
+                    })
+            if nested:
+                parse_rows(nested, (*parents, name), depth + 1)
+
+    parse_rows(rows)
+    truncated = bool(incomplete_reasons)
     sizes = label.get("servingSizes") or []
     if not isinstance(sizes, list):
         sizes = []
@@ -333,8 +368,11 @@ def supplement_label(label_id: str = ""):
     other_ingredients = _clean(others.get("text"), 4000) if isinstance(others, dict) else ""
     if isinstance(others, dict) and len(str(others.get("text") or "")) > 4000:
         truncated = True
+    if truncated and not incomplete_reasons:
+        mark("label contains ambiguous or truncated values")
     return {
         "available": True,
+        "incomplete_reasons": incomplete_reasons,
         "ingredients": "; ".join(
             (r["name"] + " " + r["amount"] + " " + r["unit"]).strip()
             for r in ingredients
