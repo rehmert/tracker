@@ -96,6 +96,8 @@ def _facts_values(form):
     text_limits = {
         "brand": 160, "source": 32, "source_id": 100,
         "serving_quantity": 40, "serving_unit": 80,
+        "other_ingredients": 4000, "servings_per_container": 80,
+        "upc_sku": 80,
     }
     values = {}
     for key, limit in text_limits.items():
@@ -206,6 +208,9 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
             "source_id": facts.source_id,
             "serving_quantity": facts.serving_quantity,
             "serving_unit": facts.serving_unit,
+            "other_ingredients": facts.other_ingredients,
+            "servings_per_container": facts.servings_per_container,
+            "upc_sku": facts.upc_sku,
             "ingredients": json.loads(facts.ingredients_json or "[]"),
         }, ensure_ascii=False)
         for facts in db.scalars(select(RegimenProductFacts639))
