@@ -13,7 +13,7 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
   echo "ERROR: Run in isolated candidate worktree" >&2
   exit 2
 }
-"$PY" -m pytest -q --tb=short --maxfail=1 \
+"$PY" -m pytest -n 16 --dist=loadfile -q --tb=short --maxfail=1 \
   tests/test_release_workflow.py \
   tests/test_release604_preflight.py \
   tests/test_release604_navigation_browser.py \
