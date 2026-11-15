@@ -55,6 +55,25 @@ def test_pk_workspace_browser_smoke():
         ):
             assert page.locator(element).count()==1
 
+        # Release 628: essential workflow and legend remain available without
+        # opening advanced controls; existing graph controls remain functional.
+        assert page.locator(".pk628-steps li").count() == 3
+        assert page.get_by_role("button", name="Use a protocol").count() == 1
+        assert page.get_by_role("button", name="Build a schedule").count() == 1
+        assert page.get_by_role("button", name="Compare scenarios").count() == 1
+        assert page.get_by_role("button", name="Compare schedules").count() == 1
+        assert page.locator(".pk628-graph-guide span").count() == 3
+        options_panel = page.locator(".pk628-graph-options")
+        assert options_panel.count() == 1
+        assert options_panel.evaluate("(element) => element.open") is False
+        options_panel.locator("summary").click()
+        assert options_panel.evaluate("(element) => element.open") is True
+        assert page.locator("#pkGraphLayerControls").is_visible()
+        page.set_viewport_size({"width": 390, "height": 844})
+        assert page.locator(".pk628-intro").is_visible()
+        assert page.locator(".pk-tabs").is_visible()
+        assert page.locator("#pkResults #plot").count() == 1
+
         assert not errors,'; '.join(errors)
         context.close()
         browser.close()
