@@ -3,7 +3,14 @@
 (() => {
   "use strict";
   function init() {
-    document.querySelectorAll(".food629-merge").forEach(form => {
+    document.querySelectorAll("form.food630-resolve").forEach(form => {
+      form.addEventListener("submit", event => {
+        if (!window.confirm(form.dataset.confirm || "Resolve these saved foods?")) {
+          event.preventDefault();
+        }
+      });
+    });
+    document.querySelectorAll("form.food629-merge").forEach(form => {
       const keep = form.querySelector('select[name="keep_id"]');
       const boxes = [...form.querySelectorAll('input[name="remove_id"]')];
       if (!keep || !boxes.length) return;
