@@ -1,5 +1,6 @@
 """Release 639: full structured supplement facts save/reload and safety tests."""
 import json
+from html import unescape
 from urllib.parse import urlencode
 
 import pytest
@@ -44,9 +45,9 @@ FACTS = {
     "serving_quantity": "2",
     "serving_unit": "Capsule(s)",
     "ingredients": [
-        {"name": "Vitamin C", "amount": "100", "unit": "mg"},
-        {"name": "Magnesium", "amount": "25", "unit": "mg"},
-        {"name": "Zinc", "amount": "0.25", "unit": "mg"},
+        {"name": "Vitamin C", "amount": "100", "unit": "mg", "basis": "", "daily_value": ""},
+        {"name": "Magnesium", "amount": "25", "unit": "mg", "basis": "", "daily_value": ""},
+        {"name": "Zinc", "amount": "0.25", "unit": "mg", "basis": "", "daily_value": ""},
     ],
 }
 
@@ -80,9 +81,10 @@ def test_structured_label_persists_and_edit_form_reloads_exact_ingredients(env):
     page = client.get("/regimen")
     assert page.status_code == 200
     assert "Nutrient 950" in page.text
-    assert "&quot;serving_quantity&quot;: &quot;2&quot;" in page.text
-    assert "&quot;source_id&quot;: &quot;218662&quot;" in page.text
-    assert "&quot;Zinc&quot;" in page.text
+    decoded = unescape(page.text)
+    assert '"serving_quantity": "2"' in decoded
+    assert '"source_id": "218662"' in decoded
+    assert '"Zinc"' in decoded
 
 
 def test_edit_updates_label_without_changing_intake_or_item_identity(env):
@@ -92,7 +94,7 @@ def test_edit_updates_label_without_changing_intake_or_item_identity(env):
         "label_facts_json": json.dumps(FACTS),
     })
     updated = {**FACTS, "serving_quantity": "3", "ingredients": [
-        {"name": "Vitamin C", "amount": "120", "unit": "mg"},
+        {"name": "Vitamin C", "amount": "120", "unit": "mg", "basis": "", "daily_value": ""},
     ]}
     response = post(client, "/regimen/items/1/edit", {
         "kind": "supplement", "name": "Nutrient 950",
