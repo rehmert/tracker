@@ -13,6 +13,7 @@ ALLOWED = frozenset({
     "app/static/js/tracker-regimen-facts639.js",
     "app/templates/regimen635.html",
     "scripts/tracker-release.sh",
+    "scripts/tracker_prod_remote568.sh",
     "scripts/tracker_schema_review639.py",
     "scripts/tracker-regimen-facts-live639.py",
     "docs/release-639-structured-supplement-facts.md",
