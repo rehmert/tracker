@@ -24,6 +24,7 @@
     let loading = false;
     let changedSinceSelection = false;
     let selectionId = '';
+    let hasFacts = Boolean(hidden.value.trim());
 
     try {
       if (hidden.value.trim()) {
@@ -40,6 +41,7 @@
     }
 
     function updateHidden() {
+      if (!hasFacts) return;
       data.brand = brand.value;
       data.serving_quantity = servingQty.value;
       data.serving_unit = servingUnit.value;
@@ -71,6 +73,7 @@
         input.value = typeof row[field] === 'string' ? row[field] : '';
         input.addEventListener('input', () => {
           changedSinceSelection = true;
+          hasFacts = true;
           updateHidden();
         });
         td.append(input);
@@ -84,6 +87,7 @@
       remove.addEventListener('click', () => {
         tr.remove();
         changedSinceSelection = true;
+        hasFacts = true;
         updateHidden();
       });
       td.append(remove);
@@ -106,11 +110,13 @@
     [brand, servingQty, servingUnit, servingsContainer, upc, others].forEach(input =>
       input.addEventListener('input', () => {
         changedSinceSelection = true;
+        hasFacts = true;
         updateHidden();
       })
     );
     add.addEventListener('click', () => {
       changedSinceSelection = true;
+      hasFacts = true;
       makeRow({name: '', amount: '', unit: '', basis: '', daily_value: ''});
       updateHidden();
     });
@@ -121,6 +127,7 @@
       data.source = '';
       data.source_id = '';
       changedSinceSelection = true;
+      hasFacts = true;
       updateHidden();
       status.textContent = 'Manual product facts selected. Review or edit the ingredient rows before saving.';
     });
@@ -142,6 +149,7 @@
       const selected = event.detail || {};
       const source = String(selected.source || '');
       if (!source) return;
+      hasFacts = true;
       data = {
         ...empty(), brand: String(selected.brand || ''),
         source, source_id: String(selected.source_id || '')
