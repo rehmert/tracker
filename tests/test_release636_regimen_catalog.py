@@ -228,3 +228,50 @@ def test_search_button_and_enter_are_not_form_submission():
     assert "event.key === 'Enter'" in script
     assert "event.preventDefault()" in script
     assert "searchButton.addEventListener('click'" in script
+
+
+def test_dsld_nested_ingredients_are_preserved_without_invented_strength(monkeypatch):
+    def fake(url, params):
+        return {
+            "ingredientRows": [
+                {
+                    "name": "Mixed botanical complex",
+                    "quantity": [{"quantity": 200, "unit": "mg"}],
+                    "nestedRows": [
+                        {"name": "Botanical A", "quantity": []},
+                        {"name": "Botanical B",
+                         "quantity": [{"quantity": 15, "unit": "mg"}]},
+                    ],
+                },
+            ],
+            "servingSizes": [{"minQuantity": 3, "unit": "Capsule(s)"}],
+        }
+    monkeypatch.setattr(catalog, "_fetch", fake)
+    data = catalog.supplement_label("277968")
+    assert data["available"] is True
+    assert data["ingredient_rows_truncated"] is False
+    assert [r["name"] for r in data["ingredient_rows"]] == [
+        "Mixed botanical complex",
+        "Mixed botanical complex / Botanical A",
+        "Mixed botanical complex / Botanical B",
+    ]
+    assert data["ingredient_rows"][0]["amount"] == "200"
+    assert data["ingredient_rows"][1]["amount"] == ""
+    assert data["ingredient_rows"][2]["amount"] == "15"
+    assert {row["basis"] for row in data["ingredient_rows"]} == {"3 Capsule(s)"}
+
+
+def test_dsld_excessive_nesting_is_reported_incomplete_not_silently_dropped(monkeypatch):
+    root = {"name": "Blend", "nestedRows": []}
+    cursor = root
+    for index in range(15):
+        child = {"name": f"Child {index}", "quantity": []}
+        cursor["nestedRows"] = [child]
+        cursor = child
+    monkeypatch.setattr(catalog, "_fetch", lambda *_: {
+        "ingredientRows": [root],
+        "servingSizes": [{"minQuantity": 2, "unit": "Capsule(s)"}],
+    })
+    data = catalog.supplement_label("277968")
+    assert data["ingredient_rows_truncated"]
+    assert "ingredient nesting exceeds supported depth" in data["incomplete_reasons"]
