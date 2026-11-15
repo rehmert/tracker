@@ -73,6 +73,18 @@ def test_pk_workspace_browser_smoke():
         assert page.locator(".pk628-intro").is_visible()
         assert page.locator(".pk-tabs").is_visible()
         assert page.locator("#pkResults #plot").count() == 1
+        # Exercise the new graph orientation without running any PK writes.
+        page.evaluate("""() => {
+          window.trackerPkLastGraph = {
+            rows: [
+              {at: '2026-11-14T00:00:00', actual: 1, planned: 2},
+              {at: '2026-11-15T00:00:00', actual: 1, planned: 2}
+            ]
+          };
+          document.dispatchEvent(new Event('tracker:pk-graph-updated'));
+        }""")
+        assert "Showing " in page.locator("#pk628GraphHint").inner_text()
+        assert "modeled estimates" in page.locator("#pk628GraphHint").inner_text()
 
         assert not errors,'; '.join(errors)
         context.close()
