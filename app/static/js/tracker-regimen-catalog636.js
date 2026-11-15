@@ -22,6 +22,7 @@
       panel.hidden = true;
       source.textContent = '';
       selected = null;
+      form.dispatchEvent(new CustomEvent('regimen:catalog-cleared639'));
     }
 
     async function search() {
@@ -99,7 +100,14 @@
                   if (!response.ok) throw new Error('Label unavailable');
                   return response.json();
                 }).then(detail => {
-                  if (!selected || selected.id !== picked || !detail.available) return;
+                  if (!selected || selected.id !== picked) return;
+                  if (!detail.available) {
+                    form.dispatchEvent(new CustomEvent('regimen:label-failed639', {
+                      detail: {source_id: picked}
+                    }));
+                    source.textContent += ' Detailed label unavailable; manual entry works.';
+                    return;
+                  }
                   form.dispatchEvent(new CustomEvent('regimen:label-loaded639', {
                     detail: {source_id: picked, ...detail}
                   }));
