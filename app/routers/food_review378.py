@@ -89,10 +89,7 @@ async def correct_nutrition(entry_id: int, request: Request, db_engine=Depends(g
             422, "Serving description must be 1–80 characters"
         )
 
-    values = {
-        key: food.optional_nutrient(form.get(key))
-        for key in food.NUTRIENTS
-    }
+    values = food.required_food_nutrients629(form)
 
     with db_engine.begin() as db:
         entry = db.execute(text("""
