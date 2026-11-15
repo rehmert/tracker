@@ -273,20 +273,27 @@ run_isolated_browser_module() {
 
     echo
     echo "=== BROWSER MODULE: $module (strict=$strict) ==="
-    local workers=4
-    # Release 627: minimize RAM pressure for targeted disposable QA only.
-    # The normal full release gate must keep its original four workers.
+    # Keep the pre-627 full browser invocation literal. Release 594/598
+    # regression contracts verify the original four-worker command and
+    # must continue catching accidental changes to full qualification.
+    # Only the explicit non-deploying targeted diagnostics use one worker.
+    local -a pytest_command=(
+        "$PY" -B -m pytest -n 4 --dist=loadfile
+        -q --tb=short "$module"
+    )
     if [[ "$MODE" == targeted ]]; then
-        workers=1
+        pytest_command=(
+            "$PY" -B -m pytest -n 1 --dist=loadfile
+            -q --tb=short "$module"
+        )
+        echo "WORKERS=1"
+    else
+        echo "WORKERS=4"
     fi
-    echo "WORKERS=$workers"
     echo "MODULE_LOG=$logfile"
 
     set +e
-    env -i "${envvars[@]}" \
-        "$PY" -B -m pytest \
-        -n "$workers" --dist=loadfile \
-        -q --tb=short "$module" \
+    env -i "${envvars[@]}" "${pytest_command[@]}" \
         2>&1 | tee "$logfile"
 
     rc=${PIPESTATUS[0]}
