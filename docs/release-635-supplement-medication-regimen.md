@@ -43,3 +43,32 @@ Use the established guarded DEV release workflow, not direct edits to deployed s
 4. Archive and stop schedules; verify historical records remain.
 5. Open Food Journal: nutrient totals must not change from recording medications or supplements alone.
 6. Inspect mobile Today shortcut and responsive layout.
+
+
+## Explicit reviewed-schema deployment exception
+
+The ordinary release runner deliberately refuses modifications to `app/models.py`. Release 635 adds only three new tables, but it still requires explicit reviewed migration flags, not a silent relaxation of the guard.
+
+On **DEV**, after isolated candidate testing, invoke the exact candidate runner with
+`--reviewed-regimen-635 --db-migration`. Both flags are required. The
+`tracker_schema_review635.py` step confirms all changed paths are on the
+explicit Release 635 allowlist, existing model text is byte-for-byte
+unchanged, and exactly the three expected model classes/tables were appended.
+It does not permit modifications to database configuration, existing
+migrations, dependencies, or systemd units.
+
+The existing guarded worker then runs Release 635's full backend and isolated
+browser qualification, snapshots configuration/source, obtains a full live
+SQLite backup, verifies its isolated restore, and only then fast-forwards
+the installed source and restarts the service.
+
+The signed remote PROD deployment script passes the reviewed flags **only for
+release number 635**. The existing signed exact-commit DEV approval, main
+promotion, backup, full PROD regression gate, and runtime smoke checks remain
+required. Do not run ordinary 635 promotion before the special DEV run
+has completed with `DATABASE_BACKUP=VERIFIED_FOR_MIGRATION`.
+
+This procedure does not automatically undo newly added SQLite tables on
+rollback. The additive tables will be ignored by Release 634 code. Preserve
+the verified pre-migration database archive for an explicit data-restoration
+decision if needed. Never blindly overwrite a live database.
