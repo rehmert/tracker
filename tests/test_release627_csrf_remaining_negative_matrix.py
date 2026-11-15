@@ -30,20 +30,34 @@ SESSION_OWNED = frozenset({
 })
 
 
+# The Release 627 baseline was 144 unsafe routes (61 without source
+# witnesses). Release 629 added the equivalent-merge route; Release 630
+# added two resolution routes. They remain unqualified and MUST appear
+# in the strict negative CSRF matrix, not be silently counted as covered.
+NEW_FOOD_ROUTES = frozenset({
+    ("POST", "/food/duplicates/merge"),
+    ("POST", "/food/duplicates/resolve-unused"),
+    ("POST", "/food/duplicates/keep-distinct"),
+})
+
+
 def gap_rows():
     report = build()
     assert report["status"] == "BLOCKED_SOURCE_ONLY_NOT_GLOBAL_CLEARANCE"
-    assert report["total_unsafe_routes"] == 144
-    assert report["remaining_without_source_witness"] == 61
+    assert report["total_unsafe_routes"] == 144 + len(NEW_FOOD_ROUTES)
+    assert report["remaining_without_source_witness"] == 61 + len(NEW_FOOD_ROUTES)
     rows = [(row["method"], row["path"]) for row in report["unqualified_routes"]]
-    assert len(rows) == 61
-    assert len(set(rows)) == 61
+    assert len(rows) == 61 + len(NEW_FOOD_ROUTES)
+    assert len(set(rows)) == len(rows)
     assert set(rows) & SESSION_OWNED == SESSION_OWNED
+    assert NEW_FOOD_ROUTES <= set(rows)
+    # No baseline unqualified routes may disappear without an explicit
+    # source-witness reconciliation, even if the total remains unchanged.
     return sorted(set(rows) - SESSION_OWNED)
 
 
 UNQUALIFIED_GLOBAL_ROUTES = gap_rows()
-assert len(UNQUALIFIED_GLOBAL_ROUTES) == 55
+assert len(UNQUALIFIED_GLOBAL_ROUTES) == 55 + len(NEW_FOOD_ROUTES)
 
 
 @pytest.fixture(scope="module")
