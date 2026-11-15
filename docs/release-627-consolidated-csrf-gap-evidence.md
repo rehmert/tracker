@@ -435,3 +435,31 @@ regression also checks both command paths.
 Source review verifies the required three literal invocations and
 the historical four full-mode sections. This correction still
 requires guarded DEV runtime qualification before installation.
+
+## Seventh guarded DEV attempt — inventory-health severity shadowing
+
+Candidate `d700977506c55f024fdfd36326d782af88774586`
+failed after 3501 passing backend tests in
+`test_616_inventory_health_review_is_read_only_and_filterable`.
+Unlike the historical runner/test source-contract failures, this
+identified an existing application correctness defect. The
+`/inventory-health` handler accepted a `severity` query parameter
+but reused the variable `severity` while iterating findings from
+`inspect_inventory(db)`. The loop overwrote the caller's requested
+filter with the last finding's classification, changing the selected
+option and filtered records whenever findings were present.
+
+The handler now stores each finding level under
+`finding_severity`, retaining the original requested filter until
+its existing validation and render step. New read-only regression
+`tests/test_release627_inventory_health_filter.py` injects two
+synthetic inventory findings and verifies `all`, `error`,
+`warning`, and invalid filter behavior without inserting any
+records. The new test is included in the early focused regression
+gate.
+
+Unlike earlier Release 627 candidate diffs, this contains an
+application Python change and will trigger the existing guarded
+DEV restart on successful install. The corrected route and new
+test have not yet passed a guarded DEV qualification; global
+CSRF enforcement and PROD promotion remain out of scope.
