@@ -28,6 +28,8 @@ ALLOWED = frozenset({
     "tests/test_release627_csrf_remaining_negative_matrix.py",
     "tests/test_release627_csrf_reconciliation.py",
     "tests/test_release574_csrf_dynamic_shapes.py",
+    "tests/test_release594_food_vendor_csrf.py",
+    "tests/test_release593_pk_final_witnesses.py",
     "scripts/tracker_csrf_reconcile627.py",
 })
 TABLES = ("regimen_items635", "regimen_schedules635", "regimen_entries635")
