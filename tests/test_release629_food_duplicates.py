@@ -281,3 +281,29 @@ def test_630_new_resolution_routes_are_available(food_engine):
         }, follow_redirects=False)
         assert response.status_code == 303
         assert "resolved=1" in response.headers["location"]
+
+
+def test_630_review_template_exposes_mismatched_resolution_controls():
+    template = (ROOT / "app/templates/food_duplicates629.html").read_text()
+    Environment().parse(template)
+    assert 'action="/food/duplicates/resolve-unused"' in template
+    assert 'action="/food/duplicates/keep-distinct"' in template
+    assert "item.log_count == 0" in template
+    assert "group.reviewed" in template
+    assert "group.fingerprint" in template
+
+
+def test_630_unauthorized_removal_does_not_change_food_records(food_engine):
+    keep = add_food(food_engine, name="Greek Yogurt", barcode="abc")
+    other = add_food(food_engine, name="Different Food", barcode="xyz")
+    with pytest.raises(ValueError, match="not direct duplicate"):
+        duplicates.remove_unused_mismatch630(food_engine, keep, other)
+    with food_engine.connect() as db:
+        assert db.execute(text(
+            "SELECT COUNT(*) FROM tracker_food_products"
+        )).scalar_one() == 2
+
+
+def test_630_invalid_review_fingerprint_rejected(food_engine):
+    with pytest.raises(ValueError, match="Invalid review selection"):
+        duplicates.mark_distinct630(food_engine, "not-a-valid-fingerprint")
