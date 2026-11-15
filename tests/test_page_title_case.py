@@ -71,7 +71,8 @@ def test_635_targeted_notes_browser_gate_is_exact_and_disposable():
     runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
     assert '"$TARGETED_MODULE" == note-title575' in runner
     assert 'TARGETED_NOTES_575_SCOPE=HTTP_AND_HTTPS_ONLY' in runner
-    assert 'tests/browser/test_strict_csrf521.py::test_575_create_and_edit_notes_with_rendered_dynamic_action' in runner
+    assert 'csrf521.py::test_575_create_and_edit_notes_with_rendered_dynamic_action' in runner
+    assert runner.count('tests/browser/test_strict_csrf521.py') == 1
     start = runner.index('if [[ "$MODE" == targeted && "$TARGETED_MODULE" == note-title575 ]]')
     end = runner.index('if [[ "$MODE" == full ]]; then', start)
     gate = runner[start:end]
