@@ -40,6 +40,7 @@ def add(client, day="2026-11-05", meal="Breakfast"):
             "serving_description": "1 container",
             "servings": "1",
             "meal": meal,
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "130",
             "proteins": "20",
             "carbohydrates": "8",
