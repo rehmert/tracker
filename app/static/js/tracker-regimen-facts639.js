@@ -114,6 +114,16 @@
       makeRow({name: '', amount: '', unit: '', basis: '', daily_value: ''});
       updateHidden();
     });
+    const manual = root.querySelector('[data-reg639-manual]');
+    if (manual) manual.addEventListener('click', () => {
+      loading = false;
+      selectionId = '';
+      data.source = '';
+      data.source_id = '';
+      changedSinceSelection = true;
+      updateHidden();
+      status.textContent = 'Manual product facts selected. Review or edit the ingredient rows before saving.';
+    });
 
     form.addEventListener('regimen:catalog-cleared639', () => {
       // Keep user-entered ingredients/serving intact, but never associate
