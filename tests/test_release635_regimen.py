@@ -211,3 +211,57 @@ def test_regimen_page_and_models_are_present():
     assert "No doses are recommended" in template or "No doses are recommended" in (
         root / "app/routers/regimen635.py"
     ).read_text()
+
+
+def test_edit_catalog_and_schedule_are_audited(env):
+    client, Session = env
+    item(client)
+    schedule(client)
+    response = post(client, "/regimen/items/1/edit", {
+        "kind": "medication", "name": "Corrected name",
+        "strength": "2 mg", "active": "yes",
+    })
+    assert "err=" not in response.headers["location"]
+    response = post(client, "/regimen/schedules/1/edit", {
+        "cadence": "interval", "interval_days": "3",
+        "start_on": "2026-11-15", "amount": "1 tablet",
+        "meal": "", "active": "yes",
+    })
+    assert "err=" not in response.headers["location"]
+    with Session() as db:
+        assert db.get(RegimenItem, 1).kind == "medication"
+        assert db.get(RegimenItem, 1).name == "Corrected name"
+        assert db.get(RegimenSchedule, 1).cadence == "interval"
+        assert db.get(RegimenSchedule, 1).interval_days == 3
+        actions = [(a.entity_type, a.action) for a in db.scalars(select(ChangeAudit))]
+        assert ("regimen_item", "edit") in actions
+        assert ("regimen_schedule", "edit") in actions
+
+
+def test_invalid_schedule_date_rejected_with_no_changes(env):
+    client, Session = env
+    item(client)
+    assert "err=" in schedule(
+        client, start_on="2026-11-15", end_on="2026-11-14",
+    ).headers["location"]
+    assert "err=" in schedule(
+        client, cadence="interval", interval_days="0",
+    ).headers["location"]
+    with Session() as db:
+        assert list(db.scalars(select(RegimenSchedule))) == []
+
+
+def test_edit_does_not_allow_duplicate_schedule_on_same_day(env):
+    client, Session = env
+    item(client)
+    schedule(client)
+    log(client)
+    log(client, schedule_id="", when="2026-11-15T18:00")
+    response = post(client, "/regimen/entries/2/edit", {
+        "item_id": "1", "schedule_id": "1",
+        "logged_at": "2026-11-15T18:00",
+        "outcome": "taken", "amount": "1 capsule", "meal": "",
+    })
+    assert "err=" in response.headers["location"]
+    with Session() as db:
+        assert db.get(RegimenEntry, 2).schedule_id is None
