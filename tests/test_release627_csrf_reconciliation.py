@@ -102,3 +102,16 @@ def test_627_release511_inventory_scopes_new_browser_modules_strict_only():
         assert strict.count(name) >= 2  # guarded full + optional targeted replay
     # The original Release 511 test verifies exact full-gate cardinality.
     module.test_511_every_browser_module_in_disposable_qualification()
+
+
+def test_627_full_browser_workers_preserve_release594_598_contracts():
+    from pathlib import Path
+    runner = (Path(__file__).resolve().parents[1] /
+              "scripts/tracker-browser-qualify.sh").read_text()
+    assert runner.count("-n 4 --dist=loadfile") == 3
+    assert 'echo "WORKERS=4"' in runner
+    assert 'echo "WORKERS=1"' in runner
+    assert '"$MODE" == targeted' in runner
+    assert '"$PY" -B -m pytest -n 1 --dist=loadfile' in runner
+    assert '"$PY" -B -m pytest -n 4 --dist=loadfile' in runner
+    assert 'rc=${PIPESTATUS[0]}' in runner
