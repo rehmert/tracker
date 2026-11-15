@@ -167,3 +167,48 @@ def suggest_catalog(kind: str = "", q: str = ""):
         return suggestions(kind, q)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
+
+
+@router.get("/regimen/catalog/supplement-label")
+def supplement_label(label_id: str = ""):
+    """Optional DSLD label enrichment after choosing a supplement suggestion."""
+    if not re.fullmatch(r"[0-9]{1,12}", label_id):
+        raise HTTPException(status_code=422, detail="Invalid DSLD label identifier")
+    try:
+        label = _fetch(
+            "https://dsld-dev-api.app.cloud.gov/api/v9/label/" + label_id, {}
+        )
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError, TypeError, json.JSONDecodeError):
+        return {"available": False, "ingredients": "", "form": "", "serving": ""}
+    if not isinstance(label, dict):
+        return {"available": False, "ingredients": "", "form": "", "serving": ""}
+
+    rows = label.get("ingredientRows") or []
+    summary = []
+    for row in rows[:40]:
+        if not isinstance(row, dict):
+            continue
+        name = _clean(row.get("name"), 80)
+        if not name:
+            continue
+        quantities = row.get("quantity") or []
+        qty = quantities[0] if quantities and isinstance(quantities[0], dict) else {}
+        amount = str(qty.get("quantity") or "").strip()
+        unit = _clean(qty.get("unit"), 20)
+        summary.append(name + (f" {amount} {unit}".rstrip() if amount and unit else ""))
+    serving = ""
+    sizes = label.get("servingSizes") or []
+    if sizes and isinstance(sizes[0], dict):
+        size = sizes[0]
+        quantity = size.get("minQuantity")
+        unit = _clean(size.get("unit"), 40)
+        if quantity is not None and unit:
+            serving = f"{quantity} {unit}"
+    state = label.get("physicalState") or {}
+    form = _clean(state.get("langualCodeDescription"), 60) if isinstance(state, dict) else ""
+    return {
+        "available": True,
+        "ingredients": "; ".join(summary)[:1600],
+        "form": form,
+        "serving": serving[:80],
+    }
