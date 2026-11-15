@@ -11,7 +11,7 @@
     </div>
     <div class="food629-summary">
       <strong>{{ groups|length }}</strong>
-      <span>matching-name groups</span>
+      <span>possible duplicate groups</span>
       <small>{{ examined }} saved-food records examined</small>
     </div>
   </header>
@@ -24,7 +24,7 @@
   <p class="note">Groups contain foods with matching names (ignoring capitalization and extra spaces) or the same nonempty barcode. They can contain different serving sizes or nutrient data. Values are per stored serving, not per 100 g. <strong>— means not reported, not zero.</strong> Exact nutritional equivalents may be combined; differing values remain untouched.</p>
 
   {% if not groups %}
-  <div class="card"><p>No saved foods with matching normalized names were found in the examined records.</p></div>
+  <div class="card"><p>No saved foods with matching names or barcodes were found in the examined records.</p></div>
   {% endif %}
 
   {% for group in groups %}
