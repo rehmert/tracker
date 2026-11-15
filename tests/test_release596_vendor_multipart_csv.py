@@ -33,7 +33,7 @@ def test_596_exact_source_witness_manifest_and_no_global_clearance():
     assert report["status"] == "BLOCKED_INCOMPLETE_RUNTIME_CLEARANCE"
     plan = gap.build()
     assert plan["source_witness_candidates"] == 83
-    assert plan["remaining_without_source_witness"] == 61
+    assert plan["remaining_without_source_witness"] == 64  # +3 duplicate-food write routes
     assert len(plan["source_witness_manifest"]) == 70
     assert plan["runtime_verified_by_this_report"] is False
     assert plan["strict_csrf_enforcement_change_authorized"] is False
