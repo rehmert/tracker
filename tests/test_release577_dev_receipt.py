@@ -145,3 +145,19 @@ def test_577_unsafe_destination_rejected_without_writing(tool, tmp_path, monkeyp
     with pytest.raises(ValueError, match="Unexpected guarded"):
         tool.preserve(tmp_path / "deployment.log", tmp_path, 577, "a" * 40)
     assert not (tmp_path / "release-577-dev.log").exists()
+
+def test_631_code_only_receipt_requires_explicit_database_skip(tool):
+    payload = evidence(tool).replace(
+        "=== ISOLATED RESTORE VERIFICATION PASSED ===",
+        "DATABASE_BACKUP=SKIPPED_NO_MIGRATION",
+    )
+    assert tool.validated_evidence(payload, "a" * 40).endswith(
+        "DEV_QUALIFIED_COMMIT=" + "a" * 40 + "\\n"
+    )
+    for broken in (
+        payload.replace("DATABASE_BACKUP=SKIPPED_NO_MIGRATION", ""),
+        payload + "=== ISOLATED RESTORE VERIFICATION PASSED ===\\n",
+        payload + "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION\\n",
+    ):
+        with pytest.raises(ValueError):
+            tool.validated_evidence(broken, "a" * 40)
