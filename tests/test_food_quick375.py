@@ -215,6 +215,7 @@ def test_501_saved_food_versions_visible_without_mutating_entries(client):
     # Same identity, changed nutrition: keep both saved products independently.
     for energy, barcode in (("130", ""), ("150", "123456789012")):
         result = browser.post("/food/entry", data={
+            **{key: "0" for key in food.NUTRIENTS},
             "day": "2026-11-06",
             "name": "Test Greek Yogurt",
             "serving_description": "1 container",
