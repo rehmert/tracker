@@ -33,7 +33,7 @@ if not (
 ):
     raise RuntimeError("627 blend planner QA requires disposable strict environment")
 
-pytestmark = pytest.mark.browser
+# Bind app.config imports in this pytest worker to the same verified\n# disposable data directory as the isolated Uvicorn process.\nos.environ["TRACKER_DATA_DIR"] = str(DATA)\n\npytestmark = pytest.mark.browser
 
 
 @pytest.fixture(scope="module")
