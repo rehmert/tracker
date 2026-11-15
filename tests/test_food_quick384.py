@@ -96,6 +96,7 @@ def test_quick_log_and_favorite_redirects(setup):
             "serving_description": "1 container",
             "servings": "1",
             "meal": "Breakfast",
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "110",
             "proteins": "20",
         },
