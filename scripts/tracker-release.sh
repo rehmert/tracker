@@ -226,25 +226,25 @@ PY
  if [[ "$DB_MIGRATION" == 1 ]]; then
   echo "=== Verified database backup required for data migration ==="
   DATA_DIR="$("$PY" - <<'PY'
- from pathlib import Path
- import re
- root=Path('/opt/tracker'); data=root/'data'
- for line in Path('/etc/tracker.env').read_text().splitlines():
-  m=re.match(r'^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$',line)
-  if m and m.group(1).strip(): data=Path(m.group(1).strip().strip("\"'"))
- if not data.is_absolute(): data=root/data
- print(data.resolve())
- PY
- )"
+from pathlib import Path
+import re
+root=Path('/opt/tracker'); data=root/'data'
+for line in Path('/etc/tracker.env').read_text().splitlines():
+ m=re.match(r'^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$',line)
+ if m and m.group(1).strip(): data=Path(m.group(1).strip().strip("\"'"))
+if not data.is_absolute(): data=root/data
+print(data.resolve())
+PY
+)"
   [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
   mkdir -m 700 "$SAVE/archives"
   ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
- from pathlib import Path
- import sys
+from pathlib import Path
+import sys
  from app.backup import create_backup
- print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
- PY
- )"
+print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
+PY
+)"
   chmod 600 "$ARCHIVE"
   PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
    "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
