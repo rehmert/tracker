@@ -81,7 +81,7 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0
  export GIT_CONFIG_COUNT=2
@@ -110,8 +110,284 @@ worker() {
  verify_prod_approval
  g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from base"
  # The hourly timer is activated by its own guarded installer.
- if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer$' | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py)'; then
-  fail "Schema/dependency/systemd changes require separately reviewed deployment"
+ if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer
+ if [[ "$DB_MIGRATION" == 0 ]] &&
+    g diff --name-only "$BASE" "$TARGET" | grep -Eq '^scripts/.*(migrat|backfill|data[-_]fix)'; then
+  fail "Possible data migration requires --db-migration and verified backup"
+ fi
+ RESTART=0
+ [[ -z "$(changed)" ]] || RESTART=1
+ echo "=== Isolated source tests ==="
+ if [[ ! -d "$QA" ]]; then g worktree add --detach "$QA" "$TARGET"; fi
+ [[ "$(git -C "$QA" rev-parse HEAD)" == "$TARGET" ]] || fail "Candidate worktree does not match target"
+ echo "CANDIDATE_COMMIT=$TARGET"
+ cd "$QA"
+ export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
+ mkdir -p "$TRACKER_DATA_DIR"
+ git diff --check "$BASE" "$TARGET"
+ "$PY" -m compileall -q app scripts tests
+ "$PY" - <<'PY'
+from pathlib import Path
+from jinja2 import Environment
+files=sorted(Path('app/templates').rglob('*.html'))
+for f in files: Environment().parse(f.read_text())
+print(f'PASS: {len(files)} Jinja templates')
+PY
+ "$PY" - "$QA" <<'PY'
+import app,sys
+from pathlib import Path
+assert Path(app.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve())
+print('PASS: Isolated source import')
+PY
+ echo "=== RELEASE 604 STATIC CHANGE IMPACT PREFLIGHT ==="
+ "$PY" "$QA/scripts/tracker-impact-preflight604.py" \
+   --base "$BASE" --target "$TARGET" --root "$QA"
+ echo "=== RELEASE 604 CHANGE IMPACT PASSED ==="
+ # Release 629: complete tests at every fifth DEV release, not on each
+ # small UI/tooling change. Security-sensitive route/auth changes remain
+ # explicit full-qualification exceptions. PROD retains its separate
+ # exact-commit approval and full-suite gate until independently reviewed.
+ QA_FULL_REQUIRED=1
+ QA_CADENCE_REASON="PROD requires full qualification"
+ if [[ "$INSTANCE" == DEV ]]; then
+  QA_CADENCE_REASON="release sequence not recognized"
+  if [[ "$REF" =~ ^release/([0-9]+)- ]]; then
+   RELEASE_SEQUENCE="${BASH_REMATCH[1]}"
+   if (( 10#$RELEASE_SEQUENCE % 5 == 0 )); then
+    QA_CADENCE_REASON="fifth release milestone"
+   else
+    QA_FULL_REQUIRED=0
+    QA_CADENCE_REASON="focused release between five-release milestones"
+   fi
+  fi
+  # Auth, origin and CSRF changes trigger full qualification. An ordinary
+  # food functionality change uses targeted food/DB regression tests in the
+  # mandatory focused gate. Full Chromium remains due at release 630.
+  if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(auth|security|csrf|middleware|scoped_db|session_auth|request_origin|food_origin|food_storage_guard)|app/routers/(session_login|account_security|user_management|user_db_status))'; then
+   QA_FULL_REQUIRED=1
+   QA_CADENCE_REASON="security-sensitive source or route changed"
+  fi
+  echo "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ==="
+  timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"
+  echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
+  if [[ "$DEV_FOCUSED_630" == 1 ]]; then
+   # Explicit one-release DEV exception. Never permitted for PROD,
+   # arbitrary release refs, or a candidate that changes authentication,
+   # origin checks, CSRF middleware, or storage authorization.
+   [[ "$REF" == release/630-food-duplicate-resolution ]] ||
+     fail "Focused 630 exception requires the exact Release 630 branch"
+   if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(auth|security|csrf|middleware|scoped_db|session_auth|request_origin|food_origin|food_storage_guard)|app/routers/(session_login|account_security|user_management|user_db_status))'; then
+    fail "Focused 630 exception prohibited for security-sensitive application changes"
+   fi
+   echo "=== RELEASE 630 TARGETED FOOD AND CSRF REGRESSIONS ==="
+   timeout 180 bash "$QA/scripts/tracker-focused630.sh" "$PY"
+   QA_FULL_REQUIRED=0
+   QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
+  fi
+ fi
+ echo "QA_FULL_REQUIRED=$QA_FULL_REQUIRED"
+ echo "QA_CADENCE_REASON=$QA_CADENCE_REASON"
+ if (( QA_FULL_REQUIRED == 1 )); then
+  if [[ "$INSTANCE" == DEV ]]; then
+   echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
+   timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+   echo "=== BROWSER GATE PASSED ==="
+  else
+   echo "=== PROD: browser qualification is required on DEV before main promotion ==="
+  fi
+  echo "=== COMPLETE REGRESSION SUITE ==="
+  echo "Critical safety tests are included in full-suite collection."
+  "$PY" -c 'import xdist' >/dev/null ||
+   fail "pytest-xdist missing; serial fallback prohibited"
+  TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)
+  echo "BACKEND_TEST_MODE=PARALLEL workers=16"
+  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
+   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
+   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
+   --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
+   --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
+  echo "=== ALL BACKEND TESTS PASSED ==="
+ else
+  echo "=== FULL BROWSER AND BACKEND SUITES DEFERRED TO NEXT FIFTH RELEASE ==="
+  echo "FOCUSED_RELEASE_GATE=PASSED"
+ fi
+ cd "$APP"
+ unset TRACKER_DATA_DIR PYTHONPATH
+ [[ -z "$(g status --porcelain)" && "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Live checkout changed"
+ echo "=== Source and configuration recovery snapshot ==="
+ umask 077
+ mkdir -m 700 "$SAVE"
+ g archive --format=tar HEAD | gzip > "$SAVE/source.tar.gz"
+ cp -p /etc/tracker.env "$SAVE/tracker.env"
+ chmod 600 "$SAVE/source.tar.gz" "$SAVE/tracker.env"
+ if [[ -f "$APP/.env" ]]; then cp -p "$APP/.env" "$SAVE/local.env"; chmod 600 "$SAVE/local.env"; fi
+ if [[ "$DB_MIGRATION" == 1 ]]; then
+  echo "=== Verified database backup required for data migration ==="
+  DATA_DIR="$("$PY" - <<'PY'
+from pathlib import Path
+import re
+root=Path('/opt/tracker'); data=root/'data'
+for line in Path('/etc/tracker.env').read_text().splitlines():
+ m=re.match(r'^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$',line)
+ if m and m.group(1).strip(): data=Path(m.group(1).strip().strip("\"'"))
+if not data.is_absolute(): data=root/data
+print(data.resolve())
+PY
+)"
+  [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
+  mkdir -m 700 "$SAVE/archives"
+  ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
+from pathlib import Path
+import sys
+from app.backup import create_backup
+print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
+PY
+)"
+  chmod 600 "$ARCHIVE"
+  PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
+   "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
+  echo "=== ISOLATED RESTORE VERIFICATION PASSED ==="
+  echo "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION"
+ else
+  echo "DATABASE_BACKUP=SKIPPED_NO_MIGRATION"
+ fi
+ echo "=== Install via fast-forward ==="
+ umask 022
+ g merge --ff-only "$TARGET"
+ INSTALLED=1
+ [[ "$(g rev-parse HEAD)" == "$TARGET" ]] ||
+   fail "Unexpected new HEAD"
+
+  echo "=== Refresh installed Python bytecode ==="
+  find "$APP/app" "$APP/scripts" -type f -name '*.pyc' -delete
+  "$PY" -m compileall -q -f "$APP/app" "$APP/scripts"
+  echo "INSTALLED_BYTECODE_REFRESH=PASSED"
+ while IFS= read -r f; do
+  [[ -f "$APP/$f" && ! -L "$APP/$f" ]] || fail "Missing new source: $f"
+  chmod a+r "$APP/$f"
+ done < <(changed)
+ "$PY" "$APP/scripts/tracker-deployment-guard.py" \
+  --root "$APP" --base "$BASE" --target "$TARGET" --service tracker
+ [[ -z "$(g status --porcelain)" ]] || fail "Working tree became dirty"
+ if ((RESTART==1)); then
+  echo "Restarting Tracker"
+  systemctl reset-failed tracker
+  systemctl restart tracker
+ else echo "Tooling-only release: no Tracker restart"; fi
+ "$PY" "$APP/scripts/tracker-runtime-smoke.py" --instance "$INSTANCE"
+ systemctl is-active --quiet tracker || fail "Tracker service not active"
+ echo "======================================"
+ echo " TRACKER RELEASE DEPLOYMENT SUCCESS"
+ echo "======================================"
+ g log -1 --oneline
+ echo "Source recovery snapshot: $SAVE/source.tar.gz"
+ QUALIFICATION_COMPLETE=1
+}
+follow_deployment_log() {
+ local unit="$1" log="$2" pid="" i final
+ echo "=== Live deployment log (Ctrl+C detaches; worker continues) ==="
+ # A root-only log is created before systemd-run, avoiding any startup race.
+ for ((i=0; i<30; i++)); do
+  pid="$(systemctl show "$unit.service" -p MainPID --value 2>/dev/null || true)"
+  if [[ "$pid" =~ ^[1-9][0-9]*$ ]]; then break; fi
+  if grep -q '^EXIT_STATUS=' "$log" 2>/dev/null; then break; fi
+  sleep 0.2
+ done
+ if [[ "$pid" =~ ^[1-9][0-9]*$ ]]; then
+  # GNU tail exits when this specific, detached systemd worker exits.
+  tail -n +1 --follow=descriptor --pid="$pid" "$log"
+ else
+  # A worker that has already exited still gets its full log displayed.
+  cat "$log"
+ fi
+ final="$(sed -n 's/^EXIT_STATUS=//p' "$log" | tail -n 1)"
+ if [[ "$final" == 0 ]]; then
+  echo "=== DEPLOYMENT FINISHED SUCCESSFULLY ==="
+ elif [[ "$final" =~ ^[0-9]+$ ]]; then
+  echo "=== DEPLOYMENT FAILED (exit $final) ===" >&2
+  return 1
+ else
+  echo "=== DEPLOYMENT STATUS UNKNOWN; check the log ===" >&2
+  return 1
+ fi
+}
+if [[ "${1:-}" == --worker ]]; then
+ shift
+ [[ $# -eq 9 ]] || fail "Bad worker arguments"
+ worker "$@"
+ exit 0
+fi
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0
+while (( $# )); do
+ case "$1" in
+  --detach) FOLLOW=0; shift;;
+  --dev-focused-630) DEV_FOCUSED_630=1; shift;;
+  --db-migration) DB_MIGRATION=1; shift;;
+  --reviewed-regimen-635) REVIEWED_REGIMEN_635=1; shift;;
+  --serial-tests) fail "Serial testing prohibited";;
+  --instance|--base|--target|--ref)
+   (( $# >= 2 )) || fail "Missing argument for $1"
+   case "$1" in
+    --instance) INSTANCE="$2";;
+    --base) BASE="$2";;
+    --target) TARGET="$2";;
+    --ref) REF="$2";;
+   esac
+   shift 2;;
+  *) fail "Unknown argument: $1";;
+ esac
+done
+[[ "$INSTANCE" == DEV || "$INSTANCE" == PROD ]] || fail "Choose DEV or PROD"
+[[ "$BASE" =~ ^[0-9a-f]{40}$ && "$TARGET" =~ ^[0-9a-f]{40}$ ]] || fail "Use full 40-character SHAs"
+[[ "$REF" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ && "$REF" != *..* ]] || fail "Invalid branch"
+[[ "$INSTANCE" != PROD || "$REF" == main ]] || fail "PROD requires --ref main"
+[[ "$DEV_FOCUSED_630" == 0 || ( "$INSTANCE" == DEV && "$REF" == release/630-food-duplicate-resolution ) ]] || fail "Focused 630 is DEV-only and branch-specific"
+[[ "$REVIEWED_REGIMEN_635" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed regimen deployment requires --db-migration"
+[[ $(id -u) == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run as root on configured Tracker host"
+instance_check "$INSTANCE"
+verify_prod_approval
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
+[[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "Not a clean main checkout"
+[[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Unexpected starting commit"
+systemctl is-active --quiet tracker || fail "Tracker service is not active"
+mkdir -p /tmp/tracker-backups
+umask 077
+RUN="$(mktemp -d /tmp/tracker-backups/release.XXXXXXXX)"
+chmod 700 "$RUN"
+cp "$0" "$RUN/worker.sh"
+chmod 700 "$RUN/worker.sh"
+bash -n "$RUN/worker.sh"
+UNIT="tracker-release-$(date +%s)-$$"
+# Make the log available before the worker starts; no source/data changes.
+touch "$RUN/deployment.log"
+# Dedicated hosts: 18 vCPUs and 18 GiB RAM allocated per LXC.
+# Operator-required full parallel qualification: 16 pytest workers and
+# a 16 GiB systemd release-worker memory ceiling on both DEV and PROD.
+# Do not silently lower either bound or introduce a serial fallback.
+MEMORY_PROPERTY="MemoryMax=16G"
+echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
+systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635"
+echo "Launched: $UNIT"
+echo "Log: $RUN/deployment.log"
+if (( FOLLOW )); then
+ follow_deployment_log "$UNIT" "$RUN/deployment.log"
+else
+ printf 'Detached. To follow: tail -n +1 -f "%s/deployment.log"\n' "$RUN"
+fi
+ | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py)'; then
+  [[ "$REVIEWED_REGIMEN_635" == 1 && "$DB_MIGRATION" == 1 ]] ||
+    fail "Schema/dependency/systemd changes require separately reviewed deployment"
+  [[ "$INSTANCE" == DEV && "$REF" == release/635-regimen-catalog-schedules ||
+     "$INSTANCE" == PROD && "$REF" == main ]] ||
+    fail "Reviewed Release 635 procedure is restricted to its exact release refs"
+  g worktree add --detach "$QA" "$TARGET"
+  "$PY" "$QA/scripts/tracker_schema_review635.py" \
+    --root "$APP" --base "$BASE" --target "$TARGET" ||
+    fail "Reviewed additive schema verification failed"
+  echo "REGIMEN_635_SCHEMA_PROCEDURE=AUTHORIZED"
+ elif [[ "$REVIEWED_REGIMEN_635" == 1 ]]; then
+  fail "Reviewed Release 635 schema flag is invalid without schema change"
  fi
  if [[ "$DB_MIGRATION" == 0 ]] &&
     g diff --name-only "$BASE" "$TARGET" | grep -Eq '^scripts/.*(migrat|backfill|data[-_]fix)'; then
@@ -120,7 +396,7 @@ worker() {
  RESTART=0
  [[ -z "$(changed)" ]] || RESTART=1
  echo "=== Isolated source tests ==="
- g worktree add --detach "$QA" "$TARGET"
+ if [[ ! -d "$QA" ]]; then g worktree add --detach "$QA" "$TARGET"; fi
  [[ "$(git -C "$QA" rev-parse HEAD)" == "$TARGET" ]] || fail "Candidate worktree does not match target"
  echo "CANDIDATE_COMMIT=$TARGET"
  cd "$QA"
