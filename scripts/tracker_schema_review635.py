@@ -25,6 +25,9 @@ ALLOWED = frozenset({
     "scripts/tracker-release.sh",
     "scripts/tracker_prod_remote568.sh",
     "tests/test_release635_schema_review.py",
+    "tests/test_release627_csrf_remaining_negative_matrix.py",
+    "tests/test_release627_csrf_reconciliation.py",
+    "scripts/tracker_csrf_reconcile627.py",
 })
 TABLES = ("regimen_items635", "regimen_schedules635", "regimen_entries635")
 CLASSES = ("RegimenItem", "RegimenSchedule", "RegimenEntry")
