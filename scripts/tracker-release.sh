@@ -81,7 +81,7 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0
  export GIT_CONFIG_COUNT=2
@@ -167,6 +167,32 @@ PY
   echo "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ==="
   timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"
   echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
+  if [[ "$DEV_FOCUSED_630" == 1 ]]; then
+   # Explicit one-release DEV exception. Never permitted for PROD,
+   # arbitrary release refs, or a candidate that changes authentication,
+   # origin checks, CSRF middleware, or storage authorization.
+   [[ "$REF" == release/630-food-duplicate-resolution ]] ||
+     fail "Focused 630 exception requires the exact Release 630 branch"
+   if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(auth|security|csrf|middleware|scoped_db|session_auth|request_origin|food_origin|food_storage_guard)|app/routers/(session_login|account_security|user_management|user_db_status))'; then
+    fail "Focused 630 exception prohibited for security-sensitive application changes"
+   fi
+   echo "=== RELEASE 630 TARGETED FOOD AND CSRF REGRESSIONS ==="
+   timeout 180 "$PY" -m pytest -q --tb=short --maxfail=1 \
+      tests/test_food_writes408.py \
+      tests/test_food_review378.py \
+      tests/test_food_manage377.py \
+      tests/test_food_quick375.py \
+      tests/test_food_quick384.py \
+      tests/test_food_week379.py \
+      tests/test_food_bundle376.py \
+      tests/test_release629_required_nutrients.py \
+      tests/test_release629_food_duplicates.py \
+      tests/test_release627_csrf_reconciliation.py \
+      tests/test_release627_csrf_remaining_negative_matrix.py
+   echo "RELEASE_630_TARGETED_QA=PASSED"
+   QA_FULL_REQUIRED=0
+   QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
+  fi
  fi
  echo "QA_FULL_REQUIRED=$QA_FULL_REQUIRED"
  echo "QA_CADENCE_REASON=$QA_CADENCE_REASON"
@@ -290,14 +316,15 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -eq 6 ]] || fail "Bad worker arguments"
+ [[ $# -eq 7 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
+  --dev-focused-630) DEV_FOCUSED_630=1; shift;;
   --serial-tests) fail "Serial testing prohibited";;
   --instance|--base|--target|--ref)
    (( $# >= 2 )) || fail "Missing argument for $1"
@@ -315,6 +342,7 @@ done
 [[ "$BASE" =~ ^[0-9a-f]{40}$ && "$TARGET" =~ ^[0-9a-f]{40}$ ]] || fail "Use full 40-character SHAs"
 [[ "$REF" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ && "$REF" != *..* ]] || fail "Invalid branch"
 [[ "$INSTANCE" != PROD || "$REF" == main ]] || fail "PROD requires --ref main"
+[[ "$DEV_FOCUSED_630" == 0 || ( "$INSTANCE" == DEV && "$REF" == release/630-food-duplicate-resolution ) ]] || fail "Focused 630 is DEV-only and branch-specific"
 [[ $(id -u) == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run as root on configured Tracker host"
 instance_check "$INSTANCE"
 verify_prod_approval
@@ -339,7 +367,7 @@ touch "$RUN/deployment.log"
 MEMORY_PROPERTY="MemoryMax=16G"
 echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
 systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
- /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS"
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
 if (( FOLLOW )); then
