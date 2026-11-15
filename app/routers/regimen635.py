@@ -199,6 +199,17 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
     except ValueError:
         selected = date.today()
     items = list(db.scalars(select(RegimenItem).order_by(RegimenItem.kind, RegimenItem.name, RegimenItem.id)))
+    product_facts = {
+        facts.item_id: json.dumps({
+            "brand": facts.brand,
+            "source": facts.source,
+            "source_id": facts.source_id,
+            "serving_quantity": facts.serving_quantity,
+            "serving_unit": facts.serving_unit,
+            "ingredients": json.loads(facts.ingredients_json or "[]"),
+        }, ensure_ascii=False)
+        for facts in db.scalars(select(RegimenProductFacts639))
+    }
     schedules = list(db.scalars(select(RegimenSchedule).order_by(RegimenSchedule.id.desc())))
     start = datetime.combine(selected, datetime.min.time())
     end = start + timedelta(days=1)
@@ -212,6 +223,7 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
     ).limit(50)))
     return render(
         request, "regimen635.html", items=items, schedules=schedules,
+        product_facts=product_facts,
         due=due, recorded=recorded, entries=entries, history=history,
         day=selected, prev_day=selected - timedelta(days=1),
         next_day=selected + timedelta(days=1), today=date.today(),
