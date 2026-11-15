@@ -20,7 +20,7 @@ def _focused_modules():
 
 def test_629_routine_focused_gate_is_small_and_relevant():
     modules = _focused_modules()
-    assert len(modules) == 19
+    assert len(modules) == 20
     assert len(modules) == len(set(modules))
     assert all((ROOT / module).is_file() for module in modules)
     for required in (
@@ -30,6 +30,7 @@ def test_629_routine_focused_gate_is_small_and_relevant():
         "tests/test_release627_inventory_health_filter.py",
         "tests/test_release628_pk_simplified.py",
         "tests/test_release629_qa_cadence.py",
+        "tests/test_release629_focused_gate.py",
         "tests/test_pk_278_281.py",
     ):
         assert required in modules
