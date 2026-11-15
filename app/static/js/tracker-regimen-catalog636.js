@@ -42,7 +42,13 @@
           method: 'GET', credentials: 'same-origin',
           headers: {'Accept': 'application/json'}, signal: controller.signal
         });
-        if (!response.ok) throw new Error('Catalog temporarily unavailable');
+        if (!response.ok) {
+          throw new Error('Search failed (HTTP ' + response.status + ').');
+        }
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.toLowerCase().includes('application/json')) {
+          throw new Error('Search returned a non-JSON response (session or server issue).');
+        }
         const data = await response.json();
         if (number !== requestNumber || name.value.trim() !== q) return;
         const matches = Array.isArray(data.results) ? data.results : [];
@@ -132,7 +138,8 @@
         }
       } catch (error) {
         if (error.name !== 'AbortError' && number === requestNumber) {
-          status.textContent = 'Catalog unavailable. Manual entry still works.';
+          status.textContent = (error instanceof Error ? error.message : 'Search failed.') +
+            ' No item was saved; manual entry remains available.';
         }
       }
     }
