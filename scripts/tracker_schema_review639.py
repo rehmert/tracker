@@ -33,14 +33,33 @@ def git(root, *args):
     return p.stdout
 
 
+# PROD's pre-639 main can still be at Release 635. The schema delta
+# must be inspected against immutable, DEV-qualified Release 638, while the
+# existing database/model prefix is checked against PROD's actual baseline.
+PROD_635_BASE = "1e938154ee4315873c968b4661bbd0953701c1e1"
+DEV_638_BASE = "94bf84d61410bb9cf9be2bc150f0e8f6114e83a2"
+
+
 def review(root, base, target):
-    changed = set(git(root, "diff", "--name-only", base, target).splitlines())
+    review_base = base
+    if base == PROD_635_BASE:
+        # An exact historical ancestry check prevents importing unknown
+        # changes as part of the reviewed 639 schema delta.
+        git(root, "merge-base", "--is-ancestor", base, DEV_638_BASE)
+        git(root, "merge-base", "--is-ancestor", DEV_638_BASE, target)
+        base_models = git(root, "show", f"{base}:app/models.py")
+        dev_models = git(root, "show", f"{DEV_638_BASE}:app/models.py")
+        if base_models != dev_models:
+            raise ValueError("Release 635→638 changed existing model definitions")
+        review_base = DEV_638_BASE
+
+    changed = set(git(root, "diff", "--name-only", review_base, target).splitlines())
     if not changed or not changed <= ALLOWED:
         raise ValueError("Unreviewed Release 639 paths: " +
                          ", ".join(sorted(changed - ALLOWED)))
     if "app/models.py" not in changed:
         raise ValueError("Expected append-only facts table missing")
-    old = git(root, "show", f"{base}:app/models.py")
+    old = git(root, "show", f"{review_base}:app/models.py")
     new = git(root, "show", f"{target}:app/models.py")
     if not new.startswith(old):
         raise ValueError("Existing model source modified")
@@ -67,6 +86,7 @@ def review(root, base, target):
         raise ValueError("Core migration or dependency edits not authorized")
     print("RELEASE_639_APPEND_ONLY_SCHEMA_REVIEW=PASSED")
     print("RELEASE_639_CHANGED_PATHS=", len(changed))
+    print("RELEASE_639_REVIEW_BASE=", review_base)
 
 
 if __name__ == "__main__":
