@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from jinja2 import Environment
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.pool import StaticPool
@@ -168,3 +170,38 @@ def test_629_review_template_and_route_wiring():
     assert '"/food/duplicates"' in (
         ROOT / "app/routers/food_duplicates629.py"
     ).read_text()
+
+
+def test_629_authenticated_review_and_explicit_merge_routes(food_engine):
+    from app.food_read_engine406 import get_food_read_engine406
+    from app.food_storage_guard391 import require_food_storage391
+
+    keeper = add_food(food_engine, logged=True)
+    redundant = add_food(food_engine, name="GREEK YOGURT",
+                         logged=True, favorite=True)
+    app = FastAPI()
+    app.include_router(duplicates.router)
+    app.dependency_overrides[get_food_read_engine406] = lambda: food_engine
+    app.dependency_overrides[require_food_storage391] = lambda: None
+    with TestClient(app) as browser:
+        review = browser.get("/food/duplicates")
+        assert review.status_code == 200
+        assert "Greek Yogurt" in review.text
+        assert "Vitamin B12" in review.text
+        assert "1.2" in review.text
+        assert f'#{keeper}' in review.text
+        assert f'#{redundant}' in review.text
+        merge = browser.post("/food/duplicates/merge", data={
+            "keep_id": str(keeper),
+            "remove_id": str(redundant),
+            "csrf_token": "synthetic-form-token",
+        }, follow_redirects=False)
+        assert merge.status_code == 303
+        assert merge.headers["location"] == "/food/duplicates?merged=1"
+        assert "consolidated" in browser.get(merge.headers["location"]).text
+
+        refused = browser.post("/food/duplicates/merge", data={
+            "keep_id": str(keeper),
+            "remove_id": str(keeper),
+        }, follow_redirects=False)
+        assert refused.status_code == 422
