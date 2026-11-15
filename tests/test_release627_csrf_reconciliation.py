@@ -74,3 +74,31 @@ def test_627_coa_upload_asserts_rendered_saved_field_not_body_text():
         assert expected in source, module
         assert 'expect(page.locator("body")).to_contain_text(' + marker + ')' not in source
         assert "View existing document" in source
+
+
+def test_627_release511_inventory_scopes_new_browser_modules_strict_only():
+    from pathlib import Path
+    from importlib.util import module_from_spec, spec_from_file_location
+
+    root = Path(__file__).resolve().parents[1]
+    spec = spec_from_file_location("release511_inventory627",
+                                   root / "tests/test_browser_qualification511.py")
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    new_modules = {
+        "tests/browser/test_csrf_gap627.py",
+        "tests/browser/test_csrf_signed_lifecycles627.py",
+        "tests/browser/test_csrf_purchase_children627.py",
+        "tests/browser/test_csrf_coa_lifecycle627.py",
+        "tests/browser/test_csrf_protocol_remaining627.py",
+        "tests/browser/test_csrf_blend_previews627.py",
+    }
+    assert new_modules <= module.STRICT_ONLY
+    source = (root / "scripts/tracker-browser-qualify.sh").read_text()
+    standard, strict = source.split(module.STRICT_PASS_MARKER, 1)
+    for name in new_modules:
+        assert name not in standard
+        assert strict.count(name) >= 2  # guarded full + optional targeted replay
+    # The original Release 511 test verifies exact full-gate cardinality.
+    module.test_511_every_browser_module_in_disposable_qualification()
