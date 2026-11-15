@@ -63,7 +63,7 @@ def test_499_live_food_search_and_review_controls(tab):
     food_add = page.locator("#food-add")
     food_add.evaluate("(node) => { node.open = true; }")
     expect(page.locator("#food499-review-status")).to_contain_text(
-        "core values reported"
+        "required nutrients entered"
     )
 
     page.locator("#food-name-search").evaluate(
