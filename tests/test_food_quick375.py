@@ -40,10 +40,11 @@ def make_entry(client):
             "serving_description": "1 container",
             "servings": "1.5",
             "meal": "Breakfast",
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "100",
             "proteins": "20",
             "sodium": "0",
-            # Potassium intentionally unknown.
+            # Legacy unknown values are seeded separately below.
         },
         follow_redirects=False,
     )
@@ -53,6 +54,14 @@ def make_entry(client):
 def test_unknown_and_zero_are_distinct(client):
     browser, engine = client
     make_entry(browser)
+
+    # Legacy saved foods may still have unreported potassium.
+    with engine.begin() as db:
+        row = db.execute(text("SELECT id,nutrients FROM tracker_food_products")).one()
+        values = json.loads(row.nutrients)
+        values["potassium"] = None
+        db.execute(text("UPDATE tracker_food_products SET nutrients=:n WHERE id=:id"),
+                   {"n": json.dumps(values), "id": row.id})
 
     with engine.connect() as db:
         raw = db.execute(text(
