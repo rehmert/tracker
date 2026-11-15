@@ -22,6 +22,7 @@
 .reg636-option{display:block;text-align:left;width:100%;padding:.6rem;margin:.15rem 0;border:1px solid var(--border,#8885);border-radius:6px;background:transparent;cursor:pointer}
 .reg636-option small{display:block;opacity:.8}
 .reg636-option:focus-visible,.reg636-option:hover{outline:2px solid var(--accent,#5575a4)}
+.reg637-search-button{justify-self:start}
 </style>
 <section class="card" id="reg635-today">
   <div class="reg635-day">
@@ -83,6 +84,7 @@
   <form method="post" action="/regimen/items" class="reg635-form" data-reg636-catalog>
     <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}">{{ kind|capitalize }}</option>{% endfor %}</select></label>
     <label class="field">Name <input name="name" maxlength="160" required></label>
+    <button type="button" data-reg637-search class="reg637-search-button">Search catalog</button>
     <div class="reg636-lookup" aria-live="polite">
       <small data-reg636-status>Type a name to search public catalogs, or enter it manually.</small>
       <div data-reg636-results role="listbox" aria-label="Catalog product matches" hidden></div>
@@ -111,6 +113,7 @@
     <form method="post" action="/regimen/items/{{ item.id }}/edit" class="reg635-form" data-reg636-catalog>
       <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}" {% if kind == item.kind %}selected{% endif %}>{{ kind|capitalize }}</option>{% endfor %}</select></label>
       <label class="field">Name <input name="name" value="{{ item.name }}" required maxlength="160"></label>
+    <button type="button" data-reg637-search class="reg637-search-button">Search catalog</button>
     <div class="reg636-lookup" aria-live="polite">
       <small data-reg636-status>Type a name to search public catalogs, or enter it manually.</small>
       <div data-reg636-results role="listbox" aria-label="Catalog product matches" hidden></div>
