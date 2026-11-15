@@ -147,6 +147,18 @@
     }
     name.addEventListener('input', schedule);
     kind.addEventListener('change', schedule);
+    const searchButton = form.querySelector('[data-reg637-search]');
+    if (searchButton) searchButton.addEventListener('click', () => {
+      clearTimeout(timer);
+      search();
+    });
+    name.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        clearTimeout(timer);
+        search();
+      }
+    });
 
   }
 
