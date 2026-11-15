@@ -34,9 +34,14 @@ def nutrient_key629(raw):
         raise ValueError("Saved food has invalid nutrient data") from None
     if type(parsed) is not dict:
         raise ValueError("Saved food nutrients must be an object")
-    # A structural comparison preserves unknown versus explicit zero,
-    # nonstandard fields and corrections made after a food was logged.
-    return json.dumps(parsed, sort_keys=True, separators=(",", ":"),
+    # Compare equivalent integer/float values numerically while retaining
+    # unknown versus zero, original keys and nonstandard correction fields.
+    # Booleans stay distinct from numbers.
+    canonical = {
+        key: (float(value) if type(value) in (int, float) else value)
+        for key, value in parsed.items()
+    }
+    return json.dumps(canonical, sort_keys=True, separators=(",", ":"),
                       ensure_ascii=False, allow_nan=False)
 
 
