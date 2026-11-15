@@ -155,10 +155,10 @@ PY
     QA_CADENCE_REASON="focused release between five-release milestones"
    fi
   fi
-  # Security-sensitive app changes require complete qualification.
-  # Browser worker-count-only tooling changes are validated in focused
-  # preflight; full Chromium remains due at release 630.
-  if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/routers/|app/(auth|security|csrf|middleware|scoped_db))'; then
+  # Auth, origin and CSRF changes trigger full qualification. An ordinary
+  # food functionality change uses targeted food/DB regression tests in the
+  # mandatory focused gate. Full Chromium remains due at release 630.
+  if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(auth|security|csrf|middleware|scoped_db|session_auth|request_origin|food_origin|food_storage_guard)|app/routers/(session_login|account_security|user_management|user_db_status))'; then
    QA_FULL_REQUIRED=1
    QA_CADENCE_REASON="security-sensitive source or route changed"
   fi
