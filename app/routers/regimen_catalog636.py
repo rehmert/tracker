@@ -248,31 +248,48 @@ def supplement_label(label_id: str = ""):
         return {"available": False, "ingredients": "", "form": "", "serving": ""}
 
     rows = label.get("ingredientRows") or []
-    summary = []
-    for row in rows[:40]:
+    if not isinstance(rows, list):
+        rows = []
+    ingredients = []
+    for row in rows[:150]:
         if not isinstance(row, dict):
             continue
-        name = _clean(row.get("name"), 80)
+        name = _clean(row.get("name"), 160)
         if not name:
             continue
         quantities = row.get("quantity") or []
-        qty = quantities[0] if quantities and isinstance(quantities[0], dict) else {}
-        amount = str(qty.get("quantity") or "").strip()
-        unit = _clean(qty.get("unit"), 20)
-        summary.append(name + (f" {amount} {unit}".rstrip() if amount and unit else ""))
-    serving = ""
+        if not isinstance(quantities, list):
+            quantities = []
+        if not quantities:
+            ingredients.append({"name": name, "amount": "", "unit": ""})
+        else:
+            for qty in quantities[:8]:
+                if not isinstance(qty, dict):
+                    continue
+                ingredients.append({
+                    "name": name,
+                    "amount": _clean(qty.get("quantity"), 40),
+                    "unit": _clean(qty.get("unit"), 40),
+                })
     sizes = label.get("servingSizes") or []
-    if sizes and isinstance(sizes[0], dict):
-        size = sizes[0]
-        quantity = size.get("minQuantity")
-        unit = _clean(size.get("unit"), 40)
-        if quantity is not None and unit:
-            serving = f"{quantity} {unit}"
+    if not isinstance(sizes, list):
+        sizes = []
+    size = sizes[0] if sizes and isinstance(sizes[0], dict) else {}
+    quantity = size.get("minQuantity")
+    serving_quantity = _clean(quantity, 40) if quantity is not None else ""
+    serving_unit = _clean(size.get("unit"), 80)
     state = label.get("physicalState") or {}
     form = _clean(state.get("langualCodeDescription"), 60) if isinstance(state, dict) else ""
     return {
         "available": True,
-        "ingredients": "; ".join(summary)[:1600],
+        "ingredients": "; ".join(
+            (r["name"] + " " + r["amount"] + " " + r["unit"]).strip()
+            for r in ingredients
+        )[:1600],  # Legacy notes preview only; never used for persistence.
+        "ingredient_rows": ingredients,
+        "ingredient_rows_truncated": len(rows) > 150,
         "form": form,
-        "serving": serving[:80],
+        "serving": (serving_quantity + " " + serving_unit).strip()[:80],
+        "serving_quantity": serving_quantity,
+        "serving_unit": serving_unit,
     }
