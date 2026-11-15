@@ -97,23 +97,84 @@ def _openfda(term):
 
 
 def _dsld(term):
-    data = _fetch(_DSLD, {"method": "by_keyword", "q": term, "size": _MAX_RESULTS})
-    matches = []
-    for hit in data.get("hits", []):
-        label = hit.get("_source") or {}
-        if not isinstance(label, dict):
-            continue
-        match = _match(
-            "NIH DSLD", hit.get("_id", ""),
-            label.get("fullName", ""),
-            brand=label.get("brandName", ""),
-            # A supplement may have many ingredients; do not imply the first
-            # is the whole formula or fabricate an ingredient strength.
-        )
-        if match:
-            matches.append(match)
-    return matches
+    """Find supplement labels by product and brand, including multiword names.
 
+    DSLD browse-by-keyword is not a reliable exact phrase search. Prefer
+    quoted search-filter matches and fall back to one-word browse queries.
+    """
+    normalized = re.sub(r"[^a-z0-9]+", " ", term.casefold()).strip()
+    tokens = normalized.split()
+    # People commonly type brand followed by product, e.g.
+    # "Pure Encapsulations Nutrient 950".
+    product_phrase = (
+        " ".join(tokens[-2:]) if len(tokens) > 2 and tokens[-1].isdigit()
+        else " ".join(tokens)
+    )
+    queries = [product_phrase]
+    if product_phrase != normalized:
+        queries.append(normalized)
+    rows = []
+    seen = set()
+
+    def include(data):
+        for hit in (data.get("hits") or []):
+            label = hit.get("_source") or {}
+            if not isinstance(label, dict):
+                continue
+            match = _match(
+                "NIH DSLD", hit.get("_id", ""),
+                label.get("fullName", ""),
+                brand=label.get("brandName", ""),
+            )
+            if match and (match["source_id"], match["name"]) not in seen:
+                seen.add((match["source_id"], match["name"]))
+                rows.append(match)
+
+    errors = []
+    for phrase in queries:
+        try:
+            include(_fetch(
+                "https://dsld-dev-api.app.cloud.gov/api/v9/search-filter/",
+                {"q": '"' + phrase + '"', "sort_by": "_score", "size": 32},
+            ))
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, TypeError, KeyError):
+            errors.append("search-filter")
+        if rows:
+            break
+
+    if not rows:
+        # Degrade to a product-name keyword, not an unbounded all-label query.
+        keyword = tokens[-2] if len(tokens) > 1 and tokens[-1].isdigit() else tokens[-1]
+        try:
+            include(_fetch(_DSLD, {"method": "by_keyword", "q": keyword, "size": 64}))
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, TypeError, KeyError):
+            errors.append("browse-products")
+
+    if not rows and len(errors) >= len(queries) + 1:
+        raise URLError("NIH catalog provider unavailable")
+
+    phrase_tokens = set(product_phrase.split())
+    query_tokens = set(tokens)
+
+    def rank(row):
+        product = re.sub(r"[^a-z0-9]+", " ", row["name"].casefold()).strip()
+        brand = re.sub(r"[^a-z0-9]+", " ", row["brand"].casefold()).strip()
+        product_tokens = set(product.split())
+        overlap = len(phrase_tokens & product_tokens)
+        brand_overlap = len((query_tokens - phrase_tokens) & set(brand.split()))
+        # Exact product and brand matches outrank broad keyword results.
+        return (
+            int(product == product_phrase),
+            int(product_phrase in product),
+            overlap,
+            brand_overlap,
+            -len(product),
+        )
+
+    rows = [row for row in rows if phrase_tokens & set(
+        re.sub(r"[^a-z0-9]+", " ", row["name"].casefold()).split())]
+    rows.sort(key=rank, reverse=True)
+    return rows[:_MAX_RESULTS]
 
 def suggestions(kind, term):
     """Search in-memory with short TTL. A failed provider is not a blank catalog."""
