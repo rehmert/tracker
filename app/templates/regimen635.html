@@ -114,8 +114,8 @@
       <p class="note" data-reg639-status aria-live="polite"></p>
       <textarea name="label_facts_json" hidden></textarea>
     </div>
-    <label class="field">Ingredient / generic name <input name="ingredient" maxlength="160"></label>
-    <label class="field">Strength <input name="strength" maxlength="80" placeholder="e.g. 200 mg per capsule"></label>
+    <label class="field">Ingredient / generic name (medication or single-ingredient product) <input name="ingredient" maxlength="160"></label>
+    <label class="field">Strength (single-ingredient product, optional) <input name="strength" maxlength="80" placeholder="e.g. 200 mg per capsule"></label>
     <label class="field">Form <input name="form" maxlength="60" placeholder="Tablet, softgel, liquid"></label>
     <label class="field">Instructions <textarea name="instructions" maxlength="2000" rows="2"></textarea></label>
     <label class="field">Purpose / outcome tracked <textarea name="purpose" maxlength="2000" rows="2"></textarea></label>
@@ -132,6 +132,33 @@
   {% if item.ingredient %}<p>Ingredient: {{ item.ingredient }}</p>{% endif %}
   {% if item.instructions %}<p>{{ item.instructions }}</p>{% endif %}
   {% if item.purpose %}<p class="note">Purpose: {{ item.purpose }}</p>{% endif %}
+  {% set facts = product_facts_display.get(item.id) %}
+  {% if facts %}
+    <p class="note">
+      {% if facts.brand %}{{ facts.brand }} · {% endif %}
+      {% if facts.serving_quantity %}Label serving: {{ facts.serving_quantity }} {{ facts.serving_unit }} · {% endif %}
+      {{ facts.ingredients|length }} ingredient row(s)
+      {% if facts.source %} · {{ facts.source }} #{{ facts.source_id }}{% endif %}
+    </p>
+    <details><summary>View product label facts</summary>
+      <p>Manufacturer serving: {{ facts.serving_quantity or 'Not reported' }} {{ facts.serving_unit }}
+      {% if facts.servings_per_container %} · {{ facts.servings_per_container }} servings/container{% endif %}
+      {% if facts.upc_sku %} · UPC {{ facts.upc_sku }}{% endif %}</p>
+      {% if facts.ingredients %}
+      <div class="reg635-history"><table>
+        <thead><tr><th>Ingredient</th><th>Amount</th><th>Unit</th><th>Serving basis</th><th>Daily value</th></tr></thead>
+        <tbody>{% for nutrient in facts.ingredients %}
+        <tr><td>{{ nutrient.name }}</td><td>{{ nutrient.amount }}</td>
+            <td>{{ nutrient.unit }}</td><td>{{ nutrient.basis }}</td>
+            <td>{{ nutrient.daily_value }}</td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+      {% endif %}
+      {% if facts.other_ingredients %}<p>Other ingredients: {{ facts.other_ingredients }}</p>{% endif %}
+      <p class="note">Manufacturer label information only; not your personal dose or schedule.
+      {% if facts.imported_at %} Imported {{ facts.imported_at }} UTC.{% endif %}</p>
+    </details>
+  {% endif %}
   <details><summary>Edit item</summary>
     <form method="post" action="/regimen/items/{{ item.id }}/edit" class="reg635-form" data-reg636-catalog>
       <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}" {% if kind == item.kind %}selected{% endif %}>{{ kind|capitalize }}</option>{% endfor %}</select></label>
@@ -166,7 +193,7 @@
       <p class="note" data-reg639-status aria-live="polite"></p>
       <textarea name="label_facts_json" hidden>{{ product_facts.get(item.id, '') }}</textarea>
     </div>
-      <label class="field">Ingredient <input name="ingredient" value="{{ item.ingredient }}" maxlength="160"></label>
+      <label class="field">Primary ingredient / generic name (optional) <input name="ingredient" value="{{ item.ingredient }}" maxlength="160"></label>
       <label class="field">Strength <input name="strength" value="{{ item.strength }}" maxlength="80"></label>
       <label class="field">Form <input name="form" value="{{ item.form }}" maxlength="60"></label>
       <label class="field">Instructions <textarea name="instructions" maxlength="2000">{{ item.instructions }}</textarea></label>
