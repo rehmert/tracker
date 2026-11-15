@@ -114,6 +114,9 @@ def add_food(client, day="2026-11-05"):
             "serving_description": "100 g",
             "servings": "1",
             "meal": "Dinner",
+            # Synthetic fixture: explicit numeric values for all 16 fields.
+            # Legacy two-field positive saves are rejected by Release 629.
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "165",
             "proteins": "31",
         },
@@ -236,6 +239,7 @@ def test_entry_edit_and_nutrition_correction_isolated(isolated):
             "day": "2026-11-06",
             "name": "Corrected Chicken",
             "serving_description": "100 g",
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "180",
             "proteins": "32",
         },
