@@ -46,8 +46,26 @@ def browser():
 
 @pytest.mark.parametrize("scheme", ("http", "https"))
 def test_627_signed_blend_preview_routes_are_read_only(browser, scheme):
-    from app.db import SessionLocal
+    from sqlalchemy import create_engine, event
+    from sqlalchemy.orm import sessionmaker
     from app.models import Blend, Compound, Vial
+
+    # Pytest's process is separate from the isolated Uvicorn process.
+    # Do not use app.db.SessionLocal: its engine is bound at import time
+    # and may silently target a different SQLite database.
+    database = DATA / "tracker.db"
+    assert database.parent == DATA and database.is_file()
+    assert not database.is_symlink() and not DATA.is_symlink()
+    qa_engine = create_engine(
+        "sqlite:///" + str(database),
+        connect_args={"check_same_thread": False},
+    )
+
+    @event.listens_for(qa_engine, "connect")
+    def _set_foreign_keys(connection, record):
+        connection.execute("PRAGMA foreign_keys=ON")
+
+    SessionLocal = sessionmaker(bind=qa_engine, expire_on_commit=False)
 
     base = BASE_HTTP if scheme == "http" else BASE_HTTPS
     name = "QA627 blend preview " + uuid4().hex[:12]
@@ -181,3 +199,4 @@ def test_627_signed_blend_preview_routes_are_read_only(browser, scheme):
                 if compound is not None:
                     db.delete(compound)
             db.commit()
+        qa_engine.dispose()
