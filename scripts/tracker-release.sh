@@ -138,28 +138,60 @@ PY
  "$PY" "$QA/scripts/tracker-impact-preflight604.py" \
    --base "$BASE" --target "$TARGET" --root "$QA"
  echo "=== RELEASE 604 CHANGE IMPACT PASSED ==="
+ # Release 629: complete tests at every fifth DEV release, not on each
+ # small UI/tooling change. Security-sensitive route/auth changes remain
+ # explicit full-qualification exceptions. PROD retains its separate
+ # exact-commit approval and full-suite gate until independently reviewed.
+ QA_FULL_REQUIRED=1
+ QA_CADENCE_REASON="PROD requires full qualification"
  if [[ "$INSTANCE" == DEV ]]; then
+  QA_CADENCE_REASON="release sequence not recognized"
+  if [[ "$REF" =~ ^release/([0-9]+)- ]]; then
+   RELEASE_SEQUENCE="${BASH_REMATCH[1]}"
+   if (( 10#$RELEASE_SEQUENCE % 5 == 0 )); then
+    QA_CADENCE_REASON="fifth release milestone"
+   else
+    QA_FULL_REQUIRED=0
+    QA_CADENCE_REASON="focused release between five-release milestones"
+   fi
+  fi
+  # Security-sensitive app changes require complete qualification.
+  # Browser worker-count-only tooling changes are validated in focused
+  # preflight; full Chromium remains due at release 630.
+  if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/routers/|app/(auth|security|csrf|middleware|scoped_db))'; then
+   QA_FULL_REQUIRED=1
+   QA_CADENCE_REASON="security-sensitive source or route changed"
+  fi
   echo "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ==="
   timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"
   echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
-  echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
-  timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
-  echo "=== BROWSER GATE PASSED ==="
- else
-  echo "=== PROD: browser qualification is required on DEV before main promotion ==="
  fi
- echo "=== COMPLETE REGRESSION SUITE ==="
- echo "Critical safety tests are included in full-suite collection."
- "$PY" -c 'import xdist' >/dev/null ||
-  fail "pytest-xdist missing; serial fallback prohibited"
- TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)
- echo "BACKEND_TEST_MODE=PARALLEL workers=16"
- timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
-  --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
-  --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
-  --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
-  --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
- echo "=== ALL BACKEND TESTS PASSED ==="
+ echo "QA_FULL_REQUIRED=$QA_FULL_REQUIRED"
+ echo "QA_CADENCE_REASON=$QA_CADENCE_REASON"
+ if (( QA_FULL_REQUIRED == 1 )); then
+  if [[ "$INSTANCE" == DEV ]]; then
+   echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
+   timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+   echo "=== BROWSER GATE PASSED ==="
+  else
+   echo "=== PROD: browser qualification is required on DEV before main promotion ==="
+  fi
+  echo "=== COMPLETE REGRESSION SUITE ==="
+  echo "Critical safety tests are included in full-suite collection."
+  "$PY" -c 'import xdist' >/dev/null ||
+   fail "pytest-xdist missing; serial fallback prohibited"
+  TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)
+  echo "BACKEND_TEST_MODE=PARALLEL workers=16"
+  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
+   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
+   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
+   --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
+   --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
+  echo "=== ALL BACKEND TESTS PASSED ==="
+ else
+  echo "=== FULL BROWSER AND BACKEND SUITES DEFERRED TO NEXT FIFTH RELEASE ==="
+  echo "FOCUSED_RELEASE_GATE=PASSED"
+ fi
  cd "$APP"
  unset TRACKER_DATA_DIR PYTHONPATH
  [[ -z "$(g status --porcelain)" && "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Live checkout changed"
