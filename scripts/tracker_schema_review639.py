@@ -14,6 +14,7 @@ ALLOWED = frozenset({
     "app/templates/regimen635.html",
     "scripts/tracker-release.sh",
     "scripts/tracker_schema_review639.py",
+    "scripts/tracker-regimen-facts-live639.py",
     "docs/release-639-structured-supplement-facts.md",
     "tests/test_release639_supplement_facts.py",
     "tests/browser/test_regimen_facts639_ui.py",
