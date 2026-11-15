@@ -1,0 +1,8 @@
+/* Release 633: concise task navigation without touching the chart engine. */
+.pk633-fast-path{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.7rem 0;padding:.65rem .8rem;border:1px solid var(--rule,#d4ded8);border-radius:10px}
+.pk633-fast-path strong{margin-right:.4rem}
+.pk633-fast-path button{min-height:42px;padding:.45rem .7rem;border:1px solid var(--rule,#d4ded8);border-radius:8px;cursor:pointer}
+.pk633-fast-path button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.pk633-fast-path .note{flex-basis:100%;margin:0;font-size:.85rem}
+#pkSetup,#whatIfCard,#pkResults{scroll-margin-top:5.5rem}
+@media(max-width:600px){.pk633-fast-path button{flex:1 1 100%;text-align:left}.pk633-fast-path strong{flex-basis:100%}}
