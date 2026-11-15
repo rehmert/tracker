@@ -52,18 +52,36 @@ def validate(release: int, target: str, base: str, ref: str) -> None:
 
 
 def verified_log(content: str, target: str) -> None:
-    """Check literal runner markers without the exact-heading whitespace bug."""
+    """Validate historical full and current focused DEV qualification receipts."""
     lines = content.splitlines()
-    for marker in QUALIFICATION:
+    full = ("QA_FULL_REQUIRED=1" in lines or
+            all(marker in lines for marker in QUALIFICATION[:3]))
+    focused = "QA_FULL_REQUIRED=0" in lines
+    if full == focused:
+        raise ReleaseError("Ambiguous DEV qualification mode")
+    if focused:
+        required = (
+            "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
+            "FOCUSED_RELEASE_GATE=PASSED",
+        )
+    else:
+        required = QUALIFICATION[:3]
+    for marker in required:
         if marker not in lines:
             raise ReleaseError(f"Missing DEV qualification marker: {marker}")
+    restored = "=== ISOLATED RESTORE VERIFICATION PASSED ===" in lines
+    skipped = "DATABASE_BACKUP=SKIPPED_NO_MIGRATION" in lines
+    if restored == skipped:
+        raise ReleaseError("Missing or ambiguous database-backup outcome")
+    if skipped and "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION" in lines:
+        raise ReleaseError("Conflicting database-backup evidence")
     if not any("TRACKER RELEASE DEPLOYMENT SUCCESS" in line for line in lines):
         raise ReleaseError("Missing guarded deployment success heading")
     statuses = [line for line in lines if line.startswith("EXIT_STATUS=")]
-    if not statuses or statuses[-1] != "EXIT_STATUS=0":
-        raise ReleaseError("Last DEV deployment status is not zero")
+    if statuses != ["EXIT_STATUS=0"]:
+        raise ReleaseError("Exactly one successful DEV exit status required")
     exact = f"DEV_QUALIFIED_COMMIT={target}"
-    if exact not in lines:
+    if lines.count(exact) != 1:
         raise ReleaseError("Missing exact-commit DEV qualification marker")
 
 
