@@ -140,3 +140,39 @@ def test_no_new_workflow_and_original_forms_are_intact():
     assert "Catalog reference: " in script
     assert "['name', 'ingredient', 'strength', 'form']" in script
     assert "['amount', 'schedule', 'instructions']" not in script
+
+
+def test_dsld_label_details_multi_ingredient_and_labeled_serving(monkeypatch):
+    def fake(url, params):
+        assert url.endswith("/api/v9/label/82118")
+        assert params == {}
+        return {
+            "ingredientRows": [
+                {"name": "Vitamin C", "quantity": [{"quantity": 100, "unit": "mg"}]},
+                {"name": "Magnesium", "quantity": [{"quantity": 25, "unit": "mg"}]},
+            ],
+            "servingSizes": [{"minQuantity": 2, "unit": "Capsules"}],
+            "physicalState": {"langualCodeDescription": "Capsule"},
+        }
+    monkeypatch.setattr(catalog, "_fetch", fake)
+    data = catalog.supplement_label("82118")
+    assert data == {
+        "available": True, "ingredients": "Vitamin C 100 mg; Magnesium 25 mg",
+        "form": "Capsule", "serving": "2 Capsules",
+    }
+
+
+def test_dsld_label_id_is_validated_before_network(monkeypatch):
+    monkeypatch.setattr(catalog, "_fetch", lambda *_: (_ for _ in ()).throw(
+        AssertionError("Invalid identifier must not reach provider")))
+    with pytest.raises(Exception) as exc:
+        catalog.supplement_label("../private")
+    assert getattr(exc.value, "status_code", None) == 422
+
+
+def test_dsld_detail_failures_never_block_manual_entry(monkeypatch):
+    monkeypatch.setattr(catalog, "_fetch", lambda *_: (_ for _ in ()).throw(
+        TimeoutError("network timeout")))
+    assert catalog.supplement_label("82118") == {
+        "available": False, "ingredients": "", "form": "", "serving": "",
+    }
