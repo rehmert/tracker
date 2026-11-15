@@ -13,7 +13,7 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
   echo "ERROR: Run in isolated candidate worktree" >&2
   exit 2
 }
-"$PY" -m pytest -q --tb=short --maxfail=1 \
+"$PY" -m pytest -n 16 --dist=loadfile -q --tb=short --maxfail=1 \
   tests/test_release_workflow.py \
   tests/test_release604_preflight.py \
   tests/test_release604_navigation_browser.py \
@@ -33,6 +33,9 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
   tests/test_release627_csrf_reconciliation.py \
   tests/test_release627_inventory_health_filter.py \
   tests/test_release628_pk_simplified.py \
+  tests/test_release629_qa_cadence.py \
+  tests/test_release595_food_vendor_lifecycle.py \
+  tests/test_release596_vendor_multipart_csv.py \
   tests/test_pk_278_281.py \
   tests/test_browser_qualification511.py \
   tests/test_release584_targeted_preflight.py \
