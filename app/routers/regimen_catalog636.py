@@ -308,11 +308,20 @@ def supplement_label(label_id: str = ""):
     quantity = size.get("minQuantity")
     serving_quantity = _clean(quantity, 40) if quantity is not None else ""
     serving_unit = _clean(size.get("unit"), 80)
+    if len(sizes) == 1 and serving_quantity and serving_unit:
+        default_basis = (serving_quantity + " " + serving_unit)[:100]
+        for ingredient in ingredients:
+            if not ingredient["basis"]:
+                ingredient["basis"] = default_basis
+    elif len(sizes) > 1 and any(not row["basis"] for row in ingredients):
+        # Multiple serving bases: do not silently attach quantities to the
+        # wrong serving size.
+        truncated = True
     state = label.get("physicalState") or {}
     form = _clean(state.get("langualCodeDescription"), 60) if isinstance(state, dict) else ""
     others = label.get("otheringredients") or {}
     other_ingredients = _clean(others.get("text"), 4000) if isinstance(others, dict) else ""
-    if len(str(others.get("text") or "")) > 4000 if isinstance(others, dict) else False:
+    if isinstance(others, dict) and len(str(others.get("text") or "")) > 4000:
         truncated = True
     return {
         "available": True,
