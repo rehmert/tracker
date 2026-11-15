@@ -68,7 +68,7 @@ def test_597_browser_real_signed_purchases_and_usage_contracts():
         assert table in body
 
     runner=(ROOT/"scripts/tracker-browser-qualify.sh").read_text()
-    assert runner.count("-n 4 --dist=loadfile")==3
+    assert runner.count("-n 16 --dist=loadfile")==3
     _,strict=runner.split("# Release 521: a second browser gate",1)
     assert strict.count("tests/browser/test_strict_csrf521.py")==1
     assert runner.count("ISOLATED_STRICT_CSRF_BROWSER=PASSED")==1
