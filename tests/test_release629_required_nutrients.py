@@ -125,7 +125,7 @@ def test_entry_and_correction_forms_require_all_nutrients():
     end = source.index("</form>", start)
     add = source[start:end]
     assert 'placeholder="Unknown"' not in add
-    assert add.count("required></label>") == 2
+    assert add.count('placeholder="Required" required></label>') == 2
     assert 'id="food-nutrient-{{ key }}"' in add
     assert 'name="{{ key }}"' in add
     assert "id=\"food-review-warning\"" in source
