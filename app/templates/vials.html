@@ -741,6 +741,7 @@ document.addEventListener("DOMContentLoaded", () => {
   <p class="note">Select vials in the table above. Enter new values to choose <strong>Set</strong> automatically, or choose <strong>Clear</strong> explicitly. Only requested fields are changed after server validation.</p>
   <div class="bulk-edit-navigation" aria-label="Jump to common bulk edit fields">
     <span>Quick edit:</span>
+    <button type="button" data-bulk-focus-field="compound_id">Compound</button>
     <button type="button" data-bulk-focus-field="status">Status</button>
     <button type="button" data-bulk-focus-field="lot">Lot</button>
     <button type="button" data-bulk-focus-field="expires_on">Expiration</button>
@@ -791,6 +792,7 @@ document.addEventListener("DOMContentLoaded", () => {
   <div id="bulk-edit-field-groups">
   {% set field_groups = [
     ('Identification & status', 'Common changes to vial status, lot and visible identifiers.', [
+      ('compound_id','Compound','compound'),
       ('status','Status','status'), ('lot','Lot','text'),
       ('label','Vial label','text'), ('cap_color','Cap color','text')
     ]),
@@ -814,9 +816,16 @@ document.addEventListener("DOMContentLoaded", () => {
           <select name="mode_{{ key }}" aria-label="Action for {{ title }}">
             <option value="keep">Keep unchanged</option>
             <option value="set">Set to value</option>
-            {% if kind not in ('status','boolean') %}<option value="clear">Clear existing value</option>{% endif %}
+            {% if kind not in ('status','boolean','compound') %}<option value="clear">Clear existing value</option>{% endif %}
           </select>
-          {% if kind == 'status' %}
+          {% if kind == 'compound' %}
+            <select name="value_{{ key }}" aria-label="New {{ title }}" required>
+              <option value="">Choose destination compound</option>
+              {% for compound in compounds %}
+              <option value="{{ compound.id }}">{{ compound.name }} ({{ compound.primary_unit }})</option>
+              {% endfor %}
+            </select>
+          {% elif kind == 'status' %}
             <select name="value_{{ key }}" aria-label="New {{ title }}">{% for st in statuses %}<option value="{{ st }}">{{ st|replace('_',' ') }}</option>{% endfor %}</select>
           {% elif kind == 'boolean' %}
             <select name="value_{{ key }}" aria-label="New {{ title }}"><option value="yes">Yes</option><option value="no">No</option></select>
@@ -840,7 +849,7 @@ document.addEventListener("DOMContentLoaded", () => {
   </button>
 </p>
 <p class="note">
-  This is a common-value edit: entering a label, lot, or note replaces that field on every selected vial.
+  This is a common-value edit: entering a compound, label, lot, or note replaces that field on every selected vial. Compound correction is blocked for vials with logged doses, blend use, linked COAs, or incompatible mass/IU units; the entire batch is rejected if any vial is ineligible.
   You can remove individual vials from the selection above. The server validates status transitions and dates before saving.
 </p>
 
