@@ -111,6 +111,7 @@ def test_627_full_browser_workers_follow_release628_16_worker_standard():
     # Two main browser gates plus one shared per-module runner.
     assert runner.count("-n 16 --dist=loadfile") == 3
     assert 'echo "WORKERS=16"' in runner
-    assert "WORKERS=4" not in runner and "WORKERS=1" not in runner
+    assert 'echo "WORKERS=4"' not in runner
+    assert 'echo "WORKERS=1"' not in runner
     assert '"$PY" -B -m pytest -n 16 --dist=loadfile' in runner
     assert 'rc=${PIPESTATUS[0]}' in runner
