@@ -101,10 +101,19 @@ def duplicate_groups629(db_engine):
             if item["match_key"] is not None:
                 exact[item["match_key"]].append(item)
         compatible = [group for group in exact.values() if len(group) > 1]
+        differing = [
+            nutrient for nutrient in food.NUTRIENTS
+            if len({
+                json.dumps(item["measurements"][nutrient],
+                           sort_keys=True, default=str)
+                for item in entries
+            }) > 1
+        ]
         result.append({
             "name": entries[0]["name"],
             "versions": entries,
             "equivalent_sets": compatible,
+            "different_nutrients": differing,
             "different_values": len(exact) != 1 or any(
                 not item["valid_nutrients"] for item in entries
             ),
