@@ -44,3 +44,19 @@ def test_627_blend_browser_fixture_uses_only_disposable_database():
     assert '"sqlite:///" + str(database)' in source
     assert "sessionmaker(bind=qa_engine" in source
     assert "qa_engine.dispose()" in source
+
+
+def test_627_targeted_allowlist_preserves_release584_contract():
+    from pathlib import Path
+    runner = (Path(__file__).resolve().parents[1] /
+              "scripts/tracker-browser-qualify.sh").read_text()
+    legacy = ('[[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" '
+              '=~ ^tests/browser/test_(csrf_preparations583|form_overlap586|'
+              'csrf_bulk587|csrf_multipart588)[.]py$ ]]')
+    assert legacy in runner
+    extension = ('[[ "$TARGETED_MODULE" == csrf-batch627 || '
+                 '"$TARGETED_MODULE" == csrf-positive627 || '
+                 '"$TARGETED_MODULE" == csrf-new627 ]]')
+    assert extension in runner
+    assert runner.index(legacy) < runner.index(extension)
+    assert 'ISOLATED_STRICT_CSRF_BROWSER=PASSED' in runner
