@@ -577,3 +577,19 @@ class RegimenEntry(Base):
     meal: Mapped[str] = mapped_column(String(20), default="")
     notes: Mapped[str] = mapped_column(Text, default="")
     item: Mapped["RegimenItem"] = relationship(back_populates="entries")
+
+
+class RegimenProductFacts639(Base):
+    """User-reviewed label information; independent of historical intake."""
+    __tablename__ = "regimen_product_facts639"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("regimen_items635.id"), nullable=False, unique=True, index=True
+    )
+    brand: Mapped[str] = mapped_column(String(160), default="")
+    source: Mapped[str] = mapped_column(String(32), default="")
+    source_id: Mapped[str] = mapped_column(String(100), default="")
+    serving_quantity: Mapped[str] = mapped_column(String(40), default="")
+    serving_unit: Mapped[str] = mapped_column(String(80), default="")
+    ingredients_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    imported_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
