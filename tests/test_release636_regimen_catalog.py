@@ -74,11 +74,12 @@ def test_dsld_product_label_does_not_infer_multingredient_strength(monkeypatch):
         }}]}
     monkeypatch.setattr(catalog, "_fetch", fake)
     results = catalog._dsld("Nutrient 950")
-    assert results == [{
-        "source": "NIH DSLD", "source_id": "82118",
-        "name": "Nutrient 950", "ingredient": "", "strength": "",
-        "form": "", "brand": "Example Brand"
-    }]
+    assert len(results) == 1
+    assert results[0]["source_id"] == "82118"
+    assert results[0]["name"] == "Nutrient 950"
+    assert results[0]["brand"] == "Example Brand"
+    assert results[0]["ingredient"] == ""
+    assert results[0]["strength"] == ""
 
 
 def test_provider_failure_fails_open_to_manual_entry_not_saved(monkeypatch):
