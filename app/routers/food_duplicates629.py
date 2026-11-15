@@ -81,11 +81,33 @@ def duplicate_groups629(db_engine):
         rows = [dict(x) for x in _fetch_products629(db)]
     limited = len(rows) > MAX_PRODUCTS
     rows = rows[:MAX_PRODUCTS]
+    # Group candidates by shared normalized name OR nonempty barcode.
+    # Connected groups are for review only; exact compatibility rules
+    # still control whether any version may be consolidated.
+    parents = {row["id"]: row["id"] for row in rows}
+
+    def root(value):
+        while parents[value] != value:
+            parents[value] = parents[parents[value]]
+            value = parents[value]
+        return value
+
+    seen = {}
+    for row in rows:
+        keys = [("name", normalize629(row["name"]))]
+        barcode = normalize629(row["barcode"])
+        if barcode:
+            keys.append(("barcode", barcode))
+        for key in keys:
+            if not key[1]:
+                continue
+            if key in seen:
+                parents[root(row["id"])] = root(seen[key])
+            else:
+                seen[key] = row["id"]
+
     groups = defaultdict(list)
     for row in rows:
-        key = normalize629(row["name"])
-        if not key:
-            key = f"unnamed:{row['id']}"
         try:
             parsed = json.loads(row["nutrients"])
             if type(parsed) is not dict:
@@ -102,7 +124,7 @@ def duplicate_groups629(db_engine):
             }
             row["match_key"] = None
             row["valid_nutrients"] = False
-        groups[key].append(row)
+        groups[root(row["id"])].append(row)
 
     result = []
     for entries in groups.values():
