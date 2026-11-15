@@ -55,6 +55,7 @@ def add(client, name="Greek Yogurt"):
             "serving_description": "1 cup",
             "servings": "2",
             "meal": "Breakfast",
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "100",
             "proteins": "10",
             "sodium": "0",
@@ -76,6 +77,7 @@ def test_correction_preserves_other_entries(setup):
             "serving_description": "1 cup",
             "servings": "1",
             "meal": "Breakfast",
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "100",
             "proteins": "10",
             "sodium": "0",
@@ -104,6 +106,7 @@ def test_correction_preserves_other_entries(setup):
             "day": "2026-11-05",
             "name": "Corrected Greek Yogurt",
             "serving_description": "1 cup",
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "125",
             "proteins": "15",
             "sodium": "0",
@@ -170,6 +173,13 @@ def test_meal_summary_and_missing_nutrients(setup):
     client, engine = setup
     add(client)
 
+    # Simulate a legacy record with unreported fat, still readable.
+    with engine.begin() as db:
+        row = db.execute(text("SELECT id,nutrients FROM tracker_food_products")).one()
+        values = json.loads(row.nutrients)
+        values["fat"] = None
+        db.execute(text("UPDATE tracker_food_products SET nutrients=:n WHERE id=:id"),
+                   {"n": json.dumps(values), "id": row.id})
     summary = food_review378.meal_summary("2026-11-05")
     breakfast = summary[0]
 
@@ -183,6 +193,14 @@ def test_meal_summary_and_missing_nutrients(setup):
 def test_csv_export_unknown_blank_and_formula_safety(setup):
     client, engine = setup
     add(client, '=HYPERLINK("https://example.org")')
+
+    # Preserve legacy unknown-vs-zero export coverage.
+    with engine.begin() as db:
+        row = db.execute(text("SELECT id,nutrients FROM tracker_food_products")).one()
+        values = json.loads(row.nutrients)
+        values["potassium"] = None
+        db.execute(text("UPDATE tracker_food_products SET nutrients=:n WHERE id=:id"),
+                   {"n": json.dumps(values), "id": row.id})
 
     response = client.get(
         "/food/export.csv?day=2026-11-05"
