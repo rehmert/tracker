@@ -130,13 +130,25 @@ def _store_facts(db, item_id, values):
         return
     existing = db.scalar(select(RegimenProductFacts639).where(
         RegimenProductFacts639.item_id == item_id))
+    before = None
     if existing is None:
         existing = RegimenProductFacts639(item_id=item_id)
         db.add(existing)
+    else:
+        before = {key: getattr(existing, key) for key in values}
     for key, value in values.items():
         setattr(existing, key, value)
-    if values["source"] and values["source_id"]:
-        existing.imported_at = datetime.utcnow()
+    after = {key: getattr(existing, key) for key in values}
+    if before != after:
+        if values["source"] and values["source_id"] and (
+            before is None or
+            before.get("source") != values["source"] or
+            before.get("source_id") != values["source_id"]
+        ):
+            existing.imported_at = datetime.utcnow()
+        _audit(db, "regimen_product_facts", item_id,
+               "create" if before is None else "edit",
+               before=before, after=after)
 
 
 def _schedule_values(form):
