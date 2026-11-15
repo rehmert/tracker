@@ -1517,8 +1517,19 @@ def test_594_food_vendor_signed_forms_and_unsigned_denial(tab, scheme):
     name="QA food 594 "+uuid4().hex[:8]
     food="/food/entry"
     unsigned(food,{"name":name,"day":day,"servings":"1"})
+    # Release 629 requires 16 explicitly reported nutrients for a new food.
+    # The synthetic fixture uses confirmed test zeros, never missing fields.
+    complete_nutrients = {
+        key: "0" for key in (
+            "energy", "proteins", "carbohydrates", "fat", "fiber",
+            "sugars", "saturated-fat", "sodium", "potassium",
+            "calcium", "iron", "magnesium", "vitamin-c",
+            "vitamin-d", "vitamin-b12", "cholesterol",
+        )
+    }
     signed(food,{"name":name,"day":day,"servings":"1",
-                 "meal":"Snack","energy":"90","proteins":"10"})
+                 "meal":"Snack","serving_description":"1 serving",
+                 **complete_nutrients, "energy":"90","proteins":"10"})
     entry_id=count("""SELECT max(e.id)
         FROM tracker_food_entries e JOIN tracker_food_products p
           ON e.product_id=p.id WHERE p.name=? AND e.eaten_on=?""",(name,day))
@@ -1628,9 +1639,18 @@ def test_595_food_templates_corrections_and_vendor_sheets(tab, scheme):
 
     name="QA food 595 "+uuid4().hex[:8]
     create="/food/entry"
+    # Exercise a valid signed food write with the mandatory full payload.
+    complete_nutrients = {
+        key: "0" for key in (
+            "energy", "proteins", "carbohydrates", "fat", "fiber",
+            "sugars", "saturated-fat", "sodium", "potassium",
+            "calcium", "iron", "magnesium", "vitamin-c",
+            "vitamin-d", "vitamin-b12", "cholesterol",
+        )
+    }
     signed(create,{"name":name,"day":day,"servings":"1",
-                   "meal":"Lunch","energy":"100","proteins":"8",
-                   "serving_description":"1 serving"})
+                   "meal":"Lunch","serving_description":"1 serving",
+                   **complete_nutrients, "energy":"100","proteins":"8"})
     product = query("""SELECT e.id,e.product_id FROM tracker_food_entries e
       JOIN tracker_food_products p ON p.id=e.product_id
       WHERE p.name=? AND e.eaten_on=?""",(name,day))
@@ -1646,7 +1666,7 @@ def test_595_food_templates_corrections_and_vendor_sheets(tab, scheme):
 
     nutrition=f"/food/entry/{entry_id}/nutrition"
     revised={"day":day,"name":name+" corrected","serving_description":"1 serving",
-             "energy":"135","proteins":"11"}
+             **complete_nutrients, "energy":"135","proteins":"11"}
     unsigned(nutrition,revised)
     signed(nutrition,revised)
     revised_id=query("SELECT product_id FROM tracker_food_entries WHERE id=?",
