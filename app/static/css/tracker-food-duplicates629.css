@@ -1,0 +1,32 @@
+/* Release 629: readable duplicate-food nutrient comparison. */
+.food629-review{max-width:1200px;margin-inline:auto}
+.food629-header{display:flex;justify-content:space-between;align-items:start;gap:1.2rem;flex-wrap:wrap}
+.food629-header h1{margin-bottom:.35rem}
+.food629-summary{display:grid;gap:.2rem;min-width:11rem;padding:.8rem 1rem;border:1px solid var(--rule,#d1d9dd);border-radius:12px}
+.food629-summary strong{font-size:2rem}
+.food629-summary span,.food629-summary small{font-size:.88rem;opacity:.85}
+.food629-group{margin:1rem 0}
+.food629-group-head{display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;align-items:center}
+.food629-group-head h2{margin:.35rem 0}
+.food629-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.6rem;margin:.85rem 0}
+.food629-meta-grid article{border:1px solid var(--rule,#ccd6dc);border-radius:10px;padding:.65rem}
+.food629-meta-grid h3{font-size:1rem;margin:.1rem 0 .5rem}
+.food629-meta-grid dl{display:grid;grid-template-columns:auto 1fr;gap:.22rem .6rem;margin:0;font-size:.9rem}
+.food629-meta-grid dt{opacity:.75}.food629-meta-grid dd{margin:0;overflow-wrap:anywhere;text-align:right}
+.food629-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:.5rem 0 1rem}
+.food629-nutrients{min-width:440px;border-collapse:collapse;width:100%;font-size:.9rem}
+.food629-nutrients th,.food629-nutrients td{border-bottom:1px solid var(--rule,#d5dadd);padding:.45rem .65rem;text-align:right;white-space:nowrap}
+.food629-nutrients th:first-child{text-align:left;position:sticky;left:0;background:var(--card,#fff);z-index:1}
+.food629-nutrients thead th{font-weight:700}
+.food629-nutrients th small{display:block;font-weight:400;opacity:.72}
+.food629-section-row th{background:var(--surface,#f0f4f8)!important;text-align:left!important;font-weight:700;position:static!important}
+.food629-unknown{opacity:.6}
+.food629-warning{border-left:4px solid #b7791f;padding:.6rem .8rem;background:var(--card,#fff)}
+.food629-success{border-left:4px solid #287c50;padding:.7rem 1rem;font-weight:600}
+.food629-merge{border:1px solid var(--rule,#d1d9dd);border-radius:10px;padding:.8rem;margin:.8rem 0;display:grid;gap:.7rem}
+.food629-merge label{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap}
+.food629-merge select{max-width:100%;min-height:42px}
+.food629-merge-option{font-size:.92rem}
+.food629-merge button{justify-self:start;min-height:44px}
+.food629-merge .note{margin:0}
+@media(max-width:650px){.food629-meta-grid{grid-template-columns:1fr}.food629-merge button{width:100%}.food629-nutrients th,.food629-nutrients td{padding:.42rem .48rem}}
