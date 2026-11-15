@@ -31,3 +31,16 @@ def test_627_signed_route_manifest_has_no_duplicate_or_unmapped_routes():
     assert len(pkeys | rkeys) == 61
     assert all(not row["full_dev_runtime_qualified"] for row in positive)
     assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == 34
+
+def test_627_blend_browser_fixture_uses_only_disposable_database():
+    from pathlib import Path
+    source = (Path(__file__).resolve().parent /
+              "browser/test_csrf_blend_previews627.py").read_text()
+    assert 'from app.db import SessionLocal' not in source
+    assert 'os.environ["TRACKER_DATA_DIR"] = str(DATA)' in source
+    assert 'database = DATA / "tracker.db"' in source
+    assert "database.is_file()" in source
+    assert "not database.is_symlink()" in source
+    assert '"sqlite:///" + str(database)' in source
+    assert "sessionmaker(bind=qa_engine" in source
+    assert "qa_engine.dispose()" in source
