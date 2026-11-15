@@ -46,6 +46,7 @@ def add_entry(client):
             "serving_description": "100 g",
             "servings": "1",
             "meal": "Dinner",
+            **{key: "0" for key in food.NUTRIENTS},
             "energy": "165",
             "proteins": "31",
         },
