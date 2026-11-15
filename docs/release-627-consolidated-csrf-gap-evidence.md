@@ -313,3 +313,24 @@ The first guarded attempt printed `EXIT_STATUS=1`; there was no
 successful release install or full DEV qualification receipt.
 The new candidate must pass the original guarded runner before it can
 be installed. Strict global CSRF enforcement remains unchanged.
+
+## Second full DEV attempt: historical 584 source contract blocked backend
+
+Candidate `519b10cf14415837544eba510d1dadef51391b5c` reached
+`3252 passed, 1 failed, 16 warnings` in the full backend suite before
+`--maxfail=1` stopped qualification. Failure:
+`test_584_targeted_qualification_is_strict_only_and_cannot_forge_full_pass`
+requires the exact original Release 584 allowlist expression within
+`scripts/tracker-browser-qualify.sh`. Release 627 had replaced that
+expression while extending accepted targeted modes. This is a source
+contract compatibility regression; it does not demonstrate a failure
+of the app's CSRF enforcement.
+
+The corrected runner restores the original Release 584 expression
+verbatim as a functional condition, then permits the three added
+Release 627 targeted modes in a separate functional OR condition.
+An additional Release 627 regression test enforces both allowlist
+fragments and their order. A local Bash syntax and allowlist
+accept/reject smoke of the replacement fragment passed, but the full
+host backend suite has **not** been rerun against this correction.
+No successful DEV install is claimed.
