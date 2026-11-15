@@ -58,10 +58,10 @@ def test_pk_workspace_browser_smoke():
         # Release 628: essential workflow and legend remain available without
         # opening advanced controls; existing graph controls remain functional.
         assert page.locator(".pk628-steps li").count() == 3
-        assert page.get_by_role("button", name="Use a protocol").count() == 1
-        assert page.get_by_role("button", name="Build a schedule").count() == 1
-        assert page.get_by_role("button", name="Compare scenarios").count() == 1
-        assert page.get_by_role("button", name="Compare schedules").count() == 1
+        assert page.locator(".pk-tabs").get_by_role("button", name="Use a protocol", exact=True).count() == 1
+        assert page.locator(".pk-tabs").get_by_role("button", name="Build a schedule", exact=True).count() == 1
+        assert page.locator(".pk-tabs").get_by_role("button", name="Compare scenarios", exact=True).count() == 1
+        assert page.locator(".pk-tabs").get_by_role("button", name="Compare schedules", exact=True).count() == 1
         assert page.locator(".pk628-graph-guide span").count() == 3
         options_panel = page.locator(".pk628-graph-options")
         assert options_panel.count() == 1
