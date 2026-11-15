@@ -88,7 +88,7 @@ def inventory_health(request:Request, severity:str='all', db:Session=Depends(get
     issues = collect_integrity_issues(db) + collect_inventory_health(db)
 
     for finding in inspect_inventory(db):
-        severity = (
+        finding_severity = (
             "Error"
             if finding.code in (
                 "nonfinite",
@@ -120,7 +120,7 @@ def inventory_health(request:Request, severity:str='all', db:Session=Depends(get
             else "/vials"
         )
 
-        issues.append((severity, explanation, review_url))
+        issues.append((finding_severity, explanation, review_url))
     errors=sum(level=='Error' for level,_,_ in issues)
     warnings=sum(level=='Warning' for level,_,_ in issues)
     if severity not in ('all', 'error', 'warning'):
