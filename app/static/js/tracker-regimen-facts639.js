@@ -105,15 +105,17 @@
     form.addEventListener('regimen:catalog-selected639', event => {
       const selected = event.detail || {};
       const source = String(selected.source || '');
-      if (!source || source !== 'NIH DSLD') return;
+      if (!source) return;
       data = {
         ...empty(), brand: String(selected.brand || ''),
         source, source_id: String(selected.source_id || '')
       };
       selectionId = data.source_id;
       changedSinceSelection = false;
-      loading = true;
-      status.textContent = 'Loading complete manufacturer label before saving…';
+      loading = source === 'NIH DSLD';
+      status.textContent = loading
+        ? 'Loading complete manufacturer label before saving…'
+        : 'Catalog product selected. Confirm the product label and strength before saving.';
       draw();
     });
     form.addEventListener('regimen:label-loaded639', event => {
@@ -132,6 +134,9 @@
       data.serving_quantity = String(label.serving_quantity || '');
       data.serving_unit = String(label.serving_unit || '');
       data.ingredients = Array.isArray(label.ingredient_rows) ? label.ingredient_rows : [];
+      if (!data.ingredients.length) {
+        status.textContent = 'NIH label returned no ingredient quantities. Verify the product before saving.';
+      }
       draw();
       status.textContent = data.ingredients.length + ' labeled ingredient rows imported. Review each amount and serving basis.';
     });
