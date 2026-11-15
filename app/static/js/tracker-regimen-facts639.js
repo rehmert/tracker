@@ -162,8 +162,10 @@
         status.textContent = 'Label loaded after your edits. Existing edits preserved; select the product again to import its facts.';
         return;
       }
-      if (label.ingredient_rows_truncated) {
-        status.textContent = 'The NIH label has more ingredient rows than Tracker can import. Save is blocked to prevent incomplete data.';
+      if (label.ingredient_rows_truncated ||
+          !Array.isArray(label.ingredient_rows) ||
+          label.ingredient_rows.length === 0) {
+        status.textContent = 'NIH label facts are incomplete or ambiguous. Use manual product facts or select a different label; automatic save is blocked.';
         loading = true;
         return;
       }
