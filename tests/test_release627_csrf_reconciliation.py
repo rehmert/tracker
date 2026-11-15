@@ -60,3 +60,17 @@ def test_627_targeted_allowlist_preserves_release584_contract():
     assert extension in runner
     assert runner.index(legacy) < runner.index(extension)
     assert 'ISOLATED_STRICT_CSRF_BROWSER=PASSED' in runner
+
+
+def test_627_coa_upload_asserts_rendered_saved_field_not_body_text():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    for module, marker in (
+        ("tests/browser/test_csrf_multipart588.py", "name"),
+        ("tests/browser/test_csrf_coa_lifecycle627.py", "lab"),
+    ):
+        source = (root / module).read_text()
+        expected = "expect(page.locator('input[name=\"lab_name\"]')).to_have_value(" + marker + ")"
+        assert expected in source, module
+        assert 'expect(page.locator("body")).to_contain_text(' + marker + ')' not in source
+        assert "View existing document" in source
