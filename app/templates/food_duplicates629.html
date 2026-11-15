@@ -21,7 +21,7 @@
   {% if truncated %}
   <p class="food629-warning" role="alert">Only the first {{ examined }} saved foods were inspected. No merge should be considered a full-library cleanup until all records are reviewed.</p>
   {% endif %}
-  <p class="note">Groups match names ignoring capitalization and extra spaces. They can contain different serving sizes or nutrient data. Values are per stored serving, not per 100 g. <strong>— means not reported, not zero.</strong> Exact nutritional equivalents may be combined; differing values remain untouched.</p>
+  <p class="note">Groups contain foods with matching names (ignoring capitalization and extra spaces) or the same nonempty barcode. They can contain different serving sizes or nutrient data. Values are per stored serving, not per 100 g. <strong>— means not reported, not zero.</strong> Exact nutritional equivalents may be combined; differing values remain untouched.</p>
 
   {% if not groups %}
   <div class="card"><p>No saved foods with matching normalized names were found in the examined records.</p></div>
@@ -38,6 +38,7 @@
       <article>
         <h3>Version #{{ item.id }}</h3>
         <dl>
+          <dt>Name</dt><dd>{{ item.name }}</dd>
           <dt>Serving</dt><dd>{{ item.serving_description }}</dd>
           <dt>Barcode</dt><dd>{{ item.barcode or '—' }}</dd>
           <dt>Source</dt><dd>{{ item.source }}</dd>
