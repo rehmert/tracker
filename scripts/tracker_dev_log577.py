@@ -26,7 +26,19 @@ def validated_evidence(content: str, target: str) -> str:
     if not SHA.fullmatch(target):
         raise ValueError("Invalid target SHA")
     lines = content.splitlines()
-    for marker in (*REQUIRED, f"CANDIDATE_COMMIT={target}"):
+    full = lines.count("QA_FULL_REQUIRED=1") == 1
+    focused = lines.count("QA_FULL_REQUIRED=0") == 1
+    if full == focused or sum(line.startswith("QA_FULL_REQUIRED=") for line in lines) != 1:
+        raise ValueError("Exactly one qualification mode required")
+    if focused:
+        required = (
+            "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
+            "FOCUSED_RELEASE_GATE=PASSED",
+            "=== ISOLATED RESTORE VERIFICATION PASSED ===",
+        )
+    else:
+        required = REQUIRED
+    for marker in (*required, f"CANDIDATE_COMMIT={target}"):
         if marker not in lines:
             raise ValueError(f"Missing DEV qualification evidence: {marker}")
     if not any("TRACKER RELEASE DEPLOYMENT SUCCESS" in line for line in lines):
