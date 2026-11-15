@@ -6,8 +6,10 @@ barcode and serving size match. It preserves recorded nutrient totals and
 updates all known references transactionally.
 """
 from collections import defaultdict
+from hashlib import sha256
 import json
 import re
+from itertools import combinations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -52,6 +54,27 @@ def compatible_key629(row):
             nutrient_key629(row["nutrients"]))
 
 
+def init_review_schema630(db_engine):
+    # Store acknowledgements separately, without changing historical food rows.
+    with db_engine.begin() as db:
+        db.execute(text("""
+            CREATE TABLE IF NOT EXISTS tracker_food_duplicate_reviews630 (
+                fingerprint TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+
+
+def group_fingerprint630(entries):
+    # Any changes to names, servings, barcode, nutrition, or membership
+    # invalidate a previous acknowledgement automatically.
+    payload = [(row["id"], row["name"], row["serving_description"],
+                row["barcode"], row["nutrients"])
+               for row in sorted(entries, key=lambda row: row["id"])]
+    return sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False,
+                            separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
 def _fetch_products629(db):
     return db.execute(text("""
         SELECT p.id, p.name, p.barcode, p.serving_description,
@@ -75,10 +98,14 @@ def _fetch_products629(db):
     """), {"limit": MAX_PRODUCTS + 1}).mappings().all()
 
 
-def duplicate_groups629(db_engine):
+def duplicate_groups629(db_engine, show_reviewed=False):
     food_bundle376.init_schema(db_engine)
+    init_review_schema630(db_engine)
     with db_engine.connect() as db:
         rows = [dict(x) for x in _fetch_products629(db)]
+        reviewed = set(db.execute(text(
+            "SELECT fingerprint FROM tracker_food_duplicate_reviews630"
+        )).scalars().all())
     limited = len(rows) > MAX_PRODUCTS
     rows = rows[:MAX_PRODUCTS]
     # Group candidates by shared normalized name OR nonempty barcode.
@@ -143,8 +170,13 @@ def duplicate_groups629(db_engine):
                 for item in entries
             }) > 1
         ]
+        fingerprint = group_fingerprint630(entries)
+        if fingerprint in reviewed and not show_reviewed:
+            continue
         result.append({
             "name": entries[0]["name"],
+            "fingerprint": fingerprint,
+            "reviewed": fingerprint in reviewed,
             "versions": entries,
             "equivalent_sets": compatible,
             "different_nutrients": differing,
@@ -154,6 +186,68 @@ def duplicate_groups629(db_engine):
         })
     result.sort(key=lambda group: normalize629(group["name"]))
     return {"groups": result, "examined": len(rows), "truncated": limited}
+
+
+def mark_distinct630(db_engine, fingerprint):
+    if not isinstance(fingerprint, str) or not re.fullmatch(r"[0-9a-f]{64}", fingerprint):
+        raise ValueError("Invalid review selection")
+    report = duplicate_groups629(db_engine, show_reviewed=True)
+    group = next((g for g in report["groups"] if g["fingerprint"] == fingerprint), None)
+    if group is None or not group["different_values"]:
+        raise ValueError("Duplicate versions changed; refresh before reviewing")
+    # Revalidate inside transaction and persist the exact fingerprint only.
+    with db_engine.begin() as db:
+        ids = [version["id"] for version in group["versions"]]
+        rows = [db.execute(text("""
+            SELECT id,name,serving_description,barcode,nutrients
+            FROM tracker_food_products WHERE id=:id
+        """), {"id": id_}).mappings().first() for id_ in ids]
+        if any(row is None for row in rows) or group_fingerprint630(rows) != fingerprint:
+            raise ValueError("Duplicate versions changed; refresh before reviewing")
+        db.execute(text("""
+            INSERT OR IGNORE INTO tracker_food_duplicate_reviews630(fingerprint)
+            VALUES (:fingerprint)
+        """), {"fingerprint": fingerprint})
+
+
+def remove_unused_mismatch630(db_engine, keep_id, remove_id):
+    if (type(keep_id) is not int or type(remove_id) is not int or
+            keep_id < 1 or remove_id < 1 or keep_id == remove_id):
+        raise ValueError("Invalid saved-food selection")
+    food_bundle376.init_schema(db_engine)
+    with db_engine.begin() as db:
+        rows = [db.execute(text("""
+            SELECT id,name,barcode,serving_description,nutrients
+            FROM tracker_food_products WHERE id=:id
+        """), {"id": id_}).mappings().first() for id_ in (keep_id, remove_id)]
+        if any(row is None for row in rows):
+            raise ValueError("Saved food changed or was removed")
+        keeper, redundant = rows
+        same_name = normalize629(keeper["name"]) == normalize629(redundant["name"])
+        same_barcode = (normalize629(keeper["barcode"]) and
+                        normalize629(keeper["barcode"]) == normalize629(redundant["barcode"]))
+        if not (same_name or same_barcode):
+            raise ValueError("These records are not direct duplicate candidates")
+        used = db.execute(text("""
+            SELECT COUNT(*) FROM tracker_food_entries WHERE product_id=:id
+        """), {"id": remove_id}).scalar_one()
+        if used:
+            raise ValueError("Cannot remove a version referenced by historical meals")
+        db.execute(text("""
+            INSERT OR IGNORE INTO tracker_food_favorites(product_id)
+            SELECT :keep FROM tracker_food_favorites WHERE product_id=:old
+        """), {"keep": keep_id, "old": remove_id})
+        db.execute(text("""
+            DELETE FROM tracker_food_favorites WHERE product_id=:old
+        """), {"old": remove_id})
+        db.execute(text("""
+            UPDATE tracker_food_meal_template_items SET product_id=:keep
+            WHERE product_id=:old
+        """), {"keep": keep_id, "old": remove_id})
+        db.execute(text("""
+            DELETE FROM tracker_food_products WHERE id=:old
+        """), {"old": remove_id})
+    return 1
 
 
 def merge_equivalent629(db_engine, keep_id, remove_ids):
@@ -216,13 +310,17 @@ def merge_equivalent629(db_engine, keep_id, remove_ids):
 def review_duplicate_foods629(
     request: Request,
     merged: int = 0,
+    resolved: int = 0,
+    show_reviewed: int = 0,
     db_engine=Depends(get_food_read_engine406),
 ):
-    report = duplicate_groups629(db_engine)
+    report = duplicate_groups629(db_engine, show_reviewed=show_reviewed == 1)
     return render(
         request, "food_duplicates629.html",
         **report, nutrients=food.NUTRIENTS,
         merged=max(0, min(merged, MAX_MERGE)),
+        resolved=resolved == 1,
+        show_reviewed=show_reviewed == 1,
     )
 
 
@@ -250,3 +348,40 @@ async def merge_duplicate_foods629(
         f"/food/duplicates?merged={merged}",
         status_code=303,
     )
+
+
+@router.post("/food/duplicates/resolve-unused")
+async def resolve_unused_food630(
+    request: Request,
+    db_engine=Depends(get_food_read_engine406),
+):
+    form = await request.form()
+    if (set(form) - {"keep_id", "remove_id", "csrf_token"}
+            or len(form.getlist("keep_id")) != 1
+            or len(form.getlist("remove_id")) != 1
+            or len(form.getlist("csrf_token")) > 1):
+        raise HTTPException(422, "Invalid unused food resolution form")
+    try:
+        remove_unused_mismatch630(
+            db_engine, int(form["keep_id"]), int(form["remove_id"])
+        )
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return RedirectResponse("/food/duplicates?resolved=1", status_code=303)
+
+
+@router.post("/food/duplicates/keep-distinct")
+async def keep_distinct_food630(
+    request: Request,
+    db_engine=Depends(get_food_read_engine406),
+):
+    form = await request.form()
+    if (set(form) - {"fingerprint", "csrf_token"}
+            or len(form.getlist("fingerprint")) != 1
+            or len(form.getlist("csrf_token")) > 1):
+        raise HTTPException(422, "Invalid duplicate review form")
+    try:
+        mark_distinct630(db_engine, str(form["fingerprint"]))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return RedirectResponse("/food/duplicates?resolved=1", status_code=303)
