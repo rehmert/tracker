@@ -80,13 +80,13 @@ def test_629_name_groups_show_every_macro_micro_value(food_engine):
     assert report["truncated"] is False
     assert len(report["groups"]) == 1
     group = report["groups"][0]
-    assert {item["id"] for item in group["items"]} == {first, second}
+    assert {item["id"] for item in group["versions"]} == {first, second}
     assert group["different_values"]
     assert group["equivalent_sets"] == []
-    assert len(group["items"][0]["measurements"]) == len(food.NUTRIENTS)
-    assert group["items"][0]["measurements"]["vitamin-b12"] == 1.2
-    assert group["items"][0]["measurements"]["potassium"] is None
-    assert group["items"][1]["measurements"]["energy"] == 110.0
+    assert len(group["versions"][0]["measurements"]) == len(food.NUTRIENTS)
+    assert group["versions"][0]["measurements"]["vitamin-b12"] == 1.2
+    assert group["versions"][0]["measurements"]["potassium"] is None
+    assert group["versions"][1]["measurements"]["energy"] == 110.0
 
 
 def test_629_equivalent_merge_preserves_logged_totals_templates_favorites(food_engine):
