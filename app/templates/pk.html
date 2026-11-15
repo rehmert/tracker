@@ -2,14 +2,22 @@
 {% block title %}PK Simulator{% endblock %}
 {% block content %}
 <h1>PK Simulator</h1>
-<p class="note">Choose a workflow, configure the schedule, then review estimated exposure. Simulations never edit real protocols, dose logs, or inventory.</p>
+<section class="pk628-intro" aria-label="PK Simulator quick start">
+  <h2>Explore a schedule in three steps</h2>
+  <p>Choose what to model, select a compound or schedule, then view the estimated exposure curve. Nothing here records an actual dose or changes inventory.</p>
+  <ol class="pk628-steps">
+    <li><strong>Choose a workflow</strong><span>Start with a saved protocol, build a hypothetical schedule, or compare.</span></li>
+    <li><strong>Set the schedule</strong><span>Use the defaults first; fine-tuning is optional.</span></li>
+    <li><strong>Read the graph</strong><span>Compare curve shapes and timing, not clinical effectiveness.</span></li>
+  </ol>
+</section>
 <div class="pk-tabs" role="tablist" aria-label="Simulation workflow">
-<button type="button" class="pk-tab" data-pk-mode="protocol" aria-selected="true">1 · Protocol</button>
-<button type="button" class="pk-tab" data-pk-mode="custom" aria-selected="false">2 · Custom</button>
-<button type="button" class="pk-tab" data-pk-mode="compare" aria-selected="false">3 · Compare</button>
+<button type="button" class="pk-tab" data-pk-mode="protocol" aria-selected="true">Use a protocol</button>
+<button type="button" class="pk-tab" data-pk-mode="custom" aria-selected="false">Build a schedule</button>
+<button type="button" class="pk-tab" data-pk-mode="compare" aria-selected="false">Compare scenarios</button>
 <button type="button" class="pk-tab"
         data-pk-mode="multi" aria-selected="false">
-  4 · Multi-schedule
+  Compare schedules
 </button>
 </div>
 <details class="card pk-help"><summary>How to use this simulator</summary><p id="pkWorkflowHelp">Choose an active protocol, select its compound, then Run simulation. The saved schedule is read-only.</p><p>Values are modeled exposure (mg-equivalent), not measured serum concentration, biological response, or dosing advice. A different compound's curve cannot be interpreted as equivalent potency.</p></details>
@@ -20,7 +28,7 @@
 <p id="pkPanelStatus" class="note" role="status"></p>
 <p id="pkWorkspaceStatus" role="status" class="note"></p>
 <div class="card pk-protocol-setup" id="pkSetup">
-<h2>1. Configure simulation</h2>
+<h2>Choose what to simulate</h2>
   <label>Protocol <select id="protocol"><option value="">None (manual scenarios)</option>{% for p in protocols %}{% if p.is_active and p.start_date %}<option value="{{ p.id }}" data-compounds="{{ p.items|map(attribute='compound_id')|unique|join(',') }}">{{ p.name }}</option>{% endif %}{% endfor %}</select></label>
   <p class="note">Select an active protocol to model its scheduled doses, including escalation stages. Choose a compound within that protocol below. This is a read-only projection; it does not create a scenario or log doses. Non-mass units such as IU are excluded.</p>
   <label>Compound <select id="compound"><option value="">Select compound</option>{% for c in compounds %}<option value="{{ c.id }}" data-half="{{ profile(c.name)[0] }}" data-abs="{{ profile(c.name)[1] }}" data-model="{{ model_info(c.name).level }}" data-needs-assumptions="{{ 1 if model_info(c.name).needs_assumptions else 0 }}" data-model-note="{{ model_info(c.name).description }}">{{ c.name }} — {% if model_info(c.name).needs_assumptions %}Illustrative only · parameters required{% elif model_info(c.name).level == "experimental" %}Experimental{% elif model_info(c.name).level == "formulation-specific" %}Formulation-specific{% elif model_info(c.name).level == "human elimination" %}Human elimination data{% else %}Approximate model{% endif %}</option>{% endfor %}</select></label>
@@ -64,7 +72,15 @@
 <p id="wiSummary" class="note" aria-live="polite"></p>
 <div style="overflow-x:auto;max-height:260px;overflow-y:auto"><table><thead><tr><th>Scheduled date/time</th><th>Dose (mg)</th></tr></thead><tbody id="wiSchedule"></tbody></table></div>
 </div>
-<div class="card" id="pkResults"><h2>2. Modeled exposure</h2>
+<div class="card" id="pkResults"><h2>Estimated exposure over time</h2>
+<div class="pk628-graph-guide" aria-label="How to read the exposure graph">
+  <span><i class="pk628-key pk628-recorded" aria-hidden="true"></i> Recorded doses only</span>
+  <span><i class="pk628-key pk628-planned" aria-hidden="true"></i> Recorded + planned</span>
+  <span><i class="pk628-key pk628-now" aria-hidden="true"></i> Dashed line: today</span>
+</div>
+<p id="pk628GraphHint" class="note" role="status">Choose a compound and run a simulation to display the estimated curve.</p>
+<details class="pk628-graph-options">
+<summary>Graph options and exports</summary>
 <div class="pk-dose-tools" id="pkGraphLayerControls" role="group" aria-label="Modeled exposure graph layers">
   <label><input type="checkbox" id="pkLayerRecorded" checked>Recorded curve</label>
   <label><input type="checkbox" id="pkLayerPlanned" checked>Planned curve</label>
@@ -87,7 +103,9 @@
 <p id="pkGraphViewport" role="status"
    class="note"></p>
 <div id="pkGraphExtraStats"
-     class="note" role="status"></div><div class="pk-quick-window">Window: <button type="button" data-pk-window="1">24h</button> <button type="button" data-pk-window="7">7d</button> <button type="button" data-pk-window="14">14d</button> <button type="button" data-pk-window="30">30d</button> <button type="button" data-pk-window="custom">Custom</button></div><canvas id="plot" width="1000" height="380" class="pk-chart" role="img" aria-label="Exposure graph"></canvas><p id="summary" role="status"></p><div class="pk-metrics" aria-label="Simulation metrics"><div><small>Peak</small><strong id="pkPeak">—</strong></div><div><small>Trough</small><strong id="pkTrough">—</strong></div><div><small>Peak / trough</small><strong id="pkRatio">—</strong></div><div><small>Mean exposure</small><strong id="pkAverage">—</strong></div></div><p class="note" id="pkMetricNote">Metrics cover the visible plotted window and use modeled mg-equivalent exposure, not blood concentration.</p><div class="pk-actions"><button type="button" id="pkExportPng">Export graph PNG</button><button type="button" id="pkExportCsv">Export graph CSV</button></div><p>Blue: historical doses and decay without future dosing. Orange: historical doses plus planned doses. Dashed vertical line: now.</p></div>
+     class="note" role="status"></div>
+</details>
+<div class="pk-quick-window" aria-label="Graph time range">Window: <button type="button" data-pk-window="1">24h</button> <button type="button" data-pk-window="7">7d</button> <button type="button" data-pk-window="14">14d</button> <button type="button" data-pk-window="30">30d</button> <button type="button" data-pk-window="custom">Custom</button></div><canvas id="plot" width="1000" height="380" class="pk-chart" role="img" aria-label="Exposure graph"></canvas><p id="summary" role="status"></p><div class="pk-metrics" aria-label="Simulation metrics"><div><small>Peak</small><strong id="pkPeak">—</strong></div><div><small>Trough</small><strong id="pkTrough">—</strong></div><div><small>Peak / trough</small><strong id="pkRatio">—</strong></div><div><small>Mean exposure</small><strong id="pkAverage">—</strong></div></div><p class="note" id="pkMetricNote">Metrics cover the visible plotted window and use modeled mg-equivalent exposure, not blood concentration.</p><div class="pk-actions"><button type="button" id="pkExportPng">Export graph PNG</button><button type="button" id="pkExportCsv">Export graph CSV</button></div><p class="note">Curves show modeled mg-equivalent exposure, not a laboratory concentration. Different compounds cannot be compared for potency or effectiveness.</p></div>
 <div class="card pk-compare-section"
      id="pkSensitivityWorkspace">
   <h2>PK Parameter Sensitivity</h2>
@@ -648,4 +666,6 @@
       href="/static/css/tracker-pk-bundle141.css?v=bundle141">
 <link rel="stylesheet"
       href="/static/css/tracker-pk-tools125.css?v=bundle125">
+<link rel="stylesheet" href="/static/css/tracker-pk-simple628.css?v=628">
+<script src="/static/js/tracker-pk-simple628.js?v=628" defer></script>
 {% endblock %}
