@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..inventory_lock import reserve_inventory_write
-from ..models import ChangeAudit, RegimenItem, RegimenSchedule, RegimenEntry
+from ..models import ChangeAudit, RegimenItem, RegimenSchedule, RegimenEntry, RegimenProductFacts639
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from .. import services
@@ -78,6 +78,62 @@ def _item_values(form):
         prescriber=_text(form, "prescriber", 160),
         notes=_text(form, "notes", 2000),
     )
+
+
+def _facts_values(form):
+    """Validate editable product label facts; never accept an unbounded payload."""
+    raw = str(form.get("label_facts_json", "")).strip()
+    if not raw:
+        return None
+    if len(raw) > 50000:
+        raise ValueError("Supplement label information exceeds the supported size.")
+    try:
+        data = json.loads(raw)
+    except (ValueError, TypeError):
+        raise ValueError("Supplement label information is invalid.") from None
+    if not isinstance(data, dict):
+        raise ValueError("Supplement label information must be an object.")
+    text_limits = {
+        "brand": 160, "source": 32, "source_id": 100,
+        "serving_quantity": 40, "serving_unit": 80,
+    }
+    values = {}
+    for key, limit in text_limits.items():
+        value = data.get(key, "")
+        if not isinstance(value, str) or len(value) > limit:
+            raise ValueError("Invalid supplement label field: " + key)
+        values[key] = value.strip()
+    rows = data.get("ingredients", [])
+    if not isinstance(rows, list) or len(rows) > 300:
+        raise ValueError("Supplement ingredient list is invalid or too large.")
+    normalized = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("Invalid supplement ingredient row.")
+        values_row = {}
+        for key, limit in (("name", 160), ("amount", 40), ("unit", 40)):
+            value = row.get(key, "")
+            if not isinstance(value, str) or len(value) > limit:
+                raise ValueError("Invalid ingredient " + key)
+            values_row[key] = value.strip()
+        if values_row["name"]:
+            normalized.append(values_row)
+    values["ingredients_json"] = json.dumps(normalized, ensure_ascii=False)
+    return values
+
+
+def _store_facts(db, item_id, values):
+    if values is None:
+        return
+    existing = db.scalar(select(RegimenProductFacts639).where(
+        RegimenProductFacts639.item_id == item_id))
+    if existing is None:
+        existing = RegimenProductFacts639(item_id=item_id)
+        db.add(existing)
+    for key, value in values.items():
+        setattr(existing, key, value)
+    if values["source"] and values["source_id"]:
+        existing.imported_at = datetime.utcnow()
 
 
 def _schedule_values(form):
@@ -168,6 +224,7 @@ async def create_item(request: Request, db: Session = Depends(get_scoped_db390))
     form = await request.form()
     try:
         values = _item_values(form)
+        facts = _facts_values(form)
     except ValueError as exc:
         return _redirect(err=str(exc))
     if not reserve_inventory_write(db):
@@ -175,6 +232,7 @@ async def create_item(request: Request, db: Session = Depends(get_scoped_db390))
     item = RegimenItem(**values)
     db.add(item)
     db.flush()
+    _store_facts(db, item.id, facts)
     _audit(db, "regimen_item", item.id, "create", after=values)
     db.commit()
     return _redirect(msg="Catalog item added.")
@@ -194,6 +252,7 @@ async def edit_item(item_id: int, request: Request, db: Session = Depends(get_sc
     before["active"] = item.active
     for key, value in values.items():
         setattr(item, key, value)
+    _store_facts(db, item.id, facts)
     item.active = str(form.get("active", "")) == "yes"
     after = {key: getattr(item, key) for key in values}
     after["active"] = item.active
