@@ -11,6 +11,13 @@
     <li><strong>Read the graph</strong><span>Compare curve shapes and timing, not clinical effectiveness.</span></li>
   </ol>
 </section>
+<nav class="pk633-fast-path" aria-label="PK Simulator common actions">
+  <strong>Quick navigation</strong>
+  <button type="button" data-pk633-jump="pkSetup" data-pk633-mode="protocol">Choose a protocol</button>
+  <button type="button" data-pk633-jump="whatIfCard" data-pk633-mode="custom">Build a what-if schedule</button>
+  <button type="button" data-pk633-jump="pkResults">View the graph</button>
+  <span class="note" id="pk633NavStatus" role="status" aria-live="polite"></span>
+</nav>
 <div class="pk-tabs" role="tablist" aria-label="Simulation workflow">
 <button type="button" class="pk-tab" data-pk-mode="protocol" aria-selected="true">Use a protocol</button>
 <button type="button" class="pk-tab" data-pk-mode="custom" aria-selected="false">Build a schedule</button>
@@ -672,4 +679,6 @@
       href="/static/css/tracker-pk-tools125.css?v=bundle125">
 <link rel="stylesheet" href="/static/css/tracker-pk-simple628.css?v=628">
 <script src="/static/js/tracker-pk-simple628.js?v=628" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-pk-fast633.css?v=633">
+<script src="/static/js/tracker-pk-fast633.js?v=633" defer></script>
 {% endblock %}
