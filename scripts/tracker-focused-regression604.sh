@@ -21,29 +21,15 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
   tests/test_release611_blend_calendar.py \
   tests/test_release616_workflow_bundle.py \
   tests/test_release619_bundle.py \
-  tests/test_release620_route_inventory.py \
-  tests/test_release621_csrf_form_crosswalk.py \
-  tests/test_release622_js_write_audit.py \
-  tests/test_release623_csrf_review_queue.py \
-  tests/test_release624_csrf_reporting_boundaries.py \
-  tests/test_release625_strict_form_compat.py \
-  tests/test_release626_dependency_evidence.py \
-  tests/test_release626_operations_bundle.py \
-  tests/test_release627_csrf_remaining_negative_matrix.py \
-  tests/test_release627_csrf_reconciliation.py \
   tests/test_release627_inventory_health_filter.py \
+  tests/test_release629_food_duplicates.py \
+  tests/test_food_quick375.py \
+  tests/test_food_bundle376.py \
+  tests/test_food_review378.py \
+  tests/test_food_manage377.py \
   tests/test_release628_pk_simplified.py \
   tests/test_release629_qa_cadence.py \
-  tests/test_release595_food_vendor_lifecycle.py \
-  tests/test_release596_vendor_multipart_csv.py \
   tests/test_pk_278_281.py \
-  tests/test_browser_qualification511.py \
-  tests/test_release584_targeted_preflight.py \
-  tests/test_release587_588_csrf_readiness.py \
-  tests/test_release589_batched_qualification.py \
-  tests/test_release594_food_vendor_csrf.py \
-  tests/test_release597_purchase_supply_csrf.py \
-  tests/test_release598_dashboard_density.py \
   tests/test_release585_dose_vial_move.py \
   tests/test_release605_oom_guard.py \
   tests/test_test_benchmark.py \
