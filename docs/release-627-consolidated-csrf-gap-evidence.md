@@ -389,3 +389,23 @@ additional Release 627 regression directly invokes the full 511
 inventory contract. These source checks are **not** a substitute for
 running the actual guarded Chromium and full backend suites on DEV.
 No PROD or global strict-CSRF rollout is authorized.
+
+## Fifth candidate: focused source-contract literal newline bug
+
+The first focused gate for candidate
+`16c4895326f05dd2b6a3c0cf22b3ba242ada0b99`
+stopped at `197 passed, 1 failed` in
+`test_627_release511_inventory_scopes_new_browser_modules_strict_only`.
+The newly extended Release 511 test used
+a double-backslash-escaped string where the Python delimiter
+was intended to be a line break on either side of `fi`.
+The targeted-only replay block ended in actual newlines, so the
+source split raised `ValueError`; this was a test code error.
+
+The corrected Python test now uses real Python newline escapes,
+`tail.split("\\nfi\\n", 1)` as displayed in source (one
+backslash per escape). A source-level replay of the 511 inventory
+check successfully matched all three targeted sections and all
+35 expected browser entry points with no missing or duplicate
+standard/strict full-gate entries. That reconciliation does not
+replace actual host Python pytest and full browser qualification.
