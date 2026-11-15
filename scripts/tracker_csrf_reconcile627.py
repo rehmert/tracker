@@ -18,6 +18,15 @@ from scripts.tracker_csrf_gap_plan590 import build as baseline
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts/tracker-browser-qualify.sh"
 
+# Routes introduced after the frozen Release 627 historical baseline.
+# Keep them explicitly unqualified until separate positive browser evidence
+# is mapped; never silently fold them into original source witnesses.
+POST_627_UNQUALIFIED_ROUTES = frozenset({
+    ("POST", "/food/duplicates/merge"),
+    ("POST", "/food/duplicates/resolve-unused"),
+    ("POST", "/food/duplicates/keep-distinct"),
+})
+
 # These are explicit signed write + negative forgery pairs with persisted state
 # checks. The route is a normalized FastAPI declaration, not a URL guess.
 WITNESSES = {
@@ -141,7 +150,11 @@ def build() -> dict:
 
     if len(mapped) != 27 or not set(mapped) <= remaining or set(mapped) & known:
         raise ValueError("Release 627 source witnesses differ from baseline gap")
-    if report["total_unsafe_routes"] != 144 or len(known) != 83 or len(remaining) != 61:
+    if (report["total_unsafe_routes"] != 144 + len(POST_627_UNQUALIFIED_ROUTES)
+            or len(known) != 83
+            or len(remaining) != 61 + len(POST_627_UNQUALIFIED_ROUTES)
+            or not POST_627_UNQUALIFIED_ROUTES <= remaining
+            or POST_627_UNQUALIFIED_ROUTES & known):
         raise ValueError("Baseline unsafe-route inventory changed; manual reassessment required")
 
     uncovered = [
@@ -155,6 +168,11 @@ def build() -> dict:
         "global_enforcement_authorized": False,
         "full_dev_qualification_observed_by_this_report": False,
         "original_unsafe_routes": 144,
+        "post_627_unqualified_routes": [
+            {"method": method, "path": path}
+            for method, path in sorted(POST_627_UNQUALIFIED_ROUTES)
+        ],
+        "current_unsafe_routes": report["total_unsafe_routes"],
         "pre_627_candidate_routes": 83,
         "pre_627_unqualified_routes": 61,
         "new_627_source_mapped_routes": len(mapped),
