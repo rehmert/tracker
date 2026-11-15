@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Supplements &amp; Medications{% endblock %}
+{% block content %}
+<h1>Supplements &amp; Medications</h1>
+<p class="note">Your personal regimen: catalog, planned schedules, and actual intake. No doses are recommended or automatically marked taken. Meal associations do not change Food Journal nutrient totals.</p>
+<style>
+.reg635-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:1rem}
+.reg635-form{display:grid;gap:.7rem}
+.reg635-form .field{display:grid;gap:.25rem}
+.reg635-day{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.reg635-card{border:1px solid var(--border, #80808055);border-radius:10px;padding:1rem}
+.reg635-card h3{margin-top:0}
+.reg635-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.reg635-history{overflow:auto}
+.reg635-history table{width:100%}
+.reg635-entry{margin:1rem 0}
+.reg635-form input,.reg635-form select,.reg635-form textarea{max-width:100%;width:100%}
+.reg635-form button{justify-self:start}
+</style>
+<section class="card" id="reg635-today">
+  <div class="reg635-day">
+    <h2>Daily regimen — {{ day }}</h2>
+    <a href="/regimen?day={{ prev_day }}">Previous day</a>
+    <a href="/regimen?day={{ today }}">Today</a>
+    <a href="/regimen?day={{ next_day }}">Next day</a>
+    <a href="/food?day={{ day }}">Food Journal</a>
+    <a href="/doses">Injectable dose log</a>
+  </div>
+  <p class="note">Due means planned, not administered. A logged intake is the only confirmation.</p>
+  {% if due %}
+  <div class="reg635-grid">
+    {% for schedule in due %}
+    <article class="reg635-card">
+      <h3>{{ schedule.item.name }}</h3>
+      <p>{{ schedule.amount }}{% if schedule.at_time %} · {{ schedule.at_time }}{% endif %}{% if schedule.meal %} · With {{ schedule.meal }}{% endif %}</p>
+      <p class="note">{{ schedule.item.kind|capitalize }} · {{ schedule.cadence }}{% if schedule.id in recorded %} · Recorded for this date{% endif %}</p>
+      {% if schedule.id not in recorded %}
+      <form method="post" action="/regimen/entries" class="reg635-form">
+        <input type="hidden" name="item_id" value="{{ schedule.item_id }}">
+        <input type="hidden" name="schedule_id" value="{{ schedule.id }}">
+        <label class="field">Recorded at <input type="datetime-local" name="logged_at" required value="{{ day }}T{{ schedule.at_time or '09:00' }}"></label>
+        <label class="field">Result <select name="outcome"><option value="taken">Taken</option><option value="skipped">Skipped</option></select></label>
+        <label class="field">Actual amount <input name="amount" value="{{ schedule.amount }}" maxlength="80"></label>
+        <label class="field">Meal (optional) <select name="meal">{% for meal in meals %}<option value="{{ meal }}" {% if meal == schedule.meal %}selected{% endif %}>{{ meal|capitalize if meal else 'None' }}</option>{% endfor %}</select></label>
+        <label class="field">Notes <input name="notes" maxlength="2000"></label>
+        <button class="primary">Record</button>
+      </form>
+      {% else %}
+      <p>Already logged. Use the history below to correct it.</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<p>No scheduled items due on this day. PRN medications are logged manually below.</p>{% endif %}
+</section>
+
+<section class="card">
+  <details id="reg635-quick-log">
+    <summary><strong>Log a supplement or medication independently</strong></summary>
+    {% if items %}
+    <form method="post" action="/regimen/entries" class="reg635-form">
+      <label class="field">Item <select name="item_id" required>{% for item in items if item.active %}<option value="{{ item.id }}">{{ item.name }} ({{ item.kind }})</option>{% endfor %}</select></label>
+      <label class="field">Taken or skipped <select name="outcome"><option value="taken">Taken</option><option value="skipped">Skipped</option></select></label>
+      <label class="field">Recorded at <input type="datetime-local" name="logged_at" value="{{ day }}T09:00" required></label>
+      <label class="field">Actual amount <input name="amount" placeholder="e.g. 1 tablet, 5 mg, 2 capsules" maxlength="80"></label>
+      <label class="field">Meal (optional) <select name="meal">{% for meal in meals %}<option value="{{ meal }}">{{ meal|capitalize if meal else 'None' }}</option>{% endfor %}</select></label>
+      <label class="field">Notes <input name="notes" maxlength="2000"></label>
+      <button class="primary">Record intake</button>
+    </form>
+    {% else %}<p>Create a catalog item first.</p>{% endif %}
+  </details>
+</section>
+
+<section class="card" id="reg635-catalog">
+<h2>Catalog</h2>
+<details><summary><strong>Add supplement or medication</strong></summary>
+  <form method="post" action="/regimen/items" class="reg635-form">
+    <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}">{{ kind|capitalize }}</option>{% endfor %}</select></label>
+    <label class="field">Name <input name="name" maxlength="160" required></label>
+    <label class="field">Ingredient / generic name <input name="ingredient" maxlength="160"></label>
+    <label class="field">Strength <input name="strength" maxlength="80" placeholder="e.g. 200 mg per capsule"></label>
+    <label class="field">Form <input name="form" maxlength="60" placeholder="Tablet, softgel, liquid"></label>
+    <label class="field">Instructions <textarea name="instructions" maxlength="2000" rows="2"></textarea></label>
+    <label class="field">Purpose / outcome tracked <textarea name="purpose" maxlength="2000" rows="2"></textarea></label>
+    <label class="field">Prescriber (medications, optional) <input name="prescriber" maxlength="160"></label>
+    <label class="field">Notes <textarea name="notes" maxlength="2000" rows="2"></textarea></label>
+    <button class="primary">Add catalog item</button>
+  </form>
+</details>
+<div class="reg635-grid">
+{% for item in items %}
+<article class="reg635-card">
+  <h3>{{ item.name }} {% if not item.active %}<small>(Archived)</small>{% endif %}</h3>
+  <p>{{ item.kind|capitalize }}{% if item.strength %} · {{ item.strength }}{% endif %}{% if item.form %} · {{ item.form }}{% endif %}</p>
+  {% if item.ingredient %}<p>Ingredient: {{ item.ingredient }}</p>{% endif %}
+  {% if item.instructions %}<p>{{ item.instructions }}</p>{% endif %}
+  {% if item.purpose %}<p class="note">Purpose: {{ item.purpose }}</p>{% endif %}
+  <details><summary>Edit item</summary>
+    <form method="post" action="/regimen/items/{{ item.id }}/edit" class="reg635-form">
+      <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}" {% if kind == item.kind %}selected{% endif %}>{{ kind|capitalize }}</option>{% endfor %}</select></label>
+      <label class="field">Name <input name="name" value="{{ item.name }}" required maxlength="160"></label>
+      <label class="field">Ingredient <input name="ingredient" value="{{ item.ingredient }}" maxlength="160"></label>
+      <label class="field">Strength <input name="strength" value="{{ item.strength }}" maxlength="80"></label>
+      <label class="field">Form <input name="form" value="{{ item.form }}" maxlength="60"></label>
+      <label class="field">Instructions <textarea name="instructions" maxlength="2000">{{ item.instructions }}</textarea></label>
+      <label class="field">Purpose <textarea name="purpose" maxlength="2000">{{ item.purpose }}</textarea></label>
+      <label class="field">Prescriber <input name="prescriber" value="{{ item.prescriber }}" maxlength="160"></label>
+      <label class="field">Notes <textarea name="notes" maxlength="2000">{{ item.notes }}</textarea></label>
+      <label class="field">Status <select name="active"><option value="yes" {% if item.active %}selected{% endif %}>Active</option><option value="no" {% if not item.active %}selected{% endif %}>Archived</option></select></label>
+      <button>Save item</button>
+    </form>
+  </details>
+  {% if item.active %}
+  <form method="post" action="/regimen/items/{{ item.id }}/archive" onsubmit="return confirm('Archive this item? Its history will remain.')" class="reg635-actions"><button type="submit">Archive</button></form>
+  {% endif %}
+</article>
+{% else %}<p>No supplements or medications have been entered.</p>{% endfor %}
+</div>
+</section>
+
+<section class="card" id="reg635-schedules">
+<h2>Schedules &amp; protocols</h2>
+<p class="note">Regimen schedules are independent from injectable PK protocols. Monday=0 through Sunday=6 for weekly schedules. Every-N-days is anchored to the selected start date. As-needed entries are never shown as automatically due.</p>
+<details><summary><strong>Create a schedule</strong></summary>
+{% if items %}
+<form method="post" action="/regimen/schedules" class="reg635-form">
+<label class="field">Item <select name="item_id">{% for item in items if item.active %}<option value="{{ item.id }}">{{ item.name }}</option>{% endfor %}</select></label>
+<label class="field">Cadence <select name="cadence"><option value="daily">Daily</option><option value="weekly">Selected weekdays</option><option value="interval">Every N days</option><option value="prn">As needed (PRN)</option></select></label>
+<label class="field">Weekdays (0–6, comma separated) <input name="weekdays" placeholder="0,1,2,3,4"></label>
+<label class="field">Interval days <input name="interval_days" type="number" min="1" max="365"></label>
+<label class="field">Start <input type="date" name="start_on" value="{{ today }}" required></label>
+<label class="field">End (optional) <input type="date" name="end_on"></label>
+<label class="field">Time (optional) <input type="time" name="at_time"></label>
+<label class="field">Planned amount (user-entered) <input name="amount" maxlength="80" required placeholder="e.g. 1 capsule"></label>
+<label class="field">Meal (optional) <select name="meal">{% for meal in meals %}<option value="{{ meal }}">{{ meal|capitalize if meal else 'None' }}</option>{% endfor %}</select></label>
+<button class="primary">Create schedule</button>
+</form>
+{% else %}<p>Create a catalog item first.</p>{% endif %}
+</details>
+<div class="reg635-grid">
+{% for schedule in schedules %}
+<article class="reg635-card">
+<h3>{{ schedule.item.name }}{% if not schedule.active %} (Stopped){% endif %}</h3>
+<p>{{ schedule.amount }} · {{ schedule.cadence }}{% if schedule.cadence == 'weekly' %} ({{ schedule.weekdays }}){% endif %}{% if schedule.cadence == 'interval' %} (every {{ schedule.interval_days }} days){% endif %}{% if schedule.at_time %} · {{ schedule.at_time }}{% endif %}</p>
+<p class="note">{{ schedule.start_on }}{% if schedule.end_on %} – {{ schedule.end_on }}{% endif %}{% if schedule.meal %} · {{ schedule.meal }}{% endif %}</p>
+<details><summary>Edit schedule</summary>
+<form method="post" action="/regimen/schedules/{{ schedule.id }}/edit" class="reg635-form">
+<label class="field">Cadence <select name="cadence">{% for cadence in ['daily','weekly','interval','prn'] %}<option value="{{ cadence }}" {% if schedule.cadence == cadence %}selected{% endif %}>{{ cadence }}</option>{% endfor %}</select></label>
+<label class="field">Weekdays (0–6) <input name="weekdays" value="{{ schedule.weekdays }}"></label>
+<label class="field">Every N days <input name="interval_days" type="number" min="1" max="365" value="{{ schedule.interval_days or '' }}"></label>
+<label class="field">Start <input type="date" name="start_on" value="{{ schedule.start_on }}" required></label>
+<label class="field">End <input type="date" name="end_on" value="{{ schedule.end_on or '' }}"></label>
+<label class="field">Time <input type="time" name="at_time" value="{{ schedule.at_time }}"></label>
+<label class="field">Amount <input name="amount" value="{{ schedule.amount }}" required maxlength="80"></label>
+<label class="field">Meal <select name="meal">{% for meal in meals %}<option value="{{ meal }}" {% if schedule.meal == meal %}selected{% endif %}>{{ meal|capitalize if meal else 'None' }}</option>{% endfor %}</select></label>
+<label class="field">Active <select name="active"><option value="yes" {% if schedule.active %}selected{% endif %}>Yes</option><option value="no" {% if not schedule.active %}selected{% endif %}>No</option></select></label>
+<button>Save schedule</button>
+</form>
+</details>
+{% if schedule.active %}<form method="post" action="/regimen/schedules/{{ schedule.id }}/stop" onsubmit="return confirm('Stop future occurrences? History is retained.')"><button>Stop schedule</button></form>{% endif %}
+</article>
+{% else %}<p>No schedules have been created.</p>{% endfor %}
+</div>
+</section>
+
+<section class="card" id="reg635-history">
+<h2>Intake history</h2>
+<p class="note">The 50 most recent actual records. You can correct or delete each one; Tracker preserves an audit entry for every change.</p>
+<div class="reg635-history"><table><thead><tr><th>Date/time</th><th>Item</th><th>Result</th><th>Amount</th><th>Meal</th><th>Actions</th></tr></thead><tbody>
+{% for entry in history %}
+<tr><td>{{ entry.logged_at|dt }}</td><td>{{ entry.item.name }}</td><td>{{ entry.outcome }}</td><td>{{ entry.amount }}</td><td>{{ entry.meal or '—' }}</td><td>
+<details><summary>Edit</summary>
+<form method="post" action="/regimen/entries/{{ entry.id }}/edit" class="reg635-form">
+<label class="field">Item <select name="item_id">{% for item in items %}<option value="{{ item.id }}" {% if item.id == entry.item_id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></label>
+<input type="hidden" name="schedule_id" value="{{ entry.schedule_id or '' }}">
+<label class="field">When <input type="datetime-local" name="logged_at" value="{{ entry.logged_at.strftime('%Y-%m-%dT%H:%M') }}" required></label>
+<label class="field">Outcome <select name="outcome">{% for outcome in ['taken','skipped'] %}<option value="{{ outcome }}" {% if entry.outcome == outcome %}selected{% endif %}>{{ outcome|capitalize }}</option>{% endfor %}</select></label>
+<label class="field">Amount <input name="amount" value="{{ entry.amount }}" maxlength="80"></label>
+<label class="field">Meal <select name="meal">{% for meal in meals %}<option value="{{ meal }}" {% if entry.meal == meal %}selected{% endif %}>{{ meal|capitalize if meal else 'None' }}</option>{% endfor %}</select></label>
+<label class="field">Notes <textarea name="notes" maxlength="2000">{{ entry.notes }}</textarea></label>
+<button>Save correction</button>
+</form>
+<form method="post" action="/regimen/entries/{{ entry.id }}/delete" onsubmit="return confirm('Delete this intake record? The audit trail remains.')"><button>Delete record</button></form>
+</details>
+</td></tr>
+{% else %}<tr><td colspan="6">No intake has been recorded.</td></tr>{% endfor %}
+</tbody></table></div>
+</section>
+{% endblock %}
