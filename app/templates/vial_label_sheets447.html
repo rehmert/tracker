@@ -82,6 +82,13 @@ h1{font-size:1.5rem;margin:0 0 .4rem}
     <button type="submit" class="primary">Update Preview</button>
   </form>
 
+  <section class="settings" aria-label="NIIMBOT print setup">
+    <div>
+      <strong>Print setup</strong>
+      <p id="label633MediaSummary" class="note" role="status" aria-live="polite"></p>
+      <p class="note">Use <strong>100% / actual size</strong>, zero margins, and the <strong>full strip</strong> size in your driver. Print one test strip to check feed direction and alignment. If the browser resizes the page, use the PNG/SVG export in compatible label software.</p>
+    </div>
+  </section>
   <div class="preview-zoom-controls">
     <label for="label-preview-zoom449">Preview zoom</label>
     <select id="label-preview-zoom449" aria-label="Preview zoom, screen only">
@@ -119,5 +126,6 @@ h1{font-size:1.5rem;margin:0 0 .4rem}
 {% endfor %}
 </main>
 <script src="/static/js/tracker-label-preview-zoom449.js?v=449" defer></script>
+<script src="/static/js/tracker-label-print-guide633.js?v=633" defer></script>
 </body>
 </html>
