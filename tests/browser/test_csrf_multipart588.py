@@ -96,7 +96,10 @@ def test_588_real_native_coa_multipart_upload_and_forgery_denial(browser, scheme
             "multipart/form-data"
         )
         page.wait_for_url(re.compile(re.escape(base) + r"/coas/[0-9]+(?:\?.*)?$"))
-        expect(page.locator("body")).to_contain_text(name)
+        # Editable input values do not contribute to body.inner_text().
+        # Confirm the saved laboratory value in the rendered edit form.
+        expect(page.locator('input[name="lab_name"]')).to_have_value(name)
+        expect(page.get_by_role("link", name=re.compile("View existing document"))).to_be_visible()
         assert not errors, errors
     finally:
         context.close()
