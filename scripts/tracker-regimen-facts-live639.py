@@ -23,6 +23,7 @@ def main():
               "SERVING=", repr(serving),
               "INGREDIENT_ROWS=", len(rows),
               "INCOMPLETE=", incomplete,
+              "INCOMPLETE_REASONS=", data.get("incomplete_reasons", []),
               "OTHER_INGREDIENTS=", bool(data.get("other_ingredients")),
               "UPC=", bool(data.get("upc_sku")),
               flush=True)
