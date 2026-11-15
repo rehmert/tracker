@@ -64,3 +64,5 @@ def test_629_resource_ceiling_and_parallel_focus_are_preserved():
     assert '"$PY" -m pytest -n 16 --dist=loadfile' in focused
     assert 'tests/test_release_workflow.py' in focused
     assert 'tests/test_release629_qa_cadence.py' in focused
+    assert 'tests/test_release629_food_duplicates.py' in focused
+    assert 'tests/test_release621_csrf_form_crosswalk.py' not in focused
