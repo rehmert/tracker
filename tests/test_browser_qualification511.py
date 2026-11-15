@@ -30,6 +30,14 @@ STRICT_ONLY = frozenset({
     "tests/browser/test_csrf_preparations583.py",
     "tests/browser/test_csrf_bulk587.py",
     "tests/browser/test_csrf_multipart588.py",
+    # Release 627 browser fixtures require strict-CSRF middleware; never run
+    # them on the report-only standard server.
+    "tests/browser/test_csrf_gap627.py",
+    "tests/browser/test_csrf_signed_lifecycles627.py",
+    "tests/browser/test_csrf_purchase_children627.py",
+    "tests/browser/test_csrf_coa_lifecycle627.py",
+    "tests/browser/test_csrf_protocol_remaining627.py",
+    "tests/browser/test_csrf_blend_previews627.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",
@@ -57,6 +65,26 @@ def test_511_every_browser_module_in_disposable_qualification():
     assert "TARGETED_CSRF_BATCH589=PASSED" in targeted_batch
     assert 'ISOLATED_STRICT_CSRF_BROWSER=PASSED' not in targeted_batch
     strict = before_batch + batch_end + after_batch
+
+    # Release 627 adds three opt-in targeted replays after the full strict
+    # gate. Those must not be mistaken for additional full release runs.
+    # Explicitly delimit and assert each optional case rather than hiding
+    # duplicate module references or weakening the one-full-witness rule.
+    targeted_627 = (
+        ("csrf-batch627", "TARGETED_CSRF_BATCH627=PASSED"),
+        ("csrf-positive627", "TARGETED_CSRF_POSITIVE627=PASSED"),
+        ("csrf-new627", "TARGETED_CSRF_NEW627=PASSED"),
+    )
+    for mode, success_marker in targeted_627:
+        begin = (f'if [[ "$MODE" == targeted && '
+                 f'"$TARGETED_MODULE" == {mode} ]]; then')
+        assert strict.count(begin) == 1, mode
+        before, tail = strict.split(begin, 1)
+        block, after = tail.split("\\nfi\\n", 1)
+        assert success_marker in block, mode
+        assert "ISOLATED_STRICT_CSRF_BROWSER=PASSED" not in block
+        assert "exit 0" in block
+        strict = before + after
 
     browser_paths = sorted((ROOT / "tests/browser").glob("test_*.py"))
     required = [str(path.relative_to(ROOT)) for path in browser_paths]
