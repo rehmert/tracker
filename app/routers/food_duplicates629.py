@@ -103,7 +103,7 @@ def duplicate_groups629(db_engine):
         compatible = [group for group in exact.values() if len(group) > 1]
         result.append({
             "name": entries[0]["name"],
-            "items": entries,
+            "versions": entries,
             "equivalent_sets": compatible,
             "different_values": len(exact) != 1 or any(
                 not item["valid_nutrients"] for item in entries
