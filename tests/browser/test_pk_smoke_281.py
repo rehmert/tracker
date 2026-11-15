@@ -81,7 +81,7 @@ def test_pk_workspace_browser_smoke():
               {at: '2026-11-15T00:00:00', actual: 1, planned: 2}
             ]
           };
-          document.dispatchEvent(new Event('tracker:pk-graph-updated'));
+          document.dispatchEvent(new CustomEvent('tracker:pk-graph-updated', {detail: {scenarioId: null, compoundId: null, sequence: 0}}));
         }""")
         assert "Showing " in page.locator("#pk628GraphHint").inner_text()
         assert "modeled estimates" in page.locator("#pk628GraphHint").inner_text()
