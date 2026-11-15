@@ -158,7 +158,7 @@ def prune_backups(
     root = Path(backup_dir or BACKUP_DIR)
 
     if keep is None:
-        keep = int(os.getenv("TRACKER_BACKUP_KEEP", "90"))
+        keep = int(os.getenv("TRACKER_BACKUP_KEEP", "48"))
 
     if keep < 1:
         raise ValueError("TRACKER_BACKUP_KEEP must be at least 1")
