@@ -592,4 +592,7 @@ class RegimenProductFacts639(Base):
     serving_quantity: Mapped[str] = mapped_column(String(40), default="")
     serving_unit: Mapped[str] = mapped_column(String(80), default="")
     ingredients_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    other_ingredients: Mapped[str] = mapped_column(Text, default="")
+    servings_per_container: Mapped[str] = mapped_column(String(80), default="")
+    upc_sku: Mapped[str] = mapped_column(String(80), default="")
     imported_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
