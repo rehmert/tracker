@@ -33,3 +33,6 @@
 }
 @media(max-width:360px){.pk-tabs .pk-tab{flex-basis:100%}}
 @media(prefers-reduced-motion:reduce){#pkResults *{scroll-behavior:auto}}
+.pk628-schedule-help{margin:.6rem 0 .9rem;border:1px solid var(--rule,#d4ded8);border-radius:10px;padding:.5rem .75rem}
+.pk628-schedule-help>summary{font-weight:600;cursor:pointer}
+.pk628-schedule-help[open]>summary{margin-bottom:.5rem}
