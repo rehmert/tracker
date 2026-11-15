@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Review Duplicate Saved Foods{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-food-duplicates629.css?v=629">
+<main class="food629-review">
+  <header class="food629-header">
+    <div>
+      <h1>Duplicate Saved Foods</h1>
+      <p class="note">Compare every reported macro- and micronutrient value per serving before deciding which saved record to keep.</p>
+      <p><a href="/food#food-search">Back to Food Journal / Saved Foods</a></p>
+    </div>
+    <div class="food629-summary">
+      <strong>{{ groups|length }}</strong>
+      <span>matching-name groups</span>
+      <small>{{ examined }} saved-food records examined</small>
+    </div>
+  </header>
+  {% if merged %}
+  <p class="food629-success" role="status">{{ merged }} equivalent duplicate record{{ '' if merged == 1 else 's' }} consolidated. Historical food log and meal template references were retained.</p>
+  {% endif %}
+  {% if truncated %}
+  <p class="food629-warning" role="alert">Only the first {{ examined }} saved foods were inspected. No merge should be considered a full-library cleanup until all records are reviewed.</p>
+  {% endif %}
+  <p class="note">Groups match names ignoring capitalization and extra spaces. They can contain different serving sizes or nutrient data. Values are per stored serving, not per 100 g. <strong>— means not reported, not zero.</strong> Exact nutritional equivalents may be combined; differing values remain untouched.</p>
+
+  {% if not groups %}
+  <div class="card"><p>No saved foods with matching normalized names were found in the examined records.</p></div>
+  {% endif %}
+
+  {% for group in groups %}
+  <section class="card food629-group" aria-label="Duplicates of {{ group.name }}">
+    <div class="food629-group-head">
+      <h2>{{ group.name }}</h2>
+      <span>{{ group.items|length }} saved versions</span>
+    </div>
+    <div class="food629-meta-grid">
+      {% for item in group.items %}
+      <article>
+        <h3>Version #{{ item.id }}</h3>
+        <dl>
+          <dt>Serving</dt><dd>{{ item.serving_description }}</dd>
+          <dt>Barcode</dt><dd>{{ item.barcode or '—' }}</dd>
+          <dt>Source</dt><dd>{{ item.source }}</dd>
+          <dt>Logged uses</dt><dd>{{ item.log_count }}</dd>
+          <dt>Meal templates</dt><dd>{{ item.template_count }}</dd>
+          <dt>Favorite</dt><dd>{{ 'Yes' if item.favorite_count else 'No' }}</dd>
+        </dl>
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="food629-scroll" tabindex="0" role="region" aria-label="Per-serving nutrients for {{ group.name }} compared by version">
+      <table class="food629-nutrients">
+        <thead><tr>
+          <th scope="col">Nutrient / stored serving</th>
+          {% for item in group.items %}
+          <th scope="col">#{{ item.id }}<small>{{ item.serving_description }}</small></th>
+          {% endfor %}
+        </tr></thead>
+        <tbody>
+          {% for key, label in nutrients.items() %}
+          {% if key == 'energy' %}
+          <tr class="food629-section-row"><th colspan="{{ group.items|length + 1 }}" scope="colgroup">Macronutrients</th></tr>
+          {% elif key == 'sodium' %}
+          <tr class="food629-section-row"><th colspan="{{ group.items|length + 1 }}" scope="colgroup">Micronutrients &amp; other nutrients</th></tr>
+          {% endif %}
+          <tr>
+            <th scope="row">{{ label[0] }} <small>{{ label[1] }}</small></th>
+            {% for item in group.items %}
+            {% set value = item.measurements[key] %}
+            <td class="{{ 'food629-unknown' if value is none else '' }}">
+              {{ '—' if value is none else value }}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if group.different_values %}
+    <p class="food629-warning">Not all versions have equivalent nutrients, servings, or barcodes. Compare them before deciding which values are authoritative. Non-equivalent versions cannot be merged on this screen because doing so could change historical nutrition totals.</p>
+    {% endif %}
+
+    {% for equivalent in group.equivalent_sets %}
+    <form class="food629-merge" method="post" action="/food/duplicates/merge">
+      <div>
+        <strong>{{ equivalent|length }} equivalent versions</strong>
+        <small>Matching complete nutrient payload, name, serving and barcode.</small>
+      </div>
+      <label>Keep version
+        <select name="keep_id" required>
+          {% for item in equivalent %}
+          <option value="{{ item.id }}" {% if loop.first %}selected{% endif %}>#{{ item.id }} — {{ item.log_count }} logged uses{{ ' · favorite' if item.favorite_count else '' }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% for item in equivalent %}
+      {# JS updates disabled checkboxes for selected keeper before submit. #}
+      <label class="food629-merge-option">
+        <input type="checkbox" name="remove_id" value="{{ item.id }}" {{ '' if loop.first else 'checked' }}>
+        Remove version #{{ item.id }}
+      </label>
+      {% endfor %}
+      <p class="note">Only the selected equivalent versions are removed. Their historical logs, meal-template references and favorite status are transferred to the kept version in one transaction. No nutrient values are recalculated.</p>
+      <button type="submit" class="primary">Consolidate selected equivalent versions</button>
+    </form>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</main>
+<script src="/static/js/tracker-food-duplicates629.js?v=629" defer></script>
+{% endblock %}
