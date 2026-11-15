@@ -220,3 +220,64 @@ def test_629_same_barcode_with_different_names_is_reviewed_not_merged(food_engin
     assert report["groups"][0]["equivalent_sets"] == []
     with pytest.raises(ValueError):
         duplicates.merge_equivalent629(food_engine, one, [two])
+
+
+def test_630_remove_mismatched_unused_preserves_history_and_moves_templates(food_engine):
+    keeper = add_food(food_engine, logged=True)
+    old = add_food(food_engine, nutrients={"energy": 125.0},
+                   template=True, favorite=True)
+    before = food.totals_for("2026-11-14", db_engine=food_engine)
+    assert duplicates.remove_unused_mismatch630(food_engine, keeper, old) == 1
+    assert food.totals_for("2026-11-14", db_engine=food_engine) == before
+    with food_engine.connect() as db:
+        assert db.execute(text(
+            "SELECT COUNT(*) FROM tracker_food_products WHERE id=:id"
+        ), {"id": old}).scalar_one() == 0
+        assert db.execute(text(
+            "SELECT COUNT(*) FROM tracker_food_meal_template_items WHERE product_id=:id"
+        ), {"id": keeper}).scalar_one() == 1
+        assert db.execute(text(
+            "SELECT COUNT(*) FROM tracker_food_favorites WHERE product_id=:id"
+        ), {"id": keeper}).scalar_one() == 1
+
+
+def test_630_reject_mismatched_removal_when_historical_meals_exist(food_engine):
+    keeper = add_food(food_engine)
+    old = add_food(food_engine, nutrients={"energy": 125.0}, logged=True)
+    before = food.totals_for("2026-11-14", db_engine=food_engine)
+    with pytest.raises(ValueError, match="historical"):
+        duplicates.remove_unused_mismatch630(food_engine, keeper, old)
+    assert food.totals_for("2026-11-14", db_engine=food_engine) == before
+
+
+def test_630_mark_distinct_hides_group_until_values_change(food_engine):
+    one = add_food(food_engine, logged=True)
+    two = add_food(food_engine, nutrients={"energy": 125.0}, logged=True)
+    report = duplicates.duplicate_groups629(food_engine)
+    fingerprint = report["groups"][0]["fingerprint"]
+    duplicates.mark_distinct630(food_engine, fingerprint)
+    assert duplicates.duplicate_groups629(food_engine)["groups"] == []
+    assert duplicates.duplicate_groups629(food_engine, show_reviewed=True)["groups"][0]["reviewed"]
+    with food_engine.begin() as db:
+        db.execute(text(
+            "UPDATE tracker_food_products SET serving_description='180 g' WHERE id=:id"
+        ), {"id": two})
+    assert len(duplicates.duplicate_groups629(food_engine)["groups"]) == 1
+    assert food.totals_for("2026-11-14", db_engine=food_engine)["energy"] == 450.0
+
+
+def test_630_new_resolution_routes_are_available(food_engine):
+    from app.food_read_engine406 import get_food_read_engine406
+    from app.food_storage_guard391 import require_food_storage391
+    keep = add_food(food_engine, logged=True)
+    unused = add_food(food_engine, nutrients={"energy": 125.0})
+    app = FastAPI()
+    app.include_router(duplicates.router)
+    app.dependency_overrides[get_food_read_engine406] = lambda: food_engine
+    app.dependency_overrides[require_food_storage391] = lambda: None
+    with TestClient(app) as browser:
+        response = browser.post("/food/duplicates/resolve-unused", data={
+            "keep_id": str(keep), "remove_id": str(unused),
+        }, follow_redirects=False)
+        assert response.status_code == 303
+        assert "resolved=1" in response.headers["location"]
