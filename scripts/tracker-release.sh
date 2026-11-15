@@ -81,8 +81,9 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
+ [[ "$DB_MIGRATION" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Invalid DB migration flag"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0
  export GIT_CONFIG_COUNT=2
  export GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
@@ -109,8 +110,16 @@ worker() {
  fi
  verify_prod_approval
  g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from base"
- if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py)'; then
+ # Schema and deployment infrastructure changes still require a separate
+ # reviewed migration procedure; the ordinary fast-forward worker refuses them.
+ if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations)(\\.py|/))'; then
   fail "Schema/dependency/systemd changes require separately reviewed deployment"
+ fi
+ # Explicit data-migration scripts may change stored values without changing
+ # ORM models. Require the operator's --db-migration opt-in for a snapshot.
+ if [[ "$DB_MIGRATION" == 0 ]] &&
+    g diff --name-only "$BASE" "$TARGET" | grep -Eq '^scripts/.*(migrat|backfill|data[-_]fix)'; then
+  fail "Possible data migration requires --db-migration and a verified database backup"
  fi
  RESTART=0
  [[ -z "$(changed)" ]] || RESTART=1
@@ -211,37 +220,43 @@ PY
  cd "$APP"
  unset TRACKER_DATA_DIR PYTHONPATH
  [[ -z "$(g status --porcelain)" && "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Live checkout changed"
- echo "=== Verified source and data recovery backup ==="
+ echo "=== Source and configuration recovery snapshot ==="
  umask 077
  mkdir -m 700 "$SAVE"
  g archive --format=tar HEAD | gzip > "$SAVE/source.tar.gz"
  cp -p /etc/tracker.env "$SAVE/tracker.env"
  chmod 600 "$SAVE/source.tar.gz" "$SAVE/tracker.env"
  if [[ -f "$APP/.env" ]]; then cp -p "$APP/.env" "$SAVE/local.env"; chmod 600 "$SAVE/local.env"; fi
- DATA_DIR="$("$PY" - <<'PY'
+ if [[ "$DB_MIGRATION" == 1 ]]; then
+  echo "=== Verified database backup required for data migration ==="
+  DATA_DIR="$("$PY" - <<'PY'
 from pathlib import Path
 import re
 root=Path('/opt/tracker'); data=root/'data'
 for line in Path('/etc/tracker.env').read_text().splitlines():
- m=re.match(r'^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$',line)
- if m and m.group(1).strip(): data=Path(m.group(1).strip().strip("\"'"))
+ m=re.match(r'^\\s*(?:export\\s+)?TRACKER_DATA_DIR\\s*=(.*)$',line)
+ if m and m.group(1).strip(): data=Path(m.group(1).strip().strip("\\\"'"))
 if not data.is_absolute(): data=root/data
 print(data.resolve())
 PY
 )"
- [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
- mkdir -m 700 "$SAVE/archives"
- ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
+  [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
+  mkdir -m 700 "$SAVE/archives"
+  ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
 from pathlib import Path
 import sys
 from app.backup import create_backup
 print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
 PY
 )"
- chmod 600 "$ARCHIVE"
- PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
-  "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
- echo "=== ISOLATED RESTORE VERIFICATION PASSED ==="
+  chmod 600 "$ARCHIVE"
+  PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \\
+   "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
+  echo "=== ISOLATED RESTORE VERIFICATION PASSED ==="
+  echo "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION"
+ else
+  echo "DATABASE_BACKUP=SKIPPED_NO_MIGRATION"
+ fi
  echo "=== Install via fast-forward ==="
  umask 022
  g merge --ff-only "$TARGET"
@@ -271,7 +286,7 @@ PY
  echo " TRACKER RELEASE DEPLOYMENT SUCCESS"
  echo "======================================"
  g log -1 --oneline
- echo "Verified recovery archive: $ARCHIVE"
+ echo "Source recovery snapshot: $SAVE/source.tar.gz"
  QUALIFICATION_COMPLETE=1
 }
 follow_deployment_log() {
@@ -304,15 +319,16 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -eq 7 ]] || fail "Bad worker arguments"
+ [[ $# -eq 8 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
   --dev-focused-630) DEV_FOCUSED_630=1; shift;;
+  --db-migration) DB_MIGRATION=1; shift;;
   --serial-tests) fail "Serial testing prohibited";;
   --instance|--base|--target|--ref)
    (( $# >= 2 )) || fail "Missing argument for $1"
@@ -355,7 +371,7 @@ touch "$RUN/deployment.log"
 MEMORY_PROPERTY="MemoryMax=16G"
 echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
 systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
- /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630"
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
 if (( FOLLOW )); then
