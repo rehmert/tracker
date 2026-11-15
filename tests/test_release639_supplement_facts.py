@@ -132,3 +132,39 @@ def test_legacy_manual_item_remains_unchanged(env):
     with Session() as db:
         assert db.get(RegimenItem, 1).strength == "10 mg"
         assert list(db.scalars(select(RegimenProductFacts639))) == []
+
+
+def test_ingredient_quantity_without_name_is_rejected(env):
+    client, Session = env
+    bad = {**FACTS, "ingredients": [
+        {"name": "", "amount": "100", "unit": "mg",
+         "basis": "2 capsules", "daily_value": ""}
+    ]}
+    response = post(client, "/regimen/items", {
+        "kind": "supplement", "name": "Missing Ingredient Name",
+        "label_facts_json": json.dumps(bad),
+    })
+    assert "err=" in response.headers["location"]
+    with Session() as db:
+        assert list(db.scalars(select(RegimenItem))) == []
+
+
+def test_product_facts_edits_have_audit_trail(env):
+    client, Session = env
+    post(client, "/regimen/items", {
+        "kind": "supplement", "name": "Nutrient 950",
+        "label_facts_json": json.dumps(FACTS),
+    })
+    with Session() as db:
+        before = db.scalar(select(RegimenProductFacts639)).imported_at
+    revised = {**FACTS, "serving_quantity": "3"}
+    post(client, "/regimen/items/1/edit", {
+        "kind": "supplement", "name": "Nutrient 950",
+        "active": "yes", "label_facts_json": json.dumps(revised),
+    })
+    with Session() as db:
+        audit = list(db.scalars(select(ChangeAudit).where(
+            ChangeAudit.entity_type == "regimen_product_facts"
+        ).order_by(ChangeAudit.id)))
+        assert [row.action for row in audit] == ["create", "edit"]
+        assert db.scalar(select(RegimenProductFacts639)).imported_at == before
