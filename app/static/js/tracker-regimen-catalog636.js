@@ -75,6 +75,14 @@
               id: String(match.source_id || ''),
               name: String(match.name || '')
             };
+            const notes = form.elements.namedItem('notes');
+            const marker = 'Catalog reference: ' + selected.source +
+              (selected.id ? ' #' + selected.id : '');
+            if (notes && !notes.value.includes(marker)) {
+              const combined = notes.value.trim()
+                ? notes.value.trim() + '\\n' + marker : marker;
+              if (combined.length <= notes.maxLength) notes.value = combined;
+            }
             source.textContent = 'Selected: ' + selected.source +
               (selected.id ? ' #' + selected.id : '') + '. Verify the label before saving.';
             panel.replaceChildren();
@@ -105,19 +113,7 @@
     }
     name.addEventListener('input', schedule);
     kind.addEventListener('change', schedule);
-    form.addEventListener('submit', () => {
-      // Preserve the source identity as a user-reviewable note, but never
-      // replace existing notes or silently modify any dosing fields.
-      if (!selected || name.value.trim() !== selected.name) return;
-      const notes = form.elements.namedItem('notes');
-      if (!notes) return;
-      const marker = 'Catalog reference: ' + selected.source +
-        (selected.id ? ' #' + selected.id : '');
-      if (notes.value.includes(marker)) return;
-      const combined = notes.value.trim()
-        ? notes.value.trim() + '\n' + marker : marker;
-      if (combined.length <= notes.maxLength) notes.value = combined;
-    });
+
   }
 
   document.querySelectorAll('form[data-reg636-catalog]').forEach(activate);
