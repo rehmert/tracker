@@ -43,7 +43,7 @@ def test_589_full_browser_and_release_gates_remain_unchanged():
     assert "tests/browser/test_csrf_multipart588.py" in runner
     assert 'timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh"' in full
     assert "=== COMPLETE REGRESSION SUITE ===" in full
-    assert "=== Verified source and data recovery backup ===" in full
+    assert "=== Source and configuration recovery snapshot ===" in full
 
 
 def test_589_secondary_checks_do_not_use_installed_database():
