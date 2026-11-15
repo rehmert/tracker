@@ -44,6 +44,7 @@ from .routers import food_manage377
 from .routers import food_review378
 from .routers import food_week379
 from .routers import food_search380
+from .routers import food_duplicates629
 from .routers import session_login385
 from .routers import account_security386
 from .routers import user_management479
@@ -285,6 +286,7 @@ app.include_router(food_manage377.router)
 app.include_router(food_review378.router)
 app.include_router(food_week379.router)
 app.include_router(food_search380.router)
+app.include_router(food_duplicates629.router)
 app.include_router(session_login385.router)
 app.include_router(account_security386.router)
 app.include_router(user_management479.router)
