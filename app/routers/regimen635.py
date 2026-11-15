@@ -119,6 +119,9 @@ def _facts_values(form):
             if not isinstance(value, str) or len(value) > limit:
                 raise ValueError("Invalid ingredient " + key)
             values_row[key] = value.strip()
+        if not values_row["name"] and any(values_row[key] for key in (
+                "amount", "unit", "basis", "daily_value")):
+            raise ValueError("Ingredient name is required when values are entered.")
         if values_row["name"]:
             normalized.append(values_row)
     values["ingredients_json"] = json.dumps(normalized, ensure_ascii=False)
