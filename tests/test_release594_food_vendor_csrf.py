@@ -37,7 +37,7 @@ def test_594_scope_and_route_counts_remain_source_only():
     plan = gap.build()
     assert plan["status"] == "BLOCKED_SOURCE_ONLY_NOT_GLOBAL_CLEARANCE"
     assert plan["source_witness_candidates"] == 83
-    assert plan["remaining_without_source_witness"] == 64  # +3 duplicate-food write routes
+    assert plan["remaining_without_source_witness"] == 73  # +3 duplicate-food, +9 regimen routes
     assert len(plan["source_witness_manifest"]) == 70
     assert plan["runtime_verified_by_this_report"] is False
     assert plan["strict_csrf_enforcement_change_authorized"] is False
