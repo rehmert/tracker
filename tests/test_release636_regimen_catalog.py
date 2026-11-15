@@ -137,7 +137,7 @@ def test_no_new_workflow_and_original_forms_are_intact():
     assert "form.submit" not in script
     assert "submit', " not in script
     assert "textContent = match.name" in script
-    assert "Catalog reference: " in script
+    assert "regimen:catalog-selected639" in script
     assert "['name', 'ingredient', 'strength', 'form']" in script
     assert "['amount', 'schedule', 'instructions']" not in script
 
@@ -163,8 +163,8 @@ def test_dsld_label_details_multi_ingredient_and_labeled_serving(monkeypatch):
     assert data["serving_quantity"] == "2"
     assert data["serving_unit"] == "Capsules"
     assert data["ingredient_rows"] == [
-        {"name": "Vitamin C", "amount": "100", "unit": "mg"},
-        {"name": "Magnesium", "amount": "25", "unit": "mg"},
+        {"name": "Vitamin C", "amount": "100", "unit": "mg", "basis": "", "daily_value": ""},
+        {"name": "Magnesium", "amount": "25", "unit": "mg", "basis": "", "daily_value": ""},
     ]
     assert not data["ingredient_rows_truncated"]
 
