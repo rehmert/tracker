@@ -6,26 +6,25 @@ Use only in an isolated candidate worktree; no DB, credentials, or app writes.
 from app.routers import regimen_catalog636 as catalog
 
 CASES = [
-    ("RxNorm medication", "medication", "metformin", "RxNorm"),
-    ("openFDA medication", "medication", "Tylenol", "openFDA"),
-    ("NIH supplement", "supplement", "Vitamin D", "NIH DSLD"),
+    ("RxNorm medication", catalog._rxnorm, "metformin", "RxNorm"),
+    ("openFDA medication", catalog._openfda, "Tylenol", "openFDA"),
+    ("NIH supplement", catalog._dsld, "Vitamin D", "NIH DSLD"),
 ]
 
 
 def main():
     success = True
-    for label, kind, term, expected in CASES:
+    for label, fetcher, term, expected in CASES:
         print(f"=== {label} ({term}) ===", flush=True)
         try:
-            result = catalog.suggestions(kind, term)
-            sources = sorted(set(row["source"] for row in result["results"]))
-            count = sum(row["source"] == expected for row in result["results"])
-            print(f"MATCHES={len(result['results'])} SOURCES={sources} "
-                  f"EXPECTED_SOURCE_MATCHES={count} "
-                  f"PROVIDER_UNAVAILABLE={result['unavailable']}", flush=True)
-            for row in result["results"][:3]:
+            rows = fetcher(term)
+            sources = sorted(set(row["source"] for row in rows))
+            count = sum(row["source"] == expected for row in rows)
+            print(f"MATCHES={len(rows)} SOURCES={sources} "
+                  f"EXPECTED_SOURCE_MATCHES={count}", flush=True)
+            for row in rows[:3]:
                 print(f"  {row['source']}: {row['name'][:100]}", flush=True)
-            if expected in result["unavailable"] or count == 0:
+            if count == 0:
                 print("STATUS=FAIL_OR_INCOMPLETE", flush=True)
                 success = False
             else:
