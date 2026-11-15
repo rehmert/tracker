@@ -35,6 +35,30 @@ missing product IDs. Access uses the existing administrator food
 storage guard, request-authorized engine and browser CSRF form
 token mechanism. No automatic merge occurs on page load.
 
+## No unknown nutrients in new entries or corrections
+
+Following the additional requirement, new Food Journal entries and
+copy-on-write nutrition corrections must provide all 16 supported
+macro- and micronutrient values, as explicit finite nonnegative
+numbers. Empty fields and the string "unknown" result in HTTP 422
+before a food product or journal entry is written. A confirmed
+numeric zero remains allowed; unknown **must not** be silently
+converted to zero.
+
+Both forms mark nutrient inputs as required, keep the micronutrient
+sections open for browser validity feedback, and report the missing
+fields in the nutrition review. Barcode/OCR imports can supply a
+partial prefilling but cannot save until complete. Historical saved
+foods containing missing nutrients remain readable and comparable;
+the migration does not rewrite their nutrient values. Other
+optional targets and secondary-user food workflows are not changed.
+
+The focused gate runs `tests/test_release629_required_nutrients.py`
+for complete entries, rejected blanks/nonnumeric values, zero,
+and atomic failed corrections. Older tests specifically designed to
+allow incomplete foods will be updated during the next full
+checkpoint (Release 630), not run as a routine release gate.
+
 ## Data boundaries
 
 The assistant has no live access to the user's saved foods. Therefore
