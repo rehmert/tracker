@@ -85,6 +85,40 @@
             }
             source.textContent = 'Selected: ' + selected.source +
               (selected.id ? ' #' + selected.id : '') + '. Verify the label before saving.';
+            // Supplement labels may contain multiple ingredients. Keep the
+            // concise product identifier fields separate from full label data.
+            if (selected.source === 'NIH DSLD' && /^[0-9]{1,12}$/.test(selected.id)) {
+              const picked = selected.id;
+              fetch('/regimen/catalog/supplement-label?' +
+                new URLSearchParams({label_id: picked}), {
+                  method: 'GET', credentials: 'same-origin',
+                  headers: {'Accept': 'application/json'}
+                }).then(response => {
+                  if (!response.ok) throw new Error('Label unavailable');
+                  return response.json();
+                }).then(detail => {
+                  if (!selected || selected.id !== picked || !detail.available) return;
+                  const formField = form.elements.namedItem('form');
+                  if (formField && !formField.value && detail.form) {
+                    formField.value = String(detail.form).slice(0, formField.maxLength);
+                  }
+                  if (notes) {
+                    const parts = [];
+                    if (detail.serving) parts.push('Labeled serving: ' + detail.serving);
+                    if (detail.ingredients) parts.push('Labeled ingredients: ' + detail.ingredients);
+                    for (const part of parts) {
+                      if (notes.value.includes(part)) continue;
+                      const combined = notes.value.trim()
+                        ? notes.value.trim() + '\n' + part : part;
+                      if (combined.length <= notes.maxLength) notes.value = combined;
+                    }
+                  }
+                  source.textContent += ' Supplement label details loaded into Notes for review.';
+                }).catch(() => {
+                  source.textContent += ' Detailed supplement label unavailable; manual entry works.';
+                });
+              }
+            }
             panel.replaceChildren();
             panel.hidden = true;
             status.textContent = 'Product details filled. Review or edit before saving.';
