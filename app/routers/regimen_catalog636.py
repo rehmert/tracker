@@ -127,6 +127,15 @@ def _dsld(term):
                 brand=label.get("brandName", ""),
             )
             if match and (match["source_id"], match["name"]) not in seen:
+                servings = label.get("servingSizes") or []
+                serving = servings[0] if isinstance(servings, list) and servings and isinstance(servings[0], dict) else {}
+                qty = serving.get("minQuantity")
+                match["serving_preview"] = (
+                    (_clean(qty, 20) + " " + _clean(serving.get("unit"), 40)).strip()
+                    if qty is not None else ""
+                )
+                match["label_date"] = _clean(label.get("entryDate"), 30)
+                match["upc"] = _clean(label.get("upcSku"), 80)
                 seen.add((match["source_id"], match["name"]))
                 rows.append(match)
 
@@ -168,6 +177,7 @@ def _dsld(term):
             int(product_phrase in product),
             overlap,
             brand_overlap,
+            row.get("label_date", ""),
             -len(product),
         )
 
