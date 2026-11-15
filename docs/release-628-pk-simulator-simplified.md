@@ -75,3 +75,31 @@ the standard disposable Chromium gate.
 This records a blocked pre-install qualification, **not** a successful
 Release 628 deployment. The revised candidate requires another full
 guarded DEV run.
+
+## Operator-required qualification capacity (2026-11-15)
+
+Backend qualification already used `pytest-xdist -n 16`, and
+`scripts/tracker-release.sh` already launched the release-worker
+systemd unit with `MemoryMax=16G`. The discrepancy was in the
+browser qualification shell script: two initial Chromium batches used
+four workers and the separate strict per-module runner used four
+(full) or one (targeted). Release 628 now uses the same fixed
+`-n 16 --dist=loadfile` everywhere in the browser qualifier.
+The historical 594, 597, 598 and 627 source checks were updated to
+validate the operator's new explicit 16-worker configuration instead
+of asserting the obsolete four-worker limit. The 605 release-memory
+contract remains unchanged.
+
+Browser gates remain sequential at security-evidence boundaries:
+some modules require signed mutation traces and immediate receipt
+verification against shared disposable SQLite state. Parallelizing
+their *invocations* as one test batch requires a separate race-safety
+audit; 16 xdist workers for an individual small module may provide
+little speedup and may consume more memory. This change satisfies
+the requested worker configuration but does not falsely claim that
+the full Chromium suite is now one batched pytest invocation.
+
+The new candidate is not qualified until a fresh guarded DEV run
+produces EXIT_STATUS=0. Never edit the installed runner or detached
+worktree in place because the release expects a pinned immutable
+candidate commit.
