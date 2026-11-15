@@ -35,6 +35,7 @@ ALLOWED = frozenset({
     "tests/test_release597_purchase_supply_csrf.py",
     "app/templates/page_view.html",
     "tests/test_page_title_case.py",
+    "tests/test_release602_mobile_bundle.py",
     "scripts/tracker-browser-qualify.sh",
     "scripts/tracker_csrf_reconcile627.py",
 })
