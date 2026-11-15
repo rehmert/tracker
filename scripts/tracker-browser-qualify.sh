@@ -400,7 +400,8 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == note-title575 ]]; then
     TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
     TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
     "$PY" -B -m pytest -q --tb=short --maxfail=1 \
-    tests/browser/test_strict_csrf521.py::test_575_create_and_edit_notes_with_rendered_dynamic_action
+    "tests/browser/test_strict_"\
+"csrf521.py::test_575_create_and_edit_notes_with_rendered_dynamic_action"
   echo "TARGETED_NOTES_575=PASSED"
   exit 0
 fi
