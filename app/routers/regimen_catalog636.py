@@ -251,7 +251,8 @@ def supplement_label(label_id: str = ""):
     if not isinstance(rows, list):
         rows = []
     ingredients = []
-    for row in rows[:150]:
+    truncated = len(rows) > 300
+    for row in rows[:300]:
         if not isinstance(row, dict):
             continue
         name = _clean(row.get("name"), 160)
@@ -260,17 +261,46 @@ def supplement_label(label_id: str = ""):
         quantities = row.get("quantity") or []
         if not isinstance(quantities, list):
             quantities = []
+        if row.get("nestedRows"):
+            # Hierarchical blends cannot be flattened accurately by this
+            # simple table. Refuse a claim of complete import.
+            truncated = True
+        if len(quantities) > 8:
+            truncated = True
         if not quantities:
-            ingredients.append({"name": name, "amount": "", "unit": ""})
+            ingredients.append({
+                "name": name, "amount": "", "unit": "",
+                "basis": "", "daily_value": "",
+            })
         else:
             for qty in quantities[:8]:
                 if not isinstance(qty, dict):
                     continue
+                targets = qty.get("dailyValueTargetGroup") or []
+                dv = ""
+                if isinstance(targets, list):
+                    dv = "; ".join(
+                        (str(t.get("name") or "") + ": " +
+                         str(t.get("percent")) + "%").strip()
+                        for t in targets if isinstance(t, dict)
+                        and t.get("percent") is not None
+                    )[:160]
+                basis_quantity = qty.get("servingSizeQuantity")
+                basis = (
+                    (_clean(basis_quantity, 40) + " " +
+                     _clean(qty.get("servingSizeUnit"), 60)).strip()
+                    if basis_quantity is not None else ""
+                )
                 ingredients.append({
                     "name": name,
                     "amount": _clean(qty.get("quantity"), 40),
                     "unit": _clean(qty.get("unit"), 40),
+                    "basis": basis,
+                    "daily_value": dv,
                 })
+    if len(ingredients) > 300:
+        truncated = True
+        ingredients = ingredients[:300]
     sizes = label.get("servingSizes") or []
     if not isinstance(sizes, list):
         sizes = []
@@ -280,16 +310,23 @@ def supplement_label(label_id: str = ""):
     serving_unit = _clean(size.get("unit"), 80)
     state = label.get("physicalState") or {}
     form = _clean(state.get("langualCodeDescription"), 60) if isinstance(state, dict) else ""
+    others = label.get("otheringredients") or {}
+    other_ingredients = _clean(others.get("text"), 4000) if isinstance(others, dict) else ""
+    if len(str(others.get("text") or "")) > 4000 if isinstance(others, dict) else False:
+        truncated = True
     return {
         "available": True,
         "ingredients": "; ".join(
             (r["name"] + " " + r["amount"] + " " + r["unit"]).strip()
             for r in ingredients
-        )[:1600],  # Legacy notes preview only; never used for persistence.
+        )[:1600],  # Legacy summary only, not persisted.
         "ingredient_rows": ingredients,
-        "ingredient_rows_truncated": len(rows) > 150,
+        "ingredient_rows_truncated": truncated,
         "form": form,
         "serving": (serving_quantity + " " + serving_unit).strip()[:80],
         "serving_quantity": serving_quantity,
         "serving_unit": serving_unit,
+        "other_ingredients": other_ingredients,
+        "servings_per_container": _clean(label.get("servingsPerContainer"), 80),
+        "upc_sku": _clean(label.get("upcSku"), 80),
     }
