@@ -1,0 +1,35 @@
+/* Release 628: simplified PK entry points and readable graph, no model changes. */
+.pk628-intro{margin:1rem 0;padding:1rem 1.1rem;border:1px solid var(--rule,#d4ded8);border-radius:14px;background:var(--card,#fff)}
+.pk628-intro h2{font-size:1.15rem;margin:0 0 .4rem}
+.pk628-intro>p{margin:.35rem 0 .8rem;max-width:65rem}
+.pk628-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;list-style:none;margin:0;padding:0;counter-reset:pk-step}
+.pk628-steps li{min-width:0;border:1px solid var(--rule,#d4ded8);border-radius:10px;padding:.65rem .8rem;counter-increment:pk-step}
+.pk628-steps li strong{display:block;margin:0 0 .2rem}
+.pk628-steps li strong:before{content:counter(pk-step) ". ";color:var(--accent,#2563eb)}
+.pk628-steps li span{display:block;font-size:.88rem;opacity:.8}
+.pk-tabs{gap:.5rem}
+.pk-tabs .pk-tab{flex:1 1 10rem;min-height:44px;line-height:1.3}
+.pk628-graph-guide{display:flex;flex-wrap:wrap;gap:.4rem 1rem;margin:.6rem 0 .8rem;font-size:.93rem}
+.pk628-graph-guide span{display:inline-flex;align-items:center;gap:.45rem}
+.pk628-key{display:inline-block;width:1.65rem;border-top:3px solid var(--chart-actual,#2563eb)}
+.pk628-planned{border-color:var(--chart-planned,#b45309)}
+.pk628-now{border-color:var(--chart-now,#53675e);border-top-style:dashed}
+.pk628-graph-options{margin:.4rem 0 .8rem;border:1px solid var(--rule,#d4ded8);border-radius:10px;padding:.5rem .75rem}
+.pk628-graph-options>summary{font-weight:600;cursor:pointer;padding:.2rem;min-height:30px}
+.pk628-graph-options[open]>summary{margin-bottom:.4rem}
+#pkResults>.pk-quick-window{gap:.35rem .5rem}
+#pkResults>.pk-quick-window button{min-width:3.4rem;min-height:40px}
+#pkResults #plot{display:block;width:100%;max-width:100%;height:auto;border:1px solid var(--rule,#d4ded8);border-radius:12px}
+#pk628GraphHint{margin:.35rem 0 .65rem;min-height:1.2em}
+.pk628-steps,.pk628-graph-guide{overflow-wrap:anywhere}
+@media(max-width:700px){
+ .pk628-steps{grid-template-columns:1fr}
+ .pk628-intro{padding:.8rem}
+ .pk-tabs .pk-tab{flex:1 1 calc(50% - .5rem);font-size:.92rem;padding:.55rem .45rem}
+ #pkResults>.pk-quick-window{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+ #pkResults>.pk-quick-window button{width:100%}
+ #pkResults .pk-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #pkResults .pk-metrics strong{font-size:1.08rem;overflow-wrap:anywhere}
+}
+@media(max-width:360px){.pk-tabs .pk-tab{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){#pkResults *{scroll-behavior:auto}}
