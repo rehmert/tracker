@@ -80,7 +80,7 @@ def test_511_every_browser_module_in_disposable_qualification():
                  f'"$TARGETED_MODULE" == {mode} ]]; then')
         assert strict.count(begin) == 1, mode
         before, tail = strict.split(begin, 1)
-        block, after = tail.split("\\nfi\\n", 1)
+        block, after = tail.split("\nfi\n", 1)
         assert success_marker in block, mode
         assert "ISOLATED_STRICT_CSRF_BROWSER=PASSED" not in block
         assert "exit 0" in block
