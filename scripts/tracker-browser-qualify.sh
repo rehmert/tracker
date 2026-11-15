@@ -244,8 +244,9 @@ print("DISPOSABLE_INVENTORY_FIXTURES=2")
 print("DISPOSABLE_PREPARATION_FIXTURES=2")
 PY
 
-# Release 594: cap Chromium pytest parallelism at four workers to avoid
-# OOM kills inside the 8 GiB LXC while preserving every browser test.
+# Release 628: operator standardizes pytest-xdist at 16 workers and
+# systemd release worker at a 16 GiB memory ceiling; maintain separate
+# isolated browser modules where evidence sequencing requires it.
 # Preserve parallel execution without overlapping
 # conflicting mutations against the same disposable SQLite database.
 run_isolated_browser_module() {
@@ -273,22 +274,21 @@ run_isolated_browser_module() {
 
     echo
     echo "=== BROWSER MODULE: $module (strict=$strict) ==="
-    # Keep the pre-627 full browser invocation literal. Release 594/598
-    # regression contracts verify the original four-worker command and
-    # must continue catching accidental changes to full qualification.
-    # Only the explicit non-deploying targeted diagnostics use one worker.
+    # Release 628: fixed 16-worker qualification for full and targeted modes.
+    # Do not silently revert to 4 or 1 workers. The enclosing release
+    # service keeps a 16 GiB memory ceiling.
     local -a pytest_command=(
-        "$PY" -B -m pytest -n 4 --dist=loadfile
+        "$PY" -B -m pytest -n 16 --dist=loadfile
         -q --tb=short "$module"
     )
     if [[ "$MODE" == targeted ]]; then
         pytest_command=(
-            "$PY" -B -m pytest -n 1 --dist=loadfile
+            "$PY" -B -m pytest -n 16 --dist=loadfile
             -q --tb=short "$module"
         )
-        echo "WORKERS=1"
+        echo "WORKERS=16"
     else
-        echo "WORKERS=4"
+        echo "WORKERS=16"
     fi
     echo "MODULE_LOG=$logfile"
 
@@ -311,7 +311,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
   TRACKER_TEST_ISOLATED=1 TRACKER_BROWSER_QA_DATA_DIR="$DATA" \
   PYTHONDONTWRITEBYTECODE=1 \
-  "$PY" -B -m pytest -n 4 --dist=loadfile -q --tb=short \
+  "$PY" -B -m pytest -n 16 --dist=loadfile -q --tb=short \
     tests/browser/test_food_search_ui.py \
     tests/browser/test_inventory_alert_csv_review.py \
     tests/browser/test_lab_compare_review.py \
@@ -408,7 +408,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
   TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
   TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
   TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
-  "$PY" -B -m pytest -n 4 --dist=loadfile -q --tb=short \
+  "$PY" -B -m pytest -n 16 --dist=loadfile -q --tb=short \
     tests/browser/test_strict_csrf521.py \
     2>&1 | tee "$STRICT_TEST_LOG"
 STRICT_EXIT=${PIPESTATUS[0]}
