@@ -33,6 +33,9 @@ ALLOWED = frozenset({
     "tests/test_release595_food_vendor_lifecycle.py",
     "tests/test_release596_vendor_multipart_csv.py",
     "tests/test_release597_purchase_supply_csrf.py",
+    "app/templates/page_view.html",
+    "tests/test_page_title_case.py",
+    "scripts/tracker-browser-qualify.sh",
     "scripts/tracker_csrf_reconcile627.py",
 })
 TABLES = ("regimen_items635", "regimen_schedules635", "regimen_entries635")
