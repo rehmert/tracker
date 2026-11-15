@@ -60,6 +60,11 @@ dimensions in the printer driver before printing.
   <div><button class="primary">Preview</button></div>
 </form>
 
+<aside class="card" aria-label="NIIMBOT print setup">
+  <h2>Printer setup</h2>
+  <p id="label633MediaSummary" role="status" aria-live="polite"></p>
+  <p class="note">In the print dialog choose <strong>actual size / 100%</strong>, zero margins and the full strip media size—not the individual sticker when several stickers share a strip. Print one test strip before producing a batch. If the browser driver changes page dimensions, import the exported PNG or SVG into compatible label software instead.</p>
+</aside>
 <p class="note">
 Rotation changes the text direction <strong>inside each sticker</strong>, not the
 strip dimensions. For 10 × 20 mm (four across), try 90° or 270° to read along
@@ -108,4 +113,5 @@ explicitly identified, never calculated or inferred.
 <p><a href="/vials/{{ v.id }}">← Back to vial</a></p>
 
 <script src="/static/js/tracker-label-preview-zoom449.js?v=449" defer></script>
+<script src="/static/js/tracker-label-print-guide633.js?v=633" defer></script>
 {% endblock %}
