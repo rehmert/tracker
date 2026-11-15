@@ -68,5 +68,5 @@ def test_598_browser_gate_contains_real_http_and_https_ui_interactions():
         'assert not errors, errors',
     ):
         assert phrase in body
-    assert gate.count("-n 4 --dist=loadfile") == 3
+    assert gate.count("-n 16 --dist=loadfile") == 3
     assert 'tests/browser/test_strict_csrf521.py' in gate
