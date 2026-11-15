@@ -91,6 +91,23 @@
       <small data-reg636-source></small>
       <small>Catalog labels are reference information, not a dosing recommendation. Review all fields before saving.</small>
     </div>
+    <div class="reg639-facts" data-reg639-facts>
+      <h3>Product label information</h3>
+      <p class="note">Label quantities are per manufacturer serving. Your administered amount remains separate.</p>
+      <label class="field">Brand / manufacturer <input data-reg639-brand maxlength="160"></label>
+      <div class="reg635-grid">
+        <label class="field">Label serving quantity <input data-reg639-serving-quantity maxlength="40" placeholder="e.g. 2"></label>
+        <label class="field">Label serving unit <input data-reg639-serving-unit maxlength="80" placeholder="e.g. capsules"></label>
+      </div>
+      <p class="note" data-reg639-provenance>Manual product details. Select an NIH label to load manufacturer information.</p>
+      <div class="reg635-history"><table>
+        <thead><tr><th>Ingredient</th><th>Amount per labeled serving</th><th>Unit</th><th></th></tr></thead>
+        <tbody data-reg639-ingredients></tbody>
+      </table></div>
+      <button type="button" data-reg639-add-ingredient>Add ingredient</button>
+      <p class="note" data-reg639-status aria-live="polite"></p>
+      <textarea name="label_facts_json" hidden></textarea>
+    </div>
     <label class="field">Ingredient / generic name <input name="ingredient" maxlength="160"></label>
     <label class="field">Strength <input name="strength" maxlength="80" placeholder="e.g. 200 mg per capsule"></label>
     <label class="field">Form <input name="form" maxlength="60" placeholder="Tablet, softgel, liquid"></label>
@@ -119,6 +136,23 @@
       <div data-reg636-results role="listbox" aria-label="Catalog product matches" hidden></div>
       <small data-reg636-source></small>
       <small>Catalog labels are reference information, not a dosing recommendation. Review all fields before saving.</small>
+    </div>
+    <div class="reg639-facts" data-reg639-facts>
+      <h3>Product label information</h3>
+      <p class="note">Label quantities are per manufacturer serving. Your administered amount remains separate.</p>
+      <label class="field">Brand / manufacturer <input data-reg639-brand maxlength="160"></label>
+      <div class="reg635-grid">
+        <label class="field">Label serving quantity <input data-reg639-serving-quantity maxlength="40" placeholder="e.g. 2"></label>
+        <label class="field">Label serving unit <input data-reg639-serving-unit maxlength="80" placeholder="e.g. capsules"></label>
+      </div>
+      <p class="note" data-reg639-provenance>Manual product details. Select an NIH label to load manufacturer information.</p>
+      <div class="reg635-history"><table>
+        <thead><tr><th>Ingredient</th><th>Amount per labeled serving</th><th>Unit</th><th></th></tr></thead>
+        <tbody data-reg639-ingredients></tbody>
+      </table></div>
+      <button type="button" data-reg639-add-ingredient>Add ingredient</button>
+      <p class="note" data-reg639-status aria-live="polite"></p>
+      <textarea name="label_facts_json" hidden>{{ product_facts.get(item.id, '') }}</textarea>
     </div>
       <label class="field">Ingredient <input name="ingredient" value="{{ item.ingredient }}" maxlength="160"></label>
       <label class="field">Strength <input name="strength" value="{{ item.strength }}" maxlength="80"></label>
@@ -207,5 +241,5 @@
 {% else %}<tr><td colspan="6">No intake has been recorded.</td></tr>{% endfor %}
 </tbody></table></div>
 </section>
-<script defer src="/static/js/tracker-regimen-catalog636.js?v=638"></script>
+<script defer src="/static/js/tracker-regimen-catalog636.js?v=639"></script>
 {% endblock %}
