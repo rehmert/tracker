@@ -30,3 +30,7 @@
 .food629-merge button{justify-self:start;min-height:44px}
 .food629-merge .note{margin:0}
 @media(max-width:650px){.food629-meta-grid{grid-template-columns:1fr}.food629-merge button{width:100%}.food629-nutrients th,.food629-nutrients td{padding:.42rem .48rem}}
+
+.food629-nutrient-diff th,.food629-nutrient-diff td{background:color-mix(in srgb, var(--accent,#2563eb) 6%, var(--card,#fff))}
+.food629-nutrient-diff th:first-child{background:color-mix(in srgb, var(--accent,#2563eb) 6%, var(--card,#fff))}
+.food629-diff-label{display:inline-block;margin-left:.55rem;font-weight:600;font-size:.72rem;opacity:.85}
