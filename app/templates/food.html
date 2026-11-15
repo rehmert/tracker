@@ -595,18 +595,18 @@ unknown, not zero.
 <details open><summary>Macros (per serving listed above)</summary>
  <div class="food-nutrient-inputs">
  {% for key in ('energy','proteins','carbohydrates','fat','fiber','sugars','saturated-fat') %}
- <label>{{ nutrients[key][0] }} ({{ nutrients[key][1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" placeholder="Unknown"></label>
+ <label>{{ nutrients[key][0] }} ({{ nutrients[key][1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" placeholder="Required" required></label>
  {% endfor %}
  </div>
 </details>
-<details><summary>Micronutrients (per serving)</summary>
+<details open><summary>Micronutrients (per serving)</summary>
  <div class="food-nutrient-inputs">
  {% for key, info in nutrients.items() if key not in ('energy','proteins','carbohydrates','fat','fiber','sugars','saturated-fat') %}
- <label>{{ info[0] }} ({{ info[1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" placeholder="Unknown"></label>
+ <label>{{ info[0] }} ({{ info[1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" placeholder="Required" required></label>
  {% endfor %}
  </div>
 </details>
-<p class="note" id="food-review-warning">Only confirmed numbers should be entered. Leave unknown nutrients blank. Newly recorded unknown values remain distinct from confirmed zero values.</p>
+<p class="note" id="food-review-warning">All macro- and micronutrients are required when saving a food. Use verified numbers; 0 is accepted only when confirmed. Barcode and photo lookup values may be incomplete and must be reviewed before saving.</p>
 <div id="food499-review" aria-label="Nutrition completeness review">
 <p class="note" id="food499-review-status" role="status" aria-live="polite"></p>
 <div id="food499-macro-preview" class="food384-preview" aria-label="Calories and macros for quantity being logged"></div>
@@ -668,7 +668,7 @@ previous product information.</p>
  step="any" min="0" inputmode="decimal"
  value="{{ e.parsed_nutrients[key] if
  e.parsed_nutrients.get(key) is not none else '' }}"
- placeholder="Unknown">
+ placeholder="Required" required>
 </label>
 {% endfor %}
 </div>
@@ -684,7 +684,7 @@ previous product information.</p>
  step="any" min="0" inputmode="decimal"
  value="{{ e.parsed_nutrients[key] if
  e.parsed_nutrients.get(key) is not none else '' }}"
- placeholder="Unknown">
+ placeholder="Required" required>
 </label>
 {% endfor %}
 </div>
