@@ -81,14 +81,6 @@
               id: String(match.source_id || ''),
               name: String(match.name || '')
             };
-            const notes = form.elements.namedItem('notes');
-            const marker = 'Catalog reference: ' + selected.source +
-              (selected.id ? ' #' + selected.id : '');
-            if (notes && !notes.value.includes(marker)) {
-              const combined = notes.value.trim()
-                ? notes.value.trim() + '\n' + marker : marker;
-              if (combined.length <= notes.maxLength) notes.value = combined;
-            }
             source.textContent = 'Selected: ' + selected.source +
               (selected.id ? ' #' + selected.id : '') + '. Verify the label before saving.';
             form.dispatchEvent(new CustomEvent('regimen:catalog-selected639', {
@@ -115,18 +107,7 @@
                   if (formField && !formField.value && detail.form) {
                     formField.value = String(detail.form).slice(0, formField.maxLength);
                   }
-                  if (notes) {
-                    const parts = [];
-                    if (detail.serving) parts.push('Labeled serving: ' + detail.serving);
-                    if (detail.ingredients) parts.push('Labeled ingredients: ' + detail.ingredients);
-                    for (const part of parts) {
-                      if (notes.value.includes(part)) continue;
-                      const combined = notes.value.trim()
-                        ? notes.value.trim() + '\n' + part : part;
-                      if (combined.length <= notes.maxLength) notes.value = combined;
-                    }
-                  }
-                  source.textContent += ' Supplement label details loaded into Notes for review.';
+                  source.textContent += ' Structured supplement facts loaded for review.';
                 }).catch(() => {
                   source.textContent += ' Detailed supplement label unavailable; manual entry works.';
                   form.dispatchEvent(new CustomEvent('regimen:label-failed639', {
