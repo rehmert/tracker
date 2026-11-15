@@ -25,6 +25,7 @@ def evidence(tool, target="a" * 40):
     return "\n".join([
         "Started: 2026-11-12T04:00:00+00:00; instance: DEV",
         f"CANDIDATE_COMMIT={target}",
+        "QA_FULL_REQUIRED=1",
         *tool.REQUIRED,
         " TRACKER RELEASE DEPLOYMENT SUCCESS",
         "EXIT_STATUS=0",
@@ -72,6 +73,51 @@ def test_577_mismatched_target_rejected(tool):
         tool.validated_evidence(evidence(tool), "b" * 40)
     with pytest.raises(ValueError):
         tool.validated_evidence(evidence(tool), "invalid")
+
+
+def focused_evidence(target="a" * 40):
+    return "\n".join([
+        "Started: 2026-11-15T03:00:00+00:00; instance: DEV",
+        f"CANDIDATE_COMMIT={target}",
+        "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
+        "QA_FULL_REQUIRED=0",
+        "FOCUSED_RELEASE_GATE=PASSED",
+        "=== ISOLATED RESTORE VERIFICATION PASSED ===",
+        " TRACKER RELEASE DEPLOYMENT SUCCESS",
+        "EXIT_STATUS=0",
+        "Finished: 2026-11-15T03:04:00+00:00",
+    ]) + "\n"
+
+
+def test_629_focused_dev_receipt_accepts_complete_focused_gate(tool):
+    result = tool.validated_evidence(focused_evidence(), "a" * 40)
+    assert result.endswith("DEV_QUALIFIED_COMMIT=" + "a" * 40 + "\n")
+
+
+@pytest.mark.parametrize("marker", [
+    "CANDIDATE_COMMIT=" + "a" * 40,
+    "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
+    "QA_FULL_REQUIRED=0",
+    "FOCUSED_RELEASE_GATE=PASSED",
+    "=== ISOLATED RESTORE VERIFICATION PASSED ===",
+    " TRACKER RELEASE DEPLOYMENT SUCCESS",
+    "EXIT_STATUS=0",
+])
+def test_629_incomplete_focused_receipt_is_rejected(tool, marker):
+    with pytest.raises(ValueError):
+        tool.validated_evidence(focused_evidence().replace(marker, ""), "a" * 40)
+
+
+def test_629_ambiguous_or_failed_focused_receipt_is_rejected(tool):
+    for payload in (
+        focused_evidence() + "QA_FULL_REQUIRED=1\n",
+        focused_evidence() + "QA_FULL_REQUIRED=0\n",
+        focused_evidence().replace("EXIT_STATUS=0", "EXIT_STATUS=1"),
+        focused_evidence().replace("CANDIDATE_COMMIT=" + "a" * 40,
+                                   "CANDIDATE_COMMIT=" + "b" * 40),
+    ):
+        with pytest.raises(ValueError):
+            tool.validated_evidence(payload, "a" * 40)
 
 
 def test_577_workflow_does_not_bypass_guard_or_resume_promotion():
