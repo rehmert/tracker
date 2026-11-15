@@ -334,3 +334,28 @@ fragments and their order. A local Bash syntax and allowlist
 accept/reject smoke of the replacement fragment passed, but the full
 host backend suite has **not** been rerun against this correction.
 No successful DEV install is claimed.
+
+## Third guarded DEV attempt — legacy COA HTTPS display assertion
+
+The operator's full release attempt on candidate
+`5bc5fce55e477976cb70a7303fdb123af19c20da`
+failed `test_csrf_multipart588.py` under HTTPS after the genuine
+native multipart upload returned 303, the browser navigated to the new
+COA detail page, and the rendered editing textbox contained the
+expected unique laboratory name. The failing test used
+`expect(page.locator("body")).to_contain_text(name)`. HTML input
+values are not part of the page's body text, so that assertion did not
+measure whether the name persisted. The operator-provided Playwright
+ARIA snapshot explicitly displayed the new laboratory value inside
+the edit textbox and the uploaded document link.
+
+Both the original 588 browser test and the newer 627 COA lifecycle
+browser test now assert the actual edit input's value with
+`to_have_value(...)` and require the uploaded-document link.
+The original signed response code, CSRF reporting, unsigned denial
+and multipart content-type assertions are retained. A source regression
+guards both modules against the misleading body-text check.
+
+The correction has not yet been runtime-tested. This failure occurred
+before installation; no full DEV qualification receipt or PROD
+authorization is claimed.
