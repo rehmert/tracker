@@ -51,13 +51,20 @@ def _fetch_products629(db):
     return db.execute(text("""
         SELECT p.id, p.name, p.barcode, p.serving_description,
                p.nutrients, p.source,
-               (SELECT COUNT(*) FROM tracker_food_entries e
-                WHERE e.product_id=p.id) AS log_count,
-               (SELECT COUNT(*) FROM tracker_food_meal_template_items i
-                WHERE i.product_id=p.id) AS template_count,
-               (SELECT COUNT(*) FROM tracker_food_favorites f
-                WHERE f.product_id=p.id) AS favorite_count
+               COALESCE(e.total,0) AS log_count,
+               COALESCE(t.total,0) AS template_count,
+               CASE WHEN f.product_id IS NULL THEN 0 ELSE 1 END
+                   AS favorite_count
         FROM tracker_food_products p
+        LEFT JOIN (
+            SELECT product_id, COUNT(*) AS total
+            FROM tracker_food_entries GROUP BY product_id
+        ) e ON e.product_id=p.id
+        LEFT JOIN (
+            SELECT product_id, COUNT(*) AS total
+            FROM tracker_food_meal_template_items GROUP BY product_id
+        ) t ON t.product_id=p.id
+        LEFT JOIN tracker_food_favorites f ON f.product_id=p.id
         ORDER BY p.name COLLATE NOCASE, p.id
         LIMIT :limit
     """), {"limit": MAX_PRODUCTS + 1}).mappings().all()
