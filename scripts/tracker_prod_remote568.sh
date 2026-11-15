@@ -85,6 +85,8 @@ chmod 600 "$LOG"
 DEPLOY_EXTRA=()
 if [[ "$RELEASE" == 635 ]]; then
   DEPLOY_EXTRA=(--reviewed-regimen-635 --db-migration)
+elif [[ "$RELEASE" == 639 ]]; then
+  DEPLOY_EXTRA=(--reviewed-facts-639 --db-migration)
 fi
 bash "$RUNNER" \
   --instance PROD \
