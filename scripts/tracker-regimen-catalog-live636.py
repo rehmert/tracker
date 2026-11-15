@@ -33,6 +33,21 @@ def main():
             print(f"STATUS=ERROR {type(exc).__name__}: {exc}", flush=True)
             success = False
 
+    print("=== Exact Nutrient 950 lookup ===", flush=True)
+    for query in ("Nutrient 950", "Pure Encapsulations Nutrient 950"):
+        try:
+            results = catalog.suggestions("supplement", query)
+            labels = [(r["source_id"], r["name"], r["brand"]) for r in results["results"]]
+            print(f"QUERY={query!r} MATCHES={len(labels)} TOP={labels[:3]}", flush=True)
+            if not labels or labels[0][0] != "277968":
+                print("STATUS=FAIL_EXACT_PRODUCT_NOT_FIRST", flush=True)
+                success = False
+            else:
+                print("STATUS=PASS", flush=True)
+        except Exception as exc:
+            print(f"STATUS=ERROR {type(exc).__name__}: {exc}", flush=True)
+            success = False
+
     print("=== NIH label 82118 ===", flush=True)
     try:
         detail = catalog.supplement_label("82118")
