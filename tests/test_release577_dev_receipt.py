@@ -27,6 +27,7 @@ def evidence(tool, target="a" * 40):
         f"CANDIDATE_COMMIT={target}",
         "QA_FULL_REQUIRED=1",
         *tool.REQUIRED,
+        "=== ISOLATED RESTORE VERIFICATION PASSED ===",
         " TRACKER RELEASE DEPLOYMENT SUCCESS",
         "EXIT_STATUS=0",
         "Finished: 2026-11-12T04:04:00+00:00",
