@@ -132,3 +132,25 @@ memoization**. Previous logs without a full machine-readable
 passed-node ledger do not support reliable individual test skipping
 across candidate SHAs. The user explicitly authorized the
 five-release regression cadence.
+
+## Focused gate scope correction
+
+The first implementation of the new five-release QA cadence still ran
+nineteen historical CSRF witness, route-inventory and browser-runner
+contracts as part of the supposedly focused preflight. This repeated
+old security investigations during routine PK UI releases and caused
+unnecessary delay. The mandatory focused gate has now been narrowed
+to core release/backup/runtime source-safety contracts, current PK UI
+coverage, the established read-only PK browser contract, and relevant
+workflow regressions. Historical CSRF modules continue to exist in
+the repository and remain collected by the comprehensive regression
+suite on releases 630, 635, 640, etc., or when a security-sensitive
+application change triggers full qualification.
+
+The isolated change-impact check, source parsing, 16-worker execution,
+16 GiB worker limit, verified backups/restores, runtime smoke and
+rollback protections remain intact.
+
+An in-flight systemd worker uses a copied runner from its original
+candidate and cannot be accelerated by subsequent GitHub commits.
+The reduced gate applies only to a newly pinned release attempt.
