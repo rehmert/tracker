@@ -103,3 +103,32 @@ The new candidate is not qualified until a fresh guarded DEV run
 produces EXIT_STATUS=0. Never edit the installed runner or detached
 worktree in place because the release expects a pinned immutable
 candidate commit.
+
+## Retry after Release 595 worker assertion (2026-11-15)
+
+The next full backend attempt stopped after `3735` passing tests in
+`tests/test_release595_food_vendor_lifecycle.py`, which still
+asserted the obsolete four-worker browser runner count. Both this
+test and the adjacent Release 596 source contract now check the
+operator's sixteen-worker browser configuration.
+
+To avoid repeating thousands of already passed backend tests on
+routine UI releases, the five-release focused-testing cadence has
+been brought forward to **Release 628 itself**, rather than waiting
+for 629. This candidate's mandatory focused preflight includes
+Release 595, Release 596, the PK UI contract, historic release safety
+contracts and cadence policy tests, all with sixteen pytest workers.
+
+Under the pinned Release 628 branch naming and no changes to
+authentication, middleware, CSRF or route handlers, the runner
+reports `QA_FULL_REQUIRED=0`. The complete browser and backend
+suites are deferred until Release 630. Releases 630, 635, 640, ...
+and security-sensitive backend edits remain full-gate releases.
+The isolated source, static impact, backup/restore, runtime smoke,
+code rollback, exact commit and 16 GiB memory limit are unchanged.
+
+This is stage-level deferral, **not per-test historical success
+memoization**. Previous logs without a full machine-readable
+passed-node ledger do not support reliable individual test skipping
+across candidate SHAs. The user explicitly authorized the
+five-release regression cadence.
