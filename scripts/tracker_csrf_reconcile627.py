@@ -27,6 +27,22 @@ POST_627_UNQUALIFIED_ROUTES = frozenset({
     ("POST", "/food/duplicates/keep-distinct"),
 })
 
+# Release 635: additional unsigned negative-matrix routes, never counted
+# as positive browser proof or merged into the frozen 627 baseline.
+POST_635_UNQUALIFIED_ROUTES = frozenset({
+    ("POST", "/regimen/items"),
+    ("POST", "/regimen/items/{item_id}/edit"),
+    ("POST", "/regimen/items/{item_id}/archive"),
+    ("POST", "/regimen/schedules"),
+    ("POST", "/regimen/schedules/{schedule_id}/edit"),
+    ("POST", "/regimen/schedules/{schedule_id}/stop"),
+    ("POST", "/regimen/entries"),
+    ("POST", "/regimen/entries/{entry_id}/edit"),
+    ("POST", "/regimen/entries/{entry_id}/delete"),
+})
+POST_BASELINE_ADDITIONS = POST_627_UNQUALIFIED_ROUTES | POST_635_UNQUALIFIED_ROUTES
+
+
 # These are explicit signed write + negative forgery pairs with persisted state
 # checks. The route is a normalized FastAPI declaration, not a URL guess.
 WITNESSES = {
@@ -150,11 +166,11 @@ def build() -> dict:
 
     if len(mapped) != 27 or not set(mapped) <= remaining or set(mapped) & known:
         raise ValueError("Release 627 source witnesses differ from baseline gap")
-    if (report["total_unsafe_routes"] != 144 + len(POST_627_UNQUALIFIED_ROUTES)
+    if (report["total_unsafe_routes"] != 144 + len(POST_BASELINE_ADDITIONS)
             or len(known) != 83
-            or len(remaining) != 61 + len(POST_627_UNQUALIFIED_ROUTES)
-            or not POST_627_UNQUALIFIED_ROUTES <= remaining
-            or POST_627_UNQUALIFIED_ROUTES & known):
+            or len(remaining) != 61 + len(POST_BASELINE_ADDITIONS)
+            or not POST_BASELINE_ADDITIONS <= remaining
+            or POST_BASELINE_ADDITIONS & known):
         raise ValueError("Baseline unsafe-route inventory changed; manual reassessment required")
 
     uncovered = [
@@ -173,6 +189,10 @@ def build() -> dict:
             for method, path in sorted(POST_627_UNQUALIFIED_ROUTES)
         ],
         "current_unsafe_routes": report["total_unsafe_routes"],
+        "post_634_unqualified_regimen_routes": [
+            {"method": method, "path": path}
+            for method, path in sorted(POST_635_UNQUALIFIED_ROUTES)
+        ],
         "pre_627_candidate_routes": 83,
         "pre_627_unqualified_routes": 61,
         "new_627_source_mapped_routes": len(mapped),
