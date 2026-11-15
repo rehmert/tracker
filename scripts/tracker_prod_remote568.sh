@@ -82,11 +82,15 @@ echo "PROD_PINNED_RUNNER_BLOB=$EXPECTED_RUNNER"
 chmod 600 "$LOG"
 # Exact-target guarded runner owns backups, backend tests, approval
 # verification, fast-forward, runtime checks and rollback.
+DEPLOY_EXTRA=()
+if [[ "$RELEASE" == 635 ]]; then
+  DEPLOY_EXTRA=(--reviewed-regimen-635 --db-migration)
+fi
 bash "$RUNNER" \
   --instance PROD \
   --base "$BASE" \
   --target "$TARGET" \
-  --ref main 2>&1 | tee "$LOG"
+  --ref main "${DEPLOY_EXTRA[@]}" 2>&1 | tee "$LOG"
 
 [[ "$(git rev-parse HEAD)" == "$TARGET" ]] ||
   fail "Final PROD checkout does not match target"
