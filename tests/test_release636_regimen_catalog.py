@@ -163,8 +163,8 @@ def test_dsld_label_details_multi_ingredient_and_labeled_serving(monkeypatch):
     assert data["serving_quantity"] == "2"
     assert data["serving_unit"] == "Capsules"
     assert data["ingredient_rows"] == [
-        {"name": "Vitamin C", "amount": "100", "unit": "mg", "basis": "", "daily_value": ""},
-        {"name": "Magnesium", "amount": "25", "unit": "mg", "basis": "", "daily_value": ""},
+        {"name": "Vitamin C", "amount": "100", "unit": "mg", "basis": "2 Capsules", "daily_value": ""},
+        {"name": "Magnesium", "amount": "25", "unit": "mg", "basis": "2 Capsules", "daily_value": ""},
     ]
     assert not data["ingredient_rows_truncated"]
 
