@@ -241,7 +241,7 @@ PY
   ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
 from pathlib import Path
 import sys
- from app.backup import create_backup
+from app.backup import create_backup
 print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
 PY
 )"
