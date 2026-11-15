@@ -127,7 +127,7 @@ def test_no_new_workflow_and_original_forms_are_intact():
     assert html.count('data-reg636-catalog>') == 2
     assert 'action="/regimen/items"' in html
     assert 'action="/regimen/items/{{ item.id }}/edit"' in html
-    assert html.count('data-reg636-results') == 2
+    assert html.count('data-reg636-results role="listbox"') == 2
     assert html.count('data-reg636-status') == 2
     assert 'tracker-regimen-catalog636.js?v=636' in html
     assert "new URLSearchParams({kind: kind.value, q})" in script
