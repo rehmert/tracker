@@ -9,7 +9,6 @@ from collections import defaultdict
 from hashlib import sha256
 import json
 import re
-from itertools import combinations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
