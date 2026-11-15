@@ -115,6 +115,19 @@
       updateHidden();
     });
 
+    form.addEventListener('regimen:catalog-cleared639', () => {
+      // Keep user-entered ingredients/serving intact, but never associate
+      // them silently with a product label after the name changes.
+      if (data.source || data.source_id) {
+        data.source = '';
+        data.source_id = '';
+        loading = false;
+        selectionId = '';
+        updateHidden();
+        status.textContent = 'Product name changed. Existing facts retained as manual; select a catalog match to link a new label.';
+      }
+    });
+
     form.addEventListener('regimen:catalog-selected639', event => {
       const selected = event.detail || {};
       const source = String(selected.source || '');
