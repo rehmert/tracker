@@ -41,23 +41,57 @@ NEW_FOOD_ROUTES = frozenset({
 })
 
 
+# Release 635 adds nine regimen write routes. These are NOT positive signed
+# browser witnesses and must remain in the strict negative matrix.
+NEW_REGIMEN_ROUTES = frozenset({
+    ("POST", "/regimen/items"),
+    ("POST", "/regimen/items/{item_id}/edit"),
+    ("POST", "/regimen/items/{item_id}/archive"),
+    ("POST", "/regimen/schedules"),
+    ("POST", "/regimen/schedules/{schedule_id}/edit"),
+    ("POST", "/regimen/schedules/{schedule_id}/stop"),
+    ("POST", "/regimen/entries"),
+    ("POST", "/regimen/entries/{entry_id}/edit"),
+    ("POST", "/regimen/entries/{entry_id}/delete"),
+})
+NEW_UNQUALIFIED_ROUTES = NEW_FOOD_ROUTES | NEW_REGIMEN_ROUTES
+
+
+def _regimen_route_manifest():
+    from scripts.tracker_csrf_route_inventory620 import extract
+    return {
+        (row["methods"][0], row["route"])
+        for row in extract(ROOT / "app/routers/regimen635.py", ROOT)
+        if len(row["methods"]) == 1
+    }
+
+
+def test_635_regimen_unsafe_routes_are_explicit_and_not_source_qualified():
+    assert _regimen_route_manifest() == NEW_REGIMEN_ROUTES
+    report = build()
+    unqualified = {(r["method"], r["path"]) for r in report["unqualified_routes"]}
+    assert NEW_REGIMEN_ROUTES <= unqualified
+    qualified = {(r["method"], r["path"]) for r in report["candidate_routes"]}
+    assert not NEW_REGIMEN_ROUTES & qualified
+
+
 def gap_rows():
     report = build()
     assert report["status"] == "BLOCKED_SOURCE_ONLY_NOT_GLOBAL_CLEARANCE"
-    assert report["total_unsafe_routes"] == 144 + len(NEW_FOOD_ROUTES)
-    assert report["remaining_without_source_witness"] == 61 + len(NEW_FOOD_ROUTES)
+    assert report["total_unsafe_routes"] == 144 + len(NEW_UNQUALIFIED_ROUTES)
+    assert report["remaining_without_source_witness"] == 61 + len(NEW_UNQUALIFIED_ROUTES)
     rows = [(row["method"], row["path"]) for row in report["unqualified_routes"]]
-    assert len(rows) == 61 + len(NEW_FOOD_ROUTES)
+    assert len(rows) == 61 + len(NEW_UNQUALIFIED_ROUTES)
     assert len(set(rows)) == len(rows)
     assert set(rows) & SESSION_OWNED == SESSION_OWNED
-    assert NEW_FOOD_ROUTES <= set(rows)
+    assert NEW_UNQUALIFIED_ROUTES <= set(rows)
     # No baseline unqualified routes may disappear without an explicit
     # source-witness reconciliation, even if the total remains unchanged.
     return sorted(set(rows) - SESSION_OWNED)
 
 
 UNQUALIFIED_GLOBAL_ROUTES = gap_rows()
-assert len(UNQUALIFIED_GLOBAL_ROUTES) == 55 + len(NEW_FOOD_ROUTES)
+assert len(UNQUALIFIED_GLOBAL_ROUTES) == 55 + len(NEW_UNQUALIFIED_ROUTES)
 
 
 @pytest.fixture(scope="module")
