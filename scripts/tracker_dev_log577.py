@@ -17,7 +17,6 @@ REQUIRED = (
     "ISOLATED_BROWSER=PASSED",
     "ISOLATED_STRICT_CSRF_BROWSER=PASSED",
     "=== ALL BACKEND TESTS PASSED ===",
-    "=== ISOLATED RESTORE VERIFICATION PASSED ===",
 )
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
@@ -34,10 +33,17 @@ def validated_evidence(content: str, target: str) -> str:
         required = (
             "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
             "FOCUSED_RELEASE_GATE=PASSED",
-            "=== ISOLATED RESTORE VERIFICATION PASSED ===",
         )
     else:
         required = REQUIRED
+    # Historical receipts contain the restore marker. New code-only releases
+    # use an explicit skip marker; exactly one outcome must be present.
+    restored = lines.count("=== ISOLATED RESTORE VERIFICATION PASSED ===")
+    skipped = lines.count("DATABASE_BACKUP=SKIPPED_NO_MIGRATION")
+    if restored + skipped != 1:
+        raise ValueError("Exactly one database backup outcome required")
+    if skipped and "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION" in lines:
+        raise ValueError("Conflicting database backup outcomes")
     for marker in (*required, f"CANDIDATE_COMMIT={target}"):
         if marker not in lines:
             raise ValueError(f"Missing DEV qualification evidence: {marker}")
