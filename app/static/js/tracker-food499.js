@@ -8,10 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!form || !status || !preview) return;
 
   const nutrients = [
-    ['energy', 'Cal'],
-    ['proteins', 'P'],
-    ['carbohydrates', 'C'],
-    ['fat', 'F']
+    ['energy', 'Calories'], ['proteins', 'Protein'],
+    ['carbohydrates', 'Carbs'], ['fat', 'Fat'],
+    ['fiber', 'Fiber'], ['sugars', 'Sugar'],
+    ['saturated-fat', 'Saturated fat'], ['sodium', 'Sodium'],
+    ['potassium', 'Potassium'], ['calcium', 'Calcium'],
+    ['iron', 'Iron'], ['magnesium', 'Magnesium'],
+    ['vitamin-c', 'Vitamin C'], ['vitamin-d', 'Vitamin D'],
+    ['vitamin-b12', 'Vitamin B12'], ['cholesterol', 'Cholesterol']
   ];
 
   function refresh() {
@@ -36,17 +40,19 @@ document.addEventListener('DOMContentLoaded', () => {
         ? Math.round(value * amount * 10) / 10
         : null;
       cell.textContent = label + ' ' + (total === null ? '?' : String(total));
-      preview.appendChild(cell);
+      if (['energy', 'proteins', 'carbohydrates', 'fat'].includes(key)) {
+        preview.appendChild(cell);
+      }
     }
 
     const counted = nutrients.length - missing.length;
     status.textContent =
       'Review ' + serving + ' × ' + (validAmount ? rawQuantity : '?') +
-      ': ' + counted + ' of 4 core values reported. ' +
+      ': ' + counted + ' of ' + nutrients.length + ' required nutrients entered. ' +
       (missing.length
-        ? 'Unknown: ' + missing.join(', ') + '. Unknown is not zero.'
-        : 'All four core values are reported.') +
-      ' Check the package label and serving basis before saving.';
+        ? 'Still required: ' + missing.join(', ') + '.'
+        : 'All tracked nutrients are entered.') +
+      ' Use only confirmed numbers, including confirmed zero, before saving.';
   }
 
   form.addEventListener('input', refresh);
