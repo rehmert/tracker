@@ -31,10 +31,10 @@
   <section class="card food629-group" aria-label="Duplicates of {{ group.name }}">
     <div class="food629-group-head">
       <h2>{{ group.name }}</h2>
-      <span>{{ group.items|length }} saved versions</span>
+      <span>{{ group.versions|length }} saved versions</span>
     </div>
     <div class="food629-meta-grid">
-      {% for item in group.items %}
+      {% for item in group.versions %}
       <article>
         <h3>Version #{{ item.id }}</h3>
         <dl>
@@ -53,20 +53,20 @@
       <table class="food629-nutrients">
         <thead><tr>
           <th scope="col">Nutrient / stored serving</th>
-          {% for item in group.items %}
+          {% for item in group.versions %}
           <th scope="col">#{{ item.id }}<small>{{ item.serving_description }}</small></th>
           {% endfor %}
         </tr></thead>
         <tbody>
           {% for key, label in nutrients.items() %}
           {% if key == 'energy' %}
-          <tr class="food629-section-row"><th colspan="{{ group.items|length + 1 }}" scope="colgroup">Macronutrients</th></tr>
+          <tr class="food629-section-row"><th colspan="{{ group.versions|length + 1 }}" scope="colgroup">Macronutrients</th></tr>
           {% elif key == 'sodium' %}
-          <tr class="food629-section-row"><th colspan="{{ group.items|length + 1 }}" scope="colgroup">Micronutrients &amp; other nutrients</th></tr>
+          <tr class="food629-section-row"><th colspan="{{ group.versions|length + 1 }}" scope="colgroup">Micronutrients &amp; other nutrients</th></tr>
           {% endif %}
           <tr>
             <th scope="row">{{ label[0] }} <small>{{ label[1] }}</small></th>
-            {% for item in group.items %}
+            {% for item in group.versions %}
             {% set value = item.measurements[key] %}
             <td class="{{ 'food629-unknown' if value is none else '' }}">
               {{ '—' if value is none else value }}
