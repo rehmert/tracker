@@ -102,7 +102,7 @@
         Remove version #{{ item.id }}
       </label>
       {% endfor %}
-      <p class="note">Only the selected equivalent versions are removed. Their historical logs, meal-template references and favorite status are transferred to the kept version in one transaction. No nutrient values are recalculated.</p>
+      <p class="note">Only the selected equivalent versions are removed. Their historical logs, meal-template references and favorite status are transferred to the kept version in one transaction. No nutrient values are recalculated. Historical records will display the kept product's name and source metadata.</p>
       <button type="submit" class="primary">Consolidate selected equivalent versions</button>
     </form>
     {% endfor %}
