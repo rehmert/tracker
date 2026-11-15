@@ -94,6 +94,14 @@
   <ul>{% for e in prep_events %}<li>{{ e.occurred_at|dt }} · {{ e.kind }}{% if e.notes %} · {{ e.notes }}{% endif %} · <a href='/vials/{{ v.id }}/preparations/{{ e.id }}/edit'>Edit supplies</a>{% if e.kind != 'reconstitution' %}<form method='post' action='/vials/{{ v.id }}/preparations/{{ e.id }}/delete' style='display:inline' onsubmit="return confirm('Delete preparation and restore supplies?')"><button class='link danger'>Delete</button></form>{% endif %}</li>{% endfor %}</ul>
   </details>{% endif %}
   <form method="post" action="/vials/{{ v.id }}" class="grid">
+    <label class="field wide"><span>Compound</span>
+      <select name="compound_id" required>
+        {% for compound in compounds %}
+        <option value="{{ compound.id }}" {% if compound.id == v.compound_id %}selected{% endif %}>{{ compound.name }} ({{ compound.primary_unit }})</option>
+        {% endfor %}
+      </select>
+      <small>Correct a vial assigned to the wrong compound. Existing doses, blend use or COA links must be resolved first; mass and IU cannot be interchanged. Changing this does not alter vial content or purchase cost.</small>
+    </label>
     <label class="field"><span>Label</span><input name="label" value="{{ v.label }}"></label>
     <label class="field"><span>Cap color</span><input name="cap_color" value="{{ v.cap_color }}"></label>
     <label class="field"><span>Lot / batch</span><input name="lot" value="{{ v.lot }}"></label>
