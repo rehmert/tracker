@@ -49,6 +49,7 @@ def vial(
         "first_dosed_on": first_dosed_on,
     })
 
+    values.pop("compound_id", None)
     return SimpleNamespace(
         id=vid,
         compound_id=10,
