@@ -51,7 +51,7 @@ def _cleanup_status_guard():
 def test_605_incomplete_normal_exit_is_a_failure_not_false_success():
     assert "QUALIFICATION_COMPLETE=0" in SOURCE
     assert "QUALIFICATION_COMPLETE=1" in SOURCE
-    assert SOURCE.index('echo "Verified recovery archive: $ARCHIVE"') < (
+    assert SOURCE.index('echo "Source recovery snapshot: $SAVE/source.tar.gz"') < (
         SOURCE.index("QUALIFICATION_COMPLETE=1")
     )
     assert "trap 'exit 143' TERM" in SOURCE
