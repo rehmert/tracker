@@ -92,8 +92,10 @@ def test_select_match_prefills_and_preserves_manual_edits(tab):
     page.locator("[data-reg636-results] button").click()
     expect(page.locator('input[name="name"]')).to_have_value("Nutrient 950")
     expect(page.locator('input[name="form"]')).to_have_value("Capsule")
-    expect(page.locator('textarea[name="notes"]')).to_contain_text("NIH DSLD #218662")
-    expect(page.locator('textarea[name="notes"]')).to_contain_text("Labeled serving")
+    expect(page.locator('textarea[name="notes"]')).to_have_value(
+        re.compile("NIH DSLD #218662"))
+    expect(page.locator('textarea[name="notes"]')).to_have_value(
+        re.compile("Labeled serving"))
     page.locator('input[name="form"]').fill("My custom form")
     expect(page.locator('input[name="form"]')).to_have_value("My custom form")
     assert not posts
