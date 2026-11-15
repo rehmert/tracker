@@ -138,7 +138,7 @@ def temporary_browser_runner(source: Path, home: Path, destination: Path) -> Non
     print("BROWSER_QA_HOME_OVERRIDE=TEMP_COPY_ONLY", flush=True)
 
 
-def execute(source_sha: str, *, retain: bool) -> None:
+def execute(source_sha: str, *, retain: bool, packages_only: bool = False) -> None:
     runroot = Path(tempfile.mkdtemp(prefix="tracker-freshenv570-", dir="/tmp"))
     runroot.chmod(0o700)
     source = runroot / "source"
@@ -188,6 +188,9 @@ def execute(source_sha: str, *, retain: bool) -> None:
               "--baseline", str(source / "docs/dependencies/observed-2026-11-11-py313.json"),
               "--constraints", constraints], env=environment, timeout=90)
         print("FRESHENV_PACKAGE_BASELINE=PASSED", flush=True)
+        if packages_only:
+            print("FRESHENV_PACKAGES_ONLY=PASSED", flush=True)
+            return
 
         print("[5/7] Downloading and launching separate Chromium", flush=True)
         call([python, "-m", "playwright", "install", "chromium"],
@@ -245,17 +248,24 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true",
                         help="Actually download and test in a disposable sandbox")
+    parser.add_argument("--packages-only", action="store_true",
+                        help="Replay pinned wheel dependencies in a fresh venv without Chromium or full suites")
     parser.add_argument("--retain-artifacts", action="store_true",
                         help="Keep private /tmp wheel receipts and browser files")
     args = parser.parse_args(argv)
     if args.retain_artifacts and not args.execute:
         parser.error("--retain-artifacts requires --execute")
+    if args.packages_only and not args.execute:
+        parser.error("--packages-only requires --execute")
     try:
         sha = preflight()
         if not args.execute:
             print("DRY_RUN=PASSED; --execute required to download/test")
             return 0
-        execute(sha, retain=args.retain_artifacts)
+        if args.packages_only:
+            execute(sha, retain=args.retain_artifacts, packages_only=True)
+        else:
+            execute(sha, retain=args.retain_artifacts)
         print("FRESHENV_REPLAY=SUCCESS", flush=True)
         return 0
     except (ReplayError, OSError, UnicodeError, subprocess.CalledProcessError) as exc:
