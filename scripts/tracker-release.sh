@@ -111,18 +111,31 @@ worker() {
  g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from base"
  # The hourly timer is activated by its own guarded installer.
  if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer$' | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py)'; then
-  [[ "$REVIEWED_REGIMEN_635" == 1 && "$DB_MIGRATION" == 1 ]] ||
+  [[ "$DB_MIGRATION" == 1 ]] ||
     fail "Schema/dependency/systemd changes require separately reviewed deployment"
-  [[ "$INSTANCE" == DEV && "$REF" == release/635-regimen-catalog-schedules ||
-     "$INSTANCE" == PROD && "$REF" == main ]] ||
-    fail "Reviewed Release 635 procedure is restricted to its exact release refs"
-  g worktree add --detach "$QA" "$TARGET"
-  "$PY" "$QA/scripts/tracker_schema_review635.py" \
-    --root "$APP" --base "$BASE" --target "$TARGET" ||
-    fail "Reviewed additive schema verification failed"
-  echo "REGIMEN_635_SCHEMA_PROCEDURE=AUTHORIZED"
- elif [[ "$REVIEWED_REGIMEN_635" == 1 ]]; then
-  fail "Reviewed Release 635 schema flag is invalid without schema change"
+  if [[ "$REVIEWED_FACTS_639" == 1 ]]; then
+   [[ "$INSTANCE" == DEV && "$REF" == release/639-structured-supplement-facts ||
+      "$INSTANCE" == PROD && "$REF" == main ]] ||
+     fail "Reviewed Release 639 procedure restricted to its exact refs"
+   g worktree add --detach "$QA" "$TARGET"
+   "$PY" "$QA/scripts/tracker_schema_review639.py" \
+     --root "$APP" --base "$BASE" --target "$TARGET" ||
+     fail "Reviewed additive facts schema verification failed"
+   echo "REGIMEN_639_SCHEMA_PROCEDURE=AUTHORIZED"
+  elif [[ "$REVIEWED_REGIMEN_635" == 1 ]]; then
+   [[ "$INSTANCE" == DEV && "$REF" == release/635-regimen-catalog-schedules ||
+      "$INSTANCE" == PROD && "$REF" == main ]] ||
+     fail "Reviewed Release 635 procedure is restricted to its exact release refs"
+   g worktree add --detach "$QA" "$TARGET"
+   "$PY" "$QA/scripts/tracker_schema_review635.py" \
+     --root "$APP" --base "$BASE" --target "$TARGET" ||
+     fail "Reviewed additive schema verification failed"
+   echo "REGIMEN_635_SCHEMA_PROCEDURE=AUTHORIZED"
+  else
+   fail "Schema/dependency/systemd changes require reviewed schema flag"
+  fi
+ elif [[ "$REVIEWED_REGIMEN_635" == 1 || "$REVIEWED_FACTS_639" == 1 ]]; then
+  fail "Reviewed schema flags are invalid without schema change"
  fi
  if [[ "$DB_MIGRATION" == 0 ]] &&
     g diff --name-only "$BASE" "$TARGET" | grep -Eq '^scripts/.*(migrat|backfill|data[-_]fix)'; then
@@ -330,13 +343,14 @@ if [[ "${1:-}" == --worker ]]; then
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
   --dev-focused-630) DEV_FOCUSED_630=1; shift;;
   --db-migration) DB_MIGRATION=1; shift;;
   --reviewed-regimen-635) REVIEWED_REGIMEN_635=1; shift;;
+  --reviewed-facts-639) REVIEWED_FACTS_639=1; shift;;
   --serial-tests) fail "Serial testing prohibited";;
   --instance|--base|--target|--ref)
    (( $# >= 2 )) || fail "Missing argument for $1"
@@ -356,6 +370,8 @@ done
 [[ "$INSTANCE" != PROD || "$REF" == main ]] || fail "PROD requires --ref main"
 [[ "$DEV_FOCUSED_630" == 0 || ( "$INSTANCE" == DEV && "$REF" == release/630-food-duplicate-resolution ) ]] || fail "Focused 630 is DEV-only and branch-specific"
 [[ "$REVIEWED_REGIMEN_635" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed regimen deployment requires --db-migration"
+[[ "$REVIEWED_FACTS_639" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed facts deployment requires --db-migration"
+[[ "$REVIEWED_FACTS_639" == 0 || "$REVIEWED_REGIMEN_635" == 0 ]] || fail "Only one reviewed schema flag permitted"
 [[ $(id -u) == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run as root on configured Tracker host"
 instance_check "$INSTANCE"
 verify_prod_approval
