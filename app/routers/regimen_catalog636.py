@@ -76,7 +76,7 @@ def _openfda(term):
     if not phrase:
         return []
     escaped = phrase.replace('"', "")
-    query = f'brand_name:"{escaped}"+generic_name:"{escaped}"'
+    query = f'brand_name:"{escaped}" OR generic_name:"{escaped}"'
     data = _fetch(_FDA, {"search": query, "limit": _MAX_RESULTS})
     matches = []
     for entry in data.get("results", []):
