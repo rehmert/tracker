@@ -85,7 +85,7 @@ def _facts_values(form):
     raw = str(form.get("label_facts_json", "")).strip()
     if not raw:
         return None
-    if len(raw) > 50000:
+    if len(raw) > 120000:
         raise ValueError("Supplement label information exceeds the supported size.")
     try:
         data = json.loads(raw)
@@ -113,7 +113,8 @@ def _facts_values(form):
         if not isinstance(row, dict):
             raise ValueError("Invalid supplement ingredient row.")
         values_row = {}
-        for key, limit in (("name", 160), ("amount", 40), ("unit", 40)):
+        for key, limit in (("name", 160), ("amount", 40), ("unit", 40),
+                           ("basis", 100), ("daily_value", 160)):
             value = row.get(key, "")
             if not isinstance(value, str) or len(value) > limit:
                 raise ValueError("Invalid ingredient " + key)
