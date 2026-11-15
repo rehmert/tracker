@@ -51,6 +51,7 @@ from .routers import user_management479
 from .routers import user_db_status389
 from .routers import inventory_timeline
 from .routers import regimen635
+from .routers import regimen_catalog636
 
 
 @asynccontextmanager
@@ -294,6 +295,7 @@ app.include_router(user_management479.router)
 app.include_router(user_db_status389.router)
 app.include_router(inventory_timeline.router)
 app.include_router(regimen635.router)
+app.include_router(regimen_catalog636.router)
 
 from .routers import consolidated_reports
 app.include_router(consolidated_reports.router)
