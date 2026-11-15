@@ -12,7 +12,8 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
-  [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 || "$TARGETED_MODULE" == note-title575 ]] || {
+  [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
+  [[ "$TARGETED_MODULE" == note-title575 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
