@@ -159,17 +159,17 @@ def test_search_rate_limit_shows_retry_delay(tab):
 def test_499_macro_review_distinguishes_unknown_from_zero(tab):
     page, errors = tab
     expect(page.locator("#food499-review-status")).to_contain_text(
-        "0 of 4 core values reported"
+        "0 of 16 required nutrients entered"
     )
     page.locator("#food-serving").fill("170 g")
     page.locator("#food-nutrient-energy").fill("0")
     page.locator("#food-nutrient-proteins").fill("20")
     expect(page.locator("#food499-review-status")).to_contain_text(
-        "2 of 4 core values reported"
+        "2 of 16 required nutrients entered"
     )
     expect(page.locator("#food499-review-status")).to_contain_text(
-        "Unknown: C, F"
+        "Still required: Carbs, Fat"
     )
-    expect(page.locator("#food499-macro-preview")).to_contain_text("Cal 0")
-    expect(page.locator("#food499-macro-preview")).to_contain_text("P 40")
+    expect(page.locator("#food499-macro-preview")).to_contain_text("Calories 0")
+    expect(page.locator("#food499-macro-preview")).to_contain_text("Protein 40")
     assert not errors, errors
