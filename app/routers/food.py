@@ -81,6 +81,25 @@ def optional_nutrient(raw):
         raise HTTPException(422, "Nutrient value is out of range")
     return value
 
+def required_food_nutrients629(form):
+    """New/edited saved foods must provide all tracked numeric nutrients.
+
+    Unknown or blank is not accepted as zero. Legacy snapshots remain
+    readable, and daily target preferences remain optional.
+    """
+    values = {}
+    for key, (label, _unit) in NUTRIENTS.items():
+        raw = form.get(key)
+        if raw is None or not str(raw).strip():
+            raise HTTPException(
+                422, f"{label} is required; enter a verified numeric value."
+            )
+        values[key] = optional_nutrient(raw)
+        if values[key] is None:
+            raise HTTPException(422, f"{label} must be numeric.")
+    return values
+
+
 def nutrient_coverage(day, db_engine=None):
     """Count foods with reported values, independently per nutrient."""
     selected_engine = engine if db_engine is None else db_engine
@@ -390,7 +409,7 @@ async def create_food_entry(request: Request, db_engine=Depends(get_food_read_en
         raise HTTPException(422,"Servings must be greater than zero and at most 100.")
     meal=str(form.get("meal","Snack"))
     if meal not in ("Breakfast","Lunch","Dinner","Snack"): meal="Snack"
-    info={key:optional_nutrient(form.get(key)) for key in NUTRIENTS}
+    info = required_food_nutrients629(form)
     barcode=str(form.get("barcode","")).strip()
     if barcode and not re.fullmatch(r"\d{8,14}",barcode): barcode=""
     desc=str(form.get("serving_description","1 serving")).strip()[:80] or "1 serving"
