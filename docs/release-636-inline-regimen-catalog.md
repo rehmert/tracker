@@ -13,9 +13,9 @@ No separate page or mandatory lookup. Manual entry works when there are no match
 - Medication: NLM RxNorm `GET /REST/drugs.json?name=...`, then openFDA Drug NDC `GET /drug/ndc.json?search=...`.
 - Supplements: NIH Dietary Supplement Label Database `GET /api/v9/browse-products/?method=by_keyword&q=...`.
 
-These are **label/product matches**, not treatment recommendations; supplements may have multiple ingredients, so this release deliberately leaves ingredient/strength empty when a search result does not identify them clearly.
+These are **label/product matches**, not treatment recommendations. Choosing a DSLD supplement also requests its individual NIH label by ID and shows labeled serving size and multiple ingredient quantities in the existing Notes field (when available). Tracker does not reduce a multi-ingredient supplement to a misleading single-strength value.
 
-Outbound HTTP requests run server-side against fixed HTTPS provider domains, with a 3-second per-provider timeout, 350 KiB maximum JSON body, 8 maximum results and 15-minute in-process cache. Query range: 2–80 characters. Failure is reported in the form and does not block manual entry. Public queries reveal the typed search term to providers, not any saved regimen data.
+Outbound HTTP requests run server-side against fixed HTTPS provider domains, with a 3-second per-request timeout, 350 KiB maximum JSON body, 8 maximum results and 15-minute in-process cache. Query range: 2–80 characters. Failure is reported in the form and does not block manual entry. Public queries reveal the typed search term to providers, not any saved regimen data.
 
 No schema changes and no new client write routes. Auth and origin/CSRF controls remain inherited from the Tracker app. Existing item POSTs and audit behavior remain authoritative.
 
