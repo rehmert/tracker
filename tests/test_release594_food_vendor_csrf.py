@@ -97,9 +97,9 @@ def test_594_real_chromium_signed_form_witness_and_disposable_db():
 
 def test_594_oom_recovery_keeps_every_browser_gate_with_bounded_parallelism():
     runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
-    assert runner.count("-n 4 --dist=loadfile") == 3
-    assert "-n 16 --dist=loadfile" not in runner
-    assert 'echo "WORKERS=4"' in runner
+    assert runner.count("-n 16 --dist=loadfile") == 3
+    assert "-n 4 --dist=loadfile" not in runner
+    assert 'echo "WORKERS=16"' in runner
     assert "tests/browser/test_strict_csrf521.py" in runner
     assert "tests/browser/test_food_search_ui.py" in runner
     assert "ISOLATED_BROWSER=PASSED" in runner
