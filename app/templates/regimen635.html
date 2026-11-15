@@ -16,6 +16,12 @@
 .reg635-entry{margin:1rem 0}
 .reg635-form input,.reg635-form select,.reg635-form textarea{max-width:100%;width:100%}
 .reg635-form button{justify-self:start}
+.reg636-lookup{display:grid;gap:.35rem}
+.reg636-lookup [hidden]{display:none!important}
+.reg636-lookup [data-reg636-results]{max-height:14rem;overflow:auto;border:1px solid var(--border,#8885);border-radius:8px;padding:.25rem}
+.reg636-option{display:block;text-align:left;width:100%;padding:.6rem;margin:.15rem 0;border:1px solid var(--border,#8885);border-radius:6px;background:transparent;cursor:pointer}
+.reg636-option small{display:block;opacity:.8}
+.reg636-option:focus-visible,.reg636-option:hover{outline:2px solid var(--accent,#5575a4)}
 </style>
 <section class="card" id="reg635-today">
   <div class="reg635-day">
@@ -74,9 +80,15 @@
 <section class="card" id="reg635-catalog">
 <h2>Catalog</h2>
 <details><summary><strong>Add supplement or medication</strong></summary>
-  <form method="post" action="/regimen/items" class="reg635-form">
+  <form method="post" action="/regimen/items" class="reg635-form" data-reg636-catalog>
     <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}">{{ kind|capitalize }}</option>{% endfor %}</select></label>
     <label class="field">Name <input name="name" maxlength="160" required></label>
+    <div class="reg636-lookup" aria-live="polite">
+      <small data-reg636-status>Type a name to search public catalogs, or enter it manually.</small>
+      <div data-reg636-results role="listbox" aria-label="Catalog product matches" hidden></div>
+      <small data-reg636-source></small>
+      <small>Catalog labels are reference information, not a dosing recommendation. Review all fields before saving.</small>
+    </div>
     <label class="field">Ingredient / generic name <input name="ingredient" maxlength="160"></label>
     <label class="field">Strength <input name="strength" maxlength="80" placeholder="e.g. 200 mg per capsule"></label>
     <label class="field">Form <input name="form" maxlength="60" placeholder="Tablet, softgel, liquid"></label>
@@ -96,9 +108,15 @@
   {% if item.instructions %}<p>{{ item.instructions }}</p>{% endif %}
   {% if item.purpose %}<p class="note">Purpose: {{ item.purpose }}</p>{% endif %}
   <details><summary>Edit item</summary>
-    <form method="post" action="/regimen/items/{{ item.id }}/edit" class="reg635-form">
+    <form method="post" action="/regimen/items/{{ item.id }}/edit" class="reg635-form" data-reg636-catalog>
       <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}" {% if kind == item.kind %}selected{% endif %}>{{ kind|capitalize }}</option>{% endfor %}</select></label>
       <label class="field">Name <input name="name" value="{{ item.name }}" required maxlength="160"></label>
+    <div class="reg636-lookup" aria-live="polite">
+      <small data-reg636-status>Type a name to search public catalogs, or enter it manually.</small>
+      <div data-reg636-results role="listbox" aria-label="Catalog product matches" hidden></div>
+      <small data-reg636-source></small>
+      <small>Catalog labels are reference information, not a dosing recommendation. Review all fields before saving.</small>
+    </div>
       <label class="field">Ingredient <input name="ingredient" value="{{ item.ingredient }}" maxlength="160"></label>
       <label class="field">Strength <input name="strength" value="{{ item.strength }}" maxlength="80"></label>
       <label class="field">Form <input name="form" value="{{ item.form }}" maxlength="60"></label>
@@ -186,4 +204,5 @@
 {% else %}<tr><td colspan="6">No intake has been recorded.</td></tr>{% endfor %}
 </tbody></table></div>
 </section>
+<script defer src="/static/js/tracker-regimen-catalog636.js?v=636"></script>
 {% endblock %}
