@@ -3,7 +3,8 @@
   'use strict';
   const empty = () => ({
     brand: '', source: '', source_id: '', serving_quantity: '',
-    serving_unit: '', ingredients: []
+    serving_unit: '', servings_per_container: '', upc_sku: '',
+    other_ingredients: '', ingredients: []
   });
   document.querySelectorAll('form[data-reg636-catalog]').forEach(form => {
     const root = form.querySelector('[data-reg639-facts]');
@@ -12,6 +13,9 @@
     const brand = root.querySelector('[data-reg639-brand]');
     const servingQty = root.querySelector('[data-reg639-serving-quantity]');
     const servingUnit = root.querySelector('[data-reg639-serving-unit]');
+    const servingsContainer = root.querySelector('[data-reg639-servings-container]');
+    const upc = root.querySelector('[data-reg639-upc]');
+    const others = root.querySelector('[data-reg639-other-ingredients]');
     const body = root.querySelector('[data-reg639-ingredients]');
     const provenance = root.querySelector('[data-reg639-provenance]');
     const status = root.querySelector('[data-reg639-status]');
@@ -39,10 +43,15 @@
       data.brand = brand.value;
       data.serving_quantity = servingQty.value;
       data.serving_unit = servingUnit.value;
+      data.servings_per_container = servingsContainer.value;
+      data.upc_sku = upc.value;
+      data.other_ingredients = others.value;
       data.ingredients = Array.from(body.querySelectorAll('tr')).map(row => ({
         name: row.querySelector('[data-key="name"]').value.trim(),
         amount: row.querySelector('[data-key="amount"]').value.trim(),
-        unit: row.querySelector('[data-key="unit"]').value.trim()
+        unit: row.querySelector('[data-key="unit"]').value.trim(),
+        basis: row.querySelector('[data-key="basis"]').value.trim(),
+        daily_value: row.querySelector('[data-key="daily_value"]').value.trim()
       })).filter(row => row.name);
       hidden.value = JSON.stringify(data);
       provenance.textContent = data.source && data.source_id
@@ -52,7 +61,8 @@
 
     function makeRow(row) {
       const tr = document.createElement('tr');
-      for (const [field, max] of [['name',160],['amount',40],['unit',40]]) {
+      for (const [field, max] of [['name',160],['amount',40],['unit',40],
+                                  ['basis',100],['daily_value',160]]) {
         const td = document.createElement('td');
         const input = document.createElement('input');
         input.setAttribute('data-key', field);
@@ -85,12 +95,15 @@
       brand.value = data.brand || '';
       servingQty.value = data.serving_quantity || '';
       servingUnit.value = data.serving_unit || '';
+      servingsContainer.value = data.servings_per_container || '';
+      upc.value = data.upc_sku || '';
+      others.value = data.other_ingredients || '';
       body.replaceChildren();
       (data.ingredients || []).forEach(makeRow);
       updateHidden();
     }
 
-    [brand, servingQty, servingUnit].forEach(input =>
+    [brand, servingQty, servingUnit, servingsContainer, upc, others].forEach(input =>
       input.addEventListener('input', () => {
         changedSinceSelection = true;
         updateHidden();
@@ -98,7 +111,7 @@
     );
     add.addEventListener('click', () => {
       changedSinceSelection = true;
-      makeRow({name: '', amount: '', unit: ''});
+      makeRow({name: '', amount: '', unit: '', basis: '', daily_value: ''});
       updateHidden();
     });
 
@@ -134,11 +147,13 @@
       data.serving_quantity = String(label.serving_quantity || '');
       data.serving_unit = String(label.serving_unit || '');
       data.ingredients = Array.isArray(label.ingredient_rows) ? label.ingredient_rows : [];
-      if (!data.ingredients.length) {
-        status.textContent = 'NIH label returned no ingredient quantities. Verify the product before saving.';
-      }
+      data.other_ingredients = String(label.other_ingredients || '');
+      data.servings_per_container = String(label.servings_per_container || '');
+      data.upc_sku = String(label.upc_sku || '');
       draw();
-      status.textContent = data.ingredients.length + ' labeled ingredient rows imported. Review each amount and serving basis.';
+      status.textContent = data.ingredients.length
+        ? data.ingredients.length + ' labeled ingredient rows imported. Review each amount and serving basis.'
+        : 'NIH label returned no ingredient quantities. Verify the product before saving.';
     });
     form.addEventListener('regimen:label-failed639', event => {
       if (event.detail?.source_id !== selectionId) return;
