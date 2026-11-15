@@ -39,8 +39,17 @@ def main():
             results = catalog.suggestions("supplement", query)
             labels = [(r["source_id"], r["name"], r["brand"]) for r in results["results"]]
             print(f"QUERY={query!r} MATCHES={len(labels)} TOP={labels[:3]}", flush=True)
-            if not labels or labels[0][0] != "277968":
-                print("STATUS=FAIL_EXACT_PRODUCT_NOT_FIRST", flush=True)
+            exact = [
+                item for item in labels
+                if item[1].strip().casefold() == "nutrient 950"
+                and item[2].strip().casefold() == "pure encapsulations"
+                and item[0].isdigit()
+            ]
+            top_is_exact = bool(labels) and labels[0] in exact
+            print(f"EXACT_BRAND_PRODUCT_MATCHES={len(exact)} "
+                  f"TOP_IS_EXACT={top_is_exact}", flush=True)
+            if not top_is_exact:
+                print("STATUS=FAIL_EXACT_PRODUCT_AND_BRAND_NOT_FIRST", flush=True)
                 success = False
             else:
                 print("STATUS=PASS", flush=True)
