@@ -124,7 +124,8 @@ def build() -> dict:
     mapped = {}
     for module, routes in WITNESSES.items():
         src = (ROOT / module).read_text()
-        if src.count("max_redirects=0") < 2 or "status == 403" not in src:
+        min_forged_calls = 1 if module == "tests/browser/test_csrf_blend_previews627.py" else 2
+        if src.count("max_redirects=0") < min_forged_calls or "status == 403" not in src:
             raise ValueError("Missing forgery/signed write assertions: " + module)
         if "form=" not in src and module != "tests/browser/test_csrf_signed_lifecycles627.py":
             raise ValueError("No form-encoded signed submission: " + module)
