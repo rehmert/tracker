@@ -112,7 +112,7 @@ worker() {
  g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from base"
  # Schema and deployment infrastructure changes still require a separate
  # reviewed migration procedure; the ordinary fast-forward worker refuses them.
- if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer
+ if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer$' | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations)(\.py|/))'; then
   fail "Schema/dependency/systemd changes require separately reviewed deployment"
  fi
  # Explicit data-migration scripts may change stored values without changing
@@ -232,11 +232,14 @@ PY
   DATA_DIR="$("$PY" - <<'PY'
 from pathlib import Path
 import re
-root=Path('/opt/tracker'); data=root/'data'
-for line in Path('/etc/tracker.env').read_text().splitlines():
- m=re.match(r'^\\s*(?:export\\s+)?TRACKER_DATA_DIR\\s*=(.*)$',line)
- if m and m.group(1).strip(): data=Path(m.group(1).strip().strip("\\\"'"))
-if not data.is_absolute(): data=root/data
+root = Path("/opt/tracker")
+data = root / "data"
+for line in Path("/etc/tracker.env").read_text().splitlines():
+    m = re.match(r"^\\s*(?:export\\s+)?TRACKER_DATA_DIR\\s*=(.*)$", line)
+    if m and m.group(1).strip():
+        data = Path(m.group(1).strip().strip(chr(34) + chr(39)))
+if not data.is_absolute():
+    data = root / data
 print(data.resolve())
 PY
 )"
