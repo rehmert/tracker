@@ -80,7 +80,7 @@
               (selected.id ? ' #' + selected.id : '');
             if (notes && !notes.value.includes(marker)) {
               const combined = notes.value.trim()
-                ? notes.value.trim() + '\\n' + marker : marker;
+                ? notes.value.trim() + '\n' + marker : marker;
               if (combined.length <= notes.maxLength) notes.value = combined;
             }
             source.textContent = 'Selected: ' + selected.source +
