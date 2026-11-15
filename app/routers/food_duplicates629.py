@@ -189,8 +189,11 @@ async def merge_duplicate_foods629(
     db_engine=Depends(get_food_read_engine406),
 ):
     form = await request.form()
-    if set(form) != {"keep_id", "remove_id"} or (
-        len(form.getlist("keep_id")) != 1
+    allowed_fields = {"keep_id", "remove_id", "csrf_token"}
+    if (not {"keep_id", "remove_id"} <= set(form)
+        or not set(form) <= allowed_fields
+        or len(form.getlist("csrf_token")) > 1
+        or len(form.getlist("keep_id")) != 1
         or not 1 <= len(form.getlist("remove_id")) <= MAX_MERGE
     ):
         raise HTTPException(422, "Invalid duplicate merge form")
