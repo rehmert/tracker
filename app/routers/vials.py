@@ -165,6 +165,7 @@ def vial_label_sheets447_download(
 # TRACKER_BULK_STAGE4
 
 BULK_FIELDS = {
+    "compound_id": "compound",
     "status": "choice",
     "lot": "text",
     "label": "text",
@@ -208,7 +209,7 @@ def _bulk_parse(form):
             continue
 
         if mode == "clear":
-            if kind in ("choice", "boolean"):
+            if kind in ("choice", "boolean", "compound"):
                 raise ValueError(f"{field} cannot be cleared.")
 
             changes[field] = None if kind == "date" else ""
@@ -216,7 +217,12 @@ def _bulk_parse(form):
 
         raw = str(form.get("value_" + field, "")).strip()
 
-        if kind == "choice":
+        if kind == "compound":
+            if not raw.isdecimal() or int(raw) <= 0:
+                raise ValueError("Choose a valid destination compound.")
+            changes[field] = int(raw)
+
+        elif kind == "choice":
             if raw not in VIAL_STATUSES:
                 raise ValueError("Choose a valid status.")
             changes[field] = raw
@@ -259,8 +265,32 @@ def _bulk_load(db, ids):
     return sorted(vials, key=lambda v: v.id)
 
 
-def _bulk_validate(vials, changes):
+def _validate_compound_reassignment(db: Session, vial: Vial, new_id: int) -> Compound:
+    """Reject corrections that would rewrite the meaning of existing records."""
+    target = db.get(Compound, new_id)
+    if target is None:
+        raise ValueError(f"Vial #{vial.id}: destination compound does not exist.")
+    if vial.compound_id == new_id:
+        return target
+    if U.parse_unit(vial.content_unit).dim != U.parse_unit(target.primary_unit).dim:
+        raise ValueError(f"Vial #{vial.id}: mass and IU compounds cannot be interchanged.")
+    if vial.doses:
+        raise ValueError(f"Vial #{vial.id}: cannot change compound after doses are recorded.")
+    if db.scalar(select(BlendComponent.id).where(
+        BlendComponent.source_vial_id == vial.id
+    ).limit(1)) is not None:
+        raise ValueError(f"Vial #{vial.id}: cannot change compound after blend use.")
+    if vial.coa_id is not None or vial.linked_coas:
+        raise ValueError(f"Vial #{vial.id}: unlink existing COAs before changing compound.")
+    return target
+
+
+def _bulk_validate(vials, changes, db=None):
     for vial in vials:
+        if "compound_id" in changes and changes["compound_id"] != vial.compound_id:
+            if db is None:
+                raise ValueError("Compound reassignment requires database validation.")
+            _validate_compound_reassignment(db, vial, changes["compound_id"])
         proposed = {
             field: getattr(vial, field)
             for field in BULK_FIELDS
@@ -340,20 +370,25 @@ def _bulk_snapshot(vials, changes):
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _bulk_rows(vials, changes):
+def _bulk_rows(vials, changes, db=None):
     rows = []
 
     for vial in vials:
         for field, value in changes.items():
             old = getattr(vial, field)
 
+            current = _bulk_serial(old)
+            proposed = _bulk_serial(value)
+            if field == "compound_id":
+                current = vial.compound.name
+                proposed = db.get(Compound, value).name if db is not None else str(value)
             rows.append({
                 "vial_id": vial.id,
                 "compound": vial.compound.name,
                 "label": vial.label or f"#{vial.id}",
                 "field": field,
-                "current": _bulk_serial(old),
-                "proposed": _bulk_serial(value),
+                "current": current,
+                "proposed": proposed,
                 "changed": old != value,
             })
 
@@ -373,13 +408,13 @@ async def bulk_preview_vials(
         form = await request.form()
         ids, changes = _bulk_parse(form)
         vials = _bulk_load(db, ids)
-        _bulk_validate(vials, changes)
+        _bulk_validate(vials, changes, db)
 
         return JSONResponse({
             "ok": True,
             "count": len(vials),
             "fields": len(changes),
-            "rows": _bulk_rows(vials, changes),
+            "rows": _bulk_rows(vials, changes, db),
             "snapshot": _bulk_snapshot(vials, changes),
         })
 
@@ -602,7 +637,7 @@ async def bulk_update_vials(
 
     try:
         vials = _bulk_load(db, ids)
-        _bulk_validate(vials, changes)
+        _bulk_validate(vials, changes, db)
 
         supplied_snapshot = str(
             form.get("bulk_preview_snapshot", "")
@@ -698,7 +733,8 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_scoped_db3
                   all_coas=list(db.scalars(select(Coa).order_by(Coa.id.desc()))),
                   disposable_supplies=manual_supplies.available(db),
                   counted_supply_kinds=counted_supply_kinds,
-                  prep_events=prep_events, prep_usage=prep_usage)
+                  prep_events=prep_events, prep_usage=prep_usage,
+                  compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
 
 
 @router.get("/vials/{vid}/labels")
@@ -787,6 +823,7 @@ def vial_labels423_export(
 
 @router.post("/vials/{vid}")
 def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: str = Form(...),
+                compound_id: str = Form(""),
                 content_value: float = Form(...), content_unit: str = Form(...),
                 volume_ml: str = Form(""), reconstituted_on: str = Form(""),
                 expires_on: str = Form(""), unit_price: str = Form("0"),
@@ -802,9 +839,15 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
     previous = {key: str(getattr(v, key) or "") for key in tracked}
     back = f"/vials/{vid}"
     try:
+        target_compound_id = v.compound_id
+        if compound_id.strip():
+            if not compound_id.isdecimal() or int(compound_id) <= 0:
+                raise ValueError("Choose a valid destination compound.")
+            target_compound_id = int(compound_id)
+        target_compound = _validate_compound_reassignment(db, v, target_compound_id)
         old_dim = U.parse_unit(v.content_unit).dim
         unit = U.parse_unit(content_unit)
-        if v.compound.primary_unit == "IU" and unit.dim != "iu":
+        if target_compound.primary_unit == "IU" and unit.dim != "iu":
             raise ValueError("This compound is tracked in IU.")
         if unit.dim != old_dim:
             raise ValueError("Mass vs IU can't be changed on an existing vial. "
@@ -818,7 +861,9 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
             raise ValueError("Volume must be a finite number above 0.")
         if status == "sealed" and v.doses:
             raise ValueError("A vial with logged doses cannot be marked sealed.")
+        old_compound_id = v.compound_id
         v.label, v.lot, v.status = label.strip(), lot.strip(), status
+        v.compound_id = target_compound_id
         v.content_value, v.content_unit, v.volume_ml = content_value, unit.name, vol
         v.reconstituted_on = services.parse_date(reconstituted_on)
         v.expires_on = services.parse_date(expires_on)
@@ -839,6 +884,10 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
         db.rollback()
         return services.flash_redirect(back, err=str(exc))
     current = {key: str(getattr(v, key) or "") for key in tracked}
+    if v.compound_id != old_compound_id:
+        db.add(ChangeAudit(entity_type="vial", entity_id=vid, action="compound_reassign",
+                           before_json=json.dumps({"compound_id": old_compound_id}),
+                           after_json=json.dumps({"compound_id": v.compound_id})))
     if current != previous:
         db.add(ChangeAudit(entity_type="vial", entity_id=vid, action="lifecycle_update",
                            before_json=json.dumps(previous), after_json=json.dumps(current)))
