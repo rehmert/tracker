@@ -124,7 +124,6 @@
                   source.textContent += ' Detailed supplement label unavailable; manual entry works.';
                 });
               }
-            }
             panel.replaceChildren();
             panel.hidden = true;
             status.textContent = 'Product details filled. Review or edit before saving.';
