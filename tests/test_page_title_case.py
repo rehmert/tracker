@@ -65,3 +65,17 @@ def test_notes_title_preserves_scientific_looking_identifiers():
     title_js = (ROOT / "app/static/js/tracker-page-title-case.js").read_text()
     assert "[data-no-title-case]" in title_js
     templates.env.get_template("page_view.html")
+
+
+def test_635_targeted_notes_browser_gate_is_exact_and_disposable():
+    runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
+    assert '"$TARGETED_MODULE" == note-title575' in runner
+    assert 'TARGETED_NOTES_575_SCOPE=HTTP_AND_HTTPS_ONLY' in runner
+    assert 'tests/browser/test_strict_csrf521.py::test_575_create_and_edit_notes_with_rendered_dynamic_action' in runner
+    start = runner.index('if [[ "$MODE" == targeted && "$TARGETED_MODULE" == note-title575 ]]')
+    end = runner.index('if [[ "$MODE" == full ]]; then', start)
+    gate = runner[start:end]
+    assert 'TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1' in gate
+    assert 'TRACKER_BROWSER_QA_DATA_DIR="$DATA"' in gate
+    assert 'exit 0' in gate
+    assert 'tests/browser/test_strict_csrf521.py\n' not in gate
