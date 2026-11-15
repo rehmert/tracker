@@ -117,11 +117,14 @@ TARGETS = {
     ),
     "release_backup": (
         "scripts/tracker-release.sh",
-        "release_guard_verified_archive",
+        "release_guard_conditional_database_archive",
         (
-            "=== Verified source and data recovery backup ===",
+            "=== Source and configuration recovery snapshot ===",
+            'if [[ "$DB_MIGRATION" == 1 ]]; then',
             "create_backup(Path(sys.argv[1]),Path(sys.argv[2]))",
             "=== ISOLATED RESTORE VERIFICATION PASSED ===",
+            "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION",
+            "DATABASE_BACKUP=SKIPPED_NO_MIGRATION",
         ),
     ),
 }
