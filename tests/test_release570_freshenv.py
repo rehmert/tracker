@@ -165,3 +165,25 @@ def test_failed_preflight_prevents_replay(tool, monkeypatch, capsys):
 def test_failed_isolated_command_propagates_nonzero(tool):
     with pytest.raises(tool.ReplayError, match="exit code 17"):
         tool.call([sys.executable, "-c", "raise SystemExit(17)"], timeout=10)
+
+
+def test_633_packages_only_requires_explicit_execute(tool):
+    with pytest.raises(SystemExit) as exc:
+        tool.main(["--packages-only"])
+    assert exc.value.code == 2
+
+
+def test_633_packages_only_uses_separate_isolated_path(tool, monkeypatch, capsys):
+    phases = []
+    monkeypatch.setattr(tool, "preflight", lambda: "c" * 40)
+    monkeypatch.setattr(tool, "execute", lambda sha, **kwargs: phases.append((sha, kwargs)))
+    assert tool.main(["--execute", "--packages-only"]) == 0
+    assert phases == [("c" * 40, {"retain": False, "packages_only": True})]
+    assert "FRESHENV_REPLAY=SUCCESS" in capsys.readouterr().out
+
+
+def test_633_packages_only_returns_after_dependency_baseline(tool):
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert source.index('if packages_only:') > source.index('FRESHENV_PACKAGE_BASELINE=PASSED')
+    assert source.index('if packages_only:') < source.index('Downloading and launching separate Chromium')
+    assert "FRESHENV_PACKAGES_ONLY=PASSED" in source
