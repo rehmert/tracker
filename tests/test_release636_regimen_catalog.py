@@ -67,9 +67,8 @@ def test_openfda_ndc_product_fields_and_safe_term(monkeypatch):
 
 def test_dsld_product_label_does_not_infer_multingredient_strength(monkeypatch):
     def fake(url, params):
-        assert url == catalog._DSLD
-        assert params["method"] == "by_keyword"
-        assert params["size"] == 8
+        assert url.endswith("/api/v9/search-filter/")
+        assert params["q"] == '"nutrient 950"'
         return {"hits": [{"_id": "82118", "_source": {
             "fullName": "Nutrient 950", "brandName": "Example Brand"
         }}]}
@@ -129,6 +128,7 @@ def test_no_new_workflow_and_original_forms_are_intact():
     assert 'action="/regimen/items/{{ item.id }}/edit"' in html
     assert html.count('data-reg636-results role="listbox"') == 2
     assert html.count('data-reg636-status') == 2
+    assert html.count('data-reg637-search') == 2
     assert 'tracker-regimen-catalog636.js?v=636' in html
     assert "new URLSearchParams({kind: kind.value, q})" in script
     assert "method: 'GET'" in script
@@ -176,3 +176,49 @@ def test_dsld_detail_failures_never_block_manual_entry(monkeypatch):
     assert catalog.supplement_label("82118") == {
         "available": False, "ingredients": "", "form": "", "serving": "",
     }
+
+
+def test_dsld_multiword_brand_query_prioritizes_exact_nih_label(monkeypatch):
+    requests = []
+    def fake(url, params):
+        requests.append((url, params))
+        return {"hits": [
+            {"_id": "277968", "_source": {
+                "fullName": "Nutrient 950", "brandName": "Pure Encapsulations"}},
+            {"_id": "278006", "_source": {
+                "fullName": "Nutrient 950 without Copper and Iron",
+                "brandName": "Pure Encapsulations"}},
+            {"_id": "777", "_source": {
+                "fullName": "Other Nutrient 950", "brandName": "Other Brand"}},
+        ]}
+    monkeypatch.setattr(catalog, "_fetch", fake)
+    results = catalog._dsld("Pure Encapsulations Nutrient 950")
+    assert results[0]["source_id"] == "277968"
+    assert results[0]["brand"] == "Pure Encapsulations"
+    assert requests[0][1]["q"] == '"nutrient 950"'
+
+
+def test_dsld_phrase_search_falls_back_to_browse_product_name(monkeypatch):
+    requests = []
+    def fake(url, params):
+        requests.append((url, params))
+        if "search-filter" in url:
+            return {"hits": []}
+        assert params["method"] == "by_keyword"
+        assert params["q"] == "nutrient"
+        return {"hits": [{"_id": "277968", "_source": {
+            "fullName": "Nutrient 950", "brandName": "Pure Encapsulations"}}]}
+    monkeypatch.setattr(catalog, "_fetch", fake)
+    results = catalog._dsld("nutrient 950")
+    assert results[0]["source_id"] == "277968"
+    assert len(requests) == 2
+
+
+def test_search_button_and_enter_are_not_form_submission():
+    html = (ROOT / "app/templates/regimen635.html").read_text()
+    script = (ROOT / "app/static/js/tracker-regimen-catalog636.js").read_text()
+    assert html.count('data-reg637-search') == 2
+    assert html.count('type="button" data-reg637-search') == 2
+    assert "event.key === 'Enter'" in script
+    assert "event.preventDefault()" in script
+    assert "searchButton.addEventListener('click'" in script
