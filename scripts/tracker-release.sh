@@ -235,7 +235,7 @@ import re
 root = Path("/opt/tracker")
 data = root / "data"
 for line in Path("/etc/tracker.env").read_text().splitlines():
-    m = re.match(r"^\\s*(?:export\\s+)?TRACKER_DATA_DIR\\s*=(.*)$", line)
+        m = re.match(r"^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$", line)
     if m and m.group(1).strip():
         data = Path(m.group(1).strip().strip(chr(34) + chr(39)))
 if not data.is_absolute():
