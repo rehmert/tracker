@@ -409,3 +409,29 @@ check successfully matched all three targeted sections and all
 35 expected browser entry points with no missing or duplicate
 standard/strict full-gate entries. That reconciliation does not
 replace actual host Python pytest and full browser qualification.
+
+## Sixth guarded DEV attempt — legacy browser worker cardinality
+
+Candidate `eb7a090441ef7e6fdca5d15fe4aba26e042e751e`
+reached `3481 passed, 2 failed, 16 warnings` in the full backend
+suite. Two historical source contracts, Release 594 and Release 598,
+assert exactly three occurrences of the four-worker Chromium invocation
+`-n 4 --dist=loadfile`. The optional targeted-mode optimization in
+Release 627 had made the shared module-runner invocation dynamic
+(`-n "$workers"`), leaving only two literal occurrences. The
+observed failures were test contract failures, not evidence of altered
+CSRF behavior.
+
+Correction: the module runner now builds an explicit four-worker
+command for the mandatory full browser qualification and a separate
+one-worker command for optional non-deploying targeted probes. The
+legacy literal invocation is present three times, the original
+`WORKERS=4` source marker is restored, and the Bash pipeline continues
+to capture pytest's actual exit status. The Release 587/588, 589, 594,
+597 and 598 runner contract tests have been added to the pre-release
+focused regression gate alongside 511 and 584. A Release 627
+regression also checks both command paths.
+
+Source review verifies the required three literal invocations and
+the historical four full-mode sections. This correction still
+requires guarded DEV runtime qualification before installation.
