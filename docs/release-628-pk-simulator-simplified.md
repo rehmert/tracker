@@ -52,3 +52,26 @@ the underlying protocol, what-if, or multi-schedule editors. A deeper
 unification of scheduling logic would require a separate
 behavioral design and regression effort. This release is not a
 validation of medical PK model accuracy, serum levels, or dose advice.
+
+## First guarded DEV qualification attempt (2026-11-15)
+
+Candidate `deb41b563c9b18ccb09065f92633d0e92e64f228`
+failed only after `3726` passing backend tests, at
+`tests/test_pk_278_281.py::test_read_only_browser_smoke_contract`.
+The Release 628 expansion of the existing read-only PK browser smoke
+used Playwright `.click()` to open an optional `details` disclosure,
+but the original Release 281 source contract intentionally forbids
+both `.click(` and `.fill(` in the module.
+
+Correction: the browser smoke now uses `summary.focus()` and
+`summary.press("Enter")` to exercise the same accessible native
+disclosure via keyboard, without clicking or filling application
+controls. All original Release 281 required markers remain present.
+The historical `tests/test_pk_278_281.py` is now in the focused
+non-deploying regression gate, together with Release 628 source
+contracts. The existing mandatory browser module is still wired in
+the standard disposable Chromium gate.
+
+This records a blocked pre-install qualification, **not** a successful
+Release 628 deployment. The revised candidate requires another full
+guarded DEV run.
