@@ -189,7 +189,9 @@ def test_602_no_backend_mutations_and_browser_matrix():
 def test_602_notes_user_titles_are_not_reformatted():
     template = source("app/templates/page_view.html")
     browser = BROWSER.read_text()
-    assert '<h1 data-no-title-case>{{ p.title }}</h1>' in template
+    # Preserve authored Notes titles from both title-casing and numeric
+    # formatting (UUID-like text can otherwise resemble an exponent).
+    assert '<h1 data-no-title-case data-preserve-numbers>{{ p.title }}</h1>' in template
     assert 'expect(heading).to_have_text(updated)' in browser
     assert "to_have_value(updated)" in browser
     templates.env.get_template("page_view.html")
