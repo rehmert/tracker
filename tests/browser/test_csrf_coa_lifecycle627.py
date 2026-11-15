@@ -83,7 +83,9 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
         assert accepted.headers.get("x-tracker-csrf-report") == "valid"
         page.wait_for_url(re.compile(re.escape(base) + r"/coas/[0-9]+(?:[?].*)?$"))
         route = urlsplit(page.url).path
-        expect(page.locator("body")).to_contain_text(lab)
+        # The laboratory name is rendered in an input, not body text.
+        expect(page.locator('input[name="lab_name"]')).to_have_value(lab)
+        expect(page.get_by_role("link", name=re.compile("View existing document"))).to_be_visible()
 
         def signed(path, data):
             bad = page.request.post(base + path, form=data, max_redirects=0)
