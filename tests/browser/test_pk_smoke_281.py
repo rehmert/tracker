@@ -66,7 +66,8 @@ def test_pk_workspace_browser_smoke():
         options_panel = page.locator(".pk628-graph-options")
         assert options_panel.count() == 1
         assert options_panel.evaluate("(element) => element.open") is False
-        options_panel.locator("summary").click()
+        options_panel.locator("summary").focus()
+        options_panel.locator("summary").press("Enter")
         assert options_panel.evaluate("(element) => element.open") is True
         assert page.locator("#pkGraphLayerControls").is_visible()
         page.set_viewport_size({"width": 390, "height": 844})
