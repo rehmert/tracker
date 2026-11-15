@@ -208,3 +208,15 @@ def test_629_authenticated_review_and_explicit_merge_routes(food_engine):
             "remove_id": str(keeper),
         }, follow_redirects=False)
         assert refused.status_code == 422
+
+
+def test_629_same_barcode_with_different_names_is_reviewed_not_merged(food_engine):
+    one = add_food(food_engine, name="Brand A Organic Yogurt", barcode="00099")
+    two = add_food(food_engine, name="Organic Yogurt Brand A", barcode="00099")
+    report = duplicates.duplicate_groups629(food_engine)
+    assert len(report["groups"]) == 1
+    versions = {item["id"] for item in report["groups"][0]["versions"]}
+    assert versions == {one, two}
+    assert report["groups"][0]["equivalent_sets"] == []
+    with pytest.raises(ValueError):
+        duplicates.merge_equivalent629(food_engine, one, [two])
