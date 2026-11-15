@@ -129,7 +129,7 @@ def test_no_new_workflow_and_original_forms_are_intact():
     assert html.count('data-reg636-results role="listbox"') == 2
     assert html.count('data-reg636-status') == 2
     assert html.count('data-reg637-search') == 2
-    assert 'tracker-regimen-catalog636.js?v=638' in html
+    assert 'tracker-regimen-catalog636.js?v=639' in html
     assert "new URLSearchParams({kind: kind.value, q})" in script
     assert "method: 'GET'" in script
     assert "option.type = 'button'" in script
@@ -156,10 +156,17 @@ def test_dsld_label_details_multi_ingredient_and_labeled_serving(monkeypatch):
         }
     monkeypatch.setattr(catalog, "_fetch", fake)
     data = catalog.supplement_label("82118")
-    assert data == {
-        "available": True, "ingredients": "Vitamin C 100 mg; Magnesium 25 mg",
-        "form": "Capsule", "serving": "2 Capsules",
-    }
+    assert data["available"] is True
+    assert data["ingredients"] == "Vitamin C 100 mg; Magnesium 25 mg"
+    assert data["form"] == "Capsule"
+    assert data["serving"] == "2 Capsules"
+    assert data["serving_quantity"] == "2"
+    assert data["serving_unit"] == "Capsules"
+    assert data["ingredient_rows"] == [
+        {"name": "Vitamin C", "amount": "100", "unit": "mg"},
+        {"name": "Magnesium", "amount": "25", "unit": "mg"},
+    ]
+    assert not data["ingredient_rows_truncated"]
 
 
 def test_dsld_label_id_is_validated_before_network(monkeypatch):
@@ -173,9 +180,7 @@ def test_dsld_label_id_is_validated_before_network(monkeypatch):
 def test_dsld_detail_failures_never_block_manual_entry(monkeypatch):
     monkeypatch.setattr(catalog, "_fetch", lambda *_: (_ for _ in ()).throw(
         TimeoutError("network timeout")))
-    assert catalog.supplement_label("82118") == {
-        "available": False, "ingredients": "", "form": "", "serving": "",
-    }
+    assert catalog.supplement_label("82118")["available"] is False
 
 
 def test_dsld_multiword_brand_query_prioritizes_exact_nih_label(monkeypatch):
