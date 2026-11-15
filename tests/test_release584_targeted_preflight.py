@@ -77,5 +77,5 @@ def test_584_full_release_still_mandates_browser_and_backend_gates():
     assert 'timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"' in source
     assert "=== COMPLETE REGRESSION SUITE ===" in source
     assert '=== ALL BACKEND TESTS PASSED ===' in source
-    assert "=== Verified source and data recovery backup ===" in source
+    assert "=== Source and configuration recovery snapshot ===" in source
     assert "=== Install via fast-forward ===" in source
