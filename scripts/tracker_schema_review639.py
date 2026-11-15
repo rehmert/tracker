@@ -49,8 +49,17 @@ def review(root, base, target):
         git(root, "merge-base", "--is-ancestor", DEV_638_BASE, target)
         base_models = git(root, "show", f"{base}:app/models.py")
         dev_models = git(root, "show", f"{DEV_638_BASE}:app/models.py")
-        if base_models != dev_models:
-            raise ValueError("Release 635→638 changed existing model definitions")
+        if not dev_models.startswith(base_models):
+            raise ValueError("Historical existing model definitions changed")
+        legacy = ast.parse(dev_models[len(base_models):])
+        legacy_classes = [
+            node.name for node in legacy.body
+            if isinstance(node, ast.ClassDef)
+        ]
+        if (legacy_classes !=
+                ["RegimenItem", "RegimenSchedule", "RegimenEntry"] or
+                len(legacy.body) != 3):
+            raise ValueError("Unexpected pre-639 regimen schema delta")
         review_base = DEV_638_BASE
 
     changed = set(git(root, "diff", "--name-only", review_base, target).splitlines())
