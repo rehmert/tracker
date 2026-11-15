@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Release 639 reviewed additive schema guard: one new facts table only."""
+import argparse
+import ast
+import subprocess
+from pathlib import Path
+
+ALLOWED = frozenset({
+    "app/models.py",
+    "app/routers/regimen635.py",
+    "app/routers/regimen_catalog636.py",
+    "app/static/js/tracker-regimen-catalog636.js",
+    "app/static/js/tracker-regimen-facts639.js",
+    "app/templates/regimen635.html",
+    "scripts/tracker-release.sh",
+    "scripts/tracker_schema_review639.py",
+    "docs/release-639-structured-supplement-facts.md",
+    "tests/test_release639_supplement_facts.py",
+    "tests/browser/test_regimen_facts639_ui.py",
+    "tests/test_release636_regimen_catalog.py",
+    "tests/browser/test_regimen_catalog638_ui.py",
+})
+
+
+def git(root, *args):
+    p = subprocess.run(
+        ["git", "-c", f"safe.directory={root}", "-C", str(root), *args],
+        text=True, capture_output=True, check=False,
+    )
+    if p.returncode:
+        raise ValueError(p.stderr[:300])
+    return p.stdout
+
+
+def review(root, base, target):
+    changed = set(git(root, "diff", "--name-only", base, target).splitlines())
+    if not changed or not changed <= ALLOWED:
+        raise ValueError("Unreviewed Release 639 paths: " +
+                         ", ".join(sorted(changed - ALLOWED)))
+    if "app/models.py" not in changed:
+        raise ValueError("Expected append-only facts table missing")
+    old = git(root, "show", f"{base}:app/models.py")
+    new = git(root, "show", f"{target}:app/models.py")
+    if not new.startswith(old):
+        raise ValueError("Existing model source modified")
+    extra = ast.parse(new[len(old):])
+    if len(extra.body) != 1 or not isinstance(extra.body[0], ast.ClassDef):
+        raise ValueError("Only one appended model class allowed")
+    model = extra.body[0]
+    if model.name != "RegimenProductFacts639":
+        raise ValueError("Unexpected model class")
+    tables = [
+        node.value.value for node in model.body
+        if isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.targets[0], ast.Name)
+        and node.targets[0].id == "__tablename__"
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    ]
+    if tables != ["regimen_product_facts639"]:
+        raise ValueError("Only regimen_product_facts639 may be added")
+    if "regimen_product_facts639" in old:
+        raise ValueError("Facts table already exists in baseline")
+    if changed & {"app/db.py", "app/migrations.py", "requirements.txt"}:
+        raise ValueError("Core migration or dependency edits not authorized")
+    print("RELEASE_639_APPEND_ONLY_SCHEMA_REVIEW=PASSED")
+    print("RELEASE_639_CHANGED_PATHS=", len(changed))
+
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser()
+    p.add_argument("--root", required=True, type=Path)
+    p.add_argument("--base", required=True)
+    p.add_argument("--target", required=True)
+    args = p.parse_args()
+    review(args.root.resolve(), args.base, args.target)
