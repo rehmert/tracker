@@ -64,8 +64,8 @@
           {% elif key == 'sodium' %}
           <tr class="food629-section-row"><th colspan="{{ group.versions|length + 1 }}" scope="colgroup">Micronutrients &amp; other nutrients</th></tr>
           {% endif %}
-          <tr>
-            <th scope="row">{{ label[0] }} <small>{{ label[1] }}</small></th>
+          <tr class="{{ 'food629-nutrient-diff' if key in group.different_nutrients else '' }}">
+            <th scope="row">{{ label[0] }} <small>{{ label[1] }}</small>{% if key in group.different_nutrients %}<span class="food629-diff-label">Differs</span>{% endif %}</th>
             {% for item in group.versions %}
             {% set value = item.measurements[key] %}
             <td class="{{ 'food629-unknown' if value is none else '' }}">
