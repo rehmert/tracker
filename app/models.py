@@ -519,3 +519,61 @@ class InventorySubmission(Base):
     operation: Mapped[str] = mapped_column(String(80), nullable=False)
     payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+# Release 635: supplements and oral/non-vial medications are tracked separately
+# from food nutrients and injectable vial administration records.
+class RegimenItem(Base):
+    __tablename__ = "regimen_items635"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)  # supplement | medication
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    ingredient: Mapped[str] = mapped_column(String(160), default="")
+    strength: Mapped[str] = mapped_column(String(80), default="")
+    form: Mapped[str] = mapped_column(String(60), default="")
+    instructions: Mapped[str] = mapped_column(Text, default="")
+    purpose: Mapped[str] = mapped_column(Text, default="")
+    prescriber: Mapped[str] = mapped_column(String(160), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    schedules: Mapped[list["RegimenSchedule"]] = relationship(
+        back_populates="item", order_by="RegimenSchedule.id"
+    )
+    entries: Mapped[list["RegimenEntry"]] = relationship(
+        back_populates="item", order_by="RegimenEntry.id"
+    )
+
+
+class RegimenSchedule(Base):
+    __tablename__ = "regimen_schedules635"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("regimen_items635.id"), nullable=False, index=True
+    )
+    cadence: Mapped[str] = mapped_column(String(20), nullable=False)  # daily | weekly | interval | prn
+    weekdays: Mapped[str] = mapped_column(String(20), default="")  # comma-separated 0..6 (Monday=0)
+    interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    start_on: Mapped[date] = mapped_column(Date, nullable=False)
+    end_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    at_time: Mapped[str] = mapped_column(String(5), default="")
+    amount: Mapped[str] = mapped_column(String(80), nullable=False)
+    meal: Mapped[str] = mapped_column(String(20), default="")  # optional association, no food writes
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    item: Mapped["RegimenItem"] = relationship(back_populates="schedules")
+
+
+class RegimenEntry(Base):
+    __tablename__ = "regimen_entries635"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("regimen_items635.id"), nullable=False, index=True
+    )
+    schedule_id: Mapped[int | None] = mapped_column(
+        ForeignKey("regimen_schedules635.id"), nullable=True, index=True
+    )
+    logged_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    outcome: Mapped[str] = mapped_column(String(12), nullable=False)  # taken | skipped
+    amount: Mapped[str] = mapped_column(String(80), default="")
+    meal: Mapped[str] = mapped_column(String(20), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    item: Mapped["RegimenItem"] = relationship(back_populates="entries")
