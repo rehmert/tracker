@@ -115,6 +115,13 @@ def test_500_food_create_edit_quick_reuse_and_delete(page):
     form.locator('select[name="meal"]').select_option("Breakfast")
     form.locator("#food-nutrient-energy").fill("100")
     form.locator("#food-nutrient-proteins").fill("10")
+    # Release 629 requires all 16 explicit numeric nutrient values.
+    for nutrient in (
+        "carbohydrates", "fat", "fiber", "sugars", "saturated-fat",
+        "sodium", "potassium", "calcium", "iron", "magnesium",
+        "vitamin-c", "vitamin-d", "vitamin-b12", "cholesterol",
+    ):
+        form.locator(f'#food-nutrient-{nutrient}').fill("0")
     form.locator('button[type="submit"]').click()
 
     expect(tab.locator("#food-recorded .food-log-row").filter(
