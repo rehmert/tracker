@@ -1,10 +1,10 @@
 [Unit]
-Description=Daily Tracker backup
+Description=Hourly Tracker backup
 
 [Timer]
-OnCalendar=*-*-* 03:00:00
+OnCalendar=hourly
 Persistent=true
-RandomizedDelaySec=10m
+RandomizedDelaySec=0
 Unit=tracker-backup.service
 
 [Install]
