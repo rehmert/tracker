@@ -32,6 +32,7 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
   tests/test_release627_csrf_remaining_negative_matrix.py \
   tests/test_release627_csrf_reconciliation.py \
   tests/test_release627_inventory_health_filter.py \
+  tests/test_release628_pk_simplified.py \
   tests/test_browser_qualification511.py \
   tests/test_release584_targeted_preflight.py \
   tests/test_release587_588_csrf_readiness.py \
