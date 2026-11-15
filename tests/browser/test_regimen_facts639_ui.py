@@ -144,14 +144,18 @@ def test_no_catalog_selection_does_not_fake_ingredient_facts(browser_tab):
 
 def test_delayed_label_data_does_not_overwrite_manual_changes(browser_tab):
     page, errors, posts = browser_tab
-    # Replace the label route with a deliberately delayed response.
-    page.unroute(re.compile(r".*/regimen/catalog/supplement-label\?.*"))
-    import time
-    def delayed(route):
-        time.sleep(0.25)
-        route.fulfill(status=200, content_type="application/json",
-                      body=json.dumps(LABEL))
-    page.route(re.compile(r".*/regimen/catalog/supplement-label\?.*"), delayed)
+    # Delay promise resolution in Chromium (not the Python event loop), so
+    # the user can edit the form while the label response is outstanding.
+    page.add_init_script("""
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = (...args) => originalFetch(...args).then(response => {
+        if (String(args[0]).includes('supplement-label')) {
+          return new Promise(resolve => setTimeout(() => resolve(response), 500));
+        }
+        return response;
+      });
+    """)
+    page.reload()
     page.locator('input[name="name"]').fill("nutrient 950")
     page.locator("[data-reg637-search]").click()
     page.locator("[data-reg636-results] button").click()
