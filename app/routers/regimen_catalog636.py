@@ -130,14 +130,17 @@ def suggestions(kind, term):
         if cached and cached[0] > now:
             return cached[1]
 
-    providers = ((_rxnorm, _openfda) if kind == "medication" else (_dsld,))
+    providers = (
+        (("rxnorm", _rxnorm), ("openfda", _openfda))
+        if kind == "medication" else (("dsld", _dsld),)
+    )
     results, failures = [], []
     seen = set()
-    for provider in providers:
+    for provider_name, provider in providers:
         try:
             matches = provider(term)
         except (HTTPError, URLError, TimeoutError, OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
-            failures.append(provider.__name__.lstrip("_"))
+            failures.append(provider_name)
             continue
         for match in matches:
             unique = (match["source"], match["source_id"] or match["name"].casefold())
