@@ -261,6 +261,7 @@ async def edit_item(item_id: int, request: Request, db: Session = Depends(get_sc
     form = await request.form()
     try:
         values = _item_values(form)
+        facts = _facts_values(form)
     except ValueError as exc:
         return _redirect(err=str(exc))
     if not reserve_inventory_write(db):
