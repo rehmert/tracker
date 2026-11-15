@@ -91,6 +91,10 @@
             }
             source.textContent = 'Selected: ' + selected.source +
               (selected.id ? ' #' + selected.id : '') + '. Verify the label before saving.';
+            form.dispatchEvent(new CustomEvent('regimen:catalog-selected639', {
+              detail: {source: selected.source, source_id: selected.id,
+                       brand: String(match.brand || ''), name: selected.name}
+            }));
             // Supplement labels may contain multiple ingredients. Keep the
             // concise product identifier fields separate from full label data.
             if (selected.source === 'NIH DSLD' && /^[0-9]{1,12}$/.test(selected.id)) {
@@ -104,6 +108,9 @@
                   return response.json();
                 }).then(detail => {
                   if (!selected || selected.id !== picked || !detail.available) return;
+                  form.dispatchEvent(new CustomEvent('regimen:label-loaded639', {
+                    detail: {source_id: picked, ...detail}
+                  }));
                   const formField = form.elements.namedItem('form');
                   if (formField && !formField.value && detail.form) {
                     formField.value = String(detail.form).slice(0, formField.maxLength);
@@ -122,6 +129,9 @@
                   source.textContent += ' Supplement label details loaded into Notes for review.';
                 }).catch(() => {
                   source.textContent += ' Detailed supplement label unavailable; manual entry works.';
+                  form.dispatchEvent(new CustomEvent('regimen:label-failed639', {
+                    detail: {source_id: picked}
+                  }));
                 });
               }
             panel.replaceChildren();
