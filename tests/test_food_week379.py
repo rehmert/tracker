@@ -2,6 +2,7 @@
 
 import csv
 import io
+import json
 
 import pytest
 from fastapi import FastAPI
@@ -33,28 +34,24 @@ def setup(monkeypatch):
 
 
 def add(client, day, protein=None, sodium=None):
-    data = {
-        "day": day,
-        "name": "Test Food",
-        "serving_description": "1 serving",
-        "servings": "1",
-        "meal": "Breakfast",
-        "energy": "100",
-    }
-
-    if protein is not None:
-        data["proteins"] = str(protein)
-
-    if sodium is not None:
-        data["sodium"] = str(sodium)
-
-    result = client.post(
-        "/food/entry",
-        data=data,
-        follow_redirects=False,
-    )
-
-    assert result.status_code == 303
+    # Historic partial-nutrient records remain readable, although Release 629
+    # disallows creating them through the new-food POST endpoint.
+    engine = food.engine
+    food.init_food_schema(engine)
+    values = {key: 0.0 for key in food.NUTRIENTS}
+    values.update({"energy": 100.0, "proteins": protein,
+                   "sodium": sodium})
+    with engine.begin() as db:
+        product_id = db.execute(text("""
+            INSERT INTO tracker_food_products
+              (name,serving_description,nutrients,source)
+            VALUES ('Legacy Test Food','1 serving',:nutrients,'legacy-test')
+        """), {"nutrients": json.dumps(values)}).lastrowid
+        db.execute(text("""
+            INSERT INTO tracker_food_entries
+              (product_id,eaten_on,meal,servings)
+            VALUES (:id,:day,'Breakfast',1)
+        """), {"id": product_id, "day": day})
 
 
 def test_weekly_coverage_and_targets(setup):
