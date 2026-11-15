@@ -110,3 +110,18 @@ def test_enter_search_does_not_submit_catalog_item(tab):
     assert requested
     assert posts == []
     assert not errors, errors
+
+
+def test_provider_http_error_is_visible_and_never_saves(tab):
+    page, errors, requested, posts = tab
+    page.unroute(re.compile(r".*/regimen/catalog/suggest\\?.*"))
+    page.route(re.compile(r".*/regimen/catalog/suggest\\?.*"),
+               lambda route: route.fulfill(
+                   status=503, content_type="application/json",
+                   body=json.dumps({"detail": "Unavailable"})))
+    page.locator('input[name="name"]').fill("nutrient 950")
+    page.locator("[data-reg637-search]").click()
+    expect(page.locator("[data-reg636-status]")).to_contain_text("HTTP 503")
+    expect(page.locator("[data-reg636-results] button")).to_have_count(0)
+    assert not posts
+    assert not errors, errors
