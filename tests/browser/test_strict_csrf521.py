@@ -406,16 +406,15 @@ def test_574_request_object_fetch_receives_signed_header_under_strict_csrf(
     token = page.evaluate("window.trackerCsrfToken?.() || ''")
     assert token.startswith("v1.")
 
-    captures = []
-    def capture(request):
-        if (request.method == "POST" and
-                urlsplit(request.url).path == "/compounds"):
-            captures.append(request.all_headers())
-
-    page.on("request", capture)
+    # Wait for the specific request rather than relying on an asynchronous
+    # page.on callback having fired before the fetch promise resolves.
     # Testing fetch(Request), not fetch(url, options) as Release 573 did.
     # Empty required name returns 422 without writing a record.
-    result = page.evaluate("""async () => {
+    with page.expect_request(lambda request: (
+        request.method == "POST"
+        and urlsplit(request.url).path == "/compounds"
+    )) as pending_request:
+        result = page.evaluate("""async () => {
         const body = new URLSearchParams({name: ''});
         const request = new Request('/compounds', {
             method: 'POST',
@@ -429,7 +428,7 @@ def test_574_request_object_fetch_receives_signed_header_under_strict_csrf(
         };
     }""")
     assert result == {"status": 422, "csrf": "valid"}, result
-    assert captures and captures[-1].get("x-tracker-csrf") == token
+    assert pending_request.value.all_headers().get("x-tracker-csrf") == token
     assert not errors, errors
 
 
