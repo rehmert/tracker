@@ -177,19 +177,7 @@ PY
     fail "Focused 630 exception prohibited for security-sensitive application changes"
    fi
    echo "=== RELEASE 630 TARGETED FOOD AND CSRF REGRESSIONS ==="
-   timeout 180 "$PY" -m pytest -q --tb=short --maxfail=1 \
-      tests/test_food_writes408.py \
-      tests/test_food_review378.py \
-      tests/test_food_manage377.py \
-      tests/test_food_quick375.py \
-      tests/test_food_quick384.py \
-      tests/test_food_week379.py \
-      tests/test_food_bundle376.py \
-      tests/test_release629_required_nutrients.py \
-      tests/test_release629_food_duplicates.py \
-      tests/test_release627_csrf_reconciliation.py \
-      tests/test_release627_csrf_remaining_negative_matrix.py
-   echo "RELEASE_630_TARGETED_QA=PASSED"
+   timeout 180 bash "$QA/scripts/tracker-focused630.sh" "$PY"
    QA_FULL_REQUIRED=0
    QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
   fi
