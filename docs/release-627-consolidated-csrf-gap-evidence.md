@@ -288,3 +288,28 @@ two new suites with one worker per suite. Its result must be observed
 before treating any of the eight additions as positive runtime evidence.
 The separate full guarded DEV QA and 110 manual-review items remain
 outstanding. Strict global enforcement and PROD are unchanged.
+
+## First full guarded DEV attempt: QA blocked before installation (2026-11-15)
+
+Candidate `81817de878f33e9b0c9c686f3b9e07726be17497`
+failed two parameterized HTTP/HTTPS blend preview browser cases during
+fixture setup with `sqlite3.OperationalError: no such table: compounds`.
+The test incorrectly imported `app.db.SessionLocal`, whose engine was
+already bound to the pytest worker's default data path instead of the
+independent temporary browser server's `TRACKER_DATA_DIR`.
+The isolated backend was running and the tests had **not** reached the
+signed-blend preview assertions.
+
+Correction: the pytest module now binds a dedicated SQLAlchemy engine
+directly to the prevalidated `/tmp/tracker-browser-qa.XXXXXXXX/data/tracker.db`
+file and sets the local worker's TRACKER_DATA_DIR to that disposable
+directory before importing Tracker models. It enables SQLite foreign
+keys and disposes the engine after test cleanup. A focused regression
+asserts the absence of the default `app.db.SessionLocal` import and
+presence of explicit isolated binding. This is an unexecuted correction
+until the next guarded DEV run.
+
+The first guarded attempt printed `EXIT_STATUS=1`; there was no
+successful release install or full DEV qualification receipt.
+The new candidate must pass the original guarded runner before it can
+be installed. Strict global CSRF enforcement remains unchanged.
