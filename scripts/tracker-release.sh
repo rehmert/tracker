@@ -169,16 +169,6 @@ from pathlib import Path
 assert Path(app.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve())
 print('PASS: Isolated source import')
 PY
- if [[ "$INSTANCE" == DEV && "$REF" == release/639-structured-supplement-facts ]]; then
-  echo "=== RELEASE 639 TARGETED CHROMIUM AND PERSISTENCE QUALIFICATION ==="
-  "$PY" -m pytest -q --tb=short --maxfail=1 \
-    tests/test_release639_supplement_facts.py \
-    tests/test_release636_regimen_catalog.py \
-    tests/browser/test_regimen_facts639_ui.py \
-    tests/browser/test_regimen_catalog638_ui.py ||
-    fail "Release 639 targeted qualification failed"
-  echo "RELEASE_639_TARGETED_QUALIFICATION=PASSED"
- fi
  echo "=== RELEASE 604 STATIC CHANGE IMPACT PREFLIGHT ==="
  "$PY" "$QA/scripts/tracker-impact-preflight604.py" \
    --base "$BASE" --target "$TARGET" --root "$QA"
