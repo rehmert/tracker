@@ -281,15 +281,7 @@ run_isolated_browser_module() {
         "$PY" -B -m pytest -n 16 --dist=loadfile
         -q --tb=short "$module"
     )
-    if [[ "$MODE" == targeted ]]; then
-        pytest_command=(
-            "$PY" -B -m pytest -n 16 --dist=loadfile
-            -q --tb=short "$module"
-        )
-        echo "WORKERS=16"
-    else
-        echo "WORKERS=16"
-    fi
+    echo "WORKERS=16"
     echo "MODULE_LOG=$logfile"
 
     set +e
