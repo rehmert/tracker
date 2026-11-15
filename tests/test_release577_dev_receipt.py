@@ -153,12 +153,12 @@ def test_631_code_only_receipt_requires_explicit_database_skip(tool):
         "DATABASE_BACKUP=SKIPPED_NO_MIGRATION",
     )
     assert tool.validated_evidence(payload, "a" * 40).endswith(
-        "DEV_QUALIFIED_COMMIT=" + "a" * 40 + "\\n"
+        "DEV_QUALIFIED_COMMIT=" + "a" * 40 + "\n"
     )
     for broken in (
         payload.replace("DATABASE_BACKUP=SKIPPED_NO_MIGRATION", ""),
-        payload + "=== ISOLATED RESTORE VERIFICATION PASSED ===\\n",
-        payload + "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION\\n",
+        payload + "=== ISOLATED RESTORE VERIFICATION PASSED ===\n",
+        payload + "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION\n",
     ):
         with pytest.raises(ValueError):
             tool.validated_evidence(broken, "a" * 40)
