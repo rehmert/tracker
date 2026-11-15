@@ -12,7 +12,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
-  [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || {
+  [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 || "$TARGETED_MODULE" == note-title575 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -389,6 +389,21 @@ for _ in range(60):
 else:
     raise SystemExit("ERROR: strict candidate did not become ready or enforce CSRF")
 PY
+
+# Release 635: exact failing Notes title lifecycle only (HTTP + HTTPS).
+# This preflight is NOT full browser qualification or a DEV approval receipt.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == note-title575 ]]; then
+  echo "TARGETED_NOTES_575_SCOPE=HTTP_AND_HTTPS_ONLY"
+  env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" \
+    TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
+    TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
+    TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
+    "$PY" -B -m pytest -q --tb=short --maxfail=1 \
+    tests/browser/test_strict_csrf521.py::test_575_create_and_edit_notes_with_rendered_dynamic_action
+  echo "TARGETED_NOTES_575=PASSED"
+  exit 0
+fi
 
 if [[ "$MODE" == full ]]; then
 # The HTTPS proxy continues to forward to the same loopback-only port.
