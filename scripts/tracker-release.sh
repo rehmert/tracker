@@ -116,6 +116,8 @@ worker() {
  [[ -z "$(changed)" ]] || RESTART=1
  echo "=== Isolated source tests ==="
  g worktree add --detach "$QA" "$TARGET"
+ [[ "$(git -C "$QA" rev-parse HEAD)" == "$TARGET" ]] || fail "Candidate worktree does not match target"
+ echo "CANDIDATE_COMMIT=$TARGET"
  cd "$QA"
  export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
  mkdir -p "$TRACKER_DATA_DIR"
