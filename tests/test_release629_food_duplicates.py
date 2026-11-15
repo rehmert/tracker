@@ -85,10 +85,13 @@ def test_629_name_groups_show_every_macro_micro_value(food_engine):
     assert {item["id"] for item in group["versions"]} == {first, second}
     assert group["different_values"]
     assert group["equivalent_sets"] == []
-    assert len(group["versions"][0]["measurements"]) == len(food.NUTRIENTS)
-    assert group["versions"][0]["measurements"]["vitamin-b12"] == 1.2
-    assert group["versions"][0]["measurements"]["potassium"] is None
-    assert group["versions"][1]["measurements"]["energy"] == 110.0
+    by_id = {item["id"]: item for item in group["versions"]}
+    assert len(by_id[first]["measurements"]) == len(food.NUTRIENTS)
+    assert by_id[first]["measurements"]["vitamin-b12"] == 1.2
+    assert by_id[first]["measurements"]["potassium"] is None
+    assert by_id[second]["measurements"]["energy"] == 110.0
+    assert "energy" in group["different_nutrients"]
+    assert "vitamin-b12" in group["different_nutrients"]
 
 
 def test_629_equivalent_merge_preserves_logged_totals_templates_favorites(food_engine):
