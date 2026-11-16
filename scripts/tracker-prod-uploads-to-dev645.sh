@@ -10,18 +10,28 @@ fail() { echo "UPLOAD_REPLICATION=FAILED: $*" >&2; exit 1; }
  fail "Run as root on configured Tracker DEV"
 [[ "$SOURCE" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*@[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] ||
  fail "Invalid PROD_SSH (expected user@hostname)"
-CONFIG="$("$PY" - <<'PY'
+# Resolve the configured path rather than comparing raw strings (trailing /,
+# quoted values and equivalent absolute paths must not cause false failures).
+"$PY" - <<'PY'
 from pathlib import Path
 import re
-items={}
+values = {}
 for line in Path("/etc/tracker.env").read_text().splitlines():
-    m=re.match(r'^\s*(?:export\s+)?(TRACKER_INSTANCE|TRACKER_DATA_DIR)\s*=(.*)$', line)
-    if m: items[m.group(1)]=m.group(2).strip().strip(chr(34)).strip(chr(39))
-print(items.get("TRACKER_INSTANCE","").upper())
-print(items.get("TRACKER_DATA_DIR","/opt/tracker/data"))
+    m = re.match(r'^\s*(?:export\s+)?(TRACKER_INSTANCE|TRACKER_DATA_DIR)\s*=(.*)$', line)
+    if m:
+        values.setdefault(m.group(1), []).append(m.group(2).strip().strip("\"'"))
+labels = values.get("TRACKER_INSTANCE", [])
+data = values.get("TRACKER_DATA_DIR", ["/opt/tracker/data"])
+if len(labels) != 1 or labels[0].upper() != "DEV":
+    raise SystemExit(f"UPLOAD_REPLICATION=FAILED: expected DEV instance label, got {labels!r}")
+if len(data) != 1 or not data[0]:
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: ambiguous data path")
+resolved = Path(data[0]).resolve()
+expected = Path("/opt/tracker/data").resolve()
+if resolved != expected:
+    raise SystemExit(f"UPLOAD_REPLICATION=FAILED: data path {resolved} differs from expected {expected}")
+print(f"UPLOAD_REPLICATION_DEV_DATA={resolved}")
 PY
-)"
-[[ "$CONFIG" == $'DEV\n/opt/tracker/data' ]] || fail "DEV-only and default data directory required"
 command -v rsync >/dev/null || fail "rsync required on DEV and PROD"
 exec 9>/run/lock/tracker-db-sync.lock
 flock -n 9 || fail "Database replication or deployment currently active"
