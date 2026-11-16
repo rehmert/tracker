@@ -85,7 +85,9 @@ def test_649_original_is_one_row_and_one_review_link_among_uploaded_documents():
             markup = _CoaMarkup()
             markup.feed(html)
             assert "<h2>Uploaded documents</h2>" in html
-            assert 'data-coa-original-document' in html
+            assert 'data-coa-original-document' not in html
+            assert 'name="test_type_original"' in html
+            assert 'name="document" value="original"' in html
             original = f"/coas/{cid}/original-file"
             assert markup.links.count(original) == 1
             assert html.index(original) < html.index(f"/coas/{cid}/attachments/{aids[0]}/file")
@@ -98,10 +100,11 @@ def test_649_original_is_one_row_and_one_review_link_among_uploaded_documents():
             response = client.get(original)
             assert response.status_code == 200
             assert 'original-report.pdf' in response.headers["content-disposition"]
-            assert '<span class="coa-document-origin">Original</span>' in html
+            assert '<span class="coa-document-origin">Original</span>' not in html
             assert "Save all test types" in html
             assert 'name="test_type_%s"' % aids[0] in html
-            assert "/default-file" not in html
+            assert f'action="/coas/{cid}/default-file"' in html
+            assert 'Save default document' in html
             assert 'View default COA document' not in html
             assert 'View existing document:' not in html
             assert 'data-coa-default-option' not in html
@@ -119,7 +122,7 @@ def test_649_original_only_and_metadata_only_render_unified_table_safely():
             html = client.get(f"/coas/{cid}").text
             assert html.count(f'href="/coas/{cid}/original-file"') == 1
             assert "No documents uploaded yet." not in html
-            assert "Save all test types" not in html
+            assert "Save all test types" in html
         finally:
             _cleanup(stored)
         empty, _, empty_files = _create(original=False, reports=(), revisions=0)
