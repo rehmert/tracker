@@ -93,9 +93,11 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
         expect(document).to_be_visible()
         assert document.get_attribute("href") == route + "/original-file"
         assert page.get_by_role("link", name="qa627-coa.pdf", exact=True).count() == 1
-        expect(page.get_by_role(
-            "combobox", name="Test type for qa627-coa.pdf"
-        )).to_be_visible()
+        # Consolidated test categories are selected in a native, touch-friendly
+        # expandable checkbox group rather than the removed single combobox.
+        expect(page.locator("#test-documents details.coa-test-multi651").first
+               .locator("summary")).to_be_visible()
+        assert page.locator("#test-documents input[data-coa-multi-choice]").count() >= 20
         expect(page.get_by_role(
             "radio", name="Make qa627-coa.pdf the default COA document"
         )).to_be_checked()
