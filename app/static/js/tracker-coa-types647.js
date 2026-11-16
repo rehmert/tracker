@@ -29,7 +29,7 @@
   const status = document.querySelector("[data-coa-bulk-status]");
   if (!form || !save || !status) return;
   // Release 651 owns the checkbox-based bulk editor; retain 647 for older pages.
-  if (form.querySelector("[data-coa-multi651]")) return;
+  if (document.querySelector("[data-coa-multi651]")) return;
 
   const entries = [...document.querySelectorAll("[data-coa-type-entry]")];
   const value = entry => {
