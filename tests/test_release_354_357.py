@@ -10,13 +10,26 @@ def exercise_edit(monkeypatch,tmp_path,fail):
     old=tmp_path/'old.pdf';new=tmp_path/'new.pdf'
     old.write_bytes(b'old original')
     deleted=[]
+    staged=[]
     coa=SimpleNamespace(original_name='old.pdf',stored_name='old.pdf',
-                        all_vials=[],notes='',lab_name='')
+                        all_vials=[],notes='',lab_name='',attachments=[])
     class DB:
         def get(self,model,id): return coa
+        def add(self,item):
+            # Release 650 keeps the original file as a regular attachment.
+            # Stage it until commit, matching the DB transaction boundary.
+            assert isinstance(item, coas.CoaAttachment)
+            assert item.coa_id == 12
+            assert item.original_name == 'new.pdf'
+            assert item.stored_name == 'new.pdf'
+            staged.append(item)
         def commit(self):
             if fail: raise RuntimeError('injected commit failure')
-        def rollback(self): deleted.append('rollback')
+            coa.attachments.extend(staged)
+            staged.clear()
+        def rollback(self):
+            deleted.append('rollback')
+            staged.clear()
     async def save(_file, directory):
         # Explicit directory routing must remain active
         # for both successful and failed replacements.
@@ -41,12 +54,16 @@ def exercise_edit(monkeypatch,tmp_path,fail):
         assert old.read_bytes()==b'old original'
         assert not new.exists()
         assert deleted==['rollback','new.pdf']
+        assert coa.attachments == []
+        assert staged == []
     else:
         response=asyncio.run(coas.coa_edit(**args))
         assert response.status_code==303
         assert not old.exists()
         assert new.exists()
         assert deleted==['old.pdf']
+        assert len(coa.attachments) == 1
+        assert coa.attachments[0].stored_name == 'new.pdf'
 
 
 def test_replace_commit_failure_keeps_original(monkeypatch,tmp_path):
