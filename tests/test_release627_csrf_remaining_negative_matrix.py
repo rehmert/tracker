@@ -60,7 +60,11 @@ NEW_COA_ROUTES = frozenset({
     ("POST", "/coas/{cid}/attachments"),
     ("POST", "/coas/{cid}/attachments/{aid}/delete"),
 })
-NEW_UNQUALIFIED_ROUTES = NEW_FOOD_ROUTES | NEW_REGIMEN_ROUTES | NEW_COA_ROUTES
+NEW_DEFAULT_ROUTES645 = frozenset({
+    ("POST", "/coas/{cid}/attachments/{aid}/test-type"),
+    ("POST", "/coas/{cid}/default-file"),
+})
+NEW_UNQUALIFIED_ROUTES = NEW_FOOD_ROUTES | NEW_REGIMEN_ROUTES | NEW_COA_ROUTES | NEW_DEFAULT_ROUTES645
 
 
 def _regimen_route_manifest():
