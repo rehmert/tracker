@@ -108,9 +108,11 @@ def test_588_real_native_coa_multipart_upload_and_forgery_denial(browser, scheme
         expect(document).to_be_visible()
         assert document.get_attribute("href") == route + "/original-file"
         assert page.get_by_role("link", name="qa-588.pdf", exact=True).count() == 1
-        expect(page.get_by_role(
-            "combobox", name="Test type for qa-588.pdf"
-        )).to_be_visible()
+        # Consolidated test categories are selected in a native, touch-friendly
+        # expandable checkbox group rather than the removed single combobox.
+        expect(page.locator("#test-documents details.coa-test-multi651").first
+               .locator("summary")).to_be_visible()
+        assert page.locator("#test-documents input[data-coa-multi-choice]").count() >= 20
         expect(page.get_by_role(
             "radio", name="Make qa-588.pdf the default COA document"
         )).to_be_checked()
