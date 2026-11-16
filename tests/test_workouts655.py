@@ -166,6 +166,7 @@ def test_655_routines_are_isolated_from_each_other():
         assert post(client, f"/workouts/routines/{a}/items/{item.id}/remove").status_code == 303
         with SessionLocal() as db:
             assert db.get(WorkoutRoutineItem655, item.id) is None
+        assert post(client, "/workouts/finish").status_code == 303
 
 
 def test_655_additive_schema_rehearsal_preserves_654_rows(tmp_path):
