@@ -36,12 +36,16 @@ def test_663_finish_and_review_uses_existing_finish_once_with_real_totals():
     with TestClient(app) as client:
         a = machine663(client, "663 Press " + key)
         b = machine663(client, "663 Bodyweight " + key, kind="bodyweight")
-        home = client.get("/workouts")
-        assert home.status_code == 200
-        assert 'formaction="/workouts/finish-review"' in home.text
-        assert 'action="/workouts/finish"' in home.text
+        idle_home = client.get("/workouts")
+        assert idle_home.status_code == 200
+        assert 'formaction="/workouts/finish-review"' not in idle_home.text
+        assert 'action="/workouts/start"' in idle_home.text
 
         assert post(client, "/workouts/quick/start").status_code == 303
+        active_home = client.get("/workouts")
+        assert active_home.status_code == 200
+        assert 'formaction="/workouts/finish-review"' in active_home.text
+        assert 'action="/workouts/finish"' in active_home.text
         quick = client.get(f"/workouts/quick?machine={a}")
         assert 'formaction="/workouts/finish-review"' in quick.text
         assert 'action="/workouts/quick/finish"' in quick.text
