@@ -116,27 +116,6 @@ def check(release: int) -> tuple[str, str]:
     return base, target
 
 
-def execute(release: int, base: str, target: str) -> None:
-    ops.sign_and_transfer(target)
-    ops.promote(target, base)
-    script = Path(__file__).resolve().with_name(
-        "tracker-workout-prod-remote657.sh"
-    )
-    ops.run([
-        *ops.SSH, "-T", ops.PROD, "bash", "-s", "--",
-        base, target, str(release),
-    ], input_data=script.read_bytes())
-
-    final = ops.remote(
-        "git -c safe.directory=/opt/tracker -C /opt/tracker rev-parse HEAD"
-    )
-    if final != target or ops.remote("systemctl is-active tracker") != "active":
-        raise ops.ReleaseError("PROD post-deployment verification failed")
-    print(f"PROD_INSTALLED_COMMIT={target}", flush=True)
-    print(f"WORKOUT_STAGE_{release}=SUCCESS", flush=True)
-    print("DEV_CONTROLLED_RELEASE=SUCCESS", flush=True)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--release", type=int, choices=tuple(STAGES), required=True)
