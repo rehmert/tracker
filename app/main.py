@@ -52,6 +52,7 @@ from .routers import user_db_status389
 from .routers import inventory_timeline
 from .routers import regimen635
 from .routers import regimen_catalog636
+from .routers import coa_test_type_catalog652
 
 
 @asynccontextmanager
@@ -59,6 +60,8 @@ async def lifespan(_app: FastAPI):
     from .migrations import migrate
     migrate(engine)
     Base.metadata.create_all(engine)
+    from .coa_catalog652 import seed_catalog652
+    seed_catalog652(engine)
     from .migrations import migrate_coa_links
     migrate_coa_links(engine)
     # A stable schema marker for future migration tooling and support checks.
@@ -296,6 +299,7 @@ app.include_router(user_db_status389.router)
 app.include_router(inventory_timeline.router)
 app.include_router(regimen635.router)
 app.include_router(regimen_catalog636.router)
+app.include_router(coa_test_type_catalog652.router)
 
 from .routers import consolidated_reports
 app.include_router(consolidated_reports.router)
