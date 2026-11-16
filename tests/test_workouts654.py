@@ -141,13 +141,13 @@ def test_654_additive_schema_is_repeatable_without_mutating_existing_data(tmp_pa
 def test_654_dev_missing_upload_policy_is_exactly_scoped():
     """DEV can reuse Release 652's verified known-missing archive, PROD cannot."""
     runner = (ROOT / "scripts/tracker-release.sh").read_text(encoding="utf-8")
-    assert '[[ "$INSTANCE" == DEV && ( "$DB_MIGRATION" == 0 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]' in runner
+    assert '[[ "$INSTANCE" == DEV && ( "$DB_MIGRATION" == 0 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 ) ]]' in runner
     assert runner.count(
-        'if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then'
+        'if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 ) ]]; then'
     ) == 3
     assert (
         'if [[ "$INSTANCE" != DEV || ( "$REVIEWED_COA_652" != 1 '
-        '&& "$REVIEWED_WORKOUT_654" != 1 ) ]]; then'
+        '&& "$REVIEWED_WORKOUT_654" != 1 && "$REVIEWED_WORKOUT_655" != 1 ) ]]; then'
     ) in runner
     assert 'tracker-coa-dev-backup652.py" --data "$DATA_DIR"' in runner
     assert 'tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes' in runner
