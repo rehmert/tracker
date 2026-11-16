@@ -878,22 +878,3 @@ main .page-header .description {
     margin-bottom: .65rem;
   }
 }
-
-/* Release 646: compact, usable COA document test-type selector. */
-.coa-document-table th,.coa-document-table td { vertical-align:middle; }
-.coa-document-table td:first-child { min-width:15rem; }
-.coa-document-table td:nth-child(2) { min-width:18rem; }
-.coa-test-type-form { margin:0; }
-.coa-test-type-controls { display:flex; align-items:center; gap:.4rem; }
-.coa-test-type-controls select { width:clamp(13rem,21vw,19rem); min-height:2.2rem; max-width:100%; padding:.32rem .5rem; }
-.coa-test-save { min-height:2.2rem; padding:.32rem .65rem; white-space:nowrap; }
-.coa-custom-test-type { display:block; margin-top:.35rem; font-size:.8rem; color:var(--muted); }
-.coa-custom-test-type[hidden] { display:none !important; }
-.coa-custom-test-type input { display:block; width:100%; min-width:10rem; margin-top:.2rem; }
-.coa-default-indicator { display:inline-block; margin-left:.35rem; padding:.1rem .35rem; border-radius:.4rem; background:var(--wash); color:var(--muted); font-size:.75rem; font-weight:600; }
-.coa-attachment-upload .note { margin:.1rem 0; font-size:.8rem; }
-@media(max-width:650px) {
-  .coa-document-table td:nth-child(2) { min-width:15rem; }
-  .coa-test-type-controls select { width:12rem; }
-  .coa-test-save { padding:.35rem .55rem; }
-}
