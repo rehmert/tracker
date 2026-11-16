@@ -2,7 +2,7 @@
 import sqlite3
 from contextlib import closing
 
-_TABLES=(('coas','coa'),('lab_reports','labs'))
+_TABLES=(('coas','coa'),('coa_attachments','coa'),('lab_reports','labs'))
 
 
 def required_attachments(snapshot):
