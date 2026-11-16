@@ -66,6 +66,7 @@ def validate(root: Path, base: str, target: str):
     source = (root / "app/routers/workouts656.py").read_text(encoding="utf-8")
     if not all(token in source for token in (
         'get_scoped_db390', '@router.get("/workouts/equipment/{equipment_id}/progress")',
+        '@router.get("/workouts/qr/scan")',
         "MAX_RECENT_SETS656", "MAX_TREND_SESSIONS656",
     )):
         raise ValueError("Missing read-only workout route or scope")
@@ -76,7 +77,7 @@ def validate(root: Path, base: str, target: str):
     js = (root / "app/static/js/tracker-workouts656.js").read_text(encoding="utf-8")
     if not all(token in js for token in (
         "BarcodeDetector", "getUserMedia", "encodeURIComponent(raw)",
-        'window.location.assign("/workouts/qr?code="',
+        'window.location.assign("/workouts/qr/scan?code="',
         "pagehide", "visibilitychange",
     )):
         raise ValueError("Incomplete internal-only camera scanner")
