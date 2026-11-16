@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ routine.name }}{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+{% endblock %}
+{% block content %}
+<section class="workout654 workout655">
+  <p><a href="/workouts/routines">← Saved Routines</a></p>
+  <h1>{{ routine.name }}</h1>
+  <p class="note">Exercises appear in the order below during this routine's workout.</p>
+  {% if items %}
+    <form method="post" action="/workouts/routines/{{ routine.id }}/start">
+      <button class="primary" type="submit">
+        {{ 'Resume Routine' if active else 'Start Routine' }}
+      </button>
+    </form>
+    {% if active %}
+      <p class="note">If a different workout is active, finish it before starting this routine.</p>
+    {% endif %}
+  {% else %}
+    <p class="note">Add at least one exercise before starting.</p>
+  {% endif %}
+  <section id="routine-exercises655">
+    <h2>Exercise Order</h2>
+    {% for item in items %}
+      <div class="workout-routine-row655" data-item-id="{{ item.id }}">
+        <div class="workout-routine-heading655">
+          <span class="workout-routine-position655">{{ loop.index }}</span>
+          <strong>{{ names[item.equipment_id] }}</strong>
+        </div>
+        <div class="workout-routine-actions655">
+          <form method="post"
+                action="/workouts/routines/{{ routine.id }}/items/{{ item.id }}/move">
+            <input type="hidden" name="direction" value="up">
+            <button type="submit" {% if loop.first %}disabled{% endif %}
+                    aria-label="Move {{ names[item.equipment_id] }} up">↑</button>
+          </form>
+          <form method="post"
+                action="/workouts/routines/{{ routine.id }}/items/{{ item.id }}/move">
+            <input type="hidden" name="direction" value="down">
+            <button type="submit" {% if loop.last %}disabled{% endif %}
+                    aria-label="Move {{ names[item.equipment_id] }} down">↓</button>
+          </form>
+          <form method="post"
+                action="/workouts/routines/{{ routine.id }}/items/{{ item.id }}/remove">
+            <button type="submit" aria-label="Remove {{ names[item.equipment_id] }}">
+              Remove
+            </button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <p>No exercises added.</p>
+    {% endfor %}
+  </section>
+  {% if available and items|length < maximum %}
+    <section>
+      <h2>Add Exercise</h2>
+      <form method="post" action="/workouts/routines/{{ routine.id }}/equipment"
+            class="workout-grid654">
+        <label>Available Equipment
+          <select name="equipment_id" required>
+            {% for machine in available %}
+              <option value="{{ machine.id }}">{{ machine.name }} — {{ machine.gym }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="primary" type="submit">Add to Routine</button>
+      </form>
+    </section>
+  {% elif not available %}
+    <p class="note">Every cataloged exercise is already in this routine.
+      <a href="/workouts">Add more equipment</a> to expand it.</p>
+  {% else %}
+    <p class="note">A routine can contain up to {{ maximum }} exercises.</p>
+  {% endif %}
+</section>
+{% endblock %}
