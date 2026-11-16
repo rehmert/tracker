@@ -29,8 +29,8 @@ def test_576_all_previous_callsites_retained_without_clearance(triage):
     assert result["summary"]["browser_verified"] == 0
     original = {(r["file"], r["line"], r["kind"]) for r in baseline["callsites"]}
     current = {(r["file"], r["line"], r["kind"]) for r in result["callsites"]}
-    assert original <= current
-    assert len(current - original) == 0  # The historical scan now includes the new callsite
+    assert current == original
+    assert any(path == "app/static/js/tracker-coa-types647.js" for path, _, _ in current)
     assert sum(result["summary"]["triage"].values()) == 49
     assert all(r["browser_verified"] is False for r in result["callsites"])
 
