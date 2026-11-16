@@ -139,7 +139,7 @@
           {% set next_id = next_machine[item.id] %}
           <p class="workout657-next">
             <a href="/workouts?machine={{ next_id }}#workout-machine-{{ next_id }}"
-               class="workout657-next-link">Next machine <span aria-hidden="true">→</span></a>
+               class="workout657-next-link">Next: {{ equipment_names.get(next_id, 'machine') }} <span aria-hidden="true">→</span></a>
           </p>
         {% endif %}
 
