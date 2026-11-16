@@ -3,7 +3,9 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+<link rel="stylesheet" href="/static/css/tracker-workouts656.css?v=656">
 <script src="/static/js/tracker-workouts655.js?v=655" defer></script>
+<script src="/static/js/tracker-workouts656.js?v=656" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout654">
@@ -53,7 +55,15 @@
       </label>
       <button type="submit">Find Machine</button>
     </form>
-    <p class="note">Map each code once below; Tracker never opens or transmits the code's destination.</p>
+    <div id="workout-qr-camera656" class="workout656-camera">
+      <button type="button" data-start656 hidden>Scan QR with Camera</button>
+      <div class="workout656-preview" data-preview656 hidden>
+        <video autoplay muted playsinline aria-label="Live camera view for QR scanning"></video>
+      </div>
+      <button type="button" data-stop656 hidden>Stop Camera</button>
+      <p class="note workout656-status" data-status656 role="status" aria-live="polite">Paste a QR code above, or use the camera scanner on a compatible browser.</p>
+    </div>
+    <p class="note">Map each code once below. Scanner results are looked up only in Tracker; external QR destinations are never opened.</p>
   </section>
 
   <section>
@@ -72,6 +82,7 @@
           {% if item.seat_setting %} · Setup: {{ item.seat_setting }}{% endif %}
         </p>
         {% if item.setup_notes %}<p>{{ item.setup_notes }}</p>{% endif %}
+        <p><a href="/workouts/equipment/{{ item.id }}/progress">View Machine Progress &amp; History</a></p>
         {% if latest[item.id] %}
           <p><strong>Previous:</strong> {{ '%.1f'|format(latest[item.id].weight_lb) }} lb × {{ latest[item.id].reps }} reps</p>
           {% if active %}
