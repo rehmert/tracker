@@ -94,7 +94,10 @@ def test_627_coa_upload_asserts_rendered_saved_field_not_body_text():
         assert 'page.locator("#test-documents").get_by_role(' in source
         assert '"/original-file"' in source
         assert 'expect(document).to_be_visible()' in source
-        assert '"combobox", name="Test type for ' in source
+        # Release 651 replaces single-choice comboboxes with a grouped
+        # multi-test checkbox picker. Keep the rendered source-contract check.
+        assert 'details.coa-test-multi651' in source
+        assert 'data-coa-multi-choice' in source
         assert '"radio", name="Make ' in source
         assert "View existing document" not in source
 
