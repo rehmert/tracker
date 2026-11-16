@@ -26,7 +26,8 @@ if len(labels) != 1 or labels[0].upper() != "DEV":
     raise SystemExit(f"UPLOAD_REPLICATION=FAILED: expected DEV instance label, got {labels!r}")
 if len(data) != 1 or not data[0]:
     raise SystemExit("UPLOAD_REPLICATION=FAILED: ambiguous data path")
-resolved = Path(data[0]).resolve()
+configured = Path(data[0])
+resolved = (configured if configured.is_absolute() else Path("/opt/tracker") / configured).resolve()
 expected = Path("/opt/tracker/data").resolve()
 if resolved != expected:
     raise SystemExit(f"UPLOAD_REPLICATION=FAILED: data path {resolved} differs from expected {expected}")
@@ -55,9 +56,9 @@ if len(labels) != 1 or labels[0].upper() != "PROD":
 if len(roots) != 1 or not roots[0]:
     raise SystemExit("UPLOAD_REPLICATION=FAILED: ambiguous remote data directory")
 raw = Path(roots[0])
-if not raw.is_absolute():
-    raise SystemExit("UPLOAD_REPLICATION=FAILED: relative remote data directory")
-data = raw.resolve(strict=True)
+# Relative TRACKER_DATA_DIR is relative to the application root, not the
+# noninteractive SSH session's current working directory.
+data = (raw if raw.is_absolute() else Path("/opt/tracker") / raw).resolve(strict=True)
 if not data.is_dir() or not (data / "tracker.db").is_file():
     raise SystemExit("UPLOAD_REPLICATION=FAILED: remote DB missing at configured data directory")
 if not (data / "uploads").is_dir() or (data / "uploads").is_symlink():
