@@ -18,6 +18,14 @@ TRACKED_FETCH_SOURCES = frozenset({
     "app/static/js/tracker-mobile-quick528.js",
     "app/static/notes_editor.js",
 })
+# Release 639 adds two read-only NIH catalog GET fetches. These are explicitly
+# inventory-reviewed but NOT counted as Release 579 runtime CSRF witnesses.
+REGIMEN_CATALOG_SOURCE = "app/static/js/tracker-regimen-catalog636.js"
+REGIMEN_CATALOG_GET_PATHS = (
+    "const response = await fetch(url, {",
+    "fetch('/regimen/catalog/supplement-label?' +",
+)
+
 
 FLOWS = {
     "mobile-weight": ("/vitals", 200),
@@ -53,8 +61,23 @@ def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
         if item["file"] in TRACKED_FETCH_SOURCES
         and item["kind"] == "fetch_callsite"
     ]
-    if len(items) != 46 or len(selected) != 2:
+    # The previous 46 callsites are preserved. Exactly two additional
+    # request sources are accounted for in the 639 catalog lookup.
+    catalog = [
+        item for item in items
+        if item["file"] == REGIMEN_CATALOG_SOURCE
+        and item["kind"] == "fetch_callsite"
+    ]
+    if len(items) != 48 or len(selected) != 2 or len(catalog) != 2:
         raise ValueError("JavaScript source inventory changed; re-review witnesses")
+    catalog_source = (root / REGIMEN_CATALOG_SOURCE).read_text(encoding="utf-8")
+    lines = catalog_source.splitlines()
+    for row, expected_call in zip(catalog, REGIMEN_CATALOG_GET_PATHS):
+        line = row["line"] - 1
+        if not (0 <= line < len(lines) and
+                expected_call in lines[line] and
+                any("method: 'GET'" in value for value in lines[line:line+4])):
+            raise ValueError("Release 639 catalog GET callsite changed; re-review required")
     if {item["file"] for item in selected} != TRACKED_FETCH_SOURCES:
         raise ValueError("Missing tracked JS source witness")
     return {
