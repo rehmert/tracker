@@ -131,6 +131,6 @@ def test_656_ui_and_read_only_contracts():
     js = (ROOT / "app/static/js/tracker-workouts656.js").read_text()
     assert "getUserMedia" in js
     assert "BarcodeDetector" in js
-    assert 'window.location.assign("/workouts/qr?code=" + encodeURIComponent(raw))' in js
+    assert 'window.location.assign("/workouts/qr/scan?code=" + encodeURIComponent(raw))' in js
     assert "window.open(" not in js
     assert "fetch(" not in js
