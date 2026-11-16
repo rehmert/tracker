@@ -95,7 +95,7 @@ def test_511_every_browser_module_in_disposable_qualification():
     )
     assert strict.count(notes_begin) == 1
     before_notes, notes_tail = strict.split(notes_begin, 1)
-    notes_replay, after_notes = notes_tail.split("\\nfi\\n", 1)
+    notes_replay, after_notes = notes_tail.split("\nfi\n", 1)
     assert notes_replay.count("tests/browser/test_csrf_workflows580.py") == 1
     assert notes_replay.count("run_isolated_browser_module") == 1
     assert "TARGETED_NOTES_580=PASSED" in notes_replay
