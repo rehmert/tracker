@@ -86,24 +86,6 @@ def test_511_every_browser_module_in_disposable_qualification():
         assert "exit 0" in block
         strict = before + after
 
-    # Release 645 adds an explicitly opted-in diagnostic replay of the
-    # existing strict Notes 580 module. Verify its exact scope and exclude
-    # only this audited targeted replay from the one-full-witness count.
-    notes_begin = (
-        'if [[ "$MODE" == targeted && '
-        '"$TARGETED_MODULE" == notes-lifecycle580 ]]; then'
-    )
-    assert strict.count(notes_begin) == 1
-    before_notes, notes_tail = strict.split(notes_begin, 1)
-    notes_replay, after_notes = notes_tail.split("\nfi\n", 1)
-    assert notes_replay.count("tests/browser/test_csrf_workflows580.py") == 1
-    assert notes_replay.count("run_isolated_browser_module") == 1
-    assert "TARGETED_NOTES_580=PASSED" in notes_replay
-    assert "TARGETED_NOTES_580_SCOPE=STRICT_WORKFLOWS_ONLY_NOT_FULL_QUALIFICATION" in notes_replay
-    assert "ISOLATED_STRICT_CSRF_BROWSER=PASSED" not in notes_replay
-    assert "exit 0" in notes_replay
-    strict = before_notes + after_notes
-
     browser_paths = sorted((ROOT / "tests/browser").glob("test_*.py"))
     required = [str(path.relative_to(ROOT)) for path in browser_paths]
     required.extend(ISOLATED_ROOT)
