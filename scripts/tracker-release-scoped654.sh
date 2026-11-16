@@ -27,6 +27,10 @@ TARGET="$(git rev-parse HEAD)"
     --root "$ROOT" --base "$BASE" --target "$TARGET"
 "$PY" -m pytest -q --tb=short --maxfail=1 \
     tests/test_workouts654.py \
+    tests/test_coa_backup652.py \
+    tests/test_dev_attachment_gate650.py::test_650_dev_missing_only_may_be_reported_without_mutation \
+    tests/test_dev_attachment_gate650.py::test_650_dev_policy_fails_closed_on_bad_evidence \
+    tests/test_dev_attachment_gate650.py::test_650_only_exact_dev_instance_is_eligible \
     tests/test_tracker_instance_check653.py \
     tests/test_release_workflow.py \
     tests/test_prod_parallel_release508.py \
