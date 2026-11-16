@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Strength Progress · Workouts{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workouts660.css?v=660">
+{% endblock %}
+{% block content %}
+<section class="workout654 workout660">
+  <nav class="workout660-nav" aria-label="Workout navigation">
+    <a href="/workouts">← Workouts</a>
+    <a href="/workouts/quick">Rapid Gym Mode</a>
+  </nav>
+  <h1>Strength Progress</h1>
+  <p class="note">Your actual recorded sets from <strong>completed workouts only</strong>. No estimated one-rep maxima, training recommendations, or comparisons between machines.</p>
+
+  {% if not equipment %}
+    <section class="workout660-empty">
+      <h2>No equipment yet</h2>
+      <p>Add a machine and log some sets to begin seeing progress.</p>
+      <p><a href="/workouts#workout-add-equipment656">Add equipment</a></p>
+    </section>
+  {% else %}
+    <form method="get" action="/workouts/analytics" class="workout660-picker">
+      <label for="workout660-machine">View strength history for</label>
+      <div class="workout660-picker-row">
+        <select id="workout660-machine" name="machine">
+          {% for item in equipment %}
+            <option value="{{ item.id }}" {% if selected and selected.id == item.id %}selected{% endif %}>{{ item.name }} · {{ item.gym }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">View Progress</button>
+      </div>
+    </form>
+
+    {% if selected %}
+      <div class="workout660-machine-intro">
+        <h2>{{ selected.name }}</h2>
+        <p class="note">{{ selected.gym }} · {{ selected.kind|replace('_',' ')|title }}</p>
+        <p><a href="/workouts/equipment/{{ selected.id }}/progress">Existing machine history &amp; recent sets</a></p>
+      </div>
+
+      {% if not summary or not summary.sets %}
+        <section class="workout660-empty">
+          <h2>No completed-session sets yet</h2>
+          <p>Finish a workout with this machine, or enter an earlier completed workout, to begin seeing strength analytics.</p>
+          <p><a href="/workouts/backfill">Log a Previous Workout</a></p>
+        </section>
+      {% else %}
+        <section class="workout660-metrics" aria-label="Completed workout summary">
+          <div><strong>{{ summary.sessions }}</strong><span>Completed sessions</span></div>
+          <div><strong>{{ summary.sets }}</strong><span>Recorded sets</span></div>
+          <div><strong>{{ summary.repetitions }}</strong><span>Total repetitions</span></div>
+          <div><strong>{{ '{:,.1f}'.format(summary.volume) }}</strong><span>Recorded volume (lb × reps)</span></div>
+        </section>
+
+        <section class="workout660-panel" aria-label="Actual personal records">
+          <h2>Recorded Personal Records</h2>
+          <p class="note">Actual records for this specific machine, across all completed workouts. A higher load with fewer repetitions is not necessarily a strength improvement.</p>
+          <div class="workout660-pr-grid">
+            <div>
+              <h3>Heaviest recorded load</h3>
+              <strong>{{ '%.1f'|format(top_load.weight_lb) }} lb</strong>
+              <p>{{ top_load.reps }} reps · <a href="/workouts/sessions/{{ top_load.session_id }}">View workout</a></p>
+            </div>
+            <div>
+              <h3>Largest single-set volume</h3>
+              <strong>{{ '{:,.1f}'.format(top_volume.weight_lb * top_volume.reps) }} lb × reps</strong>
+              <p>{{ '%.1f'|format(top_volume.weight_lb) }} lb × {{ top_volume.reps }} reps · <a href="/workouts/sessions/{{ top_volume.session_id }}">View workout</a></p>
+            </div>
+          </div>
+        </section>
+
+        <section class="workout660-panel">
+          <h2>Volume by Workout</h2>
+          <p class="note">Volume is the sum of each logged weight (lb) multiplied by repetitions on this machine. Showing up to {{ session_limit }} most recent completed sessions in chronological order. It measures entered external load, not total muscular work; a bodyweight exercise recorded as 0 lb contributes 0.</p>
+          {% if session_points %}
+            <figure class="workout660-chart">
+              <svg viewBox="0 0 700 170" role="img" aria-label="Recorded volume by completed workout, oldest to newest">
+                <line x1="24" y1="138" x2="680" y2="138" class="workout660-axis"/>
+                <line x1="24" y1="36" x2="24" y2="138" class="workout660-axis"/>
+                <polyline points="{{ session_points }}" class="workout660-line"/>
+                {% for point in session_points.split(' ') %}
+                  {% set xy = point.split(',') %}
+                  <circle cx="{{ xy[0] }}" cy="{{ xy[1] }}" r="4" class="workout660-point"/>
+                {% endfor %}
+              </svg>
+              <figcaption>
+                <span>Oldest shown</span>
+                <span>{{ '{:,.1f}'.format(session_range[0]) }}–{{ '{:,.1f}'.format(session_range[1]) }} lb × reps</span>
+                <span>Newest</span>
+              </figcaption>
+            </figure>
+          {% else %}
+            <p class="note">At least two completed workouts on this machine are needed for a trend line.</p>
+          {% endif %}
+          <div class="workout660-table-scroll">
+            <table>
+              <caption>Completed sessions on this machine (newest first)</caption>
+              <thead>
+                <tr><th scope="col">Workout</th><th scope="col">Sets</th><th scope="col">Reps</th><th scope="col">Volume (lb × reps)</th><th scope="col">Top load</th></tr>
+              </thead>
+              <tbody>
+                {% for row in sessions|reverse %}
+                  <tr>
+                    <td><a href="/workouts/sessions/{{ row.session_id }}">{{ row.started_at|dt }}</a></td>
+                    <td>{{ row.sets }}</td>
+                    <td>{{ row.reps }}</td>
+                    <td>{{ '{:,.1f}'.format(row.volume) }}</td>
+                    <td>{{ '%.1f'|format(row.max_lb) }} lb</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="workout660-panel">
+          <h2>Compare the Same Repetition Count</h2>
+          <p class="note">Only compares the heaviest recorded load on <strong>{{ reps_selected }}-rep sets</strong> on this exact machine. That avoids treating different repetition counts as equivalent.</p>
+          <form method="get" action="/workouts/analytics" class="workout660-reps-form">
+            <input type="hidden" name="machine" value="{{ selected.id }}">
+            <label for="workout660-reps">Exact repetitions</label>
+            <select name="reps" id="workout660-reps">
+              {% for choice in rep_choices %}
+                <option value="{{ choice.reps }}" {% if reps_selected == choice.reps %}selected{% endif %}>{{ choice.reps }} reps · {{ choice.sets }} recorded sets · best {{ '%.1f'|format(choice.best_lb) }} lb</option>
+              {% endfor %}
+              {% if reps_selected not in (rep_choices|map(attribute='reps')|list) %}
+                <option value="{{ reps_selected }}" selected>{{ reps_selected }} reps · no matching sets among common counts</option>
+              {% endif %}
+            </select>
+            <button type="submit">Compare</button>
+          </form>
+          {% if exact %}
+            {% if exact_points %}
+              <figure class="workout660-chart">
+                <svg viewBox="0 0 700 170" role="img" aria-label="Heaviest load at exactly {{ reps_selected }} reps by completed workout, oldest to newest">
+                  <line x1="24" y1="138" x2="680" y2="138" class="workout660-axis"/>
+                  <line x1="24" y1="36" x2="24" y2="138" class="workout660-axis"/>
+                  <polyline points="{{ exact_points }}" class="workout660-line"/>
+                  {% for point in exact_points.split(' ') %}
+                    {% set xy = point.split(',') %}
+                    <circle cx="{{ xy[0] }}" cy="{{ xy[1] }}" r="4" class="workout660-point"/>
+                  {% endfor %}
+                </svg>
+                <figcaption>
+                  <span>Oldest shown</span>
+                  <span>{{ '%.1f'|format(exact_range[0]) }}–{{ '%.1f'|format(exact_range[1]) }} lb at {{ reps_selected }} reps</span>
+                  <span>Newest</span>
+                </figcaption>
+              </figure>
+            {% else %}
+              <p class="note">Only one completed session at this repetition count; more workouts are needed for a trend line.</p>
+            {% endif %}
+            <div class="workout660-table-scroll">
+              <table>
+                <caption>Actual loads at exactly {{ reps_selected }} repetitions</caption>
+                <thead><tr><th scope="col">Workout</th><th scope="col">Matching sets</th><th scope="col">Best load</th></tr></thead>
+                <tbody>
+                  {% for row in exact|reverse %}
+                    <tr>
+                      <td><a href="/workouts/sessions/{{ row.session_id }}">{{ row.started_at|dt }}</a></td>
+                      <td>{{ row.sets }}</td>
+                      <td>{{ '%.1f'|format(row.best_lb) }} lb</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p>No completed workout has an exactly {{ reps_selected }}-repetition set on this machine.</p>
+          {% endif %}
+        </section>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+</section>
+{% endblock %}
