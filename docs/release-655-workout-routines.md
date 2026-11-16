@@ -37,10 +37,16 @@ authentication, origin protection and signed CSRF policy apply to writes.
   against its isolated pytest data directory.
 - Run additive schema review and focused Workout tests, previous 654 tests,
   targeted release-runner tests, and DEV missing-upload archive tests.
-- Verify preexisting uploads; on DEV only reuse the Release 652 reviewed archive
-  mechanism that explicitly permits exactly the one known missing COA file.
-  Present file hash mismatches, invalid paths and unexpected missing records
-  remain fatal. PROD is strictly checked.
+- Verify preexisting uploads. Release 655 uses a separate DEV-only backup
+  helper that permits ONLY the two explicitly observed missing COA files
+  `uploads/coa/b94356f52d964400b481e6c743484367.png` and
+  `uploads/coa/35ddd15d235246258cd8ed0b69fef3c6.png`.
+  The archive retains the SQLite snapshot and every present upload, checks
+  archive hashes and performs an isolated restore. It does NOT recreate either
+  missing attachment, and it is not a complete COA attachment backup.
+  Any other missing file, invalid reference, hash mismatch or changed upload
+  remains fatal. PROD stays fully strict; the historical 652/654 helper is
+  untouched.
 - Run the usual verified migration database backup, recovery snapshot, fast-forward,
   service restart and runtime smoke. On failure, do not claim success.
 
@@ -50,3 +56,13 @@ Do not use PROD without exact-commit DEV approval and a subsequent deliberate pr
 ## Deferred
 In-browser QR camera scanning, workout analytics, exercise targets, prescribed
 progression, per-set edit/delete, rename/delete routine, and offline mode.
+
+## Release 655 DEV retry (post-qualification backup block)
+
+The first DEV attempt passed 55 scoped tests but was stopped before installing
+because the legacy Release 652 backup helper rejects a second missing DEV-only
+COA reference. The reviewed Release 655 helper and focused tests preserve
+both references without fabricating files or altering database rows. The
+candidate must re-run all qualification gates under its new exact SHA before
+any DEV installation. A successful new run does not make either missing
+attachment recoverable from the DEV backup archive.
