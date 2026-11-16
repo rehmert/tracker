@@ -139,7 +139,7 @@ def test_658_reject_invalid_rows_and_keep_all_user_entries():
             ({"equipment_id": ["9999999", ""]}, "choose an existing machine"),
             ({"end_time": "08:00"}, "End time must be after"),
         ]
-        for overrides, expected in cases[:-1]:
+        for overrides, expected in cases:
             data = entry658(eid)
             if not overrides:
                 data.update(equipment_id=["", ""], weight_lb=["", ""], reps=["", ""],
