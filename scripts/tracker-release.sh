@@ -199,7 +199,7 @@ PY
       fail "DEV integrity failure beyond unsynchronized missing attachments"
   echo "LIVE_ATTACHMENT_PREFLIGHT=DEV_ONLY_MISSING_POLICY"
  else
-  # PROD and all database-migration releases stay fully strict. Never use
+  # PROD and non-reviewed migrations stay strict. Never use
   # the DEV-only adapter when validating production data or migration backups.
   "$PY" "$QA/scripts/tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes ||
       fail "Live database contains missing or changed attachment(s); reconcile uploads before testing"
@@ -389,7 +389,7 @@ PY
   if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
    "$PY" "$QA/scripts/tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR" ||
      fail "DEV has unexpected/changed upload references"
-   echo "LIVE_ATTACHMENT_PREBACKUP=DEV_652_MISSING_REFERENCE_POLICY"
+   echo "LIVE_ATTACHMENT_PREBACKUP=DEV_REVIEWED_MISSING_REFERENCE_POLICY"
   else
    "$PY" "$QA/scripts/tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes ||
      fail "Live attachments changed since preflight; migration backup blocked"
@@ -412,7 +412,7 @@ PY
   if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
    ARCHIVE="$(PYTHONPATH="$QA" TRACKER_DATA_DIR="$DATA_DIR" "$PY"      "$QA/scripts/tracker-coa-dev-backup652.py" --data "$DATA_DIR" --dest "$SAVE/archives")" ||
      fail "DEV migration archive with known missing attachment was not verified"
-   echo "DEV_652_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS"
+   echo "DEV_REVIEWED_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS"
   else
   ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
 from pathlib import Path
@@ -425,7 +425,7 @@ PY
   if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
    [[ "$ARCHIVE" == "$SAVE"/archives/tracker-dev652-*.zip &&
       -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] ||
-     fail "Release 652 backup helper did not return a single valid archive pathname"
+     fail "Reviewed DEV backup helper did not return a single valid archive pathname"
   fi
   chmod 600 "$ARCHIVE"
   if [[ "$INSTANCE" != DEV || ( "$REVIEWED_COA_652" != 1 && "$REVIEWED_WORKOUT_654" != 1 ) ]]; then
