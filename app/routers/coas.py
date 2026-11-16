@@ -245,7 +245,7 @@ def select_coa_default_file(
             _revision(db, coa, "default_document_changed")
             db.delete(preference)
             db.commit()
-    elif document.isascii() and document.isdecimal():
+    elif 1 <= len(document) <= 20 and document.isascii() and document.isdecimal():
         aid = int(document)
         item = db.get(CoaAttachment, aid)
         if item is None or item.coa_id != cid:
