@@ -1,0 +1,50 @@
+/* Release 659: gym-floor single-machine, touch-first controls. */
+.workout659 { max-width: 860px; margin: 0 auto 3rem; padding: 0 .5rem; }
+.workout659-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.workout659-header h1 { margin: .35rem 0; }
+.workout659-muted { opacity: .85; margin: .4rem 0; }
+.workout659-state { padding: .45rem .75rem; border-radius: 999px; border: 1px solid currentColor; font-weight: 700; }
+.workout659-panel { border: 1px solid var(--border, #8998a7); border-radius: .9rem; margin: 1rem 0; padding: 1.15rem; }
+.workout659-panel h2 { margin: .2rem 0 .65rem; }
+.workout659-progress { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: space-between; border: 1px solid var(--border, #8998a7); border-radius: .65rem; padding: .7rem 1rem; }
+.workout659-machine-picker label { display: block; font-weight: 700; margin-bottom: .4rem; }
+.workout659-picker-row { display: flex; gap: .5rem; align-items: stretch; }
+.workout659-picker-row select { flex: 1; min-width: 0; }
+.workout659-picker-row button { min-width: 70px; }
+.workout659 select, .workout659 input, .workout659 button { min-height: 48px; }
+.workout659-machine-heading { margin-top: 1.2rem; }
+.workout659-machine-heading h2 { font-size: clamp(1.3rem, 4vw, 2rem); margin-bottom: .15rem; }
+.workout659-notes { white-space: pre-wrap; }
+.workout659-prior { display: flex; flex-direction: column; gap: .35rem; padding: .75rem; border-radius: .6rem; background: var(--surface-muted, rgba(127, 127, 127, .1)); margin: .8rem 0; }
+.workout659-prior strong { font-size: 1.2rem; }
+.workout659-number-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; margin: 1rem 0; }
+.workout659-number-control > label { display: block; font-weight: 700; margin-bottom: .3rem; }
+.workout659-stepper { display: flex; align-items: stretch; gap: .2rem; }
+.workout659-stepper button { flex: 0 0 54px; font-size: 1.05rem; padding: 0 .25rem; }
+.workout659-stepper input { min-width: 0; width: 100%; text-align: center; font-size: 1.15rem; }
+.workout659-effort { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: .7rem 0; }
+.workout659-effort input { max-width: 100px; }
+.workout659-main-button { width: 100%; min-height: 58px !important; font-weight: 750; font-size: 1.12rem; }
+.workout659-repeat { margin-top: .7rem; }
+.workout659-repeat-button { font-size: 1rem; }
+.workout659-rest-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.workout659-rest-header label { display: flex; align-items: center; gap: .5rem; }
+.workout659-rest-header select { min-width: 96px; }
+#workout659-rest-display { display: block; text-align: center; font-size: clamp(3rem, 12vw, 5rem); font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; margin: .8rem 0; }
+.workout659-rest-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.workout659-move { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.workout659-move-button { display: flex; align-items: center; justify-content: center; padding: 1rem; text-align: center; border: 1px solid var(--border, #8998a7); border-radius: .75rem; min-height: 65px; font-weight: 700; text-decoration: none; }
+.workout659-move-next { border-width: 2px; }
+.workout659-logged p { border-bottom: 1px solid var(--border, #8998a7); padding-bottom: .45rem; }
+.workout659-end { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.workout659-routine-list { display: grid; gap: .7rem; }
+.workout659-routine-list button { width: 100%; text-align: left; padding: .65rem; }
+@media(max-width: 650px) {
+  .workout659 { padding: 0 .15rem; }
+  .workout659-panel { padding: .8rem; }
+  .workout659-number-grid { grid-template-columns: 1fr; gap: .4rem; }
+  .workout659-stepper button { flex-basis: 68px; }
+  .workout659-stepper input { font-size: 1.4rem; }
+  .workout659-rest-header { flex-wrap: wrap; }
+  .workout659-end > form, .workout659-end > form > button { width: 100%; }
+}
