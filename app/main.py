@@ -61,6 +61,7 @@ from .routers import workouts656
 from .routers import workouts657
 from .routers import workouts658
 from .routers import workouts659
+from .routers import workouts660
 
 
 @asynccontextmanager
@@ -314,6 +315,7 @@ app.include_router(workouts656.router)
 app.include_router(workouts657.router)
 app.include_router(workouts658.router)
 app.include_router(workouts659.router)
+app.include_router(workouts660.router)
 
 from .routers import consolidated_reports
 app.include_router(consolidated_reports.router)
