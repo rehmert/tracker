@@ -131,7 +131,7 @@
   <section>
     <h2>Recent Workouts</h2>
     {% for session in recent %}
-      <p>{{ session.started_at|dt }} — {{ 'Completed' if session.completed_at else 'In progress' }}</p>
+      <p><a href="/workouts/sessions/{{ session.id }}">{{ session.started_at|dt }}</a> — {{ 'Completed' if session.completed_at else 'In progress' }}</p>
     {% else %}
       <p>No workouts yet.</p>
     {% endfor %}
