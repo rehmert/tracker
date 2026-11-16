@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function clearNutrition() {
     for (const key of nutrientKeys) {
       const field = document.getElementById('food-nutrient-' + key);
-      if (field) field.value = '';
+      if (field) field.value = '0';
     }
   }
 
