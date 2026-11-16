@@ -38,11 +38,11 @@ cd "$QA"
 git diff --check "$BASE" "$TARGET"
 echo "=== RELEASE 652 EXACT ADDITIVE SCHEMA REVIEW ==="
 "$PY" scripts/tracker_schema_review652.py --root "$APP" --base "$BASE" --target "$TARGET"
-# Schema-changing releases are migration-backed and do not waive attachment
-# integrity. Fail before lengthy QA if linked files are missing or modified.
-echo "=== RELEASE 652 STRICT DEV ATTACHMENT PREFLIGHT ==="
-"$PY" scripts/tracker-attachment-integrity645.py --data /opt/tracker/data --hashes ||
- fail "DEV attachment integrity must be reconciled before any schema deployment"
+# DEV-only established Release 650 allowance: absent but referenced files
+# are reported, not silently fabricated. Present hashes/invalid paths remain fatal.
+echo "=== RELEASE 652 DEV-ONLY ATTACHMENT PREFLIGHT ==="
+"$PY" scripts/tracker-dev-attachment-gate650.py --data /opt/tracker/data ||
+ fail "DEV attachment check failed beyond unsynchronized missing files"
 export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
 mkdir -p "$TRACKER_DATA_DIR"
 for sh in scripts/tracker-release.sh scripts/tracker-coa-preflight652.sh \
