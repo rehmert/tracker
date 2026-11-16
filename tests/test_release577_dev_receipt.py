@@ -162,3 +162,20 @@ def test_631_code_only_receipt_requires_explicit_database_skip(tool):
     ):
         with pytest.raises(ValueError):
             tool.validated_evidence(broken, "a" * 40)
+
+
+
+def test_652_scoped_only_dev_receipt_is_accepted_without_broad_604_gate(tool):
+    payload = focused_evidence().replace(
+        "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
+        "RELEASE_SCOPED_PREFLIGHT=PASSED",
+    )
+    result = tool.validated_evidence(payload, "a" * 40)
+    assert result.endswith("DEV_QUALIFIED_COMMIT=" + "a" * 40 + "\n")
+    assert "RELEASE_604_FOCUSED_PREFLIGHT=PASSED" not in result
+    for broken in (
+        payload.replace("RELEASE_SCOPED_PREFLIGHT=PASSED", ""),
+        payload.replace("RELEASE_SCOPED_PREFLIGHT=PASSED", "RELEASE_SCOPED_PREFLIGHT=FAILED"),
+    ):
+        with pytest.raises(ValueError):
+            tool.validated_evidence(broken, "a" * 40)
