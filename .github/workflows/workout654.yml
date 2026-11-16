@@ -1,0 +1,29 @@
+name: Workout 654 scoped validation
+on:
+  push:
+    branches:
+      - release/654-workout-foundation
+  pull_request:
+    paths:
+      - "app/workout_models654.py"
+      - "app/routers/workouts654.py"
+      - "app/templates/workouts654.html"
+      - "app/static/css/tracker-workouts654.css"
+      - "tests/test_workouts654.py"
+      - "scripts/tracker-release-scoped654.sh"
+      - ".github/workflows/workout654.yml"
+      - "app/main.py"
+      - "app/templates/base.html"
+permissions:
+  contents: read
+jobs:
+  workout-focused:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -r requirements-dev.txt
+      - run: bash scripts/tracker-release-scoped654.sh "$(command -v python)"
