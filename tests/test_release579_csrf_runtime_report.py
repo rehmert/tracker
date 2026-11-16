@@ -56,6 +56,38 @@ def test_579_two_tracked_javascript_callsites_not_overclaimed(report):
                for ref in source["source_refs"])
 
 
+def test_651_coa_post_source_contract_matches_exactly_and_fails_closed(report):
+    source = (ROOT / report.COA_MULTI651_SOURCE).read_text(encoding="utf-8")
+    lines = source.splitlines()
+    callsites = [index for index, line in enumerate(lines)
+                 if "fetch(form.action, {" in line]
+    assert len(callsites) == 1
+    callsite = callsites[0]
+    report.verify_coa_multi651_request_lines(lines, callsite)
+    # This assertion specifically guards against treating an expected string
+    # as a full list element. The real JavaScript is indented.
+    assert lines[callsite + 1].startswith("        method:")
+
+    for before, after in (
+        ('method: "POST"', 'method: "GET"'),
+        ("body: new FormData(form)", "body: null"),
+        ('headers: {Accept: "application/json"}', "headers: {}"),
+        ('credentials: "same-origin"', 'credentials: "omit"'),
+        ("fetch(form.action, {", "fetch('https://elsewhere.test', {"),
+    ):
+        modified = list(lines)
+        offset = next(i for i in range(callsite, callsite + 6)
+                      if before in modified[i])
+        modified[offset] = modified[offset].replace(before, after)
+        with pytest.raises(ValueError, match="re-review required"):
+            report.verify_coa_multi651_request_lines(modified, callsite)
+
+    with pytest.raises(ValueError, match="re-review required"):
+        report.verify_coa_multi651_request_lines(lines, -1)
+    with pytest.raises(ValueError, match="re-review required"):
+        report.verify_coa_multi651_request_lines(lines[:callsite + 2], callsite)
+
+
 def test_579_report_requires_exact_isolated_witnesses(report):
     # Use genuine /tmp tree under a private fixture namespace if pytest's
     # tmp path happens to be elsewhere; this calls no app and no network.
