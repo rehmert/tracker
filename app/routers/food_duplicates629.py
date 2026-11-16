@@ -28,6 +28,29 @@ def normalize629(value):
     return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
 
 
+def near_name_key641(value):
+    """Review-only grouping for clearly related two-word food names.
+
+    Never autonomously merges products: every correction is user-selected.
+    """
+    words = re.findall(r"[a-z0-9]+", normalize629(value))
+    if len(words) < 2 or len(words[0]) + len(words[1]) < 9:
+        return ""
+    return " ".join(words[:2])
+
+
+def direct_candidate641(first, second):
+    first_name = normalize629(first["name"])
+    second_name = normalize629(second["name"])
+    first_barcode = normalize629(first["barcode"])
+    return bool(
+        (first_name and first_name == second_name) or
+        (first_barcode and first_barcode == normalize629(second["barcode"])) or
+        (near_name_key641(first_name) and
+         near_name_key641(first_name) == near_name_key641(second_name))
+    )
+
+
 def nutrient_key629(raw):
     try:
         parsed = json.loads(raw)
@@ -124,6 +147,9 @@ def duplicate_groups629(db_engine, show_reviewed=False):
         barcode = normalize629(row["barcode"])
         if barcode:
             keys.append(("barcode", barcode))
+        near = near_name_key641(row["name"])
+        if near:
+            keys.append(("near_name", near))
         for key in keys:
             if not key[1]:
                 continue
@@ -222,10 +248,7 @@ def remove_unused_mismatch630(db_engine, keep_id, remove_id):
         if any(row is None for row in rows):
             raise ValueError("Saved food changed or was removed")
         keeper, redundant = rows
-        same_name = normalize629(keeper["name"]) == normalize629(redundant["name"])
-        same_barcode = (normalize629(keeper["barcode"]) and
-                        normalize629(keeper["barcode"]) == normalize629(redundant["barcode"]))
-        if not (same_name or same_barcode):
+        if not direct_candidate641(keeper, redundant):
             raise ValueError("These records are not direct duplicate candidates")
         used = db.execute(text("""
             SELECT COUNT(*) FROM tracker_food_entries WHERE product_id=:id
@@ -272,10 +295,7 @@ def reassign_logged_uses641(db_engine, keep_id, remove_id, expected_count):
         if any(row is None for row in rows):
             raise ValueError("Saved food changed or was removed")
         keeper, redundant = rows
-        same_name = normalize629(keeper["name"]) == normalize629(redundant["name"])
-        barcode = normalize629(keeper["barcode"])
-        same_barcode = bool(barcode and barcode == normalize629(redundant["barcode"]))
-        if not (same_name or same_barcode):
+        if not direct_candidate641(keeper, redundant):
             raise ValueError("Foods are not direct duplicate candidates")
         count = db.execute(text("""
             SELECT COUNT(*) FROM tracker_food_entries WHERE product_id=:id
