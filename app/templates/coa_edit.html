@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ 'COA #' ~ coa.id if coa else 'New COA' }}{% if coa %}<script defer src="/static/js/tracker-coa-types646.js"></script>{% endif %}
-{% endblock %}
+{% block title %}{{ 'COA #' ~ coa.id if coa else 'New COA' }}{% endblock %}
 {% macro coa_test_picker(selected, label) %}
 <select name="test_type" aria-label="{{ label }}" data-coa-test-type-select>
 <option value="" {% if not selected %}selected{% endif %}>Unspecified test</option>
@@ -13,6 +12,10 @@
 <option value="__custom__">Other / custom…</option>
 </select>
 {% endmacro %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-coa-types646.css?v=646">
+<script defer src="/static/js/tracker-coa-types646.js?v=646"></script>
+{% endblock %}
 {% block content %}
 <p><a href="/coas">← All COAs</a></p><h1>{{ 'COA #' ~ coa.id if coa else 'Add certificate of analysis' }}</h1>
 {% if coa and (coa.original_name or coa.attachments) %}<p><a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener"><strong>View default COA document</strong></a></p>{% endif %}
