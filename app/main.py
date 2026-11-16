@@ -55,6 +55,8 @@ from .routers import regimen_catalog636
 from .routers import coa_test_type_catalog652
 from . import workout_models654  # noqa: F401 - register workout tables
 from .routers import workouts654
+from . import workout_models655  # noqa: F401 - register routine tables
+from .routers import workouts655
 
 
 @asynccontextmanager
@@ -303,6 +305,7 @@ app.include_router(regimen635.router)
 app.include_router(regimen_catalog636.router)
 app.include_router(coa_test_type_catalog652.router)
 app.include_router(workouts654.router)
+app.include_router(workouts655.router)
 
 from .routers import consolidated_reports
 app.include_router(consolidated_reports.router)
