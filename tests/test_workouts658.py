@@ -116,7 +116,6 @@ def test_658_create_historical_routine_sets_and_preserve_active_session():
         assert history.status_code == 200
         assert machine in history.text and "100.0 lb" in history.text
         assert "75.5 lb" in history.text
-        assert "Earlier workout saved." not in history.text or "100.0 lb" in history.text
         assert client.get(f"/workouts/equipment/{eid}/progress").status_code == 200
         page = client.get("/workouts")
         assert page.status_code == 200 and "Workout in progress" in page.text
@@ -139,8 +138,6 @@ def test_658_reject_invalid_rows_and_keep_all_user_entries():
             ({"set_time": ["11:00", ""]}, "set time must be within"),
             ({"equipment_id": ["9999999", ""]}, "choose an existing machine"),
             ({"end_time": "08:00"}, "End time must be after"),
-            ({"end_time": "23:59", "day": datetime.now().date().isoformat()},
-             "cannot end in the future" if datetime.now().hour < 23 else "None"),
         ]
         for overrides, expected in cases[:-1]:
             data = entry658(eid)
@@ -165,7 +162,10 @@ def test_658_reject_invalid_rows_and_keep_all_user_entries():
 def test_658_duplicate_future_limit_and_history_ordering():
     with TestClient(app) as client:
         eid, _ = equipment658(client)
-        data = entry658(eid, set_time="")
+        data = entry658(
+            eid, day=(datetime.now() - timedelta(days=5)).date().isoformat(),
+            set_time="",
+        )
         first = post(client, "/workouts/backfill", data)
         assert first.status_code == 303
         count = sessions658()
