@@ -30,7 +30,7 @@ COA_STATUSES = ("unreviewed", "verified", "rejected", "needs_review")
 
 
 def _snapshot(coa: Coa) -> dict:
-    keys = ("lab_name", "tested_on", "purity_pct", "endotoxin_pct", "job_id",
+    keys = ("lab_name", "tested_on", "purity_pct", "endotoxin_pct", "endotoxin_eu_per_vial", "job_id",
             "verify_code", "reported_content_value", "reported_content_unit", "notes",
             "original_name", "sha256", "verification_status", "verification_notes", "verified_at")
     return {key: (value.isoformat() if hasattr(value := getattr(coa, key), "isoformat") else value)
@@ -53,7 +53,7 @@ def _opt_float(text: str) -> float | None:
 async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: str = Form(""),
                      tested_on: str = Form(""), purity_pct: str = Form(""),
                      reported_content: str = Form(""), reported_unit: str = Form("mg"),
-                     notes: str = Form(""), endotoxin_pct: str = Form(""),
+                     notes: str = Form(""), endotoxin_eu_per_vial: str = Form(""),
                      job_id: str = Form(""), verify_code: str = Form(""),
                      db: Session = Depends(get_scoped_db390)):
     v = db.get(Vial, vid)
@@ -75,9 +75,9 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
                 raise ValueError("The COA's unit must match the vial's (mass vs IU).")
             unit = u.name
         tested = services.parse_date(tested_on)
-        endotoxin = _opt_float(endotoxin_pct)
-        if endotoxin is not None and not 0 <= endotoxin <= 100:
-            raise ValueError("Endotoxin percentage must be 0-100.")
+        endotoxin = _opt_float(endotoxin_eu_per_vial)
+        if endotoxin is not None and not 0 <= endotoxin < float("inf"):
+            raise ValueError("Endotoxins (EU/vial) must be a finite, nonnegative number.")
         if file and file.filename:
             stored = await services.save_upload(file, attachment_directory400("coa"))
         else:
@@ -89,7 +89,7 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
     with uploaded_transaction(db, stored, attachment_directory400("coa"), services.delete_stored_file):
         fields = dict(lab_name=lab_name.strip(), tested_on=tested, purity_pct=purity,
                       reported_content_value=reported, reported_content_unit=unit,
-                      notes=notes.strip(), endotoxin_pct=endotoxin, job_id=job_id.strip(),
+                      notes=notes.strip(), endotoxin_eu_per_vial=endotoxin, job_id=job_id.strip(),
                       verify_code=verify_code.strip(), **stored)
         # Legacy databases may still have coas.vial_id (sometimes NOT NULL).
         # The ORM intentionally no longer maps that column, so an ORM INSERT
@@ -377,14 +377,14 @@ def coa_detail(cid: int, request: Request, db: Session = Depends(get_scoped_db39
 @router.post("/coas/new")
 async def coa_create(vial_id: int = Form(...), file: UploadFile | None = File(None),
                      lab_name: str = Form(""), tested_on: str = Form(""),
-                     purity_pct: str = Form(""), endotoxin_pct: str = Form(""),
+                     purity_pct: str = Form(""), endotoxin_eu_per_vial: str = Form(""),
                      reported_content: str = Form(""), reported_unit: str = Form("mg"),
                      job_id: str = Form(""), verify_code: str = Form(""),
                      notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
     # Use the same validation, legacy schema compatibility, and upload logic
     # as the existing vial COA creation endpoint.
     response = await upload_coa(vial_id, file, lab_name, tested_on, purity_pct,
-                                reported_content, reported_unit, notes, endotoxin_pct,
+                                reported_content, reported_unit, notes, endotoxin_eu_per_vial,
                                 job_id, verify_code, db)
     if "err=" not in response.headers.get("location", ""):
         db.expire_all()
@@ -397,7 +397,7 @@ async def coa_create(vial_id: int = Form(...), file: UploadFile | None = File(No
 @router.post("/coas/{cid}/edit")
 async def coa_edit(cid: int, file: UploadFile | None = File(None),
                    lab_name: str = Form(""), tested_on: str = Form(""),
-                   purity_pct: str = Form(""), endotoxin_pct: str = Form(""),
+                   purity_pct: str = Form(""), endotoxin_eu_per_vial: str = Form(""),
                    reported_content: str = Form(""), reported_unit: str = Form("mg"),
                    job_id: str = Form(""), verify_code: str = Form(""),
                    notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
@@ -410,9 +410,9 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
         purity = _opt_float(purity_pct)
         if purity is not None and not 0 <= purity <= 100:
             raise ValueError("Purity must be between 0 and 100%.")
-        endotoxin = _opt_float(endotoxin_pct)
-        if endotoxin is not None and not 0 <= endotoxin <= 100:
-            raise ValueError("Endotoxin must be between 0 and 100%.")
+        endotoxin = _opt_float(endotoxin_eu_per_vial)
+        if endotoxin is not None and not 0 <= endotoxin < float("inf"):
+            raise ValueError("Endotoxins (EU/vial) must be a finite, nonnegative number.")
         content = _opt_float(reported_content)
         if content is not None and content <= 0:
             raise ValueError("Reported content must be positive.")
@@ -430,7 +430,7 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
         coa.lab_name = lab_name.strip()
         coa.tested_on = tested
         coa.purity_pct = purity
-        coa.endotoxin_pct = endotoxin
+        coa.endotoxin_eu_per_vial = endotoxin
         coa.reported_content_value = content
         coa.reported_content_unit = unit
         coa.job_id = job_id.strip()
