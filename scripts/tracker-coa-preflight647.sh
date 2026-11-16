@@ -4,8 +4,8 @@ set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 PY="$APP/.venv/bin/python"
-BASE=9305aae5df5ca24afcf9735d73d914a918adcafb
-REF=release/647-coa-test-type-picker
+BASE=61b3016eed48527c61a5173d94ee0f58b859f81a
+REF=release/647-coa-bulk-test-types
 fail() { echo "COA_647_PREFLIGHT=FAILED: $*" >&2; exit 1; }
 [[ "$(id -u)" == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run on configured DEV as root"
 "$PY" - <<'PY'
@@ -19,7 +19,7 @@ assert labels == ["DEV"], "DEV-only"
 PY
 g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "DEV checkout not clean main"
-[[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Installed DEV version is not Release 645"
+[[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Installed DEV version is not Release 646"
 g fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
 TARGET="$(g rev-parse "refs/remotes/origin/$REF")"
 [[ "$#" == 1 && "$TARGET" == "$1" ]] || fail "Pass exact current candidate SHA"
@@ -37,7 +37,7 @@ export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
 mkdir -p "$TRACKER_DATA_DIR"
 git diff --check "$BASE" "$TARGET"
 bash -n scripts/tracker-release.sh scripts/tracker-coa-dev647.sh scripts/tracker-coa-scoped647.sh
-"$PY" -m compileall -q app scripts tests/test_coa_test_type_picker647.py
+"$PY" -m compileall -q app scripts tests/test_coa_bulk_test_types647.py
 node --check app/static/js/tracker-coa-types647.js
 "$PY" - <<'PY'
 from pathlib import Path
