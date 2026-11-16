@@ -81,7 +81,7 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0
  export GIT_CONFIG_COUNT=2
@@ -112,7 +112,15 @@ worker() {
  # The hourly timer is activated by its own guarded installer.
  if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer$' | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py)'; then
   [[ "$DB_MIGRATION" == 1 ]] || fail "Schema changes require verified migration backup"
-  if [[ "$REVIEWED_FACTS_639" == 1 ]]; then
+  if [[ "$REVIEWED_COA_643" == 1 ]]; then
+   [[ "$INSTANCE" == DEV && "$REF" == release/643-multiple-coa-test-documents ||
+      "$INSTANCE" == PROD && "$REF" == main ]] ||
+      fail "Release 643 COA schema review restricted to exact branch"
+   g worktree add --detach "$QA" "$TARGET"
+   "$PY" "$QA/scripts/tracker_schema_review643.py" --root "$APP" --base "$BASE" --target "$TARGET" ||
+      fail "Release 643 append-only COA document schema review failed"
+   echo "COA_643_SCHEMA_PROCEDURE=AUTHORIZED"
+  elif [[ "$REVIEWED_FACTS_639" == 1 ]]; then
    [[ "$INSTANCE" == DEV && "$REF" == release/639-structured-supplement-facts ||
       "$INSTANCE" == PROD && "$REF" == main ]] ||
       fail "Release 639 schema review restricted to exact branch"
@@ -131,7 +139,7 @@ worker() {
   else
    fail "Schema changes require a reviewed schema flag"
   fi
- elif [[ "$REVIEWED_FACTS_639" == 1 || "$REVIEWED_REGIMEN_635" == 1 ]]; then
+ elif [[ "$REVIEWED_FACTS_639" == 1 || "$REVIEWED_REGIMEN_635" == 1 || "$REVIEWED_COA_643" == 1 ]]; then
   fail "Reviewed schema flag supplied without a schema change"
  fi
  if [[ "$DB_MIGRATION" == 0 ]] &&
@@ -343,11 +351,11 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -eq 10 ]] || fail "Bad worker arguments"
+ [[ $# -eq 11 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
@@ -355,6 +363,7 @@ while (( $# )); do
   --db-migration) DB_MIGRATION=1; shift;;
   --reviewed-regimen-635) REVIEWED_REGIMEN_635=1; shift;;
   --reviewed-facts-639) REVIEWED_FACTS_639=1; shift;;
+  --reviewed-coa-643) REVIEWED_COA_643=1; shift;;
   --serial-tests) fail "Serial testing prohibited";;
   --instance|--base|--target|--ref)
    (( $# >= 2 )) || fail "Missing argument for $1"
@@ -375,6 +384,8 @@ done
 [[ "$DEV_FOCUSED_630" == 0 || ( "$INSTANCE" == DEV && "$REF" == release/630-food-duplicate-resolution ) ]] || fail "Focused 630 is DEV-only and branch-specific"
 [[ "$REVIEWED_REGIMEN_635" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed regimen deployment requires --db-migration"
 [[ "$REVIEWED_FACTS_639" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed facts deployment requires --db-migration"
+[[ "$REVIEWED_COA_643" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA deployment requires --db-migration"
+[[ "$REVIEWED_COA_643" == 0 || ( "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
 [[ "$REVIEWED_FACTS_639" == 0 || "$REVIEWED_REGIMEN_635" == 0 ]] || fail "Only one reviewed schema flag permitted"
 [[ $(id -u) == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run as root on configured Tracker host"
 instance_check "$INSTANCE"
@@ -400,7 +411,7 @@ touch "$RUN/deployment.log"
 MEMORY_PROPERTY="MemoryMax=16G"
 echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
 systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
- /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639"
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
 if (( FOLLOW )); then
