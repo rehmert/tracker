@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Workouts{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+{% endblock %}
+{% block content %}
+<section class="workout654">
+  <h1>Workouts</h1>
+  <p class="note">Nautilus machines and free weights. Log only the load and repetitions you actually completed.</p>
+
+  {% if active %}
+    <div class="workout-status654">
+      <strong>Workout in progress</strong>
+      <span>Started {{ active.started_at|dt }}</span>
+      <form method="post" action="/workouts/finish"><button type="submit">Finish Workout</button></form>
+    </div>
+  {% else %}
+    <form method="post" action="/workouts/start">
+      <button class="primary" type="submit">Start Workout</button>
+    </form>
+  {% endif %}
+
+  <section>
+    <h2>Find a machine</h2>
+    <form method="get" action="/workouts/qr" class="workout-grid654">
+      <label>QR text or URL
+        <input name="code" maxlength="1024" autocomplete="off"
+               placeholder="Paste a Nautilus QR code" required>
+      </label>
+      <button type="submit">Find Machine</button>
+    </form>
+    <p class="note">Map each code once below; Tracker never opens or transmits the code's destination.</p>
+  </section>
+
+  <section>
+    <h2>Equipment &amp; Logging</h2>
+    {% if not equipment %}<p>Add your first machine below.</p>{% endif %}
+    {% for item in equipment %}
+      <details class="workout-machine654"
+          {% if request.query_params.get('machine') == (item.id|string) %}open{% endif %}>
+        <summary><strong>{{ item.name }}</strong>
+          <span>{{ item.gym }} · {{ item.kind|replace('_', ' ') }}</span>
+        </summary>
+        <p class="note">{{ item.manufacturer }} {{ item.model }}
+          {% if item.seat_setting %} · Setup: {{ item.seat_setting }}{% endif %}
+        </p>
+        {% if item.setup_notes %}<p>{{ item.setup_notes }}</p>{% endif %}
+        {% if latest[item.id] %}
+          <p><strong>Previous:</strong> {{ '%.1f'|format(latest[item.id].weight_lb) }} lb × {{ latest[item.id].reps }} reps</p>
+        {% else %}
+          <p class="note">No previous sets on this machine.</p>
+        {% endif %}
+
+        {% if active %}
+          <form method="post" action="/workouts/sets" class="workout-grid654">
+            <input type="hidden" name="equipment_id" value="{{ item.id }}">
+            <label>Weight (lb)
+              <input type="number" name="weight_lb" inputmode="decimal"
+                     min="0" max="2000" step="any"
+                     value="{{ latest[item.id].weight_lb if latest[item.id] else '' }}" required>
+            </label>
+            <label>Repetitions
+              <input type="number" name="reps" inputmode="numeric"
+                     min="1" max="200" step="1"
+                     value="{{ latest[item.id].reps if latest[item.id] else '' }}" required>
+            </label>
+            <label>Effort 1–10 (optional)
+              <input type="number" name="effort" inputmode="numeric" min="1" max="10">
+            </label>
+            <button class="primary" type="submit">Save Set</button>
+          </form>
+        {% else %}
+          <p class="note">Start a workout to record a set.</p>
+        {% endif %}
+
+        <details class="workout-settings654">
+          <summary>Machine settings &amp; QR mapping</summary>
+          <form method="post" action="/workouts/equipment/{{ item.id }}/settings"
+                class="workout-grid654">
+            <label>Seat / backrest position
+              <input name="seat_setting" maxlength="80" value="{{ item.seat_setting }}">
+            </label>
+            <label>Setup notes
+              <textarea name="setup_notes" maxlength="1000" rows="2">{{ item.setup_notes }}</textarea>
+            </label>
+            <label>QR code value
+              <input name="qr_value" maxlength="1024" value="{{ item.qr_value or '' }}">
+            </label>
+            <button type="submit">Save Settings</button>
+          </form>
+        </details>
+      </details>
+    {% endfor %}
+  </section>
+
+  {% if active %}
+  <section>
+    <h2>Sets This Session</h2>
+    {% for row in rows %}
+      <p><strong>{{ equipment_names.get(row.equipment_id, 'Equipment') }}</strong>:
+        {{ '%.1f'|format(row.weight_lb) }} lb × {{ row.reps }}
+        {% if row.effort %} · effort {{ row.effort }}/10{% endif %}
+      </p>
+    {% else %}
+      <p>No sets recorded yet.</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section>
+    <h2>Add Equipment</h2>
+    <form method="post" action="/workouts/equipment" class="workout-grid654">
+      <label>Name <input name="name" required maxlength="140" placeholder="Chest Press"></label>
+      <label>Equipment type
+        <select name="kind">{% for kind in kinds %}
+          <option value="{{ kind }}">{{ kind|replace('_', ' ')|title }}</option>
+        {% endfor %}</select>
+      </label>
+      <label>Gym
+        <input name="gym" required maxlength="140" value="Merritt Athletic Club - Eldersburg">
+      </label>
+      <label>Manufacturer <input name="manufacturer" maxlength="100" placeholder="Nautilus"></label>
+      <label>Model <input name="model" maxlength="140"></label>
+      <label>Seat setting <input name="seat_setting" maxlength="80"></label>
+      <label>Setup notes <textarea name="setup_notes" maxlength="1000" rows="2"></textarea></label>
+      <label>QR code URL/text <input name="qr_value" maxlength="1024"></label>
+      <button class="primary" type="submit">Add Equipment</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Recent Workouts</h2>
+    {% for session in recent %}
+      <p>{{ session.started_at|dt }} — {{ 'Completed' if session.completed_at else 'In progress' }}</p>
+    {% else %}
+      <p>No workouts yet.</p>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}
