@@ -22,7 +22,7 @@
           · <a href="/workouts/routines/{{ active_routine.id }}">{{ active_routine.name }}</a>
         {% endif %}
       </span>
-      <form method="post" action="/workouts/finish"><button type="submit">Finish Workout</button></form>
+      <form method="post" action="/workouts/finish"><button type="submit" class="primary" formaction="/workouts/finish-review">Finish &amp; Review</button> <button type="submit">Finish Workout</button></form>
     </div>
   {% else %}
     <form method="post" action="/workouts/start">
