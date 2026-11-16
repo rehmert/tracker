@@ -25,6 +25,15 @@ REGIMEN_CATALOG_GET_PATHS = (
     "const response = await fetch(url, {",
     "fetch('/regimen/catalog/supplement-label?' +",
 )
+# Release 651 adds a second COA editor AJAX fetch. Inventory it explicitly,
+# without expanding Release 579 runtime witness scope or claiming clearance.
+COA_MULTI651_SOURCE = "app/static/js/tracker-coa-multi651.js"
+COA_MULTI651_REQUEST_LINES = (
+    "const response = await fetch(form.action, {",
+    'method: "POST",',
+    'credentials: "same-origin",',
+)
+
 
 
 FLOWS = {
@@ -74,9 +83,24 @@ def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
     new_coa = [item for item in items
                if item["file"] == "app/static/js/tracker-coa-types647.js"
                and item["kind"] == "fetch_callsite"]
-    if (len(items) != 49 or len(selected) != 2 or len(catalog) != 2
-            or len(new_coa) != 1):
+    new_multi_coa = [item for item in items
+                     if item["file"] == COA_MULTI651_SOURCE
+                     and item["kind"] == "fetch_callsite"]
+    if (len(items) != 50 or len(selected) != 2 or len(catalog) != 2
+            or len(new_coa) != 1 or len(new_multi_coa) != 1):
         raise ValueError("JavaScript source inventory changed; re-review witnesses")
+    multi_source = (root / COA_MULTI651_SOURCE).read_text(encoding="utf-8")
+    multi_lines = multi_source.splitlines()
+    callsite = new_multi_coa[0]["line"] - 1
+    if (not 0 <= callsite < len(multi_lines)
+            or COA_MULTI651_REQUEST_LINES[0] not in multi_lines[callsite]
+            or COA_MULTI651_REQUEST_LINES[1] not in multi_lines[callsite+1:callsite+5]
+            or COA_MULTI651_REQUEST_LINES[2] not in multi_lines[callsite+1:callsite+7]):
+        raise ValueError("Release 651 COA POST fetch changed; re-review required")
+    # A source match is NOT browser verification. This request remains outside
+    # the two historical 579-witnessed sources and within the manual queue.
+    if COA_MULTI651_SOURCE in TRACKED_FETCH_SOURCES:
+        raise ValueError("New COA fetch cannot inherit unrelated 579 witnesses")
     catalog_source = (root / REGIMEN_CATALOG_SOURCE).read_text(encoding="utf-8")
     lines = catalog_source.splitlines()
     for row, expected_call in zip(catalog, REGIMEN_CATALOG_GET_PATHS):
@@ -91,6 +115,7 @@ def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
         "tracked_js_callsites": len(items),
         "witnessed_js_callsites": len(selected),
         "not_witnessed_in_579": len(items) - len(selected),
+        "unqualified_coa_multi651_callsites": len(new_multi_coa),
         "source_refs": sorted(
             f"{item['file']}:{item['line']}" for item in selected
         ),
