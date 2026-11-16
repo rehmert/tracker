@@ -129,11 +129,58 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
             db.flush()
             coa_id = coa.id
         new_coa = db.get(Coa, coa_id)
+        if stored["original_name"]:
+            # First document is a regular editable COA attachment from day one.
+            db.add(CoaAttachment(coa_id=coa_id, test_type="", **stored))
         v.linked_coas.append(new_coa)
         if v.coa_id is None:
             v.coa_id = coa_id
         db.commit()
     return services.flash_redirect(back, msg="COA uploaded.")
+
+
+def _legacy_document_attachment650(coa: Coa) -> CoaAttachment | None:
+    """Existing root COA file has a compatibility mirror in attachments."""
+    if not coa.original_name or not coa.stored_name:
+        return None
+    return next((a for a in coa.attachments if a.stored_name == coa.stored_name), None)
+
+
+def _document_rows650(coa: Coa, default_id: int | None) -> list[dict]:
+    """Present legacy first files and normal uploads with identical controls.
+
+    No read-path data writes and no requirement to backfill every historical
+    original. A legacy root-file row gets an attachment mirror when its test
+    type is first edited; both records reference the same physical file.
+    """
+    mirror = _legacy_document_attachment650(coa)
+    rows = []
+    if coa.original_name:
+        rows.append({
+            "key": "original",
+            "filename": coa.original_name,
+            "test_type": mirror.test_type if mirror else "",
+            "size": coa.size_bytes,
+            "url": f"/coas/{coa.id}/original-file",
+            "delete_id": mirror.id if mirror else 0,
+            "default": (default_id is None or (mirror is not None and
+                                                default_id == mirror.id)),
+        })
+    for attachment in coa.attachments:
+        if mirror is not None and attachment.id == mirror.id:
+            continue
+        rows.append({
+            "key": str(attachment.id),
+            "filename": attachment.original_name,
+            "test_type": attachment.test_type or "",
+            "size": attachment.size_bytes,
+            "url": f"/coas/{coa.id}/attachments/{attachment.id}/file",
+            "delete_id": attachment.id,
+            "default": default_id == attachment.id or (
+                default_id is None and not coa.original_name and
+                attachment is coa.attachments[0]),
+        })
+    return rows
 
 
 def _original_coa_file(coa: Coa):
@@ -298,41 +345,55 @@ async def update_coa_attachment_test_types647(
         response.headers["location"] += "#test-documents"
         return response
 
-    attachments = {item.id: item for item in coa.attachments}
+    mirror = _legacy_document_attachment650(coa)
+    attachments = {str(item.id): item for item in coa.attachments if item is not mirror}
+    if coa.original_name:
+        attachments["original"] = mirror  # None = unmirrored legacy file.
     if not attachments:
         return reply("There are no test documents to update.", status=400)
-    # Starlette limits parsed form fields; three fields per document plus CSRF.
+    # Three fields per document plus CSRF; reject extra or duplicate keys.
     if len(attachments) > 250:
         return reply("Too many test documents for one update.", status=400)
     form = await request.form()
-    expected = {f"{name}_{aid}" for aid in attachments
+    expected = {f"{name}_{key}" for key in attachments
                 for name in ("test_type", "custom_test_type", "original_test_type")}
-    # The browser's signed anti-CSRF field may accompany the form.
     submitted = set(form.keys()) - {"csrf_token"}
     if submitted != expected or any(len(form.getlist(key)) != 1 for key in expected):
         return reply("Document list changed. Reload before saving.", status=409)
 
     proposed = {}
-    for aid, attachment in attachments.items():
-        previous = form[f"original_test_type_{aid}"]
-        selected = form[f"test_type_{aid}"]
-        custom = form[f"custom_test_type_{aid}"]
+    for key, attachment in attachments.items():
+        previous = form[f"original_test_type_{key}"]
+        selected = form[f"test_type_{key}"]
+        custom = form[f"custom_test_type_{key}"]
         if not all(isinstance(v, str) for v in (previous, selected, custom)):
             return reply("Invalid test type form.", status=400)
-        if len(previous) > 120 or previous != (attachment.test_type or ""):
+        current = (attachment.test_type or "") if attachment is not None else ""
+        if len(previous) > 120 or previous != current:
             return reply("A document changed since you opened the page. Reload before saving.", status=409)
         try:
-            proposed[aid] = _resolve_attachment_test_type646(selected, custom)
+            proposed[key] = _resolve_attachment_test_type646(selected, custom)
         except ValueError as exc:
             return reply(str(exc), status=400)
-    changed = [(attachments[aid], label) for aid, label in proposed.items()
-               if (attachments[aid].test_type or "") != label]
+
+    changed = [(key, attachments[key], label) for key, label in proposed.items()
+               if ((attachments[key].test_type or "") if attachments[key] is not None else "") != label]
     if changed:
         _revision(db, coa, "attachment_test_types_bulk")
-        for item, label in changed:
-            item.test_type = label
+        for key, item, label in changed:
+            if item is None:
+                # Copy metadata only; never move, rename or duplicate files.
+                assert key == "original" and coa.original_name and coa.stored_name
+                db.add(CoaAttachment(
+                    coa_id=cid, test_type=label,
+                    original_name=coa.original_name, stored_name=coa.stored_name,
+                    content_type=coa.content_type, size_bytes=coa.size_bytes,
+                    sha256=coa.sha256,
+                ))
+            else:
+                item.test_type = label
         db.commit()
-    return reply(updated=len(changed), types={str(aid): label for aid, label in proposed.items()})
+    return reply(updated=len(changed), types=proposed)
 
 
 @router.post("/coas/{cid}/default-file")
@@ -346,7 +407,7 @@ def select_coa_default_file(
     preference = db.get(CoaDefaultDocument645, cid)
     if document == "original":
         if not coa.original_name:
-            return services.flash_redirect(f"/coas/{cid}", err="No original document exists.")
+            return services.flash_redirect(f"/coas/{cid}", err="Select a document on this COA.")
         if preference is not None:
             _revision(db, coa, "default_document_changed")
             db.delete(preference)
@@ -371,17 +432,36 @@ def select_coa_default_file(
 @router.post("/coas/{cid}/attachments/{aid}/delete")
 def delete_coa_attachment(cid: int, aid: int, db: Session = Depends(get_scoped_db390)):
     coa = db.get(Coa, cid)
-    item = db.get(CoaAttachment, aid)
-    if coa is None or item is None or item.coa_id != cid:
+    if coa is None:
         raise HTTPException(404, "Document not found")
-    stored_name = item.stored_name
+    item = db.get(CoaAttachment, aid) if aid else None
+    if aid == 0:
+        # Legacy root-file row before its first type edit.
+        if not coa.original_name or _legacy_document_attachment650(coa) is not None:
+            raise HTTPException(404, "Document not found")
+        stored_name = coa.stored_name
+    elif item is not None and item.coa_id == cid:
+        stored_name = item.stored_name
+    else:
+        raise HTTPException(404, "Document not found")
     preference = db.get(CoaDefaultDocument645, cid)
-    if preference is not None and preference.attachment_id == aid:
+    if preference is not None and (preference.attachment_id == aid or
+                                   (item is not None and stored_name == coa.stored_name)):
         db.delete(preference)
     _revision(db, coa, "attachment_deleted")
-    db.delete(item)
+    if item is not None:
+        db.delete(item)
+    if coa.original_name and coa.stored_name == stored_name:
+        # Old /original-file URL must not reopen a file removed from this COA.
+        import uuid
+        coa.original_name = ""
+        coa.stored_name = "metadata-" + uuid.uuid4().hex
+        coa.content_type = ""
+        coa.size_bytes = 0
+        coa.sha256 = ""
     db.commit()
-    delete_after_commit(stored_name, attachment_directory400("coa"), services.delete_stored_file)
+    if stored_name:
+        delete_after_commit(stored_name, attachment_directory400("coa"), services.delete_stored_file)
     return services.flash_redirect(f"/coas/{cid}", msg="Document removed.")
 
 
@@ -477,7 +557,7 @@ def coa_detail(cid: int, request: Request, db: Session = Depends(get_scoped_db39
     comparisons.sort(key=lambda c: (c.tested_on is not None, c.tested_on, c.id), reverse=True)
     return render(request, "coa_edit.html", coa=coa, vials=vials, selected_vial=None,
                   history=history, comparisons=comparisons, statuses=COA_STATUSES,
-                  default_attachment_id=(choice.attachment_id if (choice := db.get(CoaDefaultDocument645, cid)) else None),
+                  documents=_document_rows650(coa, choice.attachment_id if (choice := db.get(CoaDefaultDocument645, cid)) else None),
                   coa_test_type_groups=COA_TEST_TYPE_GROUPS, coa_test_type_values=COA_TEST_TYPE_VALUES)
 
 
@@ -545,6 +625,12 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
         coa.verify_code = verify_code.strip()
         coa.notes = notes.strip()
         if new_file:
+            mirror = _legacy_document_attachment650(coa)
+            if mirror is not None:
+                for key, value in new_file.items():
+                    setattr(mirror, key, value)
+            else:
+                db.add(CoaAttachment(coa_id=cid, test_type="", **new_file))
             for key, value in new_file.items():
                 setattr(coa, key, value)
         db.commit()
