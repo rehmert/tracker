@@ -118,39 +118,59 @@ def check(release: int) -> tuple[str, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--release", type=int, choices=tuple(STAGES), required=True)
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--release", type=int, choices=tuple(STAGES))
+    selection.add_argument(
+        "--all", action="store_true",
+        help="Execute 654, 655, 656, 657 in order; stop at first failure",
+    )
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
-    promoted = False
-    try:
-        base, target = check(args.release)
-        if not args.execute:
-            print("STAGED_DRY_RUN=PASSED (no approval or deploy)", flush=True)
-            return 0
-        ops.sign_and_transfer(target)
-        ops.promote(target, base)
-        promoted = True
-        script = Path(__file__).resolve().with_name(
-            "tracker-workout-prod-remote657.sh"
-        )
-        ops.run([
-            *ops.SSH, "-T", ops.PROD, "bash", "-s", "--",
-            base, target, str(args.release),
-        ], input_data=script.read_bytes())
-        final = ops.remote(
-            "git -c safe.directory=/opt/tracker -C /opt/tracker rev-parse HEAD"
-        )
-        if final != target or ops.remote("systemctl is-active tracker") != "active":
-            raise ops.ReleaseError("PROD post-deployment verification failed")
-        print(f"PROD_INSTALLED_COMMIT={target}", flush=True)
-        print(f"WORKOUT_STAGE_{args.release}=SUCCESS", flush=True)
-        print("DEV_CONTROLLED_RELEASE=SUCCESS", flush=True)
-        return 0
-    except (ops.ReleaseError, OSError, UnicodeError, subprocess.CalledProcessError) as exc:
-        print(f"STAGED_RELEASE_ERROR={exc}", file=sys.stderr)
-        if promoted:
-            print("PROMOTED_BUT_PROD_NOT_VERIFIED=YES", file=sys.stderr)
-        return 1
+    stages = sorted(STAGES) if args.all else [args.release]
+    for release in stages:
+        promoted = False
+        try:
+            base, target = check(release)
+            if not args.execute:
+                print(
+                    f"STAGED_DRY_RUN_{release}=PASSED (no approval or deployment)",
+                    flush=True,
+                )
+                if args.all:
+                    print(
+                        "DRY_RUN_REMAINDER=requires previous stages installed",
+                        flush=True,
+                    )
+                return 0
+
+            ops.sign_and_transfer(target)
+            ops.promote(target, base)
+            promoted = True
+            script = Path(__file__).resolve().with_name(
+                "tracker-workout-prod-remote657.sh"
+            )
+            ops.run([
+                *ops.SSH, "-T", ops.PROD, "bash", "-s", "--",
+                base, target, str(release),
+            ], input_data=script.read_bytes())
+            final = ops.remote(
+                "git -c safe.directory=/opt/tracker -C /opt/tracker rev-parse HEAD"
+            )
+            if final != target or ops.remote("systemctl is-active tracker") != "active":
+                raise ops.ReleaseError("PROD post-deployment verification failed")
+            print(f"PROD_INSTALLED_COMMIT={target}", flush=True)
+            print(f"WORKOUT_STAGE_{release}=SUCCESS", flush=True)
+            print("DEV_CONTROLLED_RELEASE=SUCCESS", flush=True)
+        except (
+            ops.ReleaseError, OSError, UnicodeError, subprocess.CalledProcessError
+        ) as exc:
+            print(f"STAGED_RELEASE_ERROR_{release}={exc}", file=sys.stderr)
+            if promoted:
+                print("PROMOTED_BUT_PROD_NOT_VERIFIED=YES", file=sys.stderr)
+            return 1
+    if args.all:
+        print("WORKOUT_654_TO_657_PROD_PROMOTION=SUCCESS", flush=True)
+    return 0
 
 
 if __name__ == "__main__":
