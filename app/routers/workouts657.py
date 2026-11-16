@@ -59,7 +59,7 @@ def edit_set657(
     entry.effort = parsed_effort
     db.commit()
     return services.flash_redirect(
-        f"{target}#workout-sets657", msg="Set corrected."
+        target, msg="Set corrected."
     )
 
 
@@ -75,11 +75,11 @@ def delete_set657(
     target = f"/workouts?machine={entry.equipment_id}"
     if confirm_delete != "yes":
         return services.flash_redirect(
-            f"{target}#workout-sets657",
+            target,
             err="Confirm removal of the recorded set first.",
         )
     db.delete(entry)
     db.commit()
     return services.flash_redirect(
-        f"{target}#workout-sets657", msg="Set removed."
+        target, msg="Set removed."
     )
