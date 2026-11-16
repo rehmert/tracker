@@ -67,3 +67,73 @@ def test_652_dev_migration_archive_refuses_false_missing_evidence(tmp_path):
     file = archive652(tmp_path, Path(MISSING).name)
     with pytest.raises(ValueError, match="Missing-reference evidence"):
         mod.verify_archive(file, [])
+
+
+def test_652_dev_backup_cli_stdout_contains_only_archive_path(
+    tmp_path, monkeypatch, capsys
+):
+    """Regression: stdout must be safe for ARCHIVE="$(...)" in release worker."""
+    from types import SimpleNamespace
+
+    mod = module652()
+    data = tmp_path / "data"
+    (data / "uploads").mkdir(parents=True)
+    archive_dir = tmp_path / "archives"
+
+    with sqlite3.connect(data / "tracker.db") as db:
+        db.execute(
+            "CREATE TABLE coa_attachments "
+            "(id INTEGER PRIMARY KEY, stored_name TEXT, original_name TEXT)"
+        )
+        db.execute(
+            "INSERT INTO coa_attachments(stored_name, original_name) VALUES (?,?)",
+            (Path(MISSING).name, "historical-upload.png"),
+        )
+
+    monkeypatch.setattr(mod, "verify_dev_instance", lambda: None)
+    monkeypatch.setattr(mod.os, "geteuid", lambda: 0)
+    monkeypatch.setattr(
+        mod.os, "uname", lambda: SimpleNamespace(nodename="tracker-dev")
+    )
+
+    def diagnostics(_argv):
+        print("MISSING_REFERENCE table=coa_attachments id=1")
+        print("ATTACHMENT_FILES_MISSING=1")
+        print("DEV_ATTACHMENT_GATE=DEV_MISSING_ALLOWED")
+        return 0
+
+    monkeypatch.setattr(mod, "attachment_gate", diagnostics)
+    monkeypatch.setattr(
+        mod.os.sys,
+        "argv",
+        ["tracker-coa-dev-backup652.py", "--data", str(data), "--dest", str(archive_dir)],
+    )
+    assert mod.main() == 0
+
+    captured = capsys.readouterr()
+    lines = captured.out.splitlines()
+    assert len(lines) == 1, "The shell runner must capture only one path"
+    archive = Path(lines[0])
+    assert archive.parent == archive_dir
+    assert archive.is_file()
+    assert "MISSING_REFERENCE" not in captured.out
+    assert "ATTACHMENT_FILES_MISSING=1" in captured.err
+    assert "DEV_652_DATABASE_AND_PRESENT_UPLOADS_RESTORED=PASSED" in captured.err
+    assert mod.verify_archive(archive, [MISSING]) == 1
+
+
+def test_652_dev_attachment_failure_never_returns_an_archive_path(
+    tmp_path, monkeypatch, capsys
+):
+    mod = module652()
+
+    def failing_gate(_args):
+        print("HASH_MISMATCH table=coa_attachments id=1")
+        return 1
+
+    monkeypatch.setattr(mod, "attachment_gate", failing_gate)
+    with pytest.raises(ValueError, match="failed integrity"):
+        mod.verify_dev_attachment_gate(tmp_path)
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "HASH_MISMATCH" in captured.err
