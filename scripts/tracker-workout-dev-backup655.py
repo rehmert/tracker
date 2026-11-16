@@ -50,8 +50,12 @@ def assert_sqlite(path):
 
 def files_present(data):
     uploads = data / "uploads"
-    if not uploads.is_dir() or uploads.is_symlink():
-        raise ValueError("DEV uploads directory must be a real directory")
+    if uploads.is_symlink():
+        raise ValueError("DEV uploads directory must not be a symlink")
+    if not uploads.exists():
+        return {}
+    if not uploads.is_dir():
+        raise ValueError("DEV uploads path is not a directory")
     found = {}
     for path in sorted(uploads.rglob("*")):
         if path.is_symlink():
