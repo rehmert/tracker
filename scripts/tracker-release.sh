@@ -81,7 +81,7 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13}"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0; RESUME_645_VERIFIED=0
  export GIT_CONFIG_COUNT=2
@@ -463,7 +463,7 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -eq 13 ]] || fail "Bad worker arguments"
+ [[ $# -eq 12 || $# -eq 13 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
