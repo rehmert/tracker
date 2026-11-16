@@ -68,8 +68,8 @@ def review(root: Path, base: str, target: str) -> None:
         raise ValueError("Unapproved table definition")
     reconstructed = prefix + end + suffix
     # The additive class insertion included one additional separator newline.
-    reconstructed = reconstructed.replace('\\n\\n\\n\\nclass CoaRevision(Base):',
-                                          '\\n\\n\\nclass CoaRevision(Base):', 1)
+    reconstructed = reconstructed.replace('\n\n\n\nclass CoaRevision(Base):',
+                                          '\n\n\nclass CoaRevision(Base):', 1)
     if reconstructed.count(RELATIONSHIP) != 1:
         raise ValueError("Unexpected relationship definition")
     reconstructed = reconstructed.replace(RELATIONSHIP, "", 1)
