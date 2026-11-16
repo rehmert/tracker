@@ -251,7 +251,7 @@ PY
       "$REVIEWED_COA_645" == 1 && "$DB_MIGRATION" == 1 &&
       "$QA_FULL_REQUIRED" == 1 ]] ||
      fail "Release 645 resume requested outside reviewed full DEV gate"
-  "$PY" "$QA/scripts/tracker-resume-evidence645.py" \\
+  "$PY" "$QA/scripts/tracker-resume-evidence645.py" \
       --app "$APP" --qa "$QA" --base "$BASE" --target "$TARGET" ||
       fail "Prior Release 645 full qualification evidence not verified"
   RESUME_645_VERIFIED=1
@@ -451,7 +451,7 @@ UNIT="tracker-release-$(date +%s)-$$"
 # Make the log available before the worker starts; no source/data changes.
 touch "$RUN/deployment.log"
 if [[ "$RESUME_VERIFIED_645" == 1 ]]; then
- printf "requested\\n" > "$RUN/resume-evidence645-request"
+ printf "requested\n" > "$RUN/resume-evidence645-request"
  chmod 600 "$RUN/resume-evidence645-request"
 fi
 # Dedicated hosts: 18 vCPUs and 18 GiB RAM allocated per LXC.
