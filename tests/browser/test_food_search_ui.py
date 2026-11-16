@@ -184,6 +184,9 @@ def test_641_remove_unused_and_reassign_confirm_once_and_submit():
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
             requests = []
+            confirmations = []
+            page.on("console", lambda message: confirmations.append(message.text)
+                    if message.text == "FOOD641_CONFIRM" else None)
             html = f"""<!doctype html><html><body>
               <form class="food629-merge {extra_class}" method="post"
                     action="/food/duplicates/resolve-unused"
@@ -202,8 +205,7 @@ def test_641_remove_unused_and_reassign_confirm_once_and_submit():
                            route.fulfill(status=200, body="submitted")
                        ))
             page.add_init_script("""
-                window.name = "0";
-                window.confirm = () => {window.name = String(Number(window.name) + 1); return true;};
+                window.confirm = () => {console.log("FOOD641_CONFIRM"); return true;};
             """)
             page.goto("http://tracker.test/food/duplicates")
             page.get_by_role("button", name="Apply correction").click()
@@ -213,5 +215,5 @@ def test_641_remove_unused_and_reassign_confirm_once_and_submit():
             assert "keep_id=11" in requests[0]
             if expected_count:
                 assert "expected_count=2" in requests[0]
-            assert page.evaluate("window.name") == "1"
+            assert confirmations == ["FOOD641_CONFIRM"]
             browser.close()
