@@ -269,6 +269,14 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
     if coa is None:
         raise HTTPException(404, "COA not found")
     back = f"/coas/{cid}"
+    # Direct Python callers of this historical endpoint pass no document
+    # action. FastAPI's Form sentinel is not a submitted action.
+    if not isinstance(document_action, str):
+        document_action = ""
+    if not isinstance(files, list):
+        files = []
+    if not isinstance(test_label, str):
+        test_label = ""
     if document_action == "upload":
         actual = [item for item in files if item.filename]
         if not 1 <= len(actual) <= 10 or len(files) != len(actual):
