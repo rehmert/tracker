@@ -16,6 +16,7 @@ ALLOWED654 = frozenset({
     "app/workout_models654.py",
     "app/routers/workouts654.py",
     "app/templates/workouts654.html",
+    "app/templates/workout_history654.html",
     "app/static/css/tracker-workouts654.css",
     "app/main.py",
     "app/templates/base.html",
