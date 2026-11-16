@@ -173,3 +173,45 @@ def test_499_macro_review_distinguishes_unknown_from_zero(tab):
     expect(page.locator("#food499-macro-preview")).to_contain_text("Calories 0")
     expect(page.locator("#food499-macro-preview")).to_contain_text("Protein 40")
     assert not errors, errors
+
+
+def test_641_remove_unused_and_reassign_confirm_once_and_submit():
+    """Catch the hidden remove_id being wrongly treated as a checkbox."""
+    script = (SCRIPT.parent / "tracker-food-duplicates629.js").read_text()
+    for extra_class, expected_count in (("food630-resolve", None),
+                                         ("food641-reassign", "2")):
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            requests = []
+            html = f"""<!doctype html><html><body>
+              <form class="food629-merge {extra_class}" method="post"
+                    action="/food/duplicates/resolve-unused"
+                    data-confirm="Confirm this operation?">
+                <input name="remove_id" type="hidden" value="10">
+                <select name="keep_id"><option value="11">Correct food</option></select>
+                {('<input type="hidden" name="expected_count" value="2">' if expected_count else '')}
+                <button type="submit">Apply correction</button>
+              </form>
+              <script>{script}</script></body></html>"""
+            page.route("http://tracker.test/food/duplicates", lambda route:
+                       route.fulfill(status=200, content_type="text/html", body=html))
+            page.route("http://tracker.test/food/duplicates/resolve-unused",
+                       lambda route: (
+                           requests.append(route.request.post_data),
+                           route.fulfill(status=200, body="submitted")
+                       ))
+            page.add_init_script("""
+                window.confirmCalls = 0;
+                window.confirm = () => {window.confirmCalls += 1; return true;};
+            """)
+            page.goto("http://tracker.test/food/duplicates")
+            page.get_by_role("button", name="Apply correction").click()
+            expect(page.get_by_text("submitted")).to_be_visible()
+            assert len(requests) == 1
+            assert "remove_id=10" in requests[0]
+            assert "keep_id=11" in requests[0]
+            if expected_count:
+                assert "expected_count=2" in requests[0]
+            assert page.evaluate("window.confirmCalls") == 1
+            browser.close()
