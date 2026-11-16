@@ -182,6 +182,14 @@ def duplicate_groups629(db_engine, show_reviewed=False):
     for entries in groups.values():
         if len(entries) < 2:
             continue
+        for item in entries:
+            # Connected groups may contain transitive matches. Only offer a
+            # keeper which passes the same direct-candidate server guard.
+            item["candidate_ids"] = [
+                other["id"] for other in entries
+                if other["id"] != item["id"]
+                and direct_candidate641(item, other)
+            ]
         exact = defaultdict(list)
         for item in entries:
             if item["match_key"] is not None:
