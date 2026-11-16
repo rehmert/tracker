@@ -24,7 +24,7 @@ def test_645_coa_endotoxin_eu_per_vial_create_and_edit():
         assert 'name="endotoxin_eu_per_vial"' in page.text
         assert 'name="endotoxin_result_kind"' in page.text
         assert '&lt;1 EU/vial' in page.text
-        assert 'Endotoxins (EU/vial)' in page.text
+        assert 'Endotoxin result (EU/vial)' in page.text
         assert "Legacy endotoxin value" in page.text
         assert 'name="endotoxin_pct"' not in page.text
 
