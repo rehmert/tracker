@@ -62,7 +62,8 @@ for sh in scripts/tracker-release.sh scripts/tracker-release-scoped653.sh \
           scripts/tracker-coa-preflight653.sh scripts/tracker-coa-dev653.sh; do
   bash -n "$sh"
 done
-"$PY" -m py_compile tests/test_coa_manage_actions653.py
+"$PY" -m py_compile tests/test_coa_manage_actions653.py \
+  tests/test_tracker_instance_check653.py scripts/tracker-instance-check653.py
 "$PY" - <<'PY'
 from pathlib import Path
 from jinja2 import Environment
