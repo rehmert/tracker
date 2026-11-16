@@ -11,6 +11,7 @@ ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
 }
 bash -n "$0"
 bash -n scripts/tracker-release.sh
+bash -n scripts/tracker-workout-dev654.sh
 "$PY" -m py_compile app/workout_models654.py app/routers/workouts654.py \
     scripts/tracker-workout-schema-review654.py tests/test_workouts654.py
 "$PY" - <<'PY'
