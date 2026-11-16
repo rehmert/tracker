@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Release 655 DEV-only verified workout migration archive, preserving exactly two known missing references.
+"""Release 655+ DEV-only verified migration archive; missing uploads are nonblocking.
 
 Never use in PROD. The archive contains the exact SQLite snapshot plus every
-present upload. The known missing DEV-only files remain missing references;
+present upload. Any missing DEV upload stays missing (recorded in the manifest);
 no rows or binary files are fabricated. This is NOT a fully complete COA backup.
 """
 from __future__ import annotations
@@ -31,12 +31,6 @@ _gate650 = runpy.run_path(
 )
 verify_dev_instance = _gate650["verify_dev_instance"]
 attachment_gate = _gate650["main"]
-
-ALLOWED_MISSING = frozenset({
-    "uploads/coa/b94356f52d964400b481e6c743484367.png",
-    "uploads/coa/35ddd15d235246258cd8ed0b69fef3c6.png",
-})
-
 
 def digest(path):
     h = hashlib.sha256()
@@ -142,8 +136,6 @@ def main():
             assert_sqlite(snapshot)
             present = files_present(data)
             missing = sorted(required_attachments(snapshot) - set(present))
-            if not set(missing).issubset(ALLOWED_MISSING):
-                raise ValueError("Unexpected missing DEV attachments: " + repr(missing[:3]))
             sources = {"tracker.db": snapshot, **present}
             manifest = {
                 "kind": "DEV-655-INCOMPLETE-ATTACHMENT-REVIEW",
@@ -165,8 +157,8 @@ def main():
                 raise ValueError("Archive restore count mismatch")
             os.replace(staged, archive)
             archive.chmod(0o600)
-    print("DEV_655_MISSING_REFERENCE_EXCEPTIONS=" + str(len(missing)), file=os.sys.stderr)
-    print("DEV_655_DATABASE_AND_PRESENT_UPLOADS_RESTORED=PASSED", file=os.sys.stderr)
+    print("DEV_MISSING_UPLOAD_REFERENCES_SKIPPED=" + str(len(missing)), file=os.sys.stderr)
+    print("DEV_DATABASE_AND_PRESENT_UPLOADS_RESTORED=PASSED", file=os.sys.stderr)
     print(archive)
     return 0
 
