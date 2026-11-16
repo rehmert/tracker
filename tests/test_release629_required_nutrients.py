@@ -44,20 +44,33 @@ def payload(**nutrients):
     return values
 
 
-def test_all_sixteen_nutrients_required():
+def test_all_sixteen_nutrients_are_populated_and_missing_defaults_zero():
     assert len(food.NUTRIENTS) == 16
     for key in food.NUTRIENTS:
         data = payload()
         data.pop(key)
-        with pytest.raises(HTTPException) as caught:
-            food.required_food_nutrients629(data)
-        assert caught.value.status_code == 422
-        assert food.NUTRIENTS[key][0] in caught.value.detail
+        result = food.required_food_nutrients629(data)
+        assert result[key] == 0.0
+        assert len(result) == 16
 
 
-@pytest.mark.parametrize("bad", ["", " ", "unknown", "Unknown", "nan",
-                                   "-1", "inf", "100001"])
-def test_blank_unknown_and_invalid_values_rejected_without_writes(browser, bad):
+@pytest.mark.parametrize("unknown", ["", " ", "unknown", "Unknown",
+                                       "null", "none", "n/a", "?"])
+def test_unknown_and_blank_values_default_to_zero(browser, unknown):
+    client, engine = browser
+    data = payload()
+    data["potassium"] = unknown
+    response = client.post("/food/entry", data=data, follow_redirects=False)
+    assert response.status_code == 303
+    with engine.connect() as db:
+        stored = json.loads(db.execute(text(
+            "SELECT nutrients FROM tracker_food_products"
+        )).scalar_one())
+        assert stored["potassium"] == 0.0
+
+
+@pytest.mark.parametrize("bad", ["nan", "-1", "inf", "100001", "nonsense"])
+def test_invalid_values_still_rejected_without_writes(browser, bad):
     client, engine = browser
     data = payload()
     data["potassium"] = bad
@@ -88,7 +101,7 @@ def test_all_known_numeric_values_are_saved_including_zero(browser):
     assert values["potassium"] == 260
 
 
-def test_nutrition_correction_refuses_missing_values_atomically(browser):
+def test_nutrition_correction_defaults_missing_values_on_copy(browser):
     client, engine = browser
     assert client.post("/food/entry", data=payload(),
                        follow_redirects=False).status_code == 303
@@ -100,24 +113,22 @@ def test_nutrition_correction_refuses_missing_values_atomically(browser):
     correction.pop("vitamin-d")
     response = client.post(f"/food/entry/{entry_id}/nutrition",
                            data=correction, follow_redirects=False)
-    assert response.status_code == 422
-    with engine.connect() as db:
-        assert db.execute(text(
-            "SELECT COUNT(*) FROM tracker_food_products"
-        )).scalar_one() == 1
-        assert db.execute(text(
-            "SELECT product_id FROM tracker_food_entries WHERE id=:id"
-        ), {"id": entry_id}).scalar_one() == original_id
-    corrected = payload(**{"vitamin-d": "5"})
-    assert client.post(f"/food/entry/{entry_id}/nutrition", data=corrected,
-                       follow_redirects=False).status_code == 303
+    assert response.status_code == 303
     with engine.connect() as db:
         assert db.execute(text(
             "SELECT COUNT(*) FROM tracker_food_products"
         )).scalar_one() == 2
+        corrected_id = db.execute(text(
+            "SELECT product_id FROM tracker_food_entries WHERE id=:id"
+        ), {"id": entry_id}).scalar_one()
+        assert corrected_id != original_id
+        corrected = json.loads(db.execute(text(
+            "SELECT nutrients FROM tracker_food_products WHERE id=:id"
+        ), {"id": corrected_id}).scalar_one())
+        assert corrected["vitamin-d"] == 0.0
 
 
-def test_entry_and_correction_forms_require_all_nutrients():
+def test_entry_and_correction_forms_default_unreported_nutrients_to_zero():
     from pathlib import Path
     source = (Path(__file__).resolve().parents[1] /
               "app/templates/food.html").read_text()
@@ -125,9 +136,9 @@ def test_entry_and_correction_forms_require_all_nutrients():
     end = source.index("</form>", start)
     add = source[start:end]
     assert 'placeholder="Unknown"' not in add
-    assert add.count('placeholder="Required" required></label>') == 2
+    assert add.count('value="0" placeholder="0 if unknown" required>') == 2
     assert 'id="food-nutrient-{{ key }}"' in add
     assert 'name="{{ key }}"' in add
-    assert "id=\"food-review-warning\"" in source
-    assert "All macro- and micronutrients are required" in source
-    assert source.count('placeholder="Required" required>') >= 2
+    assert 'id="food-review-warning"' in source
+    assert "All 16 nutrients default to 0" in source
+    assert "e.parsed_nutrients.get(key) is not none else 0" in source
