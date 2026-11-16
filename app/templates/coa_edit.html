@@ -7,6 +7,7 @@
 <form method="post" action="{{ '/coas/' ~ coa.id ~ '/edit' if coa else '/coas/new' }}" enctype="multipart/form-data" class="grid">
 {% if not coa %}<label class="field wide"><span>Initial vial (required)</span><select name="vial_id" required><option value="">Choose a vial</option>{% for v in vials %}<option value="{{ v.id }}">{{ v.compound.name }} · #{{ v.id }} · {{ v.label or 'Unlabeled' }}</option>{% endfor %}</select></label>{% endif %}
 <label class="field wide"><span>{{ 'Replace document (optional)' if coa else 'COA document (optional)' }} · PDF, PNG, JPG, WEBP (15 MB max)</span><input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
+{% if not coa %}<p class="note">After creating this COA, add multiple individual test PDFs or images from its detail page, all under the same COA record.</p>{% endif %}
 <label class="field"><span>Laboratory</span><input name="lab_name" value="{{ coa.lab_name if coa else '' }}"></label>
 <label class="field"><span>Tested on</span><input type="date" name="tested_on" value="{{ coa.tested_on or '' if coa else '' }}"></label>
 <label class="field"><span>Purity (%)</span><input type="number" min="0" max="100" step="any" name="purity_pct" value="{{ coa.purity_pct if coa and coa.purity_pct is not none else '' }}"></label>
