@@ -398,13 +398,27 @@ async def resolve_unused_food630(
     request: Request,
     db_engine=Depends(get_food_read_engine406),
 ):
+    """One pre-existing CSRF-protected route for removing or reassigning."""
     form = await request.form()
-    if (set(form) - {"keep_id", "remove_id", "csrf_token"}
+    reassign = "expected_count" in form
+    allowed = {"keep_id", "remove_id", "csrf_token"}
+    if reassign:
+        allowed.add("expected_count")
+    if (set(form) - allowed
             or len(form.getlist("keep_id")) != 1
             or len(form.getlist("remove_id")) != 1
-            or len(form.getlist("csrf_token")) > 1):
-        raise HTTPException(422, "Invalid unused food resolution form")
+            or len(form.getlist("csrf_token")) > 1
+            or (reassign and len(form.getlist("expected_count")) != 1)):
+        raise HTTPException(422, "Invalid food resolution form")
     try:
+        if reassign:
+            moved = reassign_logged_uses641(
+                db_engine, int(form["keep_id"]), int(form["remove_id"]),
+                int(form["expected_count"]),
+            )
+            return RedirectResponse(
+                f"/food/duplicates?reassigned={moved}", status_code=303
+            )
         remove_unused_mismatch630(
             db_engine, int(form["keep_id"]), int(form["remove_id"])
         )
@@ -412,29 +426,6 @@ async def resolve_unused_food630(
         raise HTTPException(422, str(exc)) from exc
     return RedirectResponse("/food/duplicates?resolved=1", status_code=303)
 
-
-
-@router.post("/food/duplicates/reassign-logs")
-async def reassign_duplicate_food_logs641(
-    request: Request,
-    db_engine=Depends(get_food_read_engine406),
-):
-    form = await request.form()
-    if (set(form) - {"keep_id", "remove_id", "expected_count", "csrf_token"}
-            or any(len(form.getlist(k)) != 1
-                   for k in ("keep_id", "remove_id", "expected_count"))
-            or len(form.getlist("csrf_token")) > 1):
-        raise HTTPException(422, "Invalid reassignment form")
-    try:
-        count = reassign_logged_uses641(
-            db_engine, int(form["keep_id"]), int(form["remove_id"]),
-            int(form["expected_count"]),
-        )
-    except (TypeError, ValueError) as exc:
-        raise HTTPException(422, str(exc)) from exc
-    return RedirectResponse(
-        f"/food/duplicates?reassigned={count}", status_code=303
-    )
 
 @router.post("/food/duplicates/keep-distinct")
 async def keep_distinct_food630(
