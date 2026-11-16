@@ -11,6 +11,7 @@ from ..templating import render
 from fastapi import Request
 from ..scoped_db390 import get_scoped_db390
 from ..models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision, Vial, Compound
+from ..coa_test_types646 import COA_TEST_TYPE_GROUPS, COA_CUSTOM_TYPE_SENTINEL
 
 from ..attachment_scope396 import require_attachment_scope396
 from ..attachment_files400 import (
@@ -181,11 +182,25 @@ def coa_file(cid: int, db: Session = Depends(get_scoped_db390)):
     raise HTTPException(404, "No COA document uploaded")
 
 
+
+def _resolve_attachment_test_type646(test_type: str, custom_test_type: str = "") -> str:
+    """Keep historical free-text labels and allow an explicit custom choice."""
+    choice = test_type.strip()
+    if choice == COA_CUSTOM_TYPE_SENTINEL:
+        choice = custom_test_type.strip()
+        if not choice:
+            raise ValueError("Enter a custom test type or choose a listed type.")
+    if len(choice) > 120:
+        raise ValueError("Test type is too long.")
+    return choice
+
+
 @router.post("/coas/{cid}/attachments")
 async def add_coa_attachments(
     cid: int,
     files: list[UploadFile] = File(...),
     test_type: str = Form(""),
+    custom_test_type: str = Form(""),
     db: Session = Depends(get_scoped_db390),
 ):
     coa = db.get(Coa, cid)
@@ -193,9 +208,10 @@ async def add_coa_attachments(
         raise HTTPException(404, "COA not found")
     if not 1 <= len(files) <= 20 or not all(f.filename for f in files):
         return services.flash_redirect(f"/coas/{cid}", err="Select 1 to 20 files.")
-    test_type = test_type.strip()
-    if len(test_type) > 120:
-        return services.flash_redirect(f"/coas/{cid}", err="Test type is too long.")
+    try:
+        test_type = _resolve_attachment_test_type646(test_type, custom_test_type)
+    except ValueError as exc:
+        return services.flash_redirect(f"/coas/{cid}", err=str(exc))
     directory = attachment_directory400("coa")
     uploaded = []
     try:
@@ -236,15 +252,17 @@ def coa_attachment_file(cid: int, aid: int, db: Session = Depends(get_scoped_db3
 @router.post("/coas/{cid}/attachments/{aid}/test-type")
 def update_coa_attachment_test_type(
     cid: int, aid: int, test_type: str = Form(""),
+    custom_test_type: str = Form(""),
     db: Session = Depends(get_scoped_db390),
 ):
     coa = db.get(Coa, cid)
     item = db.get(CoaAttachment, aid)
     if coa is None or item is None or item.coa_id != cid:
         raise HTTPException(404, "Document not found")
-    test_type = test_type.strip()
-    if len(test_type) > 120:
-        return services.flash_redirect(f"/coas/{cid}", err="Test type is too long.")
+    try:
+        test_type = _resolve_attachment_test_type646(test_type, custom_test_type)
+    except ValueError as exc:
+        return services.flash_redirect(f"/coas/{cid}", err=str(exc))
     if item.test_type != test_type:
         _revision(db, coa, "attachment_test_type")
         item.test_type = test_type
@@ -394,7 +412,8 @@ def coa_detail(cid: int, request: Request, db: Session = Depends(get_scoped_db39
     comparisons.sort(key=lambda c: (c.tested_on is not None, c.tested_on, c.id), reverse=True)
     return render(request, "coa_edit.html", coa=coa, vials=vials, selected_vial=None,
                   history=history, comparisons=comparisons, statuses=COA_STATUSES,
-                  default_attachment_id=(choice.attachment_id if (choice := db.get(CoaDefaultDocument645, cid)) else None))
+                  default_attachment_id=(choice.attachment_id if (choice := db.get(CoaDefaultDocument645, cid)) else None),
+                  coa_test_type_groups=COA_TEST_TYPE_GROUPS)
 
 
 @router.post("/coas/new")
