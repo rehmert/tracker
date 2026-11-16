@@ -27,7 +27,7 @@ def test_reviewed_gate_requires_explicit_migration_backup():
     assert '[[ "$INSTANCE" == DEV && "$REF" == release/635-regimen-catalog-schedules' in source
     assert '"$QA/scripts/tracker_schema_review635.py"' in source
     assert 'DATABASE_BACKUP=VERIFIED_FOR_MIGRATION' in source
-    assert '"$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639"' in source
+    assert '"$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643"' in source
 
 
 def test_signed_prod_pipeline_opts_into_migration_only_for_635():
