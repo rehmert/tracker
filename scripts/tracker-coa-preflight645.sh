@@ -29,6 +29,11 @@ cleanup() { [[ ! -d "$QA" ]] || g worktree remove --force "$QA" >/dev/null 2>&1 
 trap cleanup EXIT
 g worktree add --detach "$QA" "$TARGET"
 cd "$QA"
+echo "=== RELEASE 645 LIVE ATTACHMENT PREFLIGHT BEFORE TESTS ==="
+"$PY" scripts/tracker-attachment-integrity645.py --data /opt/tracker/data --hashes ||
+ fail "Live attachment references incomplete; reconcile PROD uploads before tests"
+echo "COA_645_LIVE_ATTACHMENT_PREFLIGHT=PASSED"
+bash -n scripts/tracker-prod-uploads-to-dev645.sh
 export TRACKER_DATA_DIR="$RUN/data" PYTHONPATH="$QA"
 mkdir -p "$TRACKER_DATA_DIR"
 git diff --check "$BASE" "$TARGET"
