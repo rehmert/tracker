@@ -11,6 +11,7 @@ from ..sparklines import sparkline
 from ..today import schedule_summary
 from ..projection_exclusions import exclusions_for
 from ..scoped_db390 import get_scoped_db390
+from ..workout_dashboard661 import workout_dashboard661
 from ..models import DoseLog, Vial, VitalReading, Protocol
 from ..templating import render
 from ..units import to_base, parse_unit, UnitError
@@ -183,4 +184,5 @@ def home(request: Request, db: Session = Depends(get_scoped_db390)):
         today_summary=today_summary, dashboard_upcoming=dashboard_upcoming,
         recent_administrations=recent_administrations,
         now_date=today_date,
+        workout_summary=workout_dashboard661(db, today_date),
     )
