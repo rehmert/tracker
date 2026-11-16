@@ -10,13 +10,15 @@
   <h1>{{ routine.name }}</h1>
   <p class="note">Exercises appear in the order below during this routine's workout.</p>
   {% if items %}
-    <form method="post" action="/workouts/routines/{{ routine.id }}/start">
-      <button class="primary" type="submit">
-        {{ 'Resume Routine' if active else 'Start Routine' }}
-      </button>
-    </form>
-    {% if active %}
-      <p class="note">If a different workout is active, finish it before starting this routine.</p>
+    {% if active and not can_resume %}
+      <p class="note">Finish your current workout before starting this routine.</p>
+      <p><a href="/workouts">Open Current Workout</a></p>
+    {% else %}
+      <form method="post" action="/workouts/routines/{{ routine.id }}/start">
+        <button class="primary" type="submit">
+          {{ 'Resume Routine' if can_resume else 'Start Routine' }}
+        </button>
+      </form>
     {% endif %}
   {% else %}
     <p class="note">Add at least one exercise before starting.</p>
