@@ -86,7 +86,7 @@ def test_649_original_is_one_row_and_one_review_link_among_uploaded_documents():
             markup.feed(html)
             assert "<h2>Uploaded documents</h2>" in html
             assert 'data-coa-original-document' not in html
-            assert 'name="test_type_original"' in html
+            assert 'name="test_types_original"' in html
             assert 'name="document" value="original"' in html
             original = f"/coas/{cid}/original-file"
             assert markup.links.count(original) == 1
@@ -102,7 +102,7 @@ def test_649_original_is_one_row_and_one_review_link_among_uploaded_documents():
             assert 'original-report.pdf' in response.headers["content-disposition"]
             assert '<span class="coa-document-origin">Original</span>' not in html
             assert "Save all test types" in html
-            assert 'name="test_type_%s"' % aids[0] in html
+            assert 'name="test_types_%s"' % aids[0] in html
             assert f'action="/coas/{cid}/default-file"' in html
             assert 'Save default document' in html
             assert 'View default COA document' not in html
