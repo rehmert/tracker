@@ -35,4 +35,4 @@ echo "COA_645_TARGET=$TARGET"
 echo "COA_645_EXPECTED_SCOPE=DEV_ONLY"
 bash "$DIR/runner.sh" \
  --instance DEV --base "$BASE" --target "$TARGET" \
- --ref "$REF" --db-migration --reviewed-coa-645
+ --ref "$REF" --db-migration --reviewed-coa-645 --resume-verified-645
