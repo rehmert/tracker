@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Rapid Gym Mode{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts659.css?v=659">
+<script src="/static/js/tracker-workouts659.js?v=659" defer></script>
+{% endblock %}
+{% block content %}
+<section class="workout659" id="workout659-root"
+         data-session-id="{{ active.id if active else '' }}"
+         data-last-set-id="{{ last.id if last else '' }}"
+         data-logged="{{ 'yes' if request.query_params.get('logged') == '1' else 'no' }}">
+  <header class="workout659-header">
+    <div>
+      <p><a href="/workouts">← Full Workout Tracker</a></p>
+      <h1>Rapid Gym Mode</h1>
+      <p class="workout659-muted">One machine at a time. Log only sets you completed.</p>
+    </div>
+    {% if active %}
+      <span class="workout659-state">Workout active</span>
+    {% endif %}
+  </header>
+
+  {% if not equipment %}
+    <section class="workout659-panel">
+      <p>Add your first machine in the main Workout Tracker to begin.</p>
+      <a href="/workouts#workout-add-equipment656">Add Equipment</a>
+    </section>
+  {% elif not active %}
+    <section class="workout659-panel">
+      <h2>Begin a workout</h2>
+      <form method="post" action="/workouts/quick/start">
+        <button class="primary workout659-main-button" type="submit">Start Free Workout</button>
+      </form>
+      {% if routines %}
+        <h3>Or start a saved routine</h3>
+        <div class="workout659-routine-list">
+          {% for option in routines %}
+            <form method="post" action="/workouts/quick/routines/{{ option.id }}/start">
+              <button type="submit">{{ option.name }}</button>
+            </form>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+  {% else %}
+    {% if routine %}
+      <section class="workout659-progress" aria-label="Routine progress">
+        <strong>{{ routine.name }}</strong>
+        <span>{{ routine_logged }} of {{ routine_total }} exercises logged</span>
+      </section>
+    {% endif %}
+
+    <section class="workout659-panel">
+      <form action="/workouts/quick" method="get" class="workout659-machine-picker">
+        <label for="workout659-machine-select">Current machine</label>
+        <div class="workout659-picker-row">
+          <select id="workout659-machine-select" name="machine">
+            {% for item in equipment %}
+              <option value="{{ item.id }}" {% if machine and item.id == machine.id %}selected{% endif %}>
+                {{ item.name }} · {{ item.gym }}
+              </option>
+            {% endfor %}
+          </select>
+          <button type="submit">Go</button>
+        </div>
+      </form>
+      {% if machine %}
+        <div class="workout659-machine-heading">
+          <h2>{{ machine.name }}</h2>
+          <p class="workout659-muted">{{ machine.gym }}{% if machine.seat_setting %} · Seat {{ machine.seat_setting }}{% endif %}</p>
+          {% if machine.setup_notes %}
+            <p class="workout659-notes">{{ machine.setup_notes }}</p>
+          {% endif %}
+        </div>
+        <div class="workout659-prior">
+          {% if last %}
+            <span>Last recorded</span>
+            <strong>{{ '%.1f'|format(last.weight_lb) }} lb × {{ last.reps }} reps{% if last.effort is not none %} · effort {{ last.effort }}/10{% endif %}</strong>
+          {% else %}
+            <span>No previous set on this machine</span>
+          {% endif %}
+          <a href="/workouts/equipment/{{ machine.id }}/progress">View progress</a>
+        </div>
+        <form method="post" action="/workouts/quick/sets"
+              class="workout659-log-form" id="workout659-log-form">
+          <input type="hidden" name="equipment_id" value="{{ machine.id }}">
+          <div class="workout659-number-grid">
+            <div class="workout659-number-control">
+              <label for="workout659-weight">Weight (lb)</label>
+              <div class="workout659-stepper">
+                <button type="button" data-step659="weight" data-delta659="-5" aria-label="Decrease weight by 5 pounds">−5</button>
+                <input id="workout659-weight" type="number" name="weight_lb"
+                       min="0" max="2000" step="any" inputmode="decimal" required
+                       value="{{ last.weight_lb if last else '' }}">
+                <button type="button" data-step659="weight" data-delta659="5" aria-label="Increase weight by 5 pounds">+5</button>
+              </div>
+            </div>
+            <div class="workout659-number-control">
+              <label for="workout659-reps">Repetitions</label>
+              <div class="workout659-stepper">
+                <button type="button" data-step659="reps" data-delta659="-1" aria-label="Decrease repetitions by 1">−1</button>
+                <input id="workout659-reps" type="number" name="reps"
+                       min="1" max="200" step="1" inputmode="numeric" required
+                       value="{{ last.reps if last else '' }}">
+                <button type="button" data-step659="reps" data-delta659="1" aria-label="Increase repetitions by 1">+1</button>
+              </div>
+            </div>
+          </div>
+          <label class="workout659-effort">Effort 1–10 (optional)
+            <input type="number" name="effort" min="1" max="10" step="1"
+                   inputmode="numeric" value="{{ last.effort if last and last.effort is not none else '' }}">
+          </label>
+          <button class="primary workout659-main-button" type="submit" id="workout659-save">Save Set</button>
+        </form>
+        {% if last %}
+          <form method="post" action="/workouts/quick/repeat" class="workout659-repeat">
+            <input type="hidden" name="equipment_id" value="{{ machine.id }}">
+            <input type="hidden" name="source_set_id" value="{{ last.id }}">
+            <button type="submit" class="workout659-main-button workout659-repeat-button">
+              Repeat Last Set — {{ '%.1f'|format(last.weight_lb) }} lb × {{ last.reps }}
+            </button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    <section class="workout659-panel workout659-rest-panel" aria-label="Rest timer">
+      <div class="workout659-rest-header">
+        <h2>Rest Timer</h2>
+        <label>Duration
+          <select id="workout659-rest-duration">
+            <option value="60">60 sec</option>
+            <option value="90" selected>90 sec</option>
+            <option value="120">120 sec</option>
+            <option value="180">180 sec</option>
+          </select>
+        </label>
+      </div>
+      <output id="workout659-rest-display" role="timer" aria-live="off">01:30</output>
+      <p id="workout659-rest-status" class="workout659-muted" role="status">Start manually or save a set to start resting.</p>
+      <div class="workout659-rest-buttons">
+        <button type="button" id="workout659-rest-start">Start / Restart</button>
+        <button type="button" id="workout659-rest-reset">Reset</button>
+      </div>
+    </section>
+
+    {% if machine %}
+      <nav class="workout659-move" aria-label="Exercise navigation">
+        {% if previous_machine %}
+          <a class="workout659-move-button" href="/workouts/quick?machine={{ previous_machine.id }}">
+            ← {{ previous_machine.name }}
+          </a>
+        {% endif %}
+        {% if next_machine %}
+          <a class="workout659-move-button workout659-move-next"
+             href="/workouts/quick?machine={{ next_machine.id }}">
+            Next: {{ next_machine.name }} →
+          </a>
+        {% endif %}
+      </nav>
+      <section class="workout659-panel workout659-logged">
+        <h2>This session on {{ machine.name }} ({{ machine_sets|length }} shown)</h2>
+        {% for entry in machine_sets %}
+          <p><strong>{{ '%.1f'|format(entry.weight_lb) }} lb × {{ entry.reps }}</strong>
+            {% if entry.effort is not none %} · effort {{ entry.effort }}/10{% endif %}
+            <span> · {{ entry.performed_at|dt }}</span>
+          </p>
+        {% else %}
+          <p class="workout659-muted">No sets recorded on this machine during this workout yet.</p>
+        {% endfor %}
+        {% if machine_sets %}
+          <p><a href="/workouts#workout-sets657">Correct an earlier set</a></p>
+        {% endif %}
+      </section>
+    {% endif %}
+    <section class="workout659-end">
+      <form method="post" action="/workouts/quick/finish">
+        <button type="submit">Finish Workout</button>
+      </form>
+      <a href="/workouts">Full Workout Tracker</a>
+    </section>
+  {% endif %}
+</section>
+{% endblock %}
