@@ -27,14 +27,14 @@ def test_597_six_source_candidates_still_block_global_enforcement():
     }
     report=readiness.report()
     assert report["missing_witness_source_routes"] == []
-    # Includes two unqualified Release 643 COA attachment POST routes.
-    assert report["route_count"] == 160
+    # Includes the unqualified Release 647 COA batch POST.
+    assert report["route_count"] == 161
     assert report["global_enable_authorized"] is False
     assert report["strict_csrf_enforce_installed"] is False
     assert report["status"] == "BLOCKED_INCOMPLETE_RUNTIME_CLEARANCE"
     plan=gap.build()
     assert plan["source_witness_candidates"] == 83
-    assert plan["remaining_without_source_witness"] == 77
+    assert plan["remaining_without_source_witness"] == 78
     assert len(plan["source_witness_manifest"]) == 70
     assert plan["runtime_verified_by_this_report"] is False
     assert plan["strict_csrf_enforcement_change_authorized"] is False
