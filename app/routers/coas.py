@@ -13,6 +13,9 @@ from ..scoped_db390 import get_scoped_db390
 from ..models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision, Vial, Compound
 from ..coa_test_types646 import COA_TEST_TYPE_GROUPS, COA_TEST_TYPE_VALUES, COA_CUSTOM_TYPE_SENTINEL
 from ..coa_multitypes651 import decode as decode_types651, from_selection as choose_types651
+from ..coa_catalog652 import (
+    catalog652, groups652, test_info652, from_selection652,
+)
 
 from ..attachment_scope396 import require_attachment_scope396
 from ..attachment_files400 import (
@@ -147,7 +150,7 @@ def _legacy_document_attachment650(coa: Coa) -> CoaAttachment | None:
     return next((a for a in coa.attachments if a.stored_name == coa.stored_name), None)
 
 
-def _document_rows650(coa: Coa, default_id: int | None) -> list[dict]:
+def _document_rows650(coa: Coa, default_id: int | None, catalog=()) -> list[dict]:
     """Present legacy first files and normal uploads with identical controls.
 
     No read-path data writes and no requirement to backfill every historical
@@ -161,8 +164,7 @@ def _document_rows650(coa: Coa, default_id: int | None) -> list[dict]:
             "key": "original",
             "filename": coa.original_name,
             "test_type": mirror.test_type if mirror else "",
-            "test_types": decode_types651(mirror.test_type if mirror else ""),
-            "custom_type": next((x for x in decode_types651(mirror.test_type if mirror else "") if x not in COA_TEST_TYPE_VALUES), ""),
+            **test_info652(mirror.test_type if mirror else "", catalog),
             "size": coa.size_bytes,
             "url": f"/coas/{coa.id}/original-file",
             "delete_id": mirror.id if mirror else 0,
@@ -176,8 +178,7 @@ def _document_rows650(coa: Coa, default_id: int | None) -> list[dict]:
             "key": str(attachment.id),
             "filename": attachment.original_name,
             "test_type": attachment.test_type or "",
-            "test_types": decode_types651(attachment.test_type),
-            "custom_type": next((x for x in decode_types651(attachment.test_type) if x not in COA_TEST_TYPE_VALUES), ""),
+            **test_info652(attachment.test_type, catalog),
             "size": attachment.size_bytes,
             "url": f"/coas/{coa.id}/attachments/{attachment.id}/file",
             "delete_id": attachment.id,
@@ -263,7 +264,7 @@ async def add_coa_attachments(
         return services.flash_redirect(f"/coas/{cid}", err="Select 1 to 20 files.")
     try:
         if test_types or (custom_test_type and not test_type):
-            test_type = choose_types651(test_types, custom_test_type)
+            test_type = from_selection652(test_types, custom_test_type, catalog652(db))
         else:
             test_type = _resolve_attachment_test_type646(test_type, custom_test_type)
     except ValueError as exc:
@@ -375,6 +376,7 @@ async def update_coa_attachment_test_types647(
     if submitted != expected:
         return reply("Document list changed. Reload before saving.", status=409)
 
+    catalog = catalog652(db) if new_mode else ()
     proposed = {}
     for key, attachment in attachments.items():
         previous = form[f"original_test_type_{key}"]
@@ -392,7 +394,7 @@ async def update_coa_attachment_test_types647(
                 if (not raw or raw.count("") != 1
                         or not all(isinstance(v, str) for v in raw)):
                     return reply("Invalid multi-test form.", status=400)
-                proposed[key] = choose_types651(raw, custom)
+                proposed[key] = from_selection652(raw, custom, catalog, previous=current)
             else:
                 selected = form[f"test_type_{key}"]
                 if (not isinstance(selected, str) or
@@ -581,10 +583,11 @@ def coa_detail(cid: int, request: Request, db: Session = Depends(get_scoped_db39
                    or any((v.compound_id, v.lot.strip().casefold()) in lot_keys
                           for v in c.all_vials if v.lot.strip())]
     comparisons.sort(key=lambda c: (c.tested_on is not None, c.tested_on, c.id), reverse=True)
+    catalog = catalog652(db)
     return render(request, "coa_edit.html", coa=coa, vials=vials, selected_vial=None,
                   history=history, comparisons=comparisons, statuses=COA_STATUSES,
-                  documents=_document_rows650(coa, choice.attachment_id if (choice := db.get(CoaDefaultDocument645, cid)) else None),
-                  coa_test_type_groups=COA_TEST_TYPE_GROUPS, coa_test_type_values=COA_TEST_TYPE_VALUES)
+                  documents=_document_rows650(coa, choice.attachment_id if (choice := db.get(CoaDefaultDocument645, cid)) else None, catalog),
+                  coa_test_type_groups=groups652(catalog), coa_test_type_values=COA_TEST_TYPE_VALUES)
 
 
 @router.post("/coas/new")
