@@ -103,6 +103,16 @@ def test_645_less_than_one_default_and_exact_requires_real_number():
                 row = db.get(Coa, cid)
                 assert row.endotoxin_result_kind == "lt1"
                 assert row.endotoxin_eu_per_vial is None
+        for invalid in ({"endotoxin_result_kind": "invalid"},
+                        {"endotoxin_result_kind": "lt1", "endotoxin_eu_per_vial": "0.4"}):
+            response = client.post(f"/coas/{cid}/edit", data=invalid,
+                                   follow_redirects=False)
+            assert response.status_code == 303
+            assert "err=" in response.headers["location"]
+            with SessionLocal() as db:
+                row = db.get(Coa, cid)
+                assert row.endotoxin_result_kind == "lt1"
+                assert row.endotoxin_eu_per_vial is None
         # A reported number is accepted only with the exact-number option.
         response = client.post(f"/coas/{cid}/edit", data={
             "endotoxin_result_kind": "exact",
