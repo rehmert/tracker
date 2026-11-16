@@ -21,7 +21,16 @@ from pathlib import Path
 from app.backup_consistency309 import upload_inventory
 from app.backup_references341 import required_attachments
 from app.upload_coordination325 import upload_guard
-from scripts.tracker_dev_attachment_gate650 import verify_dev_instance, main as attachment_gate
+# The established Release 650 gate is an executable with hyphens in its
+# filename, not an importable Python module. Load that exact adjacent file
+# by path; do not rename it or maintain a divergent copy of its DEV policy.
+import runpy
+
+_gate650 = runpy.run_path(
+    str(Path(__file__).resolve().parent / "tracker-dev-attachment-gate650.py")
+)
+verify_dev_instance = _gate650["verify_dev_instance"]
+attachment_gate = _gate650["main"]
 
 KNOWN_MISSING = "uploads/coa/b94356f52d964400b481e6c743484367.png"
 
