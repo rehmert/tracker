@@ -245,6 +245,8 @@ def _resolve_attachment_test_type646(test_type: str, custom_test_type: str = "")
             raise ValueError("Enter a custom test type or choose a listed type.")
     if len(choice) > 120:
         raise ValueError("Test type is too long.")
+    if choice.startswith(("~652~", "@652:")):
+        raise ValueError("Choose managed catalog types in the multi-test picker.")
     return choice
 
 
