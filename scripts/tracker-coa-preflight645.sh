@@ -42,6 +42,11 @@ for name in ("coa_edit.html", "vial_detail.html"):
     Environment().parse((Path("app/templates") / name).read_text())
 print("COA_645_TEMPLATE=PASSED")
 PY
+echo "=== RELEASE 645 BROWSER INVENTORY CONTRACT (FAIL FAST) ==="
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+ tests/test_browser_qualification511.py::test_511_every_browser_module_in_disposable_qualification \
+ tests/test_release627_csrf_reconciliation.py::test_627_release511_inventory_scopes_new_browser_modules_strict_only
+echo "COA_645_BROWSER_INVENTORY=PASSED"
 bash scripts/tracker-coa-scoped645.sh "$PY"
 "$PY" -m pytest -q --tb=short --maxfail=1 \
  tests/test_release_workflow.py \
