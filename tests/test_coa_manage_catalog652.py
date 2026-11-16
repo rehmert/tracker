@@ -157,3 +157,31 @@ def test_652_reject_forged_and_duplicate_catalog_selections_without_mutations():
             assert len(list(db.scalars(select(CoaTestType652).where(
                 CoaTestType652.label.ilike(name)
             )))) == 1
+
+
+
+def test_652_promotion_requires_genuine_scoped_receipt():
+    import importlib.util
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[1] / "scripts/tracker_promote568.py"
+    spec = importlib.util.spec_from_file_location("tracker_promote652", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sha = "b" * 40
+    lines = [
+        "QA_FULL_REQUIRED=0",
+        "RELEASE_SCOPED_PREFLIGHT=PASSED",
+        "FOCUSED_RELEASE_GATE=PASSED",
+        "=== ISOLATED RESTORE VERIFICATION PASSED ===",
+        " TRACKER RELEASE DEPLOYMENT SUCCESS",
+        "EXIT_STATUS=0",
+        "DEV_QUALIFIED_COMMIT=" + sha,
+    ]
+    module.verified_log("\n".join(lines) + "\n", sha)
+    import pytest
+    with pytest.raises(module.ReleaseError):
+        module.verified_log(
+            "\n".join(row for row in lines if row != "RELEASE_SCOPED_PREFLIGHT=PASSED") + "\n",
+            sha,
+        )
