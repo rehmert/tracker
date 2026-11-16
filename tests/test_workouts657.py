@@ -84,6 +84,7 @@ def test_657_correction_delete_and_completed_workout_protection():
         assert edited.headers["location"].startswith(
             f"/workouts?machine={equipment_id}&msg="
         )
+        assert edited.headers["location"].endswith("#workout-sets657")
         with SessionLocal() as db:
             changed = db.get(WorkoutSet654, set_id)
             assert changed
@@ -97,6 +98,7 @@ def test_657_correction_delete_and_completed_workout_protection():
         })
         assert removed.status_code == 303
         assert "msg=" in removed.headers["location"]
+        assert removed.headers["location"].endswith("#workout-sets657")
         with SessionLocal() as db:
             assert db.get(WorkoutSet654, set_id) is None
         assert post(client, "/workouts/finish").status_code == 303
@@ -165,6 +167,7 @@ def test_657_routine_next_machine_and_logged_exercise_count():
         assert page.status_code == 200
         assert "0 of 2" in page.text
         assert f'href="/workouts?machine={second}#workout-machine-{second}"' in page.text
+        assert "Next: 657 Leg Extension" in page.text
         assert f'id="workout-machine-{first}"' in page.text
         assert f'id="workout-machine-{second}"' in page.text
         assert page.text.index("657 Cable Row") < page.text.index("657 Leg Extension")
