@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
 <link rel="stylesheet" href="/static/css/tracker-workouts656.css?v=656">
+<link rel="stylesheet" href="/static/css/tracker-workouts657.css?v=657">
 <script src="/static/js/tracker-workouts655.js?v=655" defer></script>
 <script src="/static/js/tracker-workouts656.js?v=656" defer></script>
 {% endblock %}
@@ -73,17 +74,26 @@
     <p class="note">Map each code once below. Scanner results are looked up only in Tracker; external QR destinations are never opened.</p>
   </section>
 
+  {% if active_routine and routine_total %}
+    <div class="workout657-progress" role="status">
+      <strong>{{ routine_logged_count }} of {{ routine_total }}</strong>
+      routine exercises have logged sets this session.
+      <span class="note">Log at least one set on a machine to count it here.</span>
+    </div>
+  {% endif %}
   <section>
     <h2>Equipment &amp; Logging</h2>
     {% if not equipment %}<p>Add your first machine below.</p>{% endif %}
     {% for item in equipment %}
-      <details class="workout-machine654"
+      <details class="workout-machine654" id="workout-machine-{{ item.id }}"
           {% if request.query_params.get('machine') == (item.id|string) or (not request.query_params.get('machine') and item.id == first_routine_equipment_id) %}open{% endif %}>
         <summary><strong>{{ item.name }}</strong>
           <span>{{ item.gym }} · {{ item.kind|replace('_', ' ') }}</span>
         </summary>
         {% if item.id in routine_equipment_ids %}
-          <p class="workout-routine-marker655">Routine exercise</p>
+          <p class="workout-routine-marker655">
+            Routine exercise · {{ counts_this_session[item.id] }} set{{ '' if counts_this_session[item.id] == 1 else 's' }} recorded today
+          </p>
         {% endif %}
         <p class="note">{{ item.manufacturer }} {{ item.model }}
           {% if item.seat_setting %} · Setup: {{ item.seat_setting }}{% endif %}
@@ -125,6 +135,14 @@
           <p class="note">Start a workout to record a set.</p>
         {% endif %}
 
+        {% if active and item.id in next_machine %}
+          {% set next_id = next_machine[item.id] %}
+          <p class="workout657-next">
+            <a href="/workouts?machine={{ next_id }}#workout-machine-{{ next_id }}"
+               class="workout657-next-link">Next machine <span aria-hidden="true">→</span></a>
+          </p>
+        {% endif %}
+
         <details class="workout-settings654">
           <summary>Machine settings &amp; QR mapping</summary>
           <form method="post" action="/workouts/equipment/{{ item.id }}/settings"
@@ -146,13 +164,44 @@
   </section>
 
   {% if active %}
-  <section>
+  <section id="workout-sets657">
     <h2>Sets This Session</h2>
+    <p class="note">Correct a mis-entered set while this workout is active. Completed workouts remain read-only.</p>
     {% for row in rows %}
-      <p><strong>{{ equipment_names.get(row.equipment_id, 'Equipment') }}</strong>:
-        {{ '%.1f'|format(row.weight_lb) }} lb × {{ row.reps }}
-        {% if row.effort %} · effort {{ row.effort }}/10{% endif %}
-      </p>
+      <div class="workout657-set">
+        <div class="workout657-set-line">
+          <strong>{{ equipment_names.get(row.equipment_id, 'Equipment') }}</strong>
+          <span>{{ '%.1f'|format(row.weight_lb) }} lb × {{ row.reps }} reps
+            {% if row.effort %} · effort {{ row.effort }}/10{% endif %}</span>
+        </div>
+        <details class="workout657-set-actions">
+          <summary>Edit or remove this set</summary>
+          <form method="post" action="/workouts/sets/{{ row.id }}/edit"
+                class="workout-grid654 workout657-edit-form">
+            <label>Weight (lb)
+              <input type="number" name="weight_lb" inputmode="decimal" step="any"
+                     min="0" max="2000" value="{{ row.weight_lb }}" required>
+            </label>
+            <label>Repetitions
+              <input type="number" name="reps" inputmode="numeric" step="1"
+                     min="1" max="200" value="{{ row.reps }}" required>
+            </label>
+            <label>Effort (optional)
+              <input type="number" name="effort" inputmode="numeric"
+                     min="1" max="10" value="{{ row.effort if row.effort is not none else '' }}">
+            </label>
+            <button type="submit" class="primary">Save Correction</button>
+          </form>
+          <form method="post" action="/workouts/sets/{{ row.id }}/delete"
+                class="workout657-delete-form">
+            <label>
+              <input type="checkbox" name="confirm_delete" value="yes" required>
+              Confirm permanent removal of this set
+            </label>
+            <button type="submit">Remove Set</button>
+          </form>
+        </details>
+      </div>
     {% else %}
       <p>No sets recorded yet.</p>
     {% endfor %}
