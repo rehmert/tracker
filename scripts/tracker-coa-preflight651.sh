@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# Release 651 DEV-only disposable worktree preflight. No deploy or migrations.
+set -Eeuo pipefail
+umask 077
+APP=/opt/tracker
+PY="$APP/.venv/bin/python"
+BASE=c76b0dc81a2513412d8cf672911314b3c504cde3
+REF=release/651-coa-multiple-test-types
+fail() { echo "COA_651_PREFLIGHT=FAILED: $*" >&2; exit 1; }
+[[ "$(id -u)" == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run on configured DEV as root"
+"$PY" - <<'PY'
+from pathlib import Path
+import re
+labels=[]
+for line in Path("/etc/tracker.env").read_text().splitlines():
+ m=re.match(r'^\s*(?:export\s+)?TRACKER_INSTANCE\s*=(.*)$',line)
+ if m: labels.append(m.group(1).strip().strip(chr(34)).strip(chr(39)).upper())
+assert labels == ["DEV"], "DEV-only"
+PY
+g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
+[[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "DEV checkout not clean main"
+[[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Installed DEV version is not Release 650"
+g fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
+TARGET="$(g rev-parse "refs/remotes/origin/$REF")"
+[[ "$#" == 1 && "$TARGET" == "$1" ]] || fail "Pass exact current candidate SHA"
+RUN="$(mktemp -d /tmp/tracker-coa651-preflight.XXXXXXXX)"
+QA="$RUN/source"
+cleanup() { [[ ! -d "$QA" ]] || g worktree remove --force "$QA" >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+g worktree add --detach "$QA" "$TARGET"
+cd "$QA"
+echo "=== DEV-ONLY ATTACHMENT AUDIT (NO PROD UPLOAD SYNCHRONIZATION) ==="
+# On DEV only, report missing files without blocking isolated QA.
+# Malformed paths or changed hashes of present files remain fatal.
+"$PY" scripts/tracker-dev-attachment-gate651.py --data /opt/tracker/data ||
+ fail "DEV integrity failure is not limited to unsynchronized missing files"
+echo "COA_651_DEV_ATTACHMENTS=CHECKED_WITH_MISSING_FILE_POLICY"
+export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
+mkdir -p "$TRACKER_DATA_DIR"
+git diff --check "$BASE" "$TARGET"
+# No schema change or bulk backfill: historic first files remain in the
+# existing Coa fields until edited; the write path creates a regular attachment.
+# Avoid PROD migration flags and any change to installed data in this preflight.
+if git diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(db|models|migrations)\.py|alembic/|scripts/.*(migrat|backfill|data[-_]fix))'; then
+ fail "Release 651 must not change database or migration code"
+fi
+test -s app/static/css/tracker-coa-documents649.css
+for script in scripts/tracker-release.sh scripts/tracker-coa-dev651.sh scripts/tracker-coa-scoped651.sh scripts/tracker-coa-preflight651.sh; do
+  bash -n "$script"
+done
+"$PY" -m compileall -q app scripts tests/test_coa_multiple_test_types651.py tests/test_dev_attachment_gate651.py
+node --check app/static/js/tracker-coa-types647.js
+node --check app/static/js/tracker-coa-multi651.js
+"$PY" - <<'PY'
+from pathlib import Path
+from jinja2 import Environment
+for f in (Path("app/templates/base.html"), Path("app/templates/coa_edit.html")):
+    Environment().parse(f.read_text())
+print("COA_651_JINJA=PASSED")
+PY
+"$PY" scripts/tracker-impact-preflight604.py --root "$QA" --base "$BASE" --target "$TARGET"
+# Exercise exactly the COA regression chain the DEV release worker will run,
+# including strict-CSRF route inventory and reconciliation. This fails BEFORE
+# any deployment, rather than discovering historical contract errors mid-run.
+bash scripts/tracker-coa-scoped651.sh "$PY"
+# A full DEV browser gate previously failed on stale historic COA link labels
+# AFTER the backend-only preflight had passed. Re-run the existing isolated,
+# strict, positive Chromium probes here; these are targeted diagnostics only,
+# not a substitute for the full fifth-release DEV browser qualification.
+echo "=== RELEASE 651 TARGETED STRICT COA BROWSER WITNESSES (DISPOSABLE) ==="
+timeout 300 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict csrf-positive627
+echo "COA_651_SIGNED_COA_BROWSER=PASSED"
+timeout 240 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict tests/browser/test_csrf_multipart588.py
+echo "COA_651_MULTIPART_COA_BROWSER=PASSED"
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+ tests/test_release577_dev_receipt.py tests/test_release629_qa_cadence.py \
+ tests/test_release604_preflight.py
+# Release 651 is change-scoped. Full backend/Chromium qualification
+# was completed at milestone 650; focused COA, CSRF and browser checks
+# remain mandatory. PROD deployment has a separate full-backend gate.
+echo "COA_651_QUALIFICATION_MODE=FOCUSED_WITH_TARGETED_BROWSER"
+echo "COA_651_PREFLIGHT=PASSED"
+echo "COA_651_CANDIDATE=$TARGET"
+echo "DEPLOYMENT=NOT_PERFORMED"
