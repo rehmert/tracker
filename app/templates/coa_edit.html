@@ -11,7 +11,8 @@
 <label class="field"><span>Laboratory</span><input name="lab_name" value="{{ coa.lab_name if coa else '' }}"></label>
 <label class="field"><span>Tested on</span><input type="date" name="tested_on" value="{{ coa.tested_on or '' if coa else '' }}"></label>
 <label class="field"><span>Purity (%)</span><input type="number" min="0" max="100" step="any" name="purity_pct" value="{{ coa.purity_pct if coa and coa.purity_pct is not none else '' }}"></label>
-<label class="field"><span>Endotoxin (%)</span><input type="number" min="0" max="100" step="any" name="endotoxin_pct" value="{{ coa.endotoxin_pct if coa and coa.endotoxin_pct is not none else '' }}"></label>
+<label class="field"><span>Endotoxins (EU/vial)</span><input type="number" min="0" step="any" name="endotoxin_eu_per_vial" value="{{ coa.endotoxin_eu_per_vial if coa and coa.endotoxin_eu_per_vial is not none else '' }}"></label>
+{% if coa and coa.endotoxin_pct is not none %}<p class="note">Legacy endotoxin value: {{ coa.endotoxin_pct|num }}% (historical percentage; not converted into EU/vial).</p>{% endif %}
 <label class="field"><span>Reported content</span><input type="number" min="0" step="any" name="reported_content" value="{{ coa.reported_content_value if coa and coa.reported_content_value is not none else '' }}"></label>
 <label class="field"><span>Content unit</span><select name="reported_unit">{% for unit in CONTENT_UNITS %}<option value="{{ unit }}" {% if coa and coa.reported_content_unit == unit %}selected{% elif not coa and unit == 'mg' %}selected{% endif %}>{{ unit }}</option>{% endfor %}</select></label>
 <label class="field"><span>Job / task ID</span><input name="job_id" value="{{ coa.job_id if coa else '' }}"></label>
