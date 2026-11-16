@@ -45,5 +45,6 @@ def test_643_prod_must_explicitly_verify_schema_and_backup():
     assert '[[ "$REVIEWED_COA_643" == 0 || "$DB_MIGRATION" == 1 ]]' in deployer
     assert '"$QA/scripts/tracker_schema_review643.py"' in deployer
     assert 'DATABASE_BACKUP=VERIFIED_FOR_MIGRATION' in deployer
+    assert 'QA_CADENCE_REASON="reviewed COA upload schema and attachment security change"' in deployer
     assert 'DEPLOY_EXTRA=(--reviewed-coa-643 --db-migration)' in remote
     assert 'tracker-verify-dev-approval "$TARGET"' in remote
