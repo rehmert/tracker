@@ -1,5 +1,18 @@
 {% extends "base.html" %}
-{% block title %}{{ 'COA #' ~ coa.id if coa else 'New COA' }}{% endblock %}
+{% block title %}{{ 'COA #' ~ coa.id if coa else 'New COA' }}{% if coa %}<script defer src="/static/js/tracker-coa-types646.js"></script>{% endif %}
+{% endblock %}
+{% macro coa_test_picker(selected, label) %}
+<select name="test_type" aria-label="{{ label }}" data-coa-test-type-select>
+<option value="" {% if not selected %}selected{% endif %}>Unspecified test</option>
+{% for group, options in coa_test_type_groups %}
+<optgroup label="{{ group }}">{% for value, title in options %}
+<option value="{{ value }}" {% if selected == value %}selected{% endif %}>{{ title }}</option>
+{% endfor %}</optgroup>
+{% endfor %}
+{% if selected and selected not in coa_test_type_values and selected != '__custom__' %}<option value="{{ selected }}" selected>Existing: {{ selected }}</option>{% endif %}
+<option value="__custom__">Other / custom…</option>
+</select>
+{% endmacro %}
 {% block content %}
 <p><a href="/coas">← All COAs</a></p><h1>{{ 'COA #' ~ coa.id if coa else 'Add certificate of analysis' }}</h1>
 {% if coa and (coa.original_name or coa.attachments) %}<p><a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener"><strong>View default COA document</strong></a></p>{% endif %}
@@ -35,18 +48,24 @@
 </form>
 {% endif %}
 {% if coa.original_name %}<p>Original document: <a href="/coas/{{ coa.id }}/original-file" target="_blank" rel="noopener">{{ coa.original_name }}</a></p>{% endif %}
-<div class="scroll"><table><thead><tr><th>Test type</th><th>Document</th><th>Size</th><th>Action</th></tr></thead><tbody>
+<div class="scroll"><table class="coa-document-table"><thead><tr><th>Document</th><th>Test type</th><th>Size</th><th>Action</th></tr></thead><tbody>
 {% for attachment in coa.attachments %}
 <tr>
-<td><form method="post" action="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/test-type" class="inline"><label class="field"><span class="sr-only">Test type for {{ attachment.original_name }}</span><input name="test_type" value="{{ attachment.test_type or '' }}" maxlength="120" aria-label="Test type for {{ attachment.original_name }}"></label><button type="submit">Save type</button></form></td>
-<td><a href="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/file" target="_blank" rel="noopener">{{ attachment.original_name }}</a>{% if default_attachment_id == attachment.id or (not coa.original_name and default_attachment_id is none and loop.first) %} <strong>(Default)</strong>{% endif %}</td><td>{{ attachment.size_bytes }} bytes</td>
+<td><a href="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/file" target="_blank" rel="noopener">{{ attachment.original_name }}</a>{% if default_attachment_id == attachment.id or (not coa.original_name and default_attachment_id is none and loop.first) %} <span class="coa-default-indicator">Default</span>{% endif %}</td>
+<td><form method="post" action="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/test-type" class="coa-test-type-form" data-coa-test-type-form>
+<div class="coa-test-type-controls">{{ coa_test_picker(attachment.test_type or '', 'Test type for ' ~ attachment.original_name) }}<button type="submit" class="coa-test-save">Save</button></div>
+<label class="coa-custom-test-type" hidden data-coa-custom-container>Custom test type <input name="custom_test_type" maxlength="120" placeholder="Enter test type" autocomplete="off" disabled></label>
+</form></td>
+<td>{{ attachment.size_bytes }} bytes</td>
 <td><form method="post" action="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/delete" data-tracker-discard-changes onsubmit="return confirm('Remove only this document?')"><button class="danger">Remove</button></form></td></tr>
 {% else %}<tr><td colspan="4">No additional documents yet.</td></tr>{% endfor %}
 </tbody></table></div>
-<form method="post" action="/coas/{{ coa.id }}/attachments" enctype="multipart/form-data" class="grid">
-<label class="field"><span>Test type (optional)</span><input name="test_type" maxlength="120" placeholder="e.g. Endotoxin, identity, sterility"></label>
+<form method="post" action="/coas/{{ coa.id }}/attachments" enctype="multipart/form-data" class="grid coa-attachment-upload" data-coa-test-type-form>
+<label class="field"><span>Test type</span>{{ coa_test_picker('', 'Test type for new uploads') }}</label>
+<label class="field coa-custom-test-type" hidden data-coa-custom-container><span>Custom test type</span><input name="custom_test_type" maxlength="120" placeholder="e.g. specific assay" autocomplete="off" disabled></label>
 <label class="field wide"><span>Add documents · PDF, PNG, JPG, WEBP (15 MB each, up to 20 at once)</span><input type="file" name="files" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple required></label>
-<div><button class="primary">Upload additional documents</button></div></form></section>
+<p class="note wide">All selected files start with this test type. You can change each document individually after upload.</p>
+<div><button class="primary">Upload documents</button></div></form></section>
 {% endif %}
 {% if coa %}
 <section><h2>Verification</h2><p class="note">This is your recorded review status, not independent laboratory authentication.</p>
