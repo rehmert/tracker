@@ -9,16 +9,10 @@ REF=release/653-coa-test-type-actions-row
 fail() { echo "COA_653_PREFLIGHT=FAILED: $*" >&2; exit 1; }
 [[ "$(id -u)" == 0 && -x "$PY" && -f /etc/tracker.env ]] ||
   fail "Run as root on configured Tracker DEV"
-"$PY" - <<'PY'
-from pathlib import Path
-import re
-labels=[]
-for line in Path("/etc/tracker.env").read_text().splitlines():
-    m=re.match(r'^\s*(?:export\s+)?TRACKER_INSTANCE\s*=(.*)$', line)
-    if m: labels.append(m.group(1).strip().strip(chr(34)).strip(chr(39)).upper())
-assert labels == ["DEV"], "DEV only"
-PY
-g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
+# Validate hostname and one DEV label without printing credentials or
+# accepting a mismatched instance. Handles ordinary shell-style comments.
+"$PY" "$APP/scripts/tracker-instance-check653.py" --config /etc/tracker.env || \
+  fail "DEV identity could not be verified; deployment/preflight blocked"g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] ||
   fail "Installed DEV checkout must be clean main"
 [[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "DEV must be on Release 652"
