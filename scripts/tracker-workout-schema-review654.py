@@ -21,6 +21,7 @@ ALLOWED654 = frozenset({
     "app/main.py",
     "app/templates/base.html",
     "scripts/tracker-release-scoped654.sh",
+    "scripts/tracker-workout-dev654.sh",
     "scripts/tracker-workout-schema-review654.py",
     "scripts/tracker-release.sh",
     "tests/test_workouts654.py",
