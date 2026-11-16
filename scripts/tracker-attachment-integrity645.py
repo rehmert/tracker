@@ -39,7 +39,8 @@ def inspect(data: Path, *, hashes: bool = False) -> int:
                     missing += 1
                     print(f"MISSING_REFERENCE table={table} id={pk} path=uploads/{folder}/{stored}")
                 elif has_sha and sha:
-                    digest = hashlib.file_digest(fpath.open("rb"), "sha256").hexdigest()
+                    with fpath.open("rb") as stream:
+                        digest = hashlib.file_digest(stream, "sha256").hexdigest()
                     if digest.lower() != sha.lower():
                         mismatch += 1
                         print(f"HASH_MISMATCH table={table} id={pk} path=uploads/{folder}/{stored}")
