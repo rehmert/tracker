@@ -51,6 +51,7 @@ def page658(
     ))
     defaults = dict(
         day=datetime.now().date().isoformat(),
+        today=datetime.now().date().isoformat(),
         start_time="", end_time="", routine_id="",
     )
     if values is not None:
