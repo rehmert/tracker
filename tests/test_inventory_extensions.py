@@ -19,7 +19,7 @@ def test_new_inventory_and_coa_flow():
             assert len(vs)==10 and all(v.cap_color=='blue' for v in vs)
             assert vs[0].kit_ref != vs[5].kit_ref
             ids=[v.id for v in vs]
-        r=client.post(f'/vials/{ids[0]}/coas',data={'lab_name':'Lab Test','purity_pct':'99.5','endotoxin_pct':'0.1','job_id':'J1','verify_code':'V1','reported_content':'10.3','reported_unit':'mg'})
+        r=client.post(f'/vials/{ids[0]}/coas',data={'lab_name':'Lab Test','purity_pct':'99.5','endotoxin_eu_per_vial':'0.1','job_id':'J1','verify_code':'V1','reported_content':'10.3','reported_unit':'mg'})
         assert r.status_code == 303
         with SessionLocal() as db:
             coa=db.query(Coa).order_by(Coa.id.desc()).first()
