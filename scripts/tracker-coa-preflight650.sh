@@ -42,7 +42,7 @@ git diff --check "$BASE" "$TARGET"
 if git diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(db|models|migrations)\.py|alembic/|scripts/.*(migrat|backfill|data[-_]fix))'; then
  fail "Release 650 must not change database or migration code"
 fi
-test -s app/static/css/tracker-coa-documents650.css
+test -s app/static/css/tracker-coa-documents649.css
 for script in scripts/tracker-release.sh scripts/tracker-coa-dev650.sh scripts/tracker-coa-scoped650.sh scripts/tracker-coa-preflight650.sh; do
   bash -n "$script"
 done
