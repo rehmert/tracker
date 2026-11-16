@@ -1,0 +1,34 @@
+/* Release 654: tightly scoped, mobile-first workout styling. */
+.workout654 { max-width: 900px; margin: 0 auto; }
+.workout654 section { margin: 1.2rem 0 1.7rem; }
+.workout654 .workout-status654 {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: .75rem; padding: .8rem 1rem; border: 1px solid #93a6bb;
+  border-radius: .7rem;
+}
+.workout654 .workout-grid654 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: .75rem;
+  align-items: end;
+}
+.workout654 .workout-grid654 label {
+  display: flex; flex-direction: column; min-width: 0; gap: .35rem;
+}
+.workout654 :is(input, select, textarea) { width: 100%; max-width: 100%; }
+.workout654 :is(input, select, textarea, button) { min-height: 44px; }
+.workout654 .workout-machine654 {
+  border: 1px solid #a2b2c6; border-radius: .7rem;
+  padding: .75rem 1rem; margin: .6rem 0;
+}
+.workout654 .workout-machine654 > summary {
+  display: flex; flex-wrap: wrap; justify-content: space-between;
+  gap: .4rem; cursor: pointer; min-height: 40px; align-items: center;
+}
+.workout654 .workout-machine654 > summary > span { font-size: .9rem; }
+.workout654 .workout-settings654 { margin-top: 1rem; }
+.workout654 .workout-settings654 > summary { cursor: pointer; }
+@media (max-width: 600px) {
+  .workout654 .workout-grid654 { grid-template-columns: minmax(0, 1fr); }
+  .workout654 .workout-grid654 button { width: 100%; }
+}
