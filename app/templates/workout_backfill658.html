@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Log Previous Workout{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workouts658.css?v=658">
+<script src="/static/js/tracker-workouts658.js?v=658" defer></script>
+{% endblock %}
+{% block content %}
+<section class="workout654 workout658" id="workout658-root">
+  <p><a href="/workouts">← Back to Workouts</a></p>
+  <h1>Log Previous Workout</h1>
+  <p class="note">Enter actual sets from a workout you already completed. This does not start or change a live workout. The saved session becomes part of your history and machine progress.</p>
+
+  {% if not equipment %}
+    <p>No equipment exists yet. <a href="/workouts#workout-add-equipment656">Add a machine</a> first.</p>
+  {% else %}
+    {% if error %}
+      <p class="workout658-error" role="alert"><strong>Not saved:</strong> {{ error }} Your entered sets are still in the form.</p>
+    {% endif %}
+    <form method="post" action="/workouts/backfill" id="workout658-form">
+      <fieldset class="workout658-meta">
+        <legend>When was the workout?</legend>
+        <label>Workout date
+          <input type="date" name="day" value="{{ values.day }}"
+                 min="2000-01-01" max="{{ values.today if values.today else '' }}" required>
+        </label>
+        <label>Start time (local)
+          <input type="time" name="start_time" value="{{ values.start_time }}" required>
+        </label>
+        <label>End time (local)
+          <input type="time" name="end_time" value="{{ values.end_time }}" required>
+        </label>
+        <label>Routine (optional)
+          <select name="routine_id">
+            <option value="">No routine</option>
+            {% for routine in routines %}
+              <option value="{{ routine.id }}"
+                {% if values.routine_id == (routine.id|string) %}selected{% endif %}>{{ routine.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </fieldset>
+
+      <div class="workout658-set-heading">
+        <div>
+          <h2>Completed Sets</h2>
+          <p class="note">Enter only sets you actually performed. Leave unused rows empty.</p>
+        </div>
+        <button type="button" id="workout658-add" class="workout658-add">+ Add Set Row</button>
+      </div>
+      <div id="workout658-rows" data-max-rows="{{ max_rows }}">
+        {% for row in form_rows %}
+          <fieldset class="workout658-row">
+            <legend>Set {{ loop.index }}</legend>
+            <div class="workout658-fields">
+              <label>Machine
+                <select name="equipment_id">
+                  <option value="">Choose equipment</option>
+                  {% for item in equipment %}
+                    <option value="{{ item.id }}"
+                      {% if row.equipment_id == (item.id|string) %}selected{% endif %}>{{ item.name }} · {{ item.gym }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>Weight (lb)
+                <input type="number" name="weight_lb" inputmode="decimal"
+                       min="0" max="2000" step="any" placeholder="100"
+                       value="{{ row.weight_lb }}">
+              </label>
+              <label>Reps
+                <input type="number" name="reps" inputmode="numeric"
+                       min="1" max="200" step="1" placeholder="10"
+                       value="{{ row.reps }}">
+              </label>
+              <label>Effort (optional)
+                <input type="number" name="effort" inputmode="numeric"
+                       min="1" max="10" step="1" placeholder="1–10"
+                       value="{{ row.effort }}">
+              </label>
+              <label>Set time (optional)
+                <input type="time" name="set_time" value="{{ row.set_time }}">
+              </label>
+            </div>
+            <button type="button" data-remove658 class="workout658-remove">Remove Row</button>
+          </fieldset>
+        {% endfor %}
+      </div>
+      <p class="note">Optional set time must fall between your start and end times. If omitted, Tracker uses the workout start time only to order the set in history; it does not infer when you performed it. Same-day sessions only, up to 12 hours and {{ max_rows }} sets.</p>
+      <p id="workout658-row-status" class="note" role="status" aria-live="polite"></p>
+      <div class="workout658-save-actions">
+        <button class="primary" type="submit" id="workout658-save">Save Completed Workout</button>
+        <a href="/workouts">Cancel</a>
+      </div>
+    </form>
+
+    <template id="workout658-row-template">
+      <fieldset class="workout658-row">
+        <legend>Set</legend>
+        <div class="workout658-fields">
+          <label>Machine
+            <select name="equipment_id">
+              <option value="">Choose equipment</option>
+              {% for item in equipment %}
+                <option value="{{ item.id }}">{{ item.name }} · {{ item.gym }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Weight (lb)
+            <input type="number" name="weight_lb" inputmode="decimal"
+                   min="0" max="2000" step="any" placeholder="100">
+          </label>
+          <label>Reps
+            <input type="number" name="reps" inputmode="numeric"
+                   min="1" max="200" step="1" placeholder="10">
+          </label>
+          <label>Effort (optional)
+            <input type="number" name="effort" inputmode="numeric"
+                   min="1" max="10" step="1" placeholder="1–10">
+          </label>
+          <label>Set time (optional)
+            <input type="time" name="set_time">
+          </label>
+        </div>
+        <button type="button" data-remove658 class="workout658-remove">Remove Row</button>
+      </fieldset>
+    </template>
+  {% endif %}
+</section>
+{% endblock %}
