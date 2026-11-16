@@ -18,6 +18,7 @@ ALLOWED = frozenset({
     "scripts/tracker-coa-qualify643.sh",
     "scripts/tracker-coa-schema-rehearsal643.sh",
     "scripts/tracker-coa-deploy-dev643.sh",
+    "scripts/tracker-coa-scoped643.sh",
     "scripts/tracker_schema_review643.py",
     "scripts/tracker-release.sh",
     "scripts/tracker_prod_remote568.sh",
