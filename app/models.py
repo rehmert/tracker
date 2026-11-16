@@ -152,6 +152,7 @@ class Coa(Base):
     verification_status: Mapped[str] = mapped_column(String(20), default="unreviewed", server_default="unreviewed")
     verification_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
     verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    attachments: Mapped[list["CoaAttachment"]] = relationship("CoaAttachment", back_populates="coa", cascade="all, delete-orphan", order_by="CoaAttachment.id")
     vials: Mapped[list["Vial"]] = relationship("Vial", back_populates="coa")
     linked_vials: Mapped[list["Vial"]] = relationship("Vial", secondary="coa_vial_links", back_populates="linked_coas")
 
@@ -163,6 +164,22 @@ class Coa(Base):
     @property
     def all_vials(self):
         return sorted({v.id: v for v in list(self.vials) + list(self.linked_vials)}.values(), key=lambda v: v.id)
+
+
+
+class CoaAttachment(Base):
+    """Additional independently uploaded test documents for a single COA record."""
+    __tablename__ = "coa_attachments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    coa_id: Mapped[int] = mapped_column(ForeignKey("coas.id", ondelete="CASCADE"), nullable=False, index=True)
+    test_type: Mapped[str] = mapped_column(String(120), default="")
+    original_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    stored_name: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    content_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    coa: Mapped["Coa"] = relationship("Coa", back_populates="attachments")
 
 
 class CoaRevision(Base):
