@@ -1,0 +1,71 @@
+/* Release 657: safe, responsive in-session edits and routine navigation. */
+.workout654 .workout657-progress {
+  border: 1px solid #9eafc3;
+  border-radius: .7rem;
+  padding: .75rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .4rem;
+}
+.workout654 .workout657-progress .note { width: 100%; }
+.workout654 .workout657-next { margin: .75rem 0; }
+.workout654 .workout657-next-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 170px;
+  padding: .65rem 1rem;
+  border: 1px solid #7b9abe;
+  border-radius: .6rem;
+  text-decoration: none;
+  font-weight: 700;
+}
+.workout654 .workout657-set {
+  border: 1px solid #9eafc3;
+  border-radius: .65rem;
+  padding: .75rem 1rem;
+  margin: .65rem 0;
+}
+.workout654 .workout657-set-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.workout654 .workout657-set-actions {
+  margin-top: .65rem;
+}
+.workout654 .workout657-set-actions > summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.workout654 .workout657-edit-form { margin: .75rem 0; }
+.workout654 .workout657-delete-form {
+  margin: 1rem 0 0;
+  padding-top: .75rem;
+  border-top: 1px solid #9eafc3;
+}
+.workout654 .workout657-delete-form label {
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+  margin-bottom: .65rem;
+}
+.workout654 .workout657-delete-form input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+}
+.workout654 .workout657-delete-form button {
+  min-width: 128px;
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .workout654 .workout657-next-link,
+  .workout654 .workout657-delete-form button { width: 100%; }
+}
