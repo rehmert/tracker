@@ -99,7 +99,7 @@ def test_664_phone_month_grid_jump_to_two_session_day_and_summary_links(width, h
         try:
             page.goto(URL)
             expect(page.get_by_role("heading", name="Workout Calendar")).to_be_visible()
-            expect(page.get_by_role("heading", name="February 2024")).to_be_visible()
+            expect(page.get_by_role("heading", name="February 2024", exact=True)).to_be_visible()
             expect(page.get_by_role("link", name="Previous Month")).to_have_attribute(
                 "href", "/workouts/calendar?month=2024-01"
             )
