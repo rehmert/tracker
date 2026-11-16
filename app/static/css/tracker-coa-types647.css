@@ -1,0 +1,11 @@
+/* Release 647: one compact action bar for the entire COA test document table. */
+.coa-bulk-save-bar { display:flex; align-items:center; gap:.65rem; flex-wrap:wrap; margin:.65rem 0 1.2rem; }
+.coa-bulk-save-bar button { min-height:2.3rem; }
+.coa-bulk-save-bar [data-coa-bulk-status] { color:var(--muted); font-size:.87rem; }
+.coa-test-type-entry { min-width:14rem; }
+.coa-test-type-entry .coa-test-type-controls select { width:clamp(13rem,21vw,19rem); }
+#test-documents { scroll-margin-top:5rem; }
+@media (max-width:650px) {
+  .coa-bulk-save-bar { align-items:stretch; }
+  .coa-bulk-save-bar button { flex:0 0 auto; }
+}
