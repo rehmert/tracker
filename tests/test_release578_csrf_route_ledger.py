@@ -25,7 +25,8 @@ def test_578_all_existing_js_and_routes_preserved_without_false_clearance(ledger
     report = ledger.build(ROOT)
     assert report["status"] == "source_only_not_strict_csrf_clearance"
     assert report["summary"]["javascript_callsites"] == 49
-    assert any(row["file"] == "app/static/js/tracker-coa-types647.js"\n               for row in report["javascript"])
+    assert any(row["file"] == "app/static/js/tracker-coa-types647.js"
+               for row in report["javascript"])
     assert report["summary"]["javascript_callsites"] == len(report["javascript"])
     assert report["summary"]["unsafe_routes"] == len(report["routes"])
     assert report["summary"]["native_or_htmx_sites"] == len(report["native"])
