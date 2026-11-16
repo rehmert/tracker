@@ -2,7 +2,8 @@
 {% block title %}{{ 'COA #' ~ coa.id if coa else 'New COA' }}{% endblock %}
 {% block content %}
 <p><a href="/coas">← All COAs</a></p><h1>{{ 'COA #' ~ coa.id if coa else 'Add certificate of analysis' }}</h1>
-{% if coa and coa.original_name %}<p><a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener">View existing document: {{ coa.original_name }}</a> · {{ coa.size_bytes }} bytes</p>{% endif %}
+{% if coa and (coa.original_name or coa.attachments) %}<p><a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener"><strong>View default COA document</strong></a></p>{% endif %}
+{% if coa and coa.original_name %}<p><a href="/coas/{{ coa.id }}/original-file" target="_blank" rel="noopener">View existing document: {{ coa.original_name }}</a> · {{ coa.size_bytes }} bytes</p>{% endif %}
 <section><h2>{{ 'Edit certificate' if coa else 'New certificate' }}</h2>
 <form method="post" action="{{ '/coas/' ~ coa.id ~ '/edit' if coa else '/coas/new' }}" enctype="multipart/form-data" class="grid">
 {% if not coa %}<label class="field wide"><span>Initial vial (required)</span><select name="vial_id" required><option value="">Choose a vial</option>{% for v in vials %}<option value="{{ v.id }}">{{ v.compound.name }} · #{{ v.id }} · {{ v.label or 'Unlabeled' }}</option>{% endfor %}</select></label>{% endif %}
@@ -20,11 +21,23 @@
 </form></section>
 {% if coa %}
 <section><h2>Test documents</h2>
-<p class="note">Keep separate purity, identity, endotoxin, sterility, or other test reports together on this COA record. Adding documents never replaces existing files.</p>
-{% if coa.original_name %}<p>Original document: <a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener">{{ coa.original_name }}</a></p>{% endif %}
+<p class="note">Keep purity, identity, endotoxin, sterility, and other reports together. Edit the test type of any uploaded file, and choose which document opens from the default COA link.</p>
+{% if coa.original_name or coa.attachments %}
+<form method="post" action="/coas/{{ coa.id }}/default-file" class="inline">
+<label class="field"><span>Default COA to view</span><select name="document" required>
+{% if coa.original_name %}<option value="original" {% if default_attachment_id is none %}selected{% endif %}>Original: {{ coa.original_name }}</option>{% endif %}
+{% for attachment in coa.attachments %}<option value="{{ attachment.id }}" {% if default_attachment_id == attachment.id or (not coa.original_name and default_attachment_id is none and loop.first) %}selected{% endif %}>{{ attachment.test_type or 'Unspecified test' }} — {{ attachment.original_name }}</option>{% endfor %}
+</select></label><button type="submit">Save default</button>
+<a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener">Open default</a>
+</form>
+{% endif %}
+{% if coa.original_name %}<p>Original document: <a href="/coas/{{ coa.id }}/original-file" target="_blank" rel="noopener">{{ coa.original_name }}</a></p>{% endif %}
 <div class="scroll"><table><thead><tr><th>Test type</th><th>Document</th><th>Size</th><th>Action</th></tr></thead><tbody>
 {% for attachment in coa.attachments %}
-<tr><td>{{ attachment.test_type or 'Unspecified' }}</td><td><a href="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/file" target="_blank" rel="noopener">{{ attachment.original_name }}</a></td><td>{{ attachment.size_bytes }} bytes</td><td><form method="post" action="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/delete" data-tracker-discard-changes onsubmit="return confirm('Remove only this document?')"><button class="danger">Remove</button></form></td></tr>
+<tr>
+<td><form method="post" action="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/test-type" class="inline"><label class="field"><span class="sr-only">Test type for {{ attachment.original_name }}</span><input name="test_type" value="{{ attachment.test_type or '' }}" maxlength="120" aria-label="Test type for {{ attachment.original_name }}"></label><button type="submit">Save type</button></form></td>
+<td><a href="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/file" target="_blank" rel="noopener">{{ attachment.original_name }}</a>{% if default_attachment_id == attachment.id or (not coa.original_name and default_attachment_id is none and loop.first) %} <strong>(Default)</strong>{% endif %}</td><td>{{ attachment.size_bytes }} bytes</td>
+<td><form method="post" action="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/delete" data-tracker-discard-changes onsubmit="return confirm('Remove only this document?')"><button class="danger">Remove</button></form></td></tr>
 {% else %}<tr><td colspan="4">No additional documents yet.</td></tr>{% endfor %}
 </tbody></table></div>
 <form method="post" action="/coas/{{ coa.id }}/attachments" enctype="multipart/form-data" class="grid">
