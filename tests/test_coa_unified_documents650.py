@@ -99,7 +99,7 @@ def test_650_legacy_first_document_can_be_typed_with_ordinary_batch_save():
             before = client.get(f"/coas/{cid}")
             assert before.status_code == 200
             assert before.text.count(f'href="/coas/{cid}/original-file"') == 1
-            assert 'name="test_type_original"' in before.text
+            assert 'name="test_types_original"' in before.text
             assert 'name="document" value="original"' in before.text
             assert "Purity + identity" in before.text
             # Viewing must not create a mirror or any audit revision.
@@ -296,7 +296,7 @@ def test_650_new_initial_upload_creates_editable_document_on_first_write():
             html = client.get(f"/coas/{cid}").text
             assert html.count(f'href="/coas/{cid}/original-file"') == 1
             assert html.count("first-new.pdf") >= 1
-            assert 'name="test_type_original"' in html
+            assert 'name="test_types_original"' in html
             assert 'name="document" value="original"' in html
             assert "Save all test types" in html
             assert client.get(f"/coas/{cid}/file").status_code == 200
