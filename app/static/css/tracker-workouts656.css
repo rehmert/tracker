@@ -1,0 +1,64 @@
+/* Release 656: progressive camera QR scanner and read-only progress charts. */
+.workout654 .workout656-camera {
+  display: flex; flex-wrap: wrap; gap: .65rem; align-items: center;
+  margin: .75rem 0;
+}
+.workout654 .workout656-camera button {
+  min-height: 48px; padding: .55rem .95rem;
+}
+.workout654 .workout656-camera button[hidden],
+.workout654 .workout656-preview[hidden] { display: none; }
+.workout654 .workout656-preview {
+  width: min(100%, 420px);
+  background: #111; border-radius: .65rem; overflow: hidden;
+}
+.workout654 .workout656-preview video {
+  display: block; width: 100%; max-height: 300px;
+  object-fit: cover;
+}
+.workout654 .workout656-status { min-width: 100%; }
+.workout656-progress .workout656-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: .65rem;
+}
+.workout656-progress .workout656-stats > div {
+  border: 1px solid #9eafc3; border-radius: .7rem;
+  padding: 1rem; display: flex; flex-direction: column; gap: .5rem;
+}
+.workout656-progress .workout656-stats strong { font-size: 1.35rem; }
+.workout656-progress .workout656-stats span { font-size: .88rem; }
+.workout656-progress .workout656-trend {
+  margin: .5rem 0; max-width: 740px;
+}
+.workout656-progress .workout656-trend svg {
+  width: 100%; height: auto; overflow: visible;
+}
+.workout656-progress .workout656-axis {
+  stroke: #8792a1; stroke-width: 1.5;
+}
+.workout656-progress .workout656-line {
+  fill: none; stroke: #2369b5; stroke-width: 3; 
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.workout656-progress .workout656-dot {
+  fill: #2369b5;
+}
+.workout656-progress .workout656-trend figcaption {
+  display: flex; justify-content: space-between; gap: 1rem;
+  font-size: .82rem;
+}
+.workout656-progress .workout656-table-wrap {
+  width: 100%; overflow-x: auto;
+}
+.workout656-progress table {
+  border-collapse: collapse; width: 100%; min-width: 340px;
+  text-align: left;
+}
+.workout656-progress th,
+.workout656-progress td {
+  border-bottom: 1px solid #9eafc3;
+  padding: .6rem .45rem;
+}
+@media (max-width: 600px) {
+  .workout654 .workout656-camera button { width: 100%; }
+}
