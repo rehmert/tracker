@@ -126,6 +126,22 @@ def test_655_new_unexpected_missing_is_nonblocking(
     assert mod.verify_archive(archive, sorted(names)) == 1
 
 
+def test_655_dev_backup_succeeds_with_no_uploads_directory(
+    tmp_path, monkeypatch, capsys,
+):
+    mod = module655()
+    data = tmp_path / "data"
+    create_dev_data(data, [MISSING_A, MISSING_B])
+    (data / "uploads").rmdir()
+    dest = tmp_path / "archives"
+    assert invoke(mod, data, dest, monkeypatch) == 0
+    captured = capsys.readouterr()
+    assert "DEV_MISSING_UPLOAD_REFERENCES_SKIPPED=2" in captured.err
+    archive = Path(captured.out.strip())
+    assert archive.is_file()
+    assert mod.verify_archive(archive, EXPECTED) == 1
+
+
 def test_655_invalid_or_hash_mismatched_present_uploads_fail_closed(
     tmp_path, monkeypatch, capsys,
 ):
