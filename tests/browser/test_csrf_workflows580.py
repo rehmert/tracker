@@ -248,8 +248,11 @@ def test_580_notes_create_edit_delete_real_forms(tab, scheme):
     assert source_form.count() == 1
     assert source_form.locator('input[name="csrf_token"]').count() == 1
     _forgery(page, base, "POST", source_path, data={"title": "forged source"})
-    source_title = "QA source 580 " + uuid4().hex[:10]
+    # A bare hex suffix can resemble scientific notation (e.g. 91323053e0).
+    # Keep the identifier textual while retaining exact-value assertions.
+    source_title = "QA source 580 ref-" + uuid4().hex[:10]
     source_form.locator('input[name="title"]').fill(source_title)
+    expect(source_form.locator('input[name="title"]')).to_have_value(source_title)
     _submit(page, source_form.get_by_role("button", name="Add source"),
             "POST", source_path, 303)
     expect(page.locator("body")).to_contain_text(source_title)
