@@ -46,7 +46,7 @@
 <form id="coa-bulk-test-types" method="post" action="/coas/{{ coa.id }}/attachments/test-types" data-coa-bulk-form></form>
 <form id="coa-default-document" method="post" action="/coas/{{ coa.id }}/default-file"></form>
 {% endif %}
-<div class="scroll"><table class="coa-document-table"><thead><tr><th>Document</th><th>Test type</th><th>Default</th><th>Size</th><th>Action</th></tr></thead><tbody>
+<div class="scroll"><table class="coa-document-table"><thead><tr><th>Document</th><th>Test types</th><th>Default</th><th>Size</th><th>Action</th></tr></thead><tbody>
 {% for doc in documents %}
 <tr>
 <td><a href="{{ doc.url }}" target="_blank" rel="noopener">{{ doc.filename }}</a></td>
