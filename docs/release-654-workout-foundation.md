@@ -34,16 +34,30 @@ Before DEV deployment:
 2. Rehearse additive table creation on a restored, isolated DEV database backup.
 3. Run the scoped release gate and focused release-runner regression tests.
 4. Verify existing attachment integrity and complete the reviewed backup process.
-5. Deploy to DEV using the pinned 653 base and approved candidate SHA:
+5. Run the candidate's **exact-SHA DEV wrapper**. The installed Release 653
+   runner does not recognize `--reviewed-workout-654`, so do not invoke its
+   older script directly.
+
+On `tracker-dev` as root, fetch the approved commit, extract its wrapper
+without executing any unpinned branch tip, then invoke it with the same SHA:
 
 ```bash
-bash scripts/tracker-release.sh \
-  --instance DEV \
-  --base 108bf3241bd747f6174dc7e65a8c01161af24e62 \
-  --target <EXACT_654_COMMIT_SHA> \
-  --ref release/654-workout-foundation \
-  --db-migration --reviewed-workout-654
+cd /opt/tracker
+TARGET=<EXACT_654_COMMIT_SHA>
+git -c safe.directory=/opt/tracker fetch origin \
+  'refs/heads/release/654-workout-foundation:refs/remotes/origin/release/654-workout-foundation'
+test "$(git -c safe.directory=/opt/tracker rev-parse \
+  refs/remotes/origin/release/654-workout-foundation)" = "$TARGET" || exit 1
+RUN="$(mktemp -d /tmp/tracker-workout654-launch.XXXXXXXX)"
+git -c safe.directory=/opt/tracker show \
+  "$TARGET:scripts/tracker-workout-dev654.sh" > "$RUN/launch.sh"
+bash -n "$RUN/launch.sh" && bash "$RUN/launch.sh" "$TARGET"
 ```
+
+The wrapper requires the original 653 base, clean DEV main checkout,
+correct DEV instance identity, a running Tracker service, and a pinned
+candidate source blob. The reviewed runner performs isolated candidate
+qualification and requires a verified migration backup before installing.
 
 Only after DEV evidence is reviewed should a separate PROD promotion be
 considered. PROD still requires exact-commit DEV approval before `--ref main`
