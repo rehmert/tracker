@@ -8,7 +8,7 @@ def test_627_signed_route_reconciliation_stays_blocked():
     assert report["global_enforcement_authorized"] is False
     assert report["full_dev_qualification_observed_by_this_report"] is False
     assert report["original_unsafe_routes"] == 144
-    assert report["current_unsafe_routes"] == 158
+    assert report["current_unsafe_routes"] == 160
     assert {(x["method"], x["path"]) for x in report["post_627_unqualified_routes"]} == {
         ("POST", "/food/duplicates/merge"),
         ("POST", "/food/duplicates/resolve-unused"),
@@ -26,7 +26,7 @@ def test_627_signed_route_reconciliation_stays_blocked():
     assert report["previously_observed_targeted_positive_routes"] == 19
     assert report["new_unexecuted_protocol_route_tests"] == 5
     assert report["new_unexecuted_blend_preview_route_tests"] == 3
-    assert report["remaining_without_positive_source_witness"] == 48
+    assert report["remaining_without_positive_source_witness"] == 50
     assert report["manual_review_items_unchanged"] >= 110
     assert report["session_account_routes_not_certified"] == 6
 
@@ -38,11 +38,11 @@ def test_627_signed_route_manifest_has_no_duplicate_or_unmapped_routes():
     pkeys = {(r["method"], r["path"]) for r in positive}
     rkeys = {(r["method"], r["path"]) for r in remaining}
     assert len(pkeys) == len(positive) == 27
-    assert len(rkeys) == len(remaining) == 48
+    assert len(rkeys) == len(remaining) == 50
     assert pkeys.isdisjoint(rkeys)
-    assert len(pkeys | rkeys) == 75
+    assert len(pkeys | rkeys) == 77
     assert all(not row["full_dev_runtime_qualified"] for row in positive)
-    assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == 48
+    assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == 50
 
 def test_627_blend_browser_fixture_uses_only_disposable_database():
     from pathlib import Path
