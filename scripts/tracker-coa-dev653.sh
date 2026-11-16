@@ -11,7 +11,8 @@ EXPECTED="$1"
 [[ "$(id -u)" == 0 && -x "$APP/.venv/bin/python" ]] ||
   fail "Run as root on configured DEV"
 [[ "$(hostname -s)" == tracker-dev ]] ||
-  fail "Expected tracker-dev host; deployment blocked"g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
+  fail "Expected tracker-dev host; deployment blocked"
+g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] ||
   fail "Installed DEV checkout must be clean main"
 [[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "DEV must be at Release 652"
