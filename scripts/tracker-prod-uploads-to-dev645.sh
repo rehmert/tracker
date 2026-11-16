@@ -35,9 +35,33 @@ PY
 command -v rsync >/dev/null || fail "rsync required on DEV and PROD"
 exec 9>/run/lock/tracker-db-sync.lock
 flock -n 9 || fail "Database replication or deployment currently active"
-ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes "$SOURCE" \
- 'test -f /opt/tracker/data/tracker.db && test -d /opt/tracker/data/uploads && command -v rsync >/dev/null && grep -Eq "^[[:space:]]*(export[[:space:]]+)?TRACKER_INSTANCE=[[:space:]]*PROD[[:space:]]*$" /etc/tracker.env' ||
+# Verify the actual PROD label and canonical data path, including quoted values.
+if ! ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes "$SOURCE" \
+ 'python3 -' <<'PY'
+from pathlib import Path
+import re
+import shutil
+
+values = {}
+for line in Path("/etc/tracker.env").read_text().splitlines():
+    m = re.match(r'^\s*(?:export\s+)?(TRACKER_INSTANCE|TRACKER_DATA_DIR)\s*=(.*)$', line)
+    if m:
+        values.setdefault(m.group(1), []).append(m.group(2).strip().strip("\"'"))
+labels = values.get("TRACKER_INSTANCE", [])
+roots = values.get("TRACKER_DATA_DIR", ["/opt/tracker/data"])
+if len(labels) != 1 or labels[0].upper() != "PROD":
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: remote instance is not explicitly PROD")
+if len(roots) != 1 or not roots[0] or Path(roots[0]).resolve() != Path("/opt/tracker/data").resolve():
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: remote data directory mismatch")
+if not Path("/opt/tracker/data/tracker.db").is_file():
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: PROD database absent")
+if not Path("/opt/tracker/data/uploads").is_dir() or not shutil.which("rsync"):
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: remote uploads or rsync unavailable")
+print("UPLOAD_REPLICATION_REMOTE_IDENTITY=PROD_VERIFIED")
+PY
+then
  fail "PROD identity, access, or upload source not verified"
+fi
 echo "UPLOAD_REPLICATION_SOURCE=$SOURCE"
 echo "UPLOAD_REPLICATION_DESTINATION=/opt/tracker/data/uploads"
 # --ignore-existing never replaces DEV-only files; no --delete.
