@@ -596,3 +596,17 @@ class RegimenProductFacts639(Base):
     servings_per_container: Mapped[str] = mapped_column(String(80), default="")
     upc_sku: Mapped[str] = mapped_column(String(80), default="")
     imported_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class CoaDocument643(Base):
+    """Additional independent lab test files under an existing COA record."""
+    __tablename__ = "coa_documents643"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    coa_id: Mapped[int] = mapped_column(ForeignKey("coas.id", ondelete="CASCADE"), nullable=False, index=True)
+    original_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    stored_name: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
+    content_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    test_label: Mapped[str] = mapped_column(String(120), default="")
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
