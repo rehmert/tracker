@@ -12,7 +12,6 @@ import subprocess
 from pathlib import Path
 
 ALLOWED654 = frozenset({
-    ".github/workflows/workout654.yml",
     "app/workout_models654.py",
     "app/routers/workouts654.py",
     "app/templates/workouts654.html",
