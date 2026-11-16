@@ -86,7 +86,7 @@ def test_661_rolling_calendar_frequency_and_backdated_order(tmp_path):
             morning_view = next(row for row in result["recent"]
                                 if row.session_id == morning.id)
             assert (morning_view.sets, morning_view.machines) == (3, 2)
-            assert all(row.session_id not in recent_ids for row in
+            assert all(row.id not in recent_ids for row in
                        (twenty_eight, ancient, unfinished, empty, future))
             assert result["recent"][0].started_at == afternoon.started_at
 
