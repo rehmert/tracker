@@ -115,8 +115,7 @@ def main() -> int:
         promo.deploy(RELEASE, TARGET, PROD_BASE)
         print("RECOVERY_644_PROD_DEPLOYMENT=SUCCESS", flush=True)
         return 0
-    except (RuntimeError, OSError, UnicodeError, subprocess.CalledProcessError,
-            Exception) as exc:
+    except Exception as exc:
         print(f"RECOVERY_ERROR={type(exc).__name__}: {exc}", file=sys.stderr)
         if promoted:
             print("PROMOTED_BUT_PROD_NOT_VERIFIED=YES", file=sys.stderr)
