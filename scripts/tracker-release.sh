@@ -160,6 +160,338 @@ worker() {
  if [[ ! -d "$QA" ]]; then g worktree add --detach "$QA" "$TARGET"; fi
  [[ "$(git -C "$QA" rev-parse HEAD)" == "$TARGET" ]] || fail "Candidate worktree does not match target"
  echo "CANDIDATE_COMMIT=$TARGET"
+ # Release 645+: cheap LIVE attachment referential-integrity gate BEFORE
+ # costly test qualification. Use the same configured DATA_DIR as backup.
+ LIVE_DATA_DIR="$("$PY" - <<'PY'
+from pathlib import Path
+import re
+data=Path("/opt/tracker/data")
+for line in Path("/etc/tracker.env").read_text().splitlines():
+    match=re.match(r'^\\s*(?:export\\s+)?TRACKER_DATA_DIR\\s*=(.*)
+ cd "$QA"
+ export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
+ mkdir -p "$TRACKER_DATA_DIR"
+ git diff --check "$BASE" "$TARGET"
+ echo "=== RELEASE 639 JAVASCRIPT SYNTAX ==="
+ if [[ "$INSTANCE" == DEV && "$REF" == release/639-structured-supplement-facts ]]; then
+  command -v node >/dev/null 2>&1 || fail "Node.js is required for Release 639 syntax gate"
+  node --check "$QA/app/static/js/tracker-regimen-catalog636.js"
+  node --check "$QA/app/static/js/tracker-regimen-facts639.js"
+  echo "RELEASE_639_JAVASCRIPT_SYNTAX=PASSED"
+ fi
+ "$PY" -m compileall -q app scripts tests
+ "$PY" - <<'PY'
+from pathlib import Path
+from jinja2 import Environment
+files=sorted(Path('app/templates').rglob('*.html'))
+for f in files: Environment().parse(f.read_text())
+print(f'PASS: {len(files)} Jinja templates')
+PY
+ "$PY" - "$QA" <<'PY'
+import app,sys
+from pathlib import Path
+assert Path(app.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve())
+print('PASS: Isolated source import')
+PY
+ echo "=== RELEASE 604 STATIC CHANGE IMPACT PREFLIGHT ==="
+ "$PY" "$QA/scripts/tracker-impact-preflight604.py" \
+   --base "$BASE" --target "$TARGET" --root "$QA"
+ echo "=== RELEASE 604 CHANGE IMPACT PASSED ==="
+ # Release 629: complete tests at every fifth DEV release, not on each
+ # small UI/tooling change. Security-sensitive route/auth changes remain
+ # explicit full-qualification exceptions. PROD retains its separate
+ # exact-commit approval and full-suite gate until independently reviewed.
+ QA_FULL_REQUIRED=1
+ QA_CADENCE_REASON="PROD requires full qualification"
+ if [[ "$INSTANCE" == DEV ]]; then
+  QA_CADENCE_REASON="release sequence not recognized"
+  if [[ "$REF" =~ ^release/([0-9]+)- ]]; then
+   RELEASE_SEQUENCE="${BASH_REMATCH[1]}"
+   if (( 10#$RELEASE_SEQUENCE % 5 == 0 )); then
+    QA_CADENCE_REASON="fifth release milestone"
+   else
+    QA_FULL_REQUIRED=0
+    QA_CADENCE_REASON="focused release between five-release milestones"
+   fi
+  fi
+  # Auth, origin and CSRF changes trigger full qualification. An ordinary
+  # food functionality change uses targeted food/DB regression tests in the
+  # mandatory focused gate. Full Chromium remains due at release 630.
+  if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(auth|security|csrf|middleware|scoped_db|session_auth|request_origin|food_origin|food_storage_guard)|app/routers/(session_login|account_security|user_management|user_db_status))'; then
+   QA_FULL_REQUIRED=1
+   QA_CADENCE_REASON="security-sensitive source or route changed"
+  fi
+  if [[ "$REF" == release/644-coa-csrf-inventory ]]; then
+   QA_FULL_REQUIRED=1
+   QA_CADENCE_REASON="Release 644 pre-promotion full DEV verification"
+  fi
+  echo "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ==="
+  timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"
+  echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
+  if [[ "$REF" == release/645-coa-default-document ]]; then
+   echo "=== RELEASE 645 COA DEFAULT DOCUMENT CHANGE-SCOPED TESTS ==="
+   timeout 180 bash "$QA/scripts/tracker-coa-scoped645.sh" "$PY"
+  fi
+  if [[ "$REF" == release/643-coa-multiple-documents ]]; then
+   echo "=== RELEASE 643 COA CHANGE-SCOPED TESTS ==="
+   timeout 180 bash "$QA/scripts/tracker-coa-scoped643.sh" "$PY"
+  fi
+  if [[ "$DEV_FOCUSED_630" == 1 ]]; then
+   # Explicit one-release DEV exception. Never permitted for PROD,
+   # arbitrary release refs, or a candidate that changes authentication,
+   # origin checks, CSRF middleware, or storage authorization.
+   [[ "$REF" == release/630-food-duplicate-resolution ]] ||
+     fail "Focused 630 exception requires the exact Release 630 branch"
+   if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(auth|security|csrf|middleware|scoped_db|session_auth|request_origin|food_origin|food_storage_guard)|app/routers/(session_login|account_security|user_management|user_db_status))'; then
+    fail "Focused 630 exception prohibited for security-sensitive application changes"
+   fi
+   echo "=== RELEASE 630 TARGETED FOOD AND CSRF REGRESSIONS ==="
+   timeout 180 bash "$QA/scripts/tracker-focused630.sh" "$PY"
+   QA_FULL_REQUIRED=0
+   QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
+  fi
+ fi
+ # A backup-only Release 645 retry may reuse FULL prior qualification ONLY
+ # after exact evidence, unchanged application/tests, and prior failure stage
+ # are verified. Fresh focused tests and migration safeguards still execute.
+ if [[ -f "$RUN/resume-evidence645-request" ]]; then
+  [[ "$INSTANCE" == DEV && "$REF" == release/645-coa-default-document &&
+      "$REVIEWED_COA_645" == 1 && "$DB_MIGRATION" == 1 &&
+      "$QA_FULL_REQUIRED" == 1 ]] ||
+     fail "Release 645 resume requested outside reviewed full DEV gate"
+  "$PY" "$QA/scripts/tracker-resume-evidence645.py" \
+      --app "$APP" --qa "$QA" --base "$BASE" --target "$TARGET" ||
+      fail "Prior Release 645 full qualification evidence not verified"
+  RESUME_645_VERIFIED=1
+  QA_FULL_REQUIRED=0
+  QA_CADENCE_REASON="verified prior full DEV qualification; backup-only retry"
+  echo "COA_645_RESUME_FULL_TEST_REUSE=VERIFIED"
+ fi
+ echo "QA_FULL_REQUIRED=$QA_FULL_REQUIRED"
+ echo "QA_CADENCE_REASON=$QA_CADENCE_REASON"
+ if (( QA_FULL_REQUIRED == 1 )); then
+  if [[ "$INSTANCE" == DEV ]]; then
+   echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
+   timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+   echo "=== BROWSER GATE PASSED ==="
+  else
+   echo "=== PROD: browser qualification is required on DEV before main promotion ==="
+  fi
+  echo "=== COMPLETE REGRESSION SUITE ==="
+  echo "Critical safety tests are included in full-suite collection."
+  "$PY" -c 'import xdist' >/dev/null ||
+   fail "pytest-xdist missing; serial fallback prohibited"
+  TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)
+  echo "BACKEND_TEST_MODE=PARALLEL workers=16"
+  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
+   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
+   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
+   --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
+   --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
+  echo "=== ALL BACKEND TESTS PASSED ==="
+ else
+  if [[ "$RESUME_645_VERIFIED" == 1 ]]; then
+   echo "=== VERIFIED PRIOR FULL BROWSER AND BACKEND EVIDENCE REUSED ==="
+   echo "COA_645_FULL_QUALIFICATION_REUSE=PASSED"
+  else
+   echo "=== FULL BROWSER AND BACKEND SUITES DEFERRED TO NEXT FIFTH RELEASE ==="
+   echo "FOCUSED_RELEASE_GATE=PASSED"
+  fi
+ fi
+ cd "$APP"
+ unset TRACKER_DATA_DIR PYTHONPATH
+ [[ -z "$(g status --porcelain)" && "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Live checkout changed"
+ echo "=== Source and configuration recovery snapshot ==="
+ umask 077
+ mkdir -m 700 "$SAVE"
+ g archive --format=tar HEAD | gzip > "$SAVE/source.tar.gz"
+ cp -p /etc/tracker.env "$SAVE/tracker.env"
+ chmod 600 "$SAVE/source.tar.gz" "$SAVE/tracker.env"
+ if [[ -f "$APP/.env" ]]; then cp -p "$APP/.env" "$SAVE/local.env"; chmod 600 "$SAVE/local.env"; fi
+ if [[ "$DB_MIGRATION" == 1 ]]; then
+  echo "=== LIVE ATTACHMENT INTEGRITY BEFORE MIGRATION BACKUP ==="
+  "$PY" "$QA/scripts/tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes ||
+    fail "Live attachments changed since preflight; migration backup blocked"
+  echo "LIVE_ATTACHMENT_PREBACKUP=PASSED"
+  echo "=== Verified database backup required for data migration ==="
+  DATA_DIR="$("$PY" - <<'PY'
+from pathlib import Path
+import re
+root=Path('/opt/tracker'); data=root/'data'
+for line in Path('/etc/tracker.env').read_text().splitlines():
+ m=re.match(r'^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$',line)
+ if m and m.group(1).strip(): data=Path(m.group(1).strip().strip("\"'"))
+if not data.is_absolute(): data=root/data
+print(data.resolve())
+PY
+)"
+  [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
+  mkdir -m 700 "$SAVE/archives"
+  ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
+from pathlib import Path
+import sys
+from app.backup import create_backup
+print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
+PY
+)"
+  chmod 600 "$ARCHIVE"
+  PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
+   "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
+  echo "=== ISOLATED RESTORE VERIFICATION PASSED ==="
+  echo "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION"
+ else
+  echo "DATABASE_BACKUP=SKIPPED_NO_MIGRATION"
+ fi
+ echo "=== Install via fast-forward ==="
+ umask 022
+ g merge --ff-only "$TARGET"
+ INSTALLED=1
+ [[ "$(g rev-parse HEAD)" == "$TARGET" ]] ||
+   fail "Unexpected new HEAD"
+
+  echo "=== Refresh installed Python bytecode ==="
+  find "$APP/app" "$APP/scripts" -type f -name '*.pyc' -delete
+  "$PY" -m compileall -q -f "$APP/app" "$APP/scripts"
+  echo "INSTALLED_BYTECODE_REFRESH=PASSED"
+ while IFS= read -r f; do
+  [[ -f "$APP/$f" && ! -L "$APP/$f" ]] || fail "Missing new source: $f"
+  chmod a+r "$APP/$f"
+ done < <(changed)
+ "$PY" "$APP/scripts/tracker-deployment-guard.py" \
+  --root "$APP" --base "$BASE" --target "$TARGET" --service tracker
+ [[ -z "$(g status --porcelain)" ]] || fail "Working tree became dirty"
+ if ((RESTART==1)); then
+  echo "Restarting Tracker"
+  systemctl reset-failed tracker
+  systemctl restart tracker
+ else echo "Tooling-only release: no Tracker restart"; fi
+ "$PY" "$APP/scripts/tracker-runtime-smoke.py" --instance "$INSTANCE"
+ systemctl is-active --quiet tracker || fail "Tracker service not active"
+ echo "======================================"
+ echo " TRACKER RELEASE DEPLOYMENT SUCCESS"
+ echo "======================================"
+ g log -1 --oneline
+ echo "Source recovery snapshot: $SAVE/source.tar.gz"
+ QUALIFICATION_COMPLETE=1
+}
+follow_deployment_log() {
+ local unit="$1" log="$2" pid="" i final
+ echo "=== Live deployment log (Ctrl+C detaches; worker continues) ==="
+ # A root-only log is created before systemd-run, avoiding any startup race.
+ for ((i=0; i<30; i++)); do
+  pid="$(systemctl show "$unit.service" -p MainPID --value 2>/dev/null || true)"
+  if [[ "$pid" =~ ^[1-9][0-9]*$ ]]; then break; fi
+  if grep -q '^EXIT_STATUS=' "$log" 2>/dev/null; then break; fi
+  sleep 0.2
+ done
+ if [[ "$pid" =~ ^[1-9][0-9]*$ ]]; then
+  # GNU tail exits when this specific, detached systemd worker exits.
+  tail -n +1 --follow=descriptor --pid="$pid" "$log"
+ else
+  # A worker that has already exited still gets its full log displayed.
+  cat "$log"
+ fi
+ final="$(sed -n 's/^EXIT_STATUS=//p' "$log" | tail -n 1)"
+ if [[ "$final" == 0 ]]; then
+  echo "=== DEPLOYMENT FINISHED SUCCESSFULLY ==="
+ elif [[ "$final" =~ ^[0-9]+$ ]]; then
+  echo "=== DEPLOYMENT FAILED (exit $final) ===" >&2
+  return 1
+ else
+  echo "=== DEPLOYMENT STATUS UNKNOWN; check the log ===" >&2
+  return 1
+ fi
+}
+if [[ "${1:-}" == --worker ]]; then
+ shift
+ [[ $# -eq 12 ]] || fail "Bad worker arguments"
+ worker "$@"
+ exit 0
+fi
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; RESUME_VERIFIED_645=0
+while (( $# )); do
+ case "$1" in
+  --detach) FOLLOW=0; shift;;
+  --dev-focused-630) DEV_FOCUSED_630=1; shift;;
+  --db-migration) DB_MIGRATION=1; shift;;
+  --reviewed-regimen-635) REVIEWED_REGIMEN_635=1; shift;;
+  --reviewed-facts-639) REVIEWED_FACTS_639=1; shift;;
+  --reviewed-coa-643) REVIEWED_COA_643=1; shift;;
+  --reviewed-coa-645) REVIEWED_COA_645=1; shift;;
+  --resume-verified-645) RESUME_VERIFIED_645=1; shift;;
+  --serial-tests) fail "Serial testing prohibited";;
+  --instance|--base|--target|--ref)
+   (( $# >= 2 )) || fail "Missing argument for $1"
+   case "$1" in
+    --instance) INSTANCE="$2";;
+    --base) BASE="$2";;
+    --target) TARGET="$2";;
+    --ref) REF="$2";;
+   esac
+   shift 2;;
+  *) fail "Unknown argument: $1";;
+ esac
+done
+[[ "$INSTANCE" == DEV || "$INSTANCE" == PROD ]] || fail "Choose DEV or PROD"
+[[ "$BASE" =~ ^[0-9a-f]{40}$ && "$TARGET" =~ ^[0-9a-f]{40}$ ]] || fail "Use full 40-character SHAs"
+[[ "$REF" =~ ^[a-zA-Z0-9][a-zA-Z0-9._/-]*$ && "$REF" != *..* ]] || fail "Invalid branch"
+[[ "$INSTANCE" != PROD || "$REF" == main ]] || fail "PROD requires --ref main"
+[[ "$DEV_FOCUSED_630" == 0 || ( "$INSTANCE" == DEV && "$REF" == release/630-food-duplicate-resolution ) ]] || fail "Focused 630 is DEV-only and branch-specific"
+[[ "$REVIEWED_REGIMEN_635" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed regimen deployment requires --db-migration"
+[[ "$REVIEWED_FACTS_639" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed facts deployment requires --db-migration"
+[[ "$REVIEWED_FACTS_639" == 0 || "$REVIEWED_REGIMEN_635" == 0 ]] || fail "Only one reviewed schema flag permitted"
+[[ "$REVIEWED_COA_643" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA deployment requires --db-migration"
+[[ "$REVIEWED_COA_643" == 0 || ( "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
+[[ "$REVIEWED_COA_645" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA 645 requires --db-migration"
+[[ "$RESUME_VERIFIED_645" == 0 || ( "$INSTANCE" == DEV && "$REF" == release/645-coa-default-document && "$DB_MIGRATION" == 1 && "$REVIEWED_COA_645" == 1 ) ]] || fail "Resume is restricted to reviewed Release 645 DEV"
+[[ "$REVIEWED_COA_645" == 0 || ( "$REVIEWED_COA_643" == 0 && "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
+[[ $(id -u) == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run as root on configured Tracker host"
+instance_check "$INSTANCE"
+verify_prod_approval
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
+[[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "Not a clean main checkout"
+[[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Unexpected starting commit"
+systemctl is-active --quiet tracker || fail "Tracker service is not active"
+mkdir -p /tmp/tracker-backups
+umask 077
+RUN="$(mktemp -d /tmp/tracker-backups/release.XXXXXXXX)"
+chmod 700 "$RUN"
+cp "$0" "$RUN/worker.sh"
+chmod 700 "$RUN/worker.sh"
+bash -n "$RUN/worker.sh"
+UNIT="tracker-release-$(date +%s)-$$"
+# Make the log available before the worker starts; no source/data changes.
+touch "$RUN/deployment.log"
+if [[ "$RESUME_VERIFIED_645" == 1 ]]; then
+ printf "requested\n" > "$RUN/resume-evidence645-request"
+ chmod 600 "$RUN/resume-evidence645-request"
+fi
+# Dedicated hosts: 18 vCPUs and 18 GiB RAM allocated per LXC.
+# Operator-required full parallel qualification: 16 pytest workers and
+# a 16 GiB systemd release-worker memory ceiling on both DEV and PROD.
+# Do not silently lower either bound or introduce a serial fallback.
+MEMORY_PROPERTY="MemoryMax=16G"
+echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
+systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645"
+echo "Launched: $UNIT"
+echo "Log: $RUN/deployment.log"
+if (( FOLLOW )); then
+ follow_deployment_log "$UNIT" "$RUN/deployment.log"
+else
+ printf 'Detached. To follow: tail -n +1 -f "%s/deployment.log"\n' "$RUN"
+fi
+, line)
+    if match and match.group(1).strip():
+        data=Path(match.group(1).strip().strip(chr(34)).strip(chr(39)))
+if not data.is_absolute(): data=Path("/opt/tracker/data")
+print(data.resolve())
+PY
+)"
+ echo "=== LIVE ATTACHMENT INTEGRITY BEFORE QUALIFICATION ==="
+ "$PY" "$QA/scripts/tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes ||
+     fail "Live database contains missing or changed attachment(s); reconcile PROD->DEV uploads before testing"
+ echo "LIVE_ATTACHMENT_PREFLIGHT=PASSED"
  cd "$QA"
  export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
  mkdir -p "$TRACKER_DATA_DIR"
