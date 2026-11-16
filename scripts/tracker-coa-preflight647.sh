@@ -49,7 +49,8 @@ for f in (Path("app/templates/base.html"), Path("app/templates/coa_edit.html")):
 print("COA_647_JINJA=PASSED")
 PY
 "$PY" scripts/tracker-impact-preflight604.py --root "$QA" --base "$BASE" --target "$TARGET"
-"$PY" -m pytest -q --tb=short --maxfail=1 tests/test_coa_bulk_test_types647.py
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+ tests/test_coa_bulk_test_types647.py tests/test_coa_test_type_picker646.py
 "$PY" -m pytest -q --tb=short --maxfail=1 \
  tests/test_release577_dev_receipt.py tests/test_release629_qa_cadence.py \
  tests/test_release604_preflight.py
