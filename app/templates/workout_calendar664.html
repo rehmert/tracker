@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Workout Calendar{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workout-calendar664.css?v=664">
+{% endblock %}
+{% block content %}
+<section class="workout654 workout664" id="workout664-calendar">
+  <nav class="workout664-links" aria-label="Workout navigation">
+    <a href="/workouts">← Workouts</a>
+    <a href="/workouts/quick">Rapid Gym Mode</a>
+    <a href="/workouts/analytics">Strength Progress</a>
+    <a href="/workouts/calendar">Current Month</a>
+  </nav>
+
+  <header class="workout664-header">
+    <div>
+      <h1>Workout Calendar</h1>
+      <p class="note">Completed workouts with recorded sets, on their actual recorded dates. Backdated sessions appear in their original month.</p>
+    </div>
+  </header>
+
+  <nav class="workout664-month-navigation" aria-label="Choose calendar month">
+    {% if workout_calendar.previous %}
+      <a rel="prev" href="/workouts/calendar?month={{ workout_calendar.previous }}">← Previous Month</a>
+    {% else %}
+      <span>Previous Month</span>
+    {% endif %}
+    <h2 id="workout664-month">{{ workout_calendar.month_label }}</h2>
+    {% if workout_calendar.next %}
+      <a rel="next" href="/workouts/calendar?month={{ workout_calendar.next }}">Next Month →</a>
+    {% else %}
+      <span>Next Month</span>
+    {% endif %}
+  </nav>
+
+  <section class="workout664-stats" aria-label="Recorded training this month">
+    <div>
+      <strong>{{ workout_calendar.sessions }}</strong>
+      <span>Completed sessions</span>
+    </div>
+    <div>
+      <strong>{{ workout_calendar.training_days }}</strong>
+      <span>Training days</span>
+    </div>
+    <div>
+      <strong>{{ workout_calendar.sets }}</strong>
+      <span>Recorded sets</span>
+    </div>
+  </section>
+
+  <div class="workout664-grid-wrap">
+    <table class="workout664-grid">
+      <caption>Calendar for {{ workout_calendar.month_label }}. Links jump to completed sessions below.</caption>
+      <thead>
+        <tr>
+          {% for weekday in ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun') %}
+            <th scope="col">{{ weekday }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for week in workout_calendar.weeks %}
+          <tr>
+            {% for cell in week %}
+              <td class="{{ 'workout664-outside' if not cell.in_month else ('workout664-logged' if cell.count else 'workout664-empty') }}"
+                  {% if cell.in_month %}data-date664="{{ cell.day.isoformat() }}"{% endif %}>
+                {% if cell.in_month %}
+                  <time datetime="{{ cell.day.isoformat() }}"
+                        {% if cell.is_today %}aria-current="date"{% endif %}>{{ cell.day.day }}</time>
+                  {% if cell.count %}
+                    <a href="#workout664-day-{{ cell.day.isoformat() }}"
+                       aria-label="{{ cell.count }} completed session{{ '' if cell.count == 1 else 's' }} on {{ cell.day.isoformat() }}">
+                      {{ cell.count }} <span>session{{ '' if cell.count == 1 else 's' }}</span>
+                    </a>
+                  {% endif %}
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <section class="workout664-session-list" aria-labelledby="workout664-sessions-heading">
+    <h2 id="workout664-sessions-heading">Completed Sessions — {{ workout_calendar.month_label }}</h2>
+    {% if workout_calendar.days %}
+      <ol>
+        {% for group in workout_calendar.days %}
+          <li id="workout664-day-{{ group.day.isoformat() }}">
+            <h3>
+              <time datetime="{{ group.day.isoformat() }}">{{ group.day.strftime('%A, %B %d, %Y') }}</time>
+            </h3>
+            <p>{{ group.sessions|length }} completed session{{ '' if group.sessions|length == 1 else 's' }} · {{ group.sets }} recorded set{{ '' if group.sets == 1 else 's' }}</p>
+            <ul>
+              {% for item in group.sessions %}
+                <li>
+                  <a href="/workouts/sessions/{{ item.session_id }}/review">
+                    Review workout started {{ item.started_at|dt }}
+                  </a>
+                  <span> · {{ item.set_count }} set{{ '' if item.set_count == 1 else 's' }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="note">No completed workouts with recorded sets in this month.</p>
+      <p><a href="/workouts/backfill">Log a Previous Workout</a> if you want to add a past training session.</p>
+    {% endif %}
+  </section>
+  <p class="note">Multiple completed sessions on the same date count separately, but that date is one training day. Unfinished sessions, sessions without sets, and future-dated entries are not counted. No training targets or streaks are inferred.</p>
+</section>
+{% endblock %}
