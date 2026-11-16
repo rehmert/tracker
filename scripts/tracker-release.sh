@@ -174,9 +174,19 @@ print(data.resolve())
 PY
 )"
  echo "=== LIVE ATTACHMENT INTEGRITY BEFORE QUALIFICATION ==="
- "$PY" "$QA/scripts/tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes ||
-     fail "Live database contains missing or changed attachment(s); reconcile uploads before testing"
- echo "LIVE_ATTACHMENT_PREFLIGHT=PASSED"
+ if [[ "$INSTANCE" == DEV && "$DB_MIGRATION" == 0 ]]; then
+  # DEV upload files are not mirrored from PROD. The DEV-only adapter permits
+  # missing references but still fails for invalid paths and hash mismatches.
+  "$PY" "$QA/scripts/tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR" ||
+      fail "DEV integrity failure beyond unsynchronized missing attachments"
+  echo "LIVE_ATTACHMENT_PREFLIGHT=DEV_ONLY_MISSING_POLICY"
+ else
+  # PROD and all database-migration releases stay fully strict. Never use
+  # the DEV-only adapter when validating production data or migration backups.
+  "$PY" "$QA/scripts/tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes ||
+      fail "Live database contains missing or changed attachment(s); reconcile uploads before testing"
+  echo "LIVE_ATTACHMENT_PREFLIGHT=PASSED"
+ fi
  cd "$QA"
  export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
  mkdir -p "$TRACKER_DATA_DIR"
