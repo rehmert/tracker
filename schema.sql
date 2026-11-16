@@ -171,3 +171,13 @@ CREATE TABLE lab_results (
 );
 CREATE INDEX ix_lab_results_report ON lab_results(report_id);
 CREATE INDEX ix_lab_results_analyte ON lab_results(analyte);
+
+-- Release 652: user-maintained labels, stable built-in codes and custom IDs.
+CREATE TABLE IF NOT EXISTS coa_test_type_catalog652 (
+  id           INTEGER PRIMARY KEY,
+  builtin_code VARCHAR(80) UNIQUE,
+  label        VARCHAR(100) NOT NULL,
+  group_name   VARCHAR(60) NOT NULL,
+  active       BOOLEAN NOT NULL DEFAULT 1,
+  position     INTEGER NOT NULL DEFAULT 0
+);
