@@ -16,7 +16,8 @@ bash -n scripts/tracker-workout-dev655.sh
 "$PY" -m py_compile \
   app/workout_models655.py app/routers/workouts655.py app/routers/workouts654.py \
   tests/test_workouts655.py tests/test_workouts654.py \
-  scripts/tracker-workout-schema-review655.py
+  scripts/tracker-workout-schema-review655.py scripts/tracker-workout-dev-backup655.py \
+  tests/test_workout_dev_backup655.py
 command -v node >/dev/null || {
   echo "Node.js required for scoped Workout JavaScript syntax check" >&2; exit 2;
 }
