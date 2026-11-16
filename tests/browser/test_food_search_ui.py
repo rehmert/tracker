@@ -202,8 +202,8 @@ def test_641_remove_unused_and_reassign_confirm_once_and_submit():
                            route.fulfill(status=200, body="submitted")
                        ))
             page.add_init_script("""
-                window.confirmCalls = 0;
-                window.confirm = () => {window.confirmCalls += 1; return true;};
+                window.name = "0";
+                window.confirm = () => {window.name = String(Number(window.name) + 1); return true;};
             """)
             page.goto("http://tracker.test/food/duplicates")
             page.get_by_role("button", name="Apply correction").click()
