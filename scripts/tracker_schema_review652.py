@@ -23,6 +23,13 @@ ALLOWED = frozenset({
     "scripts/tracker_schema_review652.py",
     "scripts/tracker-release.sh",
     "tests/test_coa_manage_catalog652.py",
+    "scripts/tracker-coa-dev-backup652.py",
+    "scripts/tracker-release-scoped652.sh",
+    "scripts/tracker_dev_log577.py",
+    "scripts/tracker_promote568.py",
+    "tests/test_coa_test_type_picker646.py",
+    "tests/test_release629_qa_cadence.py",
+    "tests/test_release577_dev_receipt.py",
 })
 
 
