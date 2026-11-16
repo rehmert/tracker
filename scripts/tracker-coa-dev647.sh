@@ -3,8 +3,8 @@
 set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
-BASE=9305aae5df5ca24afcf9735d73d914a918adcafb
-REF=release/647-coa-test-type-picker
+BASE=61b3016eed48527c61a5173d94ee0f58b859f81a
+REF=release/647-coa-bulk-test-types
 fail() { echo "COA_647_DEV=FAILED: $*" >&2; exit 1; }
 [[ "$#" == 1 && "$1" =~ ^[0-9a-f]{40}$ ]] || fail "Pass exact candidate SHA"
 EXPECTED_TARGET="$1"
@@ -21,7 +21,7 @@ PY
 g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] ||
  fail "Installed DEV checkout not clean main"
-[[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "DEV starting commit is not Release 645"
+[[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "DEV starting commit is not Release 646"
 systemctl is-active --quiet tracker || fail "DEV service inactive"
 g fetch origin main "refs/heads/$REF:refs/remotes/origin/$REF"
 TARGET="$(g rev-parse "refs/remotes/origin/$REF")"
