@@ -152,6 +152,9 @@ def test_655_routines_are_isolated_from_each_other():
         assert post(client, f"/workouts/routines/{a}/equipment", {
             "equipment_id": first_id
         }).status_code == 303
+        assert post(client, f"/workouts/routines/{b}/equipment", {
+            "equipment_id": first_id
+        }).status_code == 303
         with SessionLocal() as db:
             item = db.scalar(select(WorkoutRoutineItem655).where(
                 WorkoutRoutineItem655.routine_id == a
