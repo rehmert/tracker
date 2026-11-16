@@ -10,6 +10,9 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 }
 "$PY" -m pytest -q --tb=short --maxfail=1 \
  tests/test_coa_endotoxins645.py \
+ tests/test_release_350_353.py \
+ tests/test_release_354_357.py \
+ tests/test_inventory_extensions.py \
  tests/test_coa_document_defaults645.py \
  tests/test_coa_multiple_documents.py \
  tests/test_coa_manager_v23.py \
