@@ -24,13 +24,13 @@ Branch: `release/654-workout-foundation`.
 ## Deployment is blocked pending reviewed schema workflow
 
 **Do not bypass the guarded release runner.** There are three new SQLite tables.
-The Release 654 candidate now makes the runner classify `app/workout_models654.py`
+The Release 654 source branch now makes the runner classify `app/workout_models654.py`
 as a schema change, requires `--db-migration --reviewed-workout-654`,
 and invokes a fail-closed, exact-SHA additive-model review. The runner also
 requires a verified pre-deployment database backup for migration.
 
 Before DEV deployment:
-1. Inspect the exact candidate commit, scoped CI evidence, and changed-file list.
+1. Inspect the exact candidate commit, DEV-host scoped qualification evidence, and changed-file list.
 2. Rehearse additive table creation on a restored, isolated DEV database backup.
 3. Run the scoped release gate and focused release-runner regression tests.
 4. Verify existing attachment integrity and complete the reviewed backup process.
@@ -66,3 +66,10 @@ is accepted.
 No full Tracker suite is needed for ordinary isolated Workout changes. This
 candidate modifies the release runner, so its scoped CI includes targeted
 release-runner regression tests in addition to Workout tests.
+
+## Repository-only development policy
+
+GitHub is used solely for storing and retrieving Tracker source code and commit history.
+No GitHub Actions, pull-request qualification, or GitHub-based test/deployment workflows.
+All qualification (including full syntax, migration rehearsal, browser/integration tests),
+release approval, and deployment must run on the controlled Tracker DEV/PROD hosts.
