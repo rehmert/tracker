@@ -1,0 +1,59 @@
+{# Release 661: dashboard fragment; all values supplied by scoped read-only SQL. #}
+<section class="dashboard-panel tracker-workout-dashboard661"
+         id="tracker-workout-dashboard661"
+         data-dashboard-panel="9"
+         data-dashboard-title="Workout activity"
+         aria-labelledby="tracker-workout-heading661">
+  <div class="tracker-workout-head661">
+    <div>
+      <h2 id="tracker-workout-heading661">Workout Activity</h2>
+      <p class="note">Completed workouts with recorded sets, using the original workout dates.</p>
+    </div>
+    <nav class="tracker-workout-actions661" aria-label="Workout shortcuts">
+      <a href="/workouts/quick">{{ 'Resume Gym Mode' if workout_summary.in_progress else 'Open Rapid Gym Mode' }}</a>
+      <a href="/workouts/analytics">Strength Progress</a>
+      <a href="/workouts">All Workouts</a>
+    </nav>
+  </div>
+
+  <div class="tracker-workout-summary661" aria-label="Training frequency">
+    <div>
+      <strong>{{ workout_summary.sessions7 }}</strong>
+      <span>Sessions · last 7 days</span>
+    </div>
+    <div>
+      <strong>{{ workout_summary.days7 }}</strong>
+      <span>Training days · last 7 days</span>
+    </div>
+    <div>
+      <strong>{{ workout_summary.sessions28 }}</strong>
+      <span>Sessions · last 28 days</span>
+    </div>
+    <div>
+      <strong>{{ workout_summary.days28 }}</strong>
+      <span>Training days · last 28 days</span>
+    </div>
+  </div>
+
+  <div class="tracker-workout-recent661">
+    <h3>Recent Completed Workouts</h3>
+    {% if workout_summary.recent %}
+      <ul>
+        {% for row in workout_summary.recent %}
+          <li>
+            <a href="/workouts/sessions/{{ row.session_id }}">{{ row.started_at|dt }}</a>
+            <span>{{ row.sets }} set{{ '' if row.sets == 1 else 's' }} · {{ row.machines }} machine{{ '' if row.machines == 1 else 's' }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="note">No completed workouts with recorded sets yet.</p>
+      <p><a href="/workouts/backfill">Log a Previous Workout</a> to begin your training history.</p>
+    {% endif %}
+  </div>
+  <p class="note tracker-workout-footnote661">
+    A training day is a calendar date with at least one completed workout containing a recorded set.
+    Multiple sessions on one day count as multiple sessions but one training day.
+    Unfinished and empty workouts are excluded. No training targets or recommendations are inferred.
+  </p>
+</section>
