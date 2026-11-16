@@ -5,6 +5,12 @@ set -Eeuo pipefail
 PY="$1"
 ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
 [[ "$PWD" == "$ROOT" && -d tests ]] || { echo "Run from a qualified isolated release worktree" >&2; exit 2; }
-bash "$ROOT/scripts/tracker-coa-scoped651.sh" "$PY"
-"$PY" -m pytest -q --tb=short tests/test_coa_manage_catalog652.py
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_coa_manage_catalog652.py \
+  tests/test_coa_multiple_test_types651.py::test_651_stable_codebook_and_unmodified_legacy_labels \
+  tests/test_coa_multiple_test_types651.py::test_651_multiple_types_persist_in_one_file_without_changing_default \
+  tests/test_coa_multiple_test_types651.py::test_651_atomic_stale_duplicate_and_cross_record_rejection \
+  tests/test_coa_multiple_test_types651.py::test_651_legacy_first_file_can_have_multiple_tests_without_duplicate_pdf \
+  tests/test_coa_multiple_test_types651.py::test_651_combined_types_upload_and_custom_type_persist \
+  tests/test_coa_test_type_picker646.py::test_646_compact_picker_renders_groups_and_preserves_unknown_historical_label
 echo "COA_652_SCOPED_TESTS=PASSED"
