@@ -7,6 +7,9 @@ from pathlib import Path
 
 ALLOWED = frozenset({
     "app/models.py", "app/routers/coas.py", "app/templates/coa_edit.html",
+    "app/templates/vial_detail.html", "app/migrations.py", "schema.sql",
+    "tests/test_release_350_353.py", "tests/test_release_354_357.py",
+    "tests/test_inventory_extensions.py", "tests/test_coa_endotoxins645.py",
     "scripts/tracker-release.sh", "scripts/tracker_prod_remote568.sh",
     "scripts/tracker_schema_review645.py", "scripts/tracker-coa-scoped645.sh",
     "scripts/tracker-coa-dev645.sh", "scripts/tracker-coa-preflight645.sh",
@@ -38,9 +41,17 @@ def review(root, base, target):
                          ", ".join(sorted(changed - ALLOWED)))
     prior = git(root, "show", f"{base}:app/models.py")
     candidate = git(root, "show", f"{target}:app/models.py")
-    if not candidate.startswith(prior):
-        raise ValueError("Existing model definitions changed")
-    extra = candidate[len(prior):]
+    prior_line = '    endotoxin_pct: Mapped[float | None] = mapped_column(Float, nullable=True)'
+    replacement = (
+        prior_line + '  # legacy percent; never reinterpret as EU/vial\\n'
+        '    endotoxin_eu_per_vial: Mapped[float | None] = mapped_column(Float, nullable=True)'
+    )
+    if prior.count(prior_line) != 1 or candidate.count(replacement) != 1:
+        raise ValueError("Exact EU/vial model addition absent")
+    normalized = candidate.replace(replacement, prior_line, 1)
+    if not normalized.startswith(prior):
+        raise ValueError("Existing model definitions changed beyond reviewed column")
+    extra = normalized[len(prior):]
     nodes = ast.parse(extra).body
     if len(nodes) != 1 or not isinstance(nodes[0], ast.ClassDef):
         raise ValueError("Only one appended SQLAlchemy model is allowed")
@@ -62,7 +73,25 @@ def review(root, base, target):
     if "ForeignKey(\"coas.id\", ondelete=\"CASCADE\")" not in extra or \
        "ForeignKey(\"coa_attachments.id\", ondelete=\"CASCADE\")" not in extra:
         raise ValueError("Expected ownership and cascading foreign keys")
-    if changed & {"app/db.py", "app/migrations.py", "requirements.txt", "alembic.ini"}:
+    # This release adds exactly one nullable coas column through the existing
+    # non-destructive, idempotent migration hook. Never rewrite old percentages.
+    migration_before = git(root, "show", f"{base}:app/migrations.py")
+    migration_after = git(root, "show", f"{target}:app/migrations.py")
+    migration_line = '                "endotoxin_pct": "FLOAT",'
+    migration_add = migration_line + '\\n                "endotoxin_eu_per_vial": "FLOAT",'
+    if (migration_before.count(migration_line) != 1
+            or migration_after.count(migration_add) != 1
+            or migration_after.replace(migration_add, migration_line, 1) != migration_before):
+        raise ValueError("Unapproved migration changes")
+    schema_before = git(root, "show", f"{base}:schema.sql")
+    schema_after = git(root, "show", f"{target}:schema.sql")
+    schema_line = '  endotoxin_pct           FLOAT,'
+    schema_add = schema_line + '\\n  endotoxin_eu_per_vial   FLOAT,'
+    if (schema_before.count(schema_line) != 1
+            or schema_after.count(schema_add) != 1
+            or schema_after.replace(schema_add, schema_line, 1) != schema_before):
+        raise ValueError("Unapproved schema documentation changes")
+    if changed & {"app/db.py", "requirements.txt", "alembic.ini"}:
         raise ValueError("Unreviewed core migration files")
     print("COA_645_APPEND_ONLY_SCHEMA_REVIEW=PASSED")
 
