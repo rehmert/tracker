@@ -36,15 +36,38 @@ rsync -rt --ignore-existing --omit-dir-times --no-owner --no-group \
  -e 'ssh -o BatchMode=yes -o StrictHostKeyChecking=yes' \
  "$SOURCE:/opt/tracker/data/uploads/" "/opt/tracker/data/uploads/" ||
  fail "Additive PROD upload transfer failed"
-# Stage a copy of the verifier at its exact candidate source, rather than
-# assuming the pending release's code has been installed yet.
-if [[ -f "$APP/scripts/tracker-attachment-integrity645.py" ]]; then
- "$PY" "$APP/scripts/tracker-attachment-integrity645.py" \
- --data "/opt/tracker/data" --hashes ||
- fail "Some DEV DB references remain unresolved"
-else
- echo "UPLOAD_REPLICATION=TRANSFER_COMPLETE; run candidate attachment integrity gate"
-fi
+"$PY" - <<'PY'
+import hashlib
+import sqlite3
+from pathlib import Path
+root=Path("/opt/tracker/data")
+missing=[]
+bad_hash=[]
+with sqlite3.connect(f"file:{root / 'tracker.db'}?mode=ro", uri=True) as db:
+    db.execute("PRAGMA query_only=ON")
+    for table,folder in (("coas","coa"),("coa_attachments","coa"),("lab_reports","labs")):
+        if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(table,)).fetchone(): continue
+        cols={r[1] for r in db.execute(f'PRAGMA table_info("{table}")')}
+        if not {"id","stored_name","original_name"} <= cols: continue
+        sql=f'SELECT id,stored_name,original_name,{"sha256" if "sha256" in cols else "NULL"} FROM "{table}"'
+        for ident,stored,original,expected in db.execute(sql):
+            if not original: continue
+            if not stored or "/" in stored or "\\" in stored or stored in (".",".."):
+                missing.append((table,ident)); continue
+            file=root/"uploads"/folder/stored
+            if file.is_symlink() or not file.is_file():
+                missing.append((table,ident)); continue
+            if expected:
+                with file.open("rb") as fh:
+                    actual=hashlib.file_digest(fh,"sha256").hexdigest()
+                if actual.lower()!=expected.lower(): bad_hash.append((table,ident))
+print(f"UPLOAD_REPLICATION_MISSING={len(missing)}")
+print(f"UPLOAD_REPLICATION_HASH_MISMATCH={len(bad_hash)}")
+for table,ident in missing: print(f"MISSING table={table} id={ident}")
+for table,ident in bad_hash: print(f"HASH_MISMATCH table={table} id={ident}")
+if missing or bad_hash: raise SystemExit("UPLOAD_REPLICATION=INCOMPLETE")
+print("UPLOAD_REPLICATION=PASSED")
+PY
 echo "PROD_DATABASE=UNMODIFIED"
 echo "DEV_DATABASE=UNMODIFIED"
 echo "EXISTING_DEV_UPLOADS=NOT_OVERWRITTEN"
