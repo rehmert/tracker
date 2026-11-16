@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 from app.main import app
-from app.db import SessionLocal
+from app.db import SessionLocal, engine
 from app.models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision, Compound, Vial
 from app.attachment_files400 import attachment_directory400
 
@@ -24,6 +24,12 @@ def _start_isolated_tracker_schema650():
     """
     with TestClient(app):
         pass
+    # Fast feedback when this module runs independently in a fresh pytest
+    # worker; schema checks occur before any COA test tries INSERT.
+    tables = inspect(engine)
+    assert all(tables.has_table(name) for name in (
+        "coas", "coa_attachments", "compounds", "vials"
+    )), "Tracker test lifespan did not initialize the isolated database"
 
 
 def _fixture(*, original=True, extra=True):
