@@ -4,7 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from app.db import SessionLocal
 from app.main import app
@@ -148,6 +148,15 @@ def test_660_completed_actual_pr_volume_and_repmatched_trends():
                 WorkoutSet654.equipment_id == machine,
             ))
             assert count == 7  # six completed, one active
+            # This fixture's unfinished workout must not contaminate
+            # subsequent legacy Workout tests using the same isolated DB.
+            db.execute(delete(WorkoutSet654).where(
+                WorkoutSet654.session_id == active_id,
+            ))
+            db.execute(delete(WorkoutSession654).where(
+                WorkoutSession654.id == active_id,
+            ))
+            db.commit()
 
 
 def test_660_escapes_names_and_links_from_all_workout_entries():
