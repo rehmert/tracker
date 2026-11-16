@@ -40,7 +40,15 @@ POST_635_UNQUALIFIED_ROUTES = frozenset({
     ("POST", "/regimen/entries/{entry_id}/edit"),
     ("POST", "/regimen/entries/{entry_id}/delete"),
 })
-POST_BASELINE_ADDITIONS = POST_627_UNQUALIFIED_ROUTES | POST_635_UNQUALIFIED_ROUTES
+POST_643_UNQUALIFIED_COA_ROUTES = frozenset({
+    ("POST", "/coas/{cid}/attachments"),
+    ("POST", "/coas/{cid}/attachments/{aid}/delete"),
+})
+POST_BASELINE_ADDITIONS = (
+    POST_627_UNQUALIFIED_ROUTES |
+    POST_635_UNQUALIFIED_ROUTES |
+    POST_643_UNQUALIFIED_COA_ROUTES
+)
 
 
 # These are explicit signed write + negative forgery pairs with persisted state
@@ -192,6 +200,10 @@ def build() -> dict:
         "post_634_unqualified_regimen_routes": [
             {"method": method, "path": path}
             for method, path in sorted(POST_635_UNQUALIFIED_ROUTES)
+        ],
+        "post_643_unqualified_coa_routes": [
+            {"method": method, "path": path}
+            for method, path in sorted(POST_643_UNQUALIFIED_COA_ROUTES)
         ],
         "pre_627_candidate_routes": 83,
         "pre_627_unqualified_routes": 61,
