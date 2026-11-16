@@ -15,6 +15,9 @@ from .. import services
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import KINDS654, WorkoutEquipment654, WorkoutSession654, WorkoutSet654
+from ..workout_models655 import (
+    WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655,
+)
 
 router = APIRouter()
 
@@ -36,6 +39,26 @@ def workouts654(request: Request, db: Session = Depends(get_scoped_db390)):
         )
     ))
     active = active654(db)
+    active_link = db.get(WorkoutSessionRoutine655, active.id) if active else None
+    active_routine = (
+        db.get(WorkoutRoutine655, active_link.routine_id)
+        if active_link else None
+    )
+    routine_items = list(db.scalars(
+        select(WorkoutRoutineItem655)
+        .where(WorkoutRoutineItem655.routine_id == active_routine.id)
+        .order_by(WorkoutRoutineItem655.position, WorkoutRoutineItem655.id)
+    )) if active_routine else []
+    routine_equipment_ids = [item.equipment_id for item in routine_items]
+    rank = {equipment_id: i for i, equipment_id in enumerate(routine_equipment_ids)}
+    equipment.sort(key=lambda item: (
+        0, rank[item.id]
+    ) if item.id in rank else (1, item.gym, item.name, item.id))
+    routines = list(db.scalars(
+        select(WorkoutRoutine655).order_by(
+            WorkoutRoutine655.created_at.desc(), WorkoutRoutine655.id.desc()
+        )
+    ))
     rows = list(db.scalars(
         select(WorkoutSet654)
         .where(WorkoutSet654.session_id == active.id)
@@ -59,6 +82,11 @@ def workouts654(request: Request, db: Session = Depends(get_scoped_db390)):
         request, "workouts654.html", equipment=equipment, active=active,
         rows=rows, recent=recent, latest=latest, kinds=KINDS654,
         equipment_names={item.id: item.name for item in equipment},
+        routines=routines, active_routine=active_routine,
+        routine_equipment_ids=set(routine_equipment_ids),
+        first_routine_equipment_id=(
+            routine_equipment_ids[0] if routine_equipment_ids else None
+        ),
     )
 
 
