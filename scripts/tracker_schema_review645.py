@@ -9,6 +9,7 @@ ALLOWED = frozenset({
     "app/models.py", "app/routers/coas.py", "app/templates/coa_edit.html",
     "app/templates/vial_detail.html", "app/migrations.py", "schema.sql",
     "tests/test_release_350_353.py", "tests/test_release_354_357.py",
+    "tests/browser/test_csrf_workflows580.py",
     "tests/test_inventory_extensions.py", "tests/test_coa_endotoxins645.py",
     "scripts/tracker-release.sh", "scripts/tracker_prod_remote568.sh",
     "scripts/tracker_schema_review645.py", "scripts/tracker-coa-scoped645.sh",
