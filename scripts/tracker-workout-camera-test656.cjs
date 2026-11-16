@@ -68,6 +68,7 @@ function fixture(options = {}) {
         assert.equal(opts.audio, false);
         assert.equal(opts.video.facingMode.ideal, "environment");
         if (options.denied) throw Error("Permission denied");
+        if (options.acquire) return options.acquire();
         return stream;
       },
     },
@@ -132,6 +133,22 @@ async function main() {
   hidden.document.visibilityState = "hidden";
   hidden.docEvents.get("visibilitychange")();
   assert.equal(hidden.stopped, 1);
+
+  let resolveCamera;
+  let lateStops = 0;
+  const late = fixture({
+    acquire: () => new Promise((resolve) => { resolveCamera = resolve; }),
+  });
+  const pending = late.start.fire("click");
+  late.pageEvents.get("pagehide")();
+  resolveCamera({
+    getTracks() { return [{ stop() { lateStops++; } }]; },
+  });
+  await pending;
+  assert.equal(lateStops, 1);
+  assert.equal(late.preview.hidden, true);
+  assert.equal(late.frames.length, 0);
+  assert.deepEqual(late.redirects, []);
 
   const tooLong = fixture({
     detect: () => [{ rawValue: "X".repeat(1025) }],
