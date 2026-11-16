@@ -91,7 +91,7 @@
       <strong>Correct previously logged uses</strong>
       <p class="note">Move all logged entries from an incorrect version to the correct saved version. Dates, meals and serving counts stay the same. <strong>Historical nutrition totals will change</strong> to use the keeper's per-serving nutrient values. Check serving sizes before continuing.</p>
       {% for item in group.versions if item.log_count > 0 %}
-      <form class="food641-reassign" method="post" action="/food/duplicates/reassign-logs"
+      <form class="food641-reassign" method="post" action="/food/duplicates/resolve-unused"
             data-confirm="Reassign all {{ item.log_count }} historical meal entries from version #{{ item.id }}? Their original dates and serving counts will stay the same, but historical nutrient totals WILL be recalculated using the keeper's nutrition.">
         <input type="hidden" name="remove_id" value="{{ item.id }}">
         <input type="hidden" name="expected_count" value="{{ item.log_count }}">
@@ -168,5 +168,5 @@
   </section>
   {% endfor %}
 </main>
-<script src="/static/js/tracker-food-duplicates629.js?v=630" defer></script>
+<script src="/static/js/tracker-food-duplicates629.js?v=641" defer></script>
 {% endblock %}
