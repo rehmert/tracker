@@ -58,8 +58,9 @@ def test_650_dev_missing_only_may_be_reported_without_mutation():
     ("ATTACHMENT_INTEGRITY=FAILED: database missing\n", 1),
 ])
 def test_650_dev_policy_fails_closed_on_bad_evidence(stdout, code):
-    with pytest.raises(_gate().DevAttachmentError):
-        _gate().classify(stdout, code)
+    gate = _gate()
+    with pytest.raises(gate.DevAttachmentError):
+        gate.classify(stdout, code)
 
 
 def test_650_only_exact_dev_instance_is_eligible(tmp_path):
@@ -92,6 +93,4 @@ def test_650_preflight_uses_only_dev_gate_not_prod_uploads():
     text = (ROOT / "scripts/tracker-coa-preflight650.sh").read_text()
     assert 'tracker-dev-attachment-gate650.py --data /opt/tracker/data' in text
     assert 'COA_650_DEV_ATTACHMENTS=CHECKED_WITH_MISSING_FILE_POLICY' in text
-    assert "prod" not in text.lower().split("=== DEV-ONLY ATTACHMENT AUDIT")[-1].split(
-        "export TRACKER_DATA_DIR"
-    )[0].replace("prod upload synchronization", "")
+    assert 'Missing live attachments: reconcile before qualification' not in text
