@@ -2,6 +2,8 @@
 {% block title %}Workouts{% endblock %}
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+<script src="/static/js/tracker-workouts655.js?v=655" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout654">
@@ -11,7 +13,11 @@
   {% if active %}
     <div class="workout-status654">
       <strong>Workout in progress</strong>
-      <span>Started {{ active.started_at|dt }}</span>
+      <span>Started {{ active.started_at|dt }}
+        {% if active_routine %}
+          · <a href="/workouts/routines/{{ active_routine.id }}">{{ active_routine.name }}</a>
+        {% endif %}
+      </span>
       <form method="post" action="/workouts/finish"><button type="submit">Finish Workout</button></form>
     </div>
   {% else %}
@@ -19,6 +25,24 @@
       <button class="primary" type="submit">Start Workout</button>
     </form>
   {% endif %}
+
+  <section class="workout-routine-strip655">
+    <div class="workout-routine-title655">
+      <h2>Saved Routines</h2>
+      <a href="/workouts/routines">Manage Routines</a>
+    </div>
+    {% if routines %}
+      <div class="workout-routine-launch655">
+        {% for routine in routines %}
+          <form method="post" action="/workouts/routines/{{ routine.id }}/start">
+            <button type="submit">{{ routine.name }}</button>
+          </form>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p><a href="/workouts/routines">Create your first routine</a> to save a machine sequence.</p>
+    {% endif %}
+  </section>
 
   <section>
     <h2>Find a machine</h2>
@@ -37,16 +61,26 @@
     {% if not equipment %}<p>Add your first machine below.</p>{% endif %}
     {% for item in equipment %}
       <details class="workout-machine654"
-          {% if request.query_params.get('machine') == (item.id|string) %}open{% endif %}>
+          {% if request.query_params.get('machine') == (item.id|string) or (not request.query_params.get('machine') and item.id == first_routine_equipment_id) %}open{% endif %}>
         <summary><strong>{{ item.name }}</strong>
           <span>{{ item.gym }} · {{ item.kind|replace('_', ' ') }}</span>
         </summary>
+        {% if item.id in routine_equipment_ids %}
+          <p class="workout-routine-marker655">Routine exercise</p>
+        {% endif %}
         <p class="note">{{ item.manufacturer }} {{ item.model }}
           {% if item.seat_setting %} · Setup: {{ item.seat_setting }}{% endif %}
         </p>
         {% if item.setup_notes %}<p>{{ item.setup_notes }}</p>{% endif %}
         {% if latest[item.id] %}
           <p><strong>Previous:</strong> {{ '%.1f'|format(latest[item.id].weight_lb) }} lb × {{ latest[item.id].reps }} reps</p>
+          {% if active %}
+            <form method="post" action="/workouts/sets/repeat" class="workout-repeat655">
+              <input type="hidden" name="equipment_id" value="{{ item.id }}">
+              <input type="hidden" name="source_set_id" value="{{ latest[item.id].id }}">
+              <button type="submit" class="workout-repeat-button655">Repeat Last Set</button>
+            </form>
+          {% endif %}
         {% else %}
           <p class="note">No previous sets on this machine.</p>
         {% endif %}
