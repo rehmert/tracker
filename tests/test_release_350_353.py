@@ -39,7 +39,7 @@ def test_upload_cleanup_after_failure_before_commit(monkeypatch,tmp_path):
         asyncio.run(coas.upload_coa(
             vid=1,file=UploadFile(filename='new.pdf',file=BytesIO(b'%PDF-test')),
             lab_name='',tested_on='',purity_pct='',reported_content='',
-            reported_unit='mg',notes='',endotoxin_pct='',job_id='',
+            reported_unit='mg',notes='',endotoxin_eu_per_vial='',job_id='',
             verify_code='',db=DB()
         ))
     assert calls==[('rollback',None),('delete','new.pdf')]
