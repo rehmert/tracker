@@ -65,19 +65,20 @@ def test_643_multiple_files_stay_on_same_coa_and_are_individually_accessible(set
         follow_redirects=False)
     assert response.status_code == 303
     with Session(engine) as db:
-        documents = list(db.scalars(select(CoaDocument643).order_by(CoaDocument643.id)))
-        assert len(documents) == 2
-        assert {document.original_name for document in documents} == {
-            "purity.pdf", "endotoxin.pdf",
-        }
-        assert all(doc.coa_id == 1 for doc in documents)
-        assert all(doc.test_label == "Purity / endotoxin" for doc in documents)
-        for document in documents:
-            assert (directory / document.stored_name).is_file()
-            result = client.get(f"/coas/1/file?document_id={document.id}")
-            assert result.status_code == 200
-            assert result.content.startswith(b"%PDF-1.4")
-            assert client.get(f"/coas/2/file?document_id={document.id}").status_code == 404
+        documents = [
+            (document.id, document.coa_id, document.original_name,
+             document.stored_name, document.test_label)
+            for document in db.scalars(select(CoaDocument643).order_by(CoaDocument643.id))
+        ]
+    assert len(documents) == 2
+    assert {row[2] for row in documents} == {"purity.pdf", "endotoxin.pdf"}
+    assert all(row[1] == 1 and row[4] == "Purity / endotoxin" for row in documents)
+    for document_id, _, _, stored_name, _ in documents:
+        assert (directory / stored_name).is_file()
+        result = client.get(f"/coas/1/file?document_id={document_id}")
+        assert result.status_code == 200
+        assert result.content.startswith(b"%PDF-1.4")
+        assert client.get(f"/coas/2/file?document_id={document_id}").status_code == 404
     assert len(required_attachments(data_dir / "tracker.db")) == 2
 
 
