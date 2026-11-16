@@ -26,6 +26,8 @@ ALLOWED = frozenset({
     "scripts/tracker-release.sh",
     "scripts/tracker-workout-schema-review655.py",
     "scripts/tracker-release-scoped655.sh",
+    "scripts/tracker-workout-dev-backup655.py",
+    "tests/test_workout_dev_backup655.py",
     "scripts/tracker-workout-dev655.sh",
     "docs/release-655-workout-routines.md",
 })
