@@ -16,7 +16,8 @@ bash -n scripts/tracker-release.sh
 "$PY" - <<'PY'
 from pathlib import Path
 from jinja2 import Environment
-Environment().parse(Path("app/templates/workouts654.html").read_text(encoding="utf-8"))
+for p in (Path("app/templates/workouts654.html"), Path("app/templates/workout_history654.html")):
+    Environment().parse(p.read_text(encoding="utf-8"))
 print("WORKOUT_654_TEMPLATE_SYNTAX=PASSED")
 PY
 BASE=108bf3241bd747f6174dc7e65a8c01161af24e62
