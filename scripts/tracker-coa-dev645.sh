@@ -6,6 +6,8 @@ APP=/opt/tracker
 REF=release/645-coa-default-document
 BASE=5bc0894c2c2865856856298083ca21bc62d00069
 fail() { echo "COA_645_DEPLOY=FAILED: $*" >&2; exit 1; }
+[[ "$#" == 1 && "$1" =~ ^[0-9a-f]{40}$ ]] || fail "Pass exact expected candidate SHA as first argument"
+EXPECTED_TARGET="$1"
 [[ "$(id -u)" == 0 && -x "$APP/.venv/bin/python" && -f /etc/tracker.env ]] || fail "Requires configured Tracker and root"
 "$APP/.venv/bin/python" - <<'PY'
 from pathlib import Path
@@ -23,13 +25,25 @@ systemctl is-active --quiet tracker || fail "Tracker service inactive"
 g fetch origin main "refs/heads/$REF:refs/remotes/origin/$REF"
 TARGET="$(g rev-parse "refs/remotes/origin/$REF")"
 g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from installed base"
+[[ "$TARGET" == "$EXPECTED_TARGET" ]] || fail "Branch moved beyond pinned candidate"
 DIR="$(mktemp -d /tmp/tracker-coa645-runner.XXXXXXXX)"
-cleanup() { rm -f "$DIR/runner.sh"; rmdir "$DIR" || true; }
+cleanup() {
+ if [[ -d "$DIR/candidate" ]]; then g worktree remove --force "$DIR/candidate" >/dev/null 2>&1 || true; fi
+ rm -f "$DIR/runner.sh"
+ rmdir "$DIR" || true
+}
 trap cleanup EXIT
 EXPECTED="$(g rev-parse "$TARGET:scripts/tracker-release.sh")"
 g show "$TARGET:scripts/tracker-release.sh" > "$DIR/runner.sh"
 [[ "$(g hash-object "$DIR/runner.sh")" == "$EXPECTED" ]] || fail "Runner blob differs from pinned candidate"
 bash -n "$DIR/runner.sh"
+# Fail before the expensive qualification worker if previous evidence
+# cannot be reused, without modifying the installed DEV environment.
+g worktree add --detach "$DIR/candidate" "$TARGET"
+"$APP/.venv/bin/python" "$DIR/candidate/scripts/tracker-resume-evidence645.py" \
+ --app "$APP" --qa "$DIR/candidate" --base "$BASE" --target "$TARGET" ||
+ fail "Prior full qualification evidence could not be verified"
+g worktree remove --force "$DIR/candidate"
 echo "COA_645_BASE=$BASE"
 echo "COA_645_TARGET=$TARGET"
 echo "COA_645_EXPECTED_SCOPE=DEV_ONLY"
