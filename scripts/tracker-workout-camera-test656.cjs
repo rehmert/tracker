@@ -105,7 +105,7 @@ async function main() {
   assert.equal(supported.frames.length, 1);
   await supported.frames.shift()();
   assert.deepEqual(supported.redirects, [
-    "/workouts/qr?code=" + encodeURIComponent(url),
+    "/workouts/qr/scan?code=" + encodeURIComponent(url),
   ]);
   assert.equal(supported.stopped, 1);
   assert.equal(supported.preview.hidden, true);
