@@ -301,7 +301,8 @@ async def update_coa_attachment_test_types647(
     attachments = {item.id: item for item in coa.attachments}
     if not attachments:
         return reply("There are no test documents to update.", status=400)
-    if len(attachments) > 500:
+    # Starlette limits parsed form fields; three fields per document plus CSRF.
+    if len(attachments) > 250:
         return reply("Too many test documents for one update.", status=400)
     form = await request.form()
     expected = {f"{name}_{aid}" for aid in attachments
