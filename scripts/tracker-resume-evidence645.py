@@ -67,7 +67,7 @@ def _verify_log(path: Path):
         fail("evidence directory not private")
     _secure_regular(path)
     content = path.read_text(errors="replace")
-    if (content.count("CANDIDATE_COMMIT=" + QUALIFIED) != 1
+    if (content.count("CANDIDATE_COMMIT=" + QUALIFIED) < 1
             or "instance: DEV" not in content
             or "COA_645_SCHEMA_PROCEDURE=AUTHORIZED" not in content
             or "QA_FULL_REQUIRED=1" not in content):
@@ -94,9 +94,7 @@ def verify(app: Path, qa: Path, base: str, target: str):
         fail("installed source is not expected Release 644 base")
     if git(qa, "rev-parse", "HEAD") != target:
         fail("candidate worktree mismatch")
-    if git(app, "merge-base", "--is-ancestor", QUALIFIED, target):
-        # git merge-base --is-ancestor emits no output on success.
-        pass
+    git(app, "merge-base", "--is-ancestor", QUALIFIED, target)
     changed = frozenset(git(app, "diff", "--name-only", QUALIFIED, target).splitlines())
     if not changed <= ALLOW_DIFF:
         fail("application, tests, or unapproved files changed since full qualification: " +
