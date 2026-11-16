@@ -97,6 +97,40 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
             assert good.status == 303, (scheme, path, good.status)
             assert good.headers.get("x-tracker-csrf-report") == "valid"
 
+        # Release 643: upload two different test documents onto the SAME
+        # signed, existing COA record without replacing its primary PDF.
+        page.goto(base + route, wait_until="networkidle")
+        document_form = page.locator(
+            f'form[action="{route}/edit"]:has(input[name="document_action"][value="upload"])'
+        )
+        assert document_form.count() == 1
+        assert document_form.locator('input[name="csrf_token"]').input_value() == token
+        document_form.locator('input[name="test_label"]').fill("Purity and endotoxin")
+        document_form.locator('input[name="files"]').set_input_files([
+            {"name": "qa643-purity.pdf",
+             "mimeType": "application/pdf", "buffer": PDF},
+            {"name": "qa643-endotoxin.pdf",
+             "mimeType": "application/pdf", "buffer": PDF},
+        ])
+        with page.expect_response(lambda response: (
+            response.request.method == "POST"
+            and urlsplit(response.url).path == route + "/edit"
+        )) as waiting:
+            document_form.get_by_role("button", name="Add documents to this COA").click()
+        added = waiting.value
+        assert added.status == 303
+        assert added.headers.get("x-tracker-csrf-report") == "valid"
+        page.goto(base + route, wait_until="networkidle")
+        links = page.locator(f'a[href^="{route}/file?document_id="]')
+        expect(links).to_have_count(2)
+        expect(page.locator('input[name="lab_name"]')).to_have_value(lab)
+        expect(page.get_by_role("link", name=re.compile("View existing document"))).to_be_visible()
+        for index in range(2):
+            link = links.nth(index)
+            response = page.request.get(base + link.get_attribute("href"))
+            assert response.status == 200
+            assert response.body().startswith(b"%PDF-1.4")
+
         revised = lab + " updated"
         signed(route + "/edit", {"lab_name": revised, "tested_on": "2026-11-14"})
         detail = page.request.get(base + route)
