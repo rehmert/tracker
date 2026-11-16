@@ -46,6 +46,7 @@ PROXY_PID=""
 cleanup() {
   code=$?
   trap - EXIT
+  cd /
   if [[ -n "$PROXY_PID" ]]; then
     kill "$PROXY_PID" 2>/dev/null || true
     wait "$PROXY_PID" 2>/dev/null || true
