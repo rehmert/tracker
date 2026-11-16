@@ -57,6 +57,7 @@ CREATE TABLE coas (
   tested_on               DATE,
   purity_pct              FLOAT,
   endotoxin_pct           FLOAT,
+  endotoxin_eu_per_vial   FLOAT,
   job_id                  VARCHAR(120) NOT NULL DEFAULT '',
   verify_code             VARCHAR(120) NOT NULL DEFAULT '',
   reported_content_value  FLOAT,
