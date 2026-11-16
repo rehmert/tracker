@@ -135,6 +135,7 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
         signed(route + "/edit", {"lab_name": revised, "tested_on": "2026-11-14"})
         detail = page.request.get(base + route)
         assert detail.status == 200 and revised in detail.text()
+        assert detail.text().count("file?document_id=") == 2
 
         # A genuine existing COA verification POST with valid status choice.
         page.goto(base + route, wait_until="networkidle")
