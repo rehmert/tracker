@@ -44,7 +44,7 @@ def review(root, base, target):
     prior_line = '    endotoxin_pct: Mapped[float | None] = mapped_column(Float, nullable=True)'
     replacement = (
         prior_line + '  # legacy percent; never reinterpret as EU/vial\n'
-        '    endotoxin_eu_per_vial: Mapped[float | None] = mapped_column(Float, nullable=True)\\n'
+        '    endotoxin_eu_per_vial: Mapped[float | None] = mapped_column(Float, nullable=True)\n'
         '    endotoxin_result_kind: Mapped[str | None] = mapped_column(String(12), nullable=True)  # lt1, exact; NULL means legacy/unknown'
     )
     if prior.count(prior_line) != 1 or candidate.count(replacement) != 1:
