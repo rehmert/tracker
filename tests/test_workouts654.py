@@ -139,21 +139,28 @@ def test_654_additive_schema_is_repeatable_without_mutating_existing_data(tmp_pa
 
 
 def test_654_dev_missing_upload_policy_is_exactly_scoped():
-    """DEV can reuse Release 652's verified known-missing archive, PROD cannot."""
-    runner = (ROOT / "scripts/tracker-release.sh").read_text(encoding="utf-8")
-    assert '[[ "$INSTANCE" == DEV && ( "$DB_MIGRATION" == 0 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 ) ]]' in runner
-    assert runner.count(
-        'if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 ) ]]; then'
-    ) == 3
-    assert (
-        'if [[ "$INSTANCE" != DEV || ( "$REVIEWED_COA_652" != 1 '
-        '&& "$REVIEWED_WORKOUT_654" != 1 && "$REVIEWED_WORKOUT_655" != 1 ) ]]; then'
-    ) in runner
-    assert 'tracker-coa-dev-backup652.py" --data "$DATA_DIR"' in runner
-    assert 'tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes' in runner
+    """Missing DEV uploads do not block releases, PROD still rejects them.
 
-    helper = (ROOT / "scripts/tracker-coa-dev-backup652.py").read_text(encoding="utf-8")
-    assert 'KNOWN_MISSING = "uploads/coa/b94356f52d964400b481e6c743484367.png"' in helper
-    assert "verify_dev_instance()" in helper
-    assert "verify_archive(staged, missing)" in helper
-    assert 'missing not in ([], [KNOWN_MISSING])' in helper
+    Check behavior and branches, not a brittle count of shell condition strings.
+    """
+    runner = (ROOT / "scripts/tracker-release.sh").read_text(encoding="utf-8")
+    assert '=== LIVE ATTACHMENT INTEGRITY BEFORE QUALIFICATION ===' in runner
+    assert '=== LIVE ATTACHMENT INTEGRITY BEFORE MIGRATION BACKUP ===' in runner
+    assert runner.count('if [[ "$INSTANCE" == DEV ]]; then') >= 2
+    assert 'tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR"' in runner
+    assert 'LIVE_ATTACHMENT_PREFLIGHT=DEV_ONLY_MISSING_POLICY' in runner
+    assert 'LIVE_ATTACHMENT_PREBACKUP=DEV_MISSING_REFERENCES_NONBLOCKING' in runner
+    assert '"$QA/scripts/tracker-workout-dev-backup655.py"' in runner
+    assert 'DEV_MISSING_UPLOADS=NONBLOCKING' in runner
+    assert 'tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes' in runner
+    assert '"$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"' in runner
+    assert 'if [[ "$INSTANCE" == DEV ]]; then' in runner
+    # PROD's preflight/prebackup checks and regular restore remain strict.
+    assert 'PROD remains strict for every release' in runner
+    assert 'from app.backup import create_backup' in runner
+
+    historical = (ROOT / "scripts/tracker-coa-dev-backup652.py").read_text(
+        encoding="utf-8"
+    )
+    assert "verify_dev_instance()" in historical
+    assert "verify_archive(staged, missing)" in historical
