@@ -6,7 +6,6 @@ without a live server, full regression suite, or changes to the installed DB.
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from playwright.sync_api import sync_playwright
 
 from app.main import app
 
@@ -43,7 +42,24 @@ def _table_page():
     )
 
 
+def test_653_manage_action_markup_and_css_contract():
+    html = _table_page()
+    assert 'class="coa-type-action-row653"' in html
+    assert 'class="coa-type-toggle-form653"' in html
+    assert 'form="coa-type-edit-' in html
+    assert 'action="/coa-test-types/' in html
+    css = (ROOT / "app/static/css/tracker-coa-type-actions653.css").read_text(
+        encoding="utf-8"
+    )
+    assert "flex-wrap: nowrap" in css
+    assert "flex-direction: row" in css
+    assert ".coa-type-toggle-form653" in css
+    assert "margin: 0" in css
+
+
 def test_653_manage_actions_are_side_by_side_at_desktop_tablet_and_phone():
+    from playwright.sync_api import sync_playwright
+
     html = _table_page()
     with sync_playwright() as browser_api:
         browser = browser_api.chromium.launch(headless=True)
