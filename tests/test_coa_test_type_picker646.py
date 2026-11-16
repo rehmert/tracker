@@ -62,7 +62,7 @@ def test_646_compact_picker_renders_groups_and_preserves_unknown_historical_labe
         assert 'data-coa-test-type-form' in html
         # Release 647 replaces the editor JS; verify the current batch asset.
         assert 'tracker-coa-types647.js?v=651' in html
-        assert 'tracker-coa-multi651.js?v=651' in html
+        assert 'tracker-coa-multi651.js?v=652' in html
         assert 'name="custom_test_type"' in html
         # Release 647 supersedes the per-row save UI with a single batch editor.
         assert f'/coas/{cid}/attachments/test-types' in html
