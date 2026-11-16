@@ -46,7 +46,7 @@ def test_593_full_pk_route_inventory_is_source_candidate_not_runtime_clearance()
     assert report["status"] == "BLOCKED_INCOMPLETE_RUNTIME_CLEARANCE"
     plan = gap.build()
     assert plan["source_witness_candidates"] == 83
-    assert plan["remaining_without_source_witness"] == 73  # +3 duplicate-food, +9 regimen routes
+    assert plan["remaining_without_source_witness"] == 75  # includes two unqualified Release 643 COA attachment routes
     assert len(plan["source_witness_manifest"]) == 70
     assert not any(r["workstream"] == "pk" for r in plan["unqualified_routes"])
     assert plan["strict_csrf_enforcement_change_authorized"] is False
