@@ -13,8 +13,10 @@ GitHub is only a source-code repository. There are no GitHub Actions or PRs.
   Permission is requested only when the user taps the button.
 - The scanner selects a rear-facing camera when available and decodes the code
   locally in the browser. It sends its decoded text only to Tracker's existing,
-  authenticated /workouts/qr lookup; **no external QR destination is opened**.
-  Manual QR text/URL entry remains available in all browsers.
+  authenticated /workouts/qr/scan lookup; **no external QR destination is opened**.
+  Unknown scanned codes redirect to the local Add Equipment screen with
+  the code prefilled for mapping. Manual QR text/URL entry remains available
+  in all browsers.
 - Stop, page navigation and background-tab events release the camera stream.
   Unsupported/denied camera access falls back to manual QR entry.
 - Each machine has a **View Machine Progress & History** link. The read-only
