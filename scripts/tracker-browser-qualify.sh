@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == notes-lifecycle580 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -392,19 +392,6 @@ for _ in range(60):
 else:
     raise SystemExit("ERROR: strict candidate did not become ready or enforce CSRF")
 PY
-
-# Release 645: strict Notes form lifecycle diagnostic after the exact-title
-# regression failure. Isolated synthetic DB; no DEV approval receipt.
-if [[ "$MODE" == targeted && "$TARGETED_MODULE" == notes-lifecycle580 ]]; then
-  run_isolated_browser_module \
-      tests/browser/test_csrf_workflows580.py \
-      1 "$ROOT/targeted-notes580.log"
-  "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report580.py" \
-      --directory "$ROOT/csrf-runtime580"
-  echo "TARGETED_NOTES_580=PASSED"
-  echo "TARGETED_NOTES_580_SCOPE=STRICT_WORKFLOWS_ONLY_NOT_FULL_QUALIFICATION"
-  exit 0
-fi
 
 # Release 635: exact failing Notes title lifecycle only (HTTP + HTTPS).
 # This preflight is NOT full browser qualification or a DEV approval receipt.
