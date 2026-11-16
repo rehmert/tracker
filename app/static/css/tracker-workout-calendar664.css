@@ -1,0 +1,41 @@
+/* Release 664: monthly Workout calendar, accessible at desktop and phone sizes. */
+.workout664{max-width:1040px;margin:0 auto 3rem;}
+.workout664-links{display:flex;flex-wrap:wrap;gap:.6rem 1rem;margin-bottom:1rem;}
+.workout664-links a{display:inline-flex;align-items:center;min-height:44px;}
+.workout664-header h1{margin:.25rem 0;}
+.workout664-month-navigation{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) minmax(0,1fr);gap:.4rem;align-items:center;margin:1.2rem 0;}
+.workout664-month-navigation h2{text-align:center;margin:0;font-size:clamp(1.05rem,3vw,1.5rem);}
+.workout664-month-navigation a,.workout664-month-navigation span{padding:.55rem .35rem;text-align:center;font-weight:650;}
+.workout664-month-navigation a{min-height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border,#8c96a1);border-radius:.5rem;}
+.workout664-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;margin-bottom:1.1rem;}
+.workout664-stats>div{display:flex;flex-direction:column;gap:.25rem;padding:.85rem;border:1px solid var(--border,#8c96a1);border-radius:.65rem;}
+.workout664-stats strong{font-size:clamp(1.3rem,3vw,1.9rem);font-variant-numeric:tabular-nums;}
+.workout664-stats span{font-size:.9rem;}
+.workout664-grid-wrap{max-width:100%;overflow-x:auto;}
+.workout664-grid{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:3px;}
+.workout664-grid caption{text-align:left;padding:.3rem 0 .5rem;font-size:.9rem;}
+.workout664-grid thead th{text-align:center;padding:.5rem .1rem;font-size:.85rem;}
+.workout664-grid tbody td{vertical-align:top;height:89px;border:1px solid var(--border,#8c96a1);border-radius:.5rem;padding:.35rem;overflow-wrap:anywhere;}
+.workout664-grid td.workout664-outside{background:transparent;border-color:transparent;}
+.workout664-grid td.workout664-logged{background:var(--surface-raised,var(--surface,#eef3f6));border-width:2px;}
+.workout664-grid time{display:block;font-weight:700;font-variant-numeric:tabular-nums;}
+.workout664-grid time[aria-current="date"]{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;}
+.workout664-grid td a{display:block;margin-top:.55rem;padding:.25rem .1rem;text-align:center;font-weight:700;border-radius:.25rem;}
+.workout664-session-list{margin:1.5rem 0;}
+.workout664-session-list>ol{padding:0;list-style:none;display:grid;gap:.75rem;}
+.workout664-session-list>ol>li{border:1px solid var(--border,#8c96a1);border-radius:.65rem;padding:.8rem;}
+.workout664-session-list h3{margin:0 0 .25rem;font-size:1.02rem;}
+.workout664-session-list p{margin:.2rem 0 .5rem;}
+.workout664-session-list ul{padding-left:1.1rem;}
+.workout664-session-list ul li{padding:.3rem 0;overflow-wrap:anywhere;}
+.workout664-session-list li:target{outline:2px solid currentColor;outline-offset:2px;}
+@media(max-width:520px){
+  .workout664-grid{border-spacing:2px;}
+  .workout664-grid tbody td{height:66px;padding:.15rem;}
+  .workout664-grid td a{font-size:.78rem;margin-top:.2rem;}
+  .workout664-grid td a span{display:none;}
+  .workout664-month-navigation{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr);}
+  .workout664-month-navigation a{font-size:.82rem;}
+  .workout664-stats>div{padding:.5rem;}
+  .workout664-stats span{font-size:.75rem;}
+}
