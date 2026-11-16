@@ -32,7 +32,7 @@ def exercise_edit(monkeypatch,tmp_path,fail):
     monkeypatch.setattr(coas.config,'UPLOAD_DIR',tmp_path)
     monkeypatch.setattr(coas,'_revision',lambda db,coa,event:None)
     args=dict(cid=12,file=UploadFile(filename='new.pdf',file=BytesIO(b'abc')),
-              lab_name='',tested_on='',purity_pct='',endotoxin_pct='',
+              lab_name='',tested_on='',purity_pct='',endotoxin_eu_per_vial='',
               reported_content='',reported_unit='mg',job_id='',
               verify_code='',notes='',db=DB())
     if fail:
