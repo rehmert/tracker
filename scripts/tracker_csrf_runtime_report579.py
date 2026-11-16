@@ -61,14 +61,21 @@ def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
         if item["file"] in TRACKED_FETCH_SOURCES
         and item["kind"] == "fetch_callsite"
     ]
-    # The previous 46 callsites are preserved. Exactly two additional
+    # The historical source witnesses remain unchanged. Exactly two additional
     # request sources are accounted for in the 639 catalog lookup.
     catalog = [
         item for item in items
         if item["file"] == REGIMEN_CATALOG_SOURCE
         and item["kind"] == "fetch_callsite"
     ]
-    if len(items) != 48 or len(selected) != 2 or len(catalog) != 2:
+    # Release 648: one additional unqualified COA batch-save fetch callsite.
+    # Maintain the two historical witnessed files; never infer clearance
+    # for the new AJAX editor from unrelated Release 579 browser evidence.
+    new_coa = [item for item in items
+               if item["file"] == "app/static/js/tracker-coa-types647.js"
+               and item["kind"] == "fetch_callsite"]
+    if (len(items) != 49 or len(selected) != 2 or len(catalog) != 2
+            or len(new_coa) != 1):
         raise ValueError("JavaScript source inventory changed; re-review witnesses")
     catalog_source = (root / REGIMEN_CATALOG_SOURCE).read_text(encoding="utf-8")
     lines = catalog_source.splitlines()
