@@ -1,5 +1,6 @@
 """Release 647: edit all COA attachment types with one atomic, no-reload save."""
 from uuid import uuid4
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -136,3 +137,15 @@ def test_647_plain_html_form_fallback_returns_document_anchor():
         assert response.status_code == 303
         assert "#test-documents" in response.headers["location"]
         assert _snapshot(cid) == ({ids[0]: "TFA", ids[1]: "BA/BB"}, 1)
+
+
+def test_647_save_does_not_trigger_browser_navigation_contract():
+    source = (Path(__file__).resolve().parents[1] /
+              "app/static/js/tracker-coa-types647.js").read_text()
+    assert 'form.addEventListener("submit", async event =>' in source
+    assert "event.preventDefault()" in source
+    assert "new FormData(form)" in source
+    assert "fetch(form.action" in source
+    assert 'credentials: "same-origin"' in source
+    assert "window.location" not in source
+    assert "location.reload" not in source
