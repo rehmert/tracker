@@ -16,6 +16,7 @@ ALLOWED = frozenset({
     "scripts/tracker-release.sh", "scripts/tracker_prod_remote568.sh",
     "scripts/tracker_schema_review645.py", "scripts/tracker-coa-scoped645.sh",
     "scripts/tracker-coa-dev645.sh", "scripts/tracker-coa-preflight645.sh",
+    "scripts/tracker-coa-attachment-audit645.py",
     "tests/test_coa_document_defaults645.py", "tests/test_attachment_scope396.py",
     "scripts/tracker_csrf_reconcile627.py",
     "tests/test_release627_csrf_remaining_negative_matrix.py",
