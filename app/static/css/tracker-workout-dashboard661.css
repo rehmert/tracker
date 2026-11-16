@@ -1,0 +1,17 @@
+/* Release 661: responsive read-only Workout activity on Tracker Overview. */
+.tracker-workout-dashboard661 { margin-block:1rem; }
+.tracker-workout-head661 { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; }
+.tracker-workout-head661 h2 { margin:.1rem 0 .4rem; }
+.tracker-workout-actions661 { display:flex; align-items:center; flex-wrap:wrap; gap:.65rem; }
+.tracker-workout-actions661 a { border:1px solid var(--border,#8999a7); border-radius:.55rem; display:inline-flex; align-items:center; justify-content:center; padding:.55rem .75rem; min-height:44px; text-align:center; font-weight:600; }
+.tracker-workout-summary661 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.65rem; margin:1rem 0; }
+.tracker-workout-summary661>div { display:flex; flex-direction:column; gap:.35rem; border:1px solid var(--border,#8999a7); border-radius:.7rem; padding:.9rem; }
+.tracker-workout-summary661 strong { font-size:clamp(1.45rem,3vw,2rem); font-variant-numeric:tabular-nums; }
+.tracker-workout-summary661 span { font-size:.9rem; }
+.tracker-workout-recent661 h3 { margin:.65rem 0; }
+.tracker-workout-recent661 ul { list-style:none; padding:0; margin:0; }
+.tracker-workout-recent661 li { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:.3rem 1rem; border-bottom:1px solid var(--border,#8999a7); padding:.65rem 0; }
+.tracker-workout-recent661 li>span { font-variant-numeric:tabular-nums; }
+.tracker-workout-footnote661 { margin-top:.9rem; }
+@media(max-width:760px){.tracker-workout-summary661{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:420px){.tracker-workout-actions661 a{flex:1 1 100%;}.tracker-workout-summary661>div{padding:.7rem;}}
