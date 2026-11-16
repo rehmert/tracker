@@ -10,7 +10,7 @@ from ..attachment_integrity337 import uploaded_transaction, delete_after_commit
 from ..templating import render
 from fastapi import Request
 from ..scoped_db390 import get_scoped_db390
-from ..models import Coa, CoaRevision, Vial, Compound
+from ..models import Coa, CoaAttachment, CoaRevision, Vial, Compound
 
 from ..attachment_scope396 import require_attachment_scope396
 from ..attachment_files400 import (
@@ -123,6 +123,72 @@ def coa_file(cid: int, db: Session = Depends(get_scoped_db390)):
                         headers={"X-Content-Type-Options": "nosniff"})
 
 
+@router.post("/coas/{cid}/attachments")
+async def add_coa_attachments(
+    cid: int,
+    files: list[UploadFile] = File(...),
+    test_type: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    coa = db.get(Coa, cid)
+    if coa is None:
+        raise HTTPException(404, "COA not found")
+    if not 1 <= len(files) <= 20 or not all(f.filename for f in files):
+        return services.flash_redirect(f"/coas/{cid}", err="Select 1 to 20 files.")
+    test_type = test_type.strip()
+    if len(test_type) > 120:
+        return services.flash_redirect(f"/coas/{cid}", err="Test type is too long.")
+    directory = attachment_directory400("coa")
+    uploaded = []
+    try:
+        for file in files:
+            uploaded.append(await services.save_upload(file, directory))
+        for data in uploaded:
+            db.add(CoaAttachment(coa_id=cid, test_type=test_type, **data))
+        _revision(db, coa, "attachments_added")
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        for data in uploaded:
+            services.delete_stored_file(data["stored_name"], directory)
+        return services.flash_redirect(f"/coas/{cid}", err=str(exc))
+    except BaseException:
+        db.rollback()
+        for data in uploaded:
+            services.delete_stored_file(data["stored_name"], directory)
+        raise
+    return services.flash_redirect(f"/coas/{cid}", msg=f"{len(uploaded)} document(s) added.")
+
+
+@router.get("/coas/{cid}/attachments/{aid}/file")
+def coa_attachment_file(cid: int, aid: int, db: Session = Depends(get_scoped_db390)):
+    item = db.get(CoaAttachment, aid)
+    if item is None or item.coa_id != cid:
+        raise HTTPException(404, "Document not found")
+    path = attachment_file400("coa", item.stored_name)
+    if not path.is_file():
+        raise HTTPException(404, "Document file not found")
+    return FileResponse(
+        path, media_type=item.content_type, filename=item.original_name,
+        content_disposition_type="inline",
+        headers={"X-Content-Type-Options": "nosniff"},
+    )
+
+
+@router.post("/coas/{cid}/attachments/{aid}/delete")
+def delete_coa_attachment(cid: int, aid: int, db: Session = Depends(get_scoped_db390)):
+    coa = db.get(Coa, cid)
+    item = db.get(CoaAttachment, aid)
+    if coa is None or item is None or item.coa_id != cid:
+        raise HTTPException(404, "Document not found")
+    stored_name = item.stored_name
+    _revision(db, coa, "attachment_deleted")
+    db.delete(item)
+    db.commit()
+    delete_after_commit(stored_name, attachment_directory400("coa"), services.delete_stored_file)
+    return services.flash_redirect(f"/coas/{cid}", msg="Document removed.")
+
+
 @router.post("/coas/{cid}/delete")
 def delete_coa(cid: int, db: Session = Depends(get_scoped_db390)):
     c = db.get(Coa, cid)
@@ -130,6 +196,7 @@ def delete_coa(cid: int, db: Session = Depends(get_scoped_db390)):
         raise HTTPException(404, "COA not found")
     vid = c.all_vials[0].id if c.all_vials else None
     stored_name = c.stored_name if c.original_name else None
+    extra_stored_names = [attachment.stored_name for attachment in c.attachments]
     for linked in list(c.all_vials):
         if c in linked.linked_coas:
             linked.linked_coas.remove(c)
@@ -142,6 +209,8 @@ def delete_coa(cid: int, db: Session = Depends(get_scoped_db390)):
     db.delete(c)
     db.commit()
     delete_after_commit(stored_name, attachment_directory400("coa"), services.delete_stored_file)
+    for extra_name in extra_stored_names:
+        delete_after_commit(extra_name, attachment_directory400("coa"), services.delete_stored_file)
     return services.flash_redirect(f"/vials/{vid}" if vid else "/coas", msg="COA deleted.")
 
 
