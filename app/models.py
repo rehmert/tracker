@@ -142,7 +142,8 @@ class Coa(Base):
     lab_name: Mapped[str] = mapped_column(String(160), default="")
     tested_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     purity_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
-    endotoxin_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    endotoxin_pct: Mapped[float | None] = mapped_column(Float, nullable=True)  # legacy percent; never reinterpret as EU/vial
+    endotoxin_eu_per_vial: Mapped[float | None] = mapped_column(Float, nullable=True)
     job_id: Mapped[str] = mapped_column(String(120), default="")
     verify_code: Mapped[str] = mapped_column(String(120), default="")
     reported_content_value: Mapped[float | None] = mapped_column(Float, nullable=True)
