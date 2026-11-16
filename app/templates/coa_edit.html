@@ -19,6 +19,33 @@
 <div><button class="primary">{{ 'Save changes' if coa else 'Create COA' }}</button></div>
 </form></section>
 {% if coa %}
+<section><h2>Individual test documents</h2>
+<p class="note">Attach multiple independent purity, identity, endotoxin, content or other laboratory results to this same COA record. Each file is retained separately; uploading another does not replace existing results. Files may be PDF, PNG, JPG or WEBP, up to 15 MB each.</p>
+<div class="scroll"><table>
+<thead><tr><th>Test</th><th>Document</th><th>Size</th><th>Action</th></tr></thead>
+<tbody>
+{% if coa.original_name %}<tr><td>Original certificate</td><td><a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener">{{ coa.original_name }}</a></td><td>{{ coa.size_bytes }} bytes</td><td>Manage via Replace document above</td></tr>{% endif %}
+{% for document in documents %}
+<tr><td>{{ document.test_label or 'Individual test' }}</td>
+<td><a href="/coas/{{ coa.id }}/file?document_id={{ document.id }}" target="_blank" rel="noopener">{{ document.original_name }}</a></td>
+<td>{{ document.size_bytes }} bytes</td><td>
+<form method="post" action="/coas/{{ coa.id }}/edit"
+  onsubmit="return confirm('Remove this individual test document?')">
+  <input type="hidden" name="document_action" value="remove">
+  <input type="hidden" name="document_id" value="{{ document.id }}">
+  <button class="danger" type="submit">Remove file</button>
+</form></td></tr>
+{% endfor %}
+{% if not coa.original_name and not documents %}<tr><td colspan="4">No test documents uploaded yet.</td></tr>{% endif %}
+</tbody></table></div>
+<form method="post" action="/coas/{{ coa.id }}/edit" enctype="multipart/form-data" class="grid">
+  <input type="hidden" name="document_action" value="upload">
+  <label class="field"><span>Test type or label (optional)</span>
+    <input name="test_label" maxlength="120" placeholder="e.g. Purity, endotoxin, identity"></label>
+  <label class="field wide"><span>Add test documents (up to 10 at once)</span>
+    <input type="file" name="files" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple required></label>
+  <div><button class="primary" type="submit">Add documents to this COA</button></div>
+</form></section>
 <section><h2>Verification</h2><p class="note">This is your recorded review status, not independent laboratory authentication.</p>
 <form method="post" action="/coas/{{ coa.id }}/verify" class="grid">
 <label class="field"><span>Status</span><select name="status">{% for status in statuses %}<option value="{{ status }}" {% if coa.verification_status == status %}selected{% endif %}>{{ status|replace('_',' ')|title }}</option>{% endfor %}</select></label>
@@ -29,11 +56,11 @@
 <div class="scroll"><table><thead><tr><th>COA</th><th>Tested</th><th>Laboratory</th><th>Purity</th><th>Reported content</th><th>Status</th></tr></thead><tbody>
 <tr><td><strong>Current #{{ coa.id }}</strong></td><td>{{ coa.tested_on|dt }}</td><td>{{ coa.lab_name }}</td><td>{{ coa.purity_pct|num }}%</td><td>{{ coa.reported_content_value|num }} {{ coa.reported_content_unit or '' }}</td><td>{{ coa.verification_status }}</td></tr>
 {% for other in comparisons %}<tr><td><a href="/coas/{{ other.id }}">#{{ other.id }}</a></td><td>{{ other.tested_on|dt }}</td><td>{{ other.lab_name }}</td><td>{{ other.purity_pct|num }}%</td><td>{{ other.reported_content_value|num }} {{ other.reported_content_unit or '' }}</td><td>{{ other.verification_status }}</td></tr>{% else %}<tr><td colspan="6">No other certificates found for this lot or job ID.</td></tr>{% endfor %}</tbody></table></div></section>
-<section><h2>Change history</h2><p class="note">Previous metadata is retained before each edit or review-status change. Replaced documents are not archived.</p>
+<section><h2>Change history</h2><p class="note">Previous metadata is retained before each edit or review-status change. Replacing the original document does not remove separately attached test documents.</p>
 {% for revision in history %}<details><summary>{{ revision.changed_at|utc_dt }} · {{ revision.event }}</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ revision.snapshot_json }}</pre></details>{% else %}<p class="note">No changes recorded yet.</p>{% endfor %}</section>
 {% endif %}
 {% if coa %}<section><h2>Linked vials</h2><p class="note">A certificate can be linked to multiple vials of the same compound. Removing a link does not delete the certificate.</p>
 <div class="scroll"><table><thead><tr><th>Vial</th><th>Compound</th><th>Lot</th><th>Action</th></tr></thead><tbody>{% for v in coa.all_vials %}<tr><td><a href="/vials/{{ v.id }}">#{{ v.id }} · {{ v.label }}</a></td><td>{{ v.compound.name }}</td><td>{{ v.lot or '—' }}</td><td><form method="post" action="/coas/{{ coa.id }}/unlink/{{ v.id }}" onsubmit="return confirm('Unlink this vial?')"><button class="link">Unlink</button></form></td></tr>{% else %}<tr><td colspan="4">No linked vials.</td></tr>{% endfor %}</tbody></table></div>
 <form method="post" action="/coas/{{ coa.id }}/assign" class="inline"><label class="field"><span>Link additional vial(s)</span><select name="vial_ids" multiple size="7" required>{% for v in vials if not coa.all_vials or (v.compound_id == coa.all_vials[0].compound_id and v.content_unit in CONTENT_UNITS) %}<option value="{{ v.id }}" {% if coa.id in (v.all_coas|map(attribute="id")|list) %}selected{% endif %}>{{ v.compound.name }} · #{{ v.id }} · {{ v.label }}</option>{% endfor %}</select></label><button>Link selected vials</button></form></section>
-<section><h2>Delete certificate</h2><p class="note">This removes the certificate and its uploaded document, and unlinks all associated vials. It does not delete vials.</p><form method="post" action="/coas/{{ coa.id }}/delete" data-tracker-discard-changes onsubmit="return confirm('Permanently delete this COA and unlink all associated vials?')"><button class="danger">Delete COA</button></form></section>{% endif %}
+<section><h2>Delete certificate</h2><p class="note">This removes the certificate and all its uploaded test documents, and unlinks all associated vials. It does not delete vials.</p><form method="post" action="/coas/{{ coa.id }}/delete" data-tracker-discard-changes onsubmit="return confirm('Permanently delete this COA and unlink all associated vials?')"><button class="danger">Delete COA</button></form></section>{% endif %}
 {% endblock %}
