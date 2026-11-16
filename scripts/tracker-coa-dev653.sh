@@ -10,16 +10,8 @@ fail() { echo "COA_653_DEV=FAILED: $*" >&2; exit 1; }
 EXPECTED="$1"
 [[ "$(id -u)" == 0 && -x "$APP/.venv/bin/python" ]] ||
   fail "Run as root on configured DEV"
-"$APP/.venv/bin/python" - <<'PY'
-from pathlib import Path
-import re
-labels=[]
-for line in Path("/etc/tracker.env").read_text().splitlines():
-    m=re.match(r'^\s*(?:export\s+)?TRACKER_INSTANCE\s*=(.*)$',line)
-    if m: labels.append(m.group(1).strip().strip(chr(34)).strip(chr(39)).upper())
-assert labels == ["DEV"], "DEV only"
-PY
-g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
+[[ "$(hostname -s)" == tracker-dev ]] ||
+  fail "Expected tracker-dev host; deployment blocked"g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] ||
   fail "Installed DEV checkout must be clean main"
 [[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "DEV must be at Release 652"
@@ -28,6 +20,9 @@ g fetch origin main "refs/heads/$REF:refs/remotes/origin/$REF"
 TARGET="$(g rev-parse "refs/remotes/origin/$REF")"
 [[ "$TARGET" == "$EXPECTED" ]] || fail "Release branch moved from pinned SHA"
 g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Candidate not descended from Release 652"
+g show "$TARGET:scripts/tracker-instance-check653.py" |
+  "$APP/.venv/bin/python" - --config /etc/tracker.env ||
+  fail "DEV identity verification failed; deployment blocked"
 DIR="$(mktemp -d /tmp/tracker-coa653-runner.XXXXXXXX)"
 cleanup() { rm -f "$DIR/runner.sh"; rmdir "$DIR" || true; }
 trap cleanup EXIT
