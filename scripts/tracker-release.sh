@@ -210,15 +210,7 @@ PY
   echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
   if [[ "$REF" == release/643-coa-multiple-documents ]]; then
    echo "=== RELEASE 643 COA CHANGE-SCOPED TESTS ==="
-   timeout 180 "$PY" -m pytest -q --tb=short --maxfail=1 \
-      "$QA/tests/test_coa_multiple_documents.py" \
-      "$QA/tests/test_coa_manager_v23.py" \
-      "$QA/tests/test_coa_history_decimals_v23.py" \
-      "$QA/tests/test_coa_migration_legacy.py" \
-      "$QA/tests/test_attachment_scope396.py" \
-      "$QA/tests/test_attachment_files400.py" \
-      "$QA/tests/test_backup.py"
-   echo "COA_643_SCOPED_TESTS=PASSED"
+   timeout 180 bash "$QA/scripts/tracker-coa-scoped643.sh" "$PY"
   fi
   if [[ "$DEV_FOCUSED_630" == 1 ]]; then
    # Explicit one-release DEV exception. Never permitted for PROD,
