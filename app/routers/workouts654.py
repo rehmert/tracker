@@ -164,7 +164,28 @@ def add_set654(
         weight_lb=weight_lb, reps=reps, effort=value,
     ))
     db.commit()
-    return services.flash_redirect("/workouts", msg="Set recorded.")
+    return services.flash_redirect(f"/workouts?machine={equipment_id}", msg="Set recorded.")
+
+
+@router.get("/workouts/sessions/{session_id}")
+def workout_history654(
+    session_id: int, request: Request, db: Session = Depends(get_scoped_db390),
+):
+    workout = db.get(WorkoutSession654, session_id)
+    if workout is None:
+        raise HTTPException(404, "Workout not found")
+    rows = list(db.scalars(
+        select(WorkoutSet654)
+        .where(WorkoutSet654.session_id == session_id)
+        .order_by(WorkoutSet654.performed_at.asc(), WorkoutSet654.id.asc())
+    ))
+    names = {
+        item.id: item.name for item in db.scalars(select(WorkoutEquipment654))
+    }
+    return render(
+        request, "workout_history654.html",
+        workout=workout, rows=rows, names=names,
+    )
 
 
 @router.post("/workouts/finish")
