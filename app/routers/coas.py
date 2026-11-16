@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import MetaData, Table, inspect, insert, select
+from sqlalchemy import MetaData, Table, inspect, insert, select, func
 from datetime import datetime, timezone
 import json
 
@@ -201,8 +201,12 @@ def coa_index(request: Request, compound_id: str | None = None, db: Session = De
     if compound_id is not None:
         vials = [v for v in vials if v.compound_id == compound_id]
         coas = [c for c in coas if any(v.compound_id == compound_id for v in c.all_vials)]
+    document_counts = dict(db.execute(select(
+        CoaDocument643.coa_id, func.count(CoaDocument643.id)
+    ).group_by(CoaDocument643.coa_id)).all())
     return render(request, "coas.html", coas=coas, vials=vials, compound_id=compound_id,
-                  compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
+                  compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
+                  document_counts=document_counts)
 
 
 @router.get("/coas/new")
