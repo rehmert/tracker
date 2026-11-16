@@ -170,25 +170,46 @@ def test_655_routines_are_isolated_from_each_other():
 
 
 def test_655_additive_schema_rehearsal_preserves_654_rows(tmp_path):
+    from datetime import datetime
     from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
 
     sandbox = create_engine("sqlite:///" + str(tmp_path / "existing654.db"))
     try:
-        with sandbox.begin() as conn:
-            conn.exec_driver_sql(
-                "CREATE TABLE existing_654_canary(id INTEGER PRIMARY KEY, marker TEXT NOT NULL)"
+        # Recreate a pre-655 database with actual 654 workout data.
+        existing_tables = [
+            Base.metadata.tables["workout_equipment654"],
+            Base.metadata.tables["workout_sessions654"],
+            Base.metadata.tables["workout_sets654"],
+        ]
+        Base.metadata.create_all(sandbox, tables=existing_tables)
+        before_columns = {
+            name: [col["name"] for col in inspect(sandbox).get_columns(name)]
+            for name in ("workout_equipment654", "workout_sessions654", "workout_sets654")
+        }
+        with Session(sandbox) as db:
+            machine = WorkoutEquipment654(
+                name="Existing Chest Press", gym="Existing Gym", kind="selectorized"
             )
-            conn.exec_driver_sql(
-                "INSERT INTO existing_654_canary(id,marker) VALUES(1,'preserved')"
-            )
+            session = WorkoutSession654(started_at=datetime.now())
+            db.add_all([machine, session])
+            db.flush()
+            db.add(WorkoutSet654(
+                session_id=session.id, equipment_id=machine.id,
+                weight_lb=88, reps=11, performed_at=datetime.now(),
+            ))
+            db.commit()
+
         Base.metadata.create_all(sandbox)
         Base.metadata.create_all(sandbox)
         assert {"workout_routines655", "workout_routine_items655",
                 "workout_session_routines655"} <= set(inspect(sandbox).get_table_names())
-        with sandbox.connect() as conn:
-            assert conn.execute(text(
-                "SELECT marker FROM existing_654_canary WHERE id=1"
-            )).scalar_one() == "preserved"
+        for name, columns in before_columns.items():
+            assert [col["name"] for col in inspect(sandbox).get_columns(name)] == columns
+        with Session(sandbox) as db:
+            original = db.scalar(select(WorkoutSet654))
+            assert original and (original.weight_lb, original.reps) == (88, 11)
+            assert db.get(WorkoutEquipment654, original.equipment_id).name == "Existing Chest Press"
     finally:
         sandbox.dispose()
 
