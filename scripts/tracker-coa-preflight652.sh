@@ -46,10 +46,12 @@ echo "=== RELEASE 652 DEV-ONLY ATTACHMENT PREFLIGHT ==="
 export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
 mkdir -p "$TRACKER_DATA_DIR"
 for sh in scripts/tracker-release.sh scripts/tracker-coa-preflight652.sh \
-          scripts/tracker-coa-dev652.sh scripts/tracker-coa-scoped652.sh; do
+          scripts/tracker-coa-dev652.sh scripts/tracker-coa-scoped652.sh \
+          scripts/tracker-release-scoped652.sh; do
  bash -n "$sh"
 done
-"$PY" -m compileall -q app scripts tests/test_coa_manage_catalog652.py
+"$PY" -m compileall -q app scripts tests/test_coa_manage_catalog652.py \
+ tests/test_release629_qa_cadence.py tests/test_release577_dev_receipt.py
 node --check app/static/js/tracker-coa-multi651.js
 "$PY" - <<'PY'
 from pathlib import Path
@@ -59,7 +61,7 @@ for name in ("coa_test_types_manage652.html", "coa_edit.html", "coas.html"):
 print("COA_652_TEMPLATE_SYNTAX=PASSED")
 PY
 "$PY" scripts/tracker-impact-preflight604.py --root "$QA" --base "$BASE" --target "$TARGET"
-bash scripts/tracker-coa-scoped652.sh "$PY"
+bash scripts/tracker-release-scoped652.sh "$PY"
 # Existing strict browser checks cover the shared COA multipart/origin path.
 timeout 300 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict csrf-positive627
 timeout 240 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict tests/browser/test_csrf_multipart588.py
