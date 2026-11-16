@@ -48,6 +48,13 @@
 
   <section>
     <h2>Find a machine</h2>
+    {% if request.query_params.get('unmapped_qr') %}
+      <p class="workout656-mapping-message">
+        <strong>New QR code detected.</strong>
+        <a href="#workout-add-equipment656">Add this machine</a>;
+        its QR mapping is prefilled below.
+      </p>
+    {% endif %}
     <form method="get" action="/workouts/qr" class="workout-grid654">
       <label>QR text or URL
         <input name="code" maxlength="1024" autocomplete="off"
@@ -152,7 +159,7 @@
   </section>
   {% endif %}
 
-  <section>
+  <section id="workout-add-equipment656">
     <h2>Add Equipment</h2>
     <form method="post" action="/workouts/equipment" class="workout-grid654">
       <label>Name <input name="name" required maxlength="140" placeholder="Chest Press"></label>
@@ -168,7 +175,8 @@
       <label>Model <input name="model" maxlength="140"></label>
       <label>Seat setting <input name="seat_setting" maxlength="80"></label>
       <label>Setup notes <textarea name="setup_notes" maxlength="1000" rows="2"></textarea></label>
-      <label>QR code URL/text <input name="qr_value" maxlength="1024"></label>
+      <label>QR code URL/text <input name="qr_value" maxlength="1024"
+        value="{{ request.query_params.get('unmapped_qr','') }}"></label>
       <button class="primary" type="submit">Add Equipment</button>
     </form>
   </section>
