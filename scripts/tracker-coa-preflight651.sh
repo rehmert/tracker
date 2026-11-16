@@ -32,7 +32,7 @@ cd "$QA"
 echo "=== DEV-ONLY ATTACHMENT AUDIT (NO PROD UPLOAD SYNCHRONIZATION) ==="
 # On DEV only, report missing files without blocking isolated QA.
 # Malformed paths or changed hashes of present files remain fatal.
-"$PY" scripts/tracker-dev-attachment-gate651.py --data /opt/tracker/data ||
+"$PY" scripts/tracker-dev-attachment-gate650.py --data /opt/tracker/data ||
  fail "DEV integrity failure is not limited to unsynchronized missing files"
 echo "COA_651_DEV_ATTACHMENTS=CHECKED_WITH_MISSING_FILE_POLICY"
 export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
@@ -48,7 +48,7 @@ test -s app/static/css/tracker-coa-documents649.css
 for script in scripts/tracker-release.sh scripts/tracker-coa-dev651.sh scripts/tracker-coa-scoped651.sh scripts/tracker-coa-preflight651.sh; do
   bash -n "$script"
 done
-"$PY" -m compileall -q app scripts tests/test_coa_multiple_test_types651.py tests/test_dev_attachment_gate651.py
+"$PY" -m compileall -q app scripts tests/test_coa_multiple_test_types651.py tests/test_dev_attachment_gate650.py
 node --check app/static/js/tracker-coa-types647.js
 node --check app/static/js/tracker-coa-multi651.js
 "$PY" - <<'PY'
