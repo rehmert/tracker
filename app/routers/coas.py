@@ -11,7 +11,7 @@ from ..templating import render
 from fastapi import Request
 from ..scoped_db390 import get_scoped_db390
 from ..models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision, Vial, Compound
-from ..coa_test_types646 import COA_TEST_TYPE_GROUPS, COA_CUSTOM_TYPE_SENTINEL
+from ..coa_test_types646 import COA_TEST_TYPE_GROUPS, COA_TEST_TYPE_VALUES, COA_CUSTOM_TYPE_SENTINEL
 
 from ..attachment_scope396 import require_attachment_scope396
 from ..attachment_files400 import (
@@ -413,7 +413,7 @@ def coa_detail(cid: int, request: Request, db: Session = Depends(get_scoped_db39
     return render(request, "coa_edit.html", coa=coa, vials=vials, selected_vial=None,
                   history=history, comparisons=comparisons, statuses=COA_STATUSES,
                   default_attachment_id=(choice.attachment_id if (choice := db.get(CoaDefaultDocument645, cid)) else None),
-                  coa_test_type_groups=COA_TEST_TYPE_GROUPS)
+                  coa_test_type_groups=COA_TEST_TYPE_GROUPS, coa_test_type_values=COA_TEST_TYPE_VALUES)
 
 
 @router.post("/coas/new")
