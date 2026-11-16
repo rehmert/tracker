@@ -56,7 +56,7 @@ def test_647_single_form_for_all_documents_without_per_row_save():
         assert "Save all test types" in html
         assert 'data-coa-bulk-form' in html
         assert 'data-coa-bulk-save' in html
-        assert "tracker-coa-types647.js?v=649" in html
+        assert "tracker-coa-types647.js?v=650" in html
         assert 'data-coa-bulk-status' in html
         assert 'class="coa-test-save"' not in html
         for aid in ids:
