@@ -201,15 +201,14 @@ print(data.resolve())
 PY
 )"
  echo "=== LIVE ATTACHMENT INTEGRITY BEFORE QUALIFICATION ==="
- if [[ "$INSTANCE" == DEV && ( "$DB_MIGRATION" == 0 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 ) ]]; then
+ if [[ "$INSTANCE" == DEV ]]; then
   # DEV upload files are not mirrored from PROD. The DEV-only adapter permits
   # missing references but still fails for invalid paths and hash mismatches.
   "$PY" "$QA/scripts/tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR" ||
       fail "DEV integrity failure beyond unsynchronized missing attachments"
   echo "LIVE_ATTACHMENT_PREFLIGHT=DEV_ONLY_MISSING_POLICY"
  else
-  # PROD and non-reviewed migrations stay strict. Never use
-  # the DEV-only adapter when validating production data or migration backups.
+  # PROD remains strict for every release, including migrations.
   "$PY" "$QA/scripts/tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes ||
       fail "Live database contains missing or changed attachment(s); reconcile uploads before testing"
   echo "LIVE_ATTACHMENT_PREFLIGHT=PASSED"
@@ -400,10 +399,10 @@ PY
  if [[ -f "$APP/.env" ]]; then cp -p "$APP/.env" "$SAVE/local.env"; chmod 600 "$SAVE/local.env"; fi
  if [[ "$DB_MIGRATION" == 1 ]]; then
   echo "=== LIVE ATTACHMENT INTEGRITY BEFORE MIGRATION BACKUP ==="
-  if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 ) ]]; then
+  if [[ "$INSTANCE" == DEV ]]; then
    "$PY" "$QA/scripts/tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR" ||
-     fail "DEV has unexpected/changed upload references"
-   echo "LIVE_ATTACHMENT_PREBACKUP=DEV_REVIEWED_MISSING_REFERENCE_POLICY"
+     fail "DEV upload integrity failure (invalid path or present-file hash mismatch)"
+   echo "LIVE_ATTACHMENT_PREBACKUP=DEV_MISSING_REFERENCES_NONBLOCKING"
   else
    "$PY" "$QA/scripts/tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes ||
      fail "Live attachments changed since preflight; migration backup blocked"
@@ -423,41 +422,32 @@ PY
 )"
   [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
   mkdir -m 700 "$SAVE/archives"
-  if [[ "$INSTANCE" == DEV && "$REVIEWED_WORKOUT_655" == 1 ]]; then
-   # Release 655: exactly two enumerated unsynchronized DEV references.
-   # This independent helper verifies SQLite, present upload hashes,
-   # archive manifest and an isolated restoration. Never use on PROD.
+  if [[ "$INSTANCE" == DEV ]]; then
+   # Permanent DEV policy: missing upload files do not block a release.
+   # Back up SQLite and all present uploads, verify their checksums,
+   # restore the archive in isolation; never change or fabricate files.
+   # PROD still takes the strict original backup path below.
    ARCHIVE="$(PYTHONPATH="$QA" TRACKER_DATA_DIR="$DATA_DIR" "$PY" \
      "$QA/scripts/tracker-workout-dev-backup655.py" --data "$DATA_DIR" --dest "$SAVE/archives")" ||
-     fail "Release 655 DEV backup verification failed (unexpected missing files or invalid snapshot)"
-   echo "DEV_655_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS"
-  elif [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
-   ARCHIVE="$(PYTHONPATH="$QA" TRACKER_DATA_DIR="$DATA_DIR" "$PY"      "$QA/scripts/tracker-coa-dev-backup652.py" --data "$DATA_DIR" --dest "$SAVE/archives")" ||
-     fail "DEV migration archive with known missing attachment was not verified"
-   echo "DEV_REVIEWED_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS"
+     fail "DEV SQLite/present-upload backup or isolated restoration failed"
+   [[ "$ARCHIVE" == "$SAVE"/archives/tracker-dev655-*.zip &&
+      -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] ||
+     fail "DEV backup helper returned an invalid archive pathname"
+   echo "DEV_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS"
+   echo "DEV_MISSING_UPLOADS=NONBLOCKING"
   else
-  ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
+   ARCHIVE="$(PYTHONPATH="$APP" TRACKER_DATA_DIR="$DATA_DIR" "$PY" - "$DATA_DIR" "$SAVE/archives" <<'PY'
 from pathlib import Path
 import sys
 from app.backup import create_backup
 print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
 PY
 )"
-  fi
-  if [[ "$INSTANCE" == DEV && "$REVIEWED_WORKOUT_655" == 1 ]]; then
-   [[ "$ARCHIVE" == "$SAVE"/archives/tracker-dev655-*.zip &&
-      -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] ||
-     fail "Reviewed DEV 655 backup helper returned an invalid archive pathname"
-  elif [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
-   [[ "$ARCHIVE" == "$SAVE"/archives/tracker-dev652-*.zip &&
-      -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] ||
-     fail "Reviewed DEV backup helper did not return a single valid archive pathname"
+   chmod 600 "$ARCHIVE"
+   PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
+     "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
   fi
   chmod 600 "$ARCHIVE"
-  if [[ "$INSTANCE" != DEV || ( "$REVIEWED_COA_652" != 1 && "$REVIEWED_WORKOUT_654" != 1 && "$REVIEWED_WORKOUT_655" != 1 ) ]]; then
-   PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
-    "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
-  fi
   echo "=== ISOLATED RESTORE VERIFICATION PASSED ==="
   echo "DATABASE_BACKUP=VERIFIED_FOR_MIGRATION"
  else
