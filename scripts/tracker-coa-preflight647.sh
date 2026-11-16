@@ -36,7 +36,9 @@ echo "COA_647_LIVE_ATTACHMENTS=PASSED"
 export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
 mkdir -p "$TRACKER_DATA_DIR"
 git diff --check "$BASE" "$TARGET"
-bash -n scripts/tracker-release.sh scripts/tracker-coa-dev647.sh scripts/tracker-coa-scoped647.sh
+for script in scripts/tracker-release.sh scripts/tracker-coa-dev647.sh scripts/tracker-coa-scoped647.sh scripts/tracker-coa-preflight647.sh; do
+  bash -n "$script"
+done
 "$PY" -m compileall -q app scripts tests/test_coa_bulk_test_types647.py
 node --check app/static/js/tracker-coa-types647.js
 "$PY" - <<'PY'
@@ -47,7 +49,7 @@ for f in (Path("app/templates/base.html"), Path("app/templates/coa_edit.html")):
 print("COA_647_JINJA=PASSED")
 PY
 "$PY" scripts/tracker-impact-preflight604.py --root "$QA" --base "$BASE" --target "$TARGET"
-bash scripts/tracker-coa-scoped647.sh "$PY"
+"$PY" -m pytest -q --tb=short --maxfail=1 tests/test_coa_bulk_test_types647.py
 "$PY" -m pytest -q --tb=short --maxfail=1 \
  tests/test_release577_dev_receipt.py tests/test_release629_qa_cadence.py \
  tests/test_release604_preflight.py
