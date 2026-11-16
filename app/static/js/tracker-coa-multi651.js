@@ -17,7 +17,11 @@
   }
 
   function summary(entry) {
-    const list = labels(entry);
+    // Display editable catalog labels, but keep stable token values for saves.
+    const list = [...entry.querySelectorAll("[data-coa-multi-choice]:checked")]
+      .map(input => input.dataset.coaMultiLabel || input.value);
+    const custom = entry.querySelector("[data-coa-multi-custom]")?.value.trim();
+    if (custom) list.push(custom);
     const title = entry.querySelector("[data-coa-multi-summary]");
     if (title) title.textContent = list.length ? list.join(" · ") : "Select test types";
   }
