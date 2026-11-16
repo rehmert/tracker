@@ -45,7 +45,8 @@ PY
 echo "=== RELEASE 645 BROWSER INVENTORY CONTRACT (FAIL FAST) ==="
 "$PY" -m pytest -q --tb=short --maxfail=1 \
  tests/test_browser_qualification511.py::test_511_every_browser_module_in_disposable_qualification \
- tests/test_release627_csrf_reconciliation.py::test_627_release511_inventory_scopes_new_browser_modules_strict_only
+ tests/test_release627_csrf_reconciliation.py::test_627_release511_inventory_scopes_new_browser_modules_strict_only \
+ tests/test_release580_csrf_evidence.py::test_580_exact_source_and_runtime_contract
 echo "COA_645_BROWSER_INVENTORY=PASSED"
 bash scripts/tracker-coa-scoped645.sh "$PY"
 "$PY" -m pytest -q --tb=short --maxfail=1 \
@@ -54,9 +55,6 @@ bash scripts/tracker-coa-scoped645.sh "$PY"
  tests/test_prod_parallel_release508.py \
  tests/test_test_benchmark.py \
  tests/test_release605_oom_guard.py
-echo "=== TARGETED STRICT NOTES 580 BROWSER DIAGNOSTIC ==="
-timeout 360 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict notes-lifecycle580
-echo "COA_645_NOTES_BROWSER=PASSED"
 echo "COA_645_PREFLIGHT=PASSED"
 echo "COA_645_CANDIDATE=$TARGET"
 echo "LIVE_DB=UNMODIFIED"
