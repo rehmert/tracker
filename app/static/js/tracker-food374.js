@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  function populate(data){
   for(const k of fields){
    const input=$('food-nutrient-'+k);
-   if(input)input.value='';
+   if(input)input.value='0';
   }
   if(data.name)$('food-name').value=data.name;if(data.serving_description)$('food-serving').value=data.serving_description;
   for(const [k,v] of Object.entries(data.nutrients||{})){let e=$('food-nutrient-'+k);if(e&&v!==null&&Number.isFinite(Number(v)))e.value=v;}
