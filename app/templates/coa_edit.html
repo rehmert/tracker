@@ -4,7 +4,7 @@
 <select name="test_type" aria-label="{{ label }}" data-coa-test-type-select>
 <option value="" {% if not selected %}selected{% endif %}>Unspecified test</option>
 {% for group, options in coa_test_type_groups %}
-<optgroup label="{{ group }}">{% for value, title in options %}
+<optgroup label="{{ group }}">{% for value, title, active, summary in options %}
 <option value="{{ value }}" {% if selected == value %}selected{% endif %}>{{ title }}</option>
 {% endfor %}</optgroup>
 {% endfor %}
@@ -41,6 +41,7 @@
 </form></section>
 {% if coa %}
 <section id="test-documents"><h2>Uploaded documents</h2>
+<p><a href="/coa-test-types">Manage COA test types</a></p>
 <p class="note">Every document can have multiple test types, including consolidated reports. Open a filename to review it, expand the test picker to select tests, and choose any document as the default.</p>
 {% if documents %}
 <form id="coa-bulk-test-types" method="post" action="/coas/{{ coa.id }}/attachments/test-types" data-coa-bulk-form></form>
@@ -57,8 +58,8 @@
 <div class="coa-test-multi-options651">
 {% for group, options in coa_test_type_groups %}
 <fieldset><legend>{{ group }}</legend>
-{% for value, label in options %}
-<label><input type="checkbox" name="test_types_{{ doc.key }}" value="{{ value }}" form="coa-bulk-test-types" data-coa-multi-choice {% if value in doc.test_types %}checked{% endif %}>{{ label }}</label>
+{% for value, label, active, summary in options %}
+<label><input type="checkbox" name="test_types_{{ doc.key }}" value="{{ value }}" form="coa-bulk-test-types" data-coa-multi-choice {% if value in doc.test_selected %}checked{% endif %} data-coa-multi-label="{{ summary }}">{{ label }}</label>
 {% endfor %}
 </fieldset>
 {% endfor %}
@@ -86,8 +87,8 @@
 <div class="coa-test-multi-options651">
 {% for group, options in coa_test_type_groups %}
 <fieldset><legend>{{ group }}</legend>
-{% for value, label in options %}
-<label><input type="checkbox" name="test_types" value="{{ value }}" data-coa-multi-choice>{{ label }}</label>
+{% for value, label, active, summary in options %}
+<label><input type="checkbox" name="test_types" value="{{ value }}" data-coa-multi-choice data-coa-multi-label="{{ summary }}" {% if not active %}disabled{% endif %}>{{ label }}</label>
 {% endfor %}</fieldset>
 {% endfor %}
 <label class="coa-test-custom651">Other / custom test type
