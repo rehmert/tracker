@@ -1,0 +1,37 @@
+/* Release 653: compact single-line actions in Manage COA Test Types only. */
+/* The table scrolls horizontally on narrow screens; buttons never stack. */
+#main-content .coa-type-table653 tbody td {
+  vertical-align: middle;
+  padding: .35rem .55rem;
+}
+#main-content .coa-type-table653 td:nth-child(1),
+#main-content .coa-type-table653 td:nth-child(2) {
+  min-width: 13rem;
+}
+#main-content .coa-type-action-cell653 {
+  min-width: 12.5rem;
+  white-space: nowrap;
+}
+#main-content .coa-type-action-row653 {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: .4rem;
+}
+#main-content .coa-type-action-row653 .coa-type-toggle-form653 {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+#main-content .coa-type-action-row653 button {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 2.3rem;
+  padding: .34rem .62rem;
+  white-space: nowrap;
+}
