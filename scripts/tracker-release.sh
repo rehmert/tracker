@@ -306,7 +306,7 @@ PY
   [[ -f "$QA/scripts/tracker-release-scoped653.sh" ]] ||
     fail "Missing qualified Release 653 scoped gate"
   echo "=== RELEASE 653 PROD SCOPED UI QUALIFICATION ==="
-  timeout 360 bash "$QA/scripts/tracker-release-scoped653.sh" "$PY"
+  timeout 360 bash "$QA/scripts/tracker-release-scoped653.sh" "$PY" --prod
   echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
  fi
  # A backup-only Release 645 retry may reuse FULL prior qualification ONLY
