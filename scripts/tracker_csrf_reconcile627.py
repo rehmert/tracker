@@ -48,10 +48,14 @@ POST_645_UNQUALIFIED_COA_ROUTES = frozenset({
     ("POST", "/coas/{cid}/attachments/{aid}/test-type"),
     ("POST", "/coas/{cid}/default-file"),
 })
+POST_647_UNQUALIFIED_COA_ROUTES = frozenset({
+    ("POST", "/coas/{cid}/attachments/test-types"),
+})
 POST_BASELINE_ADDITIONS = (
     POST_627_UNQUALIFIED_ROUTES |
     POST_635_UNQUALIFIED_ROUTES |
-    POST_643_UNQUALIFIED_COA_ROUTES | POST_645_UNQUALIFIED_COA_ROUTES
+    POST_643_UNQUALIFIED_COA_ROUTES | POST_645_UNQUALIFIED_COA_ROUTES |
+    POST_647_UNQUALIFIED_COA_ROUTES
 )
 
 
@@ -208,6 +212,10 @@ def build() -> dict:
         "post_643_unqualified_coa_routes": [
             {"method": method, "path": path}
             for method, path in sorted(POST_643_UNQUALIFIED_COA_ROUTES)
+        ],
+        "post_647_unqualified_coa_routes": [
+            {"method": method, "path": path}
+            for method, path in sorted(POST_647_UNQUALIFIED_COA_ROUTES)
         ],
         "pre_627_candidate_routes": 83,
         "pre_627_unqualified_routes": 61,
