@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Workout Routines{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+{% endblock %}
+{% block content %}
+<section class="workout654 workout655">
+  <p><a href="/workouts">← Workouts</a></p>
+  <h1>Saved Routines</h1>
+  <p class="note">Build a sequence of gym machines or free-weight exercises, then start it whenever you train.</p>
+  <section>
+    <h2>Create a Routine</h2>
+    <form method="post" action="/workouts/routines" class="workout-grid654">
+      <label>Name <input name="name" maxlength="120" required placeholder="Upper Body A"></label>
+      <button class="primary" type="submit">Create Routine</button>
+    </form>
+  </section>
+  <section>
+    <h2>My Routines</h2>
+    {% for routine in routines %}
+      <div class="workout-routine-row655">
+        <a href="/workouts/routines/{{ routine.id }}"><strong>{{ routine.name }}</strong></a>
+        <form method="post" action="/workouts/routines/{{ routine.id }}/start">
+          <button type="submit">Start</button>
+        </form>
+      </div>
+    {% else %}
+      <p>No routines yet. Create one above, then add equipment in order.</p>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}
