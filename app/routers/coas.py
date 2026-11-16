@@ -10,7 +10,7 @@ from ..attachment_integrity337 import uploaded_transaction, delete_after_commit
 from ..templating import render
 from fastapi import Request
 from ..scoped_db390 import get_scoped_db390
-from ..models import Coa, CoaAttachment, CoaRevision, Vial, Compound
+from ..models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision, Vial, Compound
 
 from ..attachment_scope396 import require_attachment_scope396
 from ..attachment_files400 import (
@@ -112,15 +112,45 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
     return services.flash_redirect(back, msg="COA uploaded.")
 
 
-@router.get("/coas/{cid}/file")
-def coa_file(cid: int, db: Session = Depends(get_scoped_db390)):
-    c = db.get(Coa, cid)
-    path = attachment_file400("coa", c.stored_name) if c and c.stored_name else None
-    if c is None or not c.original_name or not path.exists():
-        raise HTTPException(404, "File not found")
-    return FileResponse(path, media_type=c.content_type, filename=c.original_name,
+def _original_coa_file(coa: Coa):
+    if not coa.original_name or not coa.stored_name:
+        raise HTTPException(404, "Original COA document not found")
+    path = attachment_file400("coa", coa.stored_name)
+    if not path.is_file():
+        raise HTTPException(404, "Original COA document not found")
+    return FileResponse(path, media_type=coa.content_type, filename=coa.original_name,
                         content_disposition_type="inline",
                         headers={"X-Content-Type-Options": "nosniff"})
+
+
+def _attachment_response(item: CoaAttachment):
+    return _attachment_response(item)
+
+
+@router.get("/coas/{cid}/original-file")
+def coa_original_file(cid: int, db: Session = Depends(get_scoped_db390)):
+    coa = db.get(Coa, cid)
+    if coa is None:
+        raise HTTPException(404, "COA not found")
+    return _original_coa_file(coa)
+
+
+@router.get("/coas/{cid}/file")
+def coa_file(cid: int, db: Session = Depends(get_scoped_db390)):
+    """Stable default COA view link used throughout Tracker."""
+    coa = db.get(Coa, cid)
+    if coa is None:
+        raise HTTPException(404, "COA not found")
+    preference = db.get(CoaDefaultDocument645, cid)
+    if preference is not None:
+        item = db.get(CoaAttachment, preference.attachment_id)
+        if item is not None and item.coa_id == cid:
+            return _attachment_response(item)
+    if coa.original_name:
+        return _original_coa_file(coa)
+    if coa.attachments:
+        return _attachment_response(coa.attachments[0])
+    raise HTTPException(404, "No COA document uploaded")
 
 
 @router.post("/coas/{cid}/attachments")
@@ -175,6 +205,58 @@ def coa_attachment_file(cid: int, aid: int, db: Session = Depends(get_scoped_db3
     )
 
 
+@router.post("/coas/{cid}/attachments/{aid}/test-type")
+def update_coa_attachment_test_type(
+    cid: int, aid: int, test_type: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    coa = db.get(Coa, cid)
+    item = db.get(CoaAttachment, aid)
+    if coa is None or item is None or item.coa_id != cid:
+        raise HTTPException(404, "Document not found")
+    test_type = test_type.strip()
+    if len(test_type) > 120:
+        return services.flash_redirect(f"/coas/{cid}", err="Test type is too long.")
+    if item.test_type != test_type:
+        _revision(db, coa, "attachment_test_type")
+        item.test_type = test_type
+        db.commit()
+    return services.flash_redirect(f"/coas/{cid}", msg="Test type saved.")
+
+
+@router.post("/coas/{cid}/default-file")
+def select_coa_default_file(
+    cid: int, document: str = Form(...),
+    db: Session = Depends(get_scoped_db390),
+):
+    coa = db.get(Coa, cid)
+    if coa is None:
+        raise HTTPException(404, "COA not found")
+    preference = db.get(CoaDefaultDocument645, cid)
+    if document == "original":
+        if not coa.original_name:
+            return services.flash_redirect(f"/coas/{cid}", err="No original document exists.")
+        if preference is not None:
+            _revision(db, coa, "default_document_changed")
+            db.delete(preference)
+            db.commit()
+    elif document.isascii() and document.isdecimal():
+        aid = int(document)
+        item = db.get(CoaAttachment, aid)
+        if item is None or item.coa_id != cid:
+            return services.flash_redirect(f"/coas/{cid}", err="Select a document on this COA.")
+        if preference is None or preference.attachment_id != aid:
+            _revision(db, coa, "default_document_changed")
+            if preference is None:
+                db.add(CoaDefaultDocument645(coa_id=cid, attachment_id=aid))
+            else:
+                preference.attachment_id = aid
+            db.commit()
+    else:
+        return services.flash_redirect(f"/coas/{cid}", err="Invalid document selection.")
+    return services.flash_redirect(f"/coas/{cid}", msg="Default COA document saved.")
+
+
 @router.post("/coas/{cid}/attachments/{aid}/delete")
 def delete_coa_attachment(cid: int, aid: int, db: Session = Depends(get_scoped_db390)):
     coa = db.get(Coa, cid)
@@ -182,6 +264,9 @@ def delete_coa_attachment(cid: int, aid: int, db: Session = Depends(get_scoped_d
     if coa is None or item is None or item.coa_id != cid:
         raise HTTPException(404, "Document not found")
     stored_name = item.stored_name
+    preference = db.get(CoaDefaultDocument645, cid)
+    if preference is not None and preference.attachment_id == aid:
+        db.delete(preference)
     _revision(db, coa, "attachment_deleted")
     db.delete(item)
     db.commit()
@@ -206,6 +291,9 @@ def delete_coa(cid: int, db: Session = Depends(get_scoped_db390)):
         if not [x for x in linked.all_coas if x.id != cid]:
             linked.use_coa_content = False
     db.flush()
+    preference = db.get(CoaDefaultDocument645, cid)
+    if preference is not None:
+        db.delete(preference)
     db.delete(c)
     db.commit()
     delete_after_commit(stored_name, attachment_directory400("coa"), services.delete_stored_file)
@@ -277,7 +365,8 @@ def coa_detail(cid: int, request: Request, db: Session = Depends(get_scoped_db39
                           for v in c.all_vials if v.lot.strip())]
     comparisons.sort(key=lambda c: (c.tested_on is not None, c.tested_on, c.id), reverse=True)
     return render(request, "coa_edit.html", coa=coa, vials=vials, selected_vial=None,
-                  history=history, comparisons=comparisons, statuses=COA_STATUSES)
+                  history=history, comparisons=comparisons, statuses=COA_STATUSES,
+                  default_attachment_id=(choice.attachment_id if (choice := db.get(CoaDefaultDocument645, cid)) else None))
 
 
 @router.post("/coas/new")
