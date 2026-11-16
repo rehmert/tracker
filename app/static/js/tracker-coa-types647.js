@@ -78,8 +78,6 @@
         const label = result.types[id];
         if (typeof label !== "string") throw new Error("Incomplete save response; reload to verify.");
         entry.querySelector("[data-coa-original-type]").value = label;
-        const option = document.querySelector(`[data-coa-default-option="${id}"]`);
-        if (option) option.textContent = `${label || "Unspecified test"} — ${option.dataset.originalName}`;
       }
       saving = false;
       updateStatus();
