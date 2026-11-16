@@ -285,3 +285,9 @@ def test_651_no_navigation_save_and_editable_native_fallback_contract():
     assert 'data-coa-original-type' in source
     assert 'window.location' not in source
     assert 'location.reload' not in source
+    legacy = (Path(__file__).resolve().parents[1] /
+              "app/static/js/tracker-coa-types647.js").read_text()
+    # External form-associated inputs are not DOM descendants of the
+    # empty form tag, so detect the new editor globally, not inside it.
+    assert 'document.querySelector("[data-coa-multi651]")' in legacy
+    assert 'form.querySelector("[data-coa-multi651]")' not in legacy
