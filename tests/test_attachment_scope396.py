@@ -281,10 +281,18 @@ def test_attachment_paths_use_verified_workspace_boundary():
         'attachment_file400("labs", rep.stored_name)'
         in labs_source
     )
+    # Release 645 moves original and selected attachments into separate
+    # helpers. Both must keep using the validated workspace resolver.
     assert (
-        'attachment_file400("coa", c.stored_name)'
+        'attachment_file400("coa", coa.stored_name)'
         in coa_source
     )
+    assert (
+        'attachment_file400("coa", item.stored_name)'
+        in coa_source
+    )
+    assert 'return _original_coa_file(coa)' in coa_source
+    assert 'return _attachment_response(item)' in coa_source
 
     # Preserve commit/rollback cleanup of uploaded files.
     for source in (labs_source, coa_source):
