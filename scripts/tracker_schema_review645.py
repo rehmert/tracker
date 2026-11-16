@@ -43,7 +43,7 @@ def review(root, base, target):
     candidate = git(root, "show", f"{target}:app/models.py")
     prior_line = '    endotoxin_pct: Mapped[float | None] = mapped_column(Float, nullable=True)'
     replacement = (
-        prior_line + '  # legacy percent; never reinterpret as EU/vial\\n'
+        prior_line + '  # legacy percent; never reinterpret as EU/vial\n'
         '    endotoxin_eu_per_vial: Mapped[float | None] = mapped_column(Float, nullable=True)'
     )
     if prior.count(prior_line) != 1 or candidate.count(replacement) != 1:
@@ -78,7 +78,7 @@ def review(root, base, target):
     migration_before = git(root, "show", f"{base}:app/migrations.py")
     migration_after = git(root, "show", f"{target}:app/migrations.py")
     migration_line = '                "endotoxin_pct": "FLOAT",'
-    migration_add = migration_line + '\\n                "endotoxin_eu_per_vial": "FLOAT",'
+    migration_add = migration_line + '\n                "endotoxin_eu_per_vial": "FLOAT",'
     if (migration_before.count(migration_line) != 1
             or migration_after.count(migration_add) != 1
             or migration_after.replace(migration_add, migration_line, 1) != migration_before):
@@ -86,7 +86,7 @@ def review(root, base, target):
     schema_before = git(root, "show", f"{base}:schema.sql")
     schema_after = git(root, "show", f"{target}:schema.sql")
     schema_line = '  endotoxin_pct           FLOAT,'
-    schema_add = schema_line + '\\n  endotoxin_eu_per_vial   FLOAT,'
+    schema_add = schema_line + '\n  endotoxin_eu_per_vial   FLOAT,'
     if (schema_before.count(schema_line) != 1
             or schema_after.count(schema_add) != 1
             or schema_after.replace(schema_add, schema_line, 1) != schema_before):
