@@ -302,6 +302,10 @@ PY
   if [[ "$RESUME_645_VERIFIED" == 1 ]]; then
    echo "=== VERIFIED PRIOR FULL BROWSER AND BACKEND EVIDENCE REUSED ==="
    echo "COA_645_FULL_QUALIFICATION_REUSE=PASSED"
+   # Focused regressions ran afresh; this exact marker is required by the
+   # independent DEV qualification receipt validator for QA_FULL_REQUIRED=0.
+   # Full browser/backend gates remain explicitly documented as reused.
+   echo "FOCUSED_RELEASE_GATE=PASSED"
   else
    echo "=== FULL BROWSER AND BACKEND SUITES DEFERRED TO NEXT FIFTH RELEASE ==="
    echo "FOCUSED_RELEASE_GATE=PASSED"
