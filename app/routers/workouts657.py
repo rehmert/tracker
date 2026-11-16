@@ -17,6 +17,13 @@ from .workouts654 import active654
 router = APIRouter()
 
 
+def flash_back657(target: str, *, msg: str = "", err: str = ""):
+    """Preserve Tracker flash query and scroll back to the edited set list."""
+    response = services.flash_redirect(target, msg=msg, err=err)
+    response.headers["location"] += "#workout-sets657"
+    return response
+
+
 def active_set657(db: Session, set_id: int) -> WorkoutSet654 | None:
     current = active654(db)
     if current is None:
@@ -40,17 +47,17 @@ def edit_set657(
         return services.flash_redirect("/workouts", err="Only an active workout can be edited.")
     target = f"/workouts?machine={entry.equipment_id}"
     if not math.isfinite(weight_lb) or not (0 <= weight_lb <= 2000):
-        return services.flash_redirect(target, err="Weight must be between 0 and 2,000 lb.")
+        return flash_back657(target, err="Weight must be between 0 and 2,000 lb.")
     if not 1 <= reps <= 200:
-        return services.flash_redirect(target, err="Repetitions must be 1 to 200.")
+        return flash_back657(target, err="Repetitions must be 1 to 200.")
     parsed_effort = None
     if effort.strip():
         try:
             parsed_effort = int(effort)
         except ValueError:
-            return services.flash_redirect(target, err="Effort must be 1–10.")
+            return flash_back657(target, err="Effort must be 1–10.")
         if not 1 <= parsed_effort <= 10:
-            return services.flash_redirect(target, err="Effort must be 1–10.")
+            return flash_back657(target, err="Effort must be 1–10.")
 
     # Only edit the three recorded values. Retain original set timestamp,
     # equipment identity and session association for historical integrity.
@@ -58,7 +65,7 @@ def edit_set657(
     entry.reps = reps
     entry.effort = parsed_effort
     db.commit()
-    return services.flash_redirect(
+    return flash_back657(
         target, msg="Set corrected."
     )
 
@@ -74,12 +81,12 @@ def delete_set657(
         return services.flash_redirect("/workouts", err="Only an active workout can be edited.")
     target = f"/workouts?machine={entry.equipment_id}"
     if confirm_delete != "yes":
-        return services.flash_redirect(
+        return flash_back657(
             target,
             err="Confirm removal of the recorded set first.",
         )
     db.delete(entry)
     db.commit()
-    return services.flash_redirect(
+    return flash_back657(
         target, msg="Set removed."
     )
