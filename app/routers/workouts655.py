@@ -76,11 +76,14 @@ def routine_detail655(
     ))
     names = {item.id: item.name for item in equipment}
     selected = {item.equipment_id for item in items}
+    active = active654(db)
+    active_link = db.get(WorkoutSessionRoutine655, active.id) if active else None
+    can_resume = active_link is not None and active_link.routine_id == routine_id
     return render(
         request, "workout_routine_detail655.html",
-        routine=routine, items=items, names=names, 
+        routine=routine, items=items, names=names,
         available=[item for item in equipment if item.id not in selected],
-        active=active654(db), maximum=MAX_ROUTINE_ITEMS655,
+        active=active, can_resume=can_resume, maximum=MAX_ROUTINE_ITEMS655,
     )
 
 
