@@ -21,7 +21,7 @@
 <script src="/static/js/tracker-food382.js?v=602" defer></script>
 <script src="/static/js/tracker-food380.js?v=499" defer></script>
 <script src="/static/js/tracker-food374.js?v=499" defer></script>
-<script src="/static/js/tracker-food499.js?v=629" defer></script>
+<script src="/static/js/tracker-food499.js?v=641" defer></script>
 <script src="/static/js/tracker-food500.js?v=602" defer></script>
 <h1>Food Journal</h1>
 <p class="note"><a href="/regimen">Track supplements &amp; medications</a> separately from meals. Their optional meal association does not add unverified nutrients to Food Journal totals.</p>
@@ -596,18 +596,18 @@ unknown, not zero.
 <details open><summary>Macros (per serving listed above)</summary>
  <div class="food-nutrient-inputs">
  {% for key in ('energy','proteins','carbohydrates','fat','fiber','sugars','saturated-fat') %}
- <label>{{ nutrients[key][0] }} ({{ nutrients[key][1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" placeholder="Required" required></label>
+ <label>{{ nutrients[key][0] }} ({{ nutrients[key][1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" value="0" placeholder="0 if unknown" required></label>
  {% endfor %}
  </div>
 </details>
 <details open><summary>Micronutrients (per serving)</summary>
  <div class="food-nutrient-inputs">
  {% for key, info in nutrients.items() if key not in ('energy','proteins','carbohydrates','fat','fiber','sugars','saturated-fat') %}
- <label>{{ info[0] }} ({{ info[1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" placeholder="Required" required></label>
+ <label>{{ info[0] }} ({{ info[1] }})<input name="{{ key }}" id="food-nutrient-{{ key }}" type="number" inputmode="decimal" step="any" min="0" value="0" placeholder="0 if unknown" required></label>
  {% endfor %}
  </div>
 </details>
-<p class="note" id="food-review-warning">All macro- and micronutrients are required when saving a food. Use verified numbers; 0 is accepted only when confirmed. Barcode and photo lookup values may be incomplete and must be reviewed before saving.</p>
+<p class="note" id="food-review-warning">All 16 nutrients default to 0 when unreported. Zero is an accounting assumption for unknown values, not a confirmed measurement. Verify label values and serving size before saving.</p>
 <div id="food499-review" aria-label="Nutrition completeness review">
 <p class="note" id="food499-review-status" role="status" aria-live="polite"></p>
 <div id="food499-macro-preview" class="food384-preview" aria-label="Calories and macros for quantity being logged"></div>
@@ -668,8 +668,8 @@ previous product information.</p>
 <input type="number" name="{{ key }}"
  step="any" min="0" inputmode="decimal"
  value="{{ e.parsed_nutrients[key] if
- e.parsed_nutrients.get(key) is not none else '' }}"
- placeholder="Required" required>
+ e.parsed_nutrients.get(key) is not none else 0 }}"
+ placeholder="0 if unknown" required>
 </label>
 {% endfor %}
 </div>
@@ -684,8 +684,8 @@ previous product information.</p>
 <input type="number" name="{{ key }}"
  step="any" min="0" inputmode="decimal"
  value="{{ e.parsed_nutrients[key] if
- e.parsed_nutrients.get(key) is not none else '' }}"
- placeholder="Required" required>
+ e.parsed_nutrients.get(key) is not none else 0 }}"
+ placeholder="0 if unknown" required>
 </label>
 {% endfor %}
 </div>
@@ -809,7 +809,7 @@ do not change the template's food list or portions.</p>
 <div class="food382-content">
 <h2>Meal Totals</h2>
 <p class="note">Totals represent reported food information only.
-Unknown nutrients are excluded from sums, not assumed to be zero.</p>
+Unknown or missing nutrient values default to 0 for saved foods. A default zero does not mean the label confirmed zero.</p>
 <div class="food378-meals">
 {% for item in meals %}
 <article class="food378-meal">
