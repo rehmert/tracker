@@ -81,7 +81,7 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"; FULL_SUITE="${14:-0}"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"; FULL_SUITE="${14:-0}"; REVIEWED_WORKOUT_654="${15:-0}"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
  [[ "$FULL_SUITE" == 0 || "$FULL_SUITE" == 1 ]] || fail "Invalid full-suite setting"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0; RESUME_645_VERIFIED=0
@@ -111,7 +111,7 @@ worker() {
  verify_prod_approval
  g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from base"
  # The hourly timer is activated by its own guarded installer.
- if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer$' | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py)'; then
+ if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer$' | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py|app/workout_models654.py)'; then
   [[ "$DB_MIGRATION" == 1 ]] || fail "Schema changes require verified migration backup"
   if [[ "$REVIEWED_FACTS_639" == 1 ]]; then
    [[ "$INSTANCE" == DEV && "$REF" == release/639-structured-supplement-facts ||
@@ -145,6 +145,15 @@ worker() {
    "$PY" "$QA/scripts/tracker_schema_review652.py" --root "$APP" --base "$BASE" --target "$TARGET" ||
      fail "Release 652 additive COA test catalog review failed"
    echo "COA_652_SCHEMA_PROCEDURE=AUTHORIZED"
+  elif [[ "$REVIEWED_WORKOUT_654" == 1 ]]; then
+   [[ "$INSTANCE" == DEV && "$REF" == release/654-workout-foundation ||
+      "$INSTANCE" == PROD && "$REF" == main ]] ||
+     fail "Release 654 schema review restricted to exact branch"
+   g worktree add --detach "$QA" "$TARGET"
+   "$PY" "$QA/scripts/tracker-workout-schema-review654.py" \
+      --root "$QA" --base "$BASE" --target "$TARGET" ||
+      fail "Release 654 additive workout schema review failed"
+   echo "WORKOUT_654_SCHEMA_PROCEDURE=AUTHORIZED"
   elif [[ "$REVIEWED_COA_645" == 1 ]]; then
    [[ "$INSTANCE" == DEV && "$REF" == release/645-coa-default-document ||
       "$INSTANCE" == PROD && "$REF" == main ]] ||
@@ -156,7 +165,7 @@ worker() {
   else
    fail "Schema changes require a reviewed schema flag"
   fi
- elif [[ "$REVIEWED_FACTS_639" == 1 || "$REVIEWED_REGIMEN_635" == 1 || "$REVIEWED_COA_643" == 1 || "$REVIEWED_COA_645" == 1 || "$REVIEWED_COA_652" == 1 ]]; then
+ elif [[ "$REVIEWED_FACTS_639" == 1 || "$REVIEWED_REGIMEN_635" == 1 || "$REVIEWED_COA_643" == 1 || "$REVIEWED_COA_645" == 1 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ]]; then
   fail "Reviewed schema flag supplied without a schema change"
  fi
  if [[ "$DB_MIGRATION" == 0 ]] &&
@@ -293,6 +302,11 @@ PY
    QA_FULL_REQUIRED=0
    QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
   fi
+ fi
+ if [[ "$INSTANCE" == PROD && "$REVIEWED_WORKOUT_654" == 1 ]]; then
+  echo "=== RELEASE 654 PROD SCOPED WORKOUT QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped654.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
  fi
  if [[ "$INSTANCE" == PROD && "$REVIEWED_COA_652" == 1 ]]; then
   timeout 360 bash "$QA/scripts/tracker-release-scoped652.sh" "$PY"
@@ -485,11 +499,11 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -eq 12 || $# -eq 13 || $# -eq 14 ]] || fail "Bad worker arguments"
+ [[ $# -eq 12 || $# -eq 13 || $# -eq 14 || $# -eq 15 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; REVIEWED_COA_652=0; FULL_SUITE=0; RESUME_VERIFIED_645=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; REVIEWED_COA_652=0; REVIEWED_WORKOUT_654=0; FULL_SUITE=0; RESUME_VERIFIED_645=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
@@ -500,6 +514,7 @@ while (( $# )); do
   --reviewed-coa-643) REVIEWED_COA_643=1; shift;;
   --reviewed-coa-645) REVIEWED_COA_645=1; shift;;
   --reviewed-coa-652) REVIEWED_COA_652=1; shift;;
+  --reviewed-workout-654) REVIEWED_WORKOUT_654=1; shift;;
   --full-suite) FULL_SUITE=1; shift;;
   --resume-verified-645) RESUME_VERIFIED_645=1; shift;;
   --serial-tests) fail "Serial testing prohibited";;
@@ -527,6 +542,8 @@ done
 [[ "$REVIEWED_COA_643" == 0 || ( "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
 [[ "$REVIEWED_COA_645" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA 645 requires --db-migration"
 [[ "$REVIEWED_COA_652" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA 652 requires --db-migration"
+[[ "$REVIEWED_WORKOUT_654" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed Workout 654 requires --db-migration"
+[[ "$REVIEWED_WORKOUT_654" == 0 || ( "$REVIEWED_COA_652" == 0 && "$REVIEWED_COA_645" == 0 && "$REVIEWED_COA_643" == 0 && "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
 [[ "$REVIEWED_COA_652" == 0 || ( "$REVIEWED_COA_645" == 0 && "$REVIEWED_COA_643" == 0 && "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
 [[ "$RESUME_VERIFIED_645" == 0 || ( "$INSTANCE" == DEV && "$REF" == release/645-coa-default-document && "$DB_MIGRATION" == 1 && "$REVIEWED_COA_645" == 1 ) ]] || fail "Resume is restricted to reviewed Release 645 DEV"
 [[ "$REVIEWED_COA_645" == 0 || ( "$REVIEWED_COA_643" == 0 && "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
@@ -558,7 +575,7 @@ fi
 MEMORY_PROPERTY="MemoryMax=16G"
 echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
 systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
- /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645" "$REVIEWED_COA_652" "$FULL_SUITE"
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645" "$REVIEWED_COA_652" "$FULL_SUITE" "$REVIEWED_WORKOUT_654"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
 if (( FOLLOW )); then
