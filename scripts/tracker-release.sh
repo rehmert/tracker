@@ -237,6 +237,10 @@ PY
   echo "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ==="
   timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"
   echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
+  if [[ "$REF" == release/647-coa-bulk-test-types ]]; then
+   echo "=== RELEASE 647 COA MULTI-DOCUMENT BATCH TESTS ==="
+   timeout 180 bash "$QA/scripts/tracker-coa-scoped647.sh" "$PY"
+  fi
   if [[ "$REF" == release/646-coa-test-type-picker ]]; then
    echo "=== RELEASE 646 COA TEST TYPE DROPDOWN SCOPED TESTS ==="
    timeout 180 bash "$QA/scripts/tracker-coa-scoped646.sh" "$PY"
