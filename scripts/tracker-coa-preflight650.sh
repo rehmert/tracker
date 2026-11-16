@@ -62,6 +62,15 @@ PY
 # including strict-CSRF route inventory and reconciliation. This fails BEFORE
 # any deployment, rather than discovering historical contract errors mid-run.
 bash scripts/tracker-coa-scoped650.sh "$PY"
+# A full DEV browser gate previously failed on stale historic COA link labels
+# AFTER the backend-only preflight had passed. Re-run the existing isolated,
+# strict, positive Chromium probes here; these are targeted diagnostics only,
+# not a substitute for the full fifth-release DEV browser qualification.
+echo "=== RELEASE 650 TARGETED STRICT COA BROWSER WITNESSES (DISPOSABLE) ==="
+timeout 300 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict csrf-positive627
+echo "COA_650_SIGNED_COA_BROWSER=PASSED"
+timeout 240 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict tests/browser/test_csrf_multipart588.py
+echo "COA_650_MULTIPART_COA_BROWSER=PASSED"
 "$PY" -m pytest -q --tb=short --maxfail=1 \
  tests/test_release577_dev_receipt.py tests/test_release629_qa_cadence.py \
  tests/test_release604_preflight.py
