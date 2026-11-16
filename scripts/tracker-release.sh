@@ -423,7 +423,15 @@ PY
 )"
   [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
   mkdir -m 700 "$SAVE/archives"
-  if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 ) ]]; then
+  if [[ "$INSTANCE" == DEV && "$REVIEWED_WORKOUT_655" == 1 ]]; then
+   # Release 655: exactly two enumerated unsynchronized DEV references.
+   # This independent helper verifies SQLite, present upload hashes,
+   # archive manifest and an isolated restoration. Never use on PROD.
+   ARCHIVE="$(PYTHONPATH="$QA" TRACKER_DATA_DIR="$DATA_DIR" "$PY" \
+     "$QA/scripts/tracker-workout-dev-backup655.py" --data "$DATA_DIR" --dest "$SAVE/archives")" ||
+     fail "Release 655 DEV backup verification failed (unexpected missing files or invalid snapshot)"
+   echo "DEV_655_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS"
+  elif [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
    ARCHIVE="$(PYTHONPATH="$QA" TRACKER_DATA_DIR="$DATA_DIR" "$PY"      "$QA/scripts/tracker-coa-dev-backup652.py" --data "$DATA_DIR" --dest "$SAVE/archives")" ||
      fail "DEV migration archive with known missing attachment was not verified"
    echo "DEV_REVIEWED_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS"
@@ -436,7 +444,11 @@ print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
 PY
 )"
   fi
-  if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 ) ]]; then
+  if [[ "$INSTANCE" == DEV && "$REVIEWED_WORKOUT_655" == 1 ]]; then
+   [[ "$ARCHIVE" == "$SAVE"/archives/tracker-dev655-*.zip &&
+      -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] ||
+     fail "Reviewed DEV 655 backup helper returned an invalid archive pathname"
+  elif [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
    [[ "$ARCHIVE" == "$SAVE"/archives/tracker-dev652-*.zip &&
       -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] ||
      fail "Reviewed DEV backup helper did not return a single valid archive pathname"
