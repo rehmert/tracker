@@ -19,13 +19,16 @@
   {% if resolved %}
   <p class="food629-success" role="status">Duplicate resolution saved. Historical meal records were preserved.</p>
   {% endif %}
+  {% if reassigned %}
+  <p class="food629-success" role="status">{{ reassigned }} logged meal entr{{ 'y' if reassigned == 1 else 'ies' }} reassigned. The original dates, meals and serving counts were kept; historical nutrient totals now use the selected keeper.</p>
+  {% endif %}
   {% if merged %}
   <p class="food629-success" role="status">{{ merged }} equivalent duplicate record{{ '' if merged == 1 else 's' }} consolidated. Historical food log and meal template references were retained.</p>
   {% endif %}
   {% if truncated %}
   <p class="food629-warning" role="alert">Only the first {{ examined }} saved foods were inspected. No merge should be considered a full-library cleanup until all records are reviewed.</p>
   {% endif %}
-  <p class="note">Groups contain foods with matching names (ignoring capitalization and extra spaces) or the same nonempty barcode. They can contain different serving sizes or nutrient data. Values are per stored serving, not per 100 g. <strong>— means not reported, not zero.</strong> Exact nutritional equivalents may be combined; differing values remain untouched.</p>
+  <p class="note">Groups contain foods with matching names (ignoring capitalization and extra spaces) or the same nonempty barcode. They can contain different serving sizes or nutrient data. Values are per stored serving, not per 100 g. <strong>— means not reported, not zero.</strong> Exact nutritional equivalents may be combined. You can now explicitly correct logged uses of differing versions.</p>
 
   {% if not groups %}
   <div class="card"><p>No saved foods with matching names or barcodes were found in the examined records.</p></div>
@@ -84,6 +87,28 @@
     </div>
 
     {% if group.different_values %}
+    <div class="food629-merge">
+      <strong>Correct previously logged uses</strong>
+      <p class="note">Move all logged entries from an incorrect version to the correct saved version. Dates, meals and serving counts stay the same. <strong>Historical nutrition totals will change</strong> to use the keeper's per-serving nutrient values. Check serving sizes before continuing.</p>
+      {% for item in group.versions if item.log_count > 0 %}
+      <form class="food641-reassign" method="post" action="/food/duplicates/reassign-logs"
+            data-confirm="Reassign all {{ item.log_count }} historical meal entries from version #{{ item.id }}? Their original dates and serving counts will stay the same, but historical nutrient totals WILL be recalculated using the keeper's nutrition.">
+        <input type="hidden" name="remove_id" value="{{ item.id }}">
+        <input type="hidden" name="expected_count" value="{{ item.log_count }}">
+        <label>Move {{ item.log_count }} logged use{{ '' if item.log_count == 1 else 's' }} of version #{{ item.id }} to
+          <select name="keep_id" required>
+          {% for other in group.versions if other.id != item.id %}
+            <option value="{{ other.id }}">Version #{{ other.id }} — {{ other.serving_description }} ({{ other.log_count }} logged)</option>
+          {% endfor %}
+          </select>
+        </label>
+        <button type="submit">Reassign logged uses</button>
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if group.different_values %}
     <p class="food629-warning">Not all versions have equivalent nutrients, servings, or barcodes. Compare them before deciding which values are authoritative. Non-equivalent versions cannot be merged on this screen because doing so could change historical nutrition totals.</p>
     {% endif %}
 
@@ -92,7 +117,7 @@
     {% elif group.different_values %}
     <div class="food629-merge">
       <strong>Resolve mismatched versions</strong>
-      <p class="note">A saved version with no logged meals can be removed in favor of another version. Meal templates and favorite status move to the chosen keeper; any future template use will use the keeper's nutrition. Historical meal logs will not be rewritten.</p>
+      <p class="note">A saved version with no logged meals can be removed in favor of another version. If a version has logged uses, reassign those entries first. Meal templates and favorite status move to the chosen keeper; any future template use will use the keeper's nutrition. Historical meal logs will not be rewritten.</p>
       {% for item in group.versions if item.log_count == 0 %}
       <form class="food629-merge food630-resolve" method="post" action="/food/duplicates/resolve-unused"
             data-confirm="Remove unused version #{{ item.id }}? Any meal templates using it will use the selected keeper's nutrition for FUTURE entries.">
