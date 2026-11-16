@@ -19,6 +19,11 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
  tests/test_coa_manager_v23.py \
  tests/test_attachment_scope396.py \
  tests/test_attachment_files400.py \
+ tests/test_release572_csrf_inventory.py \
+ tests/test_release573_csrf_inventory_review.py \
+ tests/test_release590_csrf_gap_plan.py \
+ tests/test_release591_pk_csrf_coverage.py \
+ tests/test_release592_pk_compatibility.py \
  tests/test_release627_csrf_remaining_negative_matrix.py \
  tests/test_release627_csrf_reconciliation.py \
  tests/test_release597_purchase_supply_csrf.py \
