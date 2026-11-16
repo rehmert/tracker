@@ -275,6 +275,34 @@ def test_651_no_js_form_fallback_and_deselect_all_types():
             _cleanup(stored)
 
 
+def test_651_new_ajax_callsite_is_inventory_reviewed_but_not_historically_cleared():
+    from scripts.tracker_csrf_runtime_report579 import (
+        COA_MULTI651_SOURCE, TRACKED_FETCH_SOURCES, reviewed_js_source_callsites,
+    )
+    from scripts.tracker_csrf_js_triage576 import build as triage
+    from scripts.tracker_csrf_route_ledger578 import build as ledger
+
+    root = Path(__file__).resolve().parents[1]
+    tracked = reviewed_js_source_callsites(root)
+    assert tracked["tracked_js_callsites"] == 50
+    assert tracked["witnessed_js_callsites"] == 2
+    assert tracked["not_witnessed_in_579"] == 48
+    assert tracked["unqualified_coa_multi651_callsites"] == 1
+    assert COA_MULTI651_SOURCE not in TRACKED_FETCH_SOURCES
+    source = triage(root)
+    matches = [row for row in source["callsites"]
+               if row["file"] == COA_MULTI651_SOURCE]
+    assert len(matches) == 1
+    assert matches[0]["browser_verified"] is False
+    result = ledger(root)
+    pending = [row for row in result["javascript"]
+               if row["file"] == COA_MULTI651_SOURCE]
+    assert len(pending) == 1
+    assert pending[0]["runtime_executed"] is False
+    assert pending[0]["csrf_compatible"] is None
+    assert result["summary"]["js_runtime_verified"] == 0
+
+
 def test_651_no_navigation_save_and_editable_native_fallback_contract():
     source = (Path(__file__).resolve().parents[1] /
               "app/static/js/tracker-coa-multi651.js").read_text()
