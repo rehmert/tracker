@@ -292,6 +292,12 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
             for metadata in uploaded:
                 db.add(CoaDocument643(coa_id=cid, test_label=label, **metadata))
             db.commit()
+        except ValueError as exc:
+            db.rollback()
+            for metadata in uploaded:
+                delete_after_commit(metadata["stored_name"], directory,
+                                    services.delete_stored_file)
+            return services.flash_redirect(back, err=str(exc))
         except BaseException:
             db.rollback()
             for metadata in uploaded:
