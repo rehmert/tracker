@@ -16,15 +16,14 @@
 <link rel="stylesheet" href="/static/css/tracker-coa-types646.css?v=646">
 <link rel="stylesheet" href="/static/css/tracker-coa-types647.css?v=647">
 <script defer src="/static/js/tracker-coa-types647.js?v=647"></script>
+<link rel="stylesheet" href="/static/css/tracker-coa-documents649.css?v=649">
 {% endblock %}
 {% block content %}
 <p><a href="/coas">← All COAs</a></p><h1>{{ 'COA #' ~ coa.id if coa else 'Add certificate of analysis' }}</h1>
-{% if coa and (coa.original_name or coa.attachments) %}<p><a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener"><strong>View default COA document</strong></a></p>{% endif %}
-{% if coa and coa.original_name %}<p><a href="/coas/{{ coa.id }}/original-file" target="_blank" rel="noopener">View existing document: {{ coa.original_name }}</a> · {{ coa.size_bytes }} bytes</p>{% endif %}
 <section><h2>{{ 'Edit certificate' if coa else 'New certificate' }}</h2>
 <form method="post" action="{{ '/coas/' ~ coa.id ~ '/edit' if coa else '/coas/new' }}" enctype="multipart/form-data" class="grid">
 {% if not coa %}<label class="field wide"><span>Initial vial (required)</span><select name="vial_id" required><option value="">Choose a vial</option>{% for v in vials %}<option value="{{ v.id }}">{{ v.compound.name }} · #{{ v.id }} · {{ v.label or 'Unlabeled' }}</option>{% endfor %}</select></label>{% endif %}
-<label class="field wide"><span>{{ 'Replace document (optional)' if coa else 'COA document (optional)' }} · PDF, PNG, JPG, WEBP (15 MB max)</span><input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
+<label class="field wide"><span>{{ 'Replace original document (optional)' if coa else 'Original COA document (optional)' }} · PDF, PNG, JPG, WEBP (15 MB max)</span><input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
 <label class="field"><span>Laboratory</span><input name="lab_name" value="{{ coa.lab_name if coa else '' }}"></label>
 <label class="field"><span>Tested on</span><input type="date" name="tested_on" value="{{ coa.tested_on or '' if coa else '' }}"></label>
 <label class="field"><span>Purity (%)</span><input type="number" min="0" max="100" step="any" name="purity_pct" value="{{ coa.purity_pct if coa and coa.purity_pct is not none else '' }}"></label>
@@ -40,25 +39,23 @@
 <div><button class="primary">{{ 'Save changes' if coa else 'Create COA' }}</button></div>
 </form></section>
 {% if coa %}
-<section id="test-documents"><h2>Test documents</h2>
-<p class="note">Keep purity, identity, endotoxin, sterility, and other reports together. Edit the test type of any uploaded file, and choose which document opens from the default COA link.</p>
-{% if coa.original_name or coa.attachments %}
-<form method="post" action="/coas/{{ coa.id }}/default-file" class="inline">
-<label class="field"><span>Default COA to view</span><select name="document" required>
-{% if coa.original_name %}<option value="original" {% if default_attachment_id is none %}selected{% endif %}>Original: {{ coa.original_name }}</option>{% endif %}
-{% for attachment in coa.attachments %}<option value="{{ attachment.id }}" data-coa-default-option="{{ attachment.id }}" data-original-name="{{ attachment.original_name }}" {% if default_attachment_id == attachment.id or (not coa.original_name and default_attachment_id is none and loop.first) %}selected{% endif %}>{{ attachment.test_type or 'Unspecified test' }} — {{ attachment.original_name }}</option>{% endfor %}
-</select></label><button type="submit">Save default</button>
-<a href="/coas/{{ coa.id }}/file" target="_blank" rel="noopener">Open default</a>
-</form>
-{% endif %}
-{% if coa.original_name %}<p>Original document: <a href="/coas/{{ coa.id }}/original-file" target="_blank" rel="noopener">{{ coa.original_name }}</a></p>{% endif %}
+<section id="test-documents"><h2>Uploaded documents</h2>
+<p class="note">All files for this COA are listed below, including the original document. Select any filename to review it. Use "Replace original document" above to replace the original file, or upload additional test reports below.</p>
 {% if coa.attachments %}
 <form id="coa-bulk-test-types" method="post" action="/coas/{{ coa.id }}/attachments/test-types" data-coa-bulk-form></form>
 {% endif %}
 <div class="scroll"><table class="coa-document-table"><thead><tr><th>Document</th><th>Test type</th><th>Size</th><th>Action</th></tr></thead><tbody>
+{% if coa.original_name %}
+<tr data-coa-original-document>
+<td><a href="/coas/{{ coa.id }}/original-file" target="_blank" rel="noopener">{{ coa.original_name }}</a> <span class="coa-document-origin">Original</span></td>
+<td><span class="note">Original COA</span></td>
+<td>{{ coa.size_bytes }} bytes</td>
+<td><span class="note">Replace using the form above</span></td>
+</tr>
+{% endif %}
 {% for attachment in coa.attachments %}
 <tr>
-<td><a href="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/file" target="_blank" rel="noopener">{{ attachment.original_name }}</a>{% if default_attachment_id == attachment.id or (not coa.original_name and default_attachment_id is none and loop.first) %} <span class="coa-default-indicator">Default</span>{% endif %}</td>
+<td><a href="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/file" target="_blank" rel="noopener">{{ attachment.original_name }}</a></td>
 <td><div class="coa-test-type-entry" data-coa-type-entry data-attachment-id="{{ attachment.id }}">
 <div class="coa-test-type-controls">
 <select name="test_type_{{ attachment.id }}" form="coa-bulk-test-types" aria-label="Test type for {{ attachment.original_name }}" data-coa-test-type-select>
@@ -73,7 +70,7 @@
 </div></td>
 <td>{{ attachment.size_bytes }} bytes</td>
 <td><form method="post" action="/coas/{{ coa.id }}/attachments/{{ attachment.id }}/delete" data-tracker-discard-changes onsubmit="return confirm('Remove only this document?')"><button class="danger">Remove</button></form></td></tr>
-{% else %}<tr><td colspan="4">No additional documents yet.</td></tr>{% endfor %}
+{% else %}{% if not coa.original_name %}<tr><td colspan="4">No documents uploaded yet.</td></tr>{% endif %}{% endfor %}
 </tbody></table></div>
 {% if coa.attachments %}
 <div class="coa-bulk-save-bar">
@@ -99,8 +96,13 @@
 <div class="scroll"><table><thead><tr><th>COA</th><th>Tested</th><th>Laboratory</th><th>Purity</th><th>Reported content</th><th>Status</th></tr></thead><tbody>
 <tr><td><strong>Current #{{ coa.id }}</strong></td><td>{{ coa.tested_on|dt }}</td><td>{{ coa.lab_name }}</td><td>{{ coa.purity_pct|num }}%</td><td>{{ coa.reported_content_value|num }} {{ coa.reported_content_unit or '' }}</td><td>{{ coa.verification_status }}</td></tr>
 {% for other in comparisons %}<tr><td><a href="/coas/{{ other.id }}">#{{ other.id }}</a></td><td>{{ other.tested_on|dt }}</td><td>{{ other.lab_name }}</td><td>{{ other.purity_pct|num }}%</td><td>{{ other.reported_content_value|num }} {{ other.reported_content_unit or '' }}</td><td>{{ other.verification_status }}</td></tr>{% else %}<tr><td colspan="6">No other certificates found for this lot or job ID.</td></tr>{% endfor %}</tbody></table></div></section>
-<section><h2>Change history</h2><p class="note">Previous metadata is retained before each edit or review-status change. The original document may be replaced; additional test files are managed separately.</p>
-{% for revision in history %}<details><summary>{{ revision.changed_at|utc_dt }} · {{ revision.event }}</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ revision.snapshot_json }}</pre></details>{% else %}<p class="note">No changes recorded yet.</p>{% endfor %}</section>
+<section id="coa-audit-history">
+<details class="coa-audit-history">
+<summary>Audit history ({{ history|length }} {{ 'entry' if history|length == 1 else 'entries' }})</summary>
+<p class="note">Previous metadata is retained before each edit or review-status change. Expand an entry to inspect the recorded snapshot.</p>
+{% for revision in history %}<details><summary>{{ revision.changed_at|utc_dt }} · {{ revision.event }}</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ revision.snapshot_json }}</pre></details>{% else %}<p class="note">No changes recorded yet.</p>{% endfor %}
+</details>
+</section>
 {% endif %}
 {% if coa %}<section><h2>Linked vials</h2><p class="note">A certificate can be linked to multiple vials of the same compound. Removing a link does not delete the certificate.</p>
 <div class="scroll"><table><thead><tr><th>Vial</th><th>Compound</th><th>Lot</th><th>Action</th></tr></thead><tbody>{% for v in coa.all_vials %}<tr><td><a href="/vials/{{ v.id }}">#{{ v.id }} · {{ v.label }}</a></td><td>{{ v.compound.name }}</td><td>{{ v.lot or '—' }}</td><td><form method="post" action="/coas/{{ coa.id }}/unlink/{{ v.id }}" onsubmit="return confirm('Unlink this vial?')"><button class="link">Unlink</button></form></td></tr>{% else %}<tr><td colspan="4">No linked vials.</td></tr>{% endfor %}</tbody></table></div>
