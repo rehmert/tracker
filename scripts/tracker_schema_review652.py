@@ -28,6 +28,7 @@ ALLOWED = frozenset({
     "scripts/tracker-release-scoped652.sh",
     "scripts/tracker_dev_log577.py",
     "scripts/tracker_promote568.py",
+    "scripts/tracker_prod_remote568.sh",
     "tests/test_coa_test_type_picker646.py",
     "tests/test_release629_qa_cadence.py",
     "tests/test_release577_dev_receipt.py",
