@@ -54,7 +54,13 @@ NEW_REGIMEN_ROUTES = frozenset({
     ("POST", "/regimen/entries/{entry_id}/edit"),
     ("POST", "/regimen/entries/{entry_id}/delete"),
 })
-NEW_UNQUALIFIED_ROUTES = NEW_FOOD_ROUTES | NEW_REGIMEN_ROUTES
+# Release 643: two COA attachment write endpoints remain without positive
+# signed-browser clearance. Include both in the strict negative matrix.
+NEW_COA_ROUTES = frozenset({
+    ("POST", "/coas/{cid}/attachments"),
+    ("POST", "/coas/{cid}/attachments/{aid}/delete"),
+})
+NEW_UNQUALIFIED_ROUTES = NEW_FOOD_ROUTES | NEW_REGIMEN_ROUTES | NEW_COA_ROUTES
 
 
 def _regimen_route_manifest():
