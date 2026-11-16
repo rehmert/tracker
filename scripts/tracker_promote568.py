@@ -27,6 +27,12 @@ SCP = [
     "scp", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
     "-o", "StrictHostKeyChecking=yes",
 ]
+# Release 648 only: GitHub main contains signed Release 647 even though
+# PROD did not install it. Only this exact ancestor may be skipped when
+# advancing main; PROD itself must still match the installed Release 646 base.
+RECOVERY_648_MAIN = "cd041ba1dfefe6e2de7db72c8bfdf8f9949e6dc6"
+RECOVERY_648_PROD_BASE = "61b3016eed48527c61a5173d94ee0f58b859f81a"
+
 QUALIFICATION = (
     "ISOLATED_BROWSER=PASSED",
     "ISOLATED_STRICT_CSRF_BROWSER=PASSED",
@@ -111,6 +117,24 @@ def secure_file(path: Path, *, private: bool = False) -> None:
         raise ReleaseError(f"Private file is accessible to other users: {path}")
 
 
+def recovery_648_main_allowed(main: str, target: str, base: str) -> bool:
+    """Permit precisely the previously promoted-but-not-installed SHA.
+
+    Never force push. Both ancestry checks fail closed if a ref is missing
+    or another release has moved GitHub main.
+    """
+    if main != RECOVERY_648_MAIN or base != RECOVERY_648_PROD_BASE:
+        return False
+    try:
+        run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
+             "merge-base", "--is-ancestor", base, main])
+        run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
+             "merge-base", "--is-ancestor", main, target])
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
 def preflight(release: int, target: str, base: str, ref: str) -> None:
     if os.geteuid() != 0 or output(["hostname", "-s"]) != "tracker-dev":
         raise ReleaseError("Run as root on tracker-dev only")
@@ -132,8 +156,13 @@ def preflight(release: int, target: str, base: str, ref: str) -> None:
         "fetch", "origin", "main", f"refs/heads/{ref}:refs/remotes/origin/{ref}",
     ])
     main = git("rev-parse", "origin/main")
-    if main not in (base, target):
+    allowed_intermediate = (
+        release == 648 and recovery_648_main_allowed(main, target, base)
+    )
+    if main not in (base, target) and not allowed_intermediate:
         raise ReleaseError(f"GitHub main changed unexpectedly: {main}")
+    if allowed_intermediate:
+        print(f"PROD_RECOVERY_648_ANCESTOR_VERIFIED={main}", flush=True)
     if git("rev-parse", f"refs/remotes/origin/{ref}") != target:
         raise ReleaseError("Release branch differs from exact qualified commit")
     run([
@@ -203,7 +232,8 @@ def promote(target: str, base: str) -> None:
     run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
          "fetch", "origin", "main"])
     main = git("rev-parse", "origin/main")
-    if main == base:
+    if main == base or recovery_648_main_allowed(main, target, base):
+        # Ordinary fast-forward only. Never rewrite GitHub main history.
         run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
              "push", "origin", f"{target}:refs/heads/main"])
     elif main != target:
