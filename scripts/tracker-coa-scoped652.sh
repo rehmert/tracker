@@ -7,6 +7,7 @@ ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
 [[ "$PWD" == "$ROOT" && -d tests ]] || { echo "Run from a qualified isolated release worktree" >&2; exit 2; }
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_coa_manage_catalog652.py \
+  tests/test_coa_backup652.py \
   tests/test_release629_qa_cadence.py::test_652_full_regression_requires_explicit_operator_opt_in \
   tests/test_release577_dev_receipt.py::test_652_scoped_only_dev_receipt_is_accepted_without_broad_604_gate \
   tests/test_coa_multiple_test_types651.py::test_651_stable_codebook_and_unmodified_legacy_labels \
