@@ -82,23 +82,21 @@ def optional_nutrient(raw):
     return value
 
 def required_food_nutrients629(form):
-    """New/edited saved foods must provide all tracked numeric nutrients.
+    """New/edited saved foods default absent or unknown nutrition to zero.
 
-    Unknown or blank is not accepted as zero. Legacy snapshots remain
-    readable, and daily target preferences remain optional.
+    Zero here is a user-requested accounting default, not an assertion that a
+    manufacturer's label measured zero. Explicit invalid numeric data remains
+    rejected; target preferences and other optional fields are unaffected.
     """
     values = {}
-    for key, (label, _unit) in NUTRIENTS.items():
+    unknown = {"", "unknown", "null", "none", "n/a", "not reported", "?"}
+    for key in NUTRIENTS:
         raw = form.get(key)
-        if raw is None or not str(raw).strip():
-            raise HTTPException(
-                422, f"{label} is required; enter a verified numeric value."
-            )
-        values[key] = optional_nutrient(raw)
-        if values[key] is None:
-            raise HTTPException(422, f"{label} must be numeric.")
+        if raw is None or str(raw).strip().casefold() in unknown:
+            values[key] = 0.0
+        else:
+            values[key] = optional_nutrient(raw)
     return values
-
 
 def nutrient_coverage(day, db_engine=None):
     """Count foods with reported values, independently per nutrient."""
