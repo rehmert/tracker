@@ -74,8 +74,8 @@ def seed660():
 
 
 def test_660_completed_actual_pr_volume_and_repmatched_trends():
-    (machine, other, empty), ids, active_id = seed660()
     with TestClient(app) as client:
+        (machine, other, empty), ids, active_id = seed660()
         page = client.get("/workouts/analytics", params={"machine": machine})
         assert page.status_code == 200
         text = page.text
@@ -152,14 +152,14 @@ def test_660_completed_actual_pr_volume_and_repmatched_trends():
 
 def test_660_escapes_names_and_links_from_all_workout_entries():
     unsafe = "660 <img src=x onerror=alert(1)>"
-    with SessionLocal() as db:
-        item = WorkoutEquipment654(
-            gym="Analytics Test", name=unsafe, kind="selectorized",
-        )
-        db.add(item)
-        db.commit()
-        mid = item.id
     with TestClient(app) as client:
+        with SessionLocal() as db:
+            item = WorkoutEquipment654(
+                gym="Analytics Test", name=unsafe, kind="selectorized",
+            )
+            db.add(item)
+            db.commit()
+            mid = item.id
         page = client.get("/workouts/analytics", params={"machine": mid})
         assert page.status_code == 200
         assert "&lt;img src=x onerror=alert(1)&gt;" in page.text
