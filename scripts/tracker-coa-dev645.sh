@@ -37,6 +37,9 @@ EXPECTED="$(g rev-parse "$TARGET:scripts/tracker-release.sh")"
 g show "$TARGET:scripts/tracker-release.sh" > "$DIR/runner.sh"
 [[ "$(g hash-object "$DIR/runner.sh")" == "$EXPECTED" ]] || fail "Runner blob differs from pinned candidate"
 bash -n "$DIR/runner.sh"
+# Fail before the expensive qualification worker if previous evidence
+# cannot be reused, without modifying the installed DEV environment.
+g worktree add --detach "$DIR/candidate" "$TARGET"
 # Preflight the independent receipt validator against the exact resume-mode
 # marker contract before entering a deployment that might otherwise roll back.
 "$APP/.venv/bin/python" - "$DIR/candidate" "$DIR/runner.sh" <<'PY'
@@ -72,9 +75,6 @@ if f"DEV_QUALIFIED_COMMIT={target}" not in result:
     raise SystemExit("COA_645_RESUME_DENIED=receipt validator returned no exact-commit receipt")
 print("COA_645_RESUME_RECEIPT_CONTRACT=PASSED")
 PY
-# Fail before the expensive qualification worker if previous evidence
-# cannot be reused, without modifying the installed DEV environment.
-g worktree add --detach "$DIR/candidate" "$TARGET"
 "$APP/.venv/bin/python" "$DIR/candidate/scripts/tracker-resume-evidence645.py" \
  --app "$APP" --qa "$DIR/candidate" --base "$BASE" --target "$TARGET" ||
  fail "Prior full qualification evidence could not be verified"
