@@ -28,7 +28,7 @@ def _fixture():
 
 def _fields(ids, types=("Purity", "Identity"), selected=None, customs=None):
     selected = selected or types
-    customs = customs or ("", "") 
+    customs = customs or ("", "")
     values = {}
     for aid, before, choice, custom in zip(ids, types, selected, customs):
         values[f"original_test_type_{aid}"] = before
