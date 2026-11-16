@@ -15,6 +15,7 @@ ALLOWED = frozenset({
     "scripts/tracker_prod_remote568.sh",
     "scripts/tracker_schema_review643.py",
     "tests/test_release643_coa_documents.py",
+    "tests/browser/test_csrf_coa_lifecycle627.py",
     "tests/test_release643_schema_review.py",
     "tests/test_release635_schema_review.py",
     "docs/release-643-multiple-coa-test-documents.md",
