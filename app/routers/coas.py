@@ -51,8 +51,10 @@ def _opt_float(text: str) -> float | None:
 
 def _parse_endotoxin645(kind: str, value: str) -> tuple[str, float | None]:
     """Store detection-limit reports separately from real numeric measurements."""
-    kind = (kind or "").strip()
-    value = (value or "").strip()
+    # Direct legacy unit tests may call FastAPI handlers without passing
+    # the newly added Form parameter, leaving its Form default object.
+    kind = kind.strip() if isinstance(kind, str) else "lt1"
+    value = value.strip() if isinstance(value, str) else ""
     if kind == "lt1":
         if value:
             raise ValueError("Remove the numeric endotoxin entry when '<1 EU/vial' is selected.")
