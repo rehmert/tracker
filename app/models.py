@@ -613,3 +613,10 @@ class RegimenProductFacts639(Base):
     servings_per_container: Mapped[str] = mapped_column(String(80), default="")
     upc_sku: Mapped[str] = mapped_column(String(80), default="")
     imported_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class CoaDefaultDocument645(Base):
+    """Optional per-COA default attachment selection. Missing row uses original or first attachment."""
+    __tablename__ = "coa_default_documents645"
+    coa_id: Mapped[int] = mapped_column(ForeignKey("coas.id", ondelete="CASCADE"), primary_key=True)
+    attachment_id: Mapped[int] = mapped_column(ForeignKey("coa_attachments.id", ondelete="CASCADE"), nullable=False)
