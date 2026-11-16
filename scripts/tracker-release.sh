@@ -205,6 +205,10 @@ PY
    QA_FULL_REQUIRED=1
    QA_CADENCE_REASON="security-sensitive source or route changed"
   fi
+  if [[ "$REVIEWED_COA_643" == 1 ]]; then
+   QA_FULL_REQUIRED=1
+   QA_CADENCE_REASON="reviewed COA upload schema and attachment security change"
+  fi
   echo "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ==="
   timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"
   echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
