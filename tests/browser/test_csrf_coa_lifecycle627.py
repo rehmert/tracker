@@ -85,7 +85,20 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
         route = urlsplit(page.url).path
         # The laboratory name is rendered in an input, not body text.
         expect(page.locator('input[name="lab_name"]')).to_have_value(lab)
-        expect(page.get_by_role("link", name=re.compile("View existing document"))).to_be_visible()
+        # Release 650: one filename review link in the unified table; no
+        # special "view existing/original" link remains in the editor.
+        document = page.locator("#test-documents").get_by_role(
+            "link", name="qa627-coa.pdf", exact=True,
+        )
+        expect(document).to_be_visible()
+        assert document.get_attribute("href") == route + "/original-file"
+        assert page.get_by_role("link", name="qa627-coa.pdf", exact=True).count() == 1
+        expect(page.get_by_role(
+            "combobox", name="Test type for qa627-coa.pdf"
+        )).to_be_visible()
+        expect(page.get_by_role(
+            "radio", name="Make qa627-coa.pdf the default COA document"
+        )).to_be_checked()
 
         def signed(path, data):
             bad = page.request.post(base + path, form=data, max_redirects=0)
