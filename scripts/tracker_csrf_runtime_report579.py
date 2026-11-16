@@ -28,11 +28,24 @@ REGIMEN_CATALOG_GET_PATHS = (
 # Release 651 adds a second COA editor AJAX fetch. Inventory it explicitly,
 # without expanding Release 579 runtime witness scope or claiming clearance.
 COA_MULTI651_SOURCE = "app/static/js/tracker-coa-multi651.js"
+# Exact six-line request contract (indentation ignored). Do not relax this
+# into an inventory-count-only approval: any request edit requires review.
 COA_MULTI651_REQUEST_LINES = (
     "const response = await fetch(form.action, {",
     'method: "POST",',
+    "body: new FormData(form),",
+    'headers: {Accept: "application/json"},',
     'credentials: "same-origin",',
+    "});",
 )
+
+
+def verify_coa_multi651_request_lines(lines: list[str], callsite: int) -> None:
+    """Ensure the source-inventoried POST still matches the reviewed request."""
+    if (callsite < 0
+            or [line.strip() for line in lines[callsite:callsite + len(COA_MULTI651_REQUEST_LINES)]]
+               != list(COA_MULTI651_REQUEST_LINES)):
+        raise ValueError("Release 651 COA POST fetch changed; re-review required")
 
 
 
@@ -92,11 +105,7 @@ def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
     multi_source = (root / COA_MULTI651_SOURCE).read_text(encoding="utf-8")
     multi_lines = multi_source.splitlines()
     callsite = new_multi_coa[0]["line"] - 1
-    if (not 0 <= callsite < len(multi_lines)
-            or COA_MULTI651_REQUEST_LINES[0] not in multi_lines[callsite]
-            or COA_MULTI651_REQUEST_LINES[1] not in multi_lines[callsite+1:callsite+5]
-            or COA_MULTI651_REQUEST_LINES[2] not in multi_lines[callsite+1:callsite+7]):
-        raise ValueError("Release 651 COA POST fetch changed; re-review required")
+    verify_coa_multi651_request_lines(multi_lines, callsite)
     # A source match is NOT browser verification. This request remains outside
     # the two historical 579-witnessed sources and within the manual queue.
     if COA_MULTI651_SOURCE in TRACKED_FETCH_SOURCES:
