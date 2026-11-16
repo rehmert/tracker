@@ -62,7 +62,10 @@ def test_646_compact_picker_renders_groups_and_preserves_unknown_historical_labe
         assert 'data-coa-test-type-form' in html
         assert 'tracker-coa-types646.js' in html
         assert 'name="custom_test_type"' in html
-        assert f'/coas/{cid}/attachments/{aid}/test-type' in html
+        # Release 647 supersedes the per-row save UI with a single batch editor.
+        assert f'/coas/{cid}/attachments/test-types' in html
+        assert 'Save all test types' in html
+        assert f'name="test_type_{aid}"' in html
 
 
 def test_646_dropdown_update_and_explicit_custom_mode_validated():
