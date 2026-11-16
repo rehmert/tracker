@@ -72,6 +72,7 @@ def migrate(engine):
             cols = {c["name"] for c in inspect(conn).get_columns("coas")}
             for name, sql in {
                 "endotoxin_pct": "FLOAT",
+                "endotoxin_eu_per_vial": "FLOAT",
                 "job_id": "VARCHAR(120) NOT NULL DEFAULT ''",
                 "verify_code": "VARCHAR(120) NOT NULL DEFAULT ''",
                 "verification_status": "VARCHAR(20) NOT NULL DEFAULT 'unreviewed'",
