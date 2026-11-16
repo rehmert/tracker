@@ -20,9 +20,20 @@ PY
 g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] || fail "DEV checkout not clean main"
 [[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "Installed DEV version is not Release 647"
-g fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
+g fetch origin main "refs/heads/$REF:refs/remotes/origin/$REF"
 TARGET="$(g rev-parse "refs/remotes/origin/$REF")"
 [[ "$#" == 1 && "$TARGET" == "$1" ]] || fail "Pass exact current candidate SHA"
+# GitHub main contains the previous signed Release 647 promotion, while
+# the installed PROD application remains Release 646. Read-only verification
+# before qualification; do not inspect, copy, or restore production data.
+[[ "$(g rev-parse origin/main)" == "$BASE" ]] || fail "GitHub main is not the expected signed Release 647"
+PROD_HEAD="$(ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
+  root@tracker-prod 'test "$(hostname -s)" = tracker-prod && git -c safe.directory=/opt/tracker -C /opt/tracker rev-parse HEAD')" ||
+  fail "Unable to verify exact installed PROD commit"
+[[ "$PROD_HEAD" == "61b3016eed48527c61a5173d94ee0f58b859f81a" ]] ||
+  fail "PROD has changed since the failed Release 647 promotion; stop and review"
+echo "COA_648_PROD_INSTALLED_BASE=VERIFIED"
+
 RUN="$(mktemp -d /tmp/tracker-coa648-preflight.XXXXXXXX)"
 QA="$RUN/source"
 cleanup() { [[ ! -d "$QA" ]] || g worktree remove --force "$QA" >/dev/null 2>&1 || true; }
