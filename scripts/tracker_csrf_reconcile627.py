@@ -44,10 +44,14 @@ POST_643_UNQUALIFIED_COA_ROUTES = frozenset({
     ("POST", "/coas/{cid}/attachments"),
     ("POST", "/coas/{cid}/attachments/{aid}/delete"),
 })
+POST_645_UNQUALIFIED_COA_ROUTES = frozenset({
+    ("POST", "/coas/{cid}/attachments/{aid}/test-type"),
+    ("POST", "/coas/{cid}/default-file"),
+})
 POST_BASELINE_ADDITIONS = (
     POST_627_UNQUALIFIED_ROUTES |
     POST_635_UNQUALIFIED_ROUTES |
-    POST_643_UNQUALIFIED_COA_ROUTES
+    POST_643_UNQUALIFIED_COA_ROUTES | POST_645_UNQUALIFIED_COA_ROUTES
 )
 
 
