@@ -213,5 +213,5 @@ def test_641_remove_unused_and_reassign_confirm_once_and_submit():
             assert "keep_id=11" in requests[0]
             if expected_count:
                 assert "expected_count=2" in requests[0]
-            assert page.evaluate("window.confirmCalls") == 1
+            assert page.evaluate("window.name") == "1"
             browser.close()
