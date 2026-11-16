@@ -99,7 +99,21 @@ def test_588_real_native_coa_multipart_upload_and_forgery_denial(browser, scheme
         # Editable input values do not contribute to body.inner_text().
         # Confirm the saved laboratory value in the rendered edit form.
         expect(page.locator('input[name="lab_name"]')).to_have_value(name)
-        expect(page.get_by_role("link", name=re.compile("View existing document"))).to_be_visible()
+        # The first COA PDF has the same filename review link, test type,
+        # and default selection controls as subsequent uploaded documents.
+        route = urlsplit(page.url).path
+        document = page.locator("#test-documents").get_by_role(
+            "link", name="qa-588.pdf", exact=True,
+        )
+        expect(document).to_be_visible()
+        assert document.get_attribute("href") == route + "/original-file"
+        assert page.get_by_role("link", name="qa-588.pdf", exact=True).count() == 1
+        expect(page.get_by_role(
+            "combobox", name="Test type for qa-588.pdf"
+        )).to_be_visible()
+        expect(page.get_by_role(
+            "radio", name="Make qa-588.pdf the default COA document"
+        )).to_be_checked()
         assert not errors, errors
     finally:
         context.close()
