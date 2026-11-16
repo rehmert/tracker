@@ -9,10 +9,9 @@ REF=release/653-coa-test-type-actions-row
 fail() { echo "COA_653_PREFLIGHT=FAILED: $*" >&2; exit 1; }
 [[ "$(id -u)" == 0 && -x "$PY" && -f /etc/tracker.env ]] ||
   fail "Run as root on configured Tracker DEV"
-# Validate hostname and one DEV label without printing credentials or
-# accepting a mismatched instance. Handles ordinary shell-style comments.
-"$PY" "$APP/scripts/tracker-instance-check653.py" --config /etc/tracker.env || \
-  fail "DEV identity could not be verified; deployment/preflight blocked"g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
+[[ "$(hostname -s)" == tracker-dev ]] ||
+  fail "Expected tracker-dev host; no preflight performed"
+g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] ||
   fail "Installed DEV checkout must be clean main"
 [[ "$(g rev-parse HEAD)" == "$BASE" ]] || fail "DEV must be on Release 652"
@@ -31,6 +30,8 @@ cleanup() {
 }
 trap cleanup EXIT
 g worktree add --detach "$QA" "$TARGET"
+"$PY" "$QA/scripts/tracker-instance-check653.py" --config /etc/tracker.env ||
+  fail "DEV identity label verification failed; no deployment performed"
 cd "$QA"
 git diff --check "$BASE" "$TARGET"
 echo "=== RELEASE 653 EXACT UI-ONLY CHANGE SCOPE ==="
@@ -45,6 +46,8 @@ allow={
     "scripts/tracker-release-scoped653.sh",
     "scripts/tracker-coa-preflight653.sh",
     "scripts/tracker-coa-dev653.sh",
+    "scripts/tracker-instance-check653.py",
+    "tests/test_tracker_instance_check653.py",
     "scripts/tracker-release.sh",
 }
 files=set(subprocess.check_output(
