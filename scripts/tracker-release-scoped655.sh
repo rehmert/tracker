@@ -40,6 +40,7 @@ TARGET="$(git rev-parse HEAD)"
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_workouts655.py \
   tests/test_workouts654.py \
+  tests/test_workout_dev_backup655.py \
   tests/test_coa_backup652.py \
   tests/test_dev_attachment_gate650.py::test_650_dev_missing_only_may_be_reported_without_mutation \
   tests/test_dev_attachment_gate650.py::test_650_dev_policy_fails_closed_on_bad_evidence \
