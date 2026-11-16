@@ -397,3 +397,23 @@ def test_641_unused_removal_checkbox_handler_is_not_applied():
     template = (ROOT / "app/templates/food_duplicates629.html").read_text()
     assert 'name="expected_count"' in template
     assert 'action="/food/duplicates/resolve-unused"' in template
+
+
+def test_641_near_duplicate_name_versions_are_reviewable_and_reassignable(food_engine):
+    old = add_food(food_engine, name="Greek Yogurt Plain",
+                   barcode="111", logged=True)
+    keeper = add_food(food_engine, name="Greek Yogurt Nonfat",
+                      barcode="222", nutrients={"energy": 77})
+    groups = duplicates.duplicate_groups629(food_engine)["groups"]
+    assert any({old, keeper} <= {v["id"] for v in g["versions"]}
+               for g in groups)
+    assert duplicates.reassign_logged_uses641(food_engine, keeper, old, 1) == 1
+    assert food.totals_for("2026-11-14", db_engine=food_engine)["energy"] == 154
+    assert duplicates.remove_unused_mismatch630(food_engine, keeper, old) == 1
+
+
+def test_641_near_name_candidate_does_not_allow_single_generic_word(food_engine):
+    old = add_food(food_engine, name="Milk", barcode="123", logged=True)
+    other = add_food(food_engine, name="Milk Chocolate", barcode="987")
+    with pytest.raises(ValueError, match="not direct duplicate"):
+        duplicates.reassign_logged_uses641(food_engine, other, old, 1)
