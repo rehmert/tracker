@@ -10,9 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_640_only_two_new_read_only_catalog_callsites():
     result = report.reviewed_js_source_callsites(ROOT)
-    assert result["tracked_js_callsites"] == 49
+    assert result["tracked_js_callsites"] == 50
     assert result["witnessed_js_callsites"] == 2
-    assert result["not_witnessed_in_579"] == 47
+    assert result["not_witnessed_in_579"] == 48
+    assert result["unqualified_coa_multi651_callsites"] == 1
     assert len(result["source_refs"]) == 2
 
 
