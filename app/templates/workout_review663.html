@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Workout Session Review{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workout-review663.css?v=663">
+{% endblock %}
+{% block content %}
+<section class="workout654 workout663" id="workout663-review">
+  <nav class="workout663-topnav" aria-label="Workout review navigation">
+    <a href="/workouts">← Workouts</a>
+    <a href="/workouts/sessions/{{ workout.id }}">Full Set History</a>
+    <a href="/workouts/analytics">Strength Progress</a>
+  </nav>
+
+  <header class="workout663-heading">
+    <h1>Workout Session Review</h1>
+    <p>Started {{ workout.started_at|dt }}</p>
+    {% if workout.completed_at %}
+      <p><strong>Completed {{ workout.completed_at|dt }}</strong></p>
+    {% else %}
+      <p><strong>In progress</strong> — these figures may change until the session is finished.</p>
+    {% endif %}
+  </header>
+
+  <p class="note">This summary is calculated from your actual logged sets in this one workout. Recorded volume is the sum of weight (lb) × repetitions; bodyweight sets logged as 0 lb contribute 0 to that figure.</p>
+
+  <section aria-label="Workout session totals" class="workout663-totals">
+    <div><strong>{{ totals.machines }}</strong><span>Machines used</span></div>
+    <div><strong>{{ totals.sets }}</strong><span>Sets recorded</span></div>
+    <div><strong>{{ totals.reps }}</strong><span>Total repetitions</span></div>
+    <div><strong>{{ '{:,.1f}'.format(totals.volume) }}</strong><span>Recorded volume (lb × reps)</span></div>
+  </section>
+
+  <section class="workout663-details">
+    <h2>Exercise Breakdown</h2>
+    {% if machine_rows %}
+      <div class="workout663-scroll">
+        <table>
+          <caption>Actual recorded sets grouped by machine in this session</caption>
+          <thead>
+            <tr>
+              <th scope="col">Machine</th>
+              <th scope="col">Sets</th>
+              <th scope="col">Reps</th>
+              <th scope="col">Volume (lb × reps)</th>
+              <th scope="col">Heaviest load</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in machine_rows %}
+              <tr>
+                <th scope="row">
+                  <a href="/workouts/equipment/{{ row.equipment_id }}/progress">{{ row.name }}</a>
+                  <small>{{ row.gym }}</small>
+                </th>
+                <td>{{ row.sets }}</td>
+                <td>{{ row.reps }}</td>
+                <td>{{ '{:,.1f}'.format(row.volume) }}</td>
+                <td>{{ '%.1f'|format(row.heaviest_lb) }} lb</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="note">No sets were recorded during this workout.</p>
+    {% endif %}
+  </section>
+
+  <nav class="workout663-bottomnav" aria-label="Review follow-up">
+    <a href="/workouts/sessions/{{ workout.id }}">View Every Recorded Set</a>
+    <a href="/workouts/quick">Open Rapid Gym Mode</a>
+    <a href="/workouts">Back to Workouts</a>
+  </nav>
+</section>
+{% endblock %}
