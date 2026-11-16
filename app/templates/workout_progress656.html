@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ machine.name }} · Workout Progress{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workouts656.css?v=656">
+{% endblock %}
+{% block content %}
+<section class="workout654 workout656-progress">
+  <p><a href="/workouts?machine={{ machine.id }}">← Back to {{ machine.name }}</a></p>
+  <h1>{{ machine.name }} — Progress</h1>
+  <p class="note">{{ machine.gym }} · {{ machine.kind|replace('_',' ')|title }}</p>
+  <p class="note">All figures are from actual recorded sets. No estimated strength values.</p>
+
+  {% if latest %}
+    <div class="workout656-stats" aria-label="Equipment workout statistics">
+      <div><strong>{{ total_sets }}</strong><span>Sets recorded</span></div>
+      <div>
+        <strong>{{ '%.1f'|format(best.weight_lb) }} lb</strong>
+        <span>Heaviest load recorded ({{ best.reps }} reps)</span>
+      </div>
+      <div>
+        <strong>{{ '%.1f'|format(latest.weight_lb) }} lb × {{ latest.reps }}</strong>
+        <span>Most recent set</span>
+      </div>
+    </div>
+
+    <section>
+      <h2>Session Load Trend</h2>
+      <p class="note">Heaviest weight actually used in each of your most recent
+        {{ trend_limit }} sessions on this machine; {{ total_sessions }} shown.
+        Higher weight does not necessarily mean greater strength when reps or setup differ.</p>
+      {% if points %}
+        <figure class="workout656-trend">
+          <svg viewBox="0 0 700 170" role="img"
+               aria-label="Heaviest recorded load per session from oldest to newest">
+            <line x1="24" y1="138" x2="680" y2="138" class="workout656-axis"/>
+            <line x1="24" y1="36" x2="24" y2="138" class="workout656-axis"/>
+            <polyline points="{{ points }}" class="workout656-line"/>
+            {% for point in points.split(' ') %}
+              {% set coords = point.split(',') %}
+              <circle cx="{{ coords[0] }}" cy="{{ coords[1] }}" r="4" class="workout656-dot"/>
+            {% endfor %}
+          </svg>
+          <figcaption>
+            <span>Oldest shown</span>
+            <span>{{ '%.1f'|format(chart_min) }}–{{ '%.1f'|format(chart_max) }} lb</span>
+            <span>Most recent</span>
+          </figcaption>
+        </figure>
+      {% else %}
+        <p class="note">Log sets in at least two workout sessions to display a trend.</p>
+      {% endif %}
+
+      <div class="workout656-table-wrap">
+        <table>
+          <caption>Recent sessions and heaviest logged loads</caption>
+          <thead><tr><th>Session</th><th>Sets</th><th>Heaviest load</th></tr></thead>
+          <tbody>
+          {% for row in trend|reverse %}
+            <tr>
+              <td><a href="/workouts/sessions/{{ row.session_id }}">{{ row.started_at|dt }}</a></td>
+              <td>{{ row.sets }}</td>
+              <td>{{ '%.1f'|format(row.best_lb) }} lb</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Recent Sets</h2>
+      <p class="note">Showing up to {{ sets_limit }} most recent sets.</p>
+      <div class="workout656-table-wrap">
+        <table>
+          <thead><tr><th>Logged</th><th>Weight</th><th>Reps</th><th>Effort</th></tr></thead>
+          <tbody>
+            {% for row in recent %}
+              <tr>
+                <td>{{ row.performed_at|dt }}</td>
+                <td>{{ '%.1f'|format(row.weight_lb) }} lb</td>
+                <td>{{ row.reps }}</td>
+                <td>{{ row.effort if row.effort is not none else '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <p class="note">No recorded sets yet. Start a workout and log a set to build your history.</p>
+  {% endif %}
+</section>
+{% endblock %}
