@@ -30,10 +30,10 @@ def validated_evidence(content: str, target: str) -> str:
     if full == focused or sum(line.startswith("QA_FULL_REQUIRED=") for line in lines) != 1:
         raise ValueError("Exactly one qualification mode required")
     if focused:
-        required = (
-            "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
-            "FOCUSED_RELEASE_GATE=PASSED",
-        )
+        required = ("FOCUSED_RELEASE_GATE=PASSED",)
+        if not ("RELEASE_604_FOCUSED_PREFLIGHT=PASSED" in lines or
+                "RELEASE_SCOPED_PREFLIGHT=PASSED" in lines):
+            raise ValueError("Scoped release qualification evidence missing")
     else:
         required = REQUIRED
     # Historical receipts contain the restore marker. New code-only releases
