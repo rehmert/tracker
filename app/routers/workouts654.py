@@ -69,6 +69,16 @@ def workouts654(request: Request, db: Session = Depends(get_scoped_db390)):
         .order_by(WorkoutSession654.started_at.desc(), WorkoutSession654.id.desc())
         .limit(8)
     ))
+    # Routine navigation uses only the current scoped workout's logged sets.
+    logged_ids = {entry.equipment_id for entry in rows}
+    counts_this_session = {
+        item.id: sum(entry.equipment_id == item.id for entry in rows)
+        for item in equipment
+    }
+    next_machine = {
+        machine_id: routine_equipment_ids[index + 1]
+        for index, machine_id in enumerate(routine_equipment_ids[:-1])
+    }
     latest = {
         item.id: db.scalar(
             select(WorkoutSet654)
@@ -87,6 +97,9 @@ def workouts654(request: Request, db: Session = Depends(get_scoped_db390)):
         first_routine_equipment_id=(
             routine_equipment_ids[0] if routine_equipment_ids else None
         ),
+        next_machine=next_machine, counts_this_session=counts_this_session,
+        routine_logged_count=len(logged_ids.intersection(routine_equipment_ids)),
+        routine_total=len(routine_equipment_ids),
     )
 
 
