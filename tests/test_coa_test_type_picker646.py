@@ -50,23 +50,24 @@ def test_646_compact_picker_renders_groups_and_preserves_unknown_historical_labe
         response = client.get(f"/coas/{cid}")
         assert response.status_code == 200
         html = response.text
-        assert '<optgroup label="Core analysis">' in html
-        assert '<optgroup label="Safety &amp; contamination">' in html
-        assert '<optgroup label="Specialized analysis">' in html
+        assert '<legend>Core analysis</legend>' in html
+        assert '<legend>Safety &amp; contamination</legend>' in html
+        assert '<legend>Specialized analysis</legend>' in html
         assert 'value="BA/BB"' in html
         assert 'value="TFA"' in html
-        assert 'value="__custom__"' in html
-        assert 'Existing: Legacy odd-test 646' in html
-        assert 'value="Legacy odd-test 646" selected' in html
-        assert 'data-coa-test-type-select' in html
+        assert 'Other / custom test type' in html
+        assert 'value="Legacy odd-test 646"' in html
+        assert 'data-coa-multi-custom' in html
+        assert 'data-coa-multi-choice' in html
         assert 'data-coa-test-type-form' in html
         # Release 647 replaces the editor JS; verify the current batch asset.
-        assert 'tracker-coa-types647.js?v=650' in html
+        assert 'tracker-coa-types647.js?v=651' in html
+        assert 'tracker-coa-multi651.js?v=651' in html
         assert 'name="custom_test_type"' in html
         # Release 647 supersedes the per-row save UI with a single batch editor.
         assert f'/coas/{cid}/attachments/test-types' in html
         assert 'Save all test types' in html
-        assert f'name="test_type_{aid}"' in html
+        assert f'name="test_types_{aid}"' in html
 
 
 def test_646_dropdown_update_and_explicit_custom_mode_validated():
