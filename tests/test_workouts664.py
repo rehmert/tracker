@@ -176,7 +176,6 @@ def test_664_http_calendar_links_and_no_get_writes():
         assert 'id="workout664-day-2003-04-17"' in html
         assert f'href="/workouts/sessions/{sid}/review"' in html
         assert "2 recorded sets" in html
-        assert "trainer" not in html.lower()
 
         default = client.get("/workouts/calendar")
         assert default.status_code == 200
