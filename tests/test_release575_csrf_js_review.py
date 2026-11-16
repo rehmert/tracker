@@ -23,10 +23,10 @@ def test_575_full_js_source_inventory_is_preserved(review575):
     report = review575.build(ROOT)
     summary = report["summary"]
     assert report["status"] == "source_triage_only_not_security_clearance"
-    assert summary["js_request_callsites"] == 46
-    assert summary["unreviewed_runtime_effects"] == 46
-    assert sum(summary["classes"].values()) == 46
-    assert len(report["callsites"]) == 46
+    assert summary["js_request_callsites"] == 48
+    assert summary["unreviewed_runtime_effects"] == 48
+    assert sum(summary["classes"].values()) == 48
+    assert len(report["callsites"]) == 48
     assert all(
         (ROOT / row["file"]).is_file()
         for row in report["callsites"]
