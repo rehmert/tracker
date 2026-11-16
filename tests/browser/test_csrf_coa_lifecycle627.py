@@ -108,6 +108,19 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
         picker.locator("summary").click()
         picker.locator('input[value="Purity"]').check()
         picker.locator('input[value="Identity"]').check()
+        # A tokenless direct request must not mutate the COA. The real
+        # browser-signed AJAX save below must succeed over HTTP and HTTPS.
+        forgery = page.request.post(
+            base + route + "/attachments/test-types",
+            multipart={
+                "original_test_type_original": "",
+                "custom_test_type_original": "",
+                "test_types_original": "Purity",
+            },
+            max_redirects=0,
+        )
+        assert forgery.status == 403
+        assert page.request.get(base + route).status == 200
         with page.expect_response(lambda response: (
             response.request.method == "POST"
             and urlsplit(response.url).path == route + "/attachments/test-types"
