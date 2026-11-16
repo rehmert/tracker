@@ -97,7 +97,7 @@
         <input type="hidden" name="expected_count" value="{{ item.log_count }}">
         <label>Move {{ item.log_count }} logged use{{ '' if item.log_count == 1 else 's' }} of version #{{ item.id }} to
           <select name="keep_id" required>
-          {% for other in group.versions if other.id != item.id %}
+          {% for other in group.versions if other.id in item.candidate_ids %}
             <option value="{{ other.id }}">Version #{{ other.id }} — {{ other.serving_description }} ({{ other.log_count }} logged)</option>
           {% endfor %}
           </select>
@@ -124,7 +124,7 @@
         <input type="hidden" name="remove_id" value="{{ item.id }}">
         <label>Remove unused version #{{ item.id }} and keep
           <select name="keep_id" required>
-            {% for other in group.versions if other.id != item.id %}
+            {% for other in group.versions if other.id in item.candidate_ids %}
             <option value="{{ other.id }}">Version #{{ other.id }} — {{ other.serving_description }}</option>
             {% endfor %}
           </select>
