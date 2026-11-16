@@ -307,3 +307,93 @@ def test_630_unauthorized_removal_does_not_change_food_records(food_engine):
 def test_630_invalid_review_fingerprint_rejected(food_engine):
     with pytest.raises(ValueError, match="Invalid review selection"):
         duplicates.mark_distinct630(food_engine, "not-a-valid-fingerprint")
+
+
+def test_641_reassign_logged_meals_preserves_meal_identity_and_updates_totals(food_engine):
+    old = add_food(food_engine, logged=True, favorite=True, template=True,
+                   nutrients={"energy": 120.0, "proteins": 8.0})
+    keeper = add_food(food_engine, nutrients={"energy": 200.0, "proteins": 20.0})
+    with food_engine.connect() as db:
+        before = db.execute(text("""
+            SELECT id, eaten_on, meal, servings FROM tracker_food_entries
+            WHERE product_id=:id
+        """), {"id": old}).one()
+    assert food.totals_for("2026-11-14", db_engine=food_engine)["energy"] == 240
+    assert duplicates.reassign_logged_uses641(food_engine, keeper, old, 1) == 1
+    assert food.totals_for("2026-11-14", db_engine=food_engine)["energy"] == 400
+    with food_engine.connect() as db:
+        after = db.execute(text("""
+            SELECT id, eaten_on, meal, servings FROM tracker_food_entries
+            WHERE product_id=:id
+        """), {"id": keeper}).one()
+        assert after == before
+        # Reassign affects only the logs, not favorites/templates.
+        assert db.execute(text("""
+            SELECT COUNT(*) FROM tracker_food_meal_template_items
+            WHERE product_id=:id
+        """), {"id": old}).scalar_one() == 1
+    # The previously used product becomes removable, and its remaining
+    # favorite/template references are reconciled in the existing operation.
+    assert duplicates.remove_unused_mismatch630(food_engine, keeper, old) == 1
+    with food_engine.connect() as db:
+        assert db.execute(text("""
+            SELECT COUNT(*) FROM tracker_food_products WHERE id=:id
+        """), {"id": old}).scalar_one() == 0
+        assert db.execute(text("""
+            SELECT COUNT(*) FROM tracker_food_meal_template_items
+            WHERE product_id=:id
+        """), {"id": keeper}).scalar_one() == 1
+
+
+def test_641_reassignment_rejects_stale_count_and_unrelated_food(food_engine):
+    old = add_food(food_engine, logged=True)
+    keeper = add_food(food_engine, nutrients={"energy": 150})
+    unrelated = add_food(food_engine, name="Some other food", barcode="777")
+    with pytest.raises(ValueError, match="Logged uses changed"):
+        duplicates.reassign_logged_uses641(food_engine, keeper, old, 2)
+    with pytest.raises(ValueError, match="not direct duplicate"):
+        duplicates.reassign_logged_uses641(food_engine, unrelated, old, 1)
+    with food_engine.connect() as db:
+        assert db.execute(text("""
+            SELECT product_id FROM tracker_food_entries
+        """)).scalar_one() == old
+
+
+def test_641_existing_resolution_route_reassigns_then_removes(food_engine):
+    from app.food_read_engine406 import get_food_read_engine406
+    from app.food_storage_guard391 import require_food_storage391
+    old = add_food(food_engine, logged=True)
+    keeper = add_food(food_engine, nutrients={"energy": 190})
+    app = FastAPI()
+    app.include_router(duplicates.router)
+    app.dependency_overrides[get_food_read_engine406] = lambda: food_engine
+    app.dependency_overrides[require_food_storage391] = lambda: None
+    with TestClient(app) as browser:
+        bad = browser.post("/food/duplicates/resolve-unused", data={
+            "keep_id": str(keeper), "remove_id": str(old),
+            "expected_count": "2",
+        }, follow_redirects=False)
+        assert bad.status_code == 422
+        good = browser.post("/food/duplicates/resolve-unused", data={
+            "keep_id": str(keeper), "remove_id": str(old),
+            "expected_count": "1",
+        }, follow_redirects=False)
+        assert good.status_code == 303
+        assert good.headers["location"] == "/food/duplicates?reassigned=1"
+        assert "1 logged meal entry reassigned" in browser.get(
+            good.headers["location"]
+        ).text
+        delete = browser.post("/food/duplicates/resolve-unused", data={
+            "keep_id": str(keeper), "remove_id": str(old),
+        }, follow_redirects=False)
+        assert delete.status_code == 303
+        assert delete.headers["location"] == "/food/duplicates?resolved=1"
+
+
+def test_641_unused_removal_checkbox_handler_is_not_applied():
+    source = (ROOT / "app/static/js/tracker-food-duplicates629.js").read_text()
+    assert 'form.food629-merge:not(.food630-resolve)' in source
+    assert "form.food630-resolve, form.food641-reassign" in source
+    template = (ROOT / "app/templates/food_duplicates629.html").read_text()
+    assert 'name="expected_count"' in template
+    assert 'action="/food/duplicates/resolve-unused"' in template
