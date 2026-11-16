@@ -28,6 +28,7 @@ HTML = """<!doctype html><html><body>
   <input id="food-source"><input name="servings" value="2">
   <input id="food-nutrient-energy">
   <input id="food-nutrient-proteins">
+  <input id="food-nutrient-fat">
 </form>
 <p id="food-scan-status"></p>
 <div id="food499-review">
@@ -130,6 +131,7 @@ def test_name_search_loads_barcode_details_for_review(tab):
     expect(page.locator("#food-serving")).to_have_value("170 g")
     expect(page.locator("#food-nutrient-energy")).to_have_value("170")
     expect(page.locator("#food-nutrient-proteins")).to_have_value("20.4")
+    expect(page.locator("#food-nutrient-fat")).to_have_value("0")
     expect(page.locator("#food380-status")).to_contain_text(
         "Review the serving basis"
     )
