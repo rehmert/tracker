@@ -45,9 +45,10 @@ def test_579_manifest_is_exact_and_covers_source_workflows(report):
 
 def test_579_two_tracked_javascript_callsites_not_overclaimed(report):
     source = report.reviewed_js_source_callsites(ROOT)
-    assert source["tracked_js_callsites"] == 49
+    assert source["tracked_js_callsites"] == 50
     assert source["witnessed_js_callsites"] == 2
-    assert source["not_witnessed_in_579"] == 47
+    assert source["not_witnessed_in_579"] == 48
+    assert source["unqualified_coa_multi651_callsites"] == 1
     assert len(source["source_refs"]) == 2
     assert any("tracker-mobile-quick528.js:" in ref
                for ref in source["source_refs"])
