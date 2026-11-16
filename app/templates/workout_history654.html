@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Workout History{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+{% endblock %}
+{% block content %}
+<section class="workout654">
+  <p><a href="/workouts">← Back to Workouts</a></p>
+  <h1>Workout History</h1>
+  <p>Started {{ workout.started_at|dt }}</p>
+  <p>{{ 'Completed ' ~ (workout.completed_at|dt) if workout.completed_at else 'In progress' }}</p>
+  <section>
+    <h2>Recorded Sets</h2>
+    {% for row in rows %}
+      <p><strong>{{ names.get(row.equipment_id, 'Equipment') }}</strong>:
+        {{ '%.1f'|format(row.weight_lb) }} lb × {{ row.reps }} reps
+        {% if row.effort %} · effort {{ row.effort }}/10{% endif %}
+        · {{ row.performed_at|dt }}
+      </p>
+    {% else %}
+      <p>No sets were recorded during this session.</p>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}
