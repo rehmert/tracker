@@ -25,6 +25,8 @@ ALLOW_DIFF = frozenset({
     "scripts/tracker-resume-evidence645.py",
     "scripts/tracker-coa-dev645.sh",
     "scripts/tracker-coa-preflight645.sh",
+    "scripts/tracker-attachment-integrity645.py",
+    "scripts/tracker-prod-uploads-to-dev645.sh",
 })
 MARKERS = (
     "=== BROWSER GATE PASSED ===",
