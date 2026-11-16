@@ -56,14 +56,14 @@ def test_647_single_form_for_all_documents_without_per_row_save():
         assert "Save all test types" in html
         assert 'data-coa-bulk-form' in html
         assert 'data-coa-bulk-save' in html
-        assert "tracker-coa-types647.js?v=647" in html
+        assert "tracker-coa-types647.js?v=649" in html
         assert 'data-coa-bulk-status' in html
         assert 'class="coa-test-save"' not in html
         for aid in ids:
             assert f'name="test_type_{aid}" form="coa-bulk-test-types"' in html
             assert f'name="original_test_type_{aid}" value="' in html
             assert f'name="custom_test_type_{aid}"' in html
-        assert "data-coa-default-option" in html
+        assert "data-coa-default-option" not in html
 
 
 def test_647_two_updates_one_commit_one_revision():
