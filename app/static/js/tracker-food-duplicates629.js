@@ -3,14 +3,17 @@
 (() => {
   "use strict";
   function init() {
-    document.querySelectorAll("form.food630-resolve").forEach(form => {
+    document.querySelectorAll("form.food630-resolve, form.food641-reassign").forEach(form => {
       form.addEventListener("submit", event => {
         if (!window.confirm(form.dataset.confirm || "Resolve these saved foods?")) {
           event.preventDefault();
         }
       });
     });
-    document.querySelectorAll("form.food629-merge").forEach(form => {
+    // Only equivalent-consolidation forms contain removable checkboxes.
+    // Resolve-unused forms have a hidden remove_id and must NEVER enter the
+    // checkbox reconciliation/double-confirmation path.
+    document.querySelectorAll('form.food629-merge:not(.food630-resolve):not(.food641-reassign)').forEach(form => {
       const keep = form.querySelector('select[name="keep_id"]');
       const boxes = [...form.querySelectorAll('input[name="remove_id"]')];
       if (!keep || !boxes.length) return;
