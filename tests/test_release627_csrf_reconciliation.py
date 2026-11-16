@@ -88,7 +88,15 @@ def test_627_coa_upload_asserts_rendered_saved_field_not_body_text():
         expected = "expect(page.locator('input[name=\"lab_name\"]')).to_have_value(" + marker + ")"
         assert expected in source, module
         assert 'expect(page.locator("body")).to_contain_text(' + marker + ')' not in source
-        assert "View existing document" in source
+        # The original per-file review label was removed when every COA
+        # upload became a first-class document. Keep the signed browser
+        # witness but pin it to the filename link and editable controls.
+        assert 'page.locator("#test-documents").get_by_role(' in source
+        assert '"/original-file"' in source
+        assert 'expect(document).to_be_visible()' in source
+        assert '"combobox", name="Test type for ' in source
+        assert '"radio", name="Make ' in source
+        assert "View existing document" not in source
 
 
 def test_627_release511_inventory_scopes_new_browser_modules_strict_only():
