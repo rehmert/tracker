@@ -18,3 +18,8 @@
 .coa-audit-history > details { margin: .45rem 0; }
 .coa-audit-history > details > summary { cursor: pointer; }
 .coa-audit-history pre { max-height: 24rem; overflow: auto; }
+
+/* Release 650: one selectable default per document, including first uploads. */
+.coa-default-choice { display:inline-flex; align-items:center; gap:.35rem; white-space:nowrap; cursor:pointer; }
+.coa-default-choice input { width:1rem; height:1rem; margin:0; }
+.coa-document-table td:nth-child(3) { min-width:6rem; }
