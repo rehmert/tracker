@@ -5,12 +5,25 @@ All tests run against isolated TRACKER_DATA_DIR. Never against live PROD files.
 from uuid import uuid4
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from app.main import app
 from app.db import SessionLocal
 from app.models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision, Compound, Vial
 from app.attachment_files400 import attachment_directory400
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _start_isolated_tracker_schema650():
+    """Match existing COA suites: run FastAPI lifespan before DB fixture inserts.
+
+    Each pytest worker's conftest has already selected an isolated data
+    directory. The lifespan runs migrations and creates all model tables.
+    TestClient without a context manager does not enter the lifespan.
+    """
+    with TestClient(app):
+        pass
 
 
 def _fixture(*, original=True, extra=True):
