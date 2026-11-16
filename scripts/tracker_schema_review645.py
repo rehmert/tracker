@@ -74,7 +74,7 @@ def review(root, base, target):
     if "ForeignKey(\"coas.id\", ondelete=\"CASCADE\")" not in extra or \
        "ForeignKey(\"coa_attachments.id\", ondelete=\"CASCADE\")" not in extra:
         raise ValueError("Expected ownership and cascading foreign keys")
-    # This release adds exactly one nullable coas column through the existing
+    # This release adds two nullable coas columns through the existing
     # non-destructive, idempotent migration hook. Never rewrite old percentages.
     migration_before = git(root, "show", f"{base}:app/migrations.py")
     migration_after = git(root, "show", f"{target}:app/migrations.py")
