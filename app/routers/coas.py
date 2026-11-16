@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import MetaData, Table, inspect, insert, select
 from datetime import datetime, timezone
@@ -268,6 +268,70 @@ def update_coa_attachment_test_type(
         item.test_type = test_type
         db.commit()
     return services.flash_redirect(f"/coas/{cid}", msg="Test type saved.")
+
+
+@router.post("/coas/{cid}/attachments/test-types")
+async def update_coa_attachment_test_types647(
+    cid: int, request: Request, db: Session = Depends(get_scoped_db390),
+):
+    """Validate the entire document editor before one atomic commit.
+
+    The caller posts every currently displayed attachment, including the prior
+    value for optimistic concurrency. No partial updates on bad or stale rows.
+    """
+    coa = db.get(Coa, cid)
+    if coa is None:
+        raise HTTPException(404, "COA not found")
+    wants_json = "application/json" in request.headers.get("accept", "").lower()
+
+    def reply(error: str = "", updated: int = 0, types: dict | None = None,
+              status: int = 200):
+        if wants_json:
+            return JSONResponse(
+                {"ok": not bool(error), "error": error, "updated": updated,
+                 "types": types or {}},
+                status_code=status,
+            )
+        response = services.flash_redirect(
+            f"/coas/{cid}", err=error, msg=f"{updated} test type(s) saved."
+        )
+        response.headers["location"] += "#test-documents"
+        return response
+
+    attachments = {item.id: item for item in coa.attachments}
+    if not attachments:
+        return reply("There are no test documents to update.", status=400)
+    if len(attachments) > 500:
+        return reply("Too many test documents for one update.", status=400)
+    form = await request.form()
+    expected = {f"{name}_{aid}" for aid in attachments
+                for name in ("test_type", "custom_test_type", "original_test_type")}
+    # The browser's signed anti-CSRF field may accompany the form.
+    submitted = set(form.keys()) - {"csrf_token"}
+    if submitted != expected or any(len(form.getlist(key)) != 1 for key in expected):
+        return reply("Document list changed. Reload before saving.", status=409)
+
+    proposed = {}
+    for aid, attachment in attachments.items():
+        previous = form[f"original_test_type_{aid}"]
+        selected = form[f"test_type_{aid}"]
+        custom = form[f"custom_test_type_{aid}"]
+        if not all(isinstance(v, str) for v in (previous, selected, custom)):
+            return reply("Invalid test type form.", status=400)
+        if len(previous) > 120 or previous != (attachment.test_type or ""):
+            return reply("A document changed since you opened the page. Reload before saving.", status=409)
+        try:
+            proposed[aid] = _resolve_attachment_test_type646(selected, custom)
+        except ValueError as exc:
+            return reply(str(exc), status=400)
+    changed = [(attachments[aid], label) for aid, label in proposed.items()
+               if (attachments[aid].test_type or "") != label]
+    if changed:
+        _revision(db, coa, "attachment_test_types_bulk")
+        for item, label in changed:
+            item.test_type = label
+        db.commit()
+    return reply(updated=len(changed), types={str(aid): label for aid, label in proposed.items()})
 
 
 @router.post("/coas/{cid}/default-file")
