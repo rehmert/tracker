@@ -34,6 +34,7 @@ mkdir -p "$TRACKER_DATA_DIR"
 git diff --check "$BASE" "$TARGET"
 "$PY" -m compileall -q app scripts tests/test_coa_document_defaults645.py tests/test_coa_endotoxins645.py
 bash -n scripts/tracker-release.sh scripts/tracker_prod_remote568.sh scripts/tracker-coa-dev645.sh
+"$PY" -m py_compile scripts/tracker-resume-evidence645.py
 "$PY" scripts/tracker_schema_review645.py --root "$APP" --base "$BASE" --target "$TARGET"
 "$PY" - <<'PY'
 from pathlib import Path
