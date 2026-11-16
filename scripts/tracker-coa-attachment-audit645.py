@@ -17,7 +17,7 @@ def configured_data_dir() -> Path:
     env = Path("/etc/tracker.env")
     values = {}
     for line in env.read_text().splitlines():
-        match = re.match(r'^\\s*(?:export\\s+)?(TRACKER_INSTANCE|TRACKER_DATA_DIR)\\s*=(.*)$', line)
+        match = re.match(r'^\s*(?:export\s+)?(TRACKER_INSTANCE|TRACKER_DATA_DIR)\s*=(.*)$', line)
         if match:
             values[match.group(1)] = match.group(2).strip().strip("\\\"'")
     if values.get("TRACKER_INSTANCE", "").upper() != "DEV":
@@ -48,7 +48,7 @@ def read_references(db_file: Path):
             ):
                 if not original:
                     continue
-                if not stored or stored in (".", "..") or "/" in stored or "\\\\" in stored:
+                if not stored or stored in (".", "..") or "/" in stored or "\\" in stored:
                     yield (table, ident, f"INVALID_STORED_NAME:{stored!r}", original)
                 else:
                     yield (table, ident, f"uploads/{folder}/{stored}", original)
