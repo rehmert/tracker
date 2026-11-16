@@ -56,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (
         field &&
         value !== null &&
+        value !== undefined &&
+        String(value).trim() !== '' &&
         Number.isFinite(Number(value))
       ) {
         field.value = value;
