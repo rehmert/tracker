@@ -192,7 +192,7 @@ print(data.resolve())
 PY
 )"
  echo "=== LIVE ATTACHMENT INTEGRITY BEFORE QUALIFICATION ==="
- if [[ "$INSTANCE" == DEV && ( "$DB_MIGRATION" == 0 || "$REVIEWED_COA_652" == 1 ) ]]; then
+ if [[ "$INSTANCE" == DEV && ( "$DB_MIGRATION" == 0 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
   # DEV upload files are not mirrored from PROD. The DEV-only adapter permits
   # missing references but still fails for invalid paths and hash mismatches.
   "$PY" "$QA/scripts/tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR" ||
@@ -386,7 +386,7 @@ PY
  if [[ -f "$APP/.env" ]]; then cp -p "$APP/.env" "$SAVE/local.env"; chmod 600 "$SAVE/local.env"; fi
  if [[ "$DB_MIGRATION" == 1 ]]; then
   echo "=== LIVE ATTACHMENT INTEGRITY BEFORE MIGRATION BACKUP ==="
-  if [[ "$INSTANCE" == DEV && "$REVIEWED_COA_652" == 1 ]]; then
+  if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
    "$PY" "$QA/scripts/tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR" ||
      fail "DEV has unexpected/changed upload references"
    echo "LIVE_ATTACHMENT_PREBACKUP=DEV_652_MISSING_REFERENCE_POLICY"
@@ -409,7 +409,7 @@ PY
 )"
   [[ -f "$DATA_DIR/tracker.db" ]] || fail "Live SQLite database missing"
   mkdir -m 700 "$SAVE/archives"
-  if [[ "$INSTANCE" == DEV && "$REVIEWED_COA_652" == 1 ]]; then
+  if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
    ARCHIVE="$(PYTHONPATH="$QA" TRACKER_DATA_DIR="$DATA_DIR" "$PY"      "$QA/scripts/tracker-coa-dev-backup652.py" --data "$DATA_DIR" --dest "$SAVE/archives")" ||
      fail "DEV migration archive with known missing attachment was not verified"
    echo "DEV_652_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS"
@@ -422,13 +422,13 @@ print(create_backup(Path(sys.argv[1]),Path(sys.argv[2])))
 PY
 )"
   fi
-  if [[ "$INSTANCE" == DEV && "$REVIEWED_COA_652" == 1 ]]; then
+  if [[ "$INSTANCE" == DEV && ( "$REVIEWED_COA_652" == 1 || "$REVIEWED_WORKOUT_654" == 1 ) ]]; then
    [[ "$ARCHIVE" == "$SAVE"/archives/tracker-dev652-*.zip &&
       -f "$ARCHIVE" && ! -L "$ARCHIVE" ]] ||
      fail "Release 652 backup helper did not return a single valid archive pathname"
   fi
   chmod 600 "$ARCHIVE"
-  if [[ "$INSTANCE" != DEV || "$REVIEWED_COA_652" != 1 ]]; then
+  if [[ "$INSTANCE" != DEV || ( "$REVIEWED_COA_652" != 1 && "$REVIEWED_WORKOUT_654" != 1 ) ]]; then
    PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data" \
     "$PY" "$QA/scripts/tracker-restore-verify.py" --archive "$ARCHIVE"
   fi
