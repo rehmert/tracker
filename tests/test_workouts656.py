@@ -54,6 +54,29 @@ def test_656_per_machine_progress_and_qr_scanning_lookup():
         }, follow_redirects=False)
         assert lookup.status_code == 303
         assert f"machine={equipment_id}" in lookup.headers["location"]
+        camera_match = client.get("/workouts/qr/scan", params={
+            "code": "https://example.invalid/nautilus?machine=656&unit=1",
+        }, follow_redirects=False)
+        assert camera_match.status_code == 303
+        assert f"machine={equipment_id}" in camera_match.headers["location"]
+
+        new_code = "https://example.invalid/unmapped?code=656&unit=2"
+        unmapped = client.get("/workouts/qr/scan", params={
+            "code": new_code
+        }, follow_redirects=False)
+        assert unmapped.status_code == 303
+        assert unmapped.headers["location"].startswith("/workouts?unmapped_qr=")
+        mapping_page = client.get(unmapped.headers["location"])
+        assert mapping_page.status_code == 200
+        assert 'id="workout-add-equipment656"' in mapping_page.text
+        assert "New QR code detected." in mapping_page.text
+        assert 'value="https://example.invalid/unmapped?code=656&amp;unit=2"' in mapping_page.text
+
+        oversized = client.get("/workouts/qr/scan", params={
+            "code": "Z" * 1025,
+        }, follow_redirects=False)
+        assert oversized.headers["location"].startswith("/workouts?err=")
+
 
         assert post(client, "/workouts/start").status_code == 303
         for weight, reps in ((80, 12), (100, 8)):
