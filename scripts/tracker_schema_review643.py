@@ -22,6 +22,13 @@ ALLOWED = frozenset({
     "scripts/tracker_schema_review643.py",
     "scripts/tracker-release.sh",
     "scripts/tracker_prod_remote568.sh",
+    "scripts/tracker_csrf_reconcile627.py",
+    "tests/test_release627_csrf_remaining_negative_matrix.py",
+    "tests/test_release627_csrf_reconciliation.py",
+    "tests/test_release597_purchase_supply_csrf.py",
+    "tests/test_release574_csrf_dynamic_shapes.py",
+    "scripts/tracker-coa-preflight644.sh",
+    "scripts/tracker-coa-deploy-dev644.sh",
 })
 
 RELATIONSHIP = (
