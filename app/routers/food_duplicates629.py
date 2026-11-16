@@ -249,6 +249,48 @@ def remove_unused_mismatch630(db_engine, keep_id, remove_id):
     return 1
 
 
+
+def reassign_logged_uses641(db_engine, keep_id, remove_id, expected_count):
+    """Repoint all logged meals from one duplicate to a chosen keeper.
+
+    Dates, meals, serving quantities, entry IDs and other product versions stay
+    intact. Historical nutrient totals are intentionally recalculated using
+    the chosen keeper. The submitted expected count prevents stale approvals.
+    """
+    if (type(keep_id) is not int or type(remove_id) is not int or
+            keep_id <= 0 or remove_id <= 0 or keep_id == remove_id or
+            type(expected_count) is not int or
+            not 1 <= expected_count <= 1000000):
+        raise ValueError("Invalid logged-food reassignment")
+    food_bundle376.init_schema(db_engine)
+    with db_engine.begin() as db:
+        rows = [db.execute(text("""
+            SELECT id,name,barcode,serving_description
+            FROM tracker_food_products WHERE id=:id
+        """), {"id": id_}).mappings().first()
+                for id_ in (keep_id, remove_id)]
+        if any(row is None for row in rows):
+            raise ValueError("Saved food changed or was removed")
+        keeper, redundant = rows
+        same_name = normalize629(keeper["name"]) == normalize629(redundant["name"])
+        barcode = normalize629(keeper["barcode"])
+        same_barcode = bool(barcode and barcode == normalize629(redundant["barcode"]))
+        if not (same_name or same_barcode):
+            raise ValueError("Foods are not direct duplicate candidates")
+        count = db.execute(text("""
+            SELECT COUNT(*) FROM tracker_food_entries WHERE product_id=:id
+        """), {"id": remove_id}).scalar_one()
+        if count != expected_count:
+            raise ValueError("Logged uses changed; reload before reassigning")
+        result = db.execute(text("""
+            UPDATE tracker_food_entries SET product_id=:keep
+            WHERE product_id=:old
+        """), {"keep": keep_id, "old": remove_id})
+        if result.rowcount != count:
+            raise ValueError("Logged uses changed while reassigning")
+    return count
+
+
 def merge_equivalent629(db_engine, keep_id, remove_ids):
     if (type(keep_id) is not int or keep_id < 1
             or type(remove_ids) is not list
@@ -310,6 +352,7 @@ def review_duplicate_foods629(
     request: Request,
     merged: int = 0,
     resolved: int = 0,
+    reassigned: int = 0,
     show_reviewed: int = 0,
     db_engine=Depends(get_food_read_engine406),
 ):
@@ -319,6 +362,7 @@ def review_duplicate_foods629(
         **report, nutrients=food.NUTRIENTS,
         merged=max(0, min(merged, MAX_MERGE)),
         resolved=resolved == 1,
+        reassigned=max(0, min(reassigned, 1000000)),
         show_reviewed=show_reviewed == 1,
     )
 
@@ -368,6 +412,29 @@ async def resolve_unused_food630(
         raise HTTPException(422, str(exc)) from exc
     return RedirectResponse("/food/duplicates?resolved=1", status_code=303)
 
+
+
+@router.post("/food/duplicates/reassign-logs")
+async def reassign_duplicate_food_logs641(
+    request: Request,
+    db_engine=Depends(get_food_read_engine406),
+):
+    form = await request.form()
+    if (set(form) - {"keep_id", "remove_id", "expected_count", "csrf_token"}
+            or any(len(form.getlist(k)) != 1
+                   for k in ("keep_id", "remove_id", "expected_count"))
+            or len(form.getlist("csrf_token")) > 1):
+        raise HTTPException(422, "Invalid reassignment form")
+    try:
+        count = reassign_logged_uses641(
+            db_engine, int(form["keep_id"]), int(form["remove_id"]),
+            int(form["expected_count"]),
+        )
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return RedirectResponse(
+        f"/food/duplicates?reassigned={count}", status_code=303
+    )
 
 @router.post("/food/duplicates/keep-distinct")
 async def keep_distinct_food630(
