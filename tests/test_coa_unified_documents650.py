@@ -259,7 +259,7 @@ def test_650_new_initial_upload_creates_editable_document_on_first_write():
             response = client.post(
                 f"/vials/{vid}/coas",
                 files={"file": ("first-new.pdf", io.BytesIO(
-                    b"%PDF-1.4\\nnew first COA 650\\n"), "application/pdf")},
+                    b"%PDF-1.4\nnew first COA 650\n"), "application/pdf")},
                 data={"job_id": token, "endotoxin_result_kind": "lt1"},
                 follow_redirects=False,
             )
