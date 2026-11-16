@@ -64,7 +64,15 @@ NEW_DEFAULT_ROUTES645 = frozenset({
     ("POST", "/coas/{cid}/attachments/{aid}/test-type"),
     ("POST", "/coas/{cid}/default-file"),
 })
-NEW_UNQUALIFIED_ROUTES = NEW_FOOD_ROUTES | NEW_REGIMEN_ROUTES | NEW_COA_ROUTES | NEW_DEFAULT_ROUTES645
+# Release 647 adds one bulk metadata write route. It must get negative
+# strict-CSRF coverage; this is not a positive signed-browser witness.
+NEW_BULK_ROUTES647 = frozenset({
+    ("POST", "/coas/{cid}/attachments/test-types"),
+})
+NEW_UNQUALIFIED_ROUTES = (
+    NEW_FOOD_ROUTES | NEW_REGIMEN_ROUTES | NEW_COA_ROUTES |
+    NEW_DEFAULT_ROUTES645 | NEW_BULK_ROUTES647
+)
 
 
 def _regimen_route_manifest():
