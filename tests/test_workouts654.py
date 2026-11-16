@@ -80,6 +80,16 @@ def test_654_catalog_qr_free_weights_and_session_logging():
         assert "100.0 lb" in logged and "12" in logged
         assert "Dumbbell Curl" in logged
 
+        from app.workout_models654 import WorkoutSession654
+        with SessionLocal() as db:
+            session_id = db.query(WorkoutSession654).order_by(
+                WorkoutSession654.id.desc()
+            ).first().id
+        history = client.get(f"/workouts/sessions/{session_id}")
+        assert history.status_code == 200
+        assert "100.0 lb" in history.text
+        assert "Nautilus Chest Press" in history.text
+
         finished = _post(client, "/workouts/finish")
         assert finished.status_code == 303
         late = _post(client, "/workouts/sets", {
@@ -91,9 +101,10 @@ def test_654_catalog_qr_free_weights_and_session_logging():
 def test_654_template_and_route_contract():
     from jinja2 import Environment
 
-    Environment().parse(
-        (ROOT / "app/templates/workouts654.html").read_text(encoding="utf-8")
-    )
+    for template_name in ("workouts654.html", "workout_history654.html"):
+        Environment().parse(
+            (ROOT / "app/templates" / template_name).read_text(encoding="utf-8")
+        )
     main = (ROOT / "app/main.py").read_text(encoding="utf-8")
     nav = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
     assert "app.include_router(workouts654.router)" in main
@@ -102,3 +113,25 @@ def test_654_template_and_route_contract():
         ROOT / "app/routers/workouts654.py"
     ).read_text(encoding="utf-8")
     assert (ROOT / "app/static/css/tracker-workouts654.css").is_file()
+
+
+
+def test_654_additive_schema_is_repeatable_without_mutating_existing_data(tmp_path):
+    from sqlalchemy import create_engine, text
+    from app.db import Base
+
+    isolated = create_engine("sqlite:///" + str(tmp_path / "existing.db"))
+    try:
+        with isolated.begin() as conn:
+            conn.exec_driver_sql("CREATE TABLE legacy_canary (id INTEGER PRIMARY KEY, value TEXT)")
+            conn.exec_driver_sql("INSERT INTO legacy_canary(id, value) VALUES (1, 'keep')")
+        Base.metadata.create_all(isolated)
+        assert {
+            "legacy_canary", "workout_equipment654",
+            "workout_sessions654", "workout_sets654"
+        } <= set(inspect(isolated).get_table_names())
+        Base.metadata.create_all(isolated)
+        with isolated.connect() as conn:
+            assert conn.execute(text("SELECT value FROM legacy_canary WHERE id=1")).scalar_one() == "keep"
+    finally:
+        isolated.dispose()
