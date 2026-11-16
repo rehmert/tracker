@@ -1,0 +1,20 @@
+/* Release 649: one document list and a quiet, expandable audit trail. */
+.coa-document-origin {
+  display: inline-block;
+  margin-left: .35rem;
+  padding: .12rem .4rem;
+  border-radius: .35rem;
+  background: var(--wash);
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.coa-audit-history > summary {
+  cursor: pointer;
+  font-weight: 650;
+  padding: .4rem 0;
+}
+.coa-audit-history > details { margin: .45rem 0; }
+.coa-audit-history > details > summary { cursor: pointer; }
+.coa-audit-history pre { max-height: 24rem; overflow: auto; }
