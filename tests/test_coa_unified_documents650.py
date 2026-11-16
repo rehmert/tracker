@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from app.main import app
 from app.db import SessionLocal
-from app.models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision
+from app.models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision, Compound, Vial
 from app.attachment_files400 import attachment_directory400
 
 
@@ -237,3 +237,50 @@ def test_650_legacy_file_replacement_updates_existing_attachment_not_duplicate()
             if coa and coa.original_name:
                 _clean(coa.stored_name)
         _clean(first, second)
+
+
+def test_650_new_initial_upload_creates_editable_document_on_first_write():
+    # Direct COA creation via a vial must no longer strand its first PDF outside
+    # the regular attachment model. Keep the legacy fields for old external URLs.
+    import io
+    token = uuid4().hex
+    with SessionLocal() as db:
+        compound = Compound(name=f"QA650-compound-{token}", category="peptide")
+        db.add(compound)
+        db.flush()
+        vial = Vial(compound_id=compound.id, content_value=10.0,
+                    content_unit="mg", label=f"QA650-{token}")
+        db.add(vial)
+        db.commit()
+        vid = vial.id
+    stored = None
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                f"/vials/{vid}/coas",
+                files={"file": ("first-new.pdf", io.BytesIO(
+                    b"%PDF-1.4\\nnew first COA 650\\n"), "application/pdf")},
+                data={"job_id": token, "endotoxin_result_kind": "lt1"},
+                follow_redirects=False,
+            )
+            assert response.status_code == 303, response.text
+            with SessionLocal() as db:
+                record = db.scalar(select(Coa).where(Coa.job_id == token))
+                assert record is not None
+                cid = record.id
+                stored = record.stored_name
+                mirror = [x for x in record.attachments if x.stored_name == stored]
+                assert len(mirror) == 1
+                assert mirror[0].original_name == "first-new.pdf"
+                assert mirror[0].test_type == ""
+                assert record.original_name == "first-new.pdf"
+            html = client.get(f"/coas/{cid}").text
+            assert html.count(f'href="/coas/{cid}/original-file"') == 1
+            assert html.count("first-new.pdf") >= 1
+            assert 'name="test_type_original"' in html
+            assert 'name="document" value="original"' in html
+            assert "Save all test types" in html
+            assert client.get(f"/coas/{cid}/file").status_code == 200
+    finally:
+        if stored:
+            _clean(stored)
