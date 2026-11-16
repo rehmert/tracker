@@ -14,7 +14,7 @@ import os
 import sqlite3
 import tempfile
 import zipfile
-from contextlib import closing
+from contextlib import closing, redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -101,6 +101,20 @@ def verify_archive(archive, known_missing):
         return len(records)
 
 
+
+def verify_dev_attachment_gate(data):
+    """Send diagnostics to stderr; stdout is exclusively the archive pathname.
+
+    The shell runner assigns ARCHIVE from stdout via command substitution.
+    Any diagnostic on stdout corrupts that pathname and breaks deployment.
+    """
+    with redirect_stdout(os.sys.stderr):
+        result = attachment_gate(["--data", str(data)])
+    if result != 0:
+        raise ValueError("DEV present attachment hashes or paths failed integrity")
+
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=Path, required=True)
@@ -113,8 +127,7 @@ def main():
     dest = args.dest.resolve()
     if not data.joinpath("tracker.db").is_file() or dest.is_symlink():
         raise ValueError("Invalid DEV database or backup destination")
-    if attachment_gate(["--data", str(data)]) != 0:
-        raise ValueError("DEV present attachment hashes or paths failed integrity")
+    verify_dev_attachment_gate(data)
     dest.mkdir(mode=0o700, parents=True, exist_ok=True)
     with upload_guard(data):
         inventory_before = upload_inventory(data / "uploads")
