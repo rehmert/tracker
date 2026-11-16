@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}COA test types{% endblock %}
+{% block content %}
+<p><a href="/coas">← All COAs</a></p>
+<h1>Manage COA test types</h1>
+<p class="note">Add reusable tests, rename labels, or move them between groups. Changing a label updates the display everywhere without overwriting the test selection recorded on older COAs. Deactivated types cannot be newly assigned, but existing documents retain them.</p>
+<section>
+<h2>Add a test type</h2>
+<form method="post" action="/coa-test-types" class="grid">
+<label class="field"><span>Test type name</span><input name="label" maxlength="100" placeholder="e.g. Net content (Beer–Lambert AUC)" required></label>
+<label class="field"><span>Group</span><input name="group_name" maxlength="60" list="coa-type-groups652" value="Core analysis" required></label>
+<div><button class="primary">Add test type</button></div>
+</form>
+</section>
+<datalist id="coa-type-groups652">
+<option value="Core analysis"></option>
+<option value="Safety &amp; contamination"></option>
+<option value="Specialized analysis"></option>
+{% for row in types %}<option value="{{ row.group_name }}"></option>{% endfor %}
+</datalist>
+<section>
+<h2>Existing test types</h2>
+<div class="scroll"><table>
+<thead><tr><th>Test type</th><th>Group</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody>
+{% for row in types %}
+<tr>
+<td>
+<form id="coa-type-edit-{{ row.id }}" method="post" action="/coa-test-types/{{ row.id }}/edit"></form>
+<input form="coa-type-edit-{{ row.id }}" name="label" value="{{ row.label }}" maxlength="100" aria-label="Name for test type {{ row.id }}" required>
+</td>
+<td><input form="coa-type-edit-{{ row.id }}" name="group_name" value="{{ row.group_name }}" list="coa-type-groups652" maxlength="60" aria-label="Group for test type {{ row.id }}" required></td>
+<td>{{ 'Active' if row.active else 'Inactive' }}{% if row.builtin_code %} · built-in{% endif %}</td>
+<td>
+<button form="coa-type-edit-{{ row.id }}">Save</button>
+<form method="post" action="/coa-test-types/{{ row.id }}/toggle" class="inline">
+<button type="submit">{{ 'Deactivate' if row.active else 'Reactivate' }}</button>
+</form>
+</td>
+</tr>
+{% else %}<tr><td colspan="4">No test types configured.</td></tr>{% endfor %}
+</tbody></table></div>
+</section>
+{% endblock %}
