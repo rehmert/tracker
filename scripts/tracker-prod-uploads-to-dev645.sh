@@ -35,9 +35,10 @@ PY
 command -v rsync >/dev/null || fail "rsync required on DEV and PROD"
 exec 9>/run/lock/tracker-db-sync.lock
 flock -n 9 || fail "Database replication or deployment currently active"
-# Verify the actual PROD label and canonical data path, including quoted values.
-if ! ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes "$SOURCE" \
- 'python3 -' <<'PY'
+# Discover PROD's own configured canonical data directory. Do not assume
+# its location equals DEV's configured storage root.
+if ! REMOTE_DATA="$(ssh -o BatchMode=yes -o ConnectTimeout=8 \
+ -o StrictHostKeyChecking=yes "$SOURCE" 'python3 -' <<'PY'
 from pathlib import Path
 import re
 import shutil
@@ -51,24 +52,36 @@ labels = values.get("TRACKER_INSTANCE", [])
 roots = values.get("TRACKER_DATA_DIR", ["/opt/tracker/data"])
 if len(labels) != 1 or labels[0].upper() != "PROD":
     raise SystemExit("UPLOAD_REPLICATION=FAILED: remote instance is not explicitly PROD")
-if len(roots) != 1 or not roots[0] or Path(roots[0]).resolve() != Path("/opt/tracker/data").resolve():
-    raise SystemExit("UPLOAD_REPLICATION=FAILED: remote data directory mismatch")
-if not Path("/opt/tracker/data/tracker.db").is_file():
-    raise SystemExit("UPLOAD_REPLICATION=FAILED: PROD database absent")
-if not Path("/opt/tracker/data/uploads").is_dir() or not shutil.which("rsync"):
-    raise SystemExit("UPLOAD_REPLICATION=FAILED: remote uploads or rsync unavailable")
-print("UPLOAD_REPLICATION_REMOTE_IDENTITY=PROD_VERIFIED")
+if len(roots) != 1 or not roots[0]:
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: ambiguous remote data directory")
+raw = Path(roots[0])
+if not raw.is_absolute():
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: relative remote data directory")
+data = raw.resolve(strict=True)
+if not data.is_dir() or not (data / "tracker.db").is_file():
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: remote DB missing at configured data directory")
+if not (data / "uploads").is_dir() or (data / "uploads").is_symlink():
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: remote uploads directory missing or symlinked")
+if not shutil.which("rsync"):
+    raise SystemExit("UPLOAD_REPLICATION=FAILED: remote rsync unavailable")
+print(data)
 PY
-then
- fail "PROD identity, access, or upload source not verified"
+)"; then
+ fail "PROD identity, configured data path, or source verification failed"
 fi
+# Whitelist the remote pathname before interpolation into an rsync remote spec:
+# no spaces, quotes, colons, option prefixes or shell metacharacters.
+[[ "$REMOTE_DATA" =~ ^/[a-zA-Z0-9_./-]+$ && "$REMOTE_DATA" != */../* ]] ||
+ fail "Remote reported an unsupported or unsafe configured path"
+echo "UPLOAD_REPLICATION_REMOTE_IDENTITY=PROD_VERIFIED"
+echo "UPLOAD_REPLICATION_REMOTE_DATA=$REMOTE_DATA"
 echo "UPLOAD_REPLICATION_SOURCE=$SOURCE"
 echo "UPLOAD_REPLICATION_DESTINATION=/opt/tracker/data/uploads"
 # --ignore-existing never replaces DEV-only files; no --delete.
 rsync -rt --ignore-existing --omit-dir-times --no-owner --no-group \
  --chmod=F644,D755 \
  -e 'ssh -o BatchMode=yes -o StrictHostKeyChecking=yes' \
- "$SOURCE:/opt/tracker/data/uploads/" "/opt/tracker/data/uploads/" ||
+ "$SOURCE:$REMOTE_DATA/uploads/" "/opt/tracker/data/uploads/" ||
  fail "Additive PROD upload transfer failed"
 "$PY" - <<'PY'
 import hashlib
