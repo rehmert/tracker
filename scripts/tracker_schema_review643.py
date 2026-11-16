@@ -27,6 +27,10 @@ ALLOWED = frozenset({
     "tests/test_release627_csrf_reconciliation.py",
     "tests/test_release597_purchase_supply_csrf.py",
     "tests/test_release574_csrf_dynamic_shapes.py",
+    "tests/test_release596_vendor_multipart_csv.py",
+    "tests/test_release593_pk_final_witnesses.py",
+    "tests/test_release594_food_vendor_csrf.py",
+    "tests/test_release595_food_vendor_lifecycle.py",
     "scripts/tracker-coa-preflight644.sh",
     "scripts/tracker-coa-deploy-dev644.sh",
 })
