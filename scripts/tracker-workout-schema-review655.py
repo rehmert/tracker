@@ -115,7 +115,6 @@ def validate(root: Path, base: str, target: str) -> None:
     for check in (
         "--reviewed-workout-655",
         "tracker-workout-schema-review655.py",
-        "tracker-coa-dev-backup652.py",
         "tracker-workout-dev-backup655.py",
         "REVIEWED_WORKOUT_655",
     ):
