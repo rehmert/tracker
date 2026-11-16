@@ -53,7 +53,7 @@
 <td>
 <div class="coa-test-type-entry" data-coa-type-entry data-attachment-id="{{ doc.key }}" data-coa-multi651>
 <details class="coa-test-multi651">
-<summary data-coa-multi-summary>{{ doc.test_types|join(', ') if doc.test_types else 'Select test types' }}</summary>
+<summary data-coa-multi-summary>{{ doc.test_types|join(' · ') if doc.test_types else 'Select test types' }}</summary>
 <div class="coa-test-multi-options651">
 {% for group, options in coa_test_type_groups %}
 <fieldset><legend>{{ group }}</legend>
