@@ -83,7 +83,7 @@ cleanup() {
 worker() {
  RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
- QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0
+ QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0; RESUME_645_VERIFIED=0
  export GIT_CONFIG_COUNT=2
  export GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
  export GIT_CONFIG_KEY_1=safe.directory GIT_CONFIG_VALUE_1="$QA"
@@ -243,6 +243,22 @@ PY
    QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
   fi
  fi
+ # A backup-only Release 645 retry may reuse FULL prior qualification ONLY
+ # after exact evidence, unchanged application/tests, and prior failure stage
+ # are verified. Fresh focused tests and migration safeguards still execute.
+ if [[ -f "$RUN/resume-evidence645-request" ]]; then
+  [[ "$INSTANCE" == DEV && "$REF" == release/645-coa-default-document &&
+      "$REVIEWED_COA_645" == 1 && "$DB_MIGRATION" == 1 &&
+      "$QA_FULL_REQUIRED" == 1 ]] ||
+     fail "Release 645 resume requested outside reviewed full DEV gate"
+  "$PY" "$QA/scripts/tracker-resume-evidence645.py" \\
+      --app "$APP" --qa "$QA" --base "$BASE" --target "$TARGET" ||
+      fail "Prior Release 645 full qualification evidence not verified"
+  RESUME_645_VERIFIED=1
+  QA_FULL_REQUIRED=0
+  QA_CADENCE_REASON="verified prior full DEV qualification; backup-only retry"
+  echo "COA_645_RESUME_FULL_TEST_REUSE=VERIFIED"
+ fi
  echo "QA_FULL_REQUIRED=$QA_FULL_REQUIRED"
  echo "QA_CADENCE_REASON=$QA_CADENCE_REASON"
  if (( QA_FULL_REQUIRED == 1 )); then
@@ -266,8 +282,13 @@ PY
    --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
   echo "=== ALL BACKEND TESTS PASSED ==="
  else
-  echo "=== FULL BROWSER AND BACKEND SUITES DEFERRED TO NEXT FIFTH RELEASE ==="
-  echo "FOCUSED_RELEASE_GATE=PASSED"
+  if [[ "$RESUME_645_VERIFIED" == 1 ]]; then
+   echo "=== VERIFIED PRIOR FULL BROWSER AND BACKEND EVIDENCE REUSED ==="
+   echo "COA_645_FULL_QUALIFICATION_REUSE=PASSED"
+  else
+   echo "=== FULL BROWSER AND BACKEND SUITES DEFERRED TO NEXT FIFTH RELEASE ==="
+   echo "FOCUSED_RELEASE_GATE=PASSED"
+  fi
  fi
  cd "$APP"
  unset TRACKER_DATA_DIR PYTHONPATH
@@ -375,7 +396,7 @@ if [[ "${1:-}" == --worker ]]; then
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; RESUME_VERIFIED_645=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
@@ -385,6 +406,7 @@ while (( $# )); do
   --reviewed-facts-639) REVIEWED_FACTS_639=1; shift;;
   --reviewed-coa-643) REVIEWED_COA_643=1; shift;;
   --reviewed-coa-645) REVIEWED_COA_645=1; shift;;
+  --resume-verified-645) RESUME_VERIFIED_645=1; shift;;
   --serial-tests) fail "Serial testing prohibited";;
   --instance|--base|--target|--ref)
    (( $# >= 2 )) || fail "Missing argument for $1"
@@ -409,6 +431,7 @@ done
 [[ "$REVIEWED_COA_643" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA deployment requires --db-migration"
 [[ "$REVIEWED_COA_643" == 0 || ( "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
 [[ "$REVIEWED_COA_645" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA 645 requires --db-migration"
+[[ "$RESUME_VERIFIED_645" == 0 || ( "$INSTANCE" == DEV && "$REF" == release/645-coa-default-document && "$DB_MIGRATION" == 1 && "$REVIEWED_COA_645" == 1 ) ]] || fail "Resume is restricted to reviewed Release 645 DEV"
 [[ "$REVIEWED_COA_645" == 0 || ( "$REVIEWED_COA_643" == 0 && "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_REGIMEN_635" == 0 ) ]] || fail "Only one reviewed schema flag permitted"
 [[ $(id -u) == 0 && -x "$PY" && -f /etc/tracker.env ]] || fail "Run as root on configured Tracker host"
 instance_check "$INSTANCE"
@@ -427,6 +450,10 @@ bash -n "$RUN/worker.sh"
 UNIT="tracker-release-$(date +%s)-$$"
 # Make the log available before the worker starts; no source/data changes.
 touch "$RUN/deployment.log"
+if [[ "$RESUME_VERIFIED_645" == 1 ]]; then
+ printf "requested\\n" > "$RUN/resume-evidence645-request"
+ chmod 600 "$RUN/resume-evidence645-request"
+fi
 # Dedicated hosts: 18 vCPUs and 18 GiB RAM allocated per LXC.
 # Operator-required full parallel qualification: 16 pytest workers and
 # a 16 GiB systemd release-worker memory ceiling on both DEV and PROD.
