@@ -21,15 +21,28 @@ offered because historical COA records must remain interpretable.
 ## DEV qualification, before any production promotion
 1. Back up the DEV database; create an isolated worktree at this commit.
 2. Start DEV so `Base.metadata.create_all()` installs the additive catalog table.
-3. Run the *scoped* gate from the isolated checkout:
-   `bash scripts/tracker-coa-scoped652.sh /opt/tracker/.venv/bin/python`
+3. Run the **Release 652-only** gate from the isolated checkout:
+   `bash scripts/tracker-release-scoped652.sh /opt/tracker/.venv/bin/python`
 4. Manually check new type creation, rename/regroup, deactivation, original
    legacy COA document, combined upload, cross-document atomic save, CSRF, and
    ordinary COA metadata editing.
-5. Confirm migrations are additive and capture a qualified DEV receipt.
-6. Only then use Tracker's existing guarded, SHA-pinned DEV-to-PROD process.
+5. The DEV-only migration backup records the known unsynchronized missing
+   `uploads/coa/b94356f52d964400b481e6c743484367.png` explicitly. The
+   exact SQLite snapshot and all existing attachments are checksum verified
+   through a restore rehearsal. Any other missing file, invalid path, or
+   present-file hash mismatch blocks deployment. This exception is NEVER used
+   on PROD, which retains the standard fully complete backup gate.
+6. Confirm migrations are additive and capture a truthful release-scoped DEV receipt.
+7. Only then use Tracker's existing guarded, SHA-pinned DEV-to-PROD process.
    Back up PROD, check the source and schema baseline, and never force-promote
    when any DEV qualification or preflight check fails.
 
 **Status:** Source changes and regression tests are committed, but DEV tests
 and guarded deployment have not been executed from this GitHub connection.
+
+## Testing policy (effective Release 652)
+Run only a release-specific test script and directly affected compatibility
+checks by default. The full backend and browser suites are **opt-in with
+`--full-suite` only**; do not trigger them automatically at five-release
+milestones. For security-sensitive core changes, fail closed and require an
+explicit full-suite authorization rather than running it without consent.
