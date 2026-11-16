@@ -100,6 +100,29 @@ def test_627_signed_coa_multipart_edit_verify_delete_and_forgery(browser, scheme
             "radio", name="Make qa627-coa.pdf the default COA document"
         )).to_be_checked()
 
+        # Release 651: a consolidated report selects multiple test categories
+        # through the real browser, saves with signed AJAX and persists on reload.
+        picker = page.locator("#test-documents details.coa-test-multi651").first
+        picker.locator("summary").click()
+        picker.locator('input[value="Purity"]').check()
+        picker.locator('input[value="Identity"]').check()
+        with page.expect_response(lambda response: (
+            response.request.method == "POST"
+            and urlsplit(response.url).path == route + "/attachments/test-types"
+        )) as pending_tests:
+            page.get_by_role("button", name="Save all test types").click()
+        saved_tests = pending_tests.value
+        assert saved_tests.status == 200
+        assert saved_tests.json()["updated"] == 1
+        assert saved_tests.headers.get("x-tracker-csrf-report") == "valid"
+        page.reload(wait_until="networkidle")
+        persisted = page.locator("#test-documents details.coa-test-multi651").first
+        expect(persisted.locator('input[value="Purity"]')).to_be_checked()
+        expect(persisted.locator('input[value="Identity"]')).to_be_checked()
+        expect(page.locator("#test-documents").get_by_role(
+            "link", name="qa627-coa.pdf", exact=True,
+        )).to_be_visible()
+
         def signed(path, data):
             bad = page.request.post(base + path, form=data, max_redirects=0)
             assert bad.status == 403, (scheme, path, "forged")
