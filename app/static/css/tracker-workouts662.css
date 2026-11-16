@@ -1,0 +1,21 @@
+/* Release 662: phone-first machine finder, fine controls and navigation. */
+.workout662-directory { margin: .8rem 0 1.1rem; border: 1px solid var(--border,#8998a7); border-radius: .7rem; padding: .65rem .85rem; }
+.workout662-directory summary { cursor: pointer; padding: .35rem 0; font-weight: 700; min-height: 40px; }
+.workout662-directory > label { display:block; margin: .7rem 0 .3rem; font-weight: 650; }
+.workout662-directory > input { box-sizing: border-box; display:block; width:100%; min-width:0; min-height:48px; }
+.workout662-directory > p { margin:.5rem 0; }
+.workout662-directory-list { display:grid; gap:.35rem; max-height:300px; overflow-y:auto; overscroll-behavior:contain; }
+.workout662-directory-list a { display:flex; flex-direction:column; padding:.65rem .75rem; min-height:48px; border:1px solid var(--border,#8998a7); border-radius:.45rem; text-decoration:none; overflow-wrap:anywhere; }
+.workout662-directory-list a[hidden] { display:none !important; }
+.workout662-directory-list a[aria-current="page"] { border-width:2px; }
+.workout662-directory-list a span { font-size:.85rem; opacity:.85; }
+.workout662-adjustments { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.4rem; margin:.5rem 0 .85rem; }
+.workout662-adjustments button { padding:.35rem; min-width:0; font-size:.9rem; }
+.workout662-restore { display:block; width:100%; min-height:44px; margin-top:.4rem; }
+.workout662-nav { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.9rem; }
+.workout662-nav a { display:flex; align-items:center; justify-content:center; flex:1 1 170px; min-height:56px; padding:.65rem; border:1px solid var(--border,#8998a7); border-radius:.65rem; font-weight:700; text-decoration:none; text-align:center; overflow-wrap:anywhere; }
+.workout662-nav .workout662-next { border-width:2px; }
+@media(max-width:600px) {
+  .workout662-adjustments { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .workout662-nav a { flex-basis:100%; }
+}
