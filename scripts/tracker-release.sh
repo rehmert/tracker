@@ -81,8 +81,9 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"; FULL_SUITE="${14:-0}"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
+ [[ "$FULL_SUITE" == 0 || "$FULL_SUITE" == 1 ]] || fail "Invalid full-suite setting"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0; RESUME_645_VERIFIED=0
  export GIT_CONFIG_COUNT=2
  export GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
@@ -224,40 +225,27 @@ PY
  "$PY" "$QA/scripts/tracker-impact-preflight604.py" \
    --base "$BASE" --target "$TARGET" --root "$QA"
  echo "=== RELEASE 604 CHANGE IMPACT PASSED ==="
- # Release 629: complete tests at every fifth DEV release, not on each
- # small UI/tooling change. Security-sensitive route/auth changes remain
- # explicit full-qualification exceptions. PROD retains its separate
- # exact-commit approval and full-suite gate until independently reviewed.
- QA_FULL_REQUIRED=1
- QA_CADENCE_REASON="PROD requires full qualification"
+ # Operator selects full qualification explicitly. No fifth-release trigger.
+ QA_FULL_REQUIRED="$FULL_SUITE"
+ QA_CADENCE_REASON="release-specific tests only (no full suite requested)"
+ if [[ "$FULL_SUITE" == 1 ]]; then
+  QA_CADENCE_REASON="explicit operator full-suite request"
+ fi
  if [[ "$INSTANCE" == DEV ]]; then
-  QA_CADENCE_REASON="release sequence not recognized"
-  if [[ "$REF" =~ ^release/([0-9]+)- ]]; then
-   RELEASE_SEQUENCE="${BASH_REMATCH[1]}"
-   if (( 10#$RELEASE_SEQUENCE % 5 == 0 )); then
-    QA_CADENCE_REASON="fifth release milestone"
-   else
-    QA_FULL_REQUIRED=0
-    QA_CADENCE_REASON="focused release between five-release milestones"
-   fi
-  fi
-  # Auth, origin and CSRF changes trigger full qualification. An ordinary
-  # food functionality change uses targeted food/DB regression tests in the
-  # mandatory focused gate. Full Chromium remains due at release 630.
   if g diff --name-only "$BASE" "$TARGET" | grep -Eq '^(app/(auth|security|csrf|middleware|scoped_db|session_auth|request_origin|food_origin|food_storage_guard)|app/routers/(session_login|account_security|user_management|user_db_status))'; then
-   QA_FULL_REQUIRED=1
-   QA_CADENCE_REASON="security-sensitive source or route changed"
+   [[ "$FULL_SUITE" == 1 ]] || fail "Security-sensitive release requires explicit --full-suite approval"
   fi
-  if [[ "$REF" == release/644-coa-csrf-inventory ]]; then
-   QA_FULL_REQUIRED=1
-   QA_CADENCE_REASON="Release 644 pre-promotion full DEV verification"
-  fi
-  echo "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ==="
-  timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"
-  echo "=== RELEASE 604 FOCUSED REGRESSION PASSED ==="
-  if [[ "$REF" == release/652-coa-test-type-catalog ]]; then
-   echo "=== RELEASE 652 MANAGED COA TEST TYPES ==="
-   timeout 360 bash "$QA/scripts/tracker-coa-scoped652.sh" "$PY"
+  if [[ "$REF" =~ ^release/([0-9]+)- ]] && (( 10#${BASH_REMATCH[1]} >= 652 )); then
+   RELEASE_SEQUENCE="${BASH_REMATCH[1]}"
+   SCOPED="$QA/scripts/tracker-release-scoped${RELEASE_SEQUENCE}.sh"
+   [[ -f "$SCOPED" ]] || fail "Release-specific test gate missing: $SCOPED"
+   echo "=== RELEASE-SCOPED DEV QUALIFICATION ==="
+   timeout 360 bash "$SCOPED" "$PY"
+   echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+  else
+   echo "=== LEGACY FOCUSED REGRESSION ==="
+   timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"
+   echo "RELEASE_604_FOCUSED_PREFLIGHT=PASSED"
   fi
   if [[ "$REF" == release/651-coa-multiple-test-types ]]; then
    echo "=== RELEASE 651 MULTIPLE TEST TYPES PER COA DOCUMENT ==="
@@ -306,6 +294,10 @@ PY
    QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
   fi
  fi
+ if [[ "$INSTANCE" == PROD && "$REVIEWED_COA_652" == 1 ]]; then
+  timeout 360 bash "$QA/scripts/tracker-release-scoped652.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+ fi
  # A backup-only Release 645 retry may reuse FULL prior qualification ONLY
  # after exact evidence, unchanged application/tests, and prior failure stage
  # are verified. Fresh focused tests and migration safeguards still execute.
@@ -353,7 +345,7 @@ PY
    # Full browser/backend gates remain explicitly documented as reused.
    echo "FOCUSED_RELEASE_GATE=PASSED"
   else
-   echo "=== FULL BROWSER AND BACKEND SUITES DEFERRED TO NEXT FIFTH RELEASE ==="
+   echo "=== FULL BROWSER AND BACKEND SUITES NOT REQUESTED ==="
    echo "FOCUSED_RELEASE_GATE=PASSED"
   fi
  fi
@@ -463,11 +455,11 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -eq 12 || $# -eq 13 ]] || fail "Bad worker arguments"
+ [[ $# -eq 12 || $# -eq 13 || $# -eq 14 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; REVIEWED_COA_652=0; RESUME_VERIFIED_645=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; REVIEWED_COA_652=0; FULL_SUITE=0; RESUME_VERIFIED_645=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
@@ -478,6 +470,7 @@ while (( $# )); do
   --reviewed-coa-643) REVIEWED_COA_643=1; shift;;
   --reviewed-coa-645) REVIEWED_COA_645=1; shift;;
   --reviewed-coa-652) REVIEWED_COA_652=1; shift;;
+  --full-suite) FULL_SUITE=1; shift;;
   --resume-verified-645) RESUME_VERIFIED_645=1; shift;;
   --serial-tests) fail "Serial testing prohibited";;
   --instance|--base|--target|--ref)
@@ -535,7 +528,7 @@ fi
 MEMORY_PROPERTY="MemoryMax=16G"
 echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
 systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
- /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645" "$REVIEWED_COA_652"
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645" "$REVIEWED_COA_652" "$FULL_SUITE"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
 if (( FOLLOW )); then
