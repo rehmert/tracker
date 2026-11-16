@@ -29,10 +29,12 @@ cleanup() { [[ ! -d "$QA" ]] || g worktree remove --force "$QA" >/dev/null 2>&1 
 trap cleanup EXIT
 g worktree add --detach "$QA" "$TARGET"
 cd "$QA"
-echo "=== LIVE ATTACHMENT INTEGRITY (BEFORE TESTS) ==="
-"$PY" scripts/tracker-attachment-integrity645.py --data /opt/tracker/data --hashes ||
- fail "Missing live attachments: reconcile before qualification"
-echo "COA_650_LIVE_ATTACHMENTS=PASSED"
+echo "=== DEV-ONLY ATTACHMENT AUDIT (NO PROD UPLOAD SYNCHRONIZATION) ==="
+# On DEV only, report missing files without blocking isolated QA.
+# Malformed paths or changed hashes of present files remain fatal.
+"$PY" scripts/tracker-dev-attachment-gate650.py --data /opt/tracker/data ||
+ fail "DEV integrity failure is not limited to unsynchronized missing files"
+echo "COA_650_DEV_ATTACHMENTS=CHECKED_WITH_MISSING_FILE_POLICY"
 export TRACKER_DATA_DIR="$RUN/test-data" PYTHONPATH="$QA"
 mkdir -p "$TRACKER_DATA_DIR"
 git diff --check "$BASE" "$TARGET"
@@ -46,7 +48,7 @@ test -s app/static/css/tracker-coa-documents649.css
 for script in scripts/tracker-release.sh scripts/tracker-coa-dev650.sh scripts/tracker-coa-scoped650.sh scripts/tracker-coa-preflight650.sh; do
   bash -n "$script"
 done
-"$PY" -m compileall -q app scripts tests/test_coa_unified_documents650.py
+"$PY" -m compileall -q app scripts tests/test_coa_unified_documents650.py tests/test_dev_attachment_gate650.py
 node --check app/static/js/tracker-coa-types647.js
 "$PY" - <<'PY'
 from pathlib import Path
