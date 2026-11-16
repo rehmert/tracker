@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Release 654: isolated change-scoped Workout qualification (never deploys).
+set -Eeuo pipefail
+[[ "$#" == 1 && -x "$1" ]] || {
+  echo "Usage: $0 PATH_TO_CONFIGURED_PYTHON" >&2; exit 2;
+}
+PY="$1"
+ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
+[[ "$PWD" == "$ROOT" && -d tests ]] || {
+  echo "Run from isolated candidate worktree" >&2; exit 2;
+}
+bash -n "$0"
+"$PY" -m py_compile app/workout_models654.py app/routers/workouts654.py tests/test_workouts654.py
+"$PY" - <<'PY'
+from pathlib import Path
+from jinja2 import Environment
+Environment().parse(Path("app/templates/workouts654.html").read_text(encoding="utf-8"))
+print("WORKOUT_654_TEMPLATE_SYNTAX=PASSED")
+PY
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_workouts654.py tests/test_tracker_instance_check653.py
+echo "WORKOUT_654_CHANGE_SCOPED_TESTS=PASSED"
