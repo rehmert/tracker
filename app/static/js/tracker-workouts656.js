@@ -14,12 +14,14 @@
   let running = false;
   let inFlight = false;
   let detector = null;
+  let generation = 0;
 
   const setStatus = (message) => {
     status.textContent = message;
   };
 
   const shutdown = () => {
+    generation++;
     running = false;
     if (stream) {
       for (const track of stream.getTracks()) track.stop();
@@ -80,22 +82,32 @@
   start.addEventListener("click", async () => {
     if (running || stream) return;
     start.disabled = true;
+    const attempt = ++generation;
     setStatus("Requesting camera access…");
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      const acquired = await navigator.mediaDevices.getUserMedia({
         audio: false, video: { facingMode: { ideal: "environment" } },
       });
+      // Permission may resolve after tab hide, Stop, or navigation.
+      if (attempt !== generation || document.visibilityState === "hidden") {
+        for (const track of acquired.getTracks()) track.stop();
+        return;
+      }
+      stream = acquired;
       video.srcObject = stream;
       preview.hidden = false;
       stopButton.hidden = false;
       start.hidden = true;
       running = true;
       await video.play();
+      if (attempt !== generation || !running) return;
       setStatus("Point your camera at a machine QR code.");
       window.requestAnimationFrame(scanFrame);
     } catch (_) {
-      shutdown();
-      setStatus("Unable to start camera. Check camera permission, or paste the QR code.");
+      if (attempt === generation) {
+        shutdown();
+        setStatus("Unable to start camera. Check camera permission, or paste the QR code.");
+      }
     } finally {
       start.disabled = false;
     }
