@@ -124,7 +124,12 @@ def _original_coa_file(coa: Coa):
 
 
 def _attachment_response(item: CoaAttachment):
-    return _attachment_response(item)
+    path = attachment_file400("coa", item.stored_name)
+    if not path.is_file():
+        raise HTTPException(404, "Document file not found")
+    return FileResponse(path, media_type=item.content_type, filename=item.original_name,
+                        content_disposition_type="inline",
+                        headers={"X-Content-Type-Options": "nosniff"})
 
 
 @router.get("/coas/{cid}/original-file")
