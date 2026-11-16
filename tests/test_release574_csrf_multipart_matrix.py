@@ -54,7 +54,8 @@ def test_574_all_multipart_upload_routes_reject_missing_csrf(
 ):
     client, token = client574
     targets = inventory574["file_upload_writes"]
-    assert len(targets) == 11, targets
+    assert len(targets) == 12, targets
+    assert ("POST", "/coas/{cid}/attachments") in targets
 
     for method, route in targets:
         response = client.request(
@@ -75,7 +76,8 @@ def test_574_all_multipart_upload_routes_reject_forged_header(
 ):
     client, token = client574
     targets = inventory574["file_upload_writes"]
-    assert len(targets) == 11, targets
+    assert len(targets) == 12, targets
+    assert ("POST", "/coas/{cid}/attachments") in targets
 
     for method, route in targets:
         response = client.request(
