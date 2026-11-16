@@ -27,7 +27,10 @@ TARGET="$(g rev-parse "refs/remotes/origin/$REF")"
 # the installed PROD application remains Release 646. Read-only verification
 # before qualification; do not inspect, copy, or restore production data.
 [[ "$(g rev-parse origin/main)" == "$BASE" ]] || fail "GitHub main is not the expected signed Release 647"
-PROD_HEAD="$(ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
+echo "=== READ-ONLY PROD INSTALLATION CHECK ==="
+# -n is essential: the preflight is commonly streamed into bash over stdin.
+# Without it, SSH can consume the remaining script and terminate silently.
+PROD_HEAD="$(timeout 30 ssh -n -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes \
   root@tracker-prod 'test "$(hostname -s)" = tracker-prod && git -c safe.directory=/opt/tracker -C /opt/tracker rev-parse HEAD')" ||
   fail "Unable to verify exact installed PROD commit"
 [[ "$PROD_HEAD" == "61b3016eed48527c61a5173d94ee0f58b859f81a" ]] ||
