@@ -32,7 +32,7 @@ def mock_document661():
         "in_progress": True,
         "limit": 5,
     }
-    fragment = templates.get_template("_workout_dashboard661.html").render(
+    fragment = templates.env.get_template("_workout_dashboard661.html").render(
         workout_summary=summary
     )
     return (
