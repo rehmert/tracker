@@ -105,9 +105,9 @@ def test_574_real_inventory_preserves_compatibility_review_requirements(
     from app.main import app
     report = audit574.build(app)
     s = report["summary"]
-    # Release 627 baseline 144 + three food + nine regimen + two COA POSTs.
+    # Includes all post-627 routes, including the Release 647 COA batch POST.
     # New routes are counted, not declared compatible or runtime-qualified.
-    assert s["registered_unsafe_routes"] == 160
+    assert s["registered_unsafe_routes"] == 161
     assert s["root_routes_missing_global_dependencies"] == 0
     assert s["templated_route_shapes_matched"] >= 1
     assert s["literal_browser_write_routes_unmatched"] == 0
