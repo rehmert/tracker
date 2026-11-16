@@ -91,6 +91,8 @@ elif [[ "$RELEASE" == 643 || "$RELEASE" == 644 ]]; then
   DEPLOY_EXTRA=(--reviewed-coa-643 --db-migration)
 elif [[ "$RELEASE" == 645 ]]; then
   DEPLOY_EXTRA=(--reviewed-coa-645 --db-migration)
+elif [[ "$RELEASE" == 652 ]]; then
+  DEPLOY_EXTRA=(--reviewed-coa-652 --db-migration)
 fi
 bash "$RUNNER" \
   --instance PROD \
