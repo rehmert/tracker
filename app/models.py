@@ -169,6 +169,17 @@ class Coa(Base):
 
 
 
+class CoaTestType652(Base):
+    """Editable labels; stable built-in codes and custom row IDs never change."""
+    __tablename__ = "coa_test_type_catalog652"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    builtin_code: Mapped[str | None] = mapped_column(String(80), unique=True, nullable=True)
+    label: Mapped[str] = mapped_column(String(100), nullable=False)
+    group_name: Mapped[str] = mapped_column(String(60), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="1")
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+
 class CoaAttachment(Base):
     """Additional independently uploaded test documents for a single COA record."""
     __tablename__ = "coa_attachments"
