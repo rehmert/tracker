@@ -24,14 +24,18 @@ def test_576_all_previous_callsites_retained_without_clearance(triage):
     baseline = triage.load_baseline(ROOT)
     result = triage.build(ROOT)
     assert result["status"] == "source_only_no_strict_csrf_clearance"
-    assert result["summary"]["javascript_callsites"] == 49
-    assert result["summary"]["pending_executable_review"] == 49
+    assert result["summary"]["javascript_callsites"] == 50
+    assert result["summary"]["pending_executable_review"] == 50
     assert result["summary"]["browser_verified"] == 0
     original = {(r["file"], r["line"], r["kind"]) for r in baseline["callsites"]}
     current = {(r["file"], r["line"], r["kind"]) for r in result["callsites"]}
     assert current == original
     assert any(path == "app/static/js/tracker-coa-types647.js" for path, _, _ in current)
-    assert sum(result["summary"]["triage"].values()) == 49
+    new_multi = [row for row in result["callsites"]
+                 if row["file"] == "app/static/js/tracker-coa-multi651.js"]
+    assert len(new_multi) == 1
+    assert new_multi[0]["browser_verified"] is False
+    assert sum(result["summary"]["triage"].values()) == 50
     assert all(r["browser_verified"] is False for r in result["callsites"])
 
 
@@ -90,5 +94,5 @@ def test_576_private_json_and_fail_closed_path(triage, tmp_path):
     with tempfile.TemporaryDirectory(prefix="tracker-csrf576.", dir="/tmp") as d:
         destination = Path(d) / "report.json"
         assert triage.main(["--json", str(destination)]) == 0
-        assert json.loads(destination.read_text())["summary"]["javascript_callsites"] == 49
+        assert json.loads(destination.read_text())["summary"]["javascript_callsites"] == 50
         assert destination.stat().st_mode & 0o077 == 0
