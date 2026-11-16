@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
       (missing.length
         ? 'Still required: ' + missing.join(', ') + '.'
         : 'All tracked nutrients are entered.') +
-      ' Use only confirmed numbers, including confirmed zero, before saving.';
+      ' Unknown/missing values default to 0 as an accounting assumption; verify any known label values.';
   }
 
   form.addEventListener('input', refresh);
