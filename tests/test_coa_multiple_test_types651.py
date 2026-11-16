@@ -247,6 +247,34 @@ def test_651_combined_types_upload_and_custom_type_persist():
                 _cleanup(*(a.stored_name for a in coa.attachments))
 
 
+def test_651_no_js_form_fallback_and_deselect_all_types():
+    with TestClient(app) as client:
+        cid, _ = _coa()
+        aid, stored = _upload(client, cid)
+        try:
+            response = _post_multi(
+                client, cid,
+                [_multi_form(str(aid), "Purity", ("Purity", "Identity"))],
+                accept=False,
+            )
+            assert response.status_code == 303
+            assert "#test-documents" in response.headers["location"]
+            with SessionLocal() as db:
+                old = db.get(CoaAttachment, aid).test_type
+                assert decode(old) == ["Purity", "Identity"]
+            # Only the blank hidden test_types field is submitted: no selected
+            # boxes means unclassified, not a missing document row.
+            clear = _post_multi(
+                client, cid, [_multi_form(str(aid), old, ())],
+            )
+            assert clear.status_code == 200, clear.text
+            assert clear.json()["updated"] == 1
+            with SessionLocal() as db:
+                assert db.get(CoaAttachment, aid).test_type == ""
+        finally:
+            _cleanup(stored)
+
+
 def test_651_no_navigation_save_and_editable_native_fallback_contract():
     source = (Path(__file__).resolve().parents[1] /
               "app/static/js/tracker-coa-multi651.js").read_text()
