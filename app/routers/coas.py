@@ -12,6 +12,7 @@ from fastapi import Request
 from ..scoped_db390 import get_scoped_db390
 from ..models import Coa, CoaAttachment, CoaDefaultDocument645, CoaRevision, Vial, Compound
 from ..coa_test_types646 import COA_TEST_TYPE_GROUPS, COA_TEST_TYPE_VALUES, COA_CUSTOM_TYPE_SENTINEL
+from ..coa_multitypes651 import decode as decode_types651, from_selection as choose_types651
 
 from ..attachment_scope396 import require_attachment_scope396
 from ..attachment_files400 import (
@@ -160,6 +161,7 @@ def _document_rows650(coa: Coa, default_id: int | None) -> list[dict]:
             "key": "original",
             "filename": coa.original_name,
             "test_type": mirror.test_type if mirror else "",
+            "test_types": decode_types651(mirror.test_type if mirror else ""),
             "size": coa.size_bytes,
             "url": f"/coas/{coa.id}/original-file",
             "delete_id": mirror.id if mirror else 0,
@@ -173,6 +175,7 @@ def _document_rows650(coa: Coa, default_id: int | None) -> list[dict]:
             "key": str(attachment.id),
             "filename": attachment.original_name,
             "test_type": attachment.test_type or "",
+            "test_types": decode_types651(attachment.test_type),
             "size": attachment.size_bytes,
             "url": f"/coas/{coa.id}/attachments/{attachment.id}/file",
             "delete_id": attachment.id,
@@ -248,6 +251,7 @@ async def add_coa_attachments(
     files: list[UploadFile] = File(...),
     test_type: str = Form(""),
     custom_test_type: str = Form(""),
+    test_types: list[str] = Form([]),
     db: Session = Depends(get_scoped_db390),
 ):
     coa = db.get(Coa, cid)
@@ -256,7 +260,10 @@ async def add_coa_attachments(
     if not 1 <= len(files) <= 20 or not all(f.filename for f in files):
         return services.flash_redirect(f"/coas/{cid}", err="Select 1 to 20 files.")
     try:
-        test_type = _resolve_attachment_test_type646(test_type, custom_test_type)
+        if test_types or (custom_test_type and not test_type):
+            test_type = choose_types651(test_types, custom_test_type)
+        else:
+            test_type = _resolve_attachment_test_type646(test_type, custom_test_type)
     except ValueError as exc:
         return services.flash_redirect(f"/coas/{cid}", err=str(exc))
     directory = attachment_directory400("coa")
@@ -351,28 +358,45 @@ async def update_coa_attachment_test_types647(
         attachments["original"] = mirror  # None = unmirrored legacy file.
     if not attachments:
         return reply("There are no test documents to update.", status=400)
-    # Three fields per document plus CSRF; reject extra or duplicate keys.
+    # The legacy single-choice protocol remains accepted for signed callers.
+    # The new browser sends repeated checkbox values and one hidden empty
+    # marker per document, so unchecking all tests still submits every row.
     if len(attachments) > 250:
         return reply("Too many test documents for one update.", status=400)
     form = await request.form()
-    expected = {f"{name}_{key}" for key in attachments
-                for name in ("test_type", "custom_test_type", "original_test_type")}
+    new_mode = any(name.startswith("test_types_") for name in form.keys())
+    names = ("test_types", "custom_test_type", "original_test_type") if new_mode else (
+        "test_type", "custom_test_type", "original_test_type"
+    )
+    expected = {f"{name}_{key}" for key in attachments for name in names}
     submitted = set(form.keys()) - {"csrf_token"}
-    if submitted != expected or any(len(form.getlist(key)) != 1 for key in expected):
+    if submitted != expected:
         return reply("Document list changed. Reload before saving.", status=409)
 
     proposed = {}
     for key, attachment in attachments.items():
         previous = form[f"original_test_type_{key}"]
-        selected = form[f"test_type_{key}"]
         custom = form[f"custom_test_type_{key}"]
-        if not all(isinstance(v, str) for v in (previous, selected, custom)):
+        if (not isinstance(previous, str) or not isinstance(custom, str)
+                or len(form.getlist(f"original_test_type_{key}")) != 1
+                or len(form.getlist(f"custom_test_type_{key}")) != 1):
             return reply("Invalid test type form.", status=400)
         current = (attachment.test_type or "") if attachment is not None else ""
         if len(previous) > 120 or previous != current:
             return reply("A document changed since you opened the page. Reload before saving.", status=409)
         try:
-            proposed[key] = _resolve_attachment_test_type646(selected, custom)
+            if new_mode:
+                raw = form.getlist(f"test_types_{key}")
+                if (not raw or raw.count("") != 1
+                        or not all(isinstance(v, str) for v in raw)):
+                    return reply("Invalid multi-test form.", status=400)
+                proposed[key] = choose_types651(raw, custom)
+            else:
+                selected = form[f"test_type_{key}"]
+                if (not isinstance(selected, str) or
+                        len(form.getlist(f"test_type_{key}")) != 1):
+                    return reply("Invalid test type form.", status=400)
+                proposed[key] = _resolve_attachment_test_type646(selected, custom)
         except ValueError as exc:
             return reply(str(exc), status=400)
 
