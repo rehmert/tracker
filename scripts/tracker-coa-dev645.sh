@@ -37,6 +37,41 @@ EXPECTED="$(g rev-parse "$TARGET:scripts/tracker-release.sh")"
 g show "$TARGET:scripts/tracker-release.sh" > "$DIR/runner.sh"
 [[ "$(g hash-object "$DIR/runner.sh")" == "$EXPECTED" ]] || fail "Runner blob differs from pinned candidate"
 bash -n "$DIR/runner.sh"
+# Preflight the independent receipt validator against the exact resume-mode
+# marker contract before entering a deployment that might otherwise roll back.
+"$APP/.venv/bin/python" - "$DIR/candidate" "$DIR/runner.sh" <<'PY'
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+import sys
+
+qa, runner = Path(sys.argv[1]), Path(sys.argv[2])
+source = runner.read_text()
+resume = source.split('if [[ "$RESUME_645_VERIFIED" == 1 ]]; then', 1)[-1]
+resume = resume.split('\n  else', 1)[0]
+if 'echo "FOCUSED_RELEASE_GATE=PASSED"' not in resume:
+    raise SystemExit("COA_645_RESUME_DENIED=focused receipt marker absent from resume branch")
+spec = spec_from_file_location("receipt577", qa / "scripts/tracker_dev_log577.py")
+validator = module_from_spec(spec)
+spec.loader.exec_module(validator)
+target = "a" * 40
+markers = [
+    "Started: 2026-11-16T04:00:00+00:00; instance: DEV",
+    f"CANDIDATE_COMMIT={target}",
+    "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
+    "COA_645_RESUME_FULL_TEST_REUSE=VERIFIED",
+    "QA_FULL_REQUIRED=0",
+    "COA_645_FULL_QUALIFICATION_REUSE=PASSED",
+    "FOCUSED_RELEASE_GATE=PASSED",
+    "=== ISOLATED RESTORE VERIFICATION PASSED ===",
+    " TRACKER RELEASE DEPLOYMENT SUCCESS",
+    "EXIT_STATUS=0",
+    "Finished: 2026-11-16T04:01:00+00:00",
+]
+result = validator.validated_evidence("\n".join(markers) + "\n", target)
+if f"DEV_QUALIFIED_COMMIT={target}" not in result:
+    raise SystemExit("COA_645_RESUME_DENIED=receipt validator returned no exact-commit receipt")
+print("COA_645_RESUME_RECEIPT_CONTRACT=PASSED")
+PY
 # Fail before the expensive qualification worker if previous evidence
 # cannot be reused, without modifying the installed DEV environment.
 g worktree add --detach "$DIR/candidate" "$TARGET"
