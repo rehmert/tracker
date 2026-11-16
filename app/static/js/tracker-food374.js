@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(input)input.value='0';
   }
   if(data.name)$('food-name').value=data.name;if(data.serving_description)$('food-serving').value=data.serving_description;
-  for(const [k,v] of Object.entries(data.nutrients||{})){let e=$('food-nutrient-'+k);if(e&&v!==null&&Number.isFinite(Number(v)))e.value=v;}
+  for(const [k,v] of Object.entries(data.nutrients||{})){let e=$('food-nutrient-'+k);if(e&&v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v)))e.value=v;}
   if(data.source)$('food-source').value=data.source;
   $('food-entry-form')?.dispatchEvent(new Event('food:nutrition-loaded'));
  }
