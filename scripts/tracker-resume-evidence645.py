@@ -61,7 +61,7 @@ def _secure_regular(path: Path):
 
 def _verify_log(path: Path):
     parent = path.parent
-    if (parent.parent != ROOT or not re.fullmatch(r"release\\.[A-Za-z0-9]{8}", parent.name)
+    if (parent.parent != ROOT or not re.fullmatch(r"release\.[A-Za-z0-9]{8}", parent.name)
             or parent.is_symlink() or not parent.is_dir()):
         fail("untrusted evidence directory")
     if parent.stat().st_uid != 0 or stat.S_IMODE(parent.stat().st_mode) & 0o077:
