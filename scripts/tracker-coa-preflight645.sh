@@ -49,6 +49,9 @@ bash scripts/tracker-coa-scoped645.sh "$PY"
  tests/test_prod_parallel_release508.py \
  tests/test_test_benchmark.py \
  tests/test_release605_oom_guard.py
+echo "=== TARGETED STRICT NOTES 580 BROWSER DIAGNOSTIC ==="
+timeout 360 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict notes-lifecycle580
+echo "COA_645_NOTES_BROWSER=PASSED"
 echo "COA_645_PREFLIGHT=PASSED"
 echo "COA_645_CANDIDATE=$TARGET"
 echo "LIVE_DB=UNMODIFIED"
