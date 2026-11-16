@@ -66,10 +66,10 @@ def verified_log(content: str, target: str) -> None:
     if full == focused:
         raise ReleaseError("Ambiguous DEV qualification mode")
     if focused:
-        required = (
-            "RELEASE_604_FOCUSED_PREFLIGHT=PASSED",
-            "FOCUSED_RELEASE_GATE=PASSED",
-        )
+        required = ("FOCUSED_RELEASE_GATE=PASSED",)
+        if not ("RELEASE_604_FOCUSED_PREFLIGHT=PASSED" in lines or
+                "RELEASE_SCOPED_PREFLIGHT=PASSED" in lines):
+            raise ReleaseError("Missing scoped release qualification evidence")
     else:
         required = QUALIFICATION[:3]
     for marker in required:
