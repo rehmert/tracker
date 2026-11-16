@@ -7,5 +7,7 @@ PY="$1"
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 [[ "$PWD" == "$ROOT" && -d tests ]] || { echo "Run from isolated release worktree" >&2; exit 2; }
 bash "$ROOT/scripts/tracker-coa-scoped649.sh" "$PY"
-"$PY" -m pytest -q --tb=short tests/test_coa_unified_documents650.py
+"$PY" -m pytest -q --tb=short \
+ tests/test_coa_unified_documents650.py \
+ tests/test_dev_attachment_gate650.py
 echo "COA_650_SCOPED_TESTS=PASSED"
