@@ -298,6 +298,17 @@ PY
   timeout 360 bash "$QA/scripts/tracker-release-scoped652.sh" "$PY"
   echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
  fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped653.sh |
+      grep -qx 'scripts/tracker-release-scoped653.sh'; then
+  # Release 653 is a presentation-only change; qualify exactly the impacted
+  # Manage Test Types layout in the isolated candidate, without full QA.
+  [[ -f "$QA/scripts/tracker-release-scoped653.sh" ]] ||
+    fail "Missing qualified Release 653 scoped gate"
+  echo "=== RELEASE 653 PROD SCOPED UI QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped653.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+ fi
  # A backup-only Release 645 retry may reuse FULL prior qualification ONLY
  # after exact evidence, unchanged application/tests, and prior failure stage
  # are verified. Fresh focused tests and migration safeguards still execute.
