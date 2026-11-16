@@ -105,7 +105,7 @@ def test_578_private_report_path_and_permissions(ledger, tmp_path):
         output = Path(name) / "ledger.json"
         assert ledger.main(["--json", str(output)]) == 0
         report = json.loads(output.read_text(encoding="utf-8"))
-        assert report["summary"]["javascript_callsites"] == 46
+        assert report["summary"]["javascript_callsites"] == 48
         assert output.stat().st_mode & 0o077 == 0
         with pytest.raises(SystemExit):
             ledger.main(["--json", str(output)])
