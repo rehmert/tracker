@@ -1,5 +1,6 @@
 """Release 646: accessible COA test-category dropdown and safe custom labels."""
 import io
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
@@ -11,7 +12,7 @@ from app.models import Coa, CoaAttachment
 
 def _coa():
     with SessionLocal() as db:
-        c = Coa(lab_name="Test type picker 646", stored_name="metadata-only-646")
+        c = Coa(lab_name="Test type picker 646", stored_name=f"metadata-only-646-{uuid4().hex}")
         db.add(c)
         db.commit()
         return c.id
