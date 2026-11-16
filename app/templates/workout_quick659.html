@@ -3,6 +3,8 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts659.css?v=659">
 <script src="/static/js/tracker-workouts659.js?v=659" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-workouts662.css?v=662">
+<script src="/static/js/tracker-workouts662.js?v=662" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
@@ -64,6 +66,22 @@
           <button type="submit">Go</button>
         </div>
       </form>
+      <details class="workout662-directory" id="workout662-directory">
+        <summary>Find a machine by name ({{ equipment|length }} available)</summary>
+        <label for="workout662-search">Search machine or gym</label>
+        <input id="workout662-search" type="search" maxlength="140"
+               autocomplete="off" placeholder="Search equipment…">
+        <p id="workout662-results" class="workout659-muted" role="status" aria-live="polite"></p>
+        <nav class="workout662-directory-list" aria-label="Choose an equipment machine">
+          {% for item in equipment %}
+            <a href="/workouts/quick?machine={{ item.id }}"
+               data-search662="{{ item.name }} {{ item.gym }}"
+               {% if machine and item.id == machine.id %}aria-current="page"{% endif %}>
+              <strong>{{ item.name }}</strong><span>{{ item.gym }}</span>
+            </a>
+          {% endfor %}
+        </nav>
+      </details>
       {% if machine %}
         <div class="workout659-machine-heading">
           <h2>{{ machine.name }}</h2>
@@ -106,11 +124,20 @@
               </div>
             </div>
           </div>
+          <div class="workout662-adjustments" aria-label="Additional set adjustments">
+            <button type="button" data-step659="weight" data-delta659="-2.5" aria-label="Decrease weight by 2.5 pounds">−2.5 lb</button>
+            <button type="button" data-step659="weight" data-delta659="2.5" aria-label="Increase weight by 2.5 pounds">+2.5 lb</button>
+            <button type="button" data-step659="reps" data-delta659="-5" aria-label="Decrease repetitions by 5">−5 reps</button>
+            <button type="button" data-step659="reps" data-delta659="5" aria-label="Increase repetitions by 5">+5 reps</button>
+          </div>
           <label class="workout659-effort">Effort 1–10 (optional)
             <input type="number" name="effort" min="1" max="10" step="1"
                    inputmode="numeric" value="{{ last.effort if last and last.effort is not none else '' }}">
           </label>
           <button class="primary workout659-main-button" type="submit" id="workout659-save">Save Set</button>
+          <button type="reset" class="workout662-restore">
+            {{ 'Restore last recorded values' if last else 'Clear entries' }}
+          </button>
         </form>
         {% if last %}
           <form method="post" action="/workouts/quick/repeat" class="workout659-repeat">
@@ -120,6 +147,16 @@
               Repeat Last Set — {{ '%.1f'|format(last.weight_lb) }} lb × {{ last.reps }}
             </button>
           </form>
+        {% endif %}
+        {% if previous_machine or next_machine %}
+          <nav class="workout662-nav" aria-label="Quick routine machine navigation">
+            {% if previous_machine %}
+              <a href="/workouts/quick?machine={{ previous_machine.id }}">← Previous: {{ previous_machine.name }}</a>
+            {% endif %}
+            {% if next_machine %}
+              <a class="workout662-next" href="/workouts/quick?machine={{ next_machine.id }}">Next Machine: {{ next_machine.name }} →</a>
+            {% endif %}
+          </nav>
         {% endif %}
       {% endif %}
     </section>
