@@ -10,7 +10,7 @@ from ..attachment_integrity337 import uploaded_transaction, delete_after_commit
 from ..templating import render
 from fastapi import Request
 from ..scoped_db390 import get_scoped_db390
-from ..models import Coa, CoaRevision, Vial, Compound
+from ..models import Coa, CoaRevision, CoaDocument643, Vial, Compound
 
 from ..attachment_scope396 import require_attachment_scope396
 from ..attachment_files400 import (
@@ -113,12 +113,24 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
 
 
 @router.get("/coas/{cid}/file")
-def coa_file(cid: int, db: Session = Depends(get_scoped_db390)):
+def coa_file(cid: int, db: Session = Depends(get_scoped_db390),
+             document_id: int | None = None):
     c = db.get(Coa, cid)
-    path = attachment_file400("coa", c.stored_name) if c and c.stored_name else None
-    if c is None or not c.original_name or not path.exists():
+    if c is None:
         raise HTTPException(404, "File not found")
-    return FileResponse(path, media_type=c.content_type, filename=c.original_name,
+    if document_id is None:
+        document = c
+    else:
+        document = db.get(CoaDocument643, document_id)
+        if document is None or document.coa_id != cid:
+            raise HTTPException(404, "File not found")
+    if not document.original_name:
+        raise HTTPException(404, "File not found")
+    path = attachment_file400("coa", document.stored_name)
+    if not path.is_file():
+        raise HTTPException(404, "File not found")
+    return FileResponse(path, media_type=document.content_type,
+                        filename=document.original_name,
                         content_disposition_type="inline",
                         headers={"X-Content-Type-Options": "nosniff"})
 
@@ -130,6 +142,11 @@ def delete_coa(cid: int, db: Session = Depends(get_scoped_db390)):
         raise HTTPException(404, "COA not found")
     vid = c.all_vials[0].id if c.all_vials else None
     stored_name = c.stored_name if c.original_name else None
+    documents = list(db.scalars(select(CoaDocument643).where(
+        CoaDocument643.coa_id == cid)))
+    child_stored_names = [doc.stored_name for doc in documents]
+    for doc in documents:
+        db.delete(doc)
     for linked in list(c.all_vials):
         if c in linked.linked_coas:
             linked.linked_coas.remove(c)
@@ -141,7 +158,10 @@ def delete_coa(cid: int, db: Session = Depends(get_scoped_db390)):
     db.flush()
     db.delete(c)
     db.commit()
-    delete_after_commit(stored_name, attachment_directory400("coa"), services.delete_stored_file)
+    directory = attachment_directory400("coa")
+    delete_after_commit(stored_name, directory, services.delete_stored_file)
+    for name in child_stored_names:
+        delete_after_commit(name, directory, services.delete_stored_file)
     return services.flash_redirect(f"/vials/{vid}" if vid else "/coas", msg="COA deleted.")
 
 
@@ -207,8 +227,11 @@ def coa_detail(cid: int, request: Request, db: Session = Depends(get_scoped_db39
                    or any((v.compound_id, v.lot.strip().casefold()) in lot_keys
                           for v in c.all_vials if v.lot.strip())]
     comparisons.sort(key=lambda c: (c.tested_on is not None, c.tested_on, c.id), reverse=True)
+    documents = list(db.scalars(select(CoaDocument643).where(
+        CoaDocument643.coa_id == cid).order_by(CoaDocument643.id)))
     return render(request, "coa_edit.html", coa=coa, vials=vials, selected_vial=None,
-                  history=history, comparisons=comparisons, statuses=COA_STATUSES)
+                  history=history, comparisons=comparisons, statuses=COA_STATUSES,
+                  documents=documents)
 
 
 @router.post("/coas/new")
@@ -237,11 +260,49 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
                    purity_pct: str = Form(""), endotoxin_pct: str = Form(""),
                    reported_content: str = Form(""), reported_unit: str = Form("mg"),
                    job_id: str = Form(""), verify_code: str = Form(""),
-                   notes: str = Form(""), db: Session = Depends(get_scoped_db390)):
+                   notes: str = Form(""), db: Session = Depends(get_scoped_db390),
+                   files: list[UploadFile] = File([]),
+                   test_label: str = Form(""),
+                   document_action: str = Form(""),
+                   document_id: int | None = Form(None)):
     coa = db.get(Coa, cid)
     if coa is None:
         raise HTTPException(404, "COA not found")
     back = f"/coas/{cid}"
+    if document_action == "upload":
+        actual = [item for item in files if item.filename]
+        if not 1 <= len(actual) <= 10 or len(files) != len(actual):
+            return services.flash_redirect(back, err="Select 1–10 test documents.")
+        label = test_label.strip()
+        if len(label) > 120:
+            return services.flash_redirect(back, err="Test label is too long.")
+        directory = attachment_directory400("coa")
+        uploaded = []
+        try:
+            for item in actual:
+                uploaded.append(await services.save_upload(item, directory))
+            for metadata in uploaded:
+                db.add(CoaDocument643(coa_id=cid, test_label=label, **metadata))
+            db.commit()
+        except BaseException:
+            db.rollback()
+            for metadata in uploaded:
+                delete_after_commit(metadata["stored_name"], directory,
+                                    services.delete_stored_file)
+            raise
+        return services.flash_redirect(back, msg=f"{len(uploaded)} test document(s) added.")
+    if document_action == "remove":
+        document = db.get(CoaDocument643, document_id) if document_id is not None else None
+        if document is None or document.coa_id != cid:
+            raise HTTPException(404, "Test document not found")
+        stored = document.stored_name
+        db.delete(document)
+        db.commit()
+        delete_after_commit(stored, attachment_directory400("coa"),
+                            services.delete_stored_file)
+        return services.flash_redirect(back, msg="Test document removed.")
+    if document_action:
+        raise HTTPException(422, "Unknown document operation")
     new_file = None
     try:
         purity = _opt_float(purity_pct)
