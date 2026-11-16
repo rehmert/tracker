@@ -1,0 +1,72 @@
+/* Release 658: practical, mobile-first backdated workout entry. */
+.workout658 { max-width: 1050px; }
+.workout658 .workout658-error {
+  border: 1px solid #b54141;
+  border-radius: .65rem;
+  padding: .85rem;
+  margin: 1rem 0;
+}
+.workout658 .workout658-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .85rem;
+  border: 1px solid #9eafc3;
+  border-radius: .65rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.workout658 .workout658-meta legend {
+  font-weight: 700;
+  padding: 0 .4rem;
+}
+.workout658 label { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+.workout658 label input, .workout658 label select {
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+}
+.workout658 .workout658-set-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin: 1.3rem 0 .7rem;
+}
+.workout658 .workout658-set-heading h2 { margin: 0 0 .25rem; }
+.workout658 .workout658-add { min-height: 48px; }
+.workout658 .workout658-row {
+  border: 1px solid #9eafc3;
+  border-radius: .7rem;
+  padding: .85rem;
+  margin: .7rem 0;
+}
+.workout658 .workout658-row legend { font-weight: 700; padding: 0 .35rem; }
+.workout658 .workout658-fields {
+  display: grid;
+  grid-template-columns: minmax(200px, 2fr) repeat(4, minmax(110px, 1fr));
+  gap: .65rem;
+}
+.workout658 .workout658-remove { min-height: 42px; margin-top: .65rem; }
+.workout658 .workout658-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.2rem 0 2rem;
+}
+.workout658 .workout658-save-actions button { min-height: 48px; }
+@media (max-width: 800px) {
+  .workout658 .workout658-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .workout658 .workout658-fields label:first-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 500px) {
+  .workout658 .workout658-meta { grid-template-columns: 1fr; }
+  .workout658 .workout658-add,
+  .workout658 .workout658-save-actions button { width: 100%; }
+}
