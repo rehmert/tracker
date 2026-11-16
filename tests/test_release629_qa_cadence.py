@@ -1,4 +1,4 @@
-"""Release 628/629: mandatory focused QA, five-release full QA cadence.
+"""Historical 629 checks plus Release 652 operator-only full-suite policy.
 
 This checks deployment source only; it never starts the live release worker.
 """
@@ -17,29 +17,21 @@ def test_629_release_and_focused_shell_parse():
         assert result.returncode == 0, (path, result.stderr)
 
 
-def test_629_fifth_release_cadence_and_exceptions_are_fail_closed():
+def test_652_full_regression_requires_explicit_operator_opt_in():
     source = RELEASE.read_text()
-    assert 'QA_FULL_REQUIRED=1' in source
-    assert 'if [[ "$REF" =~ ^release/([0-9]+)- ]]; then' in source
-    assert '10#$RELEASE_SEQUENCE % 5 == 0' in source
-    assert 'QA_FULL_REQUIRED=0' in source
-    assert 'QA_CADENCE_REASON="fifth release milestone"' in source
-    assert 'QA_CADENCE_REASON="security-sensitive source or route changed"' in source
-    assert 'QA_CADENCE_REASON="release sequence not recognized"' in source
-    assert 'QA_CADENCE_REASON="PROD requires full qualification"' in source
+    assert 'QA_FULL_REQUIRED="$FULL_SUITE"' in source
+    assert '--full-suite) FULL_SUITE=1; shift;;' in source
+    assert '"$REVIEWED_COA_652" "$FULL_SUITE"' in source
+    assert '10#$RELEASE_SEQUENCE % 5 == 0' not in source
+    assert 'QA_CADENCE_REASON="explicit operator full-suite request"' in source
+    assert 'RELEASE_SCOPED_PREFLIGHT=PASSED' in source
+    assert 'tracker-release-scoped' in source
     assert 'if (( QA_FULL_REQUIRED == 1 )); then' in source
-    assert 'FOCUSED_RELEASE_GATE=PASSED' in source
-    assert 'timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"' in source
-    assert source.index('RELEASE 604 FOCUSED REGRESSION') < source.index(
-        'if (( QA_FULL_REQUIRED == 1 )); then')
-    assert source.index('if (( QA_FULL_REQUIRED == 1 )); then') < source.index(
-        '=== COMPLETE REGRESSION SUITE ===')
     assert '=== Source and configuration recovery snapshot ===' in source
-    assert 'DATABASE_BACKUP=SKIPPED_NO_MIGRATION' in source
     assert 'DATABASE_BACKUP=VERIFIED_FOR_MIGRATION' in source
-    assert '=== ISOLATED RESTORE VERIFICATION PASSED ===' in source
     assert 'tracker-runtime-smoke.py' in source
     assert 'QUALIFICATION_COMPLETE=1' in source
+
 
 
 def test_629_periodic_milestones_are_630_635_640_and_so_on():
