@@ -51,7 +51,8 @@ for sh in scripts/tracker-release.sh scripts/tracker-coa-preflight652.sh \
  bash -n "$sh"
 done
 "$PY" -m compileall -q app scripts tests/test_coa_manage_catalog652.py \
- tests/test_release629_qa_cadence.py tests/test_release577_dev_receipt.py
+ tests/test_release629_qa_cadence.py tests/test_release577_dev_receipt.py \
+ tests/test_coa_backup652.py
 node --check app/static/js/tracker-coa-multi651.js
 "$PY" - <<'PY'
 from pathlib import Path
