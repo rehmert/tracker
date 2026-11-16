@@ -49,7 +49,7 @@
             shutdown();
             setStatus("QR code found. Looking up the machine…");
             // Only the current origin is used. Never open the QR destination.
-            window.location.assign("/workouts/qr?code=" + encodeURIComponent(raw));
+            window.location.assign("/workouts/qr/scan?code=" + encodeURIComponent(raw));
             return;
           }
         }
