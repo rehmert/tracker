@@ -81,3 +81,42 @@ class WorkoutSetCorrection668(Base):
     new_type: Mapped[str] = mapped_column(String(16), nullable=False)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     corrected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+
+class WorkoutOfflineReceipt668(Base):
+    """An offline client action becomes one actual set, at most once."""
+    __tablename__ = "workout_offline_receipts668"
+    __table_args__ = (
+        UniqueConstraint("client_key", name="uq_workout668_offline_key"),
+        CheckConstraint("length(client_key) = 36", name="ck_workout668_offline_key"),
+    )
+    id: Mapped[int] = mapped_column(primary_key=True)
+    client_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    session_id: Mapped[int] = mapped_column(
+        ForeignKey("workout_sessions654.id", ondelete="RESTRICT"), nullable=False
+    )
+    set_id: Mapped[int] = mapped_column(
+        ForeignKey("workout_sets654.id", ondelete="RESTRICT"), nullable=False
+    )
+    synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+
+class WorkoutEquipmentLoad668(Base):
+    """Interpretation metadata; never rescales stored historical set loads."""
+    __tablename__ = "workout_equipment_load668"
+    __table_args__ = (
+        CheckConstraint(
+            "load_mode IN ('stack','total_plates','per_side','pair_total','bodyweight_added')",
+            name="ck_workout668_load_mode",
+        ),
+        CheckConstraint("multiplier > 0 AND multiplier <= 10", name="ck_workout668_load_multiplier"),
+        CheckConstraint("offset_lb >= 0 AND offset_lb <= 500", name="ck_workout668_load_offset"),
+    )
+    equipment_id: Mapped[int] = mapped_column(
+        ForeignKey("workout_equipment654.id", ondelete="CASCADE"), primary_key=True
+    )
+    load_mode: Mapped[str] = mapped_column(String(24), nullable=False, default="stack")
+    multiplier: Mapped[float] = mapped_column(nullable=False, default=1.0)
+    offset_lb: Mapped[float] = mapped_column(nullable=False, default=0.0)
+    note: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
