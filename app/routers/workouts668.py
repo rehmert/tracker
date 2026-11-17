@@ -284,3 +284,44 @@ def correct_recorded_set668(
     return services.flash_redirect(
         url, msg="Recorded set corrected; before/after audit retained.",
     )
+
+
+@router.post("/workouts/sessions/{session_id}/reuse-as-routine")
+def reuse_session_as_routine668(
+    session_id: int, db: Session = Depends(get_scoped_db390),
+):
+    """Copy the exercise sequence, NOT completed sets or inferred load targets."""
+    workout = db.get(WorkoutSession654, session_id)
+    if workout is None:
+        raise HTTPException(404, "Workout not found")
+    if workout.completed_at is None:
+        return services.flash_redirect(
+            f"/workouts/sessions/{session_id}/review",
+            err="Only completed workouts can be reused as routines.",
+        )
+    sets = list(db.scalars(select(WorkoutSet654)
+        .where(WorkoutSet654.session_id == session_id)
+        .order_by(WorkoutSet654.performed_at, WorkoutSet654.id)))
+    equipment_ids = list(dict.fromkeys(row.equipment_id for row in sets))
+    if not equipment_ids:
+        return services.flash_redirect(
+            f"/workouts/sessions/{session_id}/review",
+            err="The workout has no recorded exercises to copy.",
+        )
+    if len(equipment_ids) > 30:
+        return services.flash_redirect(
+            f"/workouts/sessions/{session_id}/review",
+            err="Cannot create a routine with more than 30 exercises.",
+        )
+    new = WorkoutRoutine655(name=f"Workout {workout.started_at:%Y-%m-%d} (Copy)")
+    db.add(new)
+    db.flush()
+    for position, equipment_id in enumerate(equipment_ids):
+        db.add(WorkoutRoutineItem655(
+            routine_id=new.id, equipment_id=equipment_id, position=position,
+        ))
+    db.commit()
+    return services.flash_redirect(
+        f"/workouts/routines/{new.id}",
+        msg="Workout exercise order copied as a new routine. No historical sets were copied.",
+    )
