@@ -58,6 +58,24 @@
       </section>
     {% endif %}
 
+    {% if routine and grouped668 %}
+      <section class="workout659-panel" aria-label="Planned Supersets and Circuits">
+        <h2>Planned Training Groups</h2>
+        <p class="workout659-muted">These are exercise-order guides; each completed
+          set still needs to be logged manually.</p>
+        {% for group in grouped668 %}
+          <details>
+            <summary>{{ group.group.group_name }} — {{ group.group.group_type|title }} · {{ group.group.rounds }} rounds</summary>
+            <nav aria-label="{{ group.group.group_name }} exercises">
+              {% for equipment_item in group.machines %}
+                <a href="/workouts/quick?machine={{ equipment_item.id }}">{{ equipment_item.name }}</a>
+              {% endfor %}
+            </nav>
+          </details>
+        {% endfor %}
+      </section>
+    {% endif %}
+
     <section class="workout659-panel">
       <form action="/workouts/quick" method="get" class="workout659-machine-picker">
         <label for="workout659-machine-select">Current machine</label>
