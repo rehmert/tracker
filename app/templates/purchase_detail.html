@@ -36,10 +36,10 @@
       <td class="n">{{ d.landed_cents|money }}</td>
       <td>{{ v.status|replace('_', ' ') }}</td>
       <td>{{ 'yes' if v.coa else 'none' }}</td>
-      <td><div class="purchase-actions"><a href="/vials/{{ v.id }}">Edit</a>
+      <td><div class="purchase-actions"><form method="get" action="/vials/{{ v.id }}"><button type="submit">Edit</button></form>
         <form method="post" action="/purchases/{{ p.id }}/vials/{{ v.id }}/delete"
               onsubmit="return confirm('Delete this vial from the purchase? This cannot be undone.')">
-          <button class="link danger" type="submit">Delete</button>
+          <button type="submit" style="color:var(--brick)">Delete</button>
         </form></div></td>
     </tr>
     {% else %}<tr><td colspan="8" class="empty">No vials yet. Add them below.</td></tr>{% endfor %}
