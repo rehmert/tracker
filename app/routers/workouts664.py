@@ -19,6 +19,8 @@ from sqlalchemy.orm import Session
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import WorkoutSession654, WorkoutSet654
+from ..workout_models655 import WorkoutRoutine655
+from ..workout_models668 import WorkoutTrainingDay668
 
 router = APIRouter()
 CALENDAR664 = calendar.Calendar(firstweekday=calendar.MONDAY)
@@ -127,7 +129,22 @@ def workout_calendar664(
 ):
     today = datetime.now().date()
     first = selected_month664(month, today)
+    # Weekly recurring plan overlays are separate from completed workout counts.
+    slots = list(db.execute(
+        select(WorkoutTrainingDay668.weekday, WorkoutRoutine655.id,
+               WorkoutRoutine655.name)
+        .join(WorkoutRoutine655, WorkoutRoutine655.id == WorkoutTrainingDay668.routine_id)
+    ))
+    import calendar
+    plans = {
+        date(first.year, first.month, day): [
+            {"routine_id": row.id, "routine_name": row.name}
+            for row in slots if row.weekday == date(first.year, first.month, day).weekday()
+        ]
+        for day in range(1, calendar.monthrange(first.year, first.month)[1] + 1)
+    }
     return render(
         request, "workout_calendar664.html",
         workout_calendar=workout_calendar_data664(db, first, today),
+        planned668=plans,
     )
