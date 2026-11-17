@@ -19,6 +19,26 @@ from .. import calendar as cal
 router = APIRouter()
 
 
+def calendar_day_sort_key(event: dict) -> tuple:
+    """Time of day, then case-insensitive compound name; unscheduled last.
+
+    Time is local HH:MM. Retain stable deterministic ties without modifying
+    reconciliation status or persisted dose records.
+    """
+    raw = event.get("dose_time") or ""
+    try:
+        clock = datetime.strptime(raw, "%H:%M").strftime("%H:%M")
+    except (TypeError, ValueError):
+        clock = "99:99"
+    return (
+        clock,
+        (event.get("name") or "").casefold(),
+        (event.get("protocol") or "").casefold(),
+        event.get("protocol_item_id") or 0,
+        event.get("compound_id") or 0,
+    )
+
+
 def reconcile(planned, actual, today):
     """Match each recorded dose to at most one same-day planned occurrence.
 
@@ -48,7 +68,7 @@ def reconcile(planned, actual, today):
         for idx, a in enumerate(recordings):
             if idx not in used:
                 events.append(dict(a, status='extra'))
-        result[day] = events
+        result[day] = sorted(events, key=calendar_day_sort_key)
     return result
 
 
@@ -142,7 +162,8 @@ def _month_events(shown: date, db: Session):
         actual.setdefault(dose.taken_at.date(), []).append({
             'compound_id': dose.vial.compound_id,
             'name': dose.vial.compound.name,
-            'dose': f'{dose.entered_value:g} {dose.entered_unit}'})
+            'dose': f'{dose.entered_value:g} {dose.entered_unit}',
+            'dose_time': dose.taken_at.strftime('%H:%M')})
     # Blend draws are stored separately from ordinary vial DoseLogs.
     # One administered draw contributes a recorded occurrence for each
     # constituent compound, but never creates duplicate DoseLog rows.
