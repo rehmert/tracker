@@ -198,6 +198,16 @@
       }
     });
     syncButton.addEventListener("click", () => { void syncQueue(); });
+    const finishForm = root.querySelector('form[action="/workouts/quick/finish"]');
+    if (finishForm) {
+      finishForm.addEventListener("submit", event => {
+        const pending = queueRead();
+        if (syncing || !pending || pending.length > 0) {
+          event.preventDefault();
+          displayQueue("Finish blocked: synchronize or discard all pending sets first.");
+        }
+      }, true);
+    }
     if (discardButton) {
       discardButton.addEventListener("click", () => {
         if (syncing) {
