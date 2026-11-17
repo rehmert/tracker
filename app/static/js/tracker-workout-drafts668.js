@@ -85,6 +85,7 @@
   const syncButton = document.getElementById("workout668-sync-now");
   const syncStatus = document.getElementById("workout668-sync-status");
   const queueKey = "tracker-workout668-queue:" + session;
+  const discardButton = document.getElementById("workout668-queue-discard");
   let syncing = false;
   const queueRead = () => {
     try {
@@ -194,6 +195,24 @@
       }
     });
     syncButton.addEventListener("click", () => { void syncQueue(); });
+    if (discardButton) {
+      discardButton.addEventListener("click", () => {
+        if (syncing) {
+          displayQueue("Synchronization is running; try again after completion.");
+          return;
+        }
+        const pending = queueRead();
+        if (!pending || !pending.length) return displayQueue("");
+        if (!window.confirm("Discard " + pending.length +
+            " unconfirmed set(s)? This cannot be undone.")) return;
+        try {
+          queueStore([]);
+          displayQueue("Pending queue discarded on this device only.");
+        } catch (_) {
+          displayQueue("Unable to discard local queue.");
+        }
+      });
+    }
     window.addEventListener("online", () => { void syncQueue(); });
     displayQueue("");
     if (window.navigator.onLine) void syncQueue();
