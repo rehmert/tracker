@@ -16,6 +16,8 @@ from app.routers.workouts664 import (
     neighboring_month664, selected_month664, workout_calendar_data664,
 )
 from app.workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
+from app.workout_models655 import WorkoutRoutine655
+from app.workout_models668 import WorkoutRoutineSchedule668
 
 ROOT = Path(__file__).resolve().parents[1]
 TODAY664 = date(2026, 11, 16)
@@ -43,6 +45,8 @@ def test_664_leap_year_backdated_order_boundaries_and_unique_days(tmp_path):
             WorkoutEquipment654.__table__,
             WorkoutSession654.__table__,
             WorkoutSet654.__table__,
+            WorkoutRoutine655.__table__,
+            WorkoutRoutineSchedule668.__table__,
         ])
         with Session(engine) as db:
             machine = WorkoutEquipment654(
