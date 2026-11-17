@@ -22,8 +22,9 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 - Read-only cross-session Workout Insights: exact 28-day completed-session
   counts, actual sets/repetitions/load × reps, and most recent 12 sessions.
   Empty and unfinished workouts do not count as completed training.
-- Read-only per-session CSV export of actual logged sets, with formula-safe
-  equipment names and existing authentication/database scoping.
+- Detailed read-only per-session CSV export with formula-safe equipment names,
+  plus a five-column actual-set export directly compatible with the historical
+  importer (when importing to the same equipment-ID catalog).
 - Focused isolated tests for duplication, substitution and CSV safety.
 - Strict future routine-plan CSV import/export (paste-based import), validated
   against the authenticated routine item IDs in one transaction.
@@ -42,10 +43,12 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 ## Deliberate boundaries and remaining verification
 
 - **Offline synchronization:** While the gym page remains open, queued actual
-  set entries retry when connectivity returns, and retry-safe server UUID
-  receipts prevent duplicate sets. Actions are preserved locally on failures;
-  the page does not claim background synchronization after the browser is
-  closed. A previously deleted set is never recreated on retry.
+  set entries retry when connectivity returns, and server UUID receipts bound
+  to original payloads prevent duplicate sets. Original local set time is
+  validated and preserved. Failed actions remain on-device; finishing a workout
+  with unconfirmed sets is blocked by the active-page UI. There is no claim
+  of background synchronization after the browser closes. Deleted sets are
+  never recreated by a retry.
 - **Historical workout duplication:** A completed workout can be reused as an
   editable future routine without duplicating logged historical performance.
   This deliberately avoids creating false completed training sessions.
