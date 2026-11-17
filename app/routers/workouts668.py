@@ -378,6 +378,7 @@ def sync_offline_set668(
     session_id: int = Form(...), equipment_id: int = Form(...),
     client_key: str = Form(...), weight_lb: float = Form(...),
     reps: int = Form(...), effort: str = Form(""),
+    performed_at: str = Form(...),
     set_type: str = Form("working"),
     db: Session = Depends(get_scoped_db390),
 ):
@@ -395,9 +396,16 @@ def sync_offline_set668(
         raise HTTPException(400, "Invalid offline action identifier")
     if key != client_key.lower():
         raise HTTPException(400, "Noncanonical offline action identifier")
+    try:
+        original_time = datetime.fromisoformat(performed_at.replace("Z", "+00:00"))
+        if original_time.tzinfo is None:
+            raise ValueError("Timezone is required")
+        original_time = original_time.astimezone().replace(tzinfo=None)
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise HTTPException(422, "Invalid original set timestamp") from exc
     fingerprint = hashlib.sha256((
         f"{session_id}|{equipment_id}|{weight_lb:.12g}|{reps}|"
-        f"{effort.strip()}|{set_type}"
+        f"{effort.strip()}|{set_type}|{original_time.isoformat(timespec='microseconds')}"
     ).encode("utf-8")).hexdigest()
     existing = db.scalar(select(WorkoutOfflineReceipt668)
         .where(WorkoutOfflineReceipt668.client_key == key))
@@ -409,6 +417,11 @@ def sync_offline_set668(
     active = active654(db)
     if active is None or active.id != session_id:
         raise HTTPException(409, "Original workout is no longer active; nothing was synchronized")
+    recorded_now = datetime.now()
+    if (original_time < active.started_at - timedelta(minutes=5)
+            or original_time > recorded_now + timedelta(minutes=1)
+            or original_time > active.started_at + timedelta(hours=24)):
+        raise HTTPException(422, "Original set timestamp outside active workout window")
     if db.get(WorkoutEquipment654, equipment_id) is None:
         raise HTTPException(404, "Equipment not found")
     if (set_type not in ("working", "warmup")
@@ -423,7 +436,7 @@ def sync_offline_set668(
     recorded = WorkoutSet654(
         session_id=active.id, equipment_id=equipment_id,
         weight_lb=weight_lb, reps=reps, effort=value,
-        performed_at=datetime.now(),
+        performed_at=original_time,
     )
     db.add(recorded)
     db.flush()
