@@ -16,7 +16,7 @@
   <header class="workout664-header">
     <div>
       <h1>Workout Calendar</h1>
-      <p class="note">Completed workouts with recorded sets, on their actual recorded dates. Backdated sessions appear in their original month.</p>
+      <p class="note">Completed workouts are counted from actual recorded sets. Planned routines appear separately, and never count as completed sessions.</p>
     </div>
   </header>
 
@@ -68,6 +68,12 @@
                 {% if cell.in_month %}
                   <time datetime="{{ cell.day.isoformat() }}"
                         {% if cell.is_today %}aria-current="date"{% endif %}>{{ cell.day.day }}</time>
+                  {% if cell.plans %}
+                    <a href="#workout668-planned-{{ cell.day.isoformat() }}"
+                       aria-label="{{ cell.plans|length }} planned routine(s) on {{ cell.day.isoformat() }}">
+                      {{ cell.plans|length }} <span>planned</span>
+                    </a>
+                  {% endif %}
                   {% if cell.count %}
                     <a href="#workout664-day-{{ cell.day.isoformat() }}"
                        aria-label="{{ cell.count }} completed session{{ '' if cell.count == 1 else 's' }} on {{ cell.day.isoformat() }}">
@@ -83,6 +89,27 @@
     </table>
   </div>
 
+  <section class="workout664-session-list" aria-label="Scheduled routines, not completed workouts">
+    <h2>Planned Routine Sessions — {{ workout_calendar.month_label }}</h2>
+    <p class="note">Training intentions only. Open the routine when ready and
+      explicitly start it; these entries do not create workout logs.</p>
+    {% if workout_calendar.planned_days %}
+      <ol>
+        {% for group in workout_calendar.planned_days %}
+          <li id="workout668-planned-{{ group.day.isoformat() }}">
+            <time datetime="{{ group.day.isoformat() }}">{{ group.day.strftime('%a, %b %d') }}</time>
+            <ul>
+              {% for routine in group.routines %}
+                <li><a href="/workouts/routines/{{ routine.routine_id }}">{{ routine.name }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="note">No routines scheduled this month. <a href="/workouts/routines">Configure schedules</a>.</p>
+    {% endif %}
+  </section>
   <section class="workout664-session-list" aria-labelledby="workout664-sessions-heading">
     <h2 id="workout664-sessions-heading">Completed Sessions — {{ workout_calendar.month_label }}</h2>
     {% if workout_calendar.days %}
