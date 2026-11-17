@@ -92,6 +92,7 @@ class WorkoutOfflineReceipt668(Base):
     )
     id: Mapped[int] = mapped_column(primary_key=True)
     client_key: Mapped[str] = mapped_column(String(36), nullable=False)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     session_id: Mapped[int] = mapped_column(
         ForeignKey("workout_sessions654.id", ondelete="RESTRICT"), nullable=False
     )
