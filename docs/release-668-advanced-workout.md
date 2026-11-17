@@ -142,3 +142,9 @@ silently merging pending data into a different workout.
   overflow.
 - PROD remains on Release 667 until the new exact SHA is DEV
   qualified and explicitly signed/promoted.
+- `scripts/tracker-workout-dev668.sh` is the pinned DEV-only schema
+  deployment script, extracted from the exact candidate Git commit.
+- `scripts/tracker-workout-promote668.sh` provides a read-only
+  signed-promotion preflight by default and requires explicit
+  `--execute` after DEV qualification to promote to PROD. It reuses
+  `tracker_promote568.py` and never bypasses approval signatures.
