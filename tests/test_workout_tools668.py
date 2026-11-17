@@ -14,12 +14,7 @@ from app.routers.workouts663 import export_session668, safe_csv668, workout_insi
 
 def test_668_routine_duplicate_copies_plan_not_history():
     engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine, tables=[
-        WorkoutEquipment654.__table__, WorkoutRoutine655.__table__,
-        WorkoutRoutineItem655.__table__, WorkoutRoutineConfig667.__table__,
-        WorkoutRoutineTarget667.__table__, WorkoutSession654.__table__,
-        WorkoutSet654.__table__,
-    ])
+    Base.metadata.create_all(engine)
     with Session(engine) as db:
         gear = WorkoutEquipment654(name="Nautilus Row", kind="selectorized")
         source = WorkoutRoutine655(name="Upper A")
