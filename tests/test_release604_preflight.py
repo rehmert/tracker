@@ -230,12 +230,21 @@ def test_604_release_gate_runs_before_expensive_qualification():
         "COMPLETE REGRESSION SUITE"
     )
     assert "timeout 180" in script
-    assert "=== RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER ===" in script
-    assert script.index("RELEASE 604 FOCUSED REGRESSION BEFORE FULL BROWSER") < (
+    # Releases 652+ now use a dedicated change-scoped gate. The legacy
+    # Release 604 helper is retained for older releases only. Both branches
+    # must execute before optional expensive browser/backend qualification.
+    assert "=== RELEASE-SCOPED DEV QUALIFICATION ===" in script
+    assert "=== LEGACY FOCUSED REGRESSION ===" in script
+    assert script.index("RELEASE-SCOPED DEV QUALIFICATION") < (
+        script.index("ISOLATED BROWSER QUALIFICATION")
+    )
+    assert script.index("LEGACY FOCUSED REGRESSION") < (
         script.index("ISOLATED BROWSER QUALIFICATION")
     )
     helper = source("scripts/tracker-focused-regression604.sh")
     assert 'timeout 180 bash "$QA/scripts/tracker-focused-regression604.sh" "$PY"' in script
+    assert 'timeout 360 bash "$SCOPED" "$PY"' in script
+    assert '[[ -f "$SCOPED" ]] || fail' in script
     for required in (
         "tests/test_release_workflow.py",
         "tests/test_release604_navigation_browser.py",
