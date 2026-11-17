@@ -32,6 +32,7 @@ PY
   tests/test_purchase_history_review.py \
   tests/test_supply_stock_filters.py \
   tests/test_food_accordion382.py \
+  tests/test_food_order383.py \
   tests/test_food_mobile424.py \
   tests/test_food_saved_edit669.py \
   tests/test_workouts659.py \
