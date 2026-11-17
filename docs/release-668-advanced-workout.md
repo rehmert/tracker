@@ -35,7 +35,7 @@ D, E, F2, F3, F5, F6, F7, F8, F9, F10, F12.
 4. `workout_set_audit668` (append-only prior/after values and a reason)
 5. `workout_load_semantics668` (per-machine recording convention)
 6. `workout_import_receipts668` (content digest for duplicate CSV detection)
-7. `workout_offline_receipts668` (idempotent UUID → committed actual set)
+7. `workout_offline_receipts668` (idempotent UUID → committed actual set ID, retained as a tombstone even after set deletion)
 
 The existing `workout_models654.py`, `workout_models655.py`, and
 `workout_models667.py` files are unchanged; no old actual sets are
