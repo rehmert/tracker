@@ -21,6 +21,7 @@
     {% for routine in routines %}
       <div class="workout-routine-row655">
         <a href="/workouts/routines/{{ routine.id }}"><strong>{{ routine.name }}</strong></a>
+        <a href="/workouts/routines/{{ routine.id }}/plan">Plan &amp; Compare</a>
         <form method="post" action="/workouts/routines/{{ routine.id }}/start">
           <button type="submit">Start</button>
         </form>
