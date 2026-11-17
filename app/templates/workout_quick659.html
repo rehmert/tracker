@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/static/css/tracker-workout-ux673.css?v=673">
 <script src="/static/js/tracker-workout-gym667.js?v=667" defer></script>
 <script src="/static/js/tracker-workout-drafts668.js?v=668" defer></script>
+<script src="/static/js/tracker-workout-progression674.js?v=674" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
@@ -222,6 +223,17 @@
             <p class="workout666-targets-note">Browser-only intentions, not logged sets. Logging values below stay independent.</p>
           </aside>
           {% endif %}
+        {% endif %}
+        {% if progression674 %}
+        <aside class="ux674-progress" aria-label="Optional training progression">
+          <strong>Next-session idea</strong>
+          <p>{{ "%.1f"|format(progression674.weight) }} lb × {{ progression674.reps }} reps
+            {% if progression674.progressed %}· modest increase{% else %}· repeat current load{% endif %}</p>
+          <small>{{ progression674.basis }} This is a configurable training suggestion, not an automatic or required change.</small>
+          <button type="button" id="workout674-use-progression"
+                  data-weight674="{{ progression674.weight }}"
+                  data-reps674="{{ progression674.reps }}">Use suggested values</button>
+        </aside>
         {% endif %}
         <form method="post" action="/workouts/quick/sets"
               class="workout659-log-form" id="workout659-log-form">
