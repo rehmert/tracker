@@ -74,7 +74,9 @@ def test_666_phone_browser_only_targets_show_correct_routine_item_without_modify
                 body=fixture666(machine, routine),
             )
 
-        page.route("**/workouts/quick*", serve)
+        # Shared context routing covers both the main page and the new tab.
+        # A page-scoped mock would let the second tab resolve tracker.test.
+        context.route("**/workouts/quick*", serve)
         try:
             page.goto(URL)
             assert page.evaluate("document.characterSet") == "UTF-8"
