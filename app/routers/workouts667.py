@@ -6,6 +6,7 @@ to the caller's scoped SQLite session, and cannot edit frozen workout goals.
 from __future__ import annotations
 
 import json
+from fastapi.responses import Response
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -18,6 +19,7 @@ from ..templating import render
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655
 from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667
 from ..workout_program667 import REST_CHOICES667, parse_goal667, rest667
+from ..workout_csv668 import parse_routine_csv668, render_routine_csv668
 from .workouts665 import routine_plan_data665
 
 router = APIRouter()
@@ -56,6 +58,69 @@ def program667(routine_id: int, request: Request,
         request, "workout_program667.html", **data, targets=targets,
         default_rest=config.rest_seconds if config else 90,
         rest_choices=REST_CHOICES667,
+    )
+
+
+@router.get("/workouts/routines/{routine_id}/program/export.csv")
+def export_program_csv668(routine_id: int, db: Session = Depends(get_scoped_db390)):
+    """Export future program rows; never include actual workout history."""
+    _routine667(db, routine_id)
+    items = list(db.scalars(
+        select(WorkoutRoutineItem655)
+        .where(WorkoutRoutineItem655.routine_id == routine_id)
+        .order_by(WorkoutRoutineItem655.position, WorkoutRoutineItem655.id)
+    ))
+    rows = []
+    for item in items:
+        goal = db.get(WorkoutRoutineTarget667, item.id)
+        rows.append(dict(
+            routine_item_id=item.id,
+            sets=goal.target_sets if goal and goal.target_sets is not None else "",
+            reps=goal.target_reps if goal and goal.target_reps is not None else "",
+            weight_lb=goal.target_weight_lb if goal and goal.target_weight_lb is not None else "",
+            rest_seconds=goal.rest_seconds if goal and goal.rest_seconds is not None else "",
+            setup_note=goal.setup_note if goal else "",
+        ))
+    return Response(
+        content=render_routine_csv668(rows).encode("utf-8-sig"),
+        media_type="text/csv",
+        headers={"Content-Disposition":
+                 f'attachment; filename="tracker-routine-{routine_id}-plan.csv"'},
+    )
+
+
+@router.post("/workouts/routines/{routine_id}/program/import.csv")
+def import_program_csv668(
+    routine_id: int, csv_text: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Validate all rows before a single atomic database commit."""
+    _routine667(db, routine_id)
+    url = _program_url667(routine_id)
+    known = set(db.scalars(
+        select(WorkoutRoutineItem655.id).where(
+            WorkoutRoutineItem655.routine_id == routine_id
+        )
+    ))
+    try:
+        rows = parse_routine_csv668(csv_text, known)
+    except ValueError as exc:
+        return services.flash_redirect(url, err=str(exc))
+    for row in rows:
+        item_id = row["routine_item_id"]
+        target = db.get(WorkoutRoutineTarget667, item_id)
+        if target is None:
+            target = WorkoutRoutineTarget667(routine_item_id=item_id)
+            db.add(target)
+        target.target_sets = row["target_sets"]
+        target.target_reps = row["target_reps"]
+        target.target_weight_lb = row["target_weight_lb"]
+        target.rest_seconds = row["rest_seconds"]
+        target.setup_note = row["setup_note"]
+        target.updated_at = datetime.now()
+    db.commit()
+    return services.flash_redirect(
+        url, msg=f"Imported {len(rows)} future routine exercise plans.",
     )
 
 
