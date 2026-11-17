@@ -34,6 +34,18 @@
           <strong>{{ names[item.equipment_id] }}</strong>
         </div>
         <div class="workout-routine-actions655">
+          {% if available and not (active and can_resume) %}
+          <form method="post" action="/workouts/routines/{{ routine.id }}/items/{{ item.id }}/substitute">
+            <label>Substitute exercise
+              <select name="equipment_id" required>
+                {% for alternate in available %}
+                  <option value="{{ alternate.id }}">{{ alternate.name }} · {{ alternate.gym }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <button type="submit">Replace</button>
+          </form>
+          {% endif %}
           <form method="post"
                 action="/workouts/routines/{{ routine.id }}/items/{{ item.id }}/move">
             <input type="hidden" name="direction" value="up">
