@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Workout Data Import & Export{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workout-advanced668.css?v=668">
+<script src="/static/js/tracker-workout-csv668.js?v=668" defer></script>
+{% endblock %}
+{% block content %}
+<section class="workout668">
+  <nav class="workout668-links"><a href="/workouts">← Workouts</a><a href="/workouts/insights">Insights</a></nav>
+  <h1>Workout CSV Import &amp; Export</h1>
+  <section class="workout668-card">
+    <h2>Export completed workouts</h2>
+    <p>Export recorded sets, session timestamps, equipment IDs, effort and warm-up types. Existing recorded weight units are never converted.</p>
+    <p><a href="/workouts/data/export.csv" download>Download Completed Workout CSV</a></p>
+  </section>
+  <section class="workout668-card">
+    <h2>Import completed workouts</h2>
+    <p>Import a Tracker-format CSV. Uploads do not modify existing history; they create new completed sessions only. A duplicate time window, unknown equipment ID, incorrect columns, or invalid row rejects the entire batch.</p>
+    <p>Up to {{ max_rows }} recorded sets and 50 sessions per batch. Times must be local, on the same day and already completed.</p>
+    <form method="post" action="/workouts/data/import" id="workout668-csv-form">
+      <label>Choose CSV file
+        <input type="file" accept=".csv,text/csv" id="workout668-csv-file">
+      </label>
+      <label>Review CSV content
+        <textarea id="workout668-csv-text" name="csv_text" maxlength="160000" rows="8" required
+          placeholder="session_key,session_started,session_completed,equipment_id,weight_lb,reps,effort,set_type,performed_at"></textarea>
+      </label>
+      <p id="workout668-csv-status" class="workout668-muted" role="status" aria-live="polite"></p>
+      <button type="submit">Import New Completed Sessions</button>
+    </form>
+  </section>
+  <details class="workout668-card">
+    <summary>Equipment ID reference (only existing equipment is accepted)</summary>
+    <ul>
+    {% for machine in equipment %}
+      <li><code>{{ machine.id }}</code> — {{ machine.name }} ({{ machine.gym }})</li>
+    {% else %}
+      <li>No equipment configured.</li>
+    {% endfor %}
+    </ul>
+  </details>
+</section>
+{% endblock %}
