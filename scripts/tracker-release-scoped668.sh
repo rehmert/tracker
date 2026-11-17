@@ -9,7 +9,7 @@ bash -n scripts/tracker-release668.sh
 bash -n scripts/tracker-release-scoped668.sh
 bash -n scripts/tracker-release.sh
 bash -n scripts/tracker_prod_remote568.sh
-"$PY" -m py_compile app/routers/calendar.py app/routers/workouts655.py app/routers/workouts663.py app/routers/workouts667.py app/routers/workouts668.py app/routers/workouts658.py app/routers/workouts659.py app/routers/workouts664.py app/main.py app/workout_csv668.py app/workout_models668.py tests/test_calendar_sort668.py tests/test_workout_tools668.py tests/test_workout_csv668.py tests/test_workout_schedule668.py tests/test_workout_corrections668.py tests/test_workout_csv_history668.py scripts/tracker-workout-schema-review668.py tests/test_workout_release668.py tests/test_workout_offline668.py tests/test_workout_calendar668.py
+"$PY" -m py_compile app/routers/calendar.py app/routers/workouts655.py app/routers/workouts663.py app/routers/workouts667.py app/routers/workouts668.py app/routers/workouts658.py app/routers/workouts659.py app/routers/workouts664.py app/workout_dashboard661.py app/main.py app/workout_csv668.py app/workout_models668.py tests/test_calendar_sort668.py tests/test_workout_tools668.py tests/test_workout_csv668.py tests/test_workout_schedule668.py tests/test_workout_corrections668.py tests/test_workout_csv_history668.py scripts/tracker-workout-schema-review668.py tests/test_workout_release668.py tests/test_workout_offline668.py tests/test_workout_calendar668.py tests/test_workout_dashboard668.py tests/test_workout_guides668.py
 BASE668=9baa03fb521573ba17ec1853fb85d40a22895336
 TARGET668="$(git rev-parse HEAD)"
 "$PY" scripts/tracker-workout-schema-review668.py \
@@ -38,6 +38,8 @@ PY
   tests/test_workout_release668.py \
   tests/test_workout_offline668.py \
   tests/test_workout_calendar668.py \
+  tests/test_workout_dashboard668.py \
+  tests/test_workout_guides668.py \
   tests/test_calendar_review_agenda.py \
   tests/test_workouts667.py \
   tests/test_workouts655.py \
