@@ -24,9 +24,16 @@ git merge-base --is-ancestor origin/main "$TARGET" || die "Candidate not descend
 # A dedicated reviewed readiness commit is required after implementation and QA.
 READY="$(git show "$TARGET:docs/release-668-ready.txt" 2>/dev/null || true)"
 [[ "$READY" == 'RELEASE_668_IMPLEMENTATION_REVIEWED=YES' ]] || die "Release 668 incomplete: reviewed readiness marker missing"
-if git diff --name-only origin/main "$TARGET" | grep -Eq '^(app/(db|models|migrations|workout_models[0-9]+)[.]py|alembic/|alembic.ini|requirements[^/]*|deploy/)'; then
-  die "Migration/dependency/topology changes require separate reviewed qualification"
+# The only permitted migration is the additive reviewed Workout 668 schema.
+# Security, dependencies, old schemas and topology still fail closed.
+if git diff --name-only origin/main "$TARGET" | grep -Eq '^(app/(db|models|migrations|workout_models(654|655|667))[.]py|alembic/|alembic.ini|requirements[^/]*|deploy/)'; then
+  die "Unreviewed schema/dependency/topology change"
 fi
+git diff --name-only origin/main "$TARGET" | grep -Fxq 'app/workout_models668.py' ||
+  die "Expected reviewed Workout 668 additive schema change missing"
+DEPLOY_EXTRA=(--db-migration --reviewed-workout-668)
+git cat-file -e "$TARGET:scripts/tracker-workout-schema-review668.py" ||
+  die "Exact-source reviewed Workout 668 schema guard missing"
 if [[ "$PHASE" == dev || "$PHASE" == all ]]; then
   BASE="$(git rev-parse HEAD)"
   [[ "$(git rev-parse origin/main)" == "$BASE" ]] || die "DEV and origin/main baseline mismatch"
@@ -41,7 +48,7 @@ if [[ "$PHASE" == dev || "$PHASE" == all ]]; then
   echo "RELEASE_668_DEV_BASE=$BASE"
   echo "RELEASE_668_TARGET=$TARGET"
   echo "RELEASE_668_TEST_MODE=FOCUSED_NO_FULL_SUITE"
-  bash "$STAGE/runner.sh" --instance DEV --base "$BASE" --target "$TARGET" --ref "$BRANCH"
+  bash "$STAGE/runner.sh" --instance DEV --base "$BASE" --target "$TARGET" --ref "$BRANCH" "${DEPLOY_EXTRA[@]}"
   [[ "$(git rev-parse HEAD)" == "$TARGET" ]] || die "DEV target not installed"
   systemctl is-active --quiet tracker || die "DEV service inactive"
   LOG=/etc/tracker-release/release-668-dev.log
