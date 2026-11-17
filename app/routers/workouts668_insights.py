@@ -144,3 +144,37 @@ def insights668(request: Request, db: Session = Depends(get_scoped_db390)):
         request, "workout_insights668.html", summary=result,
         exact_rep_records=records, equipment_names=names,
     )
+
+
+def dashboard_pulse668(db: Session, today: date | None = None) -> dict:
+    """Bounded home widget; avoid recomputing all historical insights on /."""
+    today = today or datetime.now().date()
+    slots = list(db.execute(
+        select(WorkoutTrainingDay668.weekday, WorkoutRoutine655.id,
+               WorkoutRoutine655.name)
+        .join(WorkoutRoutine655, WorkoutRoutine655.id == WorkoutTrainingDay668.routine_id)
+        .order_by(WorkoutTrainingDay668.weekday, WorkoutRoutine655.name)
+    ))
+    upcoming = sorted(slots, key=lambda row: (
+        (row.weekday - today.weekday()) % 7, row.name,
+    ))[:3]
+    most_recent = db.scalar(
+        select(WorkoutSession654)
+        .where(WorkoutSession654.completed_at.is_not(None))
+        .order_by(WorkoutSession654.started_at.desc(), WorkoutSession654.id.desc())
+        .limit(1)
+    )
+    goal = None
+    if most_recent is not None:
+        targets = list(db.scalars(select(WorkoutSessionTarget667).where(
+            WorkoutSessionTarget667.session_id == most_recent.id
+        )))
+        if targets:
+            achieved = [progress667(db, most_recent.id, t.equipment_id) for t in targets]
+            planned = sum(row["target"].target_sets for row in achieved)
+            qualified = sum(row["credited_sets"] for row in achieved)
+            goal = dict(
+                session_id=most_recent.id, planned=planned, qualified=qualified,
+                pct=round(100 * qualified / planned) if planned else None,
+            )
+    return {"upcoming": upcoming, "goal": goal}
