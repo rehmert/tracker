@@ -9,6 +9,8 @@
 <script src="/static/js/tracker-workout-targets666.js?v=666" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-workout-gym667.css?v=667">
 <script src="/static/js/tracker-workout-gym667.js?v=667" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-workout-advanced668.css?v=668">
+<script src="/static/js/tracker-workout-offline668.js?v=668" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
@@ -54,7 +56,7 @@
       <section class="workout659-progress" aria-label="Routine progress">
         <strong>{{ routine.name }}</strong>
         <span>{{ routine_logged }} of {{ routine_total }} exercises logged</span>
-        <a href="/workouts/routines/{{ routine.id }}/program">Edit Persistent Goals</a> · <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Targets</a>
+        <a href="/workouts/routines/{{ routine.id }}/program">Edit Persistent Goals</a> · <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Targets</a> · <a href="/workouts/programs">Weekly Program</a>
       </section>
     {% endif %}
 
@@ -99,6 +101,44 @@
             <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
           {% endif %}
         </div>
+        {% if group668 %}
+          <section class="workout668-card" aria-label="Superset or circuit">
+            <h3>{{ group668.mode|title }} {{ group668.label }}</h3>
+            {% if group_peers668 %}
+              <nav class="workout668-links" aria-label="Exercise group peers">
+                {% for peer in group_peers668 %}
+                  <a href="/workouts/quick?machine={{ peer.id }}">{{ peer.name }}</a>
+                {% endfor %}
+              </nav>
+            {% else %}
+              <p class="workout668-muted">Assign other routine exercises to this group to navigate through them.</p>
+            {% endif %}
+          </section>
+        {% endif %}
+        {% if is_alternate668 %}
+          <p class="workout668-muted"><strong>Substituted machine:</strong> recording on this machine instead of routine equipment #{{ is_alternate668 }}. Loads are not assumed equivalent to the original target.</p>
+          <a href="/workouts/quick?machine={{ is_alternate668 }}">Return to planned exercise</a>
+        {% endif %}
+        {% if routine and plan_item_id %}
+          <section class="workout668-card">
+            <h3>Machine unavailable? Substitute for this session</h3>
+            {% if substituted_machine668 %}
+              <p>Using <a href="/workouts/quick?machine={{ substituted_machine668.id }}">{{ substituted_machine668.name }}</a> instead. Original goal remains unchanged; replacement loads are not credited as equivalent.</p>
+            {% endif %}
+            <form action="/workouts/quick/substitution" method="post" class="workout668-grid">
+              <input type="hidden" name="original_equipment_id" value="{{ machine.id }}">
+              <label>Alternative machine
+                <select name="alternate_equipment_id">
+                  <option value="0">No substitution (original machine)</option>
+                  {% for option in alternatives668 %}
+                    <option value="{{ option.id }}" {% if substitution668 and option.id == substitution668.alternate_equipment_id %}selected{% endif %}>{{ option.name }} — {{ option.gym }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <button type="submit">Apply Substitution</button>
+            </form>
+          </section>
+        {% endif %}
         <div class="workout659-prior">
           {% if last %}
             <span>Last recorded</span>
@@ -198,6 +238,13 @@
             {{ 'Restore last recorded values' if last else 'Clear entries' }}
           </button>
         </form>
+        <aside class="workout668-offline" aria-label="Offline workout recording">
+          <h3>Offline workout queue</h3>
+          <p>Only a server-acknowledged set is logged. Queued sets stay on this device until they are safely synced to this same active session.</p>
+          <button type="button" id="workout668-queue-set">Queue Set Offline</button>
+          <button type="button" id="workout668-sync-set">Sync Queued Sets</button>
+          <p id="workout668-offline-status" role="status" aria-live="polite">Checking locally queued sets…</p>
+        </aside>
         {% if last %}
           <form method="post" action="/workouts/quick/repeat" class="workout659-repeat">
             <input type="hidden" name="equipment_id" value="{{ machine.id }}">
