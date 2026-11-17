@@ -1,0 +1,19 @@
+/* Release 667: mobile-first, explicit frozen-goal guidance in Rapid Gym. */
+.workout667-active-goal{margin:1rem 0;padding:.9rem;border:1px solid var(--border,#8996a2);border-radius:.7rem;min-width:0;}
+.workout667-goal-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.workout667-goal-header h3{font-size:1.05rem;margin:.2rem 0;}
+.workout667-goal-header a{min-height:44px;display:flex;align-items:center;}
+.workout667-active-goal p{margin:.5rem 0;overflow-wrap:anywhere;}
+.workout667-goal-progress strong{font-variant-numeric:tabular-nums;}
+.workout667-goal-note{padding:.5rem;border-left:3px solid var(--border,#8996a2);font-size:.88rem;}
+.workout667-goal-hint{font-size:.83rem;line-height:1.45;opacity:.9;}
+#workout667-use-goal{min-height:48px;max-width:100%;width:100%;font-weight:700;}
+.workout667-set-kind{display:flex;flex-wrap:wrap;gap:.5rem 1rem;border:1px solid var(--border,#8996a2);padding:.7rem;margin:.6rem 0;border-radius:.5rem;}
+.workout667-set-kind legend{font-weight:700;}
+.workout667-set-kind label{display:inline-flex;align-items:center;gap:.4rem;min-height:44px;cursor:pointer;}
+.workout667-set-kind input{width:20px;height:20px;accent-color:currentColor;}
+@media(max-width:430px){
+ .workout667-active-goal{padding:.7rem;}
+ .workout667-set-kind{padding:.5rem;gap:.25rem .7rem;}
+ .workout667-set-kind label{flex:1 1 auto;min-width:0;}
+}
