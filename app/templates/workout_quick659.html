@@ -9,6 +9,7 @@
 <script src="/static/js/tracker-workout-targets666.js?v=666" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-workout-gym667.css?v=667">
 <link rel="stylesheet" href="/static/css/tracker-workout-ux673.css?v=673">
+<link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 <script src="/static/js/tracker-workout-gym667.js?v=667" defer></script>
 <script src="/static/js/tracker-workout-drafts668.js?v=668" defer></script>
 <script src="/static/js/tracker-workout-progression674.js?v=674" defer></script>
@@ -21,15 +22,17 @@
          data-rest-seconds667="{{ rest_seconds667 if routine and plan_item_id else '' }}">
   <header class="workout659-header">
     <div>
-      <nav class="ux673-gym-links" aria-label="Workout navigation">
-        <a href="/workouts">← Workout Tracker</a>
-        <details>
-          <summary>More Workout Views</summary>
-          <div><a href="/workouts/analytics">Strength Progress</a><a href="/workouts/insights">Workout Insights</a></div>
+      <nav class="ux675-actions ux675-gym-top" aria-label="Workout navigation">
+        <a href="/workouts">← Workouts</a>
+        <a href="/workouts/analytics">Progress</a>
+        <details class="ux675-more">
+          <summary>More</summary>
+          <div><a href="/workouts/insights">Insights</a><a href="/workouts/calendar">Calendar</a>
+            <a href="/workouts/backfill">Log Past Workout</a></div>
         </details>
       </nav>
       <h1>Rapid Gym Mode</h1>
-      <p class="workout659-muted">One machine at a time. Log only sets you completed.</p>
+      <p class="workout659-muted">One machine at a time · Completed sets only.</p>
     </div>
     {% if active %}
       <span class="workout659-state">Workout active</span>
@@ -39,7 +42,7 @@
   {% if not equipment %}
     <section class="workout659-panel">
       <p>Add your first machine in the main Workout Tracker to begin.</p>
-      <a href="/workouts#workout-add-equipment656">Add Equipment</a>
+      <a class="ux675-inline-action" href="/workouts#workout-add-equipment656">Add Machine</a>
     </section>
   {% elif not active %}
     <section class="workout659-panel">
@@ -63,15 +66,20 @@
       <section class="workout659-progress" aria-label="Routine progress">
         <strong>{{ routine.name }}</strong>
         <span>{{ routine_logged }} of {{ routine_total }} exercises logged</span>
-        <a href="/workouts/routines/{{ routine.id }}/program">Edit Persistent Goals</a> · <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Targets</a>
+        <nav class="ux675-actions ux675-compact" aria-label="Routine tools">
+          <a href="/workouts/routines/{{ routine.id }}/program">Goals</a>
+          <details class="ux675-more"><summary>More</summary><div>
+            <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Targets</a>
+            <a href="/workouts/routines/{{ routine.id }}/schedule">Schedule</a>
+          </div></details>
+        </nav>
       </section>
     {% endif %}
 
     {% if routine and grouped668 %}
       <section class="workout659-panel" aria-label="Planned Supersets and Circuits">
         <h2>Planned Training Groups</h2>
-        <p class="workout659-muted">These are exercise-order guides; each completed
-          set still needs to be logged manually.</p>
+        <p class="workout659-muted">Planned order only · Log each set yourself.</p>
         {% for group in grouped668 %}
           <details>
             <summary>{{ group.group.group_name }} — {{ group.group.group_type|title }} · {{ group.group.rounds }} rounds</summary>
@@ -84,9 +92,7 @@
             {% if group.complete %}
               <p class="workout659-muted">All planned rounds have been logged.</p>
             {% elif group.next_machine %}
-              <p><a href="/workouts/quick?machine={{ group.next_machine.id }}">
-                Next in planned rotation: {{ group.next_machine.name }}
-              </a></p>
+              <p><a class="ux675-inline-action" href="/workouts/quick?machine={{ group.next_machine.id }}">Next: {{ group.next_machine.name }}</a></p>
             {% endif %}
           </details>
         {% endfor %}
@@ -108,7 +114,7 @@
         </div>
       </form>
       <details class="workout662-directory" id="workout662-directory">
-        <summary>Find a machine by name ({{ equipment|length }} available)</summary>
+        <summary>Find Machine ({{ equipment|length }})</summary>
         <label for="workout662-search">Search machine or gym</label>
         <input id="workout662-search" type="search" maxlength="140"
                autocomplete="off" placeholder="Search equipment…">
@@ -135,11 +141,8 @@
           {% endif %}
         </div>
         <details class="workout659-panel">
-          <summary>Machine load setup and interpretation</summary>
-          <p class="workout659-muted">Recorded weight remains exactly what you
-            enter. Configure whether your input refers to a stack, the whole
-            plate load, one side, a dumbbell pair or added bodyweight. The
-            multiplier and offset are advisory only and never rewrite history.</p>
+          <summary>Load Setup</summary>
+          <p class="workout659-muted">Choose stack, plates, dumbbells, or added bodyweight. These settings explain load only; recorded values never change.</p>
           <form method="post" action="/workouts/equipment/{{ machine.id }}/load">
             <label>Load representation
               <select name="load_mode">
@@ -177,7 +180,7 @@
           {% else %}
             <span>No previous set on this machine</span>
           {% endif %}
-          <a href="/workouts/equipment/{{ machine.id }}/progress">View progress</a>
+          <a class="ux675-inline-action" href="/workouts/equipment/{{ machine.id }}/progress">Progress</a>
         </div>
         {% if routine and plan_item_id and frozen_goal %}
           <aside id="workout667-active-goal" class="workout667-active-goal"
@@ -186,7 +189,7 @@
                  aria-labelledby="workout667-active-title">
             <div class="workout667-goal-header">
               <h3 id="workout667-active-title">This session's frozen goal</h3>
-              <a href="/workouts/routines/{{ routine.id }}/program">Edit future goals</a>
+              <a class="ux675-inline-action" href="/workouts/routines/{{ routine.id }}/program">Edit Goals</a>
             </div>
             <p><strong>{{ frozen_goal.target_sets }} working sets × {{ frozen_goal.target_reps }} reps at {{ '%.1f'|format(frozen_goal.target_weight_lb) }} lb</strong></p>
             <p class="workout667-goal-progress">
@@ -211,7 +214,7 @@
                  aria-labelledby="workout666-targets-title">
             <div class="workout666-targets-head">
               <h3 id="workout666-targets-title">Planned targets</h3>
-              <a href="/workouts/routines/{{ routine.id }}/plan">Edit plan</a>
+              <a class="ux675-inline-action" href="/workouts/routines/{{ routine.id }}/plan">Edit Plan</a>
             </div>
             <p id="workout666-targets-status" class="workout666-targets-status"
                role="status" aria-live="polite">No saved targets for this machine on this browser.</p>
@@ -283,10 +286,8 @@
         <details class="ux673-gym-offline" aria-label="Offline and draft tools">
           <summary>Offline &amp; Draft Tools</summary>
           <div class="ux673-gym-offline-content">
-            <h3>Offline Draft (Not Recorded)</h3>
-          <p class="workout659-muted">Save the current set fields on this device,
-            even without a network connection. Restore and explicitly save
-            the set online when ready. Queued sets sync automatically when connectivity returns, while this page is open. Server-confirmed actions are removed from the device; rejected actions remain for review.</p>
+            <h3>Offline Draft</h3>
+          <p class="workout659-muted">Drafts stay on this device; they are not logged. Queued sets sync while this page is open and online. Failed items stay queued for review.</p>
           <button type="button" id="workout668-draft-save">Save Local Draft</button>
           <button type="button" id="workout668-draft-restore">Restore Draft</button>
           <button type="button" id="workout668-queue-set">Queue This Set for Offline Sync</button>
@@ -363,7 +364,7 @@
           <p class="workout659-muted">No sets recorded on this machine during this workout yet.</p>
         {% endfor %}
         {% if machine_sets %}
-          <p><a href="/workouts#workout-sets657">Correct an earlier set</a></p>
+          <p><a class="ux675-inline-action" href="/workouts#workout-sets657">Edit Earlier Set</a></p>
         {% endif %}
       </section>
     {% endif %}
@@ -372,7 +373,7 @@
         <button type="submit" class="primary" formaction="/workouts/finish-review">Finish &amp; Review</button>
         <button type="submit">Finish Workout</button>
       </form>
-      <a href="/workouts">Full Workout Tracker</a>
+      <a class="ux675-inline-action" href="/workouts">All Workouts</a>
     </section>
   {% endif %}
 </section>
