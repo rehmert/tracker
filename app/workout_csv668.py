@@ -73,6 +73,7 @@ def render_routine_csv668(rows: list[dict]) -> str:
 HISTORICAL_FIELDS668 = (
     "equipment_id", "weight_lb", "reps", "effort", "set_time",
 )
+HISTORICAL_FIELDS_EXTENDED668 = (*HISTORICAL_FIELDS668, "set_type")
 
 
 def parse_historical_csv668(payload: str) -> list[dict[str, str]]:
@@ -81,15 +82,20 @@ def parse_historical_csv668(payload: str) -> list[dict[str, str]]:
         raise ValueError("Historical CSV must contain at most 32 KiB.")
     try:
         reader = csv.DictReader(StringIO(payload.lstrip("\ufeff"), newline=""), strict=True)
-        if reader.fieldnames != list(HISTORICAL_FIELDS668):
-            raise ValueError("Historical CSV columns must be equipment_id,weight_lb,reps,effort,set_time.")
+        extended = reader.fieldnames == list(HISTORICAL_FIELDS_EXTENDED668)
+        if not extended and reader.fieldnames != list(HISTORICAL_FIELDS668):
+            raise ValueError("Historical CSV columns must be equipment_id,weight_lb,reps,effort,set_time[,set_type].")
         result = []
         for number, row in enumerate(reader, 2):
             if number > 41:
                 raise ValueError("Historical CSV may contain at most 40 recorded sets.")
             if None in row or any(v is None for v in row.values()):
                 raise ValueError(f"Historical CSV row {number} has incomplete or extra fields.")
-            result.append({key: str(row[key]).strip() for key in HISTORICAL_FIELDS668})
+            entry = {key: str(row[key]).strip() for key in HISTORICAL_FIELDS668}
+            entry["set_type"] = str(row["set_type"]).strip() if extended else "working"
+            if entry["set_type"] not in ("working", "warmup"):
+                raise ValueError(f"Historical CSV row {number} has an invalid set type.")
+            result.append(entry)
         if not result:
             raise ValueError("Historical CSV must contain actual set rows.")
         return result
