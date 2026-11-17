@@ -211,7 +211,7 @@ def test_604_quick_shortcuts_still_have_exact_original_destinations():
     assert sum(fast.count(f'href="{route}"') for route in expected) == 15
     assert all(fast.count(f'href="{route}"') == 1 for route in expected)
     assert fast.count('<details class="tracker-quick-fast-more604">') == 1
-    assert 'More direct shortcuts</summary>' in fast
+    assert 'More Actions</summary>' in fast
     assert fast.count('<a href=') == 15
     assert html.count('data-quick-daily') == 5
     assert "tracker-quick-entry.js?v=603" in html
