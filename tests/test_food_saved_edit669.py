@@ -55,7 +55,7 @@ def edit_form(client, product_id):
     return {
         "day": "2026-11-16", "version": token.group(1),
         "name": "Updated Greek Yogurt", "serving_description": "170 g",
-        "barcode": "123456789012", "confirm_history": "yes",
+        "barcode": "123456789012",
         **{key: "0" for key in food.NUTRIENTS},
         "energy": "120", "proteins": "21", "potassium": "",
     }
@@ -94,13 +94,10 @@ def test_669_edit_changes_saved_record_and_totals_without_new_entries(env):
     assert food.totals_for("2026-11-16", db_engine=db_engine)["energy"] == 240
 
 
-def test_669_conflict_and_missing_confirmation_do_not_write(env):
+def test_672_edit_saves_without_extra_acknowledgement_and_rejects_stale_versions(env):
     client, db_engine, product_id = env
     original = edit_form(client, product_id)
-    missing_confirm = {**original, "confirm_history": ""}
-    denied = client.post(f"/food/saved/{product_id}/edit",
-                         data=missing_confirm, follow_redirects=False)
-    assert denied.status_code == 422
+    assert "confirm_history" not in original
 
     successful = client.post(
         f"/food/saved/{product_id}/edit", data=original, follow_redirects=False
@@ -161,3 +158,11 @@ def test_669_edit_links_in_saved_food_views():
     assert '<form method="get" action="/food/saved/{{ e.product_id }}/edit">' in content
     assert '<button type="submit">Edit Saved Food</button>' in content
     assert '<a href="/food/saved/{{ e.product_id }}/edit?day={{ day }}">' not in content
+
+
+def test_672_editor_has_no_confirmation_checkbox():
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[1] /
+            "app/templates/food_saved_edit669.html").read_text(encoding="utf-8")
+    assert 'name="confirm_history"' not in html
+    assert "I understand this edit updates previously logged nutrition" not in html
