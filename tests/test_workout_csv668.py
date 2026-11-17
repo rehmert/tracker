@@ -67,3 +67,9 @@ def test_668_historical_csv_structure_accepts_exact_columns():
 def test_668_historical_csv_rejects_malformed_documents(text):
     with pytest.raises(ValueError):
         parse_historical_csv668(text)
+
+
+def test_668_plan_csv_accepts_utf8_bom_after_export():
+    sample = "routine_item_id,sets,reps,weight_lb,rest_seconds,setup_note\n7,2,10,75,90,Seat 4\n"
+    values = parse_routine_csv668("\ufeff" + sample, {7})
+    assert len(values) == 1 and values[0]["target_weight_lb"] == 75.0
