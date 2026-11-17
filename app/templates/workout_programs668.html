@@ -37,7 +37,7 @@
     {% for day in weekdays %}
       <div class="workout668-day">
         <h3>{{ day }}</h3>
-        {% set day_entries = schedules|selectattr('0.weekday','equalto',loop.index0)|list %}
+        {% set day_entries = schedules_by_day.get(loop.index0, []) %}
         {% if day_entries %}
           <ul>
             {% for slot, routine_name in day_entries %}
