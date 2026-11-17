@@ -28,6 +28,8 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 - Additive user-scoped weekday routine schedules with optional end dates,
   8-week future preview and explicit remove control. Planned days do not create
   session records or count as completed workouts.
+- Local-only set drafts in Rapid Gym with explicit manual restore and later
+  online submission; drafts are **not** recorded workouts and never auto-sync.
 - Additive named superset/circuit group definitions with 2–10 unique exercises,
   optional rounds, and advisory Rapid Gym navigation. Logging remains manual.
 - Audited historical set correction for completed sessions: old/new load,
@@ -48,7 +50,9 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 - Extended machine/load semantics and historical Workout CSV import.
   Future routine-plan CSV import/export is implemented.
   (Session-level actual-sets CSV export is implemented.)
-- Offline logging, expanded actionable insights, and additional dashboard widgets.
+- True offline set synchronization with server-side conflict handling,
+  richer actionable insights, and additional dashboard metrics. Local-only
+  unsynced set drafts and dashboard links are implemented.
 
 Do not create `docs/release-668-ready.txt` until **all** bundled features
 are implemented, reviewed, tested and a complete qualified migration review
@@ -59,6 +63,28 @@ exists for any changed schema. The file must contain exactly:
 The DEV launcher intentionally refuses to deploy without that marker.
 This is not a release approval by itself; the exact-SHA guarded DEV
 tests, receipt, signed promotion and PROD safeguards remain mandatory.
+
+## DEV-only isolated preview qualification (available now)
+
+This runs only the Release 668 scoped tests against the candidate source in an
+isolated DEV worktree. It does not install to DEV or deploy PROD. No GitHub
+Actions, hosted QA, or other GitHub services are involved.
+
+```bash
+sudo bash -c '
+  set -Eeuo pipefail
+  cd /opt/tracker
+  git -c safe.directory=/opt/tracker fetch origin \\
+    refs/heads/release/668-workout-completion:refs/remotes/origin/release/668-workout-completion
+  git -c safe.directory=/opt/tracker show \\
+    refs/remotes/origin/release/668-workout-completion:scripts/tracker-preview668.sh \\
+    | bash -s
+'
+```
+
+This is a preview test, **not** a DEV deployment receipt. The release
+readiness marker is intentionally still absent. It must not be created from
+successful preview results alone.
 
 ## DEV-only operator command (run as root through sudo)
 
