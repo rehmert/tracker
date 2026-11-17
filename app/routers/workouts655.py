@@ -19,6 +19,7 @@ from ..workout_models655 import (
 )
 from .workouts654 import active654
 from ..workout_program667 import snapshots667
+from ..workout_models667 import WorkoutSetType667
 
 router = APIRouter()
 MAX_ROUTINE_ITEMS655 = 30
@@ -205,11 +206,17 @@ def repeat_last_set655(
             f"/workouts?machine={equipment_id}",
             err="Previous set changed. Reload before repeating.",
         )
-    db.add(WorkoutSet654(
+    repeated = WorkoutSet654(
         session_id=workout.id, equipment_id=equipment_id,
         weight_lb=last.weight_lb, reps=last.reps, effort=last.effort,
         performed_at=datetime.now(),
-    ))
+    )
+    db.add(repeated)
+    # A repeated warm-up must remain a warm-up, never silently become working.
+    prior_kind = db.get(WorkoutSetType667, last.id)
+    if prior_kind is not None and prior_kind.set_type == "warmup":
+        db.flush()
+        db.add(WorkoutSetType667(set_id=repeated.id, set_type="warmup"))
     db.commit()
     return services.flash_redirect(
         f"/workouts?machine={equipment_id}", msg="Previous set repeated."
