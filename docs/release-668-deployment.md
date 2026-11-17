@@ -12,8 +12,10 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
   time into calendar presentation. Reconciled planned entries retain their
   planned time. No logged dose is created, edited, or removed.
 - Focused calendar regression tests and a release-scoped DEV QA gate.
-- Routine duplication copies ordered exercises and persistent goals/rest settings,
-  never historical sessions or frozen workout targets.
+- Routine duplication copies ordered exercises, persistent goals/rest settings,
+  weekday schedules and groups, never historical sessions or frozen targets.
+- Completed workouts can be reused as a new saved routine: only the observed
+  machine order is copied, not actual sets or inferred future load targets.
 - Future-routine exercise substitution requires cataloged equipment, blocks
   changes during a matching active routine, and clears non-transferable numeric
   goals and old machine-specific setup notes.
@@ -45,7 +47,9 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
   implemented actual-only 28-day and recent-session summary).
 - Advanced superset/circuit execution automation (planning, guided navigation,
   and future substitutions are implemented).
-- Full workout-session duplication. Audited per-set corrections are implemented.
+- Exact duplicate completed-workout creation is intentionally not implemented:
+  reuse-as-routine is available without fabricating a second recorded workout.
+  Audited per-set corrections are implemented.
   (Editable *routine* duplication is implemented.)
 - Extended machine/load semantics and historical Workout CSV import.
   Future routine-plan CSV import/export is implemented.
