@@ -12,6 +12,7 @@ from ..today import schedule_summary
 from ..projection_exclusions import exclusions_for
 from ..scoped_db390 import get_scoped_db390
 from ..workout_dashboard661 import workout_dashboard661
+from .workouts668_insights import dashboard_pulse668
 from ..models import DoseLog, Vial, VitalReading, Protocol
 from ..templating import render
 from ..units import to_base, parse_unit, UnitError
@@ -185,4 +186,5 @@ def home(request: Request, db: Session = Depends(get_scoped_db390)):
         recent_administrations=recent_administrations,
         now_date=today_date,
         workout_summary=workout_dashboard661(db, today_date),
+        workout_pulse668=dashboard_pulse668(db, today_date),
     )
