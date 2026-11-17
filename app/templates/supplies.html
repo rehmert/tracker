@@ -108,17 +108,17 @@
   No supplies match the selected filters.
   Reset to review all stock.
 </p>
-<div class="scroll" data-enhanced-table><table data-stock-review-table><thead><tr><th>Product</th><th>Type</th><th>Purchased</th><th>Remaining</th><th>Unit price</th><th>Stock status</th><th>Record use</th></tr></thead><tbody>{% for s in supplies %}<tr data-stock-review-row><td>{{ s.name }}</td><td>{{ category_map[s.kind].label if s.kind in category_map else s.kind }} ({{ category_map[s.kind].unit if s.kind in category_map else 'units' }})</td><td>{{ s.purchased_qty|num }} {{ category_map[s.kind].unit if s.kind in category_map else "units" }}</td><td>{{ s.remaining_qty|num }} {{ category_map[s.kind].unit if s.kind in category_map else "units" }}</td><td class="nowrap">{{ ((s.bulk_total_cents / s.purchased_qty) if s.bulk_total_cents is not none and s.purchased_qty else s.unit_price_cents)|money_precise }} / {{ category_map[s.kind].unit if s.kind in category_map else "unit" }} <a href="/purchases/{{ s.purchase_id }}" title="Edit pricing on the purchase page">Edit</a></td>{% if s.remaining_qty <= 0 %}
-  <td><span class="tracker-stock-status"
+<div class="scroll" data-enhanced-table><table class="ux673-card-table" data-stock-review-table><thead><tr><th>Product</th><th>Type</th><th>Purchased</th><th>Remaining</th><th>Unit price</th><th>Stock status</th><th>Record use</th></tr></thead><tbody>{% for s in supplies %}<tr data-stock-review-row><td data-label="Product" data-ux673-full>{{ s.name }}</td><td data-label="Type">{{ category_map[s.kind].label if s.kind in category_map else s.kind }} ({{ category_map[s.kind].unit if s.kind in category_map else 'units' }})</td><td data-label="Purchased">{{ s.purchased_qty|num }} {{ category_map[s.kind].unit if s.kind in category_map else "units" }}</td><td data-label="Remaining">{{ s.remaining_qty|num }} {{ category_map[s.kind].unit if s.kind in category_map else "units" }}</td><td class="nowrap" data-label="Unit price" data-ux673-full>{{ ((s.bulk_total_cents / s.purchased_qty) if s.bulk_total_cents is not none and s.purchased_qty else s.unit_price_cents)|money_precise }} / {{ category_map[s.kind].unit if s.kind in category_map else "unit" }} <a href="/purchases/{{ s.purchase_id }}" title="Edit pricing on the purchase page">Edit</a></td>{% if s.remaining_qty <= 0 %}
+  <td data-label="Stock status"><span class="tracker-stock-status"
       data-stock-state="depleted">Out of Stock</span></td>
 {% elif s.purchased_qty > 0 and s.remaining_qty * 4 <= s.purchased_qty %}
-  <td><span class="tracker-stock-status"
+  <td data-label="Stock status"><span class="tracker-stock-status"
       data-stock-state="low">Low Stock</span></td>
 {% else %}
-  <td><span class="tracker-stock-status"
+  <td data-label="Stock status"><span class="tracker-stock-status"
       data-stock-state="available">Available</span></td>
 {% endif %}
-<td><form method="post" action="/supplies/{{ s.id }}/use" class="inline" data-tracker-supply-use data-remaining="{{ s.remaining_qty }}" data-unit="{{ category_map[s.kind].unit if s.kind in category_map else 'units' }}"><input type="hidden" name="submission_token" value="{{ submission_tokens[s.id] }}"><input aria-label="Supply quantity" name="quantity" type="number" step="any" min="0.0001" max="{{ s.remaining_qty }}" required><button>{{ "Log pills" if s.kind == "pill" else "Use" }}</button></form></td></tr>{% else %}<tr><td colspan="7">No supplies.</td></tr>{% endfor %}</tbody></table></div></section>
+<td data-label="Record use" data-ux673-action><form method="post" action="/supplies/{{ s.id }}/use" class="inline" data-tracker-supply-use data-remaining="{{ s.remaining_qty }}" data-unit="{{ category_map[s.kind].unit if s.kind in category_map else 'units' }}"><input type="hidden" name="submission_token" value="{{ submission_tokens[s.id] }}"><input aria-label="Supply quantity" name="quantity" type="number" step="any" min="0.0001" max="{{ s.remaining_qty }}" required><button>{{ "Log pills" if s.kind == "pill" else "Use" }}</button></form></td></tr>{% else %}<tr><td colspan="7">No supplies.</td></tr>{% endfor %}</tbody></table></div></section>
 <section><h2>Create inventory category</h2><p class="note">Create additional types for needles, syringes, cartridges, sterile vials, or any other consumable. Existing stock and usage history are preserved.</p>
 <form method="post" action="/supplies/categories" class="grid">
 <label class="field"><span>Category name</span><input name="label" maxlength="100" placeholder="e.g. Sharps containers" required></label>
