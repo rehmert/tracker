@@ -4,7 +4,8 @@ from io import StringIO
 
 import pytest
 
-from app.workout_csv668 import FIELDS668, parse_routine_csv668, render_routine_csv668
+from app.workout_csv668 import (FIELDS668, parse_routine_csv668,
+                                  render_routine_csv668, parse_historical_csv668)
 
 
 def test_668_csv_plan_round_trip_with_utf8_and_blank_goal():
@@ -47,3 +48,22 @@ def test_668_csv_export_neutralizes_formula_in_notes():
     data = list(csv.reader(StringIO(result)))
     assert data[0] == list(FIELDS668)
     assert data[1][-1].startswith("'=")
+
+
+def test_668_historical_csv_structure_accepts_exact_columns():
+    text = "equipment_id,weight_lb,reps,effort,set_time\n3,125,10,8,08:30\n4,0,12,,08:40\n"
+    rows = parse_historical_csv668(text)
+    assert len(rows) == 2
+    assert rows[0]["equipment_id"] == "3"
+    assert rows[1]["effort"] == ""
+
+
+@pytest.mark.parametrize("text", [
+    "",
+    "equipment,weight_lb,reps,effort,set_time\n1,20,8,,12:00\n",
+    "equipment_id,weight_lb,reps,effort,set_time\n1,20,8,extra,12:00,extra\n",
+    "equipment_id,weight_lb,reps,effort,set_time\n",
+])
+def test_668_historical_csv_rejects_malformed_documents(text):
+    with pytest.raises(ValueError):
+        parse_historical_csv668(text)
