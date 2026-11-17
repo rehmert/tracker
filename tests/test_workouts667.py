@@ -376,7 +376,7 @@ def test_667_http_program_snapshots_import_and_rapid_gym_workflow(cleanup_shared
         assert finish.status_code == 303
         review = client.get(f"/workouts/sessions/{sid}/review")
         assert review.status_code == 200
-        assert "Planned vs actual" in review.text
+        assert "Plan vs. Actual" in review.text
         assert "2 / 3 qualifying" in review.text
         assert "2 working, 1 warm-up" in review.text
         assert "Goal not yet achieved" in review.text
