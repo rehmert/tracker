@@ -68,7 +68,7 @@
                     <div><dt>Volume</dt><dd>{{ '{:,.1f}'.format(entry.previous.volume) }} lb × reps</dd></div>
                   </dl>
                   <p class="workout665-delta">Change in heaviest load: {{ '%+.1f'|format(entry.load_change) }} lb
-                    <span> · Change in volume: {{ '%+,.1f'|format(entry.volume_change) }} lb × reps</span></p>
+                    <span> · Change in volume: {{ '{:+,.1f}'.format(entry.volume_change) }} lb × reps</span></p>
                 {% else %}
                   <p>Only one completed session is available for this machine.</p>
                 {% endif %}
