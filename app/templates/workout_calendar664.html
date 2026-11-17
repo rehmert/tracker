@@ -23,13 +23,13 @@
 
   <nav class="workout664-month-navigation" aria-label="Choose calendar month">
     {% if workout_calendar.previous %}
-      <a rel="prev" href="/workouts/calendar?month={{ workout_calendar.previous }}">← Prev</a>
+      <a rel="prev" aria-label="Previous Month" href="/workouts/calendar?month={{ workout_calendar.previous }}">← Prev</a>
     {% else %}
       <span>Previous Month</span>
     {% endif %}
     <h2 id="workout664-month">{{ workout_calendar.month_label }}</h2>
     {% if workout_calendar.next %}
-      <a rel="next" href="/workouts/calendar?month={{ workout_calendar.next }}">Next →</a>
+      <a rel="next" aria-label="Next Month" href="/workouts/calendar?month={{ workout_calendar.next }}">Next →</a>
     {% else %}
       <span>Next Month</span>
     {% endif %}
