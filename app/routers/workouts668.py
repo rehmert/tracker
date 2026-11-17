@@ -384,8 +384,8 @@ def sync_offline_set668(
 ):
     """Authenticated idempotent single-action sync; UUID logs once.
 
-    Client never supplies timestamps, user IDs or database paths. Drafts can
-    sync only to their original still-active workout in the scoped workspace.
+    Client supplies an original timestamp, which is validated against the
+    active workout window. User IDs and database paths are never accepted.
     """
     from .workouts654 import active654
     try:
