@@ -107,4 +107,4 @@ def test_675_abbreviations_do_not_remove_explanations_of_critical_actions():
     assert "Drafts stay on this device; they are not logged." in quick
     assert "An order alone adds no stock." in purchases
     for name in PAGES:
-        assert re.search(r'<a\\b', page(name))
+        assert re.search(r'<a\b', page(name))
