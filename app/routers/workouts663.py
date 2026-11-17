@@ -11,7 +11,7 @@ from io import StringIO
 from fastapi.responses import Response
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -103,7 +103,7 @@ def workout_insights668(
 ):
     """Read-only completed-session consistency and recorded workload."""
     now = datetime.now()
-    since = now - timedelta(days=28)
+    since = datetime.combine(now.date() - timedelta(days=27), time.min)
     previous_since = since - timedelta(days=28)
     totals = list(db.execute(
         select(
