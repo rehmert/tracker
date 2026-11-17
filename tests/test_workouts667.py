@@ -282,6 +282,65 @@ def test_667_http_program_snapshots_import_and_rapid_gym_workflow():
             assert db.get(WorkoutSessionTarget667, (sid, machine_id)).target_sets == 3
 
 
+def test_667_repeat_and_active_correction_preserve_set_kind():
+    nonce = uuid4().hex
+    with TestClient(app) as client:
+        with SessionLocal() as db:
+            machine = WorkoutEquipment654(
+                name="667 Repeat " + nonce, gym="QA", kind="selectorized",
+            )
+            db.add(machine)
+            db.commit()
+            machine_id = machine.id
+        started = post667(client, "/workouts/quick/start")
+        assert started.status_code == 303
+        first = post667(client, "/workouts/quick/sets", {
+            "equipment_id": machine_id, "weight_lb": "45",
+            "reps": "12", "set_type": "warmup",
+        })
+        assert first.status_code == 303
+        with SessionLocal() as db:
+            sid = db.scalar(select(WorkoutSession654.id).where(
+                WorkoutSession654.completed_at.is_(None)
+            ).order_by(WorkoutSession654.id.desc()).limit(1))
+            last = db.scalar(select(WorkoutSet654).where(
+                WorkoutSet654.session_id == sid
+            ).order_by(WorkoutSet654.id.desc()))
+            source_id = last.id
+            assert db.get(WorkoutSetType667, source_id).set_type == "warmup"
+
+        repeated = post667(client, "/workouts/quick/repeat", {
+            "equipment_id": machine_id, "source_set_id": source_id,
+        })
+        assert repeated.status_code == 303
+        with SessionLocal() as db:
+            sets = list(db.scalars(select(WorkoutSet654).where(
+                WorkoutSet654.session_id == sid
+            ).order_by(WorkoutSet654.id.asc())))
+            assert len(sets) == 2
+            assert all(db.get(WorkoutSetType667, entry.id).set_type == "warmup"
+                       for entry in sets)
+            copied_id = sets[-1].id
+
+        corrected = post667(client, f"/workouts/sets/{copied_id}/edit", {
+            "weight_lb": "50", "reps": "8",
+            "set_type": "working", "effort": "6",
+        })
+        assert corrected.status_code == 303
+        with SessionLocal() as db:
+            saved = db.get(WorkoutSet654, copied_id)
+            assert saved and saved.weight_lb == 50 and saved.reps == 8
+            assert db.get(WorkoutSetType667, copied_id) is None
+            assert progress667(db, sid, machine_id)["working_sets"] == 1
+            assert progress667(db, sid, machine_id)["warmup_sets"] == 1
+
+        view = client.get("/workouts")
+        assert view.status_code == 200
+        assert "Recorded set type" in view.text
+        assert 'value="warmup" selected' in view.text
+        assert post667(client, "/workouts/quick/finish").status_code == 303
+
+
 def test_667_existing_source_separation_and_model_registration():
     main = (ROOT / "app/main.py").read_text(encoding="utf-8")
     assert "from . import workout_models667" in main
