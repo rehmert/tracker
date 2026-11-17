@@ -5,6 +5,8 @@
 <script src="/static/js/tracker-workouts659.js?v=659" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-workouts662.css?v=662">
 <script src="/static/js/tracker-workouts662.js?v=662" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-workout-targets666.css?v=666">
+<script src="/static/js/tracker-workout-targets666.js?v=666" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
@@ -100,6 +102,25 @@
           {% endif %}
           <a href="/workouts/equipment/{{ machine.id }}/progress">View progress</a>
         </div>
+        {% if routine and plan_item_id %}
+          <aside id="workout666-targets" class="workout666-targets"
+                 data-routine-id666="{{ routine.id }}"
+                 data-item-id666="{{ plan_item_id }}"
+                 aria-labelledby="workout666-targets-title">
+            <div class="workout666-targets-head">
+              <h3 id="workout666-targets-title">Planned targets</h3>
+              <a href="/workouts/routines/{{ routine.id }}/plan">Edit plan</a>
+            </div>
+            <p id="workout666-targets-status" class="workout666-targets-status"
+               role="status" aria-live="polite">No saved targets for this machine on this browser.</p>
+            <dl id="workout666-target-values" class="workout666-target-values" hidden>
+              <div><dt>Planned sets</dt><dd data-target666="sets">—</dd></div>
+              <div><dt>Reps per set</dt><dd data-target666="reps">—</dd></div>
+              <div><dt>Planned weight</dt><dd data-target666="weight">—</dd></div>
+            </dl>
+            <p class="workout666-targets-note">Browser-only intentions, not logged sets. Logging values below stay independent.</p>
+          </aside>
+        {% endif %}
         <form method="post" action="/workouts/quick/sets"
               class="workout659-log-form" id="workout659-log-form">
           <input type="hidden" name="equipment_id" value="{{ machine.id }}">
