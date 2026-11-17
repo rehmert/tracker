@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, func, text, inspect
 from sqlalchemy.orm import Session
 
@@ -85,11 +85,12 @@ def data_quality674(request: Request, db: Session = Depends(get_scoped_db390)):
     try:
         from ..food_engine392 import get_food_engine392
         food_engine = get_food_engine392(request)
-    except Exception as exc:
-        # Read-only dashboard must remain accessible when Food is disabled,
-        # but do not swallow unexpected database errors after authorization.
-        from fastapi import HTTPException
-        if not isinstance(exc, HTTPException) or exc.status_code not in (403, 503):
+    except PermissionError:
+        # Food storage is administrator-only; secondary users see scoped
+        # inventory and workout checks without accessing the food database.
+        pass
+    except HTTPException as exc:
+        if exc.status_code not in (403, 503):
             raise
     report = quality_summary674(db, food_engine)
     return render(request, "data_quality674.html", report=report,
