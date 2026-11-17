@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from .. import services
 from ..scoped_db390 import get_scoped_db390
 from ..workout_models654 import WorkoutSet654
+from ..workout_models667 import WorkoutSetType667
 from .workouts654 import active654
 
 router = APIRouter()
@@ -40,6 +41,7 @@ def edit_set657(
     weight_lb: float = Form(...),
     reps: int = Form(...),
     effort: str = Form(""),
+    set_type: str = Form("working"),
     db: Session = Depends(get_scoped_db390),
 ):
     entry = active_set657(db, set_id)
@@ -59,11 +61,19 @@ def edit_set657(
         if not 1 <= parsed_effort <= 10:
             return flash_back657(target, err="Effort must be 1–10.")
 
-    # Only edit the three recorded values. Retain original set timestamp,
+    if set_type not in ("working", "warmup"):
+        return flash_back657(target, err="Choose a valid set type.")
+    # Retain original set timestamp,
     # equipment identity and session association for historical integrity.
     entry.weight_lb = weight_lb
     entry.reps = reps
     entry.effort = parsed_effort
+    existing_type = db.get(WorkoutSetType667, entry.id)
+    if set_type == "warmup":
+        if existing_type is None:
+            db.add(WorkoutSetType667(set_id=entry.id, set_type="warmup"))
+    elif existing_type is not None:
+        db.delete(existing_type)
     db.commit()
     return flash_back657(
         target, msg="Set corrected."
