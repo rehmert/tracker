@@ -330,6 +330,13 @@ PY
   fi
  fi
  if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped671.sh |
+      grep -qx 'scripts/tracker-release-scoped671.sh'; then
+  echo "=== RELEASE 671 PROD FOCUSED FOOD EDIT BUTTON QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped671.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+ fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
     g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped670.sh |
       grep -qx 'scripts/tracker-release-scoped670.sh'; then
   echo "=== RELEASE 670 PROD FOCUSED FOOD ACTION QUALIFICATION ==="
