@@ -154,4 +154,8 @@ def test_669_edit_links_in_saved_food_views():
     path = Path(__file__).resolve().parents[1] / "app/templates/food.html"
     content = path.read_text(encoding="utf-8")
     assert content.count('/food/saved/{{ item.id }}/edit?day={{ day }}') == 3
-    assert '/food/saved/{{ e.product_id }}/edit?day={{ day }}' in content
+    # Recorded Meals uses the same actual button/form controls as Repeat,
+    # Favorite and Delete; never a bare text link inside the action row.
+    assert '<form method="get" action="/food/saved/{{ e.product_id }}/edit">' in content
+    assert '<button type="submit">Edit Saved Food</button>' in content
+    assert '<a href="/food/saved/{{ e.product_id }}/edit?day={{ day }}">' not in content
