@@ -87,6 +87,11 @@ def cleanup_shared_workout667():
                 WorkoutEquipment654.id.in_(equipment_ids)
             ))
         db.commit()
+        # Fail at the originating test if the fixture leaves new sessions
+        # that could displace an older test's five-item dashboard history.
+        assert set(db.scalars(select(WorkoutSession654.id))) == prior_sessions
+        assert set(db.scalars(select(WorkoutRoutine655.id))) == prior_routines
+        assert set(db.scalars(select(WorkoutEquipment654.id))) == prior_equipment
 
 
 @pytest.mark.parametrize("fields,expected", [
