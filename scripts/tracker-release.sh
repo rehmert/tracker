@@ -329,6 +329,13 @@ PY
    QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
   fi
  fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped669.sh |
+      grep -qx 'scripts/tracker-release-scoped669.sh'; then
+  echo "=== RELEASE 669 PROD FOCUSED FOOD EDITOR QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped669.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+ fi
  if [[ "$INSTANCE" == PROD && "$REVIEWED_WORKOUT_668" == 1 ]]; then
   echo "=== RELEASE 668 PROD SCOPED WORKOUT QUALIFICATION ==="
   timeout 360 bash "$QA/scripts/tracker-release-scoped668.sh" "$PY"
