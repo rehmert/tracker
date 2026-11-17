@@ -6,6 +6,10 @@ it never duplicates session write logic, adds columns, or estimates strength.
 """
 from __future__ import annotations
 
+import csv
+from io import StringIO
+from fastapi.responses import Response
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -89,6 +93,50 @@ def workout_session_review663(
         request, "workout_review663.html",
         workout=workout, machine_rows=machine_rows, totals=totals,
         goal_rows=goal_rows,
+    )
+
+
+def safe_csv668(value: object) -> str:
+    """Prevent spreadsheet formula execution when exporting user-provided names."""
+    text = "" if value is None else str(value)
+    if text.lstrip().startswith(("=", "+", "-", "@")) or (text and text[0].isspace()):
+        return "'" + text
+    return text
+
+
+@router.get("/workouts/sessions/{session_id}/export.csv")
+def export_session668(
+    session_id: int, db: Session = Depends(get_scoped_db390),
+):
+    """Export only actual user-scoped logged sets; read-only and bounded."""
+    workout = db.get(WorkoutSession654, session_id)
+    if workout is None:
+        raise HTTPException(404, "Workout not found")
+    from ..workout_models667 import WorkoutSetType667
+    rows = list(db.execute(
+        select(WorkoutSet654, WorkoutEquipment654.name, WorkoutSetType667.set_type)
+        .join(WorkoutEquipment654, WorkoutEquipment654.id == WorkoutSet654.equipment_id)
+        .outerjoin(WorkoutSetType667, WorkoutSetType667.set_id == WorkoutSet654.id)
+        .where(WorkoutSet654.session_id == session_id)
+        .order_by(WorkoutSet654.performed_at, WorkoutSet654.id)
+    ))
+    stream = StringIO(newline="")
+    writer = csv.writer(stream)
+    writer.writerow(("Session", "Started", "Completed", "Set ID", "Performed",
+                     "Equipment", "Type", "Load (lb)", "Repetitions", "Effort"))
+    for logged, equipment_name, set_type in rows:
+        writer.writerow((
+            workout.id, workout.started_at.isoformat(),
+            workout.completed_at.isoformat() if workout.completed_at else "",
+            logged.id, logged.performed_at.isoformat(),
+            safe_csv668(equipment_name), set_type or "working",
+            logged.weight_lb, logged.reps,
+            logged.effort if logged.effort is not None else "",
+        ))
+    return Response(
+        content=stream.getvalue().encode("utf-8-sig"), media_type="text/csv",
+        headers={"Content-Disposition":
+                 f'attachment; filename="tracker-workout-{session_id}.csv"'},
     )
 
 
