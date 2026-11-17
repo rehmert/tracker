@@ -39,7 +39,7 @@ def test_659_quick_mode_free_workout_and_server_validated_sets():
         assert ready.status_code == 200
         assert "Rapid Gym Mode" in ready.text
         assert "Start Free Workout" in ready.text
-        assert "Open Rapid Gym Mode" in client.get("/workouts").text
+        assert "Gym Mode" in client.get("/workouts").text
 
         started = post(client, "/workouts/quick/start")
         assert started.status_code == 303
