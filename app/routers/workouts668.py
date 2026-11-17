@@ -397,7 +397,8 @@ def sync_offline_set668(
     if existing:
         if existing.session_id != session_id:
             raise HTTPException(409, "Offline action belongs to a different workout")
-        return JSONResponse({"ok": True, "duplicate": True, "set_id": existing.set_id})
+        return JSONResponse({"ok": True, "duplicate": True, "set_id": existing.set_id,
+                             "deleted": existing.set_id is None})
     active = active654(db)
     if active is None or active.id != session_id:
         raise HTTPException(409, "Original workout is no longer active; nothing was synchronized")
@@ -432,5 +433,6 @@ def sync_offline_set668(
             .where(WorkoutOfflineReceipt668.client_key == key))
         if receipt is None or receipt.session_id != session_id:
             raise HTTPException(409, "Offline synchronization conflict")
-        return JSONResponse({"ok": True, "duplicate": True, "set_id": receipt.set_id})
+        return JSONResponse({"ok": True, "duplicate": True, "set_id": receipt.set_id,
+                             "deleted": receipt.set_id is None})
     return JSONResponse({"ok": True, "duplicate": False, "set_id": recorded.id})
