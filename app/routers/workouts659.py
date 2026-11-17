@@ -16,6 +16,8 @@ from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import WorkoutEquipment654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
+from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667, WorkoutSessionTarget667
+from ..workout_program667 import progress667
 from .workouts654 import active654, add_set654, start654, finish654
 from .workouts655 import repeat_last_set655, start_routine655
 
@@ -78,10 +80,20 @@ def quick_workout659(
         elif equipment:
             chosen_id = equipment[0].id
     chosen = lookup.get(chosen_id)
-    # Release 666: expose the existing routine-item ID for browser-local
-    # target lookup only. No target values are read, sent, or written here.
+    # Match only the current machine to an item of the active saved routine.
     plan_item_id = next((item.id for item in items
                          if chosen and item.equipment_id == chosen.id), None)
+    frozen_goal = db.get(
+        WorkoutSessionTarget667, (active.id, chosen.id),
+    ) if active and chosen and plan_item_id else None
+    current_goal = db.get(WorkoutRoutineTarget667, plan_item_id) if plan_item_id else None
+    settings = db.get(WorkoutRoutineConfig667, routine.id) if routine else None
+    rest_seconds667 = (
+        frozen_goal.rest_seconds if frozen_goal else
+        (current_goal.rest_seconds if current_goal and current_goal.rest_seconds else
+         (settings.rest_seconds if settings else 90))
+    )
+    goal_progress667 = progress667(db, active.id, chosen.id) if active and chosen else None
     last = db.scalar(
         select(WorkoutSet654)
         .where(WorkoutSet654.equipment_id == chosen.id)
@@ -118,6 +130,9 @@ def quick_workout659(
         active=active, machine=chosen, equipment=equipment, routines=routines,
         routine=routine, routine_total=len(routine_ids),
         plan_item_id=plan_item_id,
+        frozen_goal=frozen_goal, current_goal=current_goal,
+        goal_progress667=goal_progress667,
+        rest_seconds667=rest_seconds667,
         routine_logged=len(all_logged_ids.intersection(routine_ids)),
         machine_sets=machine_sets, last=last,
         previous_machine=lookup.get(previous_id),
@@ -145,11 +160,12 @@ def quick_start_routine659(
 def quick_set659(
     equipment_id: int = Form(...), weight_lb: float = Form(...),
     reps: int = Form(...), effort: str = Form(""),
+    set_type: str = Form("working"),
     db: Session = Depends(get_scoped_db390),
 ):
     response = add_set654(
         equipment_id=equipment_id, weight_lb=weight_lb,
-        reps=reps, effort=effort, db=db,
+        reps=reps, effort=effort, db=db, set_type=set_type,
     )
     return redirect_quick659(response, equipment_id, logged=True)
 
