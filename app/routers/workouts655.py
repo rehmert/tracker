@@ -20,6 +20,7 @@ from ..workout_models655 import (
 from .workouts654 import active654
 from ..workout_program667 import snapshots667
 from ..workout_models667 import WorkoutSetType667
+from ..workout_models668 import WorkoutRoutineGroup668
 
 router = APIRouter()
 MAX_ROUTINE_ITEMS655 = 30
@@ -86,6 +87,7 @@ def routine_detail655(
         routine=routine, items=items, names=names,
         available=[item for item in equipment if item.id not in selected],
         active=active, can_resume=can_resume, maximum=MAX_ROUTINE_ITEMS655,
+        groups668={item.id: db.get(WorkoutRoutineGroup668, item.id) for item in items},
     )
 
 
