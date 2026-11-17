@@ -18,6 +18,7 @@ from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutSessionRoutine655
+from ..workout_models667 import WorkoutSetType667
 from ..workout_csv668 import parse_historical_csv668
 
 router = APIRouter()
@@ -269,8 +270,12 @@ def import_previous_workout_csv668(
         db.add(WorkoutSessionRoutine655(
             session_id=workout.id, routine_id=routine.id,
         ))
-    for row in prepared:
-        db.add(WorkoutSet654(session_id=workout.id, **row))
+    for row, original in zip(prepared, rows):
+        recorded = WorkoutSet654(session_id=workout.id, **row)
+        db.add(recorded)
+        if original["set_type"] == "warmup":
+            db.flush()
+            db.add(WorkoutSetType667(set_id=recorded.id, set_type="warmup"))
     db.commit()
     return services.flash_redirect(
         f"/workouts/sessions/{workout.id}/review",
