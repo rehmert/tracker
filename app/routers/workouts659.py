@@ -18,6 +18,7 @@ from ..workout_models654 import WorkoutEquipment654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
 from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667, WorkoutSessionTarget667
 from ..workout_program667 import progress667
+from ..workout_models668 import WorkoutRoutineGroup668, WorkoutRoutineGroupMember668
 from .workouts654 import active654, add_set654, start654, finish654
 from .workouts655 import repeat_last_set655, start_routine655
 
@@ -120,6 +121,27 @@ def quick_workout659(
             next_id = routine_ids[index + 1]
         if index > 0:
             previous_id = routine_ids[index - 1]
+    # Advisory group membership only; the gym form remains the sole set writer.
+    grouped668 = []
+    if routine:
+        for group in db.scalars(
+            select(WorkoutRoutineGroup668)
+            .where(WorkoutRoutineGroup668.routine_id == routine.id)
+            .order_by(WorkoutRoutineGroup668.id)
+        ):
+            member_rows = list(db.scalars(
+                select(WorkoutRoutineGroupMember668)
+                .where(WorkoutRoutineGroupMember668.group_id == group.id)
+                .order_by(WorkoutRoutineGroupMember668.position,
+                          WorkoutRoutineGroupMember668.id)
+            ))
+            by_id = {item.id: item.equipment_id for item in items}
+            machines = [lookup[by_id[member.routine_item_id]]
+                        for member in member_rows
+                        if member.routine_item_id in by_id
+                        and by_id[member.routine_item_id] in lookup]
+            if machines:
+                grouped668.append(dict(group=group, machines=machines))
     routines = list(db.scalars(
         select(WorkoutRoutine655).order_by(
             WorkoutRoutine655.created_at.desc(), WorkoutRoutine655.id.desc()
@@ -129,6 +151,7 @@ def quick_workout659(
         request, "workout_quick659.html",
         active=active, machine=chosen, equipment=equipment, routines=routines,
         routine=routine, routine_total=len(routine_ids),
+        grouped668=grouped668,
         plan_item_id=plan_item_id,
         frozen_goal=frozen_goal, current_goal=current_goal,
         goal_progress667=goal_progress667,
