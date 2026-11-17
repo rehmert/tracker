@@ -23,8 +23,8 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
   counts, actual sets/repetitions/load × reps, and most recent 12 sessions.
   Empty and unfinished workouts do not count as completed training.
 - Detailed read-only per-session CSV export with formula-safe equipment names,
-  plus a five-column actual-set export directly compatible with the historical
-  importer (when importing to the same equipment-ID catalog).
+  plus an import-compatible actual-set CSV preserving set type; the importer
+  also accepts legacy five-column files (same equipment-ID catalog).
 - Focused isolated tests for duplication, substitution and CSV safety.
 - Strict future routine-plan CSV import/export (paste-based import), validated
   against the authenticated routine item IDs in one transaction.
