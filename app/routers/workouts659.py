@@ -18,6 +18,7 @@ from ..workout_models654 import WorkoutEquipment654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
 from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667, WorkoutSessionTarget667, WorkoutSetType667
 from ..workout_program667 import progress667
+from ..workout_progression674 import progression_for674
 from ..workout_models668 import WorkoutRoutineGroup668, WorkoutRoutineGroupMember668, WorkoutEquipmentLoad668
 from .workouts654 import active654, add_set654, start654, finish654
 from .workouts655 import repeat_last_set655, start_routine655
@@ -168,6 +169,12 @@ def quick_workout659(
                     next_machine=follow,
                     complete=follow is None,
                 ))
+    progression674 = progression_for674(
+        db, chosen.id,
+        (frozen_goal.target_reps if frozen_goal else (
+            current_goal.target_reps if current_goal else None
+        )),
+    ) if chosen else None
     routines = list(db.scalars(
         select(WorkoutRoutine655).order_by(
             WorkoutRoutine655.created_at.desc(), WorkoutRoutine655.id.desc()
@@ -184,7 +191,7 @@ def quick_workout659(
         goal_progress667=goal_progress667,
         rest_seconds667=rest_seconds667,
         routine_logged=len(all_logged_ids.intersection(routine_ids)),
-        machine_sets=machine_sets, last=last,
+        machine_sets=machine_sets, last=last, progression674=progression674,
         previous_machine=lookup.get(previous_id),
         next_machine=lookup.get(next_id),
     )
