@@ -79,6 +79,7 @@ def validate(root: Path, base: str, target: str) -> None:
         "WorkoutRoutineItem655.routine_id == routine.id",
         "WorkoutSet654.equipment_id == equipment.id",
         "WorkoutSession654.completed_at.is_not(None)",
+        "WorkoutSession654.started_at < tomorrow",
         "WorkoutSession654.started_at.desc()",
         "func.count(WorkoutSet654.id)", "func.sum(WorkoutSet654.reps)",
         "func.sum(volume_expr)", "func.max(WorkoutSet654.weight_lb)",
