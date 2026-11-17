@@ -95,6 +95,9 @@
           {% if machine.setup_notes %}
             <p class="workout659-notes">{{ machine.setup_notes }}</p>
           {% endif %}
+          {% if routine and plan_item_id and current_goal and current_goal.setup_note and not frozen_goal %}
+            <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
+          {% endif %}
         </div>
         <div class="workout659-prior">
           {% if last %}
