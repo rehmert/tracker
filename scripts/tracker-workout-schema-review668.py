@@ -54,6 +54,66 @@ ALLOWED668 = MODIFIED668 | NEW668
 # Immutable reviewed before/after Git blob IDs of all previously deployed
 # source files. Filled after final code review, before DEV qualification.
 REVIEWED_BLOBS668 = {
+    "app/main.py": (
+        "5c4cf772a1b7ec47af2433c0598026ddee83738b",
+        "aa05925cca87b439068a1df1cb1d2fcdc4ea6bef",
+    ),
+    "app/routers/dashboard.py": (
+        "190267246b75af222c3906dbd2f4f8bed931fc80",
+        "46e45cb51e93e5fc69282b9455b988f44c43932b",
+    ),
+    "app/routers/workouts654.py": (
+        "d03884227def45bbfbdcd80a08f6fa83467ca77a",
+        "cd5e60a50c69cdc63ef238de83cd2c1065168c54",
+    ),
+    "app/routers/workouts655.py": (
+        "d25bd69bb755417f7c40ca34b6d7c68410a0d819",
+        "071c60543932673fda3418d2be163197977ad4b7",
+    ),
+    "app/routers/workouts656.py": (
+        "ab68c444ef9d9e05cfdd917da04d93feb80d4fd6",
+        "46e0287b80e85710881ba977a12fda73fc05cfeb",
+    ),
+    "app/routers/workouts659.py": (
+        "245b4608afb9e16a15ea88429c903998095e29a4",
+        "b74ae8c854ddbdaa8cc287e312735e89731d6c86",
+    ),
+    "app/routers/workouts664.py": (
+        "42e34c14b4359d683ca45975aea936460805c271",
+        "5d8571dc0dc30ed8782ac1b22c1f4a59cede892b",
+    ),
+    "app/templates/_workout_dashboard661.html": (
+        "72019f4e3ef7111b30fdcb9bf2383f960d62c6c4",
+        "f98c30b7c564eaa9f6f0adb5dc08da1629050986",
+    ),
+    "app/templates/workout_calendar664.html": (
+        "37588bc7140c71d18fc6b45e682544158aac8e13",
+        "bcfbe6e60145bd5134347d0f7fc3b38ef919767a",
+    ),
+    "app/templates/workout_history654.html": (
+        "39cbcd4c242e7804fc01a14b90a5c20b27df3046",
+        "f57a1785ce423f32236fbd235970eff6a5a5c649",
+    ),
+    "app/templates/workout_progress656.html": (
+        "921540b84db430134e64728b34c3224662ace65b",
+        "100e3621576be6b82bc32772ebd2db54a598407f",
+    ),
+    "app/templates/workout_quick659.html": (
+        "66ac42823e805ee811b3b097375fc6235b0b31af",
+        "2f3217d089e0d27ecca1ebe821a93cf00c90fbde",
+    ),
+    "app/templates/workout_routine_detail655.html": (
+        "1fb5a92af17c04b328c30ae465eda8170a28c1f0",
+        "0d2a2025e38afa1092269b36ecd123d2773f682e",
+    ),
+    "scripts/tracker-release.sh": (
+        "6b3e52d898af77450e43a07a814dbf0ab77b07f4",
+        "7b0e905ea8084d363355f4eb5987aa7cf6c7cbda",
+    ),
+    "scripts/tracker_prod_remote568.sh": (
+        "07f36790a92a7f28cca314536af8a29b361b11f9",
+        "2ac0a9969d567cffe8e6b50718d106ce0bcdf41f",
+    ),
 }
 
 
