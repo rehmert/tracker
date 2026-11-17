@@ -9,10 +9,13 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 import math
 import re
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from .. import services
 from ..scoped_db390 import get_scoped_db390
@@ -23,6 +26,7 @@ from ..workout_models667 import WorkoutSetType667
 from ..workout_models668 import (
     WorkoutRoutineSchedule668, WorkoutRoutineGroup668,
     WorkoutRoutineGroupMember668, WorkoutSetCorrection668,
+    WorkoutOfflineReceipt668, WorkoutEquipmentLoad668,
 )
 
 router = APIRouter()
@@ -325,3 +329,108 @@ def reuse_session_as_routine668(
         f"/workouts/routines/{new.id}",
         msg="Workout exercise order copied as a new routine. No historical sets were copied.",
     )
+
+
+LOAD_MODES668 = {
+    "stack": "Stack displayed total (lb)",
+    "total_plates": "Total loaded plates (lb)",
+    "per_side": "Plates on ONE side (lb)",
+    "pair_total": "Total for dumbbell pair (lb)",
+    "bodyweight_added": "Added resistance only (lb)",
+}
+
+
+@router.post("/workouts/equipment/{equipment_id}/load")
+def save_load_semantics668(
+    equipment_id: int, load_mode: str = Form("stack"),
+    multiplier: float = Form(1.0), offset_lb: float = Form(0.0),
+    note: str = Form(""), db: Session = Depends(get_scoped_db390),
+):
+    machine = db.get(WorkoutEquipment654, equipment_id)
+    if machine is None:
+        raise HTTPException(404, "Equipment not found")
+    clean_note = note.strip()
+    if (load_mode not in LOAD_MODES668 or not math.isfinite(multiplier)
+            or not 0 < multiplier <= 10 or not math.isfinite(offset_lb)
+            or not 0 <= offset_lb <= 500 or len(clean_note) > 500):
+        return services.flash_redirect(
+            f"/workouts/quick?machine={equipment_id}", err="Invalid equipment load settings.",
+        )
+    config = db.get(WorkoutEquipmentLoad668, equipment_id)
+    if config is None:
+        config = WorkoutEquipmentLoad668(equipment_id=equipment_id)
+        db.add(config)
+    config.load_mode = load_mode
+    config.multiplier = multiplier
+    config.offset_lb = offset_lb
+    config.note = clean_note
+    config.updated_at = datetime.now()
+    db.commit()
+    return services.flash_redirect(
+        f"/workouts/quick?machine={equipment_id}",
+        msg="Load input settings saved for future sets; historical loads remain unchanged.",
+    )
+
+
+@router.post("/workouts/quick/offline-sync")
+def sync_offline_set668(
+    session_id: int = Form(...), equipment_id: int = Form(...),
+    client_key: str = Form(...), weight_lb: float = Form(...),
+    reps: int = Form(...), effort: str = Form(""),
+    set_type: str = Form("working"),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Authenticated idempotent single-action sync; UUID logs once.
+
+    Client never supplies timestamps, user IDs or database paths. Drafts can
+    sync only to their original still-active workout in the scoped workspace.
+    """
+    from .workouts654 import active654
+    try:
+        key = str(UUID(client_key))
+    except (ValueError, AttributeError):
+        raise HTTPException(400, "Invalid offline action identifier")
+    if key != client_key.lower():
+        raise HTTPException(400, "Noncanonical offline action identifier")
+    existing = db.scalar(select(WorkoutOfflineReceipt668)
+        .where(WorkoutOfflineReceipt668.client_key == key))
+    if existing:
+        if existing.session_id != session_id:
+            raise HTTPException(409, "Offline action belongs to a different workout")
+        return JSONResponse({"ok": True, "duplicate": True, "set_id": existing.set_id})
+    active = active654(db)
+    if active is None or active.id != session_id:
+        raise HTTPException(409, "Original workout is no longer active; nothing was synchronized")
+    if db.get(WorkoutEquipment654, equipment_id) is None:
+        raise HTTPException(404, "Equipment not found")
+    if (set_type not in ("working", "warmup")
+            or not math.isfinite(weight_lb) or not 0 <= weight_lb <= 2000
+            or not 1 <= reps <= 200):
+        raise HTTPException(422, "Invalid actual set values")
+    value = None
+    if effort.strip():
+        if not effort.isascii() or not effort.isdecimal() or not 1 <= int(effort) <= 10:
+            raise HTTPException(422, "Effort must be 1–10")
+        value = int(effort)
+    recorded = WorkoutSet654(
+        session_id=active.id, equipment_id=equipment_id,
+        weight_lb=weight_lb, reps=reps, effort=value,
+        performed_at=datetime.now(),
+    )
+    db.add(recorded)
+    db.flush()
+    if set_type == "warmup":
+        db.add(WorkoutSetType667(set_id=recorded.id, set_type="warmup"))
+    db.add(WorkoutOfflineReceipt668(
+        client_key=key, session_id=active.id, set_id=recorded.id,
+    ))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        receipt = db.scalar(select(WorkoutOfflineReceipt668)
+            .where(WorkoutOfflineReceipt668.client_key == key))
+        if receipt is None or receipt.session_id != session_id:
+            raise HTTPException(409, "Offline synchronization conflict")
+        return JSONResponse({"ok": True, "duplicate": True, "set_id": receipt.set_id})
+    return JSONResponse({"ok": True, "duplicate": False, "set_id": recorded.id})
