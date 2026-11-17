@@ -3,18 +3,24 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workout-review663.css?v=663">
+<link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout663" id="workout663-review">
-  <nav class="workout663-topnav" aria-label="Workout review navigation">
+  <nav class="workout663-topnav ux675-actions" aria-label="Workout review navigation">
     <a href="/workouts">← Workouts</a>
-    <a href="/workouts/sessions/{{ workout.id }}">Full Set History</a>
-    <a href="/workouts/sessions/{{ workout.id }}/export.csv">Export Actual Sets (CSV)</a>
-    <a href="/workouts/sessions/{{ workout.id }}/export-for-import.csv">Export Import-Compatible Set CSV</a>
-    <a href="/workouts/sessions/{{ workout.id }}/correct">Correct Recorded Sets / Audit</a>
-    <a href="/workouts/analytics">Strength Progress</a>
-    <a href="/workouts/insights">Workout Insights</a>
-    <a href="/workouts/calendar?month={{ workout.started_at.strftime('%Y-%m') }}">Workout Calendar</a>
+    <a href="/workouts/sessions/{{ workout.id }}">All Sets</a>
+    <a href="/workouts/sessions/{{ workout.id }}/correct">Corrections</a>
+    <details class="ux675-more">
+      <summary>More</summary>
+      <div>
+        <a href="/workouts/sessions/{{ workout.id }}/export.csv">Sets CSV</a>
+        <a href="/workouts/sessions/{{ workout.id }}/export-for-import.csv">Import CSV</a>
+        <a href="/workouts/analytics">Progress</a>
+        <a href="/workouts/insights">Insights</a>
+        <a href="/workouts/calendar?month={{ workout.started_at.strftime('%Y-%m') }}">Calendar</a>
+      </div>
+    </details>
   </nav>
 
   <header class="workout663-heading">
@@ -27,7 +33,7 @@
     {% endif %}
   </header>
 
-  <p class="note">This summary is calculated from your actual logged sets in this one workout. Recorded volume is the sum of weight (lb) × repetitions; bodyweight sets logged as 0 lb contribute 0 to that figure.</p>
+  <p class="note">Based on logged sets. Volume = load (lb) × reps; 0-lb sets contribute 0.</p>
 
   <section aria-label="Workout session totals" class="workout663-totals">
     <div><strong>{{ totals.machines }}</strong><span>Machines used</span></div>
@@ -38,8 +44,8 @@
 
   {% if goal_rows %}
     <section class="workout667-session-goals" aria-label="Frozen goal achievement">
-      <h2>Planned vs actual (goals frozen at workout start)</h2>
-      <p class="note">A qualifying working set meets both the planned load and repetitions. Warm-up sets do not count. Changing routine plans later does not change these results.</p>
+      <h2>Plan vs. Actual</h2>
+      <p class="note">Qualifying sets meet the original load + rep goals; warm-ups excluded. Goals stay frozen for this session.</p>
       {% for row in goal_rows %}
         <div class="workout667-session-goal">
           <h3>{{ row.name }}</h3>
@@ -97,14 +103,14 @@
   {% if workout.completed_at and totals.sets > 0 %}
     <form method="post" action="/workouts/sessions/{{ workout.id }}/reuse-as-routine">
       <button type="submit">Reuse This Workout as a New Routine</button>
-      <p class="note">Copies machine order only, not old set entries or inferred weight targets.</p>
+      <p class="note">Copies machine order only—not sets or load targets.</p>
     </form>
   {% endif %}
 
-  <nav class="workout663-bottomnav" aria-label="Review follow-up">
-    <a href="/workouts/sessions/{{ workout.id }}">View Every Recorded Set</a>
-    <a href="/workouts/quick">Open Rapid Gym Mode</a>
-    <a href="/workouts">Back to Workouts</a>
+  <nav class="workout663-bottomnav ux675-actions" aria-label="Next steps">
+    <a href="/workouts/sessions/{{ workout.id }}">All Sets</a>
+    <a href="/workouts/quick">Gym Mode</a>
+    <a href="/workouts">Workouts</a>
   </nav>
 </section>
 {% endblock %}
