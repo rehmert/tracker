@@ -330,6 +330,13 @@ PY
   fi
  fi
  if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped674.sh |
+      grep -qx 'scripts/tracker-release-scoped674.sh'; then
+  echo "=== RELEASE 674 PROD PRODUCTIVITY AND RECOVERY QUALIFICATION ==="
+  timeout 600 bash "$QA/scripts/tracker-release-scoped674.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+ fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
     g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped673.sh |
       grep -qx 'scripts/tracker-release-scoped673.sh'; then
   echo "=== RELEASE 673 PROD INTEGRATED MOBILE UX QUALIFICATION ==="
