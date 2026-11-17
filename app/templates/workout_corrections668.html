@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Correct Recorded Workout Sets{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workout-review663.css?v=663">
+{% endblock %}
+{% block content %}
+<section class="workout654">
+  <p><a href="/workouts/sessions/{{ session.id }}/review">← Session Review</a></p>
+  <h1>Correct Recorded Sets</h1>
+  <p class="note">Completed workout: {{ session.started_at|dt }}.
+    Corrections update the recorded set and append an audit of the old and new
+    values with your explanation. They do not modify the original session
+    date, machine identity, or frozen goals.</p>
+  {% if not session.completed_at %}
+    <p>Finish this workout before correcting historical results.</p>
+  {% else %}
+    {% for item in recorded %}
+      <section>
+        <h2>{{ names[item.equipment_id] }} · Set #{{ item.id }}</h2>
+        <p>Logged {{ item.performed_at|dt }}</p>
+        <form method="post" action="/workouts/sessions/{{ session.id }}/sets/{{ item.id }}/correct">
+          <label>Load (lb)
+            <input type="number" name="weight_lb" min="0" max="2000" step="any"
+                   value="{{ item.weight_lb }}" required>
+          </label>
+          <label>Repetitions
+            <input type="number" name="reps" min="1" max="200" step="1"
+                   value="{{ item.reps }}" required>
+          </label>
+          <label>Effort (optional, 1–10)
+            <input type="number" name="effort" min="1" max="10"
+                   value="{{ item.effort if item.effort is not none else '' }}">
+          </label>
+          <label>Set type
+            <select name="set_type">
+              <option value="working" {% if kinds.get(item.id, 'working') == 'working' %}selected{% endif %}>Working</option>
+              <option value="warmup" {% if kinds.get(item.id, 'working') == 'warmup' %}selected{% endif %}>Warm-up</option>
+            </select>
+          </label>
+          <label>Reason for correction (required)
+            <input name="reason" minlength="3" maxlength="500" required
+                   placeholder="Correcting entered load">
+          </label>
+          <button type="submit">Save Audited Correction</button>
+        </form>
+      </section>
+    {% else %}
+      <p>No recorded sets available for correction.</p>
+    {% endfor %}
+  {% endif %}
+  <section>
+    <h2>Correction History</h2>
+    {% for change in changes %}
+      <article>
+        <p><strong>Set #{{ change.set_id }}</strong> · {{ change.corrected_at|dt }}
+          · {{ change.reason }}</p>
+        <p>Load: {{ change.old_weight_lb }} → {{ change.new_weight_lb }} lb;
+          Reps: {{ change.old_reps }} → {{ change.new_reps }};
+          Effort: {{ change.old_effort if change.old_effort is not none else '—' }}
+          → {{ change.new_effort if change.new_effort is not none else '—' }};
+          Type: {{ change.old_type }} → {{ change.new_type }}</p>
+      </article>
+    {% else %}
+      <p>No historical corrections recorded.</p>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}
