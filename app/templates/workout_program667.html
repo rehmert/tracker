@@ -3,17 +3,18 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
 <link rel="stylesheet" href="/static/css/tracker-workout-program667.css?v=667">
+<link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 <script src="/static/js/tracker-workout-program667.js?v=667" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout667" id="workout667-program" data-routine-id667="{{ routine.id }}">
-  <nav class="workout667-topnav" aria-label="Program navigation">
+  <nav class="workout667-topnav ux675-actions" aria-label="Program navigation">
     <a href="/workouts/routines/{{ routine.id }}">← {{ routine.name }}</a>
     <a href="/workouts/quick">Rapid Gym</a>
-    <a href="/workouts/analytics">Strength Progress</a>
+    <a href="/workouts/analytics">Progress</a>
   </nav>
   <h1>{{ routine.name }} — Workout Program</h1>
-  <p>Goals are saved to Tracker and available across devices. Starting a saved routine freezes its current measurable goals for that session. Editing your program never rewrites earlier workout goals.</p>
+  <p>Saved goals sync across devices and freeze at session start. Past sessions never change.</p>
   <section class="workout667-panel">
     <h2>Routine settings</h2>
     <form method="post" action="/workouts/routines/{{ routine.id }}/program/rest" class="workout667-settings">
@@ -26,11 +27,11 @@
       </label>
       <button type="submit">Save rest default</button>
     </form>
-    <p class="workout667-muted">Each exercise can override the routine rest interval. The manual rest timer remains available.</p>
+    <p class="workout667-muted">Exercises can override rest; the timer stays manual.</p>
   </section>
   <section class="workout667-panel">
     <h2>Import existing browser plans (optional)</h2>
-    <p>Release 665 plans were stored only in your browser. You may import complete sets/reps/weight targets from this browser. This overwrites matching persisted numeric goals but retains notes and rest settings. Existing workout snapshots are never changed.</p>
+    <p>Import legacy browser-only targets. Matching sets/reps/load goals will be replaced; notes, rest settings and past sessions stay unchanged.</p>
     <form id="workout667-import-form" action="/workouts/routines/{{ routine.id }}/program/import" method="post">
       <input type="hidden" name="targets_json" id="workout667-import-payload" value="">
       <button type="submit" id="workout667-import-button">Import This Browser's Targets</button>
