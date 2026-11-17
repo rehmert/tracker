@@ -3,6 +3,7 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workouts656.css?v=656">
+<link rel="stylesheet" href="/static/css/tracker-workout-advanced668.css?v=668">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout656-progress">
@@ -11,6 +12,21 @@
   <p><a href="/workouts/analytics?machine={{ machine.id }}">View Strength Analytics &amp; Exact-Rep Trends</a></p>
   <p class="note">{{ machine.gym }} · {{ machine.kind|replace('_',' ')|title }}</p>
   <p class="note">All figures are from actual recorded sets. No estimated strength values.</p>
+  <section class="workout668-card">
+    <h2>Recording convention for this equipment</h2>
+    <p>Choose how you record pounds. This annotation does not change past weight numbers, history, or existing volume totals. A pair of dumbbells recorded per hand has a different interpretation from total bar or machine-stack weight.</p>
+    <form method="post" action="/workouts/equipment/{{ machine.id }}/load-semantics" class="workout668-grid">
+      <label>Recorded load format
+        <select name="mode">
+          <option value="as_recorded" {% if not load_semantics668 or load_semantics668.mode == 'as_recorded' %}selected{% endif %}>Recorded total/stack/bar weight (as entered)</option>
+          <option value="per_hand" {% if load_semantics668 and load_semantics668.mode == 'per_hand' %}selected{% endif %}>Per hand (e.g. dumbbell weight)</option>
+          <option value="added_bodyweight" {% if load_semantics668 and load_semantics668.mode == 'added_bodyweight' %}selected{% endif %}>Added external weight only (bodyweight exercise)</option>
+        </select>
+      </label>
+      <button type="submit">Save Load Convention</button>
+    </form>
+    <p class="workout668-muted">Any comparisons across differently leveraged machines should be made manually. Bodyweight itself is never invented from a zero-pound entry.</p>
+  </section>
 
   {% if latest %}
     <div class="workout656-stats" aria-label="Equipment workout statistics">
