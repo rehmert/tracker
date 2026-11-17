@@ -61,7 +61,7 @@
 }
 .ux675-actions > :is(a,.ux675-more):hover,
 .ux675-inline-action:hover {filter:brightness(.96);}
-.ux675-fastpaths > .tracker-quick-fast-primary604 a {
+.tracker-quick-fast-paths > .tracker-quick-fast-primary604 a {
   white-space:normal;min-height:48px;line-height:1.25;
 }
 @media(max-width:760px){
@@ -72,7 +72,7 @@
   .ux675-actions .ux675-more > div > a {width:100%;min-width:0;white-space:normal;}
   .ux675-inline-action {min-height:44px;}
   .workout659-progress > .ux675-actions {flex-basis:100%;width:100%;}
-  .ux675-fastpaths > .tracker-quick-fast-primary604 {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .tracker-quick-fast-paths > .tracker-quick-fast-primary604 {grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 @media(max-width:350px) {
   .ux675-actions {grid-template-columns:minmax(0,1fr);}
