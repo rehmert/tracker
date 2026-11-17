@@ -81,7 +81,29 @@ def summary668(db: Session, today: date | None = None) -> dict:
             goal_pct=round(100 * qualifying / goals) if goals else None,
             semantics=semantics,
         ))
-    recent28 = [row for row in recent if start28.date() <= row["date"] <= today]
+    # Count all eligible 28-day sessions (not merely the 40 rendered cards).
+    recorded28 = list(db.execute(
+        select(
+            WorkoutSession654.id, WorkoutSession654.started_at,
+            func.sum(WorkoutSet654.weight_lb * WorkoutSet654.reps).label("volume"),
+        )
+        .join(WorkoutSet654, WorkoutSet654.session_id == WorkoutSession654.id)
+        .where(
+            WorkoutSession654.completed_at.is_not(None),
+            WorkoutSession654.started_at >= start28,
+            WorkoutSession654.started_at < end,
+        )
+        .group_by(WorkoutSession654.id, WorkoutSession654.started_at)
+    ))
+    effort28 = db.scalar(select(func.avg(WorkoutSet654.effort))
+        .join(WorkoutSession654, WorkoutSession654.id == WorkoutSet654.session_id)
+        .where(
+            WorkoutSession654.completed_at.is_not(None),
+            WorkoutSession654.started_at >= start28,
+            WorkoutSession654.started_at < end,
+            WorkoutSet654.effort.is_not(None),
+        )
+    )
     schedules = list(db.scalars(select(WorkoutTrainingDay668)))
     # Scheduled slot is a specific weekday and routine. Count whether a
     # completed session linked to that routine happened on that date.
@@ -92,6 +114,9 @@ def summary668(db: Session, today: date | None = None) -> dict:
             WorkoutSession654.completed_at.is_not(None),
             WorkoutSession654.started_at >= start28,
             WorkoutSession654.started_at < end,
+            select(WorkoutSet654.id).where(
+                WorkoutSet654.session_id == WorkoutSession654.id
+            ).exists(),
         )
     ))
     logged_pairs = {(r.routine_id, r.started_at.date()) for r in links}
@@ -105,17 +130,16 @@ def summary668(db: Session, today: date | None = None) -> dict:
                 scheduled_completed += int((slot.routine_id, day) in logged_pairs)
     with_targets = [row for row in recent if row["goal_pct"] is not None]
     return dict(
-        sessions28=len(recent28),
-        days28=len({row["date"] for row in recent28}),
-        volume28=round(sum(row["volume"] for row in recent28), 1),
+        sessions28=len(recorded28),
+        days28=len({row.started_at.date() for row in recorded28}),
+        volume28=round(sum(float(row.volume) for row in recorded28), 1),
         scheduled_total=scheduled_total,
         scheduled_completed=scheduled_completed,
         scheduled_pct=round(100 * scheduled_completed / scheduled_total) if scheduled_total else None,
         goal_sessions=len(with_targets),
         goal_average=round(mean(row["goal_pct"] for row in with_targets), 1) if with_targets else None,
         recent=recent[:20],
-        effort_average=round(mean(row["avg_effort"] for row in recent28 if row["avg_effort"] is not None), 1)
-        if any(row["avg_effort"] is not None for row in recent28) else None,
+        effort_average=round(float(effort28), 1) if effort28 is not None else None,
     )
 
 
