@@ -52,6 +52,7 @@
       <p><a href="/workouts/backfill">Log a Previous Workout</a> to begin your training history.</p>
     {% endif %}
   </div>
+  {% if workout_pulse668 is defined %}
   <section class="workout668-dashboard-widgets" aria-label="Workout program pulse">
     <h3>Upcoming Training &amp; Goals</h3>
     <nav class="tracker-workout-actions661">
@@ -82,6 +83,7 @@
       <p class="note">No recent completed session with frozen targets yet.</p>
     {% endif %}
   </section>
+  {% endif %}
   <p class="note tracker-workout-footnote661">
     A training day is a calendar date with at least one completed workout containing a recorded set.
     Multiple sessions on one day count as multiple sessions but one training day.
