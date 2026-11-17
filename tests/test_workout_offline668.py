@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, event, func, select
 from sqlalchemy.orm import Session
 
 from app.db import Base
@@ -16,6 +16,9 @@ from app.routers.workouts668 import sync_offline_set668, save_load_semantics668
 
 def test_668_offline_sync_idempotency_and_stale_session(tmp_path):
     engine = create_engine("sqlite:///" + str(tmp_path / "offline.sqlite"))
+    @event.listens_for(engine, "connect")
+    def sqlite_foreign_keys(dbapi_connection, _):
+        dbapi_connection.execute("PRAGMA foreign_keys=ON")
     Base.metadata.create_all(engine)
     with Session(engine) as db:
         machine = WorkoutEquipment654(name="Nautilus Row", kind="selectorized")
