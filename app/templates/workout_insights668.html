@@ -60,6 +60,21 @@
       </tbody>
     </table></div>
   </section>
+  <section class="workout668-card">
+    <h2>Recorded load conventions by session</h2>
+    <p>These are your selected units of interpretation, not converted totals. In particular, per-hand values are still shown exactly as logged.</p>
+    {% for row in summary.recent[:10] %}
+      <details>
+        <summary>{{ row.started_at|dt }} · {{ row.machines }} machines</summary>
+        <ul>
+          {% for name, mode, recorded_volume in row.semantics %}
+            <li>{{ name }}: {{ '{:,.1f}'.format(recorded_volume) }} recorded lb × reps
+              · {{ mode|replace('_',' ')|title }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endfor %}
+  </section>
   <p class="workout668-muted">Load conventions are managed per machine. Recorded volume always means the sum of entered lb × reps; even a “per-hand” designation does not silently rewrite your historical data.</p>
 </section>
 {% endblock %}
