@@ -572,7 +572,6 @@ async def update_saved_food669(
     serving = str(form.get("serving_description", "")).strip()
     barcode = str(form.get("barcode", "")).strip()
     version = str(form.get("version", "")).strip()
-    confirm = str(form.get("confirm_history", ""))
     if not name or len(name) > 160:
         raise HTTPException(422, "Food name must be 1–160 characters")
     if not serving or len(serving) > 80:
@@ -594,11 +593,6 @@ async def update_saved_food669(
             raise HTTPException(404, "Saved food not found")
         if food_product_version669(row) != version:
             raise HTTPException(409, "This saved food changed. Reload before editing.")
-        used = saved_food_usage669(db, product_id)
-        if used and confirm != "yes":
-            raise HTTPException(
-                422, "Confirm that nutritional changes also update past logged meals"
-            )
         db.execute(text("""
             UPDATE tracker_food_products
                SET name=:name, barcode=:barcode,
