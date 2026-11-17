@@ -51,6 +51,7 @@
   {% endif %}
   <section>
     <h2>Correction History</h2>
+    {% set recovery674 = namespace(seen=[]) %}
     {% for change in changes %}
       <article>
         <p><strong>Set #{{ change.set_id }}</strong> · {{ change.corrected_at|dt }}
@@ -60,6 +61,12 @@
           Effort: {{ change.old_effort if change.old_effort is not none else '—' }}
           → {{ change.new_effort if change.new_effort is not none else '—' }};
           Type: {{ change.old_type }} → {{ change.new_type }}</p>
+        {% if session.completed_at and change.set_id not in recovery674.seen and not change.reason.startswith("Undo of correction #") %}
+        <form method="post" action="/workouts/sessions/{{ session.id }}/sets/{{ change.set_id }}/corrections/{{ change.id }}/undo">
+          <button type="submit">Undo this correction</button>
+        </form>
+        {% endif %}
+        {% set recovery674.seen = recovery674.seen + [change.set_id] %}
       </article>
     {% else %}
       <p>No historical corrections recorded.</p>
