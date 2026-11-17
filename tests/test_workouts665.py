@@ -64,6 +64,17 @@ def test_665_two_completed_sessions_exact_equipment_chronological_even_if_backda
             earliest = workout(2, press, [(70, 10)])
             active = workout(20, press, [(999, 200)], complete=False)
             empty = workout(19, press, [])
+            future = WorkoutSession654(
+                started_at=datetime.now() + timedelta(days=30),
+                completed_at=datetime.now() + timedelta(days=30, hours=1),
+            )
+            db.add(future)
+            db.flush()
+            db.add(WorkoutSet654(
+                session_id=future.id, equipment_id=press.id,
+                weight_lb=1900, reps=200,
+                performed_at=future.started_at,
+            ))
             other = workout(20, outsider, [(900, 10)])
             db.commit()
             before = db.scalar(select(func.count(WorkoutSet654.id)))
@@ -84,7 +95,7 @@ def test_665_two_completed_sessions_exact_equipment_chronological_even_if_backda
             assert chosen["previous"].volume == 1700
             assert chosen["load_change"] == 20
             assert chosen["volume_change"] == 0
-            excluded = {earliest.id, active.id, empty.id, other.id}
+            excluded = {earliest.id, active.id, empty.id, future.id, other.id}
             assert chosen["latest"].session_id not in excluded
             assert chosen["previous"].session_id not in excluded
             assert db.scalar(select(func.count(WorkoutSet654.id))) == before
@@ -189,6 +200,7 @@ def test_665_source_and_rendering_contract():
         "get_scoped_db390",
         '@router.get("/workouts/routines/{routine_id}/plan")',
         "WorkoutSession654.completed_at.is_not(None)",
+        "WorkoutSession654.started_at < tomorrow",
         "WorkoutSet654.equipment_id == equipment.id",
         "WorkoutRoutineItem655.routine_id == routine.id",
         "WorkoutSession654.started_at.desc()",
