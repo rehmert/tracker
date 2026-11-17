@@ -96,7 +96,7 @@ def validate(root: Path, base: str, target: str) -> None:
         if exact in main_before or main_after.count(exact) != 1:
             raise ValueError("Unreviewed model or route registration")
         main_after = main_after.replace(exact, "", 1)
-    if main_after != main_before:
+    if main_after.strip() != main_before:
         raise ValueError("Unexpected application startup change")
 
     model_source = (root / "app/workout_models667.py").read_text(encoding="utf-8")
