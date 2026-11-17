@@ -224,7 +224,7 @@ def export_session668(
 def export_reimport_sets668(
     session_id: int, db: Session = Depends(get_scoped_db390),
 ):
-    """A 5-column actual-set CSV compatible with the historical importer.
+    """A lossless set-type CSV compatible with the historical importer.
 
     The importer still requires explicit original date/start/end and rejects
     exact duplicate sessions. It does not silently create new workouts.
@@ -232,19 +232,21 @@ def export_reimport_sets668(
     workout = db.get(WorkoutSession654, session_id)
     if workout is None:
         raise HTTPException(404, "Workout not found")
-    rows = list(db.scalars(
-        select(WorkoutSet654)
+    from ..workout_models667 import WorkoutSetType667
+    rows = list(db.execute(
+        select(WorkoutSet654, WorkoutSetType667.set_type)
+        .outerjoin(WorkoutSetType667, WorkoutSetType667.set_id == WorkoutSet654.id)
         .where(WorkoutSet654.session_id == session_id)
         .order_by(WorkoutSet654.performed_at, WorkoutSet654.id)
     ))
     output = StringIO(newline="")
     writer = csv.writer(output)
-    writer.writerow(("equipment_id", "weight_lb", "reps", "effort", "set_time"))
-    for item in rows:
+    writer.writerow(("equipment_id", "weight_lb", "reps", "effort", "set_time", "set_type"))
+    for item, set_type in rows:
         writer.writerow((
             item.equipment_id, item.weight_lb, item.reps,
             item.effort if item.effort is not None else "",
-            item.performed_at.strftime("%H:%M"),
+            item.performed_at.strftime("%H:%M"), set_type or "working",
         ))
     return Response(
         content=output.getvalue().encode("utf-8-sig"), media_type="text/csv",
