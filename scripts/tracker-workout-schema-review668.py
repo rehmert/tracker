@@ -203,7 +203,7 @@ def validate(root: Path, base: str, target: str):
         'ForeignKey("workout_routine_items655.id", ondelete="CASCADE")',
         'ForeignKey("workout_sessions654.id", ondelete="CASCADE")',
         'ForeignKey("workout_equipment654.id", ondelete="RESTRICT")',
-        'ForeignKey("workout_sets654.id", ondelete="CASCADE")',
+        "set_id: Mapped[int] = mapped_column(Integer, nullable=False)",
         "ck_workout668_weekday", "ck_workout668_group_mode",
         "ck_workout668_sub_distinct", "ck_workout668_audit_action",
         "ck_workout668_load_mode",
