@@ -79,7 +79,7 @@
   <p class="row">
     <button class="primary">Save page</button>
     <button type="button" id="notes-discard-draft">Discard local draft</button>
-    <a href="{{ '/pages/' ~ p.id if p else '/pages' }}">Cancel</a>
+    <a class="btn" href="{{ '/pages/' ~ p.id if p else '/pages' }}">Cancel</a>
   </p>
 </form>
 {% endblock %}
