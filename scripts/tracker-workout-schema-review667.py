@@ -88,7 +88,7 @@ REVIEWED_BLOBS667 = {
     ),
     "app/templates/workout_quick659.html": (
         "a8bce2a205be83fc6bfe8e72e1f9477fd3ff9f6b",
-        "c41c86400276c7cb71ce7983449275f4d199558b",
+        "66ac42823e805ee811b3b097375fc6235b0b31af",
     ),
     "app/templates/workout_review663.html": (
         "5ec088575d9210845175f6a12c049a9870f068e6",
