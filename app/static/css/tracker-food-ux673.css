@@ -1,0 +1,40 @@
+/* Release 673 — simplify common food tasks without removing existing tools. */
+.ux673-food-primary {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: .5rem; margin-block: .75rem;
+}
+.ux673-food-primary a {
+  display:flex; align-items:center; justify-content:center;
+  min-height: 48px; padding:.55rem .65rem;
+  border:1px solid var(--rule,#cbd5e1); border-radius:.7rem;
+  text-decoration:none; text-align:center; font-weight:700;
+  white-space:normal; min-width:0;
+}
+.ux673-food-primary .ux673-food-cta {
+  background:var(--teal,#1265ad); color:var(--teal-ink,#fff);
+  border-color:var(--teal,#1265ad);
+}
+.ux673-food-more {
+  border:1px solid var(--rule,#cbd5e1); border-radius:.7rem;
+  padding:0; margin:.7rem 0;
+}
+.ux673-food-more > summary {
+  cursor:pointer; padding:.8rem .9rem; min-height:48px; box-sizing:border-box;
+  display:flex; align-items:center; font-weight:650;
+}
+.ux673-food-more > nav {
+  padding:.15rem .65rem .65rem; display:flex; flex-wrap:wrap;
+  gap:.35rem; overflow:visible;
+}
+.ux673-food-more > nav a { min-height:44px; display:inline-flex; align-items:center; }
+.ux673-food-more:focus-within { scroll-margin-top:1rem; }
+@media(max-width:760px) {
+  .ux673-food-primary { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem; }
+  .ux673-food-primary a { min-height:52px; padding:.6rem .4rem; font-size:.94rem; }
+  .ux673-food-more > nav a { min-height:44px; }
+  #main-content .food382-accordion { scroll-margin-top: .75rem; }
+  #main-content .food382-content { min-width:0; }
+}
+@media(max-width:350px) {
+ .ux673-food-primary { grid-template-columns:minmax(0,1fr); }
+}
