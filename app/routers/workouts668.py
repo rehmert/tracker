@@ -43,10 +43,10 @@ def parse_weekdays668(raw: str) -> str:
 def next_occurrences668(days: str, start: date, end: date | None,
                         *, today: date, horizon: int = MAX_PREVIEW_DAYS668) -> list[date]:
     selected = {int(part) for part in parse_weekdays668(days).split(",")}
-    first = max(start, today)
     return [
         day for n in range(horizon)
-        if (day := first + timedelta(days=n)).weekday() in selected
+        if (day := today + timedelta(days=n)) >= start
+        and day.weekday() in selected
         and (end is None or day <= end)
     ]
 
