@@ -8,7 +8,7 @@ from __future__ import annotations
 from urllib.parse import parse_qs, urlsplit
 
 from fastapi import APIRouter, Depends, Form, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .. import services
@@ -16,7 +16,7 @@ from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import WorkoutEquipment654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
-from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667, WorkoutSessionTarget667
+from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667, WorkoutSessionTarget667, WorkoutSetType667
 from ..workout_program667 import progress667
 from ..workout_models668 import WorkoutRoutineGroup668, WorkoutRoutineGroupMember668, WorkoutEquipmentLoad668
 from .workouts654 import active654, add_set654, start654, finish654
@@ -141,7 +141,33 @@ def quick_workout659(
                         if member.routine_item_id in by_id
                         and by_id[member.routine_item_id] in lookup]
             if machines:
-                grouped668.append(dict(group=group, machines=machines))
+                # Count only actual working sets. The visual round guide
+                # never creates sets or implies that exercise was performed.
+                count_rows = dict(db.execute(
+                    select(WorkoutSet654.equipment_id, func.count(WorkoutSet654.id))
+                    .outerjoin(
+                        WorkoutSetType667,
+                        WorkoutSetType667.set_id == WorkoutSet654.id,
+                    )
+                    .where(
+                        WorkoutSet654.session_id == active.id,
+                        WorkoutSet654.equipment_id.in_([m.id for m in machines]),
+                        (WorkoutSetType667.set_type.is_(None) |
+                         (WorkoutSetType667.set_type == "working")),
+                    )
+                    .group_by(WorkoutSet654.equipment_id)
+                )) if active else {}
+                minimum = min((count_rows.get(m.id, 0) for m in machines), default=0)
+                follow = next((m for m in machines
+                               if count_rows.get(m.id, 0) == minimum
+                               and minimum < group.rounds), None)
+                grouped668.append(dict(
+                    group=group, machines=machines,
+                    progress={m.id: min(count_rows.get(m.id, 0), group.rounds)
+                              for m in machines},
+                    next_machine=follow,
+                    complete=follow is None,
+                ))
     routines = list(db.scalars(
         select(WorkoutRoutine655).order_by(
             WorkoutRoutine655.created_at.desc(), WorkoutRoutine655.id.desc()
