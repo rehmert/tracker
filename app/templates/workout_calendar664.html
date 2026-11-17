@@ -3,32 +3,33 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workout-calendar664.css?v=664">
+<link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout664" id="workout664-calendar">
-  <nav class="workout664-links" aria-label="Workout navigation">
+  <nav class="workout664-links ux675-actions" aria-label="Workout navigation">
     <a href="/workouts">← Workouts</a>
-    <a href="/workouts/quick">Rapid Gym Mode</a>
-    <a href="/workouts/analytics">Strength Progress</a>
-    <a href="/workouts/calendar">Current Month</a>
+    <a href="/workouts/quick">Gym Mode</a>
+    <a href="/workouts/analytics">Progress</a>
+    <a href="/workouts/calendar">Today</a>
   </nav>
 
   <header class="workout664-header">
     <div>
       <h1>Workout Calendar</h1>
-      <p class="note">Completed workouts are counted from actual recorded sets. Planned routines appear separately, and never count as completed sessions.</p>
+      <p class="note">Completed sessions and planned routines are shown separately.</p>
     </div>
   </header>
 
   <nav class="workout664-month-navigation" aria-label="Choose calendar month">
     {% if workout_calendar.previous %}
-      <a rel="prev" href="/workouts/calendar?month={{ workout_calendar.previous }}">← Previous Month</a>
+      <a rel="prev" href="/workouts/calendar?month={{ workout_calendar.previous }}">← Prev</a>
     {% else %}
       <span>Previous Month</span>
     {% endif %}
     <h2 id="workout664-month">{{ workout_calendar.month_label }}</h2>
     {% if workout_calendar.next %}
-      <a rel="next" href="/workouts/calendar?month={{ workout_calendar.next }}">Next Month →</a>
+      <a rel="next" href="/workouts/calendar?month={{ workout_calendar.next }}">Next →</a>
     {% else %}
       <span>Next Month</span>
     {% endif %}
