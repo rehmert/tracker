@@ -612,4 +612,3 @@ async def update_saved_food669(
     return RedirectResponse(
         f"/food/saved/{product_id}/edit?day={day}&saved=1", status_code=303
     )
-
