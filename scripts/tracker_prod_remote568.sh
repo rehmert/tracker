@@ -96,6 +96,9 @@ elif [[ "$RELEASE" == 652 ]]; then
 elif [[ "$RELEASE" == 667 ]]; then
   # Signed Release 667 is an additive schema change; do not bypass backup.
   DEPLOY_EXTRA=(--reviewed-workout-667 --db-migration)
+elif [[ "$RELEASE" == 668 ]]; then
+  # New additive Workout tables require signed exact-source review and backup.
+  DEPLOY_EXTRA=(--reviewed-workout-668 --db-migration)
 fi
 bash "$RUNNER" \
   --instance PROD \
