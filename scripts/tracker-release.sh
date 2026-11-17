@@ -329,6 +329,11 @@ PY
    QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
   fi
  fi
+ if [[ "$INSTANCE" == PROD && "$REVIEWED_WORKOUT_668" == 1 ]]; then
+  echo "=== RELEASE 668 PROD SCOPED WORKOUT QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped668.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+ fi
  if [[ "$INSTANCE" == PROD && "$REVIEWED_WORKOUT_655" == 1 ]]; then
   echo "=== RELEASE 655 PROD SCOPED WORKOUT QUALIFICATION ==="
   timeout 360 bash "$QA/scripts/tracker-release-scoped655.sh" "$PY"
@@ -533,7 +538,7 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -eq 12 || $# -eq 13 || $# -eq 14 || $# -eq 15 || $# -eq 16 || $# -eq 17 ]] || fail "Bad worker arguments"
+ [[ $# -ge 12 && $# -le 18 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
