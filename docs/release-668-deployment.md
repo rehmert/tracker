@@ -51,10 +51,11 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
   reuse-as-routine is available without fabricating a second recorded workout.
   Audited per-set corrections are implemented.
   (Editable *routine* duplication is implemented.)
-- Extended machine/load semantics and historical Workout CSV import.
-  Future routine-plan CSV import/export is implemented.
+- Extended machine/load semantics and any further cross-machine comparison.
+  Historical actual-set CSV import and future routine-plan CSV import/export
+  are implemented through validated, explicitly submitted forms.
   (Session-level actual-sets CSV export is implemented.)
-- True offline set synchronization with server-side conflict handling,
+- True automatic offline set synchronization with server-side conflict handling,
   richer actionable insights, and additional dashboard metrics. Local-only
   unsynced set drafts and dashboard links are implemented.
 
@@ -124,7 +125,8 @@ To promote an already independently DEV-qualified build, change it to
 **No GitHub Actions, CI, or cloud deploy are used.**
 The built-in existing runner may still demand a full suite for sensitive
 shared-core changes; in that case do not bypass it.
-The current branch now introduces four additive Workout 668 tables. The
-launcher intentionally fails closed. A dedicated 668 schema review, verified
-backup path, and DEV/PROD exact-source qualification must be implemented
-before this branch can be declared ready or deployed.
+The current branch introduces four additive Workout 668 tables.
+The dedicated Release 668 source reviewer and migration/backup runner wiring
+are committed but have not yet passed DEV qualification. The readiness guard
+remains closed; successful focused DEV preview and review of the resulting
+source, schema, and migration backup behavior are mandatory before deployment.
