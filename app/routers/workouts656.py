@@ -14,6 +14,7 @@ from .. import services
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
+from ..workout_models668 import WorkoutLoadSemantics668
 
 router = APIRouter()
 
@@ -108,6 +109,7 @@ def progress656(
     return render(
         request, "workout_progress656.html",
         machine=machine, total_sets=total_sets,
+        load_semantics668=db.get(WorkoutLoadSemantics668, equipment_id),
         latest=latest_sets[0] if latest_sets else None,
         best=best, recent=latest_sets, trend=trend,
         points=points, chart_min=min(lows) if lows else 0.0,
