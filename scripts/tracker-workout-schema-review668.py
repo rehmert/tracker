@@ -45,6 +45,7 @@ NEW668 = frozenset({
     "tests/test_workouts668.py",
     "tests/browser/test_workout_advanced668.py",
     "scripts/tracker-workout-dev668.sh",
+    "scripts/tracker-workout-promote668.sh",
     "scripts/tracker-release-scoped668.sh",
     "scripts/tracker-workout-schema-review668.py",
     "docs/release-668-advanced-workout.md",
