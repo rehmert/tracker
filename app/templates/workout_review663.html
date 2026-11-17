@@ -93,6 +93,13 @@
     {% endif %}
   </section>
 
+  {% if workout.completed_at and totals.sets > 0 %}
+    <form method="post" action="/workouts/sessions/{{ workout.id }}/reuse-as-routine">
+      <button type="submit">Reuse This Workout as a New Routine</button>
+      <p class="note">Copies machine order only, not old set entries or inferred weight targets.</p>
+    </form>
+  {% endif %}
+
   <nav class="workout663-bottomnav" aria-label="Review follow-up">
     <a href="/workouts/sessions/{{ workout.id }}">View Every Recorded Set</a>
     <a href="/workouts/quick">Open Rapid Gym Mode</a>
