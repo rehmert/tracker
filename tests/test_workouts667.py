@@ -34,11 +34,25 @@ def cleanup_shared_workout667():
     session, even though neither dashboard code nor actual data is wrong.
     Keep new tests isolated instead of weakening older regression coverage.
     """
-    with SessionLocal() as db:
-        prior_sessions = set(db.scalars(select(WorkoutSession654.id)))
-        prior_routines = set(db.scalars(select(WorkoutRoutine655.id)))
-        prior_equipment = set(db.scalars(select(WorkoutEquipment654.id)))
-    yield
+    # Pytest fixtures initialize before the TestClient lifespan. Defer
+    # the baseline read until the client has created isolated SQLite tables.
+    baseline = None
+
+    def capture_after_startup():
+        nonlocal baseline
+        if baseline is not None:
+            raise AssertionError("Workout 667 cleanup baseline already captured")
+        with SessionLocal() as db:
+            baseline = (
+                set(db.scalars(select(WorkoutSession654.id))),
+                set(db.scalars(select(WorkoutRoutine655.id))),
+                set(db.scalars(select(WorkoutEquipment654.id))),
+            )
+
+    yield capture_after_startup
+    if baseline is None:
+        raise AssertionError("Workout 667 cleanup baseline was not captured")
+    prior_sessions, prior_routines, prior_equipment = baseline
     with SessionLocal() as db:
         session_ids = set(db.scalars(select(WorkoutSession654.id))) - prior_sessions
         routine_ids = set(db.scalars(select(WorkoutRoutine655.id))) - prior_routines
@@ -222,6 +236,7 @@ def test_667_additive_schema_snapshots_and_achievement_isolated(tmp_path):
 def test_667_http_program_snapshots_import_and_rapid_gym_workflow(cleanup_shared_workout667):
     nonce = uuid4().hex
     with TestClient(app) as client:
+        cleanup_shared_workout667()
         with SessionLocal() as db:
             machine = WorkoutEquipment654(
                 name="667 Chest " + nonce, gym="QA", kind="selectorized",
@@ -373,6 +388,7 @@ def test_667_http_program_snapshots_import_and_rapid_gym_workflow(cleanup_shared
 def test_667_repeat_and_active_correction_preserve_set_kind(cleanup_shared_workout667):
     nonce = uuid4().hex
     with TestClient(app) as client:
+        cleanup_shared_workout667()
         with SessionLocal() as db:
             machine = WorkoutEquipment654(
                 name="667 Repeat " + nonce, gym="QA", kind="selectorized",
@@ -432,6 +448,7 @@ def test_667_repeat_and_active_correction_preserve_set_kind(cleanup_shared_worko
 def test_667_exercise_notes_display_without_numeric_goal(cleanup_shared_workout667):
     nonce = uuid4().hex
     with TestClient(app) as client:
+        cleanup_shared_workout667()
         with SessionLocal() as db:
             machine = WorkoutEquipment654(
                 name="667 Note only " + nonce, gym="QA", kind="selectorized",
