@@ -66,6 +66,8 @@ def quality_summary674(db: Session, food_engine=None):
                         nutrients = json.loads(row["nutrients"])
                     except (ValueError, TypeError):
                         nutrients = {}
+                    if not isinstance(nutrients, dict):
+                        nutrients = {}
                     if any(nutrients.get(key) is None for key in ("energy", "proteins", "carbohydrates", "fat")):
                         issues.append(dict(kind="Food", label=row["name"],
                                            detail="One or more core nutrients are unreported",
@@ -75,8 +77,8 @@ def quality_summary674(db: Session, food_engine=None):
     counts = {}
     for item in issues:
         counts[item["kind"]] = counts.get(item["kind"], 0) + 1
-    return dict(issues=issues, counts=counts, food_status=food_status,
-                total=len(issues), limited=False)
+    return dict(issues=issues[:100], counts=counts, food_status=food_status,
+                total=len(issues), limited=len(issues) > 100)
 
 
 @router.get("/data-quality")
