@@ -4,17 +4,31 @@
 <link rel="stylesheet" href="/static/css/tracker-purchase-history-review.css?v=20261103">
 <script src="/static/js/tracker-purchase-history-review.js?v=603" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
+<link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 <script defer src="/static/js/tracker-purchase-mobile603.js?v=603"></script>
-<h1>Purchases</h1><nav class="ux-shortcuts" aria-label="Purchase actions"><a href="#new-purchase">+ Record a purchase</a><a href="#purchase-history">Purchase history</a><a href="/vials">Vials</a><a href="/supplies">Supplies</a><a href="/vendor-prices">Compare prices</a></nav><p class="note">Workflow: create the order below, then open it to add purchased vials or supplies. Inventory is not created by the order header alone.</p>
+<h1>Purchases</h1>
+<nav class="ux675-actions ux-shortcuts" aria-label="Purchase actions">
+  <a class="ux675-primary" href="#new-purchase">New Order</a>
+  <a href="#purchase-history">History</a>
+  <a href="/vendor-prices">Prices</a>
+  <details class="ux675-more"><summary>More</summary><div>
+    <a href="/vials">Vials</a><a href="/supplies">Supplies</a>
+    <a href="/inventory-health">Inventory Health</a>
+  </div></details>
+</nav>
+<p class="note">Save the order, then add vials or supplies. An order alone adds no stock.</p>
 <details id="purchase-review-guide618" class="card">
-  <summary><strong>Purchase workflow · review before recording</strong></summary>
-  <p class="note">1. Review the vendor, order date and reference. 2. Save the purchase header. 3. Open the saved purchase and add the actual vials or supplies. 4. Confirm the recorded inventory and allocated costs in the purchase details.</p>
-  <p><a href="#new-purchase">Review purchase form</a> · <a href="#purchase-history">Review existing purchases</a> · <a href="/vendor-prices">Compare vendor prices</a> · <a href="/inventory-health">Inventory health</a></p>
-  <p class="note">A purchase header alone does not create inventory. These links do not save or modify records.</p>
+  <summary><strong>Order Steps</strong></summary>
+  <p class="note">1. Enter vendor + order details. 2. Save. 3. Add inventory. 4. Review costs.</p>
+  <nav class="ux675-actions ux675-compact" aria-label="Purchase review tools">
+    <a href="#new-purchase">Order Form</a><a href="#purchase-history">History</a>
+    <a href="/vendor-prices">Prices</a><a href="/inventory-health">Stock Health</a>
+  </nav>
+  
 </details>
 <section id="purchase-history" aria-labelledby="purchase-history-title">
   <h2 id="purchase-history-title">Purchase history</h2>
-  <p class="note">Order headers without any vials or supplies are flagged as <strong>Needs items</strong>. An order header alone does not add inventory, and its allocated line-item total may show zero until items are recorded.</p>
+  <p class="note"><strong>Needs items</strong> = no inventory added yet. Totals may show $0 until items are entered.</p>
 
   <div class="purchase-review-toolbar" data-purchase-review-toolbar>
     <label class="field"><span>Find purchase</span>
@@ -98,11 +112,11 @@
       </tbody>
     </table>
   </div>
-  <p class="note">Review totals use the server-calculated allocated line-item amounts for matching orders; they are not a payment ledger. Filters, sorting and CSV exports do not change purchases or inventory.</p>
+  <p class="note">Totals are allocated item costs, not payments. Filters and CSV exports never change records.</p>
 </section>
 
 <section>
-  <h2 id="new-purchase">Step 1 · Record order details</h2><p class="note">After saving, you will be taken to Step 2 to add the actual purchased inventory.</p>
+  <h2 id="new-purchase">New Order</h2><p class="note">Save first; add inventory next.</p>
   <form method="post" action="/purchases" class="grid"><input type="hidden" name="submission_token" value="{{ submission_token }}">
     <label class="field"><span>Vendor</span><input name="vendor" required></label>
     <label class="field"><span>Date</span><input type="date" name="purchased_on" value="{{ today }}"></label>
