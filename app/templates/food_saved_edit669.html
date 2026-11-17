@@ -45,9 +45,6 @@
         <p><strong>Existing meal history:</strong> {{ usage }} logged meal entr{{ 'y' if usage == 1 else 'ies' }}
         use this saved record. Editing its nutrition recalculates their daily, weekly
         and historical totals. This action does not create a new food version.</p>
-        <label><input type="checkbox" name="confirm_history" value="yes" required>
-          I understand this edit updates previously logged nutrition for this food.
-        </label>
       </div>
     {% endif %}
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:18px">
