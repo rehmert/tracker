@@ -49,3 +49,18 @@ def test_672_existing_button_visual_system():
     css = (ROOT.parent / "static/app.css").read_text(encoding="utf-8")
     assert ".btn { display: inline-block;" in css
     assert "button { padding:" in css
+
+
+def test_672_vendor_and_vitals_edit_controls_are_buttons():
+    vendor = (ROOT / "vendor_prices.html").read_text(encoding="utf-8")
+    assert '<form method="get" action="/vendor-prices/entries/{{ e.id }}/edit#edit-offer" style="display:inline"><button type="submit">Edit</button></form>' in vendor
+    assert 'class="button" role="button"' not in vendor
+    vitals = (ROOT / "vitals.html").read_text(encoding="utf-8")
+    assert '<form method="get" action="/vitals/{{ r.id }}/edit" style="display:inline">' in vitals
+    assert '<input type="hidden" name="days" value="{{ days }}">' in vitals
+    assert '<input type="hidden" name="events" value="{{ 1 if events_on else 0 }}">' in vitals
+    assert 'hx-delete="/vitals/{{ r.id }}"' in vitals
+    assert 'hx-confirm="Delete this reading?"' in vitals
+    assert '<a class="link" href="/vitals/{{ r.id }}/edit' not in vitals
+    Environment().parse(vendor)
+    Environment().parse(vitals)
