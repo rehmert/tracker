@@ -9,6 +9,7 @@ from app.workout_models654 import WorkoutEquipment654, WorkoutSession654, Workou
 from app.workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655
 from app.workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667
 from app.routers.workouts655 import duplicate_routine668, substitute_routine_item668
+from app.routers.workouts668 import reuse_session_as_routine668
 from app.routers.workouts663 import export_session668, safe_csv668, workout_insights668
 
 
@@ -122,3 +123,36 @@ def test_668_insights_counts_only_completed_sessions_with_actual_sets(monkeypatc
         assert data["recent_volume"] == 1000
         assert len(data["sessions"]) == 1
         assert data["sessions"][0].session_id == done.id
+
+
+def test_668_completed_session_reuse_does_not_create_fake_sets():
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        first = WorkoutEquipment654(name="Row", kind="selectorized")
+        second = WorkoutEquipment654(name="Press", kind="selectorized")
+        session = WorkoutSession654(
+            started_at=datetime.now(), completed_at=datetime.now(),
+        )
+        db.add_all([first, second, session])
+        db.flush()
+        db.add_all([
+            WorkoutSet654(session_id=session.id, equipment_id=first.id,
+                          weight_lb=80, reps=10),
+            WorkoutSet654(session_id=session.id, equipment_id=first.id,
+                          weight_lb=90, reps=8),
+            WorkoutSet654(session_id=session.id, equipment_id=second.id,
+                          weight_lb=70, reps=10),
+        ])
+        db.commit()
+        before = db.scalar(select(func.count(WorkoutSet654.id)))
+        result = reuse_session_as_routine668(session_id=session.id, db=db)
+        assert result.status_code == 303
+        new_routine = db.scalar(select(WorkoutRoutine655).order_by(
+            WorkoutRoutine655.id.desc()
+        ).limit(1))
+        exercise_order = list(db.scalars(select(WorkoutRoutineItem655.equipment_id)
+            .where(WorkoutRoutineItem655.routine_id == new_routine.id)
+            .order_by(WorkoutRoutineItem655.position)))
+        assert exercise_order == [first.id, second.id]
+        assert db.scalar(select(func.count(WorkoutSet654.id))) == before
