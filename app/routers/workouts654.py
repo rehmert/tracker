@@ -65,6 +65,15 @@ def workouts654(request: Request, db: Session = Depends(get_scoped_db390)):
         .where(WorkoutSet654.session_id == active.id)
         .order_by(WorkoutSet654.performed_at.desc(), WorkoutSet654.id.desc())
     )) if active else []
+    # Optional Release 667 kind annotations; unannotated historic sets are working.
+    set_types667 = {
+        value.set_id: value.set_type
+        for value in db.scalars(
+            select(WorkoutSetType667).where(
+                WorkoutSetType667.set_id.in_([row.id for row in rows])
+            )
+        )
+    } if rows else {}
     recent = list(db.scalars(
         select(WorkoutSession654)
         .order_by(WorkoutSession654.started_at.desc(), WorkoutSession654.id.desc())
@@ -92,6 +101,7 @@ def workouts654(request: Request, db: Session = Depends(get_scoped_db390)):
     return render(
         request, "workouts654.html", equipment=equipment, active=active,
         rows=rows, recent=recent, latest=latest, kinds=KINDS654,
+        set_types667=set_types667,
         equipment_names={item.id: item.name for item in equipment},
         routines=routines, active_routine=active_routine,
         routine_equipment_ids=set(routine_equipment_ids),
