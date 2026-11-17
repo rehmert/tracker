@@ -500,3 +500,116 @@ async def delete_food_entry(entry_id: int, request: Request, db_engine=Depends(g
             raise HTTPException(404, "Food entry not found")
 
     return food_redirect(day, "food-recorded")
+
+
+# Release 669: update one existing saved food without replacing any meal,
+# favorite, or template references. The UI explicitly acknowledges that edits
+# to the shared product recalculate historical meal totals.
+def food_product_version669(row):
+    """Bind edits to the exact previously displayed record."""
+    from hashlib import sha256
+    payload = json.dumps(
+        [row["id"], row["name"], row["barcode"],
+         row["serving_description"], row["nutrients"], row["source"]],
+        ensure_ascii=False, separators=(",", ":"),
+    )
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
+def saved_food_row669(db, product_id):
+    if product_id <= 0:
+        raise HTTPException(404, "Saved food not found")
+    return db.execute(text("""
+        SELECT id, name, barcode, serving_description, nutrients, source
+        FROM tracker_food_products WHERE id=:id
+    """), {"id": product_id}).mappings().first()
+
+
+def food_edit_day669(value):
+    from .food_quick375 import selected_day
+    return selected_day(value)
+
+
+def saved_food_usage669(db, product_id):
+    return db.execute(text("""
+        SELECT COUNT(*) FROM tracker_food_entries WHERE product_id=:id
+    """), {"id": product_id}).scalar_one()
+
+
+@router.get("/food/saved/{product_id}/edit")
+def edit_saved_food_page669(
+    product_id: int, request: Request, day: str = "",
+    saved: bool = False, db_engine=Depends(get_food_read_engine406),
+):
+    chosen = food_edit_day669(day or date.today().isoformat())
+    init_food_schema(db_engine)
+    with db_engine.connect() as db:
+        row = saved_food_row669(db, product_id)
+        if row is None:
+            raise HTTPException(404, "Saved food not found")
+        usage = saved_food_usage669(db, product_id)
+    try:
+        values = json.loads(row["nutrients"])
+        if not isinstance(values, dict):
+            raise ValueError("Invalid nutrient payload")
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(409, "Saved food nutrition cannot be edited safely") from exc
+    return render(
+        request, "food_saved_edit669.html", product=dict(row),
+        values=values, nutrients=NUTRIENTS, day=chosen, saved=saved,
+        usage=usage, version=food_product_version669(row),
+    )
+
+
+@router.post("/food/saved/{product_id}/edit")
+async def update_saved_food669(
+    product_id: int, request: Request,
+    db_engine=Depends(get_food_read_engine406),
+):
+    form = await request.form()
+    day = food_edit_day669(form.get("day"))
+    name = str(form.get("name", "")).strip()
+    serving = str(form.get("serving_description", "")).strip()
+    barcode = str(form.get("barcode", "")).strip()
+    version = str(form.get("version", "")).strip()
+    confirm = str(form.get("confirm_history", ""))
+    if not name or len(name) > 160:
+        raise HTTPException(422, "Food name must be 1–160 characters")
+    if not serving or len(serving) > 80:
+        raise HTTPException(422, "Serving description must be 1–80 characters")
+    if barcode and not re.fullmatch(r"[0-9]{8,14}", barcode):
+        raise HTTPException(422, "Barcode must contain 8–14 digits")
+    if not re.fullmatch(r"[0-9a-f]{64}", version):
+        raise HTTPException(422, "Stale or invalid edit version")
+    if any(key not in form for key in NUTRIENTS):
+        raise HTTPException(422, "Missing nutrient fields")
+    # Preserve the distinction between unknown (blank) and confirmed zero.
+    # Do not let a missing form field silently erase existing nutrition.
+    nutrients = {key: optional_nutrient(form[key]) for key in NUTRIENTS}
+
+    init_food_schema(db_engine)
+    with db_engine.begin() as db:
+        row = saved_food_row669(db, product_id)
+        if row is None:
+            raise HTTPException(404, "Saved food not found")
+        if food_product_version669(row) != version:
+            raise HTTPException(409, "This saved food changed. Reload before editing.")
+        used = saved_food_usage669(db, product_id)
+        if used and confirm != "yes":
+            raise HTTPException(
+                422, "Confirm that nutritional changes also update past logged meals"
+            )
+        db.execute(text("""
+            UPDATE tracker_food_products
+               SET name=:name, barcode=:barcode,
+                   serving_description=:serving, nutrients=:nutrients
+             WHERE id=:id
+        """), {
+            "id": product_id, "name": name, "barcode": barcode or None,
+            "serving": serving, "nutrients": json.dumps(nutrients),
+        })
+    # Keep product ID and all original meal/favorite/template references.
+    return RedirectResponse(
+        f"/food/saved/{product_id}/edit?day={day}&saved=1", status_code=303
+    )
+
