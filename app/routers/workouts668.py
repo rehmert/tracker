@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 import math
 import re
+import hashlib
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -387,16 +388,22 @@ def sync_offline_set668(
     """
     from .workouts654 import active654
     try:
+        if len(client_key) != 36:
+            raise ValueError("UUID must be canonical length")
         key = str(UUID(client_key))
     except (ValueError, AttributeError):
         raise HTTPException(400, "Invalid offline action identifier")
     if key != client_key.lower():
         raise HTTPException(400, "Noncanonical offline action identifier")
+    fingerprint = hashlib.sha256((
+        f"{session_id}|{equipment_id}|{weight_lb:.12g}|{reps}|"
+        f"{effort.strip()}|{set_type}"
+    ).encode("utf-8")).hexdigest()
     existing = db.scalar(select(WorkoutOfflineReceipt668)
         .where(WorkoutOfflineReceipt668.client_key == key))
     if existing:
-        if existing.session_id != session_id:
-            raise HTTPException(409, "Offline action belongs to a different workout")
+        if existing.session_id != session_id or existing.payload_sha256 != fingerprint:
+            raise HTTPException(409, "Offline UUID reused with different set data")
         return JSONResponse({"ok": True, "duplicate": True, "set_id": existing.set_id,
                              "deleted": existing.set_id is None})
     active = active654(db)
@@ -423,7 +430,8 @@ def sync_offline_set668(
     if set_type == "warmup":
         db.add(WorkoutSetType667(set_id=recorded.id, set_type="warmup"))
     db.add(WorkoutOfflineReceipt668(
-        client_key=key, session_id=active.id, set_id=recorded.id,
+        client_key=key, payload_sha256=fingerprint,
+        session_id=active.id, set_id=recorded.id,
     ))
     try:
         db.commit()
@@ -431,7 +439,8 @@ def sync_offline_set668(
         db.rollback()
         receipt = db.scalar(select(WorkoutOfflineReceipt668)
             .where(WorkoutOfflineReceipt668.client_key == key))
-        if receipt is None or receipt.session_id != session_id:
+        if (receipt is None or receipt.session_id != session_id
+                or receipt.payload_sha256 != fingerprint):
             raise HTTPException(409, "Offline synchronization conflict")
         return JSONResponse({"ok": True, "duplicate": True, "set_id": receipt.set_id,
                              "deleted": receipt.set_id is None})
