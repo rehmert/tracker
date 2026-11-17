@@ -48,7 +48,7 @@ def test_673_food_focus_preserves_every_existing_capability():
 
 def test_673_gym_keeps_recording_and_offline_sync_but_defers_advanced_tools():
     html = (TPL / "workout_quick659.html").read_text(encoding="utf-8")
-    assert 'class="ux673-gym-links"' in html
+    assert 'class="ux675-actions ux675-gym-top"' in html
     assert "<summary>More</summary>" in html
     assert "href=\"/workouts/analytics\"" in html
     assert "href=\"/workouts/insights\"" in html
