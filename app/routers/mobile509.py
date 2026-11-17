@@ -5,7 +5,7 @@ There are no mobile-specific tables, caches or background writes.
 """
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -15,6 +15,7 @@ from ..projection_exclusions import exclusions_for
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..today import schedule_summary
+from ..daily_summary674 import snapshot674
 
 router = APIRouter()
 
@@ -73,6 +74,15 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
     bp_row = latest(VitalReading.systolic)
     pulse_row = latest(VitalReading.pulse_bpm)
 
+    food_engine = None
+    try:
+        from ..food_engine392 import get_food_engine392
+        food_engine = get_food_engine392(request)
+    except HTTPException as exc:
+        if exc.status_code not in (403, 503):
+            raise
+    daily674 = snapshot674(db, today, food_engine)
+
     return render(
         request, "mobile_today509.html",
         now=now.strftime("%Y-%m-%dT%H:%M"),
@@ -81,6 +91,7 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         unit=config.WEIGHT_UNIT,
         summary=summary,
         recent_doses=recent_doses,
+        daily674=daily674,
         recent_vitals=recent_vitals,
         last_weight=(
             metrics.weight_from_kg(weight_row.weight_kg, config.WEIGHT_UNIT)
