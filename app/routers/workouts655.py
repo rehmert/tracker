@@ -67,6 +67,54 @@ def create_routine655(
     return services.flash_redirect(_routine_url(routine.id), msg="Routine created. Add equipment in workout order.")
 
 
+@router.post("/workouts/routines/{routine_id}/items/{item_id}/substitute")
+def substitute_routine_item668(
+    routine_id: int, item_id: int, equipment_id: int = Form(...),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Replace a future routine machine without rewriting historical workouts."""
+    target = _routine_url(routine_id)
+    _routine(db, routine_id)
+    item = db.get(WorkoutRoutineItem655, item_id)
+    if item is None or item.routine_id != routine_id:
+        raise HTTPException(404, "Routine item not found")
+    replacement = db.get(WorkoutEquipment654, equipment_id)
+    if replacement is None:
+        raise HTTPException(404, "Equipment not found")
+    if item.equipment_id == equipment_id:
+        return services.flash_redirect(target, msg="No substitution needed.")
+    # Existing active-session navigation must not shift during a workout.
+    active = active654(db)
+    link = db.get(WorkoutSessionRoutine655, active.id) if active else None
+    if link is not None and link.routine_id == routine_id:
+        return services.flash_redirect(target, err="Finish the active routine before changing machines.")
+    occupied = db.scalar(select(WorkoutRoutineItem655.id).where(
+        WorkoutRoutineItem655.routine_id == routine_id,
+        WorkoutRoutineItem655.equipment_id == equipment_id,
+    ))
+    if occupied is not None:
+        return services.flash_redirect(target, err="That machine is already in this routine.")
+    from ..workout_models667 import WorkoutRoutineTarget667
+    goal = db.get(WorkoutRoutineTarget667, item.id)
+    if goal is not None:
+        # Machine loads cannot be assumed equivalent. Preserve only
+        # non-numeric setup/rest preferences; clear machine-specific goals.
+        goal.target_sets = None
+        goal.target_reps = None
+        goal.target_weight_lb = None
+        goal.setup_note = ""
+        goal.updated_at = datetime.now()
+    item.equipment_id = equipment_id
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return services.flash_redirect(target, err="Substitution conflicts with this routine.")
+    return services.flash_redirect(
+        target, msg="Machine substituted. Set new goals for the replacement equipment.",
+    )
+
+
 @router.post("/workouts/routines/{routine_id}/duplicate")
 def duplicate_routine668(
     routine_id: int, db: Session = Depends(get_scoped_db390),
