@@ -50,9 +50,13 @@ def schedule_page668(request: Request, db: Session = Depends(get_scoped_db390)):
     next_scheduled = sorted(plans, key=lambda row: (
         (row[0].weekday - today.weekday()) % 7, row[1]
     ))
+    schedules_by_day = {day: [] for day in range(7)}
+    for slot, name in plans:
+        schedules_by_day[slot.weekday].append((slot, name))
     return render(
         request, "workout_programs668.html", routines=routines,
-        schedules=plans, next_scheduled=next_scheduled[:5],
+        schedules=plans, schedules_by_day=schedules_by_day,
+        next_scheduled=next_scheduled[:5],
         weekdays=WEEKDAYS668, today_weekday=today.weekday(),
         active=active654(db),
     )
