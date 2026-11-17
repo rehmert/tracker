@@ -8,6 +8,7 @@
       href="/static/css/tracker-daily-flow559.css?v=559">
 <link rel="stylesheet" href="/static/css/tracker-mobile-daily602.css?v=602">
 <link rel="stylesheet" href="/static/css/tracker-navigation604.css?v=604b">
+<link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 <script defer
         src="/static/js/tracker-quick-entry.js?v=603"></script>
 
@@ -15,36 +16,34 @@
   <header class="tracker-quick-entry-header">
     <h1>Quick Entry</h1>
     <p class="note">
-      Choose what you want to record or review.
-      Scheduled administrations are not recorded until
-      you explicitly save an actual entry.
+      Record or review an entry. Scheduled items only count when saved.
     </p>
   </header>
 
 
-  <nav class="tracker-quick-fast-paths"
+  <nav class="tracker-quick-fast-paths ux675-fastpaths"
        aria-label="Jump directly to a recording workflow">
-    <span class="tracker-quick-fast-heading">Fast paths</span>
+    <span class="tracker-quick-fast-heading">Quick Actions</span>
     <div class="tracker-quick-fast-primary604">
       <a href="/mobile">Today</a>
-      <a href="/food#food-quick-log">Log Favorite Food</a>
+      <a href="/food#food-quick-log">Log Food</a>
       <a href="/food#food-water">Log Water</a>
-      <a href="/doses#quick-dose-entry">Dose Entry</a>
-      <a href="/vitals#quick-vitals-entry">Vital Reading</a>
-      <a href="/supplies#tracker-stock-section">Supply Use</a>
+      <a href="/doses#quick-dose-entry">Log Dose</a>
+      <a href="/vitals#quick-vitals-entry">Log Vitals</a>
+      <a href="/supplies#tracker-stock-section">Use Supplies</a>
     </div>
     <details class="tracker-quick-fast-more604">
-      <summary>More direct shortcuts</summary>
+      <summary>More Actions</summary>
       <div class="tracker-quick-fast-secondary604">
-        <a href="/health-insights">View Progress</a>
-        <a href="/replenishment-review">Inventory Needs</a>
-        <a href="/mobile#mobile-quick-vitals">Quick Vital Capture</a>
+        <a href="/health-insights">Progress</a>
+        <a href="/replenishment-review">Stock Needs</a>
+        <a href="/mobile#mobile-quick-vitals">Quick Vitals</a>
         <a href="/vitals#quick-vitals-weight">Weight</a>
-        <a href="/vitals#quick-vitals-bp">Blood Pressure</a>
+        <a href="/vitals#quick-vitals-bp" aria-label="Blood pressure">BP</a>
         <a href="/vitals#quick-vitals-pulse">Pulse</a>
         <a href="/purchases#new-purchase">New Purchase</a>
-        <a href="/labs/new#lab-manual-entry">New Lab Report</a>
-        <a href="/labs/new#lab-csv-entry">Import Lab CSV</a>
+        <a href="/labs/new#lab-manual-entry">New Labs</a>
+        <a href="/labs/new#lab-csv-entry">Import CSV</a>
       </div>
     </details>
   </nav>
@@ -99,7 +98,7 @@
        data-quick-daily
        href="/food#food-quick-log">
       <strong>Log food</strong>
-      <span>Jump to saved foods and favorites in the Food Journal.</span>
+      <span>Favorites + recent foods.</span>
       <small>Record</small>
     </a>
 
@@ -110,7 +109,7 @@
        data-quick-daily
        href="/food#food-water">
       <strong>Log water</strong>
-      <span>Record water against your daily target.</span>
+      <span>Track daily water.</span>
       <small>Record</small>
     </a>
 
@@ -120,7 +119,7 @@
        data-quick-keywords="progress trend health weight blood pressure pulse laboratory labs charts"
        href="/health-insights">
       <strong>Review progress</strong>
-      <span>Compare your recorded vitals, labs, and events.</span>
+      <span>Vitals, labs + trends.</span>
       <small>Review</small>
     </a>
 
@@ -130,7 +129,7 @@
        data-quick-keywords="inventory supply shortage depleted replenish order planning forecast"
        href="/replenishment-review">
       <strong>Review inventory needs</strong>
-      <span>Use the existing replenishment worklist.</span>
+      <span>Review stock needs.</span>
       <small>Review</small>
     </a>
 
