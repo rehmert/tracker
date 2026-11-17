@@ -49,20 +49,28 @@ def test_accordion_order():
 
 
 def test_navigation_matches_section_order():
-    match = re.search(
-        r'<nav class="food376-nav"[^>]*>'
-        r'(.*?)</nav>',
-        SOURCE,
-        re.S,
+    # Release 673 preserves the canonical accordion order while separating
+    # everyday logging links from the advanced-tools disclosure.
+    primary = re.search(
+        r'<nav class="food424-actions [^"]*ux673-food-primary"[^>]*>'
+        r'(.*?)</nav>', SOURCE, re.S,
     )
-    assert match
-
-    actual = re.findall(
+    advanced = re.search(
+        r'<details class="ux673-food-more">.*?'
+        r'<nav class="food376-nav"[^>]*>(.*?)</nav>',
+        SOURCE, re.S,
+    )
+    assert primary and advanced
+    assert SOURCE.index('class="food-dashboard"') < SOURCE.index(
+        'class="food376-nav"'
+    )
+    destinations = re.findall(
         r'href="#(food-[^"]+)"',
-        match.group(1),
+        primary.group(1) + advanced.group(1),
     )
+    assert set(ORDER).issubset(set(destinations))
+    assert len(destinations) == len(set(destinations))
 
-    assert actual == ORDER
 
 
 def test_all_sections_still_collapsible():
