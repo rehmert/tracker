@@ -9,6 +9,7 @@
 <script src="/static/js/tracker-workout-targets666.js?v=666" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-workout-gym667.css?v=667">
 <script src="/static/js/tracker-workout-gym667.js?v=667" defer></script>
+<script src="/static/js/tracker-workout-drafts668.js?v=668" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
@@ -216,6 +217,16 @@
             {{ 'Restore last recorded values' if last else 'Clear entries' }}
           </button>
         </form>
+        <section aria-label="Unsynced local set draft">
+          <h3>Offline Draft (Not Recorded)</h3>
+          <p class="workout659-muted">Save the current set fields on this device,
+            even without a network connection. Restore and explicitly save
+            the set online when ready. No automatic synchronization occurs.</p>
+          <button type="button" id="workout668-draft-save">Save Local Draft</button>
+          <button type="button" id="workout668-draft-restore">Restore Draft</button>
+          <button type="button" id="workout668-draft-clear">Delete Draft</button>
+          <p id="workout668-draft-status" role="status" aria-live="polite"></p>
+        </section>
         {% if last %}
           <form method="post" action="/workouts/quick/repeat" class="workout659-repeat">
             <input type="hidden" name="equipment_id" value="{{ machine.id }}">
