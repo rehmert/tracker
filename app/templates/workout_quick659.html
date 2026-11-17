@@ -132,7 +132,8 @@
         {% elif routine and plan_item_id and current_goal and current_goal.target_sets is not none %}
           <p class="workout667-goal-hint">Goals saved after this workout began apply to your next session, not retroactively to this one.</p>
         {% endif %}
-        {% if routine and plan_item_id and not frozen_goal %}
+        {% if routine and plan_item_id %}
+          {% if not frozen_goal %}
           <aside id="workout666-targets" class="workout666-targets"
                  data-routine-id666="{{ routine.id }}"
                  data-item-id666="{{ plan_item_id }}"
@@ -150,6 +151,7 @@
             </dl>
             <p class="workout666-targets-note">Browser-only intentions, not logged sets. Logging values below stay independent.</p>
           </aside>
+          {% endif %}
         {% endif %}
         <form method="post" action="/workouts/quick/sets"
               class="workout659-log-form" id="workout659-log-form">
