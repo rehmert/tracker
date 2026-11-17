@@ -32,6 +32,28 @@
     <div><strong>{{ '{:,.1f}'.format(totals.volume) }}</strong><span>Recorded volume (lb × reps)</span></div>
   </section>
 
+  {% if goal_rows %}
+    <section class="workout667-session-goals" aria-label="Frozen goal achievement">
+      <h2>Planned vs actual (goals frozen at workout start)</h2>
+      <p class="note">A qualifying working set meets both the planned load and repetitions. Warm-up sets do not count. Changing routine plans later does not change these results.</p>
+      {% for row in goal_rows %}
+        <div class="workout667-session-goal">
+          <h3>{{ row.name }}</h3>
+          <p><strong>Planned:</strong> {{ row.target.target_sets }} working sets × {{ row.target.target_reps }} reps at {{ '%.1f'|format(row.target.target_weight_lb) }} lb.</p>
+          <p><strong>Actual:</strong> {{ row.progress.working_sets }} working, {{ row.progress.warmup_sets }} warm-up sets;
+            {{ row.progress.credited_sets }} / {{ row.target.target_sets }} qualifying working sets
+            ({{ row.progress.progress_percent }}% of set goal).
+          </p>
+          {% if row.progress.achieved %}
+            <strong>Goal achieved</strong>
+          {% else %}
+            <span>Goal not yet achieved</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
   <section class="workout663-details">
     <h2>Exercise Breakdown</h2>
     {% if machine_rows %}
