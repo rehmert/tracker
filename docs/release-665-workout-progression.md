@@ -63,9 +63,10 @@ require a separate, explicitly reviewed database schema release.
 - The new GET route checks the routine exists inside the authenticated
   `get_scoped_db390` workspace and restricts every set-history query
   to an item in that routine, matching the exact equipment ID.
-- Only completed-session workout sets contribute to historical
-  comparisons. In-progress, empty or unrelated exercise history does
-  not appear. Backdated sessions follow their entered dates.
+- Only completed-session workout sets with starts no later than today
+  contribute to historical comparisons. In-progress, empty, future-dated,
+  or unrelated exercise history does not appear. Backdated sessions follow
+  their entered dates.
 - Browser target script performs no `fetch`, `POST`, form submission,
   database mutation, cookie use or remote requests. It sets input values
   and local storage only and never inserts untrusted HTML.
