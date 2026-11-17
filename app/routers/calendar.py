@@ -103,10 +103,7 @@ def calendar_review_items(days: list[dict]) -> list[dict]:
     ]
     return sorted(items, key=lambda item: (
         item["date"],
-        item["event"].get("dose_time") or "",
-        (item["event"].get("name") or "").casefold(),
-        (item["event"].get("protocol") or "").casefold(),
-        item["event"].get("protocol_item_id") or 0,
+        *calendar_day_sort_key(item["event"]),
     ))
 
 
