@@ -16,6 +16,7 @@ Environment().parse(Path("app/templates/food.html").read_text(encoding="utf-8"))
 print("RELEASE_670_FOOD_TEMPLATE_SYNTAX=PASSED")
 PY
 "$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_food_action670.py \
   tests/test_food_saved_edit669.py \
   tests/test_food_quick375.py
 echo "RELEASE_670_FOCUSED_FOOD_ACTION_REGRESSIONS=PASSED"
