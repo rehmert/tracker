@@ -1,0 +1,37 @@
+/* Release 668: scoped mobile-first training programs, history and analytics. */
+.workout668{max-width:1080px;margin:0 auto 3rem;line-height:1.5;min-width:0;}
+.workout668 h1{font-size:clamp(1.45rem,4vw,2.2rem);}
+.workout668-links{display:flex;gap:.7rem 1.1rem;flex-wrap:wrap;}
+.workout668-links a{display:inline-flex;align-items:center;min-height:44px;}
+.workout668-card{padding:1rem;margin:1rem 0;border:1px solid var(--border,#82909d);border-radius:.7rem;min-width:0;}
+.workout668-card h2,.workout668-card h3{margin:.25rem 0 .6rem;}
+.workout668-day{padding:.7rem 0;border-bottom:1px solid var(--border,#82909d);}
+.workout668-day li{padding:.4rem 0;line-height:2.2;}
+.workout668-inline{display:inline-flex;margin:.1rem .25rem;}
+.workout668-inline button{min-height:42px;}
+.workout668-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;}
+.workout668 label{display:grid;gap:.35rem;min-width:0;}
+.workout668 input,.workout668 select,.workout668 textarea{box-sizing:border-box;max-width:100%;width:100%;min-width:0;min-height:44px;}
+.workout668 button{min-height:44px;max-width:100%;}
+.workout668 textarea{min-height:150px;font-family:monospace;}
+.workout668-muted{font-size:.87rem;opacity:.84;overflow-wrap:anywhere;}
+.workout668-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;}
+.workout668-stats>div{padding:.9rem;border:1px solid var(--border,#82909d);border-radius:.6rem;display:grid;gap:.4rem;}
+.workout668-stats strong{font-size:1.35rem;font-variant-numeric:tabular-nums;}
+.workout668-stats span{font-size:.78rem;}
+.workout668-scroll{max-width:100%;overflow:auto;}
+.workout668 table{border-collapse:collapse;width:100%;min-width:620px;font-size:.9rem;}
+.workout668 td,.workout668 th{padding:.55rem;text-align:left;border-bottom:1px solid var(--border,#82909d);vertical-align:top;}
+.workout668-audit{padding:.7rem;border-left:3px solid var(--border,#82909d);margin:.7rem 0;overflow-wrap:anywhere;}
+.workout668-offline{border:1px solid var(--border,#82909d);border-radius:.65rem;padding:.8rem;margin:1rem 0;}
+.workout668-offline button{min-height:46px;margin-right:.5rem;margin-bottom:.5rem;}
+#workout668-offline-status{font-weight:600;}
+.workout668-group-form{display:grid;grid-template-columns:1fr 1fr auto;gap:.3rem;}
+.workout668-group-form input,.workout668-group-form select,.workout668-group-form button{min-height:44px;}
+@media(max-width:550px){
+ .workout668-card{padding:.7rem;}
+ .workout668-grid{grid-template-columns:1fr;}
+ .workout668-group-form{grid-template-columns:1fr;}
+ .workout668-stats{grid-template-columns:1fr 1fr;}
+ .workout668-offline button{display:block;width:100%;}
+}
