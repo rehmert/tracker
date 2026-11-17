@@ -70,7 +70,7 @@
                 {% if cell.in_month %}
                   <time datetime="{{ cell.day.isoformat() }}"
                         {% if cell.is_today %}aria-current="date"{% endif %}>{{ cell.day.day }}</time>
-                  {% if planned668.get(cell.day) %}
+                  {% if planned668 is defined and planned668.get(cell.day) %}
                     <div class="workout668-calendar-plan" aria-label="Planned routines">
                       {% for plan in planned668[cell.day] %}
                         <a href="/workouts/routines/{{ plan.routine_id }}/program" title="{{ plan.routine_name }}">{{ plan.routine_name }}</a>
