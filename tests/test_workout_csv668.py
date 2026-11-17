@@ -106,5 +106,17 @@ def test_668_historical_export_is_directly_import_compatible():
         assert imported == [{
             "equipment_id": str(gear.id),
             "weight_lb": "110.0", "reps": "8", "effort": "7",
-            "set_time": "09:15",
+            "set_time": "09:15", "set_type": "working",
         }]
+
+
+def test_668_historical_csv_preserves_warmup_type():
+    legacy = "equipment_id,weight_lb,reps,effort,set_time\n7,55,12,,09:20\n"
+    assert parse_historical_csv668(legacy)[0]["set_type"] == "working"
+    with_kind = (
+        "equipment_id,weight_lb,reps,effort,set_time,set_type\n"
+        "7,25,15,,09:10,warmup\n"
+    )
+    assert parse_historical_csv668(with_kind)[0]["set_type"] == "warmup"
+    with pytest.raises(ValueError):
+        parse_historical_csv668(with_kind.replace("warmup", "unknown"))
