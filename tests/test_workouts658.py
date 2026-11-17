@@ -119,7 +119,7 @@ def test_658_create_historical_routine_sets_and_preserve_active_session():
         assert client.get(f"/workouts/equipment/{eid}/progress").status_code == 200
         page = client.get("/workouts")
         assert page.status_code == 200 and "Workout in progress" in page.text
-        assert "Log a Previous Workout" in page.text
+        assert "Log Past Workout" in page.text
         assert post(client, "/workouts/finish").status_code == 303
 
 
@@ -211,7 +211,7 @@ def test_658_source_and_template_are_schema_free():
     assert "app.include_router(workouts658.router)" in (
         ROOT / "app/main.py"
     ).read_text()
-    assert "Log a Previous Workout" in (
+    assert "Log Past Workout" in (
         ROOT / "app/templates/workouts654.html"
     ).read_text()
     Environment().parse(
