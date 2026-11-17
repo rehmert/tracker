@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Weekly Workout Programs{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workout-advanced668.css?v=668">
+{% endblock %}
+{% block content %}
+<section class="workout668">
+  <nav class="workout668-links"><a href="/workouts">← Workouts</a>
+    <a href="/workouts/calendar">Calendar</a>
+    <a href="/workouts/insights">Training Insights</a>
+    <a href="/workouts/quick">Rapid Gym</a></nav>
+  <h1>Weekly Workout Programs</h1>
+  <p>Build repeatable weekly splits from saved routines. A planned day is not a logged workout—only actual completed sessions count as training.</p>
+  <section class="workout668-card">
+    <h2>Schedule a recurring routine</h2>
+    {% if routines %}
+      <form method="post" action="/workouts/programs/schedule" class="workout668-grid">
+        <label>Day of week <select name="weekday">
+          {% for day in weekdays %}
+            <option value="{{ loop.index0 }}" {% if loop.index0 == today_weekday %}selected{% endif %}>{{ day }}</option>
+          {% endfor %}
+        </select></label>
+        <label>Saved routine <select name="routine_id">
+          {% for routine in routines %}
+            <option value="{{ routine.id }}">{{ routine.name }}</option>
+          {% endfor %}
+        </select></label>
+        <label>Optional label <input name="note" maxlength="120" placeholder="Upper body, recovery focus…"></label>
+        <button type="submit">Add Weekly Slot</button>
+      </form>
+    {% else %}
+      <p>Create a <a href="/workouts/routines">saved routine</a> first.</p>
+    {% endif %}
+  </section>
+  <section class="workout668-card">
+    <h2>Upcoming weekly split</h2>
+    {% for day in weekdays %}
+      <div class="workout668-day">
+        <h3>{{ day }}</h3>
+        {% set day_entries = schedules|selectattr('0.weekday','equalto',loop.index0)|list %}
+        {% if day_entries %}
+          <ul>
+            {% for slot, routine_name in day_entries %}
+              <li>
+                <strong>{{ routine_name }}</strong>
+                {% if slot.note %}<span> · {{ slot.note }}</span>{% endif %}
+                <a href="/workouts/routines/{{ slot.routine_id }}/program">Plan</a>
+                {% if not active %}
+                  <form method="post" action="/workouts/routines/{{ slot.routine_id }}/start" class="workout668-inline">
+                    <button type="submit">Start</button>
+                  </form>
+                {% endif %}
+                <form method="post" action="/workouts/programs/schedule/{{ slot.id }}/remove" class="workout668-inline">
+                  <button type="submit">Remove day</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="workout668-muted">No routine scheduled</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+  <p class="workout668-muted">Routine items can be assigned to Superset or Circuit groups from each <a href="/workouts/routines">saved routine</a>. Copy an existing routine to use it as another weekly template.</p>
+</section>
+{% endblock %}
