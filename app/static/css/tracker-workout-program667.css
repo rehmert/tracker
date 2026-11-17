@@ -1,0 +1,19 @@
+/* Release 667: touch-first persistent routine plan, no global overrides */
+.workout667{max-width:1050px;margin:0 auto 3rem;line-height:1.5;min-width:0;}
+.workout667 h1{font-size:clamp(1.5rem,4vw,2.1rem);}
+.workout667-topnav{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;}
+.workout667-topnav a,.workout667-bottom-link{display:inline-flex;align-items:center;min-height:44px;}
+.workout667-panel{border:1px solid var(--border,#82909d);border-radius:.7rem;padding:1rem;margin:1rem 0;min-width:0;}
+.workout667-panel h2,.workout667-panel h3{margin:.1rem 0 .65rem;}
+.workout667-muted{font-size:.85rem;opacity:.86;overflow-wrap:anywhere;}
+.workout667-note{padding:.5rem .75rem;border-left:3px solid var(--border,#82909d);font-size:.88rem;}
+.workout667-settings,.workout667-exercise-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.7rem;}
+.workout667-exercise-heading a{min-height:44px;display:inline-flex;align-items:center;}
+.workout667-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;min-width:0;}
+.workout667 label{display:flex;flex-direction:column;gap:.3rem;min-width:0;}
+.workout667 input,.workout667 select,.workout667 textarea{box-sizing:border-box;width:100%;min-width:0;min-height:44px;}
+.workout667 textarea{min-height:70px;}
+.workout667 button{min-height:48px;max-width:100%;}
+.workout667-settings label{flex:1;max-width:250px;}
+.workout667-notes{margin:.8rem 0;}
+@media(max-width:520px){.workout667-fields{grid-template-columns:1fr}.workout667-panel{padding:.75rem}.workout667-settings{align-items:stretch}.workout667-settings label{max-width:none;flex-basis:100%}}
