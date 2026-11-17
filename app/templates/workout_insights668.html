@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Workout Insights{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+{% endblock %}
+{% block content %}
+<section class="workout654">
+  <p><a href="/workouts">← Workouts</a> · <a href="/workouts/analytics">Machine-Level Analytics</a></p>
+  <h1>Workout Insights</h1>
+  <p class="note">Recorded performance only. Last 28 calendar days, based on workout start time. No estimated strength, readiness, or recommended weights.</p>
+  <div class="workout663-totals">
+    <div><strong>{{ recent_count }}</strong><span>Completed sessions with sets</span></div>
+    <div><strong>{{ recent_sets }}</strong><span>Logged sets</span></div>
+    <div><strong>{{ recent_repetitions }}</strong><span>Logged repetitions</span></div>
+    <div><strong>{{ '{:,.1f}'.format(recent_volume) }}</strong><span>Recorded lb × reps</span></div>
+  </div>
+  <section>
+    <h2>12 most recent completed workouts with sets</h2>
+    <p class="note">Different machines and bodyweight exercises may not have comparable resistance. Volume reflects only recorded loads; it is not a measure of physiological work or progress.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Date</th><th>Sets</th><th>Repetitions</th><th>Recorded lb × reps</th><th>Review</th></tr></thead>
+        <tbody>
+        {% for item in sessions %}
+        <tr>
+          <td>{{ item.started_at|dt }}</td>
+          <td>{{ item.set_count }}</td>
+          <td>{{ item.repetitions }}</td>
+          <td>{{ '{:,.1f}'.format(item.volume) }}</td>
+          <td><a href="/workouts/sessions/{{ item.session_id }}/review">Review session</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">No completed workouts with recorded sets yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+{% endblock %}
