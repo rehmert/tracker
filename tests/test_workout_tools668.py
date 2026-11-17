@@ -8,7 +8,7 @@ from app.db import Base
 from app.workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
 from app.workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655
 from app.workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667
-from app.routers.workouts655 import duplicate_routine668
+from app.routers.workouts655 import duplicate_routine668, substitute_routine_item668
 from app.routers.workouts663 import export_session668, safe_csv668
 
 
@@ -48,6 +48,24 @@ def test_668_routine_duplicate_copies_plan_not_history():
         assert (goal.target_sets, goal.target_reps, goal.target_weight_lb,
                 goal.setup_note, goal.rest_seconds) == (3, 8, 100, "Seat 4", 90)
         assert db.get(WorkoutRoutineConfig667, new.id).rest_seconds == 120
+        assert db.scalar(select(func.count(WorkoutSet654.id))) == 0
+        alternate = WorkoutEquipment654(name="Different Machine", kind="plate_loaded")
+        db.add(alternate)
+        db.commit()
+        result = substitute_routine_item668(
+            routine_id=new.id, item_id=new_item.id,
+            equipment_id=alternate.id, db=db,
+        )
+        assert result.status_code == 303
+        db.refresh(new_item)
+        assert new_item.equipment_id == alternate.id
+        db.refresh(goal)
+        assert (goal.target_sets, goal.target_reps, goal.target_weight_lb) == (
+            None, None, None,
+        )
+        # Original routine and its machine-specific plan must remain intact.
+        assert db.get(WorkoutRoutineItem655, item.id).equipment_id == gear.id
+        assert db.get(WorkoutRoutineTarget667, item.id).target_weight_lb == 100
         assert db.scalar(select(func.count(WorkoutSet654.id))) == 0
 
 
