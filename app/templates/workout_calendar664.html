@@ -3,6 +3,7 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workout-calendar664.css?v=664">
+<link rel="stylesheet" href="/static/css/tracker-workout-advanced668.css?v=668">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout664" id="workout664-calendar">
@@ -11,6 +12,7 @@
     <a href="/workouts/quick">Rapid Gym Mode</a>
     <a href="/workouts/analytics">Strength Progress</a>
     <a href="/workouts/calendar">Current Month</a>
+    <a href="/workouts/programs">Weekly Program</a>
   </nav>
 
   <header class="workout664-header">
@@ -68,6 +70,13 @@
                 {% if cell.in_month %}
                   <time datetime="{{ cell.day.isoformat() }}"
                         {% if cell.is_today %}aria-current="date"{% endif %}>{{ cell.day.day }}</time>
+                  {% if planned668.get(cell.day) %}
+                    <div class="workout668-calendar-plan" aria-label="Planned routines">
+                      {% for plan in planned668[cell.day] %}
+                        <a href="/workouts/routines/{{ plan.routine_id }}/program" title="{{ plan.routine_name }}">{{ plan.routine_name }}</a>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
                   {% if cell.count %}
                     <a href="#workout664-day-{{ cell.day.isoformat() }}"
                        aria-label="{{ cell.count }} completed session{{ '' if cell.count == 1 else 's' }} on {{ cell.day.isoformat() }}">
@@ -111,6 +120,6 @@
       <p><a href="/workouts/backfill">Log a Previous Workout</a> if you want to add a past training session.</p>
     {% endif %}
   </section>
-  <p class="note">Multiple completed sessions on the same date count separately, but that date is one training day. Unfinished sessions, sessions without sets, and future-dated entries are not counted. No training targets or streaks are inferred.</p>
+  <p class="note">Recurring routine links are planned only; they never count as completed sessions until actual sets are logged. Multiple completed sessions on the same date count separately, but that date is one training day. Unfinished sessions, sessions without sets, and future-dated entries are not counted. No training targets or streaks are inferred.</p>
 </section>
 {% endblock %}
