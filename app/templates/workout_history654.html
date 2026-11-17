@@ -2,25 +2,80 @@
 {% block title %}Workout History{% endblock %}
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workout-advanced668.css?v=668">
 {% endblock %}
 {% block content %}
-<section class="workout654">
-  <p><a href="/workouts">← Back to Workouts</a></p>
+<section class="workout654 workout668">
+  <nav class="workout668-links">
+    <a href="/workouts">← Workouts</a>
+    <a href="/workouts/sessions/{{ workout.id }}/review">Session Summary</a>
+    <a href="/workouts/insights">Insights</a>
+  </nav>
   <h1>Workout History</h1>
-  <p><a href="/workouts/sessions/{{ workout.id }}/review">View Session Summary</a></p>
   <p>Started {{ workout.started_at|dt }}</p>
   <p>{{ 'Completed ' ~ (workout.completed_at|dt) if workout.completed_at else 'In progress' }}</p>
+  {% if workout.completed_at and rows %}
+    <form method="post" action="/workouts/sessions/{{ workout.id }}/duplicate">
+      <button type="submit">Create Draft Routine from Actual Sets</button>
+    </form>
+  {% endif %}
   <section>
     <h2>Recorded Sets</h2>
     {% for row in rows %}
-      <p><strong>{{ names.get(row.equipment_id, 'Equipment') }}</strong>:
-        {{ '%.1f'|format(row.weight_lb) }} lb × {{ row.reps }} reps
-        {% if row.effort %} · effort {{ row.effort }}/10{% endif %}
-        · {{ row.performed_at|dt }}
-      </p>
+      <article class="workout668-card">
+        <p><strong>{{ names.get(row.equipment_id, 'Equipment') }}</strong>:
+          {{ '%.1f'|format(row.weight_lb) }} lb × {{ row.reps }} reps
+          {% if row.effort %} · effort {{ row.effort }}/10{% endif %}
+          · {{ set_types668.get(row.id, 'working')|title }} set
+          · {{ row.performed_at|dt }}
+        </p>
+        {% if workout.completed_at %}
+          <details>
+            <summary>Correct this recorded set (audited)</summary>
+            <p>Every change or removal requires a reason and leaves a permanent before/after audit entry.</p>
+            <form method="post" action="/workouts/sessions/{{ workout.id }}/sets/{{ row.id }}/correct" class="workout668-grid">
+              <input type="hidden" name="action" value="edit">
+              <label>Weight (lb) <input type="number" name="weight_lb" min="0" max="2000" step="any" required value="{{ row.weight_lb }}"></label>
+              <label>Repetitions <input type="number" name="reps" min="1" max="200" step="1" required value="{{ row.reps }}"></label>
+              <label>Effort 1–10 <input type="number" name="effort" min="1" max="10" step="1" value="{{ row.effort if row.effort is not none else '' }}"></label>
+              <label>Set type <select name="set_type">
+                <option value="working" {% if set_types668.get(row.id, 'working') == 'working' %}selected{% endif %}>Working</option>
+                <option value="warmup" {% if set_types668.get(row.id) == 'warmup' %}selected{% endif %}>Warm-up</option>
+              </select></label>
+              <label>Why is this correction necessary?
+                <input name="reason" minlength="8" maxlength="300" required placeholder="Corrected accidental entry">
+              </label>
+              <button type="submit">Save Audited Correction</button>
+            </form>
+            <form method="post" action="/workouts/sessions/{{ workout.id }}/sets/{{ row.id }}/correct">
+              <input type="hidden" name="action" value="delete">
+              <label>Reason for removal
+                <input name="reason" minlength="8" maxlength="300" required placeholder="Duplicate recorded set">
+              </label>
+              <label><input type="checkbox" name="confirm_delete" value="yes" required> Confirm permanent removal of this set</label>
+              <button type="submit">Remove Set with Audit</button>
+            </form>
+          </details>
+        {% endif %}
+      </article>
     {% else %}
       <p>No sets were recorded during this session.</p>
     {% endfor %}
   </section>
+  {% if audit668 %}
+    <section class="workout668-card" aria-label="Historical workout correction audit">
+      <h2>Correction History</h2>
+      {% for entry in audit668 %}
+        <article class="workout668-audit">
+          <p><strong>{{ entry.action|title }}</strong> set #{{ entry.original_set_id }} on {{ entry.changed_at|dt }}</p>
+          <p>Reason: {{ entry.reason }}</p>
+          <details><summary>Before and after</summary>
+            <pre>{{ entry.before_json }}</pre>
+            <pre>{{ entry.after_json }}</pre>
+          </details>
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
 </section>
 {% endblock %}
