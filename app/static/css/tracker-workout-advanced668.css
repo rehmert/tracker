@@ -35,3 +35,8 @@
  .workout668-stats{grid-template-columns:1fr 1fr;}
  .workout668-offline button{display:block;width:100%;}
 }
+
+.workout668-calendar-plan{display:grid;gap:.15rem;margin-top:.3rem;max-width:100%;min-width:0;}
+.workout668-calendar-plan a{display:block;font-size:.72rem;overflow-wrap:anywhere;line-height:1.2;}
+.workout668-dashboard-widgets{padding:.7rem 0;border-top:1px solid var(--border,#82909d);}
+.workout668-dashboard-widgets ul{margin:.4rem 0;padding-left:1.3rem;}
