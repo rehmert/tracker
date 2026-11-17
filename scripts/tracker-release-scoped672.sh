@@ -22,5 +22,8 @@ PY
   tests/test_food_edit_buttons671.py \
   tests/test_food_quick375.py \
   tests/test_food_bundle376.py \
+  tests/test_vitals_range_ux.py \
+  tests/test_vitals_date_review.py \
+  tests/test_vendor_prices.py \
   tests/test_workout_tools668.py
 echo "RELEASE_672_FOCUSED_FOOD_ACTION_REGRESSIONS=PASSED"
