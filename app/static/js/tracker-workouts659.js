@@ -81,7 +81,12 @@
     try { window.sessionStorage.removeItem(key); } catch (_) { /* optional */ }
   };
   const savedSeconds = Number(safeGet(secondsKey));
-  if ([60, 90, 120, 180].includes(savedSeconds)) {
+  const exercisePreset667 = Number(root.dataset.restSeconds667);
+  const allowedRest667 = [30,45,60,75,90,120,150,180,240,300,360,420,480,600];
+  // A frozen exercise preset wins; otherwise preserve manual timer choice.
+  if (allowedRest667.includes(exercisePreset667)) {
+    durationSelect.value = String(exercisePreset667);
+  } else if (allowedRest667.includes(savedSeconds)) {
     durationSelect.value = String(savedSeconds);
   }
   const chosenSeconds = () => Number(durationSelect.value) || 90;
