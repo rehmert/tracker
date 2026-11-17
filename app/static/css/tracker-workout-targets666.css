@@ -1,0 +1,18 @@
+/* Release 666: compact, mobile-safe guide next to Rapid Gym logging. */
+.workout666-targets{margin:1rem 0;padding:.85rem;border:1px solid var(--border,#8996a2);border-radius:.7rem;min-width:0;}
+.workout666-targets-head{display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;justify-content:space-between;}
+.workout666-targets-head h3{font-size:1.05rem;margin:.2rem 0;}
+.workout666-targets-head a{display:inline-flex;align-items:center;min-height:44px;}
+.workout666-targets-status{font-size:.88rem;margin:.35rem 0 .65rem;}
+.workout666-target-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:.5rem 0;}
+.workout666-target-values[hidden]{display:none;}
+.workout666-target-values>div{border:1px solid var(--border,#8996a2);border-radius:.45rem;padding:.6rem;min-width:0;}
+.workout666-target-values dt{font-size:.79rem;line-height:1.2;}
+.workout666-target-values dd{font-weight:700;font-size:1.1rem;font-variant-numeric:tabular-nums;margin:.3rem 0 0;overflow-wrap:anywhere;}
+.workout666-targets-note{font-size:.8rem;line-height:1.5;margin:.6rem 0 .2rem;}
+@media(max-width:400px){
+ .workout666-targets{padding:.65rem;}
+ .workout666-target-values{gap:.3rem;}
+ .workout666-target-values>div{padding:.4rem .3rem;}
+ .workout666-target-values dd{font-size:1rem;}
+}
