@@ -7,12 +7,15 @@
 <script src="/static/js/tracker-workouts662.js?v=662" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-workout-targets666.css?v=666">
 <script src="/static/js/tracker-workout-targets666.js?v=666" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-workout-gym667.css?v=667">
+<script src="/static/js/tracker-workout-gym667.js?v=667" defer></script>
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
          data-session-id="{{ active.id if active else '' }}"
          data-last-set-id="{{ last.id if last else '' }}"
-         data-logged="{{ 'yes' if request.query_params.get('logged') == '1' else 'no' }}">
+         data-logged="{{ 'yes' if request.query_params.get('logged') == '1' else 'no' }}"
+         data-rest-seconds667="{{ rest_seconds667 if routine and plan_item_id else '' }}">
   <header class="workout659-header">
     <div>
       <p><a href="/workouts">← Full Workout Tracker</a> · <a href="/workouts/analytics">Strength Progress</a></p>
@@ -102,7 +105,31 @@
           {% endif %}
           <a href="/workouts/equipment/{{ machine.id }}/progress">View progress</a>
         </div>
-        {% if routine and plan_item_id %}
+        {% if routine and plan_item_id and frozen_goal %}
+          <aside id="workout667-active-goal" class="workout667-active-goal"
+                 data-planned-lb="{{ frozen_goal.target_weight_lb }}"
+                 data-planned-reps="{{ frozen_goal.target_reps }}"
+                 aria-labelledby="workout667-active-title">
+            <div class="workout667-goal-header">
+              <h3 id="workout667-active-title">This session's frozen goal</h3>
+              <a href="/workouts/routines/{{ routine.id }}/program">Edit future goals</a>
+            </div>
+            <p><strong>{{ frozen_goal.target_sets }} working sets × {{ frozen_goal.target_reps }} reps at {{ '%.1f'|format(frozen_goal.target_weight_lb) }} lb</strong></p>
+            <p class="workout667-goal-progress">
+              <strong>{{ goal_progress667.credited_sets }} / {{ frozen_goal.target_sets }}</strong>
+              qualifying sets completed ({{ goal_progress667.progress_percent }}%).
+              {{ goal_progress667.working_sets }} working, {{ goal_progress667.warmup_sets }} warm-up logged.
+            </p>
+            {% if frozen_goal.setup_note %}
+              <p class="workout667-goal-note">{{ frozen_goal.setup_note }}</p>
+            {% endif %}
+            <button type="button" id="workout667-use-goal">Use planned weight &amp; reps</button>
+            <p class="workout667-goal-hint">Copies values into editable inputs only. Never logs a set automatically.</p>
+          </aside>
+        {% elif routine and plan_item_id and current_goal and current_goal.target_sets is not none %}
+          <p class="workout667-goal-hint">Goals saved after this workout began apply to your next session, not retroactively to this one.</p>
+        {% endif %}
+        {% if routine and plan_item_id and not frozen_goal %}
           <aside id="workout666-targets" class="workout666-targets"
                  data-routine-id666="{{ routine.id }}"
                  data-item-id666="{{ plan_item_id }}"
@@ -152,6 +179,11 @@
             <button type="button" data-step659="reps" data-delta659="-5" aria-label="Decrease repetitions by 5">−5 reps</button>
             <button type="button" data-step659="reps" data-delta659="5" aria-label="Increase repetitions by 5">+5 reps</button>
           </div>
+          <fieldset class="workout667-set-kind" aria-label="Recorded set type">
+            <legend>Set type</legend>
+            <label><input type="radio" name="set_type" value="working" checked> Working set</label>
+            <label><input type="radio" name="set_type" value="warmup"> Warm-up set</label>
+          </fieldset>
           <label class="workout659-effort">Effort 1–10 (optional)
             <input type="number" name="effort" min="1" max="10" step="1"
                    inputmode="numeric" value="{{ last.effort if last and last.effort is not none else '' }}">
@@ -188,10 +220,9 @@
         <h2>Rest Timer</h2>
         <label>Duration
           <select id="workout659-rest-duration">
-            <option value="60">60 sec</option>
-            <option value="90" selected>90 sec</option>
-            <option value="120">120 sec</option>
-            <option value="180">180 sec</option>
+            {% for seconds in (30,45,60,75,90,120,150,180,240,300,360,420,480,600) %}
+              <option value="{{ seconds }}" {% if seconds == 90 %}selected{% endif %}>{{ seconds }} sec</option>
+            {% endfor %}
           </select>
         </label>
       </div>
