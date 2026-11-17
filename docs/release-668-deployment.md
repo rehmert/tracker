@@ -23,18 +23,30 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 - Read-only per-session CSV export of actual logged sets, with formula-safe
   equipment names and existing authentication/database scoping.
 - Focused isolated tests for duplication, substitution and CSV safety.
+- Strict future routine-plan CSV import/export (paste-based import), validated
+  against the authenticated routine item IDs in one transaction.
+- Additive user-scoped weekday routine schedules with optional end dates,
+  8-week future preview and explicit remove control. Planned days do not create
+  session records or count as completed workouts.
+- Additive named superset/circuit group definitions with 2–10 unique exercises,
+  optional rounds, and advisory Rapid Gym navigation. Logging remains manual.
+- Audited historical set correction for completed sessions: old/new load,
+  repetitions, effort and set type are retained with a mandatory explanation.
 - DEV-driven local deployment script using the signed DEV-to-PROD pathway.
   GitHub is used for Git objects and refs only, never hosted tests/actions.
 
 ## Remaining requested scope (NOT IMPLEMENTED / NOT QUALIFIED)
 
-- Workout scheduling and program improvements.
+- Further Workout scheduling refinements (e.g., cross-routine conflicts and
+  combined schedule/calendar display). Basic persistent weekdays are implemented.
 - Remaining advanced Workout analytics (comparison and filtering beyond the
   implemented actual-only 28-day and recent-session summary).
-- Supersets, circuits, exercise substitutions.
-- Full workout-session duplication and auditable historical correction workflow.
+- Advanced superset/circuit execution automation (planning, guided navigation,
+  and future substitutions are implemented).
+- Full workout-session duplication. Audited per-set corrections are implemented.
   (Editable *routine* duplication is implemented.)
-- Extended machine/load semantics, and complete Workout CSV import/exports.
+- Extended machine/load semantics and historical Workout CSV import.
+  Future routine-plan CSV import/export is implemented.
   (Session-level actual-sets CSV export is implemented.)
 - Offline logging, expanded actionable insights, and additional dashboard widgets.
 
@@ -82,6 +94,7 @@ To promote an already independently DEV-qualified build, change it to
 **No GitHub Actions, CI, or cloud deploy are used.**
 The built-in existing runner may still demand a full suite for sensitive
 shared-core changes; in that case do not bypass it.
-If the final bundled implementation introduces schema changes, the current
-launcher fails closed and needs a newly reviewed schema/migration gate and
-backup process BEFORE enabling this deployment path.
+The current branch now introduces four additive Workout 668 tables. The
+launcher intentionally fails closed. A dedicated 668 schema review, verified
+backup path, and DEV/PROD exact-source qualification must be implemented
+before this branch can be declared ready or deployed.
