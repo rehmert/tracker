@@ -20,6 +20,10 @@ git fetch origin main "refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
 TARGET="$(git rev-parse "refs/remotes/origin/$BRANCH")"
 [[ "$TARGET" =~ ^[a-f0-9]{40}$ ]] || die "Invalid candidate SHA"
 git merge-base --is-ancestor origin/main "$TARGET" || die "Candidate not descended from main"
+# Release 668 includes multiple Workout workstreams beyond calendar sorting.
+# A dedicated reviewed readiness commit is required after implementation and QA.
+READY="$(git show "$TARGET:docs/release-668-ready.txt" 2>/dev/null || true)"
+[[ "$READY" == 'RELEASE_668_IMPLEMENTATION_REVIEWED=YES' ]] || die "Release 668 incomplete: reviewed readiness marker missing"
 if git diff --name-only origin/main "$TARGET" | grep -Eq '^(app/(db|models|migrations|workout_models[0-9]+)[.]py|alembic/|alembic.ini|requirements[^/]*|deploy/)'; then
   die "Migration/dependency/topology changes require separate reviewed qualification"
 fi
