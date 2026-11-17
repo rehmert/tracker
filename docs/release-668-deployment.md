@@ -79,10 +79,10 @@ Actions, hosted QA, or other GitHub services are involved.
 sudo bash -c '
   set -Eeuo pipefail
   cd /opt/tracker
-  git -c safe.directory=/opt/tracker fetch origin \\
+  git -c safe.directory=/opt/tracker fetch origin \
     refs/heads/release/668-workout-completion:refs/remotes/origin/release/668-workout-completion
   git -c safe.directory=/opt/tracker show \\
-    refs/remotes/origin/release/668-workout-completion:scripts/tracker-preview668.sh \\
+    refs/remotes/origin/release/668-workout-completion:scripts/tracker-preview668.sh \
     | bash -s
 '
 ```
