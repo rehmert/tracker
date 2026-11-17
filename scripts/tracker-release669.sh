@@ -8,7 +8,7 @@ PY=/opt/tracker/.venv/bin/python
 PROMOTER=/opt/tracker/scripts/tracker_promote568.py
 BASE669=c5ca4e1e226408b6d5784794dab5f73205b95c36
 die() { echo "RELEASE_669_ERROR=$*" >&2; exit 1; }
-PHASE="\${1:-all}"
+PHASE="${1:-all}"
 [[ "$PHASE" == dev || "$PHASE" == promote || "$PHASE" == all ]] ||
   die "Use dev, promote, or all"
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev ]] ||
@@ -26,9 +26,10 @@ git merge-base --is-ancestor "$BASE669" "$TARGET" ||
 REVIEWED="$(git show "$TARGET:docs/release-669-ready.txt" 2>/dev/null || true)"
 [[ "$REVIEWED" == 'RELEASE_669_IMPLEMENTATION_REVIEWED=YES' ]] ||
   die "Release 669 source not yet qualified and reviewed"
-git diff --name-only "$BASE669" "$TARGET" |
-  grep -Eq '^(app/(db|models|migrations|scoped_db|auth|security|csrf|session_auth|food_storage_guard)|alembic/|requirements[^/]*|deploy/)' &&
+if git diff --name-only "$BASE669" "$TARGET" |
+  grep -Eq '^(app/(db|models|migrations|scoped_db|auth|security|csrf|session_auth|food_storage_guard)|alembic/|requirements[^/]*|deploy/)'; then
   die "Code-only release must not modify schema/security/dependencies"
+fi
 if [[ "$PHASE" == dev || "$PHASE" == all ]]; then
   BASE="$(git rev-parse HEAD)"
   [[ "$(git rev-parse origin/main)" == "$BASE" && "$BASE" == "$BASE669" ]] ||
