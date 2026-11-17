@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Workout Training Insights{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workout-advanced668.css?v=668">
+{% endblock %}
+{% block content %}
+<section class="workout668">
+  <nav class="workout668-links"><a href="/workouts">← Workouts</a>
+    <a href="/workouts/analytics">Machine Analytics</a>
+    <a href="/workouts/programs">Weekly Program</a>
+    <a href="/workouts/data">CSV Export</a></nav>
+  <h1>Training Insights</h1>
+  <p>Descriptive trends from recorded workouts. These figures are not prescribed loads, estimates of recovery, or comparisons of mechanical leverage between different machines.</p>
+  <section class="workout668-stats" aria-label="Last 28 days">
+    <div><strong>{{ summary.sessions28 }}</strong><span>Completed sessions · 28 days</span></div>
+    <div><strong>{{ summary.days28 }}</strong><span>Training days · 28 days</span></div>
+    <div><strong>{{ '{:,.0f}'.format(summary.volume28) }}</strong><span>Recorded lb × reps · 28 days</span></div>
+    <div><strong>{{ summary.effort_average if summary.effort_average is not none else '—' }}</strong><span>Average entered effort · 28 days</span></div>
+  </section>
+  <section class="workout668-card">
+    <h2>Program adherence and goals</h2>
+    <p><strong>{{ summary.scheduled_completed }} / {{ summary.scheduled_total }}</strong> scheduled routine/date slots with a matching completed session in the last 28 days.
+      {% if summary.scheduled_pct is not none %}({{ summary.scheduled_pct }}%){% endif %}</p>
+    <p><strong>{{ summary.goal_average if summary.goal_average is not none else '—' }}{% if summary.goal_average is not none %}%{% endif %}</strong>
+      average frozen working-set target attainment across {{ summary.goal_sessions }} recent completed sessions with goals.</p>
+    <p class="workout668-muted">A calendar slot is met only when that same saved routine was completed on that date; free workouts do not count toward a scheduled routine.</p>
+  </section>
+  <section class="workout668-card">
+    <h2>Recent sessions and performance</h2>
+    <div class="workout668-scroll"><table>
+      <thead><tr><th>Date</th><th>Sets</th><th>Reps</th><th>Recorded volume</th><th>Goal sets achieved</th><th>Effort</th></tr></thead>
+      <tbody>
+        {% for row in summary.recent %}
+          <tr>
+            <th><a href="/workouts/sessions/{{ row.id }}/review">{{ row.started_at|dt }}</a></th>
+            <td>{{ row.sets }}</td><td>{{ row.reps }}</td>
+            <td>{{ '{:,.1f}'.format(row.volume) }}</td>
+            <td>{{ row.qualifying_goals }}/{{ row.planned_goals if row.planned_goals else '—' }}
+              {% if row.goal_pct is not none %}({{ row.goal_pct }}%){% endif %}</td>
+            <td>{{ row.avg_effort if row.avg_effort is not none else '—' }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6">No completed workouts yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  <section class="workout668-card">
+    <h2>Exact-rep recorded personal bests</h2>
+    <p>Same machine and same repetition count; these are actual maximum logged loads at those exact repetitions.</p>
+    <div class="workout668-scroll"><table>
+      <thead><tr><th>Machine</th><th>Exact reps</th><th>Best recorded</th><th>Sets in group</th></tr></thead>
+      <tbody>
+        {% for row in exact_rep_records %}
+          <tr><td>{{ equipment_names.get(row.equipment_id, 'Equipment') }}</td>
+            <td>{{ row.reps }}</td><td>{{ '%.1f'|format(row.best_lb) }} lb</td><td>{{ row.sets }}</td></tr>
+        {% else %}
+          <tr><td colspan="4">Record workouts to establish benchmarks.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  <p class="workout668-muted">Load conventions are managed per machine. Recorded volume always means the sum of entered lb × reps; even a “per-hand” designation does not silently rewrite your historical data.</p>
+</section>
+{% endblock %}
