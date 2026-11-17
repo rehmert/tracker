@@ -18,6 +18,7 @@ from ..workout_models654 import KINDS654, WorkoutEquipment654, WorkoutSession654
 from ..workout_models655 import (
     WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655,
 )
+from ..workout_models667 import WorkoutSetType667
 
 router = APIRouter()
 
@@ -182,10 +183,13 @@ def add_set654(
     equipment_id: int = Form(...), weight_lb: float = Form(...),
     reps: int = Form(...), effort: str = Form(""),
     db: Session = Depends(get_scoped_db390),
+    set_type: str = "working",
 ):
     workout = active654(db)
     if workout is None:
         return services.flash_redirect("/workouts", err="Start a workout before logging sets.")
+    if set_type not in ("working", "warmup"):
+        return services.flash_redirect("/workouts", err="Unknown recorded set type.")
     if db.get(WorkoutEquipment654, equipment_id) is None:
         raise HTTPException(404, "Equipment not found")
     if not math.isfinite(weight_lb) or not (0 <= weight_lb <= 2000):
@@ -200,10 +204,16 @@ def add_set654(
             return services.flash_redirect("/workouts", err="Effort must be 1 to 10.")
         if not (1 <= value <= 10):
             return services.flash_redirect("/workouts", err="Effort must be 1 to 10.")
-    db.add(WorkoutSet654(
+    entry = WorkoutSet654(
         session_id=workout.id, equipment_id=equipment_id,
         weight_lb=weight_lb, reps=reps, effort=value,
-    ))
+    )
+    db.add(entry)
+    if set_type == "warmup":
+        # Annotate in the SAME transaction as the actual set. A missing
+        # annotation always means a backward-compatible working set.
+        db.flush()
+        db.add(WorkoutSetType667(set_id=entry.id, set_type="warmup"))
     db.commit()
     return services.flash_redirect(f"/workouts?machine={equipment_id}", msg="Set recorded.")
 
