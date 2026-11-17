@@ -18,7 +18,7 @@ from ..workout_models654 import WorkoutEquipment654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
 from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667, WorkoutSessionTarget667
 from ..workout_program667 import progress667
-from ..workout_models668 import WorkoutRoutineGroup668, WorkoutRoutineGroupMember668
+from ..workout_models668 import WorkoutRoutineGroup668, WorkoutRoutineGroupMember668, WorkoutEquipmentLoad668
 from .workouts654 import active654, add_set654, start654, finish654
 from .workouts655 import repeat_last_set655, start_routine655
 
@@ -152,6 +152,7 @@ def quick_workout659(
         active=active, machine=chosen, equipment=equipment, routines=routines,
         routine=routine, routine_total=len(routine_ids),
         grouped668=grouped668,
+        load_config668=db.get(WorkoutEquipmentLoad668, chosen.id) if chosen else None,
         plan_item_id=plan_item_id,
         frozen_goal=frozen_goal, current_goal=current_goal,
         goal_progress667=goal_progress667,
