@@ -220,6 +220,39 @@ def export_session668(
     )
 
 
+@router.get("/workouts/sessions/{session_id}/export-for-import.csv")
+def export_reimport_sets668(
+    session_id: int, db: Session = Depends(get_scoped_db390),
+):
+    """A 5-column actual-set CSV compatible with the historical importer.
+
+    The importer still requires explicit original date/start/end and rejects
+    exact duplicate sessions. It does not silently create new workouts.
+    """
+    workout = db.get(WorkoutSession654, session_id)
+    if workout is None:
+        raise HTTPException(404, "Workout not found")
+    rows = list(db.scalars(
+        select(WorkoutSet654)
+        .where(WorkoutSet654.session_id == session_id)
+        .order_by(WorkoutSet654.performed_at, WorkoutSet654.id)
+    ))
+    output = StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(("equipment_id", "weight_lb", "reps", "effort", "set_time"))
+    for item in rows:
+        writer.writerow((
+            item.equipment_id, item.weight_lb, item.reps,
+            item.effort if item.effort is not None else "",
+            item.performed_at.strftime("%H:%M"),
+        ))
+    return Response(
+        content=output.getvalue().encode("utf-8-sig"), media_type="text/csv",
+        headers={"Content-Disposition":
+                 f'attachment; filename="tracker-workout-{session_id}-import.csv"'},
+    )
+
+
 @router.post("/workouts/finish-review")
 def finish_then_review663(db: Session = Depends(get_scoped_db390)):
     """Reuse original completion exactly once; never invent a completion."""
