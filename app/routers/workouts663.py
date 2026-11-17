@@ -11,6 +11,7 @@ from io import StringIO
 from fastapi.responses import Response
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from datetime import datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -93,6 +94,37 @@ def workout_session_review663(
         request, "workout_review663.html",
         workout=workout, machine_rows=machine_rows, totals=totals,
         goal_rows=goal_rows,
+    )
+
+
+@router.get("/workouts/insights")
+def workout_insights668(
+    request: Request, db: Session = Depends(get_scoped_db390),
+):
+    """Read-only completed-session consistency and recorded workload."""
+    since = datetime.now() - timedelta(days=28)
+    totals = list(db.execute(
+        select(
+            WorkoutSession654.id.label("session_id"),
+            WorkoutSession654.started_at.label("started_at"),
+            func.count(WorkoutSet654.id).label("set_count"),
+            func.sum(WorkoutSet654.reps).label("repetitions"),
+            func.sum(WorkoutSet654.weight_lb * WorkoutSet654.reps).label("volume"),
+        )
+        .select_from(WorkoutSession654)
+        .join(WorkoutSet654, WorkoutSet654.session_id == WorkoutSession654.id)
+        .where(WorkoutSession654.completed_at.is_not(None))
+        .group_by(WorkoutSession654.id, WorkoutSession654.started_at)
+        .order_by(WorkoutSession654.started_at.desc(), WorkoutSession654.id.desc())
+        .limit(12)
+    ))
+    recent = [row for row in totals if row.started_at >= since]
+    return render(
+        request, "workout_insights668.html", sessions=totals,
+        recent_count=len(recent),
+        recent_sets=sum(row.set_count for row in recent),
+        recent_repetitions=sum(row.repetitions for row in recent),
+        recent_volume=sum(float(row.volume) for row in recent),
     )
 
 
