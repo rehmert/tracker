@@ -32,6 +32,7 @@ MODIFIED668 = frozenset({
     "app/templates/workout_review663.html",
     "app/templates/workout_routine_detail655.html",
     "app/templates/workout_routines655.html",
+    "tests/test_workouts664.py",
     "scripts/tracker-release.sh",
     "scripts/tracker_prod_remote568.sh",
 })
