@@ -7,6 +7,7 @@ through validated existing routes. No automatic sets are created.
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+import math
 import re
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -17,9 +18,11 @@ from .. import services
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655
+from ..workout_models654 import WorkoutSet654, WorkoutSession654, WorkoutEquipment654
+from ..workout_models667 import WorkoutSetType667
 from ..workout_models668 import (
     WorkoutRoutineSchedule668, WorkoutRoutineGroup668,
-    WorkoutRoutineGroupMember668,
+    WorkoutRoutineGroupMember668, WorkoutSetCorrection668,
 )
 
 router = APIRouter()
@@ -191,4 +194,93 @@ def remove_group668(
     return services.flash_redirect(
         f"/workouts/routines/{routine_id}/schedule",
         msg="Training group removed; recorded workouts unchanged.",
+    )
+
+
+@router.get("/workouts/sessions/{session_id}/correct")
+def correction_page668(
+    session_id: int, request: Request,
+    db: Session = Depends(get_scoped_db390),
+):
+    session = db.get(WorkoutSession654, session_id)
+    if session is None:
+        raise HTTPException(404, "Workout not found")
+    recorded = list(db.scalars(
+        select(WorkoutSet654).where(WorkoutSet654.session_id == session_id)
+        .order_by(WorkoutSet654.performed_at, WorkoutSet654.id)
+    ))
+    names = {
+        row.equipment_id: (
+            db.get(WorkoutEquipment654, row.equipment_id).name
+            if db.get(WorkoutEquipment654, row.equipment_id)
+            else "Unknown equipment"
+        ) for row in recorded
+    }
+    kinds = {
+        row.set_id: row.set_type for row in db.scalars(
+            select(WorkoutSetType667)
+            .where(WorkoutSetType667.set_id.in_([r.id for r in recorded]))
+        )
+    } if recorded else {}
+    changes = list(db.scalars(
+        select(WorkoutSetCorrection668)
+        .join(WorkoutSet654, WorkoutSet654.id == WorkoutSetCorrection668.set_id)
+        .where(WorkoutSet654.session_id == session_id)
+        .order_by(WorkoutSetCorrection668.corrected_at.desc(),
+                  WorkoutSetCorrection668.id.desc())
+    ))
+    return render(request, "workout_corrections668.html", session=session,
+                  recorded=recorded, names=names, kinds=kinds, changes=changes)
+
+
+@router.post("/workouts/sessions/{session_id}/sets/{set_id}/correct")
+def correct_recorded_set668(
+    session_id: int, set_id: int,
+    weight_lb: float = Form(...), reps: int = Form(...),
+    effort: str = Form(""), set_type: str = Form("working"),
+    reason: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    session = db.get(WorkoutSession654, session_id)
+    row = db.get(WorkoutSet654, set_id)
+    if session is None or row is None or row.session_id != session_id:
+        raise HTTPException(404, "Workout set not found")
+    url = f"/workouts/sessions/{session_id}/correct"
+    if session.completed_at is None:
+        return services.flash_redirect(url, err="Historical corrections require a completed workout.")
+    reason = reason.strip()
+    if (not math.isfinite(weight_lb) or not 0 <= weight_lb <= 2000
+            or not 1 <= reps <= 200 or not 3 <= len(reason) <= 500
+            or set_type not in ("working", "warmup")):
+        return services.flash_redirect(url, err="Invalid correction values or reason (3–500 characters).")
+    new_effort = None
+    if effort.strip():
+        if not effort.strip().isascii() or not effort.strip().isdecimal():
+            return services.flash_redirect(url, err="Effort must be a whole number from 1 to 10.")
+        new_effort = int(effort)
+        if not 1 <= new_effort <= 10:
+            return services.flash_redirect(url, err="Effort must be from 1 to 10.")
+    existing_type = db.get(WorkoutSetType667, row.id)
+    previous_type = existing_type.set_type if existing_type else "working"
+    if (row.weight_lb, row.reps, row.effort, previous_type) == (
+            weight_lb, reps, new_effort, set_type):
+        return services.flash_redirect(url, err="No changes found; correction not recorded.")
+    db.add(WorkoutSetCorrection668(
+        set_id=row.id,
+        old_weight_lb=row.weight_lb, new_weight_lb=weight_lb,
+        old_reps=row.reps, new_reps=reps,
+        old_effort=row.effort, new_effort=new_effort,
+        old_type=previous_type, new_type=set_type, reason=reason,
+    ))
+    row.weight_lb, row.reps, row.effort = weight_lb, reps, new_effort
+    if set_type == "working":
+        if existing_type is not None:
+            db.delete(existing_type)
+    elif existing_type is None:
+        db.add(WorkoutSetType667(set_id=row.id, set_type="warmup"))
+    else:
+        existing_type.set_type = "warmup"
+    db.commit()
+    return services.flash_redirect(
+        url, msg="Recorded set corrected; before/after audit retained.",
     )
