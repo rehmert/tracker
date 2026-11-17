@@ -78,6 +78,9 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
     try:
         from ..food_engine392 import get_food_engine392
         food_engine = get_food_engine392(request)
+    except PermissionError:
+        # Secondary workspaces cannot access administrator-only food storage.
+        pass
     except HTTPException as exc:
         if exc.status_code not in (403, 503):
             raise
