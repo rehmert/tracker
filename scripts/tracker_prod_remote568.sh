@@ -93,6 +93,9 @@ elif [[ "$RELEASE" == 645 ]]; then
   DEPLOY_EXTRA=(--reviewed-coa-645 --db-migration)
 elif [[ "$RELEASE" == 652 ]]; then
   DEPLOY_EXTRA=(--reviewed-coa-652 --db-migration)
+elif [[ "$RELEASE" == 667 ]]; then
+  # Signed Release 667 is an additive schema change; do not bypass backup.
+  DEPLOY_EXTRA=(--reviewed-workout-667 --db-migration)
 fi
 bash "$RUNNER" \
   --instance PROD \
