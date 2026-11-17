@@ -17,6 +17,37 @@
     {% if error %}
       <p class="workout658-error" role="alert"><strong>Not saved:</strong> {{ error }} Your entered sets are still in the form.</p>
     {% endif %}
+    <details>
+      <summary>Import completed workout sets from CSV</summary>
+      <p class="note">Use only sets you actually completed. Expected columns:
+        equipment_id,weight_lb,reps,effort,set_time. Enter the actual workout
+        date and start/end times; Tracker validates all rows before saving.</p>
+      <form method="post" action="/workouts/backfill/import.csv">
+        <label>Workout date
+          <input type="date" name="day" required min="2000-01-01" max="{{ values.today }}">
+        </label>
+        <label>Start time
+          <input type="time" name="start_time" required>
+        </label>
+        <label>End time
+          <input type="time" name="end_time" required>
+        </label>
+        <label>Optional saved routine
+          <select name="routine_id">
+            <option value="">No routine</option>
+            {% for routine in routines %}
+              <option value="{{ routine.id }}">{{ routine.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Paste CSV (maximum 40 set rows)
+          <textarea name="csv_text" maxlength="32768" required rows="7"
+                    spellcheck="false" placeholder="equipment_id,weight_lb,reps,effort,set_time"></textarea>
+        </label>
+        <button type="submit">Import Validated Actual Sets</button>
+      </form>
+    </details>
+
     <form method="post" action="/workouts/backfill" id="workout658-form">
       <fieldset class="workout658-meta">
         <legend>When was the workout?</legend>
