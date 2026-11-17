@@ -105,6 +105,8 @@
   <link rel="stylesheet" href="/static/css/tracker-mobile-density600.css?v=600">
   <script src="/static/js/tracker-mobile-scroll600.js?v=600" defer></script>
   {% block page_assets %}{% endblock %}
+  <!-- Release 673: unified mobile spacing and responsive management cards. -->
+  <link rel="stylesheet" href="/static/css/tracker-mobile-ux673.css?v=673">
 </head>
 <body>
 <a class="tracker-skip-link" href="#main-content">Skip to Content</a>
@@ -150,14 +152,11 @@
       <a href="/mobile" {% if path.startswith('/mobile') %}aria-current="page"{% endif %}>
         <span class="tracker-mobile-dock-icon" aria-hidden="true">◷</span><span>Today</span>
       </a>
-      <a href="/quick-entry" id="tracker-mobile-add528" aria-controls="tracker-mobile-quick528" aria-expanded="false" {% if path.startswith('/quick-entry') %}aria-current="page"{% endif %}>
-        <span class="tracker-mobile-dock-icon" aria-hidden="true">＋</span><span>Add</span>
+      <a href="/quick-entry" id="tracker-mobile-add528" aria-controls="tracker-mobile-quick528" aria-expanded="false" aria-label="Log a new entry" {% if path.startswith('/quick-entry') %}aria-current="page"{% endif %}>
+        <span class="tracker-mobile-dock-icon" aria-hidden="true">＋</span><span>Log</span>
       </a>
-      <a href="/doses" {% if path.startswith('/doses') %}aria-current="page"{% endif %}>
-        <span class="tracker-mobile-dock-icon" aria-hidden="true">✓</span><span>Doses</span>
-      </a>
-      <a href="/vitals" {% if path.startswith('/vitals') %}aria-current="page"{% endif %}>
-        <span class="tracker-mobile-dock-icon" aria-hidden="true">♡</span><span>Vitals</span>
+      <a href="/workouts/quick" {% if path.startswith('/workouts') %}aria-current="page"{% endif %}>
+        <span class="tracker-mobile-dock-icon" aria-hidden="true">▥</span><span>Workout</span>
       </a>
       <button type="button" id="tracker-mobile-more" aria-label="More pages"
               aria-controls="app-sidebar" aria-expanded="false">
