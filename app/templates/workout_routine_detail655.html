@@ -3,13 +3,17 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+<link rel="stylesheet" href="/static/css/tracker-workout-advanced668.css?v=668">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout655">
   <p><a href="/workouts/routines">← Saved Routines</a></p>
   <h1>{{ routine.name }}</h1>
   <p class="note">Exercises appear in the order below during this routine's workout.</p>
-  <p><a href="/workouts/routines/{{ routine.id }}/program"><strong>Open Persistent Workout Program</strong></a> · <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Browser Planner</a></p>
+  <p><a href="/workouts/routines/{{ routine.id }}/program"><strong>Open Persistent Workout Program</strong></a> · <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Browser Planner</a> · <a href="/workouts/programs">Weekly Schedule</a></p>
+  <form method="post" action="/workouts/routines/{{ routine.id }}/duplicate">
+    <button type="submit">Duplicate Routine as Reusable Template</button>
+  </form>
   {% if items %}
     {% if active and not can_resume %}
       <p class="note">Finish your current workout before starting this routine.</p>
@@ -32,6 +36,19 @@
           <span class="workout-routine-position655">{{ loop.index }}</span>
           <strong>{{ names[item.equipment_id] }}</strong>
         </div>
+        {% set group668 = groups668.get(item.id) %}
+        <form method="post" action="/workouts/routines/{{ routine.id }}/groups/{{ item.id }}" class="workout668-group-form">
+          <label>Group label
+            <input name="label" maxlength="20" value="{{ group668.label if group668 else '' }}" placeholder="A, B, Circuit 1">
+          </label>
+          <label>Group type
+            <select name="mode">
+              <option value="superset" {% if not group668 or group668.mode == 'superset' %}selected{% endif %}>Superset</option>
+              <option value="circuit" {% if group668 and group668.mode == 'circuit' %}selected{% endif %}>Circuit</option>
+            </select>
+          </label>
+          <button type="submit">Save Group</button>
+        </form>
         <div class="workout-routine-actions655">
           <form method="post"
                 action="/workouts/routines/{{ routine.id }}/items/{{ item.id }}/move">
