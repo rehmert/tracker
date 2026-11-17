@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Data Quality{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-productivity674.css?v=674">
+<section class="ux674-page">
+  <p><a href="/mobile">← Today</a> · <a href="/inventory-data-quality">Detailed vial quality review</a></p>
+  <h1>Data Quality</h1>
+  <p class="note">Incomplete records worth reviewing. These are data-entry checks, not medical assessments. This page never changes records.</p>
+  <div class="ux674-summary">
+    <article><strong>{{ report.total }}</strong><span>Items to review</span></article>
+    <article><strong>{{ report.counts.get("COA", 0) }}</strong><span>COAs</span></article>
+    <article><strong>{{ report.counts.get("Purchase", 0) }}</strong><span>Purchases</span></article>
+    <article><strong>{{ report.counts.get("Workout", 0) }}</strong><span>Machines</span></article>
+    <article><strong>{{ report.counts.get("Food", 0) }}</strong><span>Foods</span></article>
+  </div>
+  <p class="note">{{ report.food_status }}. Food quality checks review up to 1,000 used products; other categories include all records in this workspace.</p>
+  <nav class="ux674-actions" aria-label="Review shortcuts">
+    <a href="/food/duplicates">Duplicate Foods</a>
+    <a href="/inventory-data-quality">Inventory Dates</a>
+    <a href="/workouts">Equipment &amp; QR Mapping</a>
+    <a href="/coas">COA Records</a>
+  </nav>
+  {% if report.issues %}
+    <div class="ux674-quality-list">
+      {% for item in report.issues %}
+        <article class="ux674-card">
+          <div><small>{{ item.kind }}</small><h2>{{ item.label }}</h2><p>{{ item.detail }}</p></div>
+          <a class="btn" href="{{ item.href }}">Review / Correct</a>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="ux674-card">No issues detected by these checks. Detailed inventory and COA reports may contain additional checks.</p>
+  {% endif %}
+</section>
+{% endblock %}
