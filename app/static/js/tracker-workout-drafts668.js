@@ -41,7 +41,9 @@
     const values = {};
     for (const name of fields) {
       const field = node(name);
-      values[name] = field ? String(field.value).slice(0, 32) : "";
+      values[name] = name === "set_type" ?
+        (form.querySelector('input[name="set_type"]:checked')?.value || "working") :
+        (field ? String(field.value).slice(0, 32) : "");
     }
     const pounds = Number(values.weight_lb);
     const reps = Number(values.reps);
@@ -65,7 +67,10 @@
     if (!draft) return refresh();
     for (const name of fields) {
       const field = node(name);
-      if (field && draft.values[name]) field.value = draft.values[name];
+      if (name === "set_type") {
+        const options = form.querySelectorAll('input[name="set_type"]');
+        for (const choice of options) choice.checked = choice.value === draft.values[name];
+      } else if (field) field.value = draft.values[name];
     }
     status.textContent = "Draft restored to editable fields. Review and tap Save Set online.";
   });
