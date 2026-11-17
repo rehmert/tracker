@@ -21,9 +21,11 @@ MODIFIED668 = frozenset({
     "app/routers/workouts658.py",
     "app/routers/workouts659.py",
     "app/routers/workouts663.py",
+    "app/routers/workouts664.py",
     "app/routers/workouts667.py",
     "app/templates/_workout_dashboard661.html",
     "app/templates/workout_backfill658.html",
+    "app/templates/workout_calendar664.html",
     "app/templates/workout_program667.html",
     "app/templates/workout_quick659.html",
     "app/templates/workout_review663.html",
@@ -52,6 +54,7 @@ NEW668 = frozenset({
     "tests/test_workout_schedule668.py",
     "tests/test_workout_tools668.py",
     "tests/test_workout_release668.py",
+    "tests/test_workout_offline668.py",
 })
 
 EXPECTED_TABLES668 = {
