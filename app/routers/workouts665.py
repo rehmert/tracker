@@ -6,6 +6,8 @@ unscoped databases. Historical comparisons keep equipment identity exact.
 """
 from __future__ import annotations
 
+from datetime import datetime, time, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -31,6 +33,7 @@ def routine_plan_data665(db: Session, routine_id: int) -> dict:
         .where(WorkoutRoutineItem655.routine_id == routine.id)
         .order_by(WorkoutRoutineItem655.position, WorkoutRoutineItem655.id)
     ))
+    tomorrow = datetime.combine(datetime.now().date() + timedelta(days=1), time.min)
     rows = []
     for item in items:
         equipment = db.get(WorkoutEquipment654, item.equipment_id)
@@ -55,6 +58,7 @@ def routine_plan_data665(db: Session, routine_id: int) -> dict:
             .where(
                 WorkoutSet654.equipment_id == equipment.id,
                 WorkoutSession654.completed_at.is_not(None),
+                WorkoutSession654.started_at < tomorrow,
             )
             .group_by(
                 WorkoutSession654.id, WorkoutSession654.started_at,
