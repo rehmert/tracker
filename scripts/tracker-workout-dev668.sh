@@ -18,7 +18,7 @@ g() { git -c safe.directory="$APP" -C "$APP" "$@"; }
 [[ "$(g branch --show-current)" == main && -z "$(g status --porcelain)" ]] ||
   fail "DEV checkout must be clean main"
 [[ "$(g rev-parse HEAD)" == "$BASE" ]] ||
-  fail "Installed DEV must be qualified Release 666"
+  fail "Installed DEV must be qualified Release 667"
 systemctl is-active --quiet tracker || fail "Tracker DEV service not active"
 "$PY" "$APP/scripts/tracker-instance-check653.py" --config /etc/tracker.env ||
   fail "DEV instance identity not verified"
@@ -26,7 +26,7 @@ g fetch origin main "refs/heads/$REF:refs/remotes/origin/$REF"
 TARGET="$(g rev-parse "refs/remotes/origin/$REF")"
 [[ "$TARGET" == "$EXPECTED" ]] || fail "Candidate differs from pinned SHA"
 g merge-base --is-ancestor "$BASE" "$TARGET" ||
-  fail "Candidate not descended from Release 666"
+  fail "Candidate not descended from Release 667"
 
 RUN="$(mktemp -d /tmp/tracker-workout668-runner.XXXXXXXX)"
 cleanup() { rm -f "$RUN/runner.sh"; rmdir "$RUN" 2>/dev/null || true; }
