@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ routine.name }} Training Schedule{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+<link rel="stylesheet" href="/static/css/tracker-workout-program667.css?v=667">
+{% endblock %}
+{% block content %}
+<section class="workout667">
+  <p><a href="/workouts/routines/{{ routine.id }}">← {{ routine.name }}</a> ·
+     <a href="/workouts/routines/{{ routine.id }}/program">Exercise Goals</a></p>
+  <h1>Schedule and Training Groups</h1>
+  <p class="note">These entries are future training intentions. A scheduled day
+  is not a completed workout; actual sets still require explicit logging.</p>
+  <section class="workout667-panel">
+    <h2>Repeat on weekdays</h2>
+    <form method="post" action="/workouts/routines/{{ routine.id }}/schedule">
+      <label>Weekdays (Monday=0, Sunday=6, comma-separated)
+        <input name="weekdays" required pattern="[0-6](,[0-6])*"
+               value="{{ schedule.weekdays if schedule else '0,2,4' }}"
+               placeholder="0,2,4">
+      </label>
+      <label>Start date
+        <input type="date" name="start_on" required
+               value="{{ schedule.start_on.isoformat() if schedule else today.isoformat() }}">
+      </label>
+      <label>Optional end date
+        <input type="date" name="end_on"
+               value="{{ schedule.end_on.isoformat() if schedule and schedule.end_on else '' }}">
+      </label>
+      <button type="submit">Save Training Schedule</button>
+    </form>
+    {% if schedule %}
+      <form method="post" action="/workouts/routines/{{ routine.id }}/schedule/clear">
+        <button type="submit">Remove This Schedule</button>
+      </form>
+      <h3>Next scheduled training dates</h3>
+      <ul>
+        {% for when in upcoming %}
+          <li>{{ when.strftime('%a %b %d, %Y') }}
+            <a href="/workouts/routines/{{ routine.id }}">Open routine</a>
+          </li>
+        {% else %}
+          <li>No scheduled days in the upcoming eight weeks.</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
+  <section class="workout667-panel">
+    <h2>Supersets and circuits</h2>
+    <p class="note">Group exercises for training order. Grouping is guidance,
+    not automatic set creation or a substitute for tracking completed sets.</p>
+    {% for group in groups %}
+      <article>
+        <h3>{{ group.group_name }} — {{ group.group_type|title }} · {{ group.rounds }} rounds</h3>
+        <ol>
+        {% for member in memberships[group.id] %}
+          <li>{{ names.get(member.routine_item_id, 'Unknown exercise') }}</li>
+        {% endfor %}
+        </ol>
+        <form method="post"
+              action="/workouts/routines/{{ routine.id }}/groups/{{ group.id }}/remove">
+          <button type="submit">Remove Group</button>
+        </form>
+      </article>
+    {% endfor %}
+    {% if items|length >= 2 %}
+      <form method="post" action="/workouts/routines/{{ routine.id }}/groups">
+        <label>Group name <input name="group_name" maxlength="100" required></label>
+        <label>Group type
+          <select name="group_type">
+            <option value="superset">Superset</option>
+            <option value="circuit">Circuit</option>
+          </select>
+        </label>
+        <label>Planned rounds
+          <input type="number" name="rounds" min="1" max="20" value="3" required>
+        </label>
+        <fieldset>
+          <legend>Select 2 to 10 exercises in this routine</legend>
+          {% for item in items %}
+            <label><input type="checkbox" name="item_ids" value="{{ item.id }}">
+              {{ names[item.id] }}</label>
+          {% endfor %}
+        </fieldset>
+        <button type="submit">Save Group</button>
+      </form>
+    {% else %}
+      <p>Add at least two routine exercises to create a superset or circuit.</p>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}
