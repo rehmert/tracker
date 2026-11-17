@@ -39,25 +39,35 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 - DEV-driven local deployment script using the signed DEV-to-PROD pathway.
   GitHub is used for Git objects and refs only, never hosted tests/actions.
 
-## Remaining requested scope (NOT IMPLEMENTED / NOT QUALIFIED)
+## Deliberate boundaries and remaining verification
 
-- Further Workout scheduling refinements (e.g., cross-routine conflicts and
-  combined schedule/calendar display). Basic persistent weekdays are implemented.
-- Remaining advanced Workout analytics (comparison and filtering beyond the
-  implemented actual-only 28-day and recent-session summary).
-- Advanced superset/circuit execution automation (planning, guided navigation,
-  and future substitutions are implemented).
-- Exact duplicate completed-workout creation is intentionally not implemented:
-  reuse-as-routine is available without fabricating a second recorded workout.
-  Audited per-set corrections are implemented.
-  (Editable *routine* duplication is implemented.)
-- Extended machine/load semantics and any further cross-machine comparison.
-  Historical actual-set CSV import and future routine-plan CSV import/export
-  are implemented through validated, explicitly submitted forms.
-  (Session-level actual-sets CSV export is implemented.)
-- True automatic offline set synchronization with server-side conflict handling,
-  richer actionable insights, and additional dashboard metrics. Local-only
-  unsynced set drafts and dashboard links are implemented.
+- **Offline synchronization:** While the gym page remains open, queued actual
+  set entries retry when connectivity returns, and retry-safe server UUID
+  receipts prevent duplicate sets. Actions are preserved locally on failures;
+  the page does not claim background synchronization after the browser is
+  closed. A previously deleted set is never recreated on retry.
+- **Historical workout duplication:** A completed workout can be reused as an
+  editable future routine without duplicating logged historical performance.
+  This deliberately avoids creating false completed training sessions.
+- **Supersets and circuits:** Saved groups guide rounds using *actual working
+  sets*, excluding warm-ups. They never create sets or silently move/change
+  recorded workout data. Scheduling displays planned sessions separately from
+  completed workouts on the monthly calendar.
+- **Equipment loads:** Store the machine's input mode, multiplier, offset and
+  notes. Set weight is exactly the user's entered value; equipment settings
+  never retroactively rescale old workout weights or assert that resistance
+  across unlike machines is comparable.
+- **Analytics:** Provide actual-set 28-day / prior-28-day summaries and per-machine
+  observed workloads without simulated strength, subjective readiness or
+  automatic load recommendations.
+- **Dashboard:** Existing recorded-session counters are retained, with actual
+  28-day set and repetition counters and scheduling/insights shortcuts.
+
+Release completion still requires a new exact-SHA DEV preview passing the
+expanded focused gates and confirmation of six additive tables, migration
+backup and signed promotion safeguards. The preview is **not** deployment
+approval. No changes are authorized to authentication, existing historical
+schema, dependency versions or deployment topology.
 
 Do not create `docs/release-668-ready.txt` until **all** bundled features
 are implemented, reviewed, tested and a complete qualified migration review
@@ -125,8 +135,8 @@ To promote an already independently DEV-qualified build, change it to
 **No GitHub Actions, CI, or cloud deploy are used.**
 The built-in existing runner may still demand a full suite for sensitive
 shared-core changes; in that case do not bypass it.
-The current branch introduces four additive Workout 668 tables.
-The dedicated Release 668 source reviewer and migration/backup runner wiring
-are committed but have not yet passed DEV qualification. The readiness guard
-remains closed; successful focused DEV preview and review of the resulting
-source, schema, and migration backup behavior are mandatory before deployment.
+The current branch introduces six additive Workout 668 tables.
+The dedicated Release 668 exact-source reviewer and migration/backup runner
+are committed. An earlier candidate passed 79 change-scoped tests, but all
+new scope must pass a fresh isolated DEV preview before readiness is approved.
+The readiness guard remains closed until that qualification and review.
