@@ -18,6 +18,7 @@ from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutSessionRoutine655
+from ..workout_csv668 import parse_historical_csv668
 
 router = APIRouter()
 MAX_HISTORICAL_SETS658 = 40
@@ -227,4 +228,51 @@ def save_retroactive658(
     db.commit()
     return services.flash_redirect(
         f"/workouts/sessions/{session.id}", msg="Earlier workout saved."
+    )
+
+
+@router.post("/workouts/backfill/import.csv")
+def import_previous_workout_csv668(
+    day: str = Form(""), start_time: str = Form(""),
+    end_time: str = Form(""), routine_id: str = Form(""),
+    csv_text: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Explicit actual-set CSV import through Release 658 validation."""
+    url = "/workouts/backfill"
+    try:
+        start, end = window658(day, start_time, end_time)
+        rows = parse_historical_csv668(csv_text)
+        allowed = set(db.scalars(select(WorkoutEquipment654.id)))
+        prepared = parse_sets658(rows, start, end, allowed)
+        routine = None
+        if routine_id:
+            if not routine_id.isascii() or not routine_id.isdecimal():
+                raise ValueError("Invalid optional routine.")
+            routine = db.get(WorkoutRoutine655, int(routine_id))
+            if routine is None:
+                raise ValueError("Selected routine does not exist.")
+        duplicate = db.scalar(select(WorkoutSession654.id)
+            .where(
+                WorkoutSession654.started_at == start,
+                WorkoutSession654.completed_at == end,
+            )
+            .limit(1))
+        if duplicate is not None:
+            raise ValueError("A workout with these exact start/end times already exists.")
+    except ValueError as exc:
+        return services.flash_redirect(url, err=str(exc))
+    workout = WorkoutSession654(started_at=start, completed_at=end)
+    db.add(workout)
+    db.flush()
+    if routine is not None:
+        db.add(WorkoutSessionRoutine655(
+            session_id=workout.id, routine_id=routine.id,
+        ))
+    for row in prepared:
+        db.add(WorkoutSet654(session_id=workout.id, **row))
+    db.commit()
+    return services.flash_redirect(
+        f"/workouts/sessions/{workout.id}/review",
+        msg=f"Imported {len(prepared)} actual historical sets from CSV.",
     )
