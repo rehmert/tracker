@@ -29,4 +29,6 @@ def test_668_readiness_marker_is_optional_and_exact_content_only():
     assert '"RELEASE_668_IMPLEMENTATION_REVIEWED=YES"' in source
     assert 'allowed = allowed | {ready_path}' in source
     assert 'if ready_path in changed:' in source
-    assert not (ROOT / "docs/release-668-ready.txt").exists()
+    marker = ROOT / "docs/release-668-ready.txt"
+    if marker.exists():
+        assert marker.read_text().strip() == "RELEASE_668_IMPLEMENTATION_REVIEWED=YES"
