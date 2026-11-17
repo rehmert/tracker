@@ -18,6 +18,7 @@ from ..workout_models655 import (
     WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655,
 )
 from .workouts654 import active654
+from ..workout_program667 import snapshots667
 
 router = APIRouter()
 MAX_ROUTINE_ITEMS655 = 30
@@ -170,6 +171,7 @@ def start_routine655(routine_id: int, db: Session = Depends(get_scoped_db390)):
     db.add(workout)
     db.flush()
     db.add(WorkoutSessionRoutine655(session_id=workout.id, routine_id=routine_id))
+    snapshots667(db, routine_id, workout.id)
     db.commit()
     return services.flash_redirect(
         f"/workouts?machine={items[0].equipment_id}", msg="Routine started."
