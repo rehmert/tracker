@@ -360,6 +360,41 @@ def test_667_repeat_and_active_correction_preserve_set_kind():
         assert post667(client, "/workouts/quick/finish").status_code == 303
 
 
+def test_667_exercise_notes_display_without_numeric_goal():
+    nonce = uuid4().hex
+    with TestClient(app) as client:
+        with SessionLocal() as db:
+            machine = WorkoutEquipment654(
+                name="667 Note only " + nonce, gym="QA", kind="selectorized",
+            )
+            routine = WorkoutRoutine655(name="667 Note routine " + nonce)
+            db.add_all([machine, routine])
+            db.flush()
+            item = WorkoutRoutineItem655(
+                routine_id=routine.id, equipment_id=machine.id, position=0,
+            )
+            db.add(item)
+            db.commit()
+            rid, iid, mid = routine.id, item.id, machine.id
+        saved = post667(client, f"/workouts/routines/{rid}/program/items/{iid}", {
+            "setup_note": "Neutral handle, seat position 5",
+            "rest_seconds": "120",
+        })
+        assert saved.status_code == 303 and "msg=" in saved.headers["location"]
+        assert post667(client, f"/workouts/quick/routines/{rid}/start").status_code == 303
+        with SessionLocal() as db:
+            sid = db.scalar(select(WorkoutSession654.id).where(
+                WorkoutSession654.completed_at.is_(None)
+            ).order_by(WorkoutSession654.id.desc()).limit(1))
+            assert db.get(WorkoutSessionTarget667, (sid, mid)) is None
+        quick = client.get(f"/workouts/quick?machine={mid}")
+        assert quick.status_code == 200
+        assert "Neutral handle, seat position 5" in quick.text
+        assert 'data-rest-seconds667="120"' in quick.text
+        assert 'id="workout667-active-goal"' not in quick.text
+        assert post667(client, "/workouts/quick/finish").status_code == 303
+
+
 def test_667_existing_source_separation_and_model_registration():
     main = (ROOT / "app/main.py").read_text(encoding="utf-8")
     assert "from . import workout_models667" in main
