@@ -19,6 +19,9 @@ from sqlalchemy.orm import Session
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import WorkoutSession654, WorkoutSet654
+from ..workout_models655 import WorkoutRoutine655
+from ..workout_models668 import WorkoutRoutineSchedule668
+from .workouts668 import next_occurrences668
 
 router = APIRouter()
 CALENDAR664 = calendar.Calendar(firstweekday=calendar.MONDAY)
@@ -90,12 +93,38 @@ def workout_calendar_data664(db: Session, first: date, today: date) -> dict:
     for row in rows:
         by_date[row.started_at.date()].append(row)
 
+    # Planned training is independent from completed session counts.
+    schedules = db.execute(
+        select(
+            WorkoutRoutineSchedule668,
+            WorkoutRoutine655.name.label("routine_name"),
+        )
+        .join(WorkoutRoutine655, WorkoutRoutine655.id == WorkoutRoutineSchedule668.routine_id)
+        .where(WorkoutRoutineSchedule668.start_on < end.date())
+    ).all()
+    planned = defaultdict(list)
+    first_day = first
+    last_day = (end - timedelta(days=1)).date()
+    for schedule, routine_name in schedules:
+        if schedule.end_on and schedule.end_on < first_day:
+            continue
+        for day in next_occurrences668(
+            schedule.weekdays, schedule.start_on, schedule.end_on,
+            today=first_day, horizon=(last_day - first_day).days + 1,
+        ):
+            planned[day].append({
+                "routine_id": schedule.routine_id, "name": routine_name,
+            })
+    for entries in planned.values():
+        entries.sort(key=lambda entry: (entry["name"].casefold(), entry["routine_id"]))
+
     weeks = [
         [
             {
                 "day": day,
                 "in_month": day.year == first.year and day.month == first.month,
                 "count": len(by_date.get(day, ())),
+                "plans": planned.get(day, []),
                 "is_today": day == today,
             }
             for day in week
@@ -113,6 +142,9 @@ def workout_calendar_data664(db: Session, first: date, today: date) -> dict:
         "previous": neighboring_month664(first, -1),
         "next": neighboring_month664(first, 1),
         "weeks": weeks,
+        "planned_days": [
+            {"day": day, "routines": planned[day]} for day in sorted(planned)
+        ],
         "days": days,
         "sessions": len(rows),
         "training_days": len(by_date),
