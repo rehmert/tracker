@@ -37,6 +37,23 @@
     </form>
     <p id="workout667-import-status" class="workout667-muted" role="status" aria-live="polite"></p>
   </section>
+  <section class="workout667-panel" aria-label="Routine plan CSV exchange">
+    <h2>Routine plan CSV</h2>
+    <p class="workout667-muted">Export your future exercise targets and rest/notes as a CSV.
+      The import accepts a pasted CSV from this same routine and replaces only
+      the listed future targets. Existing recorded workouts are not changed.
+      Keep the routine_item_id column unchanged.</p>
+    <p><a href="/workouts/routines/{{ routine.id }}/program/export.csv">Export routine plan CSV</a></p>
+    <form action="/workouts/routines/{{ routine.id }}/program/import.csv" method="post">
+      <label>Paste routine plan CSV
+        <textarea name="csv_text" rows="5" maxlength="32768"
+          spellcheck="false" placeholder="routine_item_id,sets,reps,weight_lb,rest_seconds,setup_note" required></textarea>
+      </label>
+      <button type="submit">Import validated routine CSV</button>
+    </form>
+    <p class="workout667-muted">Every CSV row is checked before anything is saved.
+      The import cannot assign arbitrary equipment or create actual workout sets.</p>
+  </section>
   <section aria-label="Program exercises">
     <h2>Exercise goals</h2>
     {% for entry in rows %}
