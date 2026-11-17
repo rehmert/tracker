@@ -19,6 +19,7 @@ from ..workout_models655 import (
     WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655,
 )
 from ..workout_models667 import WorkoutSetType667
+from ..workout_models668 import WorkoutSetAudit668
 
 router = APIRouter()
 
@@ -243,9 +244,19 @@ def workout_history654(
     names = {
         item.id: item.name for item in db.scalars(select(WorkoutEquipment654))
     }
+    kinds = {
+        row.set_id: row.set_type
+        for row in db.scalars(select(WorkoutSetType667).where(
+            WorkoutSetType667.set_id.in_([item.id for item in rows])
+        ))
+    } if rows else {}
+    audit = list(db.scalars(select(WorkoutSetAudit668).where(
+        WorkoutSetAudit668.session_id == session_id
+    ).order_by(WorkoutSetAudit668.changed_at.desc(), WorkoutSetAudit668.id.desc())))
     return render(
         request, "workout_history654.html",
         workout=workout, rows=rows, names=names,
+        set_types668=kinds, audit668=audit,
     )
 
 
