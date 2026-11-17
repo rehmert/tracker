@@ -36,6 +36,10 @@ def test_668_offline_sync_idempotency_and_stale_session(tmp_path):
         assert b'"duplicate":true' in duplicate.body
         assert db.scalar(select(func.count(WorkoutSet654.id))) == 1
         assert db.scalar(select(func.count(WorkoutOfflineReceipt668.id))) == 1
+        with pytest.raises(HTTPException) as conflict:
+            sync_offline_set668(**{**req, "weight_lb": 200})
+        assert conflict.value.status_code == 409
+        assert db.scalar(select(func.count(WorkoutSet654.id))) == 1
         actual = db.scalar(select(WorkoutSet654))
         assert (actual.weight_lb, actual.reps, actual.effort) == (115, 10, 8)
         assert db.get(WorkoutSetType667, actual.id).set_type == "warmup"
