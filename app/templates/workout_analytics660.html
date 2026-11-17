@@ -3,21 +3,22 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workouts660.css?v=660">
+<link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout660">
-  <nav class="workout660-nav" aria-label="Workout navigation">
+  <nav class="workout660-nav ux675-actions" aria-label="Workout navigation">
     <a href="/workouts">← Workouts</a>
-    <a href="/workouts/quick">Rapid Gym Mode</a>
+    <a href="/workouts/quick">Gym Mode</a>
   </nav>
   <h1>Strength Progress</h1>
-  <p class="note">Your actual recorded sets from <strong>completed workouts only</strong>. No estimated one-rep maxima, training recommendations, or comparisons between machines.</p>
+  <p class="note">Completed sets only · No estimated 1RM or cross-machine comparisons.</p>
 
   {% if not equipment %}
     <section class="workout660-empty">
       <h2>No equipment yet</h2>
       <p>Add a machine and log some sets to begin seeing progress.</p>
-      <p><a href="/workouts#workout-add-equipment656">Add equipment</a></p>
+      <p><a class="ux675-inline-action" href="/workouts#workout-add-equipment656">Add Machine</a></p>
     </section>
   {% else %}
     <form method="get" action="/workouts/analytics" class="workout660-picker">
@@ -36,14 +37,14 @@
       <div class="workout660-machine-intro">
         <h2>{{ selected.name }}</h2>
         <p class="note">{{ selected.gym }} · {{ selected.kind|replace('_',' ')|title }}</p>
-        <p><a href="/workouts/equipment/{{ selected.id }}/progress">Existing machine history &amp; recent sets</a></p>
+        <p><a class="ux675-inline-action" href="/workouts/equipment/{{ selected.id }}/progress">Machine History</a></p>
       </div>
 
       {% if not summary or not summary.sets %}
         <section class="workout660-empty">
           <h2>No completed-session sets yet</h2>
-          <p>Finish a workout with this machine, or enter an earlier completed workout, to begin seeing strength analytics.</p>
-          <p><a href="/workouts/backfill">Log a Previous Workout</a></p>
+          <p>Finish a session or log a past workout to see trends.</p>
+          <p><a class="ux675-inline-action" href="/workouts/backfill">Log Past Workout</a></p>
         </section>
       {% else %}
         <section class="workout660-metrics" aria-label="Completed workout summary">
