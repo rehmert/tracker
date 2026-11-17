@@ -17,6 +17,9 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 - Future-routine exercise substitution requires cataloged equipment, blocks
   changes during a matching active routine, and clears non-transferable numeric
   goals and old machine-specific setup notes.
+- Read-only cross-session Workout Insights: exact 28-day completed-session
+  counts, actual sets/repetitions/load × reps, and most recent 12 sessions.
+  Empty and unfinished workouts do not count as completed training.
 - Read-only per-session CSV export of actual logged sets, with formula-safe
   equipment names and existing authentication/database scoping.
 - Focused isolated tests for duplication, substitution and CSV safety.
@@ -26,13 +29,14 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 ## Remaining requested scope (NOT IMPLEMENTED / NOT QUALIFIED)
 
 - Workout scheduling and program improvements.
-- Advanced Workout analytics.
+- Remaining advanced Workout analytics (comparison and filtering beyond the
+  implemented actual-only 28-day and recent-session summary).
 - Supersets, circuits, exercise substitutions.
 - Full workout-session duplication and auditable historical correction workflow.
   (Editable *routine* duplication is implemented.)
 - Extended machine/load semantics, and complete Workout CSV import/exports.
   (Session-level actual-sets CSV export is implemented.)
-- Offline logging, actionable insights, expanded Workout dashboard widgets.
+- Offline logging, expanded actionable insights, and additional dashboard widgets.
 
 Do not create `docs/release-668-ready.txt` until **all** bundled features
 are implemented, reviewed, tested and a complete qualified migration review
