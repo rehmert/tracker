@@ -50,6 +50,62 @@ ALLOWED667 = MODIFIED667 | NEW667
 
 # Populated from GitHub's reviewed immutable Git blobs after final edits.
 REVIEWED_BLOBS667 = {
+    "app/main.py": (
+        "43699dabf223f6ab95d018bcf5fb125800eca3e5",
+        "5c4cf772a1b7ec47af2433c0598026ddee83738b",
+    ),
+    "app/routers/workouts654.py": (
+        "034bdbc18c93757d7889516d44d00e1f906063b6",
+        "d03884227def45bbfbdcd80a08f6fa83467ca77a",
+    ),
+    "app/routers/workouts655.py": (
+        "0893c76ccfebe6ead1068ad1a714542f6fd2695e",
+        "d25bd69bb755417f7c40ca34b6d7c68410a0d819",
+    ),
+    "app/routers/workouts657.py": (
+        "eb5b3cf9cfea45ec956248af0cbb415a9786b60d",
+        "ab0174dbae3cc11b6f91efb8f204a8819c692c9e",
+    ),
+    "app/routers/workouts659.py": (
+        "bcbe4f5c43e0b242744822bb7e931b0c02937b58",
+        "245b4608afb9e16a15ea88429c903998095e29a4",
+    ),
+    "app/routers/workouts663.py": (
+        "195ddfe377bc0f9efbac95eebddfed9bcfdb7b3c",
+        "daa829d5d2e64092a8dc398886f43b7fa0eefa0a",
+    ),
+    "app/templates/workouts654.html": (
+        "43c21acd38124a59c02a34769e6461068b2d664e",
+        "73fb3abe03bc69bbc20fa0812ef1cbef73c80936",
+    ),
+    "app/templates/workout_routine_detail655.html": (
+        "2410447a25eaea4d4fdade6dd8a0861247621d4a",
+        "1fb5a92af17c04b328c30ae465eda8170a28c1f0",
+    ),
+    "app/templates/workout_routines655.html": (
+        "7f19df5dc6010ddd15332ac7a50afd01e0ee43c8",
+        "b27b858cde180193a7e923c9ef4afb798a472302",
+    ),
+    "app/templates/workout_quick659.html": (
+        "a8bce2a205be83fc6bfe8e72e1f9477fd3ff9f6b",
+        "1867934157c62569038348abcc27099a9c5f1e95",
+    ),
+    "app/templates/workout_review663.html": (
+        "5ec088575d9210845175f6a12c049a9870f068e6",
+        "183a8235995a4a639ba925ce56667edf31f913b3",
+    ),
+    "app/static/js/tracker-workouts659.js": (
+        "de346e7c9f79f2c8f01842a2fb5c779835945ca9",
+        "51dc5ccf294cf76d17ca5ae91321b52508e94289",
+    ),
+    "scripts/tracker-release.sh": (
+        "a7d1b8b7b4193bf5e146553db898fbf79d7fac49",
+        "6b3e52d898af77450e43a07a814dbf0ab77b07f4",
+    ),
+    "scripts/tracker_prod_remote568.sh": (
+        "d8bb4c6c1e52755bc64ab53312b03c7e6b574a57",
+        "07f36790a92a7f28cca314536af8a29b361b11f9",
+    ),
 }
 
 
