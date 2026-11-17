@@ -51,6 +51,7 @@ NEW668 = frozenset({
     "tests/test_workout_csv_history668.py",
     "tests/test_workout_schedule668.py",
     "tests/test_workout_tools668.py",
+    "tests/test_workout_release668.py",
 })
 
 EXPECTED_TABLES668 = {
