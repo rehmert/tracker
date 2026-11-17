@@ -17,6 +17,7 @@ pages = (
     "purchases.html", "supplies.html", "coas.html",
 )
 for page in pages:
+    print(f"RELEASE_673_JINJA_CHECK={page}", flush=True)
     Environment().parse((Path("app/templates") / page).read_text(encoding="utf-8"))
 print("RELEASE_673_JINJA_SYNTAX=PASSED")
 PY
