@@ -20,6 +20,9 @@
     <a href="/workouts">Equipment &amp; QR Mapping</a>
     <a href="/coas">COA Records</a>
   </nav>
+  {% if report.limited %}
+    <p class="note">Showing the first 100 review items. Resolve those records and revisit to see the remaining findings.</p>
+  {% endif %}
   {% if report.issues %}
     <div class="ux674-quality-list">
       {% for item in report.issues %}
