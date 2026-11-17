@@ -102,7 +102,9 @@ def workout_insights668(
     request: Request, db: Session = Depends(get_scoped_db390),
 ):
     """Read-only completed-session consistency and recorded workload."""
-    since = datetime.now() - timedelta(days=28)
+    now = datetime.now()
+    since = now - timedelta(days=28)
+    previous_since = since - timedelta(days=28)
     totals = list(db.execute(
         select(
             WorkoutSession654.id.label("session_id"),
@@ -113,7 +115,8 @@ def workout_insights668(
         )
         .select_from(WorkoutSession654)
         .join(WorkoutSet654, WorkoutSet654.session_id == WorkoutSession654.id)
-        .where(WorkoutSession654.completed_at.is_not(None))
+        .where(WorkoutSession654.completed_at.is_not(None),
+               WorkoutSession654.started_at <= now)
         .group_by(WorkoutSession654.id, WorkoutSession654.started_at)
         .order_by(WorkoutSession654.started_at.desc(), WorkoutSession654.id.desc())
         .limit(12)
@@ -128,13 +131,48 @@ def workout_insights668(
         .select_from(WorkoutSession654)
         .join(WorkoutSet654, WorkoutSet654.session_id == WorkoutSession654.id)
         .where(WorkoutSession654.completed_at.is_not(None),
-               WorkoutSession654.started_at >= since)
+               WorkoutSession654.started_at >= since,
+               WorkoutSession654.started_at <= now)
     ).one()
+    prior = db.execute(
+        select(
+            func.count(func.distinct(WorkoutSession654.id)),
+            func.count(WorkoutSet654.id),
+            func.coalesce(func.sum(WorkoutSet654.reps), 0),
+            func.coalesce(func.sum(WorkoutSet654.weight_lb * WorkoutSet654.reps), 0.0),
+        )
+        .select_from(WorkoutSession654)
+        .join(WorkoutSet654, WorkoutSet654.session_id == WorkoutSession654.id)
+        .where(WorkoutSession654.completed_at.is_not(None),
+               WorkoutSession654.started_at >= previous_since,
+               WorkoutSession654.started_at < since)
+    ).one()
+    machine_summary = list(db.execute(
+        select(
+            WorkoutEquipment654.id.label("equipment_id"),
+            WorkoutEquipment654.name.label("name"),
+            func.count(WorkoutSet654.id).label("set_count"),
+            func.max(WorkoutSet654.weight_lb).label("heaviest_lb"),
+            func.sum(WorkoutSet654.reps).label("reps"),
+            func.sum(WorkoutSet654.weight_lb * WorkoutSet654.reps).label("volume"),
+        )
+        .join(WorkoutSet654, WorkoutSet654.equipment_id == WorkoutEquipment654.id)
+        .join(WorkoutSession654, WorkoutSet654.session_id == WorkoutSession654.id)
+        .where(WorkoutSession654.completed_at.is_not(None),
+               WorkoutSession654.started_at >= since,
+               WorkoutSession654.started_at <= now)
+        .group_by(WorkoutEquipment654.id, WorkoutEquipment654.name)
+        .order_by(func.count(WorkoutSet654.id).desc(), WorkoutEquipment654.name)
+        .limit(20)
+    ))
     return render(
         request, "workout_insights668.html", sessions=totals,
         recent_count=int(recent[0]), recent_sets=int(recent[1]),
         recent_repetitions=int(recent[2]),
         recent_volume=float(recent[3]),
+        prior_count=int(prior[0]), prior_sets=int(prior[1]),
+        prior_repetitions=int(prior[2]), prior_volume=float(prior[3]),
+        machines=machine_summary,
     )
 
 
