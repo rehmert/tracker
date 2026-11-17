@@ -7,12 +7,23 @@
 <link rel="stylesheet" href="/static/css/tracker-workouts657.css?v=657">
 <script src="/static/js/tracker-workouts655.js?v=655" defer></script>
 <script src="/static/js/tracker-workouts656.js?v=656" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 {% endblock %}
 {% block content %}
 <section class="workout654">
   <h1>Workouts</h1>
-  <p class="note">Nautilus machines and free weights. Log only the load and repetitions you actually completed.</p>
-  <p><a href="/workouts/quick" class="workout659-entry-link">Open Rapid Gym Mode</a> · <a href="/workouts/analytics">Strength Progress</a> · <a href="/workouts/calendar">Workout Calendar</a> · <a href="/workouts/backfill" class="workout658-history-link">Log a Previous Workout</a></p>
+  <p class="note">Nautilus + free weights · Log completed sets only.</p>
+  <nav class="ux675-actions" aria-label="Workout shortcuts">
+    <a class="ux675-primary workout659-entry-link" href="/workouts/quick">Gym Mode</a>
+    <a href="/workouts/analytics">Progress</a>
+    <a href="/workouts/calendar">Calendar</a>
+    <details class="ux675-more">
+      <summary>More</summary>
+      <div><a class="workout658-history-link" href="/workouts/backfill">Log Past Workout</a>
+        <a href="/workouts/insights">Insights</a>
+        <a href="/workouts/routines">Routines</a></div>
+    </details>
+  </nav>
 
   {% if active %}
     <div class="workout-status654">
@@ -33,7 +44,7 @@
   <section class="workout-routine-strip655">
     <div class="workout-routine-title655">
       <h2>Saved Routines</h2>
-      <a href="/workouts/routines">Manage Routines</a>
+      <a class="ux675-inline-action" href="/workouts/routines">Manage</a>
     </div>
     {% if routines %}
       <div class="workout-routine-launch655">
@@ -44,7 +55,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <p><a href="/workouts/routines">Create your first routine</a> to save a machine sequence.</p>
+      <p><a class="ux675-inline-action" href="/workouts/routines">Create Routine</a></p>
     {% endif %}
   </section>
 
@@ -53,7 +64,7 @@
     {% if request.query_params.get('unmapped_qr') %}
       <p class="workout656-mapping-message">
         <strong>New QR code detected.</strong>
-        <a href="#workout-add-equipment656">Add this machine</a>;
+        <a class="ux675-inline-action" href="#workout-add-equipment656">Add Machine</a>;
         its QR mapping is prefilled below.
       </p>
     {% endif %}
@@ -72,7 +83,7 @@
       <button type="button" data-stop656 hidden>Stop Camera</button>
       <p class="note workout656-status" data-status656 role="status" aria-live="polite">Paste a QR code above, or use the camera scanner on a compatible browser.</p>
     </div>
-    <p class="note">Map each code once below. Scanner results are looked up only in Tracker; external QR destinations are never opened.</p>
+    <p class="note">Map QR codes once. Tracker never opens external QR links.</p>
   </section>
 
   {% if active_routine and routine_total %}
@@ -100,7 +111,7 @@
           {% if item.seat_setting %} · Setup: {{ item.seat_setting }}{% endif %}
         </p>
         {% if item.setup_notes %}<p>{{ item.setup_notes }}</p>{% endif %}
-        <p><a href="/workouts/equipment/{{ item.id }}/progress">View Machine Progress &amp; History</a></p>
+        <p><a class="ux675-inline-action" href="/workouts/equipment/{{ item.id }}/progress">Progress &amp; History</a></p>
         {% if latest[item.id] %}
           <p><strong>Previous:</strong> {{ '%.1f'|format(latest[item.id].weight_lb) }} lb × {{ latest[item.id].reps }} reps</p>
           {% if active %}
@@ -145,7 +156,7 @@
         {% endif %}
 
         <details class="workout-settings654">
-          <summary>Machine settings &amp; QR mapping</summary>
+          <summary>Setup &amp; QR</summary>
           <form method="post" action="/workouts/equipment/{{ item.id }}/settings"
                 class="workout-grid654">
             <label>Seat / backrest position
@@ -167,7 +178,7 @@
   {% if active %}
   <section id="workout-sets657">
     <h2>Sets This Session</h2>
-    <p class="note">Correct a mis-entered set while this workout is active. Completed workouts remain read-only.</p>
+    <p class="note">Edit active sets here; use audited corrections for completed workouts.</p>
     {% for row in rows %}
       <div class="workout657-set">
         <div class="workout657-set-line">
