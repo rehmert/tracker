@@ -51,6 +51,20 @@ def workout_dashboard661(db: Session, today: date) -> dict:
 
     sessions7, days7 = frequency(RECENT_DAYS661)
     sessions28, days28 = frequency(LONG_DAYS661)
+    first28 = datetime.combine(today - timedelta(days=27), time.min)
+    recent_loads = db.execute(
+        select(
+            func.count(WorkoutSet654.id),
+            func.coalesce(func.sum(WorkoutSet654.reps), 0),
+        )
+        .select_from(WorkoutSession654)
+        .join(WorkoutSet654, WorkoutSet654.session_id == WorkoutSession654.id)
+        .where(
+            completed,
+            WorkoutSession654.started_at >= first28,
+            WorkoutSession654.started_at < tomorrow,
+        )
+    ).one()
 
     recent = list(db.execute(
         select(
@@ -90,6 +104,8 @@ def workout_dashboard661(db: Session, today: date) -> dict:
         "sessions7": sessions7,
         "days7": days7,
         "sessions28": sessions28,
+        "sets28": int(recent_loads[0]),
+        "reps28": int(recent_loads[1]),
         "days28": days28,
         "recent": recent,
         "in_progress": in_progress,
