@@ -62,7 +62,7 @@
   <p class="note" data-purchase-results role="status" aria-live="polite">Showing {{ rows|length }} of {{ rows|length }} purchases.</p>
   <p class="note" data-purchase-empty hidden>No purchases match those filters. Reset the filters to see all orders.</p>
   <div class="scroll">
-    <table id="purchase-history-table" data-purchase-history data-currency="{{ currency }}">
+    <table class="ux673-card-table" id="purchase-history-table" data-purchase-history data-currency="{{ currency }}">
       <thead><tr>
         <th scope="col" data-purchase-sort="date">Date</th>
         <th scope="col" data-purchase-sort="vendor">Vendor</th>
@@ -84,13 +84,13 @@
           data-purchase-supplies="{{ r.supply_count }}"
           data-purchase-total-cents="{{ r.total }}"
           data-purchase-status="{{ 'needs-items' if needs_items else 'has-items' }}">
-        <td>{{ r.p.purchased_on|dt }}</td>
-        <td><a href="/purchases/{{ r.p.id }}">{{ r.p.vendor }}</a></td>
-        <td>{{ r.p.order_ref or '—' }}</td>
-        <td class="n">{{ r.n }}</td>
-        <td class="n">{{ r.supply_count }}</td>
-        <td class="n">{{ r.total|money }}</td>
-        <td>{% if needs_items %}<a class="purchase-needs-items" href="/purchases/{{ r.p.id }}">Needs items · Add inventory</a>{% else %}<a href="/purchases/{{ r.p.id }}">Review items</a>{% endif %}</td>
+        <td data-label="Date">{{ r.p.purchased_on|dt }}</td>
+        <td data-label="Vendor"><a href="/purchases/{{ r.p.id }}">{{ r.p.vendor }}</a></td>
+        <td data-label="Order">{{ r.p.order_ref or '—' }}</td>
+        <td class="n" data-label="Vials">{{ r.n }}</td>
+        <td class="n" data-label="Supplies / pills">{{ r.supply_count }}</td>
+        <td class="n" data-label="Total">{{ r.total|money }}</td>
+        <td data-label="Next step" data-ux673-action>{% if needs_items %}<a class="purchase-needs-items" href="/purchases/{{ r.p.id }}">Needs items · Add inventory</a>{% else %}<a href="/purchases/{{ r.p.id }}">Review items</a>{% endif %}</td>
       </tr>
       {% else %}
       <tr><td colspan="7" class="empty">No purchases yet.</td></tr>
