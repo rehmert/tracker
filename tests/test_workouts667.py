@@ -217,6 +217,14 @@ def test_667_http_program_snapshots_import_and_rapid_gym_workflow():
                             '":{"sets":"3","reps":"10","weight":"95.5"}}}',
         })
         assert good_import.status_code == 303 and "msg=" in good_import.headers["location"]
+        incomplete_import = post667(client, url + "/import", {
+            "targets_json": '{"version":1,"targets":{"' + str(iid) +
+                            '":{"sets":"2","reps":"","weight":"100"}}}',
+        })
+        assert incomplete_import.status_code == 303
+        assert "err=" in incomplete_import.headers["location"]
+        with SessionLocal() as db:
+            assert db.get(WorkoutRoutineTarget667, iid).target_weight_lb == 95.5
 
         started = post667(client, f"/workouts/quick/routines/{rid}/start")
         assert started.status_code == 303
@@ -238,6 +246,17 @@ def test_667_http_program_snapshots_import_and_rapid_gym_workflow():
         assert 'id="workout667-use-goal"' in quick.text
         assert 'name="set_type"' in quick.text
         assert "Seat 3, neutral grip" in quick.text
+
+        rejected_kind = post667(client, "/workouts/quick/sets", {
+            "equipment_id": machine_id, "weight_lb": "110", "reps": "20",
+            "set_type": "rest",
+        })
+        assert rejected_kind.status_code == 303
+        assert "err=" in rejected_kind.headers["location"]
+        with SessionLocal() as db:
+            assert db.scalar(select(func.count(WorkoutSet654.id)).where(
+                WorkoutSet654.session_id == sid
+            )) == 0
 
         warmup = post667(client, "/workouts/quick/sets", {
             "equipment_id": machine_id, "weight_lb": "110", "reps": "20",
