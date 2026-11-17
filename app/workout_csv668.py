@@ -21,7 +21,7 @@ def parse_routine_csv668(payload: str, allowed_item_ids: set[int]) -> list[dict]
     if not payload or len(payload.encode("utf-8")) > MAX_CSV_BYTES668:
         raise ValueError("CSV must contain at most 32 KiB of text.")
     try:
-        reader = csv.DictReader(StringIO(payload, newline=""), strict=True)
+        reader = csv.DictReader(StringIO(payload.lstrip("\ufeff"), newline=""), strict=True)
         if reader.fieldnames != list(FIELDS668):
             raise ValueError("CSV columns do not match the supported routine-plan format.")
         parsed = []
