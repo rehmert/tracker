@@ -70,8 +70,16 @@
             <nav aria-label="{{ group.group.group_name }} exercises">
               {% for equipment_item in group.machines %}
                 <a href="/workouts/quick?machine={{ equipment_item.id }}">{{ equipment_item.name }}</a>
+                <small> · {{ group.progress[equipment_item.id] }}/{{ group.group.rounds }} working sets</small>
               {% endfor %}
             </nav>
+            {% if group.complete %}
+              <p class="workout659-muted">All planned rounds have been logged.</p>
+            {% elif group.next_machine %}
+              <p><a href="/workouts/quick?machine={{ group.next_machine.id }}">
+                Next in planned rotation: {{ group.next_machine.name }}
+              </a></p>
+            {% endif %}
           </details>
         {% endfor %}
       </section>
