@@ -191,6 +191,12 @@
               <input type="number" name="effort" inputmode="numeric"
                      min="1" max="10" value="{{ row.effort if row.effort is not none else '' }}">
             </label>
+            <label>Recorded set type
+              <select name="set_type">
+                <option value="working" {% if set_types667.get(row.id, 'working') == 'working' %}selected{% endif %}>Working set</option>
+                <option value="warmup" {% if set_types667.get(row.id) == 'warmup' %}selected{% endif %}>Warm-up set</option>
+              </select>
+            </label>
             <button type="submit" class="primary">Save Correction</button>
           </form>
           <form method="post" action="/workouts/sets/{{ row.id }}/delete"
