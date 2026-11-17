@@ -95,8 +95,10 @@ class WorkoutOfflineReceipt668(Base):
     session_id: Mapped[int] = mapped_column(
         ForeignKey("workout_sessions654.id", ondelete="RESTRICT"), nullable=False
     )
-    set_id: Mapped[int] = mapped_column(
-        ForeignKey("workout_sets654.id", ondelete="RESTRICT"), nullable=False
+    # A deleted active set leaves a durable idempotency tombstone. Retried
+    # client actions must never recreate a set explicitly removed by the user.
+    set_id: Mapped[int | None] = mapped_column(
+        ForeignKey("workout_sets654.id", ondelete="SET NULL"), nullable=True
     )
     synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
