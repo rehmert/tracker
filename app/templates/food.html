@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="/static/css/tracker-food424.css?v=424">
 <link rel="stylesheet" href="/static/css/tracker-food425.css?v=425">
 <link rel="stylesheet" href="/static/css/tracker-mobile-daily602.css?v=602">
+<link rel="stylesheet" href="/static/css/tracker-food-ux673.css?v=673">
 <script defer src="/static/js/tracker-food-mobile602.js?v=602"></script>
 <script src="/static/js/tracker-food424.js?v=424" defer></script>
 <script src="/static/js/tracker-food384.js?v=384" defer></script>
@@ -25,22 +26,18 @@
 <script src="/static/js/tracker-food500.js?v=602" defer></script>
 <h1>Food Journal</h1>
 <p class="note"><a href="/regimen">Track supplements &amp; medications</a> separately from meals. Their optional meal association does not add unverified nutrients to Food Journal totals.</p>
-<p class="note">Tap a section below to expand it.
-Daily totals remain visible; nutrient values can be incomplete.
-Confirm package-label values before saving.</p>
+<p class="note">Choose a food action below. Nutrition totals reflect the values reported for saved foods; incomplete labels may leave some totals unknown.</p>
 <nav class="food377-days" aria-label="Food Journal dates">
 <a href="/food?day={{ previous_day }}">← Previous</a>
 <a href="/food?day={{ today }}">Today</a>
 <a href="/food?day={{ next_day }}">Next →</a>
 </nav>
 <form method="get" action="/food" class="food-date"><label>Day <input type="date" name="day" value="{{ day }}"></label><button>Show</button></form>
-<nav class="food424-actions food-mobile-actions602" aria-label="Fast food logging actions">
-<a href="#food-quick-log">Log Favorite</a>
+<nav class="food424-actions food-mobile-actions602 ux673-food-primary" aria-label="Food Journal primary actions">
+<a class="ux673-food-cta" href="#food-quick-log">Log Food</a>
 <a href="#food-add">Scan / Add</a>
-<a href="#food-search">Saved Foods</a>
-<a href="/food/duplicates">Review Duplicates</a>
-<a href="#food-water">Water</a>
-<a href="#food-targets">Daily Targets</a>
+<a href="#food-water">Log Water</a>
+<a href="#food-recorded">Today's Meals</a>
 </nav>
 <section class="food-dashboard">
   <h2>Daily Totals</h2>
@@ -306,17 +303,19 @@ Save Daily Targets
 </div>
 </details>
 <p class="note">Barcode product data provided by <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" target="_blank">Open Food Facts</a> and may be incomplete. Check serving basis and package values.</p>
-<nav class="food376-nav" aria-label="Food Journal sections">
-<a href="#food-quick-log">Quick Log</a>
+<details class="ux673-food-more">
+<summary>More Food Tools &amp; Analysis</summary>
+<nav class="food376-nav" aria-label="Additional Food Journal sections">
 <a href="#food-search">Saved Foods</a>
 <a href="#food-name-search">Find New Food</a>
-<a href="#food-add">Scan / Add</a>
-<a href="#food-recorded">Recorded Meals</a>
 <a href="#food-templates">Meal Templates</a>
 <a href="#food-meal-totals">Meal Totals</a>
 <a href="#food-week">Trends</a>
 <a href="#food-nutrient-week">Nutrients</a>
+<a href="#food-targets">Daily Targets</a>
+<a href="/food/duplicates">Review Duplicates</a>
 </nav>
+</details>
 
 <details id="food-quick-log" class="food375-section food382-accordion" data-food382-section="food-quick-log">
 <summary>Quick Log / Favorites<span class="food382-chevron" aria-hidden="true"></span></summary>
