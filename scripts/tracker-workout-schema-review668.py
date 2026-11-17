@@ -80,6 +80,15 @@ def review668(root: Path, base: str, target: str) -> None:
     git(root, "merge-base", "--is-ancestor", base, target)
     changed = set(git(root, "diff", "--name-only", base, target).splitlines())
     allowed = MODIFIED668 | NEW668
+    ready_path = "docs/release-668-ready.txt"
+    if ready_path in changed:
+        if git(root, "show", f"{target}:{ready_path}") != (
+            "RELEASE_668_IMPLEMENTATION_REVIEWED=YES"
+        ):
+            raise ValueError("Invalid exact-content Release 668 readiness marker")
+        # The marker is an additional reviewed file, not an alternative to
+        # any required source or test files. Its absence keeps preview valid.
+        allowed = allowed | {ready_path}
     if changed != allowed:
         raise ValueError(f"Unexpected changed paths: {sorted(changed ^ allowed)!r}")
     for protected in (
