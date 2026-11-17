@@ -52,6 +52,36 @@
       <p><a href="/workouts/backfill">Log a Previous Workout</a> to begin your training history.</p>
     {% endif %}
   </div>
+  <section class="workout668-dashboard-widgets" aria-label="Workout program pulse">
+    <h3>Upcoming Training &amp; Goals</h3>
+    <nav class="tracker-workout-actions661">
+      <a href="/workouts/programs">Edit Weekly Program</a>
+      <a href="/workouts/insights">Advanced Insights</a>
+      <a href="/workouts/data">Import / Export Workout Data</a>
+    </nav>
+    {% if workout_pulse668.upcoming %}
+      <ul>
+        {% for slot in workout_pulse668.upcoming %}
+          <li>
+            {{ ('Mon','Tue','Wed','Thu','Fri','Sat','Sun')[slot.weekday] }}
+            · <a href="/workouts/routines/{{ slot.id }}/program">{{ slot.name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="note">No weekly workouts scheduled yet.</p>
+    {% endif %}
+    {% if workout_pulse668.goal %}
+      <p>Last completed goal-based session:
+        <a href="/workouts/sessions/{{ workout_pulse668.goal.session_id }}/review">
+          {{ workout_pulse668.goal.qualified }} of {{ workout_pulse668.goal.planned }}
+          qualifying working sets ({{ workout_pulse668.goal.pct }}%)
+        </a>
+      </p>
+    {% else %}
+      <p class="note">No recent completed session with frozen targets yet.</p>
+    {% endif %}
+  </section>
   <p class="note tracker-workout-footnote661">
     A training day is a calendar date with at least one completed workout containing a recorded set.
     Multiple sessions on one day count as multiple sessions but one training day.
