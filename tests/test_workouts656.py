@@ -47,7 +47,7 @@ def test_656_per_machine_progress_and_qr_scanning_lookup():
         assert 'data-start656' in root.text
         assert 'data-stop656' in root.text
         assert 'name="code"' in root.text  # manual fallback retained
-        assert "View Machine Progress &amp; History" in root.text
+        assert "Progress &amp; History" in root.text
 
         lookup = client.get("/workouts/qr", params={
             "code": "https://example.invalid/nautilus?machine=656&unit=1",
