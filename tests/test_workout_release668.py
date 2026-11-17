@@ -21,3 +21,12 @@ def test_668_reviewed_prod_branch_runs_exact_scoped_gate():
     )
     remote = (ROOT / "scripts/tracker_prod_remote568.sh").read_text()
     assert 'DEPLOY_EXTRA=(--reviewed-workout-668 --db-migration)' in remote
+
+
+def test_668_readiness_marker_is_optional_and_exact_content_only():
+    source = (ROOT / "scripts/tracker-workout-schema-review668.py").read_text()
+    assert 'ready_path = "docs/release-668-ready.txt"' in source
+    assert '"RELEASE_668_IMPLEMENTATION_REVIEWED=YES"' in source
+    assert 'allowed = allowed | {ready_path}' in source
+    assert 'if ready_path in changed:' in source
+    assert not (ROOT / "docs/release-668-ready.txt").exists()
