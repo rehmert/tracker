@@ -59,7 +59,7 @@
       <a href="/workouts/insights">Advanced Insights</a>
       <a href="/workouts/data">Import / Export Workout Data</a>
     </nav>
-    {% if workout_pulse668.upcoming %}
+    {% if workout_pulse668 is defined and workout_pulse668.upcoming %}
       <ul>
         {% for slot in workout_pulse668.upcoming %}
           <li>
