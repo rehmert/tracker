@@ -374,6 +374,7 @@ and choose the intended version before logging.
 {% endfor %}
 </div>
 
+ <p><a href="/food/saved/{{ item.id }}/edit?day={{ day }}">Edit Saved Food</a></p>
  <form method="post" action="/food/quick/{{ item.id }}" class="food375-quick-form">
   <input type="hidden" name="day" value="{{ day }}">
   <label>Servings
@@ -427,6 +428,7 @@ and choose the intended version before logging.
 {% endfor %}
 </div>
 
+ <p><a href="/food/saved/{{ item.id }}/edit?day={{ day }}">Edit Saved Food</a></p>
  <form method="post" action="/food/quick/{{ item.id }}" class="food375-quick-form">
   <input type="hidden" name="day" value="{{ day }}">
   <label>Servings
@@ -493,6 +495,7 @@ and choose the intended version before logging.
 {% endfor %}
 </div>
 
+<p><a href="/food/saved/{{ item.id }}/edit?day={{ day }}">Edit Saved Food</a></p>
 <form method="post" action="/food/quick/{{ item.id }}"
  class="food375-quick-form">
 <input type="hidden" name="day" value="{{ day }}">
@@ -728,6 +731,7 @@ Save Nutrition Correction
   <input type="hidden" name="servings" value="{{ e.servings }}">
   <button type="submit">Repeat</button>
  </form>
+ <a href="/food/saved/{{ e.product_id }}/edit?day={{ day }}">Edit Saved Food</a>
  <form method="post" action="/food/favorite/{{ e.product_id }}">
   <input type="hidden" name="day" value="{{ day }}">
   <button type="submit">{% if e.product_id in favorite_ids %}★ Saved{% else %}☆ Favorite{% endif %}</button>
