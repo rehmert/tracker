@@ -731,7 +731,10 @@ Save Nutrition Correction
   <input type="hidden" name="servings" value="{{ e.servings }}">
   <button type="submit">Repeat</button>
  </form>
- <a href="/food/saved/{{ e.product_id }}/edit?day={{ day }}">Edit Saved Food</a>
+ <form method="get" action="/food/saved/{{ e.product_id }}/edit">
+  <input type="hidden" name="day" value="{{ day }}">
+  <button type="submit">Edit Saved Food</button>
+ </form>
  <form method="post" action="/food/favorite/{{ e.product_id }}">
   <input type="hidden" name="day" value="{{ day }}">
   <button type="submit">{% if e.product_id in favorite_ids %}★ Saved{% else %}☆ Favorite{% endif %}</button>
