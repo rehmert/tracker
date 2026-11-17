@@ -20,7 +20,7 @@
     <details>
       <summary>Import completed workout sets from CSV</summary>
       <p class="note">Use only sets you actually completed. Expected columns:
-        equipment_id,weight_lb,reps,effort,set_time. Enter the actual workout
+        equipment_id,weight_lb,reps,effort,set_time and optional set_type (working/warmup). Enter the actual workout
         date and start/end times; Tracker validates all rows before saving.</p>
       <form method="post" action="/workouts/backfill/import.csv">
         <label>Workout date
@@ -42,7 +42,7 @@
         </label>
         <label>Paste CSV (maximum 40 set rows)
           <textarea name="csv_text" maxlength="32768" required rows="7"
-                    spellcheck="false" placeholder="equipment_id,weight_lb,reps,effort,set_time"></textarea>
+                    spellcheck="false" placeholder="equipment_id,weight_lb,reps,effort,set_time,set_type"></textarea>
         </label>
         <button type="submit">Import Validated Actual Sets</button>
       </form>
