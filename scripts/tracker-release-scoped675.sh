@@ -27,12 +27,14 @@ PY
   tests/test_action_navigation_browser675.py \
   tests/test_integrated_mobile_ux673.py \
   tests/test_release604_preflight.py \
+  tests/test_release604_navigation_browser.py \
   tests/test_workouts656.py \
   tests/test_workouts658.py \
   tests/test_workouts659.py \
   tests/test_workouts660.py \
   tests/test_workouts663.py \
   tests/test_workouts664.py \
+  tests/browser/test_workout_calendar664.py \
   tests/test_workouts667.py \
   tests/test_workout_tools668.py \
   tests/test_purchase_history_review.py \
