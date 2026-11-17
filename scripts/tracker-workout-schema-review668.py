@@ -59,6 +59,8 @@ EXPECTED_TABLES668 = {
     "WorkoutRoutineGroup668": "workout_routine_groups668",
     "WorkoutRoutineGroupMember668": "workout_routine_group_members668",
     "WorkoutSetCorrection668": "workout_set_corrections668",
+    "WorkoutOfflineReceipt668": "workout_offline_receipts668",
+    "WorkoutEquipmentLoad668": "workout_equipment_load668",
 }
 
 
@@ -133,7 +135,7 @@ def review668(root: Path, base: str, target: str) -> None:
             raise ValueError("Unexpected schema class declaration")
         classes[node.name] = table_names[0]
     if classes != EXPECTED_TABLES668:
-        raise ValueError("Only the four reviewed additive Workout tables are permitted")
+        raise ValueError("Only the six reviewed additive Workout tables are permitted")
     required = (
         'ForeignKey("workout_routines655.id", ondelete="CASCADE")',
         'ForeignKey("workout_routine_items655.id", ondelete="CASCADE")',
@@ -142,6 +144,7 @@ def review668(root: Path, base: str, target: str) -> None:
         "ck_workout668_group_rounds",
         "ck_workout668_correction_reason",
         "uq_workout668_group_single_membership",
+        "uq_workout668_offline_key", "ck_workout668_load_mode",
     )
     if any(fragment not in source for fragment in required):
         raise ValueError("Expected key, constraint or referential guard is missing")
