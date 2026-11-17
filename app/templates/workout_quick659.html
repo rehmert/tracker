@@ -118,6 +118,42 @@
             <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
           {% endif %}
         </div>
+        <details class="workout659-panel">
+          <summary>Machine load setup and interpretation</summary>
+          <p class="workout659-muted">Recorded weight remains exactly what you
+            enter. Configure whether your input refers to a stack, the whole
+            plate load, one side, a dumbbell pair or added bodyweight. The
+            multiplier and offset are advisory only and never rewrite history.</p>
+          <form method="post" action="/workouts/equipment/{{ machine.id }}/load">
+            <label>Load representation
+              <select name="load_mode">
+                {% for key, description in (
+                  ('stack', 'Stack displayed total (lb)'),
+                  ('total_plates', 'Combined plate load (lb)'),
+                  ('per_side', 'Plates on one side (lb)'),
+                  ('pair_total', 'Total of dumbbell pair (lb)'),
+                  ('bodyweight_added', 'Added resistance above bodyweight (lb)')
+                ) %}
+                  <option value="{{ key }}" {% if load_config668 and load_config668.load_mode == key %}selected{% endif %}>{{ description }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>Reference multiplier
+              <input type="number" name="multiplier" min="0.01" max="10" step="0.01"
+                     value="{{ load_config668.multiplier if load_config668 else 1 }}" required>
+            </label>
+            <label>Equipment offset (lb; e.g. sled)
+              <input type="number" name="offset_lb" min="0" max="500" step="any"
+                     value="{{ load_config668.offset_lb if load_config668 else 0 }}" required>
+            </label>
+            <label>Machine-specific load notes
+              <textarea name="note" maxlength="500" rows="2">{{ load_config668.note if load_config668 else '' }}</textarea>
+            </label>
+            <button type="submit">Save Machine Load Setup</button>
+          </form>
+          <p class="workout659-muted">These values do not alter recorded weight
+            or calculate strength between different machine designs.</p>
+        </details>
         <div class="workout659-prior">
           {% if last %}
             <span>Last recorded</span>
@@ -221,10 +257,13 @@
           <h3>Offline Draft (Not Recorded)</h3>
           <p class="workout659-muted">Save the current set fields on this device,
             even without a network connection. Restore and explicitly save
-            the set online when ready. No automatic synchronization occurs.</p>
+            the set online when ready. Queued sets sync automatically when connectivity returns, while this page is open. Server-confirmed actions are removed from the device; rejected actions remain for review.</p>
           <button type="button" id="workout668-draft-save">Save Local Draft</button>
           <button type="button" id="workout668-draft-restore">Restore Draft</button>
+          <button type="button" id="workout668-queue-set">Queue This Set for Offline Sync</button>
+          <button type="button" id="workout668-sync-now">Synchronize Pending Sets</button>
           <button type="button" id="workout668-draft-clear">Delete Draft</button>
+          <p id="workout668-sync-status" role="status" aria-live="polite"></p>
           <p id="workout668-draft-status" role="status" aria-live="polite"></p>
         </section>
         {% if last %}
