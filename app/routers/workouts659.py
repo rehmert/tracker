@@ -78,6 +78,10 @@ def quick_workout659(
         elif equipment:
             chosen_id = equipment[0].id
     chosen = lookup.get(chosen_id)
+    # Release 666: expose the existing routine-item ID for browser-local
+    # target lookup only. No target values are read, sent, or written here.
+    plan_item_id = next((item.id for item in items
+                         if chosen and item.equipment_id == chosen.id), None)
     last = db.scalar(
         select(WorkoutSet654)
         .where(WorkoutSet654.equipment_id == chosen.id)
@@ -113,6 +117,7 @@ def quick_workout659(
         request, "workout_quick659.html",
         active=active, machine=chosen, equipment=equipment, routines=routines,
         routine=routine, routine_total=len(routine_ids),
+        plan_item_id=plan_item_id,
         routine_logged=len(all_logged_ids.intersection(routine_ids)),
         machine_sets=machine_sets, last=last,
         previous_machine=lookup.get(previous_id),
