@@ -88,7 +88,7 @@ def save_item667(
     db: Session = Depends(get_scoped_db390),
 ):
     _item667(db, routine_id, item_id)
-    url = _program_url667(routine_id) + f"#program-item-{item_id}"
+    url = _program_url667(routine_id)
     try:
         sets, reps, pounds = parse_goal667(
             target_sets, target_reps, target_weight_lb,
