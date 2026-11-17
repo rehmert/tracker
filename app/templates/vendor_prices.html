@@ -242,7 +242,7 @@
 <label class="field"><span>Number of vials in package</span><input type="number" name="vial_count" value="{{ editing.vial_count }}" min="1" max="100000" step="1" required></label>
 <label class="field"><span>Price for package (USD)</span><input type="number" name="total_price" value="{{ '%.2f'|format(editing.total_price_cents / 100) }}" min="0" step="0.01" required></label>
 <label class="field"><span>Product link (optional)</span><input type="url" name="product_url" value="{{ editing.product_url or '' }}" maxlength="2048"></label>
-</div><button type="submit">Save changes</button> <a href="/vendor-prices">Cancel</a>
+</div><button type="submit">Save changes</button> <a class="btn" href="/vendor-prices">Cancel</a>
 </form></section>
 {% endif %}
 <section class="card"><h2>Vendor shipping policies</h2>
