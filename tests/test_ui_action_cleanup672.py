@@ -1,0 +1,51 @@
+"""Release 672: no redundant saved-food confirmation and consistent actions."""
+from pathlib import Path
+from jinja2 import Environment
+
+ROOT = Path(__file__).resolve().parents[1] / "app/templates"
+
+
+def test_672_saved_food_update_requires_only_save():
+    source = (ROOT.parent / "routers/food.py").read_text(encoding="utf-8")
+    markup = (ROOT / "food_saved_edit669.html").read_text(encoding="utf-8")
+    assert 'name="confirm_history"' not in markup
+    assert 'form.get("confirm_history"' not in source
+    assert "if used and confirm" not in source
+    assert "Existing meal history:" in markup
+    assert '<button type="submit" class="primary">Save Food Changes</button>' in markup
+    assert '<a class="btn" href="/food?day={{ day }}#food-search">Cancel</a>' in markup
+
+
+def test_672_cancel_controls_consistent_on_editor_pages():
+    expected = {
+        "compound_edit.html": '<a class="btn" href="/compounds">Cancel</a>',
+        "page_edit.html": '<a class="btn" href="{{ \'/pages/\' ~ p.id if p else \'/pages\' }}">Cancel</a>',
+        "lab_form.html": '<a class="btn" href="/labs">Cancel</a>',
+        "workout_backfill658.html": '<a class="btn" href="/workouts">Cancel</a>',
+        "vendor_prices.html": '<a class="btn" href="/vendor-prices">Cancel</a>',
+        "food_saved_edit669.html": '<a class="btn" href="/food?day={{ day }}#food-search">Cancel</a>',
+    }
+    for file, marker in expected.items():
+        html = (ROOT / file).read_text(encoding="utf-8")
+        assert marker in html, file
+        Environment().parse(html)
+
+
+def test_672_compound_and_purchase_actions_are_real_buttons():
+    compounds = (ROOT / "compounds.html").read_text(encoding="utf-8")
+    assert '<form style="display:inline" method="get" action="/compounds/{{ c.id }}/edit"><button type="submit">Edit</button></form>' in compounds
+    assert '<a href="/compounds/{{ c.id }}/edit">Edit</a>' not in compounds
+    assert '<button type="submit" style="color:var(--brick)">Delete</button>' in compounds
+
+    purchases = (ROOT / "purchase_detail.html").read_text(encoding="utf-8")
+    assert '<form method="get" action="/vials/{{ v.id }}"><button type="submit">Edit</button></form>' in purchases
+    assert '<a href="/vials/{{ v.id }}">Edit</a>' not in purchases
+    assert '<button type="submit" style="color:var(--brick)">Delete</button>' in purchases
+    Environment().parse(compounds)
+    Environment().parse(purchases)
+
+
+def test_672_existing_button_visual_system():
+    css = (ROOT.parent / "static/app.css").read_text(encoding="utf-8")
+    assert ".btn { display: inline-block;" in css
+    assert "button { padding:" in css
