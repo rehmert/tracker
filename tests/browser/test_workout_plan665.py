@@ -45,6 +45,7 @@ def markup665(routine_id=99):
     )
     return (
         '<!doctype html><html><head>'
+        '<meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<style>*{box-sizing:border-box}body{margin:0;padding:12px}'
         + CSS + '</style></head><body>'
@@ -69,13 +70,14 @@ def test_665_phone_user_entered_targets_are_private_and_persist_per_routine(widt
             (request.method, request.url)
         ))
         page.route("**/workouts/routines/*/plan", lambda route: route.fulfill(
-            status=200, content_type="text/html",
+            status=200, content_type="text/html; charset=utf-8",
             body=markup665(
                 routine_id=100 if "/100/" in route.request.url else 99
             ),
         ))
         try:
             page.goto(URL)
+            assert page.evaluate("document.characterSet") == "UTF-8"
             expect(page.get_by_role("heading", name="Workout Program Planner")).to_be_visible()
             expect(page.locator(".workout665-exercise")).to_have_count(2)
             assert page.evaluate(
