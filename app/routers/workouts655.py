@@ -67,6 +67,48 @@ def create_routine655(
     return services.flash_redirect(_routine_url(routine.id), msg="Routine created. Add equipment in workout order.")
 
 
+@router.post("/workouts/routines/{routine_id}/duplicate")
+def duplicate_routine668(
+    routine_id: int, db: Session = Depends(get_scoped_db390),
+):
+    """Copy the editable program, never recorded sets or historical snapshots."""
+    source = _routine(db, routine_id)
+    items = _items(db, routine_id)
+    from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667
+
+    proposed = f"{source.name} (Copy)"
+    if len(proposed) > 120:
+        proposed = source.name[:113].rstrip() + " (Copy)"
+    clone = WorkoutRoutine655(name=proposed)
+    db.add(clone)
+    db.flush()
+    config = db.get(WorkoutRoutineConfig667, source.id)
+    if config is not None:
+        db.add(WorkoutRoutineConfig667(
+            routine_id=clone.id, rest_seconds=config.rest_seconds,
+        ))
+    for item in items:
+        new_item = WorkoutRoutineItem655(
+            routine_id=clone.id, equipment_id=item.equipment_id,
+            position=item.position,
+        )
+        db.add(new_item)
+        db.flush()
+        goal = db.get(WorkoutRoutineTarget667, item.id)
+        if goal is not None:
+            db.add(WorkoutRoutineTarget667(
+                routine_item_id=new_item.id, target_sets=goal.target_sets,
+                target_reps=goal.target_reps,
+                target_weight_lb=goal.target_weight_lb,
+                setup_note=goal.setup_note, rest_seconds=goal.rest_seconds,
+            ))
+    db.commit()
+    return services.flash_redirect(
+        _routine_url(clone.id),
+        msg="Routine and future exercise plans duplicated; no historical sets copied.",
+    )
+
+
 @router.get("/workouts/routines/{routine_id}")
 def routine_detail655(
     routine_id: int, request: Request, db: Session = Depends(get_scoped_db390),
