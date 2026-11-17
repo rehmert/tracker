@@ -14,6 +14,8 @@ from .. import services
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
+from ..workout_models667 import WorkoutSessionTarget667
+from ..workout_program667 import progress667
 from .workouts654 import active654, finish654
 
 router = APIRouter()
@@ -62,9 +64,31 @@ def workout_session_review663(
         "reps": sum(int(row.reps) for row in machine_rows),
         "volume": sum(float(row.volume) for row in machine_rows),
     }
+    frozen_targets = list(db.scalars(
+        select(WorkoutSessionTarget667)
+        .where(WorkoutSessionTarget667.session_id == session_id)
+        .order_by(WorkoutSessionTarget667.equipment_id)
+    ))
+    equipment_names = {
+        target.equipment_id: (
+            db.get(WorkoutEquipment654, target.equipment_id).name
+            if db.get(WorkoutEquipment654, target.equipment_id) else
+            "Unknown equipment"
+        )
+        for target in frozen_targets
+    }
+    goal_rows = [
+        {
+            "target": target,
+            "name": equipment_names[target.equipment_id],
+            "progress": progress667(db, session_id, target.equipment_id),
+        }
+        for target in frozen_targets
+    ]
     return render(
         request, "workout_review663.html",
         workout=workout, machine_rows=machine_rows, totals=totals,
+        goal_rows=goal_rows,
     )
 
 
