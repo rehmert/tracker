@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Workout Program Planner{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+<link rel="stylesheet" href="/static/css/tracker-workout-plan665.css?v=665">
+<script src="/static/js/tracker-workout-plan665.js?v=665" defer></script>
+{% endblock %}
+{% block content %}
+<section class="workout665" id="workout665-planner"
+         data-routine-id665="{{ routine.id }}">
+  <nav class="workout665-nav" aria-label="Routine planning navigation">
+    <a href="/workouts/routines/{{ routine.id }}">← {{ routine.name }}</a>
+    <a href="/workouts/routines">Saved Routines</a>
+    <a href="/workouts/analytics">Strength Progress</a>
+    <a href="/workouts/quick">Rapid Gym Mode</a>
+  </nav>
+  <header>
+    <h1>Workout Program Planner</h1>
+    <h2>{{ routine.name }}</h2>
+    <p>Plan your next workout against the last two completed sessions for each exercise.</p>
+    <p class="workout665-note">Targets are optional notes saved <strong>only in this browser on this device</strong>. They are not stored in Tracker, transferred across devices, or automatically logged. Use a private browser if you share this device.</p>
+  </header>
+
+  <section aria-label="Planning summary" class="workout665-summary">
+    <div><strong>{{ rows|length }}</strong><span>Exercises in routine</span></div>
+    <div><strong>{{ history_count }}</strong><span>Exercises with completed history</span></div>
+    <div><strong>{{ rows|length - history_count }}</strong><span>Exercises without history</span></div>
+  </section>
+
+  <div class="workout665-controls">
+    <output role="status" id="workout665-save-status" aria-live="polite">
+      Targets are not logged workout sets.
+    </output>
+    <button type="button" id="workout665-clear-all">Clear Saved Targets</button>
+  </div>
+  {% if rows %}
+    <ol class="workout665-exercises">
+      {% for entry in rows %}
+        <li class="workout665-exercise" data-item-id665="{{ entry.item.id }}">
+          <div class="workout665-exercise-head">
+            <div>
+              <h3>{{ loop.index }}. {{ entry.equipment.name }}</h3>
+              <p>{{ entry.equipment.gym }}</p>
+            </div>
+            <a href="/workouts/analytics?machine={{ entry.equipment.id }}">Machine Analytics</a>
+          </div>
+
+          {% if entry.latest %}
+            <section class="workout665-comparison" aria-label="Recorded workout comparison for {{ entry.equipment.name }}">
+              <div>
+                <h4>Most recent completed</h4>
+                <p><a href="/workouts/sessions/{{ entry.latest.session_id }}/review">{{ entry.latest.started_at|dt }}</a></p>
+                <dl>
+                  <div><dt>Sets</dt><dd>{{ entry.latest.sets }}</dd></div>
+                  <div><dt>Total reps</dt><dd>{{ entry.latest.reps }}</dd></div>
+                  <div><dt>Heaviest load</dt><dd>{{ '%.1f'|format(entry.latest.heaviest_lb) }} lb</dd></div>
+                  <div><dt>Volume</dt><dd>{{ '{:,.1f}'.format(entry.latest.volume) }} lb × reps</dd></div>
+                </dl>
+              </div>
+              <div>
+                <h4>Previous completed</h4>
+                {% if entry.previous %}
+                  <p><a href="/workouts/sessions/{{ entry.previous.session_id }}/review">{{ entry.previous.started_at|dt }}</a></p>
+                  <dl>
+                    <div><dt>Sets</dt><dd>{{ entry.previous.sets }}</dd></div>
+                    <div><dt>Total reps</dt><dd>{{ entry.previous.reps }}</dd></div>
+                    <div><dt>Heaviest load</dt><dd>{{ '%.1f'|format(entry.previous.heaviest_lb) }} lb</dd></div>
+                    <div><dt>Volume</dt><dd>{{ '{:,.1f}'.format(entry.previous.volume) }} lb × reps</dd></div>
+                  </dl>
+                  <p class="workout665-delta">Change in heaviest load: {{ '%+.1f'|format(entry.load_change) }} lb
+                    <span> · Change in volume: {{ '%+,.1f'|format(entry.volume_change) }} lb × reps</span></p>
+                {% else %}
+                  <p>Only one completed session is available for this machine.</p>
+                {% endif %}
+              </div>
+            </section>
+          {% else %}
+            <p class="workout665-note">No completed sessions with recorded sets yet for this machine. Leave a target if you wish, but no actual performance is inferred.</p>
+          {% endif %}
+
+          <fieldset class="workout665-targets">
+            <legend>Your next-session targets (optional; browser only)</legend>
+            <label>Target sets
+              <input type="number" inputmode="numeric" min="1" max="20" step="1"
+                     data-field665="sets" placeholder="—">
+            </label>
+            <label>Target reps per set
+              <input type="number" inputmode="numeric" min="1" max="200" step="1"
+                     data-field665="reps" placeholder="—">
+            </label>
+            <label>Target load (lb)
+              <input type="number" inputmode="decimal" min="0" max="2000" step="any"
+                     data-field665="weight" placeholder="—">
+            </label>
+          </fieldset>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p>There are no exercises in this saved routine yet.
+      <a href="/workouts/routines/{{ routine.id }}">Add exercises to this routine</a>.
+    </p>
+  {% endif %}
+  <footer class="workout665-footer">
+    <p>Recorded comparisons use completed sessions, even when backdated. Changes in volume can reflect different numbers of sets or repetitions; they are not a measure of strength by themselves. The app does not prescribe weight increases.</p>
+    <a href="/workouts/routines/{{ routine.id }}">Back to Routine</a>
+  </footer>
+</section>
+{% endblock %}
