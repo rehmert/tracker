@@ -12,6 +12,7 @@ bash -n "$0"
 bash -n scripts/tracker-release.sh
 bash -n scripts/tracker_prod_remote568.sh
 bash -n scripts/tracker-workout-dev668.sh
+bash -n scripts/tracker-workout-promote668.sh
 "$PY" -m py_compile \
   app/workout_models668.py \
   app/routers/workouts668_program.py \
