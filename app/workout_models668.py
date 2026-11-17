@@ -98,7 +98,7 @@ class WorkoutOfflineReceipt668(Base):
     session_id: Mapped[int] = mapped_column(
         ForeignKey("workout_sessions654.id", ondelete="CASCADE"), index=True, nullable=False,
     )
-    set_id: Mapped[int] = mapped_column(
-        ForeignKey("workout_sets654.id", ondelete="CASCADE"), nullable=False,
-    )
+    # Keep the original ID as an immutable idempotency tombstone even
+    # if the user later deletes or corrects the actual recorded set.
+    set_id: Mapped[int] = mapped_column(Integer, nullable=False)
     received_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
