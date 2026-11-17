@@ -68,3 +68,30 @@ def render_routine_csv668(rows: list[dict]) -> str:
     for row in rows:
         writer.writerow([csv_cell668(row.get(key)) for key in FIELDS668])
     return output.getvalue()
+
+
+HISTORICAL_FIELDS668 = (
+    "equipment_id", "weight_lb", "reps", "effort", "set_time",
+)
+
+
+def parse_historical_csv668(payload: str) -> list[dict[str, str]]:
+    """Parse only CSV structure; Release 658 validates actual values/window."""
+    if not payload or len(payload.encode("utf-8")) > MAX_CSV_BYTES668:
+        raise ValueError("Historical CSV must contain at most 32 KiB.")
+    try:
+        reader = csv.DictReader(StringIO(payload.lstrip("\ufeff"), newline=""), strict=True)
+        if reader.fieldnames != list(HISTORICAL_FIELDS668):
+            raise ValueError("Historical CSV columns must be equipment_id,weight_lb,reps,effort,set_time.")
+        result = []
+        for number, row in enumerate(reader, 2):
+            if number > 41:
+                raise ValueError("Historical CSV may contain at most 40 recorded sets.")
+            if None in row or any(v is None for v in row.values()):
+                raise ValueError(f"Historical CSV row {number} has incomplete or extra fields.")
+            result.append({key: str(row[key]).strip() for key in HISTORICAL_FIELDS668})
+        if not result:
+            raise ValueError("Historical CSV must contain actual set rows.")
+        return result
+    except (csv.Error, UnicodeError) as exc:
+        raise ValueError("Malformed historical workout CSV.") from exc
