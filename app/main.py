@@ -67,6 +67,8 @@ from .routers import workouts664
 from .routers import workouts665
 from . import workout_models667  # noqa: F401 - register additive workout program tables
 from .routers import workouts667
+from . import workout_models668  # noqa: F401 - register additive advanced workout tables
+from .routers import workouts668_program, workouts668_history, workouts668_csv, workouts668_offline, workouts668_insights
 
 
 @asynccontextmanager
@@ -325,6 +327,11 @@ app.include_router(workouts663.router)
 app.include_router(workouts664.router)
 app.include_router(workouts665.router)
 app.include_router(workouts667.router)
+app.include_router(workouts668_program.router)
+app.include_router(workouts668_history.router)
+app.include_router(workouts668_csv.router)
+app.include_router(workouts668_offline.router)
+app.include_router(workouts668_insights.router)
 
 from .routers import consolidated_reports
 app.include_router(consolidated_reports.router)
