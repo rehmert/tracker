@@ -41,6 +41,13 @@ def review(root: Path, base: str, target: str) -> None:
     git(root, "merge-base", "--is-ancestor", base, target)
     modified = set(git(root, "diff", "--name-only", base, target).splitlines())
     allowed = MODIFIED669 | NEW669
+    marker = "docs/release-669-ready.txt"
+    if marker in modified:
+        if git(root, "show", f"{target}:{marker}").strip() != (
+            "RELEASE_669_IMPLEMENTATION_REVIEWED=YES"
+        ):
+            raise ValueError("Invalid Release 669 readiness marker")
+        allowed = allowed | {marker}
     if modified != allowed:
         raise ValueError(f"Unexpected Release 669 changed paths: {sorted(modified ^ allowed)}")
     old = git(root, "show", f"{base}:app/routers/food.py")
