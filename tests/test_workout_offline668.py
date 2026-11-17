@@ -28,6 +28,7 @@ def test_668_offline_sync_idempotency_and_stale_session(tmp_path):
         key = str(uuid4())
         req = dict(session_id=session.id, equipment_id=machine.id,
                    client_key=key, weight_lb=115, reps=10, effort="8",
+                   performed_at=datetime.now().astimezone().isoformat(),
                    set_type="warmup", db=db)
         first = sync_offline_set668(**req)
         assert first.status_code == 200 and first.body
@@ -83,6 +84,7 @@ def test_668_offline_invalid_set_never_writes(tmp_path, weight, reps, effort, ki
             sync_offline_set668(
                 session_id=session.id, equipment_id=machine.id,
                 client_key=str(uuid4()), weight_lb=weight, reps=reps,
+                performed_at=datetime.now().astimezone().isoformat(),
                 effort=effort, set_type=kind, db=db,
             )
         assert exc.value.status_code == 422
@@ -121,3 +123,24 @@ def test_668_machine_load_settings_never_reinterpret_historical_set():
         )
         assert invalid.status_code == 303
         assert db.get(WorkoutEquipmentLoad668, machine.id).multiplier == 2
+
+
+def test_668_offline_rejects_fabricated_future_timestamp(tmp_path):
+    from datetime import timedelta
+    engine = create_engine("sqlite:///" + str(tmp_path / "badtime.sqlite"))
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        gear = WorkoutEquipment654(name="Test", kind="selectorized")
+        workout = WorkoutSession654(started_at=datetime.now())
+        db.add_all([gear, workout])
+        db.commit()
+        with pytest.raises(HTTPException) as exc:
+            sync_offline_set668(
+                session_id=workout.id, equipment_id=gear.id,
+                client_key=str(uuid4()), weight_lb=50, reps=10,
+                effort="", set_type="working", db=db,
+                performed_at=(datetime.now().astimezone()
+                              + timedelta(days=2)).isoformat(),
+            )
+        assert exc.value.status_code == 422
+        assert db.scalar(select(func.count(WorkoutSet654.id))) == 0
