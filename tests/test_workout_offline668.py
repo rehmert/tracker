@@ -45,6 +45,17 @@ def test_668_offline_sync_idempotency_and_stale_session(tmp_path):
         assert exc.value.status_code == 409
         assert db.scalar(select(func.count(WorkoutSet654.id))) == 1
 
+        # Explicit deletion must not let a retry re-create the removed set.
+        db.delete(actual)
+        db.commit()
+        db.refresh(db.scalar(select(WorkoutOfflineReceipt668)))
+        tombstone = db.scalar(select(WorkoutOfflineReceipt668))
+        assert tombstone.set_id is None
+        deleted_retry = sync_offline_set668(**req)
+        assert deleted_retry.status_code == 200
+        assert b'"deleted":true' in deleted_retry.body
+        assert db.scalar(select(func.count(WorkoutSet654.id))) == 0
+
 
 @pytest.mark.parametrize("weight,reps,effort,kind", [
     (float("nan"), 10, "", "working"),
