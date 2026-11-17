@@ -138,3 +138,16 @@ def test_674_templates_routes_and_no_auto_log_contract():
     assert "fetch(" not in js and "requestSubmit(" not in js
     css = (ROOT / "app/static/css/tracker-productivity674.css").read_text()
     assert css.count("{") == css.count("}")
+
+
+def test_674_read_only_routes_render_without_new_schema():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    with TestClient(app, follow_redirects=False) as client:
+        today = client.get("/mobile")
+        quality = client.get("/data-quality")
+        assert today.status_code == 200
+        assert "Daily Command Center" in today.text
+        assert quality.status_code == 200
+        assert "Data Quality" in quality.text
+        assert "Review / Correct" in quality.text or "No issues detected" in quality.text
