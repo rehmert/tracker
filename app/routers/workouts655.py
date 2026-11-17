@@ -150,10 +150,57 @@ def duplicate_routine668(
                 target_weight_lb=goal.target_weight_lb,
                 setup_note=goal.setup_note, rest_seconds=goal.rest_seconds,
             ))
+    # Preserve future scheduling and grouping in cloned routines, remapping
+    # all group members to the clone's NEW item IDs.
+    from ..workout_models668 import (
+        WorkoutRoutineSchedule668, WorkoutRoutineGroup668,
+        WorkoutRoutineGroupMember668,
+    )
+    prior_schedule = db.get(WorkoutRoutineSchedule668, source.id)
+    if prior_schedule is not None:
+        db.add(WorkoutRoutineSchedule668(
+            routine_id=clone.id, weekdays=prior_schedule.weekdays,
+            start_on=prior_schedule.start_on, end_on=prior_schedule.end_on,
+        ))
+    old_members = list(db.scalars(
+        select(WorkoutRoutineGroupMember668)
+        .join(WorkoutRoutineGroup668,
+              WorkoutRoutineGroup668.id == WorkoutRoutineGroupMember668.group_id)
+        .where(WorkoutRoutineGroup668.routine_id == source.id)
+    ))
+    remap = {
+        old.equipment_id: new.id
+        for old, new in zip(items, list(db.scalars(
+            select(WorkoutRoutineItem655).where(
+                WorkoutRoutineItem655.routine_id == clone.id
+            ).order_by(WorkoutRoutineItem655.position, WorkoutRoutineItem655.id)
+        )))
+    }
+    for previous in db.scalars(
+        select(WorkoutRoutineGroup668)
+        .where(WorkoutRoutineGroup668.routine_id == source.id)
+        .order_by(WorkoutRoutineGroup668.id)
+    ):
+        copied = WorkoutRoutineGroup668(
+            routine_id=clone.id, group_name=previous.group_name,
+            group_type=previous.group_type, rounds=previous.rounds,
+        )
+        db.add(copied)
+        db.flush()
+        for member in old_members:
+            if member.group_id != previous.id:
+                continue
+            old_item = db.get(WorkoutRoutineItem655, member.routine_item_id)
+            if old_item and old_item.equipment_id in remap:
+                db.add(WorkoutRoutineGroupMember668(
+                    group_id=copied.id,
+                    routine_item_id=remap[old_item.equipment_id],
+                    position=member.position,
+                ))
     db.commit()
     return services.flash_redirect(
         _routine_url(clone.id),
-        msg="Routine and future exercise plans duplicated; no historical sets copied.",
+        msg="Routine, schedule, groups and future goals duplicated; no recorded sets copied.",
     )
 
 
