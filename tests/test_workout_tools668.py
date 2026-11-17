@@ -9,7 +9,7 @@ from app.workout_models654 import WorkoutEquipment654, WorkoutSession654, Workou
 from app.workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655
 from app.workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667
 from app.routers.workouts655 import duplicate_routine668, substitute_routine_item668
-from app.routers.workouts663 import export_session668, safe_csv668
+from app.routers.workouts663 import export_session668, safe_csv668, workout_insights668
 
 
 def test_668_routine_duplicate_copies_plan_not_history():
@@ -86,3 +86,44 @@ def test_668_csv_formula_safety_and_missing_session():
             assert exc.status_code == 404
         else:
             raise AssertionError("Unknown session must fail")
+
+
+def test_668_insights_counts_only_completed_sessions_with_actual_sets(monkeypatch):
+    from app.routers import workouts663
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine, tables=[
+        WorkoutEquipment654.__table__, WorkoutSession654.__table__,
+        WorkoutSet654.__table__,
+    ])
+    monkeypatch.setattr(
+        workouts663, "render", lambda request, template, **context: context,
+    )
+    with Session(engine) as db:
+        gear = WorkoutEquipment654(name="Verified Row", kind="selectorized")
+        done = WorkoutSession654(
+            started_at=datetime.now(), completed_at=datetime.now(),
+        )
+        open_session = WorkoutSession654(started_at=datetime.now())
+        empty = WorkoutSession654(
+            started_at=datetime.now(), completed_at=datetime.now(),
+        )
+        db.add_all([gear, done, open_session, empty])
+        db.flush()
+        db.add_all([
+            WorkoutSet654(
+                session_id=done.id, equipment_id=gear.id,
+                weight_lb=100, reps=10,
+            ),
+            WorkoutSet654(
+                session_id=open_session.id, equipment_id=gear.id,
+                weight_lb=500, reps=10,
+            ),
+        ])
+        db.commit()
+        data = workout_insights668(request=None, db=db)
+        assert data["recent_count"] == 1
+        assert data["recent_sets"] == 1
+        assert data["recent_repetitions"] == 10
+        assert data["recent_volume"] == 1000
+        assert len(data["sessions"]) == 1
+        assert data["sessions"][0].session_id == done.id
