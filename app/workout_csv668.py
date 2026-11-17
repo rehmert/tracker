@@ -92,6 +92,8 @@ def parse_historical_csv668(payload: str) -> list[dict[str, str]]:
             if None in row or any(v is None for v in row.values()):
                 raise ValueError(f"Historical CSV row {number} has incomplete or extra fields.")
             entry = {key: str(row[key]).strip() for key in HISTORICAL_FIELDS668}
+            if not any(entry.values()):
+                raise ValueError(f"Historical CSV row {number} is empty.")
             entry["set_type"] = str(row["set_type"]).strip() if extended else "working"
             if entry["set_type"] not in ("working", "warmup"):
                 raise ValueError(f"Historical CSV row {number} has an invalid set type.")
