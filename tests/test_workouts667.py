@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event, func, inspect, select
+from sqlalchemy import create_engine, delete, event, func, inspect, select
 from sqlalchemy.orm import Session
 
 from app.db import Base, SessionLocal
@@ -23,6 +23,70 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def post667(client, path, data=None):
     return client.post(path, data=data or {}, follow_redirects=False)
+
+
+@pytest.fixture
+def cleanup_shared_workout667():
+    """Undo all shared-DB records created by this Release 667 HTTP test.
+
+    The historical dashboard shows only five completed sessions. Retaining
+    new completed fixtures from this module can displace its older recorded
+    session, even though neither dashboard code nor actual data is wrong.
+    Keep new tests isolated instead of weakening older regression coverage.
+    """
+    with SessionLocal() as db:
+        prior_sessions = set(db.scalars(select(WorkoutSession654.id)))
+        prior_routines = set(db.scalars(select(WorkoutRoutine655.id)))
+        prior_equipment = set(db.scalars(select(WorkoutEquipment654.id)))
+    yield
+    with SessionLocal() as db:
+        session_ids = set(db.scalars(select(WorkoutSession654.id))) - prior_sessions
+        routine_ids = set(db.scalars(select(WorkoutRoutine655.id))) - prior_routines
+        equipment_ids = set(db.scalars(select(WorkoutEquipment654.id))) - prior_equipment
+        if session_ids:
+            set_ids = set(db.scalars(
+                select(WorkoutSet654.id).where(
+                    WorkoutSet654.session_id.in_(session_ids)
+                )
+            ))
+            if set_ids:
+                db.execute(delete(WorkoutSetType667).where(
+                    WorkoutSetType667.set_id.in_(set_ids)
+                ))
+                db.execute(delete(WorkoutSet654).where(
+                    WorkoutSet654.id.in_(set_ids)
+                ))
+            db.execute(delete(WorkoutSessionTarget667).where(
+                WorkoutSessionTarget667.session_id.in_(session_ids)
+            ))
+            db.execute(delete(WorkoutSessionRoutine655).where(
+                WorkoutSessionRoutine655.session_id.in_(session_ids)
+            ))
+            db.execute(delete(WorkoutSession654).where(
+                WorkoutSession654.id.in_(session_ids)
+            ))
+        if routine_ids:
+            item_ids = set(db.scalars(select(WorkoutRoutineItem655.id).where(
+                WorkoutRoutineItem655.routine_id.in_(routine_ids)
+            )))
+            if item_ids:
+                db.execute(delete(WorkoutRoutineTarget667).where(
+                    WorkoutRoutineTarget667.routine_item_id.in_(item_ids)
+                ))
+                db.execute(delete(WorkoutRoutineItem655).where(
+                    WorkoutRoutineItem655.id.in_(item_ids)
+                ))
+            db.execute(delete(WorkoutRoutineConfig667).where(
+                WorkoutRoutineConfig667.routine_id.in_(routine_ids)
+            ))
+            db.execute(delete(WorkoutRoutine655).where(
+                WorkoutRoutine655.id.in_(routine_ids)
+            ))
+        if equipment_ids:
+            db.execute(delete(WorkoutEquipment654).where(
+                WorkoutEquipment654.id.in_(equipment_ids)
+            ))
+        db.commit()
 
 
 @pytest.mark.parametrize("fields,expected", [
@@ -150,7 +214,7 @@ def test_667_additive_schema_snapshots_and_achievement_isolated(tmp_path):
         engine.dispose()
 
 
-def test_667_http_program_snapshots_import_and_rapid_gym_workflow():
+def test_667_http_program_snapshots_import_and_rapid_gym_workflow(cleanup_shared_workout667):
     nonce = uuid4().hex
     with TestClient(app) as client:
         with SessionLocal() as db:
@@ -301,7 +365,7 @@ def test_667_http_program_snapshots_import_and_rapid_gym_workflow():
             assert db.get(WorkoutSessionTarget667, (sid, machine_id)).target_sets == 3
 
 
-def test_667_repeat_and_active_correction_preserve_set_kind():
+def test_667_repeat_and_active_correction_preserve_set_kind(cleanup_shared_workout667):
     nonce = uuid4().hex
     with TestClient(app) as client:
         with SessionLocal() as db:
@@ -360,7 +424,7 @@ def test_667_repeat_and_active_correction_preserve_set_kind():
         assert post667(client, "/workouts/quick/finish").status_code == 303
 
 
-def test_667_exercise_notes_display_without_numeric_goal():
+def test_667_exercise_notes_display_without_numeric_goal(cleanup_shared_workout667):
     nonce = uuid4().hex
     with TestClient(app) as client:
         with SessionLocal() as db:
