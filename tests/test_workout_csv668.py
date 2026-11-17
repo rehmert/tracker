@@ -73,3 +73,38 @@ def test_668_plan_csv_accepts_utf8_bom_after_export():
     sample = "routine_item_id,sets,reps,weight_lb,rest_seconds,setup_note\n7,2,10,75,90,Seat 4\n"
     values = parse_routine_csv668("\ufeff" + sample, {7})
     assert len(values) == 1 and values[0]["target_weight_lb"] == 75.0
+
+
+def test_668_historical_export_is_directly_import_compatible():
+    from datetime import datetime
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+    from app.db import Base
+    from app.workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
+    from app.routers.workouts663 import export_reimport_sets668
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        gear = WorkoutEquipment654(name="Lat Pull", kind="selectorized")
+        workout = WorkoutSession654(
+            started_at=datetime(2026, 11, 12, 9),
+            completed_at=datetime(2026, 11, 12, 9, 30),
+        )
+        db.add_all([gear, workout])
+        db.flush()
+        logged = WorkoutSet654(
+            session_id=workout.id, equipment_id=gear.id,
+            weight_lb=110, reps=8, effort=7,
+            performed_at=datetime(2026, 11, 12, 9, 15),
+        )
+        db.add(logged)
+        db.commit()
+        exported = export_reimport_sets668(session_id=workout.id, db=db)
+        assert exported.status_code == 200
+        imported = parse_historical_csv668(exported.body.decode("utf-8"))
+        assert imported == [{
+            "equipment_id": str(gear.id),
+            "weight_lb": "110.0", "reps": "8", "effort": "7",
+            "set_time": "09:15",
+        }]
