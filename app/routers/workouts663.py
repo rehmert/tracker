@@ -118,13 +118,23 @@ def workout_insights668(
         .order_by(WorkoutSession654.started_at.desc(), WorkoutSession654.id.desc())
         .limit(12)
     ))
-    recent = [row for row in totals if row.started_at >= since]
+    recent = db.execute(
+        select(
+            func.count(func.distinct(WorkoutSession654.id)),
+            func.count(WorkoutSet654.id),
+            func.coalesce(func.sum(WorkoutSet654.reps), 0),
+            func.coalesce(func.sum(WorkoutSet654.weight_lb * WorkoutSet654.reps), 0.0),
+        )
+        .select_from(WorkoutSession654)
+        .join(WorkoutSet654, WorkoutSet654.session_id == WorkoutSession654.id)
+        .where(WorkoutSession654.completed_at.is_not(None),
+               WorkoutSession654.started_at >= since)
+    ).one()
     return render(
         request, "workout_insights668.html", sessions=totals,
-        recent_count=len(recent),
-        recent_sets=sum(row.set_count for row in recent),
-        recent_repetitions=sum(row.repetitions for row in recent),
-        recent_volume=sum(float(row.volume) for row in recent),
+        recent_count=int(recent[0]), recent_sets=int(recent[1]),
+        recent_repetitions=int(recent[2]),
+        recent_volume=float(recent[3]),
     )
 
 
