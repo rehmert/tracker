@@ -155,7 +155,8 @@
           break;
         }
         const answer = await response.json().catch(() => null);
-        if (!answer || answer.ok !== true || !Number.isInteger(answer.set_id)) {
+        if (!answer || answer.ok !== true ||
+            (!Number.isInteger(answer.set_id) && answer.deleted !== true)) {
           displayQueue("Invalid server acknowledgement; nothing discarded.");
           break;
         }
@@ -163,7 +164,8 @@
         if (!newest) break;
         pending = newest.filter(row => row.client_key !== queued.client_key);
         queueStore(pending);
-        displayQueue("Last recorded set #" + answer.set_id + ".");
+        displayQueue(answer.deleted ? "Previously deleted action acknowledged." :
+          "Last recorded set #" + answer.set_id + ".");
       }
     } finally {
       syncing = false;
