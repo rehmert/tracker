@@ -22,6 +22,9 @@
       <div class="workout-routine-row655">
         <a href="/workouts/routines/{{ routine.id }}"><strong>{{ routine.name }}</strong></a>
         <a href="/workouts/routines/{{ routine.id }}/program">Plan &amp; Compare (Synced)</a> · <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Browser Planner</a>
+        <form method="post" action="/workouts/routines/{{ routine.id }}/duplicate">
+          <button type="submit" aria-label="Duplicate {{ routine.name }}">Duplicate</button>
+        </form>
         <form method="post" action="/workouts/routines/{{ routine.id }}/start">
           <button type="submit">Start</button>
         </form>
