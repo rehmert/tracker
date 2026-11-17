@@ -15,6 +15,44 @@
     <div><strong>{{ recent_repetitions }}</strong><span>Logged repetitions</span></div>
     <div><strong>{{ '{:,.1f}'.format(recent_volume) }}</strong><span>Recorded lb × reps</span></div>
   </div>
+  <section aria-label="Previous period comparison">
+    <h2>Prior 28-Day Comparison</h2>
+    <p class="note">The earlier period is the 28 days immediately preceding
+      the current 28-day window. This is a factual comparison, not a target.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Metric</th><th>Current 28 days</th><th>Prior 28 days</th></tr></thead>
+        <tbody>
+          <tr><th>Completed sessions</th><td>{{ recent_count }}</td><td>{{ prior_count }}</td></tr>
+          <tr><th>Recorded sets</th><td>{{ recent_sets }}</td><td>{{ prior_sets }}</td></tr>
+          <tr><th>Recorded reps</th><td>{{ recent_repetitions }}</td><td>{{ prior_repetitions }}</td></tr>
+          <tr><th>Logged lb × reps</th><td>{{ '%.1f'|format(recent_volume) }}</td><td>{{ '%.1f'|format(prior_volume) }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section aria-label="Machine comparison">
+    <h2>Machines Used This Period</h2>
+    <p class="note">Resistance configurations vary; do not compare weight
+      between different machines. Follow each machine's history separately.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Machine</th><th>Sets</th><th>Reps</th><th>Heaviest logged</th><th>Logged lb × reps</th></tr></thead>
+        <tbody>
+          {% for row in machines %}
+          <tr>
+            <td><a href="/workouts/analytics?machine={{ row.equipment_id }}">{{ row.name }}</a></td>
+            <td>{{ row.set_count }}</td><td>{{ row.reps }}</td>
+            <td>{{ '%.1f'|format(row.heaviest_lb) }} lb</td>
+            <td>{{ '%.1f'|format(row.volume) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">No recorded sets in this period.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
   <section>
     <h2>12 most recent completed workouts with sets</h2>
     <p class="note">Different machines and bodyweight exercises may not have comparable resistance. Volume reflects only recorded loads; it is not a measure of physiological work or progress.</p>
