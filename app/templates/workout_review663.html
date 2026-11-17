@@ -9,6 +9,7 @@
   <nav class="workout663-topnav" aria-label="Workout review navigation">
     <a href="/workouts">← Workouts</a>
     <a href="/workouts/sessions/{{ workout.id }}">Full Set History</a>
+    <a href="/workouts/sessions/{{ workout.id }}/export.csv">Export Actual Sets (CSV)</a>
     <a href="/workouts/analytics">Strength Progress</a>
     <a href="/workouts/calendar?month={{ workout.started_at.strftime('%Y-%m') }}">Workout Calendar</a>
   </nav>
