@@ -56,3 +56,28 @@ class WorkoutRoutineGroupMember668(Base):
         ForeignKey("workout_routine_items655.id", ondelete="CASCADE"), nullable=False
     )
     position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class WorkoutSetCorrection668(Base):
+    __tablename__ = "workout_set_corrections668"
+    __table_args__ = (
+        CheckConstraint("length(reason) BETWEEN 3 AND 500", name="ck_workout668_correction_reason"),
+        CheckConstraint("old_weight_lb BETWEEN 0 AND 2000", name="ck_workout668_correction_old_weight"),
+        CheckConstraint("new_weight_lb BETWEEN 0 AND 2000", name="ck_workout668_correction_new_weight"),
+        CheckConstraint("old_reps BETWEEN 1 AND 200", name="ck_workout668_correction_old_reps"),
+        CheckConstraint("new_reps BETWEEN 1 AND 200", name="ck_workout668_correction_new_reps"),
+    )
+    id: Mapped[int] = mapped_column(primary_key=True)
+    set_id: Mapped[int] = mapped_column(
+        ForeignKey("workout_sets654.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    old_weight_lb: Mapped[float] = mapped_column(nullable=False)
+    new_weight_lb: Mapped[float] = mapped_column(nullable=False)
+    old_reps: Mapped[int] = mapped_column(Integer, nullable=False)
+    new_reps: Mapped[int] = mapped_column(Integer, nullable=False)
+    old_effort: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    new_effort: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    old_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    new_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    corrected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
