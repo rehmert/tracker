@@ -93,6 +93,7 @@
       return Array.isArray(rows) && rows.length <= 100 &&
         rows.every(row => row && row.version === 1 &&
           row.session_id === session && /^\d+$/.test(row.equipment_id) &&
+          typeof row.performed_at === "string" && row.performed_at.length <= 40 &&
           /^[0-9a-f-]{36}$/.test(row.client_key) &&
           row.values && typeof row.values === "object") ? rows : null;
     } catch (_) { return null; }
@@ -135,6 +136,7 @@
           session_id: queued.session_id,
           equipment_id: queued.equipment_id,
           client_key: queued.client_key,
+          performed_at: queued.performed_at,
           ...queued.values
         });
         let response;
@@ -184,7 +186,8 @@
       }
       pending.push({
         version: 1, session_id: session, equipment_id: machine,
-        client_key: window.crypto.randomUUID(), values
+        client_key: window.crypto.randomUUID(),
+        performed_at: new Date().toISOString(), values
       });
       try {
         queueStore(pending);
