@@ -325,13 +325,28 @@ def test_668_offline_replay_is_idempotent_and_rejects_stale_session(isolated668)
     with Local() as db:
         assert db.scalar(select(func.count(WorkoutSet654.id))) == 1
         assert db.scalar(select(func.count(WorkoutOfflineReceipt668.token))) == 1
+        set_id = db.scalar(select(WorkoutSet654.id))
+    # An intentional active set deletion must NOT erase the receipt:
+    # otherwise a lost acknowledgment could recreate a deleted set.
+    assert post(client, f"/workouts/sets/{set_id}/delete", {
+        "confirm_delete": "yes",
+    }).status_code == 303
+    with Local() as db:
+        assert db.get(WorkoutSet654, set_id) is None
+        receipt = db.get(WorkoutOfflineReceipt668, token)
+        assert receipt and receipt.set_id == set_id
+    deleted_replay = post(client, "/workouts/offline/sync", payload)
+    assert deleted_replay.status_code == 200
+    assert deleted_replay.json()["duplicate"] is True
+    with Local() as db:
+        assert db.scalar(select(func.count(WorkoutSet654.id))) == 0
     assert post(client, "/workouts/quick/finish").status_code == 303
     stale = post(client, "/workouts/offline/sync", {
         **payload, "token": str(uuid4()),
     })
     assert stale.status_code == 409
     with Local() as db:
-        assert db.scalar(select(func.count(WorkoutSet654.id))) == 1
+        assert db.scalar(select(func.count(WorkoutSet654.id))) == 0
 
 
 def test_668_source_contract_and_additive_tables():
