@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Edit Saved Food{% endblock %}
+{% block content %}
+<section class="food-saved-edit669" style="max-width:850px;margin:0 auto">
+  <nav aria-label="Food editor navigation">
+    <a href="/food?day={{ day }}#food-search">← Back to Food Journal</a>
+  </nav>
+  <h1>Edit Saved Food</h1>
+  {% if saved %}
+    <p role="status" class="note"><strong>Saved food updated.</strong> All meal entries continue
+    referencing the same saved record. Updated nutrition is reflected in journal totals.</p>
+  {% endif %}
+  <p class="note">Editing this shared saved food changes its values wherever the food is reused.
+  Serving counts, meal dates and favorites are not changed. Blank nutrients remain unknown;
+  entering 0 means confirmed zero. Nutrition values are per serving shown below.</p>
+  <p><strong>Saved food #{{ product.id }}</strong> · Source: {{ product.source }}</p>
+  <form method="post" action="/food/saved/{{ product.id }}/edit">
+    <input type="hidden" name="day" value="{{ day }}">
+    <input type="hidden" name="version" value="{{ version }}">
+    <div class="food-row">
+      <label>Food name
+        <input type="text" name="name" maxlength="160" required
+               value="{{ product.name }}" autocomplete="off">
+      </label>
+      <label>Barcode (optional)
+        <input type="text" name="barcode" inputmode="numeric"
+               pattern="[0-9]{8,14}" maxlength="14" value="{{ product.barcode or '' }}">
+      </label>
+    </div>
+    <label>Serving size / basis
+      <input name="serving_description" maxlength="80" required
+             value="{{ product.serving_description }}">
+    </label>
+    <h2>Per-serving nutrition</h2>
+    <div class="food-nutrient-inputs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+      {% for key, info in nutrients.items() %}
+      <label>{{ info[0] }} ({{ info[1] }})
+        <input name="{{ key }}" type="number" step="any" min="0" max="100000"
+               inputmode="decimal" value="{{ values[key] if key in values and values[key] is not none else '' }}">
+      </label>
+      {% endfor %}
+    </div>
+    {% if usage %}
+      <div role="group" aria-label="Effect on existing meal history">
+        <p><strong>Existing meal history:</strong> {{ usage }} logged meal entr{{ 'y' if usage == 1 else 'ies' }}
+        use this saved record. Editing its nutrition recalculates their daily, weekly
+        and historical totals. This action does not create a new food version.</p>
+        <label><input type="checkbox" name="confirm_history" value="yes" required>
+          I understand this edit updates previously logged nutrition for this food.
+        </label>
+      </div>
+    {% endif %}
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:18px">
+      <button type="submit" class="primary">Save Food Changes</button>
+      <a href="/food?day={{ day }}#food-search">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
