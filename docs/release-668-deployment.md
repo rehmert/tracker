@@ -12,6 +12,14 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
   time into calendar presentation. Reconciled planned entries retain their
   planned time. No logged dose is created, edited, or removed.
 - Focused calendar regression tests and a release-scoped DEV QA gate.
+- Routine duplication copies ordered exercises and persistent goals/rest settings,
+  never historical sessions or frozen workout targets.
+- Future-routine exercise substitution requires cataloged equipment, blocks
+  changes during a matching active routine, and clears non-transferable numeric
+  goals and old machine-specific setup notes.
+- Read-only per-session CSV export of actual logged sets, with formula-safe
+  equipment names and existing authentication/database scoping.
+- Focused isolated tests for duplication, substitution and CSV safety.
 - DEV-driven local deployment script using the signed DEV-to-PROD pathway.
   GitHub is used for Git objects and refs only, never hosted tests/actions.
 
@@ -20,8 +28,10 @@ Baseline: Release 667, `9baa03fb521573ba17ec1853fb85d40a22895336`.
 - Workout scheduling and program improvements.
 - Advanced Workout analytics.
 - Supersets, circuits, exercise substitutions.
-- Duplicate workouts, auditable correction workflow.
-- Machine/load semantics and Workout CSV import/export.
+- Full workout-session duplication and auditable historical correction workflow.
+  (Editable *routine* duplication is implemented.)
+- Extended machine/load semantics, and complete Workout CSV import/exports.
+  (Session-level actual-sets CSV export is implemented.)
 - Offline logging, actionable insights, expanded Workout dashboard widgets.
 
 Do not create `docs/release-668-ready.txt` until **all** bundled features
