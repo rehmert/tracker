@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release 667: DEV-only, exact-SHA source-only Workout deployment.
+# Release 667: DEV-only, exact-SHA, reviewed additive-schema Workout deployment.
 # Fetches code from GitHub. All tests run on tracker-dev; no GitHub CI.
 set -Eeuo pipefail
 umask 077
