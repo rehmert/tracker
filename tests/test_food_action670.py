@@ -7,7 +7,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_670_recorded_food_actions_are_four_consistent_buttons():
     html = (ROOT / "app/templates/food.html").read_text(encoding="utf-8")
-    section = html.split('<div class="food375-actions">', 1)[1].split("</div>", 1)[0]
+    # Other Food Journal sections now use the same action class; scope this
+    # historical assertion to Recorded Meals rather than the first match.
+    recorded = html.split('<details id="food-recorded"', 1)[1]
+    recorded = recorded.split('<details id="food-templates"', 1)[0]
+    section = recorded.split('<div class="food375-actions">', 1)[1].split("</div>", 1)[0]
     assert section.count("<form ") == 4
     for label in ("Repeat", "Edit Saved Food", "Delete"):
         assert label in section
