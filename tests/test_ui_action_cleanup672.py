@@ -54,7 +54,9 @@ def test_672_existing_button_visual_system():
 def test_672_vendor_and_vitals_edit_controls_are_buttons():
     vendor = (ROOT / "vendor_prices.html").read_text(encoding="utf-8")
     assert '<form method="get" action="/vendor-prices/entries/{{ e.id }}/edit#edit-offer" style="display:inline"><button type="submit">Edit</button></form>' in vendor
-    assert 'class="button" role="button"' not in vendor
+    # An independent Download anchor is intentionally button-styled; only
+    # the Vendor Price Edit control must be an actual form button.
+    assert '<a href="/vendor-prices/entries/{{ e.id }}/edit#edit-offer"' not in vendor
     vitals = (ROOT / "vitals.html").read_text(encoding="utf-8")
     assert '<form method="get" action="/vitals/{{ r.id }}/edit" style="display:inline">' in vitals
     assert '<input type="hidden" name="days" value="{{ days }}">' in vitals
