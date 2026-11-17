@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Persistent Workout Program{% endblock %}
+{% block page_assets %}
+<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+<link rel="stylesheet" href="/static/css/tracker-workout-program667.css?v=667">
+<script src="/static/js/tracker-workout-program667.js?v=667" defer></script>
+{% endblock %}
+{% block content %}
+<section class="workout667" id="workout667-program" data-routine-id667="{{ routine.id }}">
+  <nav class="workout667-topnav" aria-label="Program navigation">
+    <a href="/workouts/routines/{{ routine.id }}">← {{ routine.name }}</a>
+    <a href="/workouts/quick">Rapid Gym</a>
+    <a href="/workouts/analytics">Strength Progress</a>
+  </nav>
+  <h1>{{ routine.name }} — Workout Program</h1>
+  <p>Goals are saved to Tracker and available across devices. Starting a saved routine freezes its current measurable goals for that session. Editing your program never rewrites earlier workout goals.</p>
+  <section class="workout667-panel">
+    <h2>Routine settings</h2>
+    <form method="post" action="/workouts/routines/{{ routine.id }}/program/rest" class="workout667-settings">
+      <label>Default rest between sets
+        <select name="rest_seconds">
+          {% for seconds in rest_choices %}
+            <option value="{{ seconds }}" {% if seconds == default_rest %}selected{% endif %}>{{ seconds }} seconds</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Save rest default</button>
+    </form>
+    <p class="workout667-muted">Each exercise can override the routine rest interval. The manual rest timer remains available.</p>
+  </section>
+  <section class="workout667-panel">
+    <h2>Import existing browser plans (optional)</h2>
+    <p>Release 665 plans were stored only in your browser. You may import complete sets/reps/weight targets from this browser. This overwrites matching persisted numeric goals but retains notes and rest settings. Existing workout snapshots are never changed.</p>
+    <form id="workout667-import-form" action="/workouts/routines/{{ routine.id }}/program/import" method="post">
+      <input type="hidden" name="targets_json" id="workout667-import-payload" value="">
+      <button type="submit" id="workout667-import-button">Import This Browser's Targets</button>
+    </form>
+    <p id="workout667-import-status" class="workout667-muted" role="status" aria-live="polite"></p>
+  </section>
+  <section aria-label="Program exercises">
+    <h2>Exercise goals</h2>
+    {% for entry in rows %}
+      {% set goal = targets.get(entry.item.id) %}
+      <section class="workout667-exercise workout667-panel" id="program-item-{{ entry.item.id }}">
+        <div class="workout667-exercise-heading">
+          <h3>{{ loop.index }}. {{ entry.equipment.name }}</h3>
+          <a href="/workouts/analytics?machine={{ entry.equipment.id }}">Progress History</a>
+        </div>
+        <p class="workout667-muted">{{ entry.equipment.gym }}
+          {% if entry.equipment.seat_setting %} · Seat {{ entry.equipment.seat_setting }}{% endif %}
+        </p>
+        {% if entry.equipment.setup_notes %}
+          <p class="workout667-note">Equipment instructions: {{ entry.equipment.setup_notes }}</p>
+        {% endif %}
+        {% if entry.latest %}
+          <p class="workout667-muted">Last completed:
+            <a href="/workouts/sessions/{{ entry.latest.session_id }}/review">{{ entry.latest.started_at|dt }}</a>
+            — {{ entry.latest.sets }} sets, heaviest {{ '%.1f'|format(entry.latest.heaviest_lb) }} lb.
+            {% if entry.previous %}
+              Prior session: {{ '%.1f'|format(entry.previous.heaviest_lb) }} lb heaviest.
+            {% endif %}
+          </p>
+        {% else %}
+          <p class="workout667-muted">No prior completed sets on this machine.</p>
+        {% endif %}
+        <form method="post" action="/workouts/routines/{{ routine.id }}/program/items/{{ entry.item.id }}">
+          <div class="workout667-fields">
+            <label>Target working sets
+              <input type="number" name="target_sets" min="1" max="20" step="1" inputmode="numeric"
+                     value="{{ goal.target_sets if goal and goal.target_sets is not none else '' }}" placeholder="—">
+            </label>
+            <label>Reps per working set
+              <input type="number" name="target_reps" min="1" max="200" step="1" inputmode="numeric"
+                     value="{{ goal.target_reps if goal and goal.target_reps is not none else '' }}" placeholder="—">
+            </label>
+            <label>Working load (lb)
+              <input type="number" name="target_weight_lb" min="0" max="2000" step="any" inputmode="decimal"
+                     value="{{ goal.target_weight_lb if goal and goal.target_weight_lb is not none else '' }}" placeholder="—">
+            </label>
+            <label>Rest after working set
+              <select name="rest_seconds">
+                <option value="">Routine default ({{ default_rest }} sec)</option>
+                {% for seconds in rest_choices %}
+                  <option value="{{ seconds }}" {% if goal and goal.rest_seconds == seconds %}selected{% endif %}>{{ seconds }} seconds</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <label class="workout667-notes">Exercise setup and training notes (optional)
+            <textarea name="setup_note" maxlength="1000" rows="2" placeholder="Seat height, attachment, grip, cues…">{{ goal.setup_note if goal else '' }}</textarea>
+          </label>
+          <button type="submit">Save Exercise Plan</button>
+          <p class="workout667-muted">A measurable goal requires all three targets. Leave all three empty to keep notes/rest only.</p>
+        </form>
+      </section>
+    {% else %}
+      <p>Add exercises from <a href="/workouts/routines/{{ routine.id }}">this saved routine</a> first.</p>
+    {% endfor %}
+  </section>
+  <p class="workout667-muted">Goal achievement counts actual working sets meeting both planned load and repetitions, up to the planned set count. Warm-up sets never count toward the goal. No exercise load is automatically prescribed.</p>
+  <a class="workout667-bottom-link" href="/workouts/routines/{{ routine.id }}">Back to routine</a>
+</section>
+{% endblock %}
