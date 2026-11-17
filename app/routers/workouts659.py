@@ -156,7 +156,7 @@ def quick_workout659(
                          (WorkoutSetType667.set_type == "working")),
                     )
                     .group_by(WorkoutSet654.equipment_id)
-                )) if active else {}
+                ).all()) if active else {}
                 minimum = min((count_rows.get(m.id, 0) for m in machines), default=0)
                 follow = next((m for m in machines
                                if count_rows.get(m.id, 0) == minimum
