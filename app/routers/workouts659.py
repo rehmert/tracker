@@ -18,6 +18,7 @@ from ..workout_models654 import WorkoutEquipment654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
 from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667, WorkoutSessionTarget667
 from ..workout_program667 import progress667
+from ..workout_models668 import WorkoutRoutineGroup668, WorkoutSessionSubstitution668
 from .workouts654 import active654, add_set654, start654, finish654
 from .workouts655 import repeat_last_set655, start_routine655
 
@@ -80,6 +81,31 @@ def quick_workout659(
         elif equipment:
             chosen_id = equipment[0].id
     chosen = lookup.get(chosen_id)
+    group_map668 = {item.equipment_id: db.get(WorkoutRoutineGroup668, item.id)
+                    for item in items}
+    group668 = group_map668.get(chosen_id)
+    group_peers668 = [
+        lookup[item.equipment_id] for item in items
+        if item.equipment_id != chosen_id and item.equipment_id in lookup
+        and group668 and group_map668.get(item.equipment_id)
+        and group_map668[item.equipment_id].label == group668.label
+        and group_map668[item.equipment_id].mode == group668.mode
+    ]
+    substitutions668 = {
+        item.original_equipment_id: item
+        for item in db.scalars(select(WorkoutSessionSubstitution668).where(
+            WorkoutSessionSubstitution668.session_id == active.id
+        ))
+    } if active else {}
+    substitution668 = substitutions668.get(chosen_id)
+    is_alternate668 = next((
+        original for original, row in substitutions668.items()
+        if row.alternate_equipment_id == chosen_id
+    ), None)
+    alternatives668 = [
+        item for item in equipment
+        if item.id not in routine_ids and item.id != chosen_id
+    ] if chosen and routine and chosen_id in routine_ids else []
     # Match only the current machine to an item of the active saved routine.
     plan_item_id = next((item.id for item in items
                          if chosen and item.equipment_id == chosen.id), None)
@@ -133,6 +159,12 @@ def quick_workout659(
         frozen_goal=frozen_goal, current_goal=current_goal,
         goal_progress667=goal_progress667,
         rest_seconds667=rest_seconds667,
+        group668=group668, group_peers668=group_peers668,
+        substitution668=substitution668,
+        is_alternate668=is_alternate668,
+        alternatives668=alternatives668,
+        substituted_machine668=lookup.get(substitution668.alternate_equipment_id)
+            if substitution668 else None,
         routine_logged=len(all_logged_ids.intersection(routine_ids)),
         machine_sets=machine_sets, last=last,
         previous_machine=lookup.get(previous_id),
