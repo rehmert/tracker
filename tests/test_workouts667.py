@@ -1,0 +1,297 @@
+"""Release 667: persistent plans, immutable session snapshots, set types and goals."""
+from datetime import datetime
+from pathlib import Path
+from uuid import uuid4
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, event, func, inspect, select
+from sqlalchemy.orm import Session
+
+from app.db import Base, SessionLocal
+from app.main import app
+from app.workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
+from app.workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
+from app.workout_models667 import (
+    WorkoutRoutineConfig667, WorkoutRoutineTarget667,
+    WorkoutSessionTarget667, WorkoutSetType667,
+)
+from app.workout_program667 import parse_goal667, rest667, snapshots667, progress667
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def post667(client, path, data=None):
+    return client.post(path, data=data or {}, follow_redirects=False)
+
+
+@pytest.mark.parametrize("fields,expected", [
+    (("", "", ""), (None, None, None)),
+    (("3", "10", "100.5"), (3, 10, 100.5)),
+    (("20", "200", "0"), (20, 200, 0.0)),
+])
+def test_667_goal_parser_valid(fields, expected):
+    assert parse_goal667(*fields) == expected
+
+
+@pytest.mark.parametrize("fields", [
+    ("3", "", "100"), ("", "10", "100"), ("3", "10", ""),
+    ("0", "10", "100"), ("21", "10", "100"),
+    ("3", "201", "100"), ("3", "-2", "100"),
+    ("3.5", "10", "100"), ("3", "10", "-5"),
+    ("3", "10", "nan"), ("3", "10", "Infinity"),
+    ("3", "10", "2001"), ("3", "10", "1e309"),
+    ("３", "10", "100"),
+])
+def test_667_goal_parser_fails_closed(fields):
+    with pytest.raises(ValueError):
+        parse_goal667(*fields)
+
+
+def test_667_rest_presets_are_bounded():
+    assert rest667("90") == 90
+    assert rest667("", optional=True) is None
+    for bad in ("", "13", "0", "999", "90.5", "nan", "-90"):
+        with pytest.raises(ValueError):
+            rest667(bad)
+
+
+def test_667_additive_schema_snapshots_and_achievement_isolated(tmp_path):
+    engine = create_engine("sqlite:///" + str(tmp_path / "workout667.sqlite"))
+    @event.listens_for(engine, "connect")
+    def fk_on(conn, record):
+        conn.execute("PRAGMA foreign_keys=ON")
+
+    tables = [
+        WorkoutEquipment654.__table__,
+        WorkoutSession654.__table__,
+        WorkoutSet654.__table__,
+        WorkoutRoutine655.__table__,
+        WorkoutRoutineItem655.__table__,
+        WorkoutSessionRoutine655.__table__,
+        WorkoutRoutineConfig667.__table__,
+        WorkoutRoutineTarget667.__table__,
+        WorkoutSessionTarget667.__table__,
+        WorkoutSetType667.__table__,
+    ]
+    try:
+        Base.metadata.create_all(engine, tables=tables)
+        assert {"workout_routine_config667", "workout_routine_targets667",
+                "workout_session_targets667", "workout_set_types667"} <= set(
+                    inspect(engine).get_table_names()
+                )
+        with Session(engine) as db:
+            routine = WorkoutRoutine655(name="667 Upper")
+            machine = WorkoutEquipment654(name="667 Press", kind="selectorized", gym="QA")
+            db.add_all([routine, machine])
+            db.flush()
+            item = WorkoutRoutineItem655(
+                routine_id=routine.id, equipment_id=machine.id, position=0,
+            )
+            db.add(item)
+            db.flush()
+            db.add(WorkoutRoutineConfig667(routine_id=routine.id, rest_seconds=120))
+            db.add(WorkoutRoutineTarget667(
+                routine_item_id=item.id, target_sets=2, target_reps=10,
+                target_weight_lb=100, setup_note="Seat 4 / neutral grip",
+                rest_seconds=None,
+            ))
+            db.flush()
+            workout = WorkoutSession654(started_at=datetime(2026, 11, 16, 9))
+            db.add(workout)
+            db.flush()
+            snapshots667(db, routine.id, workout.id)
+            db.flush()
+            snap = db.get(WorkoutSessionTarget667, (workout.id, machine.id))
+            assert snap and snap.rest_seconds == 120
+            assert snap.setup_note == "Seat 4 / neutral grip"
+            # Repeated start logic cannot create duplicates.
+            snapshots667(db, routine.id, workout.id)
+            db.flush()
+            assert db.scalar(select(func.count(WorkoutSessionTarget667.session_id))) == 1
+            target = db.get(WorkoutRoutineTarget667, item.id)
+            target.target_sets, target.target_weight_lb = 5, 110
+            db.flush()
+            assert snap.target_sets == 2 and snap.target_weight_lb == 100
+
+            def add_set(weight, reps, kind=None):
+                entry = WorkoutSet654(
+                    session_id=workout.id, equipment_id=machine.id,
+                    weight_lb=weight, reps=reps,
+                )
+                db.add(entry)
+                db.flush()
+                if kind is not None:
+                    db.add(WorkoutSetType667(set_id=entry.id, set_type=kind))
+                return entry
+
+            add_set(150, 20, "warmup")
+            first = add_set(100, 10)
+            add_set(100, 9)
+            db.flush()
+            status = progress667(db, workout.id, machine.id)
+            assert status["working_sets"] == 2
+            assert status["warmup_sets"] == 1
+            assert status["credited_sets"] == 1
+            assert status["progress_percent"] == 50
+            assert status["achieved"] is False
+            add_set(105, 10, "working")
+            db.flush()
+            status = progress667(db, workout.id, machine.id)
+            assert status["working_sets"] == 3
+            assert status["credited_sets"] == 2
+            assert status["achieved"] is True
+            assert status["progress_percent"] == 100
+            # Deleting an actual set cascades only its type annotation.
+            db.delete(first)
+            db.commit()
+            assert progress667(db, workout.id, machine.id)["achieved"] is False
+    finally:
+        engine.dispose()
+
+
+def test_667_http_program_snapshots_import_and_rapid_gym_workflow():
+    nonce = uuid4().hex
+    with TestClient(app) as client:
+        with SessionLocal() as db:
+            machine = WorkoutEquipment654(
+                name="667 Chest " + nonce, gym="QA", kind="selectorized",
+                seat_setting="3", setup_notes="Equipment cue",
+            )
+            outsider = WorkoutEquipment654(
+                name="667 Row " + nonce, gym="QA", kind="selectorized",
+            )
+            routine = WorkoutRoutine655(name="667 Push " + nonce)
+            other = WorkoutRoutine655(name="667 Other " + nonce)
+            db.add_all([machine, outsider, routine, other])
+            db.flush()
+            item = WorkoutRoutineItem655(
+                routine_id=routine.id, equipment_id=machine.id, position=0,
+            )
+            external = WorkoutRoutineItem655(
+                routine_id=other.id, equipment_id=outsider.id, position=0,
+            )
+            db.add_all([item, external])
+            db.commit()
+            rid, iid, other_id, eid = routine.id, item.id, other.id, external.id
+            machine_id = machine.id
+        url = f"/workouts/routines/{rid}/program"
+        rendered = client.get(url)
+        assert rendered.status_code == 200
+        assert "Persisted" not in rendered.text or "Program" in rendered.text
+        assert "Workout Program" in rendered.text
+        assert "Equipment cue" in rendered.text
+        assert "target_sets" in rendered.text
+        assert "Import This Browser" in rendered.text
+        assert client.get("/workouts/routines/99999999/program").status_code == 404
+
+        invalid = post667(client, url + f"/items/{iid}", {
+            "target_sets": "3", "target_reps": "10", "target_weight_lb": "NaN",
+            "setup_note": "Should not save",
+        })
+        assert invalid.status_code == 303 and "err=" in invalid.headers["location"]
+        assert post667(client, url + f"/items/{eid}", {
+            "target_sets": "3", "target_reps": "10", "target_weight_lb": "100",
+        }).status_code == 404
+        assert "err=" in post667(client, url + "/rest", {"rest_seconds": "919"}).headers["location"]
+
+        assert "msg=" in post667(client, url + "/rest", {"rest_seconds": "120"}).headers["location"]
+        assert "msg=" in post667(client, url + f"/items/{iid}", {
+            "target_sets": "2", "target_reps": "10", "target_weight_lb": "100",
+            "rest_seconds": "75", "setup_note": "Seat 3, neutral grip",
+        }).headers["location"]
+        with SessionLocal() as db:
+            saved = db.get(WorkoutRoutineTarget667, iid)
+            assert saved and saved.target_sets == 2 and saved.rest_seconds == 75
+            assert saved.setup_note == "Seat 3, neutral grip"
+
+        bad_import = post667(client, url + "/import", {
+            "targets_json": '{"version":1,"targets":{"' + str(eid) +
+                            '":{"sets":"2","reps":"8","weight":"95"}}}',
+        })
+        assert bad_import.status_code == 303 and "err=" in bad_import.headers["location"]
+        with SessionLocal() as db:
+            assert db.get(WorkoutRoutineTarget667, iid).target_weight_lb == 100
+        good_import = post667(client, url + "/import", {
+            "targets_json": '{"version":1,"targets":{"' + str(iid) +
+                            '":{"sets":"3","reps":"10","weight":"95.5"}}}',
+        })
+        assert good_import.status_code == 303 and "msg=" in good_import.headers["location"]
+
+        started = post667(client, f"/workouts/quick/routines/{rid}/start")
+        assert started.status_code == 303
+        with SessionLocal() as db:
+            sid = db.scalar(select(WorkoutSession654.id).where(
+                WorkoutSession654.completed_at.is_(None),
+            ).order_by(WorkoutSession654.id.desc()))
+            assert sid
+            frozen = db.get(WorkoutSessionTarget667, (sid, machine_id))
+            assert frozen and frozen.target_sets == 3
+            assert frozen.target_weight_lb == 95.5
+            assert frozen.rest_seconds == 75
+
+        quick = client.get(f"/workouts/quick?machine={machine_id}")
+        assert quick.status_code == 200
+        assert 'id="workout667-active-goal"' in quick.text
+        assert "3 working sets" in quick.text
+        assert 'data-rest-seconds667="75"' in quick.text
+        assert 'id="workout667-use-goal"' in quick.text
+        assert 'name="set_type"' in quick.text
+        assert "Seat 3, neutral grip" in quick.text
+
+        warmup = post667(client, "/workouts/quick/sets", {
+            "equipment_id": machine_id, "weight_lb": "110", "reps": "20",
+            "set_type": "warmup",
+        })
+        assert warmup.status_code == 303 and "logged=1" in warmup.headers["location"]
+        for _ in range(2):
+            recorded = post667(client, "/workouts/quick/sets", {
+                "equipment_id": machine_id, "weight_lb": "95.5",
+                "reps": "10", "set_type": "working",
+            })
+            assert recorded.status_code == 303
+        with SessionLocal() as db:
+            actuals = list(db.scalars(select(WorkoutSet654).where(
+                WorkoutSet654.session_id == sid
+            ).order_by(WorkoutSet654.id)))
+            assert len(actuals) == 3
+            assert db.get(WorkoutSetType667, actuals[0].id).set_type == "warmup"
+            assert db.get(WorkoutSetType667, actuals[1].id) is None
+            assert progress667(db, sid, machine_id)["credited_sets"] == 2
+
+        change = post667(client, url + f"/items/{iid}", {
+            "target_sets": "1", "target_reps": "5", "target_weight_lb": "60",
+            "setup_note": "New setup",
+        })
+        assert change.status_code == 303
+        with SessionLocal() as db:
+            frozen = db.get(WorkoutSessionTarget667, (sid, machine_id))
+            assert frozen.target_sets == 3 and frozen.target_weight_lb == 95.5
+            assert frozen.setup_note == "Seat 3, neutral grip"
+
+        finish = post667(client, "/workouts/finish-review")
+        assert finish.status_code == 303
+        review = client.get(f"/workouts/sessions/{sid}/review")
+        assert review.status_code == 200
+        assert "Planned vs actual" in review.text
+        assert "2 / 3 qualifying" in review.text
+        assert "2 working, 1 warm-up" in review.text
+        assert "Goal not yet achieved" in review.text
+        with SessionLocal() as db:
+            assert db.get(WorkoutSession654, sid).completed_at is not None
+            assert db.get(WorkoutSessionTarget667, (sid, machine_id)).target_sets == 3
+
+
+def test_667_existing_source_separation_and_model_registration():
+    main = (ROOT / "app/main.py").read_text(encoding="utf-8")
+    assert "from . import workout_models667" in main
+    assert "app.include_router(workouts667.router)" in main
+    route = (ROOT / "app/routers/workouts667.py").read_text(encoding="utf-8")
+    assert "get_scoped_db390" in route
+    assert "WorkoutRoutineItem655.routine_id == routine_id" in route
+    assert "@router.post" in route
+    snapshot = (ROOT / "app/routers/workouts655.py").read_text(encoding="utf-8")
+    assert "snapshots667(db, routine_id, workout.id)" in snapshot
+    log = (ROOT / "app/routers/workouts654.py").read_text(encoding="utf-8")
+    assert "db.add(WorkoutSetType667(" in log and "db.commit()" in log
+    assert "workout_set_types667" in (ROOT / "app/workout_models667.py").read_text()
