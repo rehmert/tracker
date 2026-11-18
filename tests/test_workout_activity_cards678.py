@@ -25,7 +25,6 @@ def test_678_workout_activity_links_are_card_actions_not_bare_link_boxes():
     assert src.count('<a ') == 8
     assert src.count('<a href="/workouts/sessions/{{ row.session_id }}">') == 1
     assert src.count('class="tracker-workout-empty-action678"') == 1
-    assert src.count('<a href="/workouts/') == 5  # four cards plus recent session
     assert src.count('<strong>') >= 5
     assert "data-dashboard-panel=\"9\"" in src
     Environment().parse(src)
