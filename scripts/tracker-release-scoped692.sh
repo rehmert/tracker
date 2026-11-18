@@ -16,7 +16,8 @@ bash -n scripts/tracker-preview692.sh
 "$PY" - <<'PY'
 from pathlib import Path
 from jinja2 import Environment
-Environment().parse(Path("app/templates/workouts654.html").read_text(encoding="utf-8"))
+for template in ("workouts654.html", "workout_progress656.html"):
+    Environment().parse((Path("app/templates") / template).read_text(encoding="utf-8"))
 print("RELEASE_692_JINJA_SYNTAX=PASSED")
 PY
 echo "RELEASE_692_TEST_SCOPE=WORKOUT_FOCUSED_NO_FULL_SUITE"
