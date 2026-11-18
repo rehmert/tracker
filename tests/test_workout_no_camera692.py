@@ -24,9 +24,11 @@ def test_692_workout_page_has_no_camera_ui_or_scanner_script():
         page = client.get("/workouts")
         assert page.status_code == 200
         html = page.text
-        assert "Find a machine" in html
-        assert 'name="code"' in html
-        assert 'action="/workouts/qr"' in html
+        assert "Find a machine" not in html
+        assert 'name="code"' not in html
+        assert 'action="/workouts/qr"' not in html
+        assert "Setup &amp; QR" not in html
+        assert 'name="qr_value"' not in html
         assert "Equipment &amp; Logging" in html
         assert "Add Equipment" in html
         assert "Progress" in html
@@ -47,7 +49,7 @@ def test_692_camera_backend_and_script_are_gone_manual_lookup_kept():
             assert response.status_code == 404
         assert client.get("/static/js/tracker-workouts656.js").status_code == 404
         assert client.get("/workouts/qr", params={"code": "unknown-code"},
-                          follow_redirects=False).status_code == 303
+                          follow_redirects=False).status_code == 404
         assert client.get("/workouts").status_code == 200
     assert not (ROOT / "app/static/js/tracker-workouts656.js").exists()
     assert not (ROOT / "scripts/tracker-workout-camera-test656.cjs").exists()
@@ -75,15 +77,12 @@ def test_692_manual_machine_selection_settings_sets_and_progress_still_work():
                 WorkoutEquipment654.name == name
             ))
             assert equipment_id is not None
-            assert db.get(WorkoutEquipment654, equipment_id).qr_value == code
+            assert db.get(WorkoutEquipment654, equipment_id).qr_value is None
         page = client.get("/workouts")
         assert name in page.text
         assert f'id="workout-machine-{equipment_id}"' in page.text
-        assert 'type="submit">Find Machine</button>' in page.text
-        looked_up = client.get("/workouts/qr", params={"code": code},
-                               follow_redirects=False)
-        assert looked_up.status_code == 303
-        assert f"machine={equipment_id}" in looked_up.headers["location"]
+        assert 'type="submit">Find Machine</button>' not in page.text
+        assert client.get(f"/workouts?machine={equipment_id}").status_code == 200
         assert client.get(f"/workouts/equipment/{equipment_id}/progress").status_code == 200
         assert client.post("/workouts/start", follow_redirects=False).status_code == 303
         logged = client.post("/workouts/sets", data={
@@ -127,8 +126,8 @@ def test_692_real_browser_workout_navigation_and_manual_equipment_lookup(width):
             page = browser.new_page(viewport={"width": width, "height": 812})
             page.set_content(html)
             expect(page.get_by_role("heading", name="Workouts", exact=True)).to_be_visible()
-            expect(page.get_by_role("heading", name="Find a machine")).to_be_visible()
-            expect(page.get_by_role("button", name="Find Machine")).to_be_visible()
+            expect(page.get_by_role("heading", name="Find a machine")).to_have_count(0)
+            expect(page.get_by_role("button", name="Find Machine")).to_have_count(0)
             expect(page.get_by_role("link", name="Gym Mode")).to_be_visible()
             expect(page.get_by_role("link", name="Progress", exact=True)).to_be_visible()
             expect(page.get_by_role("heading", name="Equipment & Logging")).to_be_visible()
@@ -136,6 +135,7 @@ def test_692_real_browser_workout_navigation_and_manual_equipment_lookup(width):
             assert page.locator("video").count() == 0
             assert page.locator('script[src*="tracker-workouts656.js"]').count() == 0
             assert page.locator('[data-start656], [data-stop656], [data-preview656]').count() == 0
-            assert page.locator('form[action="/workouts/qr"] input[name="code"]').count() == 1
+            assert page.locator('form[action="/workouts/qr"] input[name="code"]').count() == 0
+            assert page.locator('input[name="qr_value"]').count() == 0
         finally:
             browser.close()
