@@ -15,6 +15,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_693_main_workout_ui_is_equipment_first_and_qr_free():
     with TestClient(app) as client:
+        created = client.post("/workouts/equipment", data={
+            "name": "QA693 UI Fixture " + uuid4().hex[:9],
+            "kind": "selectorized", "gym": "Merritt Eldersburg",
+        }, follow_redirects=False)
+        assert created.status_code == 303
         response = client.get("/workouts")
         assert response.status_code == 200
         html = response.text
