@@ -172,3 +172,82 @@
   }
 }
 /* Mobile dock clearance and page readability remain controlled by existing CSS. */
+
+/* Desktop Compact is a high-density workspace, not merely a phone preset.
+   These rules apply at desktop widths as well as in the narrower default
+   Compact rules above. Preserve 40px desktop toolbar/form targets. */
+@media (min-width: 761px) {
+  :root[data-density="compact"] #main-content {
+    padding-top: .1rem;
+  }
+  :root[data-density="compact"] #main-content > .workspace-toolbar {
+    margin-bottom: .08rem;
+    padding: 0 0 .1rem;
+    gap: .12rem .25rem;
+  }
+  :root[data-density="compact"] #main-content :is(.workspace-search,.workspace-recent > summary,.workspace-settings > button,.ux-add-button) {
+    min-height: 40px;
+    padding-block: .25rem;
+  }
+  :root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) {
+    margin-bottom: .12rem;
+    padding-bottom: 0;
+    gap: .12rem .35rem;
+  }
+  :root[data-density="compact"] #main-content > :is(section,.dashboard-panel,.metric-section) {
+    margin-block: .12rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .dashboard-panel,.tracker-ui-card,.ux673-card,
+    .today-card,.protocol-card,.inventory-card,.inventory-kpi,
+    .insight-card,.export-card,.labcard,.tracker-status-card
+  ) {
+    padding: .22rem .42rem;
+  }
+  :root[data-density="compact"] #main-content :is(.dashboard-metrics,.stats) > div {
+    padding: .22rem .4rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .dashboard-metrics,.insight-grid,.inventory-kpis,.metric-section,
+    .tracker-status-grid,.today-cards,.protocol-card-list,.cards,
+    .labgrid,.tracker-attention-list
+  ) {
+    gap: .16rem;
+    margin-block: .1rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .section-intro,.panel-heading,.tracker-attention-header,.tracker-status-heading
+  ) {
+    margin-bottom: .08rem;
+    gap: .12rem .28rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .grid,.inline,.cards,.ux673-action-row,.tracker-ui-actions,
+    .recon-inline,.recon-components,.recon-picker-row,.recon-layout,
+    .dashboard-search,.ux-shortcuts
+  ) {
+    gap: .14rem .26rem;
+  }
+  :root[data-density="compact"] #main-content :is(.grid,.inline,.ux673-action-row,.dashboard-search,.ux-shortcuts,.tracker-page-jump) {
+    margin-block: .1rem;
+  }
+  :root[data-density="compact"] #main-content :is(.note,.meta,.ux-callout,.tracker-attention-note) {
+    margin-block: .08rem;
+  }
+  :root[data-density="compact"] #main-content :is(th,td) {
+    padding-block: .12rem;
+  }
+  :root[data-density="compact"] #main-content .recon-vial-picker {
+    padding: .3rem .45rem;
+    margin-block: .12rem;
+  }
+  :root[data-density="compact"] #main-content .recon .card {
+    padding: .3rem .45rem;
+  }
+  :root[data-density="compact"] #main-content .recon .recon-field {
+    margin-block: .12rem;
+  }
+  :root[data-density="compact"] #main-content .tracker-page-jump {
+    padding: .16rem .35rem;
+  }
+}
