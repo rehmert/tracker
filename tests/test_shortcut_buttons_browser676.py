@@ -47,7 +47,7 @@ def test_676_mobile_links_look_like_daily_shortcut_tiles(width):
             )
             reference = css(".tracker-daily-actions a:not(.tracker-daily-action-primary)")
             primary_ref = css(".tracker-daily-action-primary")
-            normal = css(".ux675-actions > a:not(.ux675-primary)")
+            normal = css('.ux675-actions > a[href="#progress"]')
             primary = css(".ux675-actions > a.ux675-primary")
             summary = css(".ux675-more > summary")
             inline = css(".ux675-inline-action")
