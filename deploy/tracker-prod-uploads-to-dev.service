@@ -1,0 +1,34 @@
+[Unit]
+Description=Tracker one-way PROD to DEV upload reconciliation (additive only)
+Documentation=https://github.com/rehmert/tracker
+Wants=network-online.target
+After=network-online.target
+ConditionHost=tracker-dev
+AssertPathExists=/etc/tracker.env
+AssertPathIsDirectory=/opt/tracker/data/uploads
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/tracker
+Environment=PROD_SSH=root@tracker-prod
+UMask=0077
+ExecStartPre=/opt/tracker/.venv/bin/python /opt/tracker/scripts/tracker-instance-check653.py --config /etc/tracker.env
+ExecStartPre=/usr/bin/test ! -L /opt/tracker/data/uploads
+ExecStart=/usr/bin/bash /opt/tracker/scripts/tracker-prod-uploads-to-dev645.sh
+TimeoutStartSec=15min
+MemoryAccounting=yes
+MemoryMax=512M
+TasksMax=96
+CPUQuota=100%
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/tracker/data/uploads /run/lock
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+StandardOutput=journal
+StandardError=journal
