@@ -15,8 +15,9 @@ cd "$APP"
 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
 [[ "$(git branch --show-current)" == main && -z "$(git status --porcelain)" ]] ||
   fail "Require clean installed DEV main"
-[[ "$(git rev-parse HEAD)" == "$BASE" ]] ||
-  fail "Require installed DEV Release 690"
+DEV_HEAD="$(git rev-parse HEAD)"
+[[ "$DEV_HEAD" == "$BASE" || "$DEV_HEAD" == "ae8c75ef39ed26fa505be17e0d8b6152542cbf36" ]] ||
+  fail "Require installed DEV Release 689 or 690; tests remain fully isolated"
 git fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
 TARGET="$(git rev-parse "refs/remotes/origin/$REF")"
 git merge-base --is-ancestor "$BASE" "$TARGET" ||
