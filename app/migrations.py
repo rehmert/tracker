@@ -83,6 +83,17 @@ def migrate(engine):
                 if name not in cols:
                     conn.exec_driver_sql(f"ALTER TABLE coas ADD COLUMN {name} {sql}")
 
+
+        # Release 691: additive, idempotent per-document identifiers. Original
+        # COA files continue to use coas.job_id / coas.verify_code.
+        if "coa_attachments" in tables:
+            columns = {c["name"] for c in inspect(conn).get_columns("coa_attachments")}
+            for name in ("job_id", "verify_code"):
+                if name not in columns:
+                    conn.exec_driver_sql(
+                        f"ALTER TABLE coa_attachments ADD COLUMN {name} VARCHAR(120) NOT NULL DEFAULT ''"
+                    )
+
         if "vendor_price_entries" in tables:
             cols = {c["name"] for c in inspect(conn).get_columns("vendor_price_entries")}
             if "product_url" not in cols:
