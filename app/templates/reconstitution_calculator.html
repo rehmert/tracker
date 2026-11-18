@@ -36,7 +36,7 @@
         data-lot="{{ v.lot or '—' }}"
         data-vial="{{ v.label or ('#' ~ v.id) }}"
         data-status="{{ v.status|replace('_',' ') }}"
-        {% if initial and initial.vial_id == v.id %}selected{% endif %}>{{ v.compound.name }} · {{ v.purchase.vendor if v.purchase and v.purchase.vendor else '—' }} · Lot: {{ v.lot or '—' }} · {{ v.label or ('#' ~ v.id) }}</option>
+        {% if initial and initial.vial_id == v.id %}selected{% endif %}>{{ v.compound.name }} · Vendor: {{ v.purchase.vendor if v.purchase and v.purchase.vendor else '—' }} · Lot: {{ v.lot or '—' }} · {{ v.label or ('#' ~ v.id) }}</option>
       {% endfor %}
     </select>
 
