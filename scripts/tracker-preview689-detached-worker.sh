@@ -4,7 +4,7 @@ set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 REF=release/689-workout-footnote-spacing
-TARGET=81abf95aef9659096267fcb4222b386f3b1d6e21
+TARGET=ae8c75ef39ed26fa505be17e0d8b6152542cbf36
 [[ "$(id -u)" -eq 0 && "$(hostname -s)" == tracker-dev ]] || {
   echo "RELEASE_689_WORKER_ERROR=Wrong host or user" >&2
   exit 2
