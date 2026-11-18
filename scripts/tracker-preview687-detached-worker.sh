@@ -5,7 +5,7 @@ set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 REF=release/687-shortcuts-toolbar
-TARGET=eee70cb697e633bca71fe842630dee5bf74a2035
+TARGET=6c47f765e76d4e4609f1d36c06226f439b28334d
 [[ "$(id -u)" -eq 0 && "$(hostname -s)" == tracker-dev ]] || exit 2
 [[ -n "${INVOCATION_ID:-}" ]] || {
   echo "REFUSING_FOREGROUND_EXECUTION=requires_systemd_service" >&2
