@@ -1,0 +1,123 @@
+/* Release 690: Overview-only density correction for Workout Activity and
+   At a glance. Preserve content, links, 44px workout actions, and charts. */
+
+/* Workout Activity: close wrapper/heading gaps rather than shrinking targets. */
+#main-content #tracker-workout-dashboard661 .tracker-workout-head661 h2 {
+  margin: .05rem 0 .12rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-head661 > div > .note {
+  max-width: none;
+  margin: 0;
+  line-height: 1.23;
+}
+#main-content #tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 {
+  gap: .3rem;
+  margin: .3rem 0 .3rem;
+}
+#main-content #tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a {
+  min-height: 44px;
+  padding: .35rem .62rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 {
+  gap: .25rem;
+  margin: .2rem 0 .25rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+  gap: 0;
+  padding: .2rem .42rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 strong {
+  font-size: clamp(1.4rem, 2vw, 1.65rem);
+  line-height: 1.04;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 span {
+  font-size: .83rem;
+  line-height: 1.16;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-recent661 h3 {
+  margin: .14rem 0 .12rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-recent661 > p.note {
+  max-width: none;
+  margin: .06rem 0 .16rem;
+  line-height: 1.22;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-recent661 > p:last-child {
+  display: flex;
+  align-items: center;
+  margin: .1rem 0 0;
+  line-height: 1.15;
+}
+#main-content #tracker-workout-dashboard661 a.tracker-workout-empty-action678 {
+  min-height: 44px;
+  padding: .38rem .65rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-recent661 li {
+  padding: .35rem 0;
+}
+#main-content #tracker-workout-dashboard661 > p.tracker-workout-footnote661 {
+  margin: .22rem 0 0;
+  line-height: 1.23;
+}
+
+/* At a glance: compact the genuine card components and sparklines, not the
+   chart data or metric labels. Only the Dashboard's At a glance is targeted. */
+#main-content > .metric-section[data-dashboard-title="At a glance"] .section-intro {
+  margin-bottom: .2rem;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .insight-grid {
+  gap: .28rem;
+  margin: .12rem 0 .26rem;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .insight-card {
+  min-height: 0;
+  gap: .16rem;
+  padding: .32rem .55rem;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .insight-top {
+  gap: .35rem;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .insight-icon {
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 8px;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .insight-icon svg {
+  width: .95rem;
+  height: .95rem;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .insight-value {
+  font-size: clamp(1.5rem, 2vw, 1.75rem);
+  line-height: 1.05;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .insight-foot {
+  margin-top: 0;
+  gap: .35rem;
+  min-height: 0;
+  align-items: end;
+  line-height: 1.16;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .insight-foot > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .metric-sparkline {
+  height: 24px;
+  max-height: 24px;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .dashboard-metrics {
+  gap: .25rem;
+  margin: .1rem 0 .2rem;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .dashboard-metrics > div {
+  padding: .28rem .52rem;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .dashboard-metrics dt {
+  font-size: .76rem;
+  line-height: 1.16;
+}
+#main-content > .metric-section[data-dashboard-title="At a glance"] .dashboard-metrics dd {
+  font-size: clamp(1.3rem, 2vw, 1.5rem);
+  line-height: 1.06;
+  margin: .04rem 0 0;
+}
