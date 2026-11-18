@@ -10,6 +10,7 @@ import subprocess
 BASE = "869ada02eb9ac523ca9e8ce7c19ed6b92b303d68"
 EXPECTED = frozenset({
     "app/templates/workouts654.html",
+    "app/templates/workout_progress656.html",
     "app/routers/workouts656.py",
     "app/static/css/tracker-workouts656.css",
     "app/static/js/tracker-workouts656.js",
@@ -69,6 +70,12 @@ def review(root: Path, base: str, target: str) -> None:
         if removed in html:
             raise ValueError("Camera scan UI or orphaned state still present: " + removed)
     assert "Scan QR with Camera" in old_html and "tracker-workouts656.js" in old_html
+    # The modified CSS must be cache-busted in every referencing template.
+    for name in ("workouts654.html", "workout_progress656.html"):
+        template = (root / "app/templates" / name).read_text(encoding="utf-8")
+        assert '/static/css/tracker-workouts656.css?v=692' in template
+        assert '/static/css/tracker-workouts656.css?v=656' not in template
+
 
     old_route = git(root, "show", f"{base}:app/routers/workouts656.py")
     route = (root / "app/routers/workouts656.py").read_text()
