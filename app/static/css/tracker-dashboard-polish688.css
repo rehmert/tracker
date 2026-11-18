@@ -1,0 +1,261 @@
+/* Release 688: targeted dashboard chrome and density polish.
+   No content hiding or typography shrink; preserve keyboard and touch controls. */
+
+/* One coherent 44px control system for every top-bar action. */
+#main-content > .workspace-toolbar :is(
+  .tracker-account-action687, form > button, #ux-add-toggle,
+  #command-open, #workspace-settings-toggle
+),
+#main-content > .workspace-toolbar #page-finder-container .nav-find #nav-filter {
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0 .7rem;
+  box-shadow: none;
+}
+#main-content > .workspace-toolbar #command-open {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-width: 0;
+  text-align: left;
+}
+#main-content > .workspace-toolbar #command-open span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#main-content > .workspace-toolbar #command-open kbd {
+  flex: 0 0 auto;
+}
+#main-content > .workspace-toolbar #page-finder-container,
+#main-content > .workspace-toolbar #page-finder-container .nav-find {
+  min-width: 0;
+}
+#main-content > .workspace-toolbar #page-finder-container .nav-find #nav-filter {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  font-weight: 500;
+}
+#main-content > .workspace-toolbar #page-finder-container .nav-find #nav-filter::placeholder {
+  color: var(--muted, #65717f);
+  opacity: 1;
+}
+#main-content > .workspace-toolbar #workspace-settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#main-content > .workspace-toolbar :is(
+  .tracker-account-action687, form > button, #ux-add-toggle,
+  #command-open, #workspace-settings-toggle
+):hover {
+  background: var(--wash, #f1f5f9);
+}
+#main-content > .workspace-toolbar :is(
+  .tracker-account-action687, form > button, #ux-add-toggle,
+  #command-open, #workspace-settings-toggle
+):focus-visible,
+#main-content > .workspace-toolbar #page-finder-container .nav-find #nav-filter:focus-visible {
+  outline: 2px solid var(--teal, #1265ad);
+  outline-offset: 2px;
+}
+/* Avoid a large blank band between the toolbar and the section picker. */
+#main-content > .workspace-toolbar {
+  align-items: center;
+  column-gap: .35rem;
+  row-gap: .3rem;
+  padding-bottom: .18rem;
+  margin-bottom: .2rem;
+}
+
+/* Compact single-row section jump, without an oversized bordered panel.
+   Both the picker and deep-link copy button keep their original behavior. */
+#main-content > #tracker-page-jump-slot:not(:empty) {
+  margin: .1rem 0 .25rem;
+}
+#main-content > #tracker-page-jump-slot .tracker-page-jump:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem .55rem;
+  padding: .08rem 0 .18rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#main-content > #tracker-page-jump-slot .tracker-page-jump label {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .25rem .5rem;
+  min-width: 0;
+  margin: 0;
+  font-size: .82rem;
+  font-weight: 600;
+}
+#main-content > #tracker-page-jump-slot .tracker-page-jump select,
+#main-content > #tracker-page-jump-slot .tracker-copy-section-link {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 .6rem;
+  margin: 0;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-size: .86rem;
+  line-height: 1.2;
+}
+#main-content > #tracker-page-jump-slot .tracker-page-jump select {
+  width: clamp(11rem, 25vw, 19rem);
+  max-width: 100%;
+}
+#main-content > #tracker-page-jump-slot .tracker-copy-section-link {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+#main-content > #tracker-page-jump-slot .tracker-section-link-status {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  #main-content > #tracker-page-jump-slot .tracker-page-jump label {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+  #main-content > #tracker-page-jump-slot .tracker-page-jump select {
+    flex: 1 1 10rem;
+    width: auto;
+  }
+  #main-content > #tracker-page-jump-slot .tracker-copy-section-link {
+    min-height: 44px;
+  }
+}
+/* Replace standalone Dashboard customization with an in-menu disclosure. */
+#main-content #workspace-settings-panel .workspace-dashboard-customize688 {
+  margin: .15rem 0 .6rem;
+  padding: .2rem 0 .65rem;
+  border-bottom: 1px solid var(--rule, #cbd5e1);
+}
+#main-content #workspace-settings-panel #dashboard-customize {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: .48rem .6rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: 9px;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  text-align: left;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+#main-content #workspace-settings-panel #dashboard-customize[aria-expanded="true"] {
+  background: var(--wash, #f1f5f9);
+}
+#main-content #workspace-settings-panel #dashboard-customize-panel {
+  position: static;
+  width: 100%;
+  max-width: 100%;
+  padding: .4rem 0 .1rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+#main-content #workspace-settings-panel #dashboard-customize-panel p {
+  margin: .25rem 0 .4rem;
+}
+#main-content #workspace-settings-panel .customize-row {
+  gap: .3rem;
+  padding: .2rem 0;
+}
+#main-content #workspace-settings-panel .customize-row button {
+  min-height: 34px;
+}
+/* Center labels in every density; no explanatory second line. */
+#main-content nav.tracker-daily-flow559-links > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  text-align: center;
+  line-height: 1.2;
+  padding: .55rem .4rem;
+}
+#main-content nav.tracker-daily-flow559-links > a strong {
+  display: block;
+  width: 100%;
+  line-height: 1.2;
+  text-align: center;
+}
+:root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a {
+  min-height: 44px;
+  padding: .18rem .38rem;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Workout metrics: six useful cards on one desktop row, without dead space. */
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: .35rem;
+  margin: .42rem 0 .5rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .08rem;
+  min-height: 0;
+  padding: .38rem .52rem;
+  border-radius: .55rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 strong {
+  line-height: 1.1;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 span {
+  line-height: 1.22;
+}
+:root[data-density="compact"] #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+  padding: .24rem .4rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-recent661 h3 {
+  margin: .28rem 0 .18rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-footnote661 {
+  margin-top: .4rem;
+}
+@media (min-width: 761px) and (max-width: 1150px) {
+  #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+    padding: .45rem .5rem;
+  }
+  :root[data-density="compact"] #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+    padding: .35rem .44rem;
+  }
+}
