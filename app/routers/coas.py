@@ -135,7 +135,8 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
         new_coa = db.get(Coa, coa_id)
         if stored["original_name"]:
             # First document is a regular editable COA attachment from day one.
-            db.add(CoaAttachment(coa_id=coa_id, test_type="", **stored))
+            db.add(CoaAttachment(coa_id=coa_id, test_type="", job_id=job_id.strip(),
+                                 verify_code=verify_code.strip(), **stored))
         v.linked_coas.append(new_coa)
         if v.coa_id is None:
             v.coa_id = coa_id
@@ -164,6 +165,8 @@ def _document_rows650(coa: Coa, default_id: int | None, catalog=()) -> list[dict
             "key": "original",
             "filename": coa.original_name,
             "test_type": mirror.test_type if mirror else "",
+            "job_id": coa.job_id or "",
+            "verify_code": coa.verify_code or "",
             **test_info652(mirror.test_type if mirror else "", catalog),
             "size": coa.size_bytes,
             "url": f"/coas/{coa.id}/original-file",
@@ -178,6 +181,8 @@ def _document_rows650(coa: Coa, default_id: int | None, catalog=()) -> list[dict
             "key": str(attachment.id),
             "filename": attachment.original_name,
             "test_type": attachment.test_type or "",
+            "job_id": attachment.job_id or "",
+            "verify_code": attachment.verify_code or "",
             **test_info652(attachment.test_type, catalog),
             "size": attachment.size_bytes,
             "url": f"/coas/{coa.id}/attachments/{attachment.id}/file",
@@ -258,6 +263,8 @@ async def add_coa_attachments(
     custom_test_type: str = Form(""),
     test_types: list[str] = Form([]),
     db: Session = Depends(get_scoped_db390),
+    job_id: str = Form(""),
+    verify_code: str = Form(""),
 ):
     coa = db.get(Coa, cid)
     if coa is None:
@@ -271,13 +278,24 @@ async def add_coa_attachments(
             test_type = _resolve_attachment_test_type646(test_type, custom_test_type)
     except ValueError as exc:
         return services.flash_redirect(f"/coas/{cid}", err=str(exc))
+    try:
+        job_id = _document_identifier691(job_id, "Task number")
+        verify_code = _document_identifier691(verify_code, "Verification number")
+    except ValueError as exc:
+        return services.flash_redirect(f"/coas/{cid}", err=str(exc))
+    if len(files) > 1 and (job_id or verify_code):
+        return services.flash_redirect(
+            f"/coas/{cid}", err="Upload one document to assign identifiers immediately; "
+            "for multiple files, edit each document after uploading."
+        )
     directory = attachment_directory400("coa")
     uploaded = []
     try:
         for file in files:
             uploaded.append(await services.save_upload(file, directory))
         for data in uploaded:
-            db.add(CoaAttachment(coa_id=cid, test_type=test_type, **data))
+            db.add(CoaAttachment(coa_id=cid, test_type=test_type,
+                                 job_id=job_id, verify_code=verify_code, **data))
         _revision(db, coa, "attachments_added")
         db.commit()
     except ValueError as exc:
@@ -306,6 +324,106 @@ def coa_attachment_file(cid: int, aid: int, db: Session = Depends(get_scoped_db3
         content_disposition_type="inline",
         headers={"X-Content-Type-Options": "nosniff"},
     )
+
+
+def _document_identifier691(value: str, label: str) -> str:
+    """Opaque lab-issued text; never infer numbers or fabricate verify URLs."""
+    if not isinstance(value, str):
+        raise ValueError(f"{label} must be text.")
+    text = value.strip()
+    if len(text) > 120 or any(ord(char) < 32 or ord(char) == 127 for char in text):
+        raise ValueError(f"{label} must be at most 120 printable characters.")
+    return text
+
+
+@router.post("/coas/{cid}/attachments/identifiers")
+async def update_coa_document_identifiers691(
+    cid: int, request: Request, db: Session = Depends(get_scoped_db390),
+):
+    """Save identifiers independently for every visible document, atomically.
+
+    Original root-file identifiers remain on Coa for backward compatibility.
+    Additional attachments have their own values. No file, lab, test type,
+    default-document, or review-status edits occur in this endpoint.
+    """
+    coa = db.get(Coa, cid)
+    if coa is None:
+        raise HTTPException(404, "COA not found")
+    wants_json = "application/json" in request.headers.get("accept", "").lower()
+
+    def reply(error: str = "", updated: int = 0, status: int = 200):
+        if wants_json:
+            return JSONResponse(
+                {"ok": not bool(error), "error": error, "updated": updated},
+                status_code=status,
+            )
+        response = services.flash_redirect(
+            f"/coas/{cid}", err=error,
+            msg=f"{updated} document identifier pair(s) saved.",
+        )
+        response.headers["location"] += "#test-documents"
+        return response
+
+    mirror = _legacy_document_attachment650(coa)
+    records = {str(item.id): item for item in coa.attachments if item is not mirror}
+    if coa.original_name:
+        records["original"] = None  # Root COA, mirrored or not.
+    if not records:
+        return reply("There are no uploaded documents to update.", status=400)
+    if len(records) > 250:
+        return reply("Too many documents for one update.", status=400)
+    form = await request.form()
+    expected = {
+        f"{field}_{key}"
+        for key in records
+        for field in ("job_id", "verify_code", "original_job_id", "original_verify_code")
+    }
+    if set(form.keys()) - {"csrf_token"} != expected:
+        return reply("Document list changed. Reload before saving.", status=409)
+
+    proposed = {}
+    for key, item in records.items():
+        current_job = (coa.job_id or "") if key == "original" else (item.job_id or "")
+        current_verify = ((coa.verify_code or "") if key == "original"
+                          else (item.verify_code or ""))
+        names = (
+            f"job_id_{key}", f"verify_code_{key}",
+            f"original_job_id_{key}", f"original_verify_code_{key}",
+        )
+        if any(len(form.getlist(name)) != 1 or not isinstance(form[name], str)
+               for name in names):
+            return reply("Invalid document identifier form.", status=400)
+        old_job, old_verify = form[names[2]], form[names[3]]
+        if old_job != current_job or old_verify != current_verify:
+            return reply(
+                "Document identifiers changed since this page loaded. Reload before saving.",
+                status=409,
+            )
+        try:
+            new_job = _document_identifier691(form[names[0]], "Task number")
+            new_verify = _document_identifier691(form[names[1]], "Verification number")
+        except ValueError as exc:
+            return reply(str(exc), status=400)
+        proposed[key] = (new_job, new_verify)
+    changes = [
+        (key, item, proposed[key])
+        for key, item in records.items()
+        if proposed[key] != (
+            (coa.job_id or "", coa.verify_code or "")
+            if key == "original" else (item.job_id or "", item.verify_code or "")
+        )
+    ]
+    if changes:
+        _revision(db, coa, "document_identifiers_bulk")
+        for key, item, (job, verify) in changes:
+            if key == "original":
+                coa.job_id, coa.verify_code = job, verify
+                if mirror is not None:
+                    mirror.job_id, mirror.verify_code = job, verify
+            else:
+                item.job_id, item.verify_code = job, verify
+        db.commit()
+    return reply(updated=len(changes))
 
 
 @router.post("/coas/{cid}/attachments/{aid}/test-type")
@@ -416,6 +534,7 @@ async def update_coa_attachment_test_types647(
                 assert key == "original" and coa.original_name and coa.stored_name
                 db.add(CoaAttachment(
                     coa_id=cid, test_type=label,
+                    job_id=coa.job_id or "", verify_code=coa.verify_code or "",
                     original_name=coa.original_name, stored_name=coa.stored_name,
                     content_type=coa.content_type, size_bytes=coa.size_bytes,
                     sha256=coa.sha256,
@@ -654,6 +773,9 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
         coa.reported_content_unit = unit
         coa.job_id = job_id.strip()
         coa.verify_code = verify_code.strip()
+        mirror = _legacy_document_attachment650(coa)
+        if mirror is not None:
+            mirror.job_id, mirror.verify_code = coa.job_id, coa.verify_code
         coa.notes = notes.strip()
         if new_file:
             mirror = _legacy_document_attachment650(coa)
