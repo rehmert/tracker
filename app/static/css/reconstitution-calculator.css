@@ -332,3 +332,24 @@
     width: 100%;
   }
 }
+
+/* Release 684: native selects can truncate long vendor/lot option text.
+   Always expose the complete selected vial identity beneath the picker. */
+.recon .recon-picker-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .8rem;
+  align-items: center;
+  border: 1px solid var(--border, #d5dce4);
+  border-radius: .55rem;
+  padding: .65rem .75rem;
+  margin-top: .65rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.recon .recon-picker-selection strong {
+  flex: 0 0 100%;
+}
+.recon .recon-picker-selection span {
+  min-width: 0;
+}
