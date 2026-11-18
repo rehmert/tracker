@@ -21,6 +21,14 @@ command -v ssh >/dev/null || fail "ssh client missing"
 [[ -x "$PY" ]] || fail "Tracker Python missing"
 [[ -d "$APP/data/uploads" && ! -L "$APP/data/uploads" ]] || fail "DEV uploads missing or symlinked"
 [[ -f "$APP/data/tracker.db" && ! -L "$APP/data/tracker.db" ]] || fail "DEV DB unavailable"
+"$PY" - <<'PY'
+from pathlib import Path
+root = Path("/opt/tracker/data/uploads")
+for item in root.rglob("*"):
+    if item.is_symlink():
+        raise SystemExit("UPLOAD_MIRROR_INSTALL=FAILED: DEV uploads contains symlink")
+print("UPLOAD_MIRROR_DEV_PATHS=NO_SYMLINKS")
+PY
 cd "$APP"
 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
 [[ "$(git branch --show-current)" == main && -z "$(git status --porcelain)" ]] || fail "DEV must have clean main checkout"
@@ -87,9 +95,9 @@ echo "UPLOAD_MIRROR_UNIT_PREFLIGHT=PASSED"
 # Avoid installing units concurrently with an app release or DB replication.
 exec 8>/run/lock/tracker-db-sync.lock
 flock -n 8 || fail "Release or database replication active; retry after completion"
+rollback=1
 install -m 0644 "$STAGE/deploy/$SERVICE" "$INSTALL_DIR/$SERVICE"
 install -m 0644 "$STAGE/deploy/$TIMER" "$INSTALL_DIR/$TIMER"
-rollback=1
 systemctl daemon-reload
 flock -u 8
 systemctl enable --now "$TIMER" ||
