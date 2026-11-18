@@ -65,7 +65,7 @@
   <h2>Vial details</h2>
 <p><a href="/reconstitution-calculator?vial_id={{ v.id }}">Open full reconstitution calculator →</a></p>
   <details id="vial-reconstitution683" {% if v.form == 'lyophilized' and not v.volume_ml %}open{% endif %}><summary>Reconstitution calculator and recording</summary><div class="grid">
-  <label class="field"><span>Vial content ({{ recon_unit }})</span><input id="rc-content" type="number" step="any" value="{{ recon_content|num }}"></label>
+  <label class="field"><span>Vial content ({{ recon_unit }})</span><input id="rc-content" type="number" step="any" value="{{ recon_content|num_input }}"></label>
   <label class="field"><span>BAC water added (mL)</span><input id="rc-water" type="number" step="any" min="{{ '0.001' if v.form == 'lyophilized' and not v.volume_ml else '0' }}" {% if v.form == 'lyophilized' and not v.volume_ml %}name="volume_ml" form="recon-record-form683" required{% endif %} value="{{ v.volume_ml or '' }}"></label>
   <label class="field"><span>Target concentration ({{ recon_unit }}/mL)</span><input id="rc-conc" type="number" step="any" min="0"></label>
   <label class="field"><span>Desired dose ({{ recon_unit }})</span><input id="rc-dose" type="number" step="any" min="0"></label>
