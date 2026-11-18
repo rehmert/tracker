@@ -1,0 +1,141 @@
+/* Release 685: coherent compact/balanced spacing.
+   Applied LAST after the historic density and page-shell sheets.
+   No content hiding, font reduction, minimum tap-target reduction, or JS. */
+:root[data-density="compact"] #main-content {
+  --tracker685-gap: .35rem;
+  --tracker685-inner: .3rem;
+  --tracker685-pad-y: .48rem;
+  --tracker685-pad-x: .65rem;
+  --tracker685-heading: .2rem;
+}
+:root[data-density="balanced"] #main-content {
+  --tracker685-gap: .6rem;
+  --tracker685-inner: .45rem;
+  --tracker685-pad-y: .65rem;
+  --tracker685-pad-x: .8rem;
+  --tracker685-heading: .32rem;
+}
+/* Chrome should not consume a separate blank band before the page heading. */
+:root[data-density="compact"] #main-content > .workspace-toolbar {
+  margin: 0 0 .3rem;
+  padding: .15rem 0 .25rem;
+  row-gap: .3rem;
+}
+:root[data-density="balanced"] #main-content > .workspace-toolbar {
+  margin-bottom: .48rem;
+  padding-bottom: .4rem;
+}
+:root[data-density="compact"] #main-content > .ux-breadcrumbs:not([hidden]),
+:root[data-density="compact"] #tracker-page-jump-slot:not(:empty) {
+  margin-top: 0;
+  margin-bottom: .22rem;
+}
+/* The eyebrow, heading, subtitle and actions already imply grouping. */
+:root[data-density="compact"] #main-content .dashboard-hero,
+:root[data-density="compact"] #main-content .page-header {
+  gap: .4rem .65rem;
+  padding-top: 0;
+  padding-bottom: .28rem;
+  margin-top: 0;
+  margin-bottom: .35rem;
+}
+:root[data-density="compact"] #main-content .dashboard-hero .eyebrow,
+:root[data-density="compact"] #main-content .page-header .eyebrow {
+  margin: 0 0 .1rem;
+}
+:root[data-density="compact"] #main-content .dashboard-hero h1,
+:root[data-density="compact"] #main-content .page-header h1 {
+  margin: 0 0 .12rem;
+  line-height: 1.16;
+}
+:root[data-density="compact"] #main-content .dashboard-hero :is(.hero-subtitle,.note),
+:root[data-density="compact"] #main-content .page-header :is(.description,.note) {
+  margin: 0;
+}
+:root[data-density="compact"] #main-content .hero-actions {
+  gap: .35rem;
+}
+/* One shared margin between adjacent sections instead of stacked gaps. */
+:root[data-density="compact"] #main-content > :is(section,.dashboard-panel,.metric-section) {
+  margin-top: .35rem;
+  margin-bottom: .35rem;
+}
+:root[data-density="compact"] #main-content :is(.dashboard-panel,.tracker-ui-card,.ux673-card) {
+  padding: var(--tracker685-pad-y) var(--tracker685-pad-x);
+}
+:root[data-density="balanced"] #main-content :is(.dashboard-panel,.tracker-ui-card,.ux673-card) {
+  padding: var(--tracker685-pad-y) var(--tracker685-pad-x);
+}
+:root[data-density="compact"] #main-content :is(.insight-grid,.inventory-kpis,.metric-section,.dashboard-metrics,.tracker-status-grid,.today-cards,.protocol-card-list) {
+  gap: var(--tracker685-gap);
+  margin-top: .25rem;
+  margin-bottom: .4rem;
+}
+:root[data-density="compact"] #main-content :is(.insight-card,.inventory-card,.today-card,.protocol-card,.export-card,.tracker-status-card,.tracker-ui-card,.ux673-card) {
+  padding: var(--tracker685-pad-y) var(--tracker685-pad-x);
+}
+:root[data-density="compact"] #main-content :is(.section-intro,.panel-heading) {
+  gap: .3rem .5rem;
+  margin-top: 0;
+  margin-bottom: var(--tracker685-heading);
+}
+:root[data-density="compact"] #main-content .section-intro > :is(h2,h3),
+:root[data-density="compact"] #main-content .panel-heading > :is(h2,h3) {
+  margin: 0;
+}
+:root[data-density="compact"] #main-content :is(h2,h3) + :is(p,.note,.muted) {
+  margin-top: .12rem;
+}
+:root[data-density="compact"] #main-content :is(.note,.section-intro,.meta,.ux-callout) {
+  margin-bottom: .3rem;
+}
+:root[data-density="compact"] #main-content :is(.grid,.inline,.cards,.ux673-action-row,.tracker-ui-actions) {
+  gap: var(--tracker685-inner);
+}
+:root[data-density="compact"] #main-content .ux673-action-row {
+  margin-top: .28rem;
+  margin-bottom: .38rem;
+}
+:root[data-density="compact"] #main-content .dashboard-metrics > div,
+:root[data-density="compact"] #main-content .stats > div {
+  padding: .45rem .6rem;
+}
+:root[data-density="compact"] #main-content .dashboard-metrics dd {
+  margin-top: .12rem;
+}
+:root[data-density="balanced"] #main-content .section-intro {
+  margin-bottom: .45rem;
+}
+/* Mobile remains compact without shrinking inputs, primary logging actions or
+   leaving the fixed dock uncovered. */
+@media (max-width: 760px) {
+  :root[data-density="compact"] #main-content > .workspace-toolbar {
+    margin-bottom: .24rem;
+    padding-bottom: .22rem;
+  }
+  :root[data-density="compact"] #main-content .dashboard-hero {
+    gap: .35rem;
+    padding-bottom: .2rem;
+  }
+  :root[data-density="compact"] #main-content :is(.dashboard-panel,.tracker-ui-card,.ux673-card) {
+    padding: .45rem .58rem;
+  }
+  :root[data-density="compact"] #main-content .tracker-status-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  :root[data-density="compact"] #main-content :is(.tracker-ui-action,.ux673-action-row > a,.ux673-action-row > button) {
+    min-height: 44px;
+  }
+}
+@media (max-width: 359px) {
+  :root[data-density="compact"] #main-content .tracker-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  :root[data-density="compact"] #main-content > .workspace-toolbar,
+  :root[data-density="balanced"] #main-content > .workspace-toolbar {
+    margin: revert;
+    padding: revert;
+  }
+}
