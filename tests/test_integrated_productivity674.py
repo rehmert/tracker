@@ -112,7 +112,8 @@ def test_674_quality_and_daily_snapshot_do_not_mutate(tmp_path):
         report = quality_summary674(db)
         assert report["counts"]["COA"] >= 1
         assert report["counts"]["Purchase"] >= 1
-        assert report["counts"]["Workout"] >= 1
+        assert report["counts"].get("Workout", 0) == 0
+        assert not any("QR mapping" in issue["detail"] for issue in report["issues"])
         assert all(x["href"].startswith("/") for x in report["issues"])
         snapshot = snapshot674(db, date.today())
         assert snapshot["workout_today"] == 0
