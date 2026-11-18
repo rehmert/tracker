@@ -46,11 +46,13 @@ EXPECTED="$(printf '%s\n' \
   app/static/css/tracker-coa-identifiers691.css \
   app/templates/coa_edit.html \
   scripts/tracker-release.sh \
+  scripts/tracker_prod_remote568.sh \
   scripts/tracker_schema_review691.py \
   scripts/tracker-release-scoped691.sh \
   scripts/tracker-preview691.sh \
   tests/test_coa_document_identifiers691.py \
-  tests/test_coa_csrf_surface691.py | LC_ALL=C sort)"
+  tests/test_coa_csrf_surface691.py \
+  tests/test_coa_deploy_gate691.py | LC_ALL=C sort)"
 ACTUAL="$(git diff --name-only "$BASE" "$TARGET" | LC_ALL=C sort)"
 [[ "$ACTUAL" == "$EXPECTED" ]] || fail "Unexpected source files in release"
 "$PY" scripts/tracker_schema_review691.py --root "$APP" --base "$BASE" --target "$TARGET"
