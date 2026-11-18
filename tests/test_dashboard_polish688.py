@@ -21,6 +21,8 @@ WORKOUT_CSS = read("app/static/css/tracker-workout-dashboard661.css")
 STYLE_FILES = [
     "app/static/app.css",
     "app/static/css/tracker-page-navigation.css",
+    "app/static/css/tracker-layout-density685.css",
+    "app/static/css/tracker-compact-aggressive686.css",
     "app/static/css/tracker-shortcuts-toolbar687.css",
     "app/static/css/tracker-dashboard-polish688.css",
     "app/static/css/tracker-daily-flow559.css",
