@@ -15,8 +15,6 @@ from sqlalchemy.orm import Session
 from ..models import Coa, Purchase, Vial
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
-from ..workout_models654 import WorkoutEquipment654, WorkoutSet654
-from ..workout_models668 import WorkoutSetCorrection668
 
 router = APIRouter()
 
@@ -43,12 +41,6 @@ def quality_summary674(db: Session, food_engine=None):
             issues.append(dict(kind="Purchase", label=f"Order #{order.id} — {order.vendor}",
                                detail="Order has no recorded inventory",
                                href=f"/purchases/{order.id}"))
-    machines = list(db.scalars(select(WorkoutEquipment654).order_by(WorkoutEquipment654.id)))
-    for machine in machines:
-        if not (machine.qr_value or "").strip() and machine.kind in ("selectorized", "plate_loaded"):
-            issues.append(dict(kind="Workout", label=machine.name,
-                               detail="Machine has no QR mapping",
-                               href="/workouts"))
     food_status = "Food records not assessed"
     if food_engine is not None:
         with food_engine.connect() as conn:
