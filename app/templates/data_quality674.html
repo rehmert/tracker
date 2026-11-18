@@ -10,14 +10,13 @@
     <article><strong>{{ report.total }}</strong><span>Items to review</span></article>
     <article><strong>{{ report.counts.get("COA", 0) }}</strong><span>COAs</span></article>
     <article><strong>{{ report.counts.get("Purchase", 0) }}</strong><span>Purchases</span></article>
-    <article><strong>{{ report.counts.get("Workout", 0) }}</strong><span>Machines</span></article>
     <article><strong>{{ report.counts.get("Food", 0) }}</strong><span>Foods</span></article>
   </div>
   <p class="note">{{ report.food_status }}. Food quality checks review up to 1,000 used products; other categories include all records in this workspace.</p>
   <nav class="ux674-actions" aria-label="Review shortcuts">
     <a href="/food/duplicates">Duplicate Foods</a>
     <a href="/inventory-data-quality">Inventory Dates</a>
-    <a href="/workouts">Equipment &amp; QR Mapping</a>
+    <a href="/workouts">Workout Equipment</a>
     <a href="/coas">COA Records</a>
   </nav>
   {% if report.limited %}
