@@ -129,6 +129,10 @@ SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes -n)
 ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -n root@tracker-prod \
   'grep -Fxq DATABASE_BACKUP=VERIFIED_FOR_MIGRATION /etc/tracker-release/release-691-prod.log && grep -Fxq COA_691_PROD_FOCUSED_TESTS=PASSED /etc/tracker-release/release-691-prod.log && grep -Fxq EXIT_STATUS=0 /etc/tracker-release/release-691-prod.log' ||
   fail "PROD verified backup or scoped test receipt missing"
+PROD_SCHEMA="$(ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -n root@tracker-prod \
+  "/opt/tracker/.venv/bin/python -c 'import sqlite3; c=sqlite3.connect(\"file:/opt/tracker/data/tracker.db?mode=ro\", uri=True); print(int({\"job_id\",\"verify_code\"}.issubset({r[1] for r in c.execute(\"PRAGMA table_info(coa_attachments)\")})))'")"
+[[ "$PROD_SCHEMA" == 1 ]] || fail "PROD COA attachment columns not present"
+echo "PROD_691_COA_DOCUMENT_SCHEMA=VERIFIED"
 echo "PROD_DEPLOY_VERIFIED=$NEW"
 echo "RELEASE_691_DEV_INSTALLED=$NEW"
 echo "RELEASE_691_PROD_INSTALLED=$NEW"
