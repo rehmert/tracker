@@ -55,7 +55,7 @@ def test_676_mobile_links_look_like_daily_shortcut_tiles(width):
             def opaque_rgb(value):
                 # Browser CSS serialization may use rgb(...) or rgba(..., 1)
                 # for the same fully opaque color. Compare channel values.
-                match = re.fullmatch(r"rgba?\\(([^)]*)\\)", value)
+                match = re.fullmatch(r"rgba?\(([^)]*)\)", value)
                 assert match is not None, value
                 channels = [float(item.strip()) for item in match.group(1).split(",")]
                 assert len(channels) in (3, 4), value
