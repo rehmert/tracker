@@ -5,8 +5,12 @@ These tests use the disposable pytest TRACKER_DATA_DIR, not either live host.
 from __future__ import annotations
 
 import io
+import os
 import sqlite3
 from pathlib import Path
+
+import pytest
+from playwright.sync_api import expect, sync_playwright
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -309,3 +313,51 @@ def test_691_single_upload_identifiers_and_multifile_rejection():
             stored = new.stored_name
         from app.attachment_files400 import attachment_directory400
         (attachment_directory400("coa") / stored).unlink(missing_ok=True)
+
+
+@pytest.mark.parametrize("width", [320, 390, 768, 1280])
+def test_691_browser_form_association_and_mobile_document_table(width):
+    with TestClient(app) as client:
+        cid = _coa()
+        html = client.get(f"/coas/{cid}").text
+        start = html.index('<section id="test-documents">')
+        stop = html.index("</section>", start) + len("</section>")
+        fragment = html[start:stop]
+        doc = (
+            '<!doctype html><html><head><meta name="viewport" '
+            'content="width=device-width,initial-scale=1"></head>'
+            '<body><main id="main-content">' + fragment + '</main></body></html>'
+        )
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(
+                headless=True,
+                executable_path=os.environ.get("TRACKER_TEST_CHROMIUM_PATH") or None,
+            )
+            try:
+                page = browser.new_page(viewport={"width": width, "height": 900})
+                page.set_content(doc)
+                page.add_style_tag(content=(
+                    Path(__file__).resolve().parents[1] /
+                    "app/static/css/tracker-coa-identifiers691.css"
+                ).read_text())
+                expect(page.get_by_role("columnheader", name="Task number")).to_be_visible()
+                expect(page.get_by_role("columnheader", name="Verification number")).to_be_visible()
+                expect(page.get_by_role("button", name="Save task / verification numbers")).to_be_visible()
+                assert page.locator(".coa-document-table tbody tr").count() == 3
+                values = page.evaluate("""() => {
+                  const form = document.getElementById('coa-document-identifiers691');
+                  return [...new FormData(form).entries()];
+                }""")
+                names = [name for name, value in values]
+                assert len(names) == 12, values
+                assert "job_id_original" in names
+                assert "verify_code_original" in names
+                assert all(not key.startswith("test_types") for key in names)
+                assert page.locator('input[name="job_id_original"]').input_value() == "0001-ROOT"
+                assert page.locator('input[name="verify_code_original"]').input_value() == "VERIFY-ROOT"
+                # Horizontal scroll is intentional for a dense document table;
+                # editable inputs remain visible via scrolling, never omitted.
+                assert page.locator('.coa-identifier691-cell input[type="text"]').count() == 0
+                assert page.locator('.coa-identifier691-cell input:not([type="hidden"])').count() == 6
+            finally:
+                browser.close()
