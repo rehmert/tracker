@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
-TARGET=74933010af8ebe5f18d704190b4284a218bdbc3b
+TARGET=696fe7f482436090df5342f76cd65b9fb5febad4
 REF=release/692-remove-workout-qr-camera
 fail(){ echo "RELEASE_692_PREVIEW_WORKER_ERROR=$*" >&2; exit 1; }
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev && -n "${INVOCATION_ID:-}" ]] || fail "Detached root on tracker-dev required"
