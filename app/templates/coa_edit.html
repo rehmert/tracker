@@ -18,6 +18,7 @@
 <script defer src="/static/js/tracker-coa-types647.js?v=651"></script>
 <script defer src="/static/js/tracker-coa-multi651.js?v=652"></script>
 <link rel="stylesheet" href="/static/css/tracker-coa-documents649.css?v=651">
+<link rel="stylesheet" href="/static/css/tracker-coa-identifiers691.css?v=691">
 {% endblock %}
 {% block content %}
 <p><a href="/coas">← All COAs</a></p><h1>{{ 'COA #' ~ coa.id if coa else 'Add certificate of analysis' }}</h1>
@@ -34,20 +35,21 @@
 {% if coa and coa.endotoxin_pct is not none %}<p class="note">Legacy endotoxin value: {{ coa.endotoxin_pct|num }}% (historical percentage; not converted into EU/vial).</p>{% endif %}
 <label class="field"><span>Reported content</span><input type="number" min="0" step="any" name="reported_content" value="{{ coa.reported_content_value if coa and coa.reported_content_value is not none else '' }}"></label>
 <label class="field"><span>Content unit</span><select name="reported_unit">{% for unit in CONTENT_UNITS %}<option value="{{ unit }}" {% if coa and coa.reported_content_unit == unit %}selected{% elif not coa and unit == 'mg' %}selected{% endif %}>{{ unit }}</option>{% endfor %}</select></label>
-<label class="field"><span>Job / task ID</span><input name="job_id" value="{{ coa.job_id if coa else '' }}"></label>
-<label class="field"><span>Verification code</span><input name="verify_code" value="{{ coa.verify_code if coa else '' }}"></label>
+<label class="field"><span>Task number (original document)</span><input name="job_id" maxlength="120" value="{{ coa.job_id if coa else '' }}"></label>
+<label class="field"><span>Verification number (original document)</span><input name="verify_code" maxlength="120" value="{{ coa.verify_code if coa else '' }}"></label>
 <label class="field wide"><span>Notes</span><textarea name="notes" rows="4">{{ coa.notes if coa else '' }}</textarea></label>
 <div><button class="primary">{{ 'Save changes' if coa else 'Create COA' }}</button></div>
 </form></section>
 {% if coa %}
 <section id="test-documents"><h2>Uploaded documents</h2>
 <p><a href="/coa-test-types">Manage COA test types</a></p>
-<p class="note">Every document can have multiple test types, including consolidated reports. Open a filename to review it, expand the test picker to select tests, and choose any document as the default.</p>
+<p class="note">Each document has its own test types, task number, and verification number. The original document retains the identifiers shown in the certificate form above. Save document identifiers separately from test types. Verification links will be added when laboratory URL formats are configured.</p>
 {% if documents %}
 <form id="coa-bulk-test-types" method="post" action="/coas/{{ coa.id }}/attachments/test-types" data-coa-bulk-form></form>
+<form id="coa-document-identifiers691" method="post" action="/coas/{{ coa.id }}/attachments/identifiers"></form>
 <form id="coa-default-document" method="post" action="/coas/{{ coa.id }}/default-file"></form>
 {% endif %}
-<div class="scroll"><table class="coa-document-table"><thead><tr><th>Document</th><th>Test types</th><th>Default</th><th>Size</th><th>Action</th></tr></thead><tbody>
+<div class="scroll"><table class="coa-document-table"><thead><tr><th>Document</th><th>Test types</th><th>Task number</th><th>Verification number</th><th>Default</th><th>Size</th><th>Action</th></tr></thead><tbody>
 {% for doc in documents %}
 <tr>
 <td><a href="{{ doc.url }}" target="_blank" rel="noopener">{{ doc.filename }}</a></td>
@@ -69,14 +71,25 @@
 <input type="hidden" name="test_types_{{ doc.key }}" value="" form="coa-bulk-test-types">
 <input type="hidden" name="original_test_type_{{ doc.key }}" value="{{ doc.test_type or '' }}" form="coa-bulk-test-types" data-coa-original-type>
 </div></td>
+<td class="coa-identifier691-cell">
+<label class="coa-identifier691-label" for="coa-task-{{ doc.key }}">Task number</label>
+<input id="coa-task-{{ doc.key }}" name="job_id_{{ doc.key }}" form="coa-document-identifiers691" value="{{ doc.job_id }}" maxlength="120" autocomplete="off" placeholder="Not recorded" aria-label="Task number for {{ doc.filename }}">
+<input type="hidden" name="original_job_id_{{ doc.key }}" form="coa-document-identifiers691" value="{{ doc.job_id }}">
+</td>
+<td class="coa-identifier691-cell">
+<label class="coa-identifier691-label" for="coa-verify-{{ doc.key }}">Verification number</label>
+<input id="coa-verify-{{ doc.key }}" name="verify_code_{{ doc.key }}" form="coa-document-identifiers691" value="{{ doc.verify_code }}" maxlength="120" autocomplete="off" placeholder="Not recorded" aria-label="Verification number for {{ doc.filename }}">
+<input type="hidden" name="original_verify_code_{{ doc.key }}" form="coa-document-identifiers691" value="{{ doc.verify_code }}">
+</td>
 <td><label class="coa-default-choice"><input type="radio" form="coa-default-document" name="document" value="{{ doc.key }}" {% if doc.default %}checked{% endif %} required aria-label="Make {{ doc.filename }} the default COA document"> Default</label></td>
 <td>{{ doc.size }} bytes</td>
 <td><form method="post" action="/coas/{{ coa.id }}/attachments/{{ doc.delete_id }}/delete" data-tracker-discard-changes onsubmit="return confirm('Remove this document?')"><button class="danger">Remove</button></form></td></tr>
-{% else %}<tr><td colspan="5">No documents uploaded yet.</td></tr>{% endfor %}
+{% else %}<tr><td colspan="7">No documents uploaded yet.</td></tr>{% endfor %}
 </tbody></table></div>
 {% if documents %}
 <div class="coa-bulk-save-bar">
 <button class="primary" type="submit" form="coa-bulk-test-types" data-coa-bulk-save>Save all test types</button>
+<button type="submit" form="coa-document-identifiers691">Save task / verification numbers</button>
 <span role="status" aria-live="polite" data-coa-bulk-status>Choose one or more tests per document, then save once.</span>
 <button type="submit" form="coa-default-document">Save default document</button>
 </div>
@@ -96,8 +109,10 @@
 </div></details>
 <input type="hidden" name="test_types" value="">
 </div>
+<label class="field"><span>Task number (single-file upload)</span><input name="job_id" maxlength="120" autocomplete="off" placeholder="Optional"></label>
+<label class="field"><span>Verification number (single-file upload)</span><input name="verify_code" maxlength="120" autocomplete="off" placeholder="Optional"></label>
 <label class="field wide"><span>Add documents · PDF, PNG, JPG, WEBP (15 MB each, up to 20 at once)</span><input type="file" name="files" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple required></label>
-<p class="note wide">Selected types apply to all files in this upload. Each document can be edited separately afterward.</p>
+<p class="note wide">Selected test types apply to every file. Task and verification numbers entered here require exactly one file; for multiple uploads, leave them blank and edit each document separately afterward.</p>
 <div><button class="primary">Upload documents</button></div></form></section>
 {% endif %}
 {% if coa %}
