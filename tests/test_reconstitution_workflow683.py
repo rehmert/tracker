@@ -150,6 +150,6 @@ def test_683_browser_formdata_uses_calculator_field():
                 "form => [...new FormData(form).getAll('volume_ml')]"
             )
             assert actual == ["2.45"]
-            assert page.locator('input[name="volume_ml"]').count() == 1
+            assert page.locator('input[name="volume_ml"][form="recon-record-form683"]').count() == 1
         finally:
             browser.close()
