@@ -230,17 +230,32 @@ def test_691_legacy_root_mirror_keeps_one_table_row_and_synced_identifiers():
         cid = _coa()
         # Saving a test selection for the first file creates the normal
         # compatibility mirror without copying the original attachment.
-        response = client.post(
-            f"/coas/{cid}/attachments/test-types",
-            files=[
+        # The bulk endpoint is deliberately fail-closed: all displayed
+        # documents must be submitted, even if only the original changes.
+        with SessionLocal() as db:
+            coa, extra_documents = _rows(db, cid)
+            assert len(extra_documents) == 2
+            fields = [
                 ("test_types_original", (None, "")),
                 ("test_types_original", (None, "Purity")),
                 ("custom_test_type_original", (None, "")),
                 ("original_test_type_original", (None, "")),
-            ],
+            ]
+            for doc in extra_documents:
+                key = str(doc.id)
+                fields.extend([
+                    (f"test_types_{key}", (None, "")),
+                    (f"test_types_{key}", (None, doc.test_type)),
+                    (f"custom_test_type_{key}", (None, "")),
+                    (f"original_test_type_{key}", (None, doc.test_type)),
+                ])
+        response = client.post(
+            f"/coas/{cid}/attachments/test-types",
+            files=fields,
             headers={"Accept": "application/json"},
         )
         assert response.status_code == 200, response.text
+        assert response.json()["updated"] == 1
         with SessionLocal() as db:
             coa = db.get(Coa, cid)
             mirrors = [x for x in coa.attachments if x.stored_name == coa.stored_name]
