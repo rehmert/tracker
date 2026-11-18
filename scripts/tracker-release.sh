@@ -330,6 +330,13 @@ PY
   fi
  fi
  if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped677.sh |
+      grep -qx 'scripts/tracker-release-scoped677.sh'; then
+  echo "=== RELEASE 677 PROD COLOR PARITY RECOVERY QUALIFICATION ==="
+  timeout 600 bash "$QA/scripts/tracker-release-scoped677.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+ fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
     g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped676.sh |
       grep -qx 'scripts/tracker-release-scoped676.sh'; then
   echo "=== RELEASE 676 PROD DAILY SHORTCUT BUTTON VISUAL QUALIFICATION ==="
