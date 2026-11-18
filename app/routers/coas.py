@@ -414,7 +414,19 @@ async def update_coa_document_identifiers691(
         )
     ]
     if changes:
-        _revision(db, coa, "document_identifiers_bulk")
+        snapshot = _snapshot(coa)
+        snapshot["document_identifiers"] = {
+            key: {
+                "job_id": ((coa.job_id or "") if key == "original" else (item.job_id or "")),
+                "verify_code": ((coa.verify_code or "") if key == "original"
+                                else (item.verify_code or "")),
+            }
+            for key, item in records.items()
+        }
+        db.add(CoaRevision(
+            coa_id=cid, event="document_identifiers_bulk",
+            snapshot_json=json.dumps(snapshot, sort_keys=True),
+        ))
         for key, item, (job, verify) in changes:
             if key == "original":
                 coa.job_id, coa.verify_code = job, verify
