@@ -149,7 +149,7 @@ with sync_playwright() as p:
      print('VISUAL681_PAGE='+json.dumps(record,separators=(',',':')),flush=True)
  finally: b.close()
 (out.parent/'summary.json').write_text(json.dumps(results,indent=2)+'\n')
-flagged=[r for r in results if r.get('status')!=200 or not r.get('hasMain') or r.get('overflow') or r.get('missingStyles') or not r.get('found680') or r.get('undersizedExplanationToggles') or r.get('nav681Problem') or r.get('errors') or r.get('error')]
+flagged=[r for r in results if r.get('status')!=200 or not r.get('hasMain') or r.get('overflow') or r.get('missingStyles') or not r.get('found681') or r.get('undersizedExplanationToggles') or r.get('nav681Problem') or r.get('errors') or r.get('error')]
 print('VISUAL681_CHECKED='+str(len(results)))
 print('VISUAL681_NAV_PROBLEMS='+str(sum(bool(r.get('nav681Problem')) for r in results)))
 print('VISUAL681_TOGGLES_CHECKED='+str(sum(r.get('explanationToggles',0) for r in results)))
