@@ -26,6 +26,18 @@ git fetch origin "refs/heads/$OPS_REF:refs/remotes/origin/$OPS_REF"
 git merge-base --is-ancestor "$EXPECTED_WORKER_SHA" "refs/remotes/origin/$OPS_REF" || {
   echo "RELEASE_687_LAUNCH_ERROR=Ops branch moved" >&2; exit 1;
 }
+# Fetch the exact candidate ref before inspecting a commit not yet local.
+CANDIDATE_REF=release/687-shortcuts-toolbar
+CANDIDATE_SHA=6c47f765e76d4e4609f1d36c06226f439b28334d
+git fetch origin "refs/heads/$CANDIDATE_REF:refs/remotes/origin/$CANDIDATE_REF"
+[[ "$(git rev-parse "refs/remotes/origin/$CANDIDATE_REF")" == "$CANDIDATE_SHA" ]] || {
+  echo "RELEASE_687_LAUNCH_ERROR=Candidate branch changed" >&2
+  exit 1
+}
+git merge-base --is-ancestor 6d6505403ec191df66977ea0fab9d1004f7a022f "$CANDIDATE_SHA" || {
+  echo "RELEASE_687_LAUNCH_ERROR=Candidate not based on DEV 686" >&2
+  exit 1
+}
 # Lightweight no-browser syntax preflight before scheduling the bounded worker.
 # The worker independently checks the pinned candidate before the real tests.
 "$APP/.venv/bin/python" -c 'import ast,subprocess; ast.parse(subprocess.check_output(["git","show","6c47f765e76d4e4609f1d36c06226f439b28334d:tests/test_shortcuts_toolbar687.py"], text=True))'
