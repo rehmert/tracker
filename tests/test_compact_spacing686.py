@@ -94,3 +94,44 @@ def test_686_is_measurably_tighter_than_685_without_clipping(width):
                 assert before[d] == after[d], (width,d,before[d],after[d])
         finally:
             browser.close()
+
+
+@pytest.mark.parametrize("width", [1024, 1440, 1920])
+def test_686_desktop_compact_is_intentionally_high_density(width):
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            executable_path=os.environ.get("TRACKER_TEST_CHROMIUM_PATH") or None)
+        try:
+            page = browser.new_page(viewport={"width":width,"height":900})
+            page.set_content(DOC)
+            page.add_style_tag(content=CSS685)
+            def metrics():
+                return page.evaluate("""() => {
+                    const c = s => getComputedStyle(document.querySelector(s));
+                    const num = (s,p) => parseFloat(c(s)[p]);
+                    return {
+                        toolbar: num('.workspace-toolbar','marginBottom'),
+                        panel: num('.dashboard-panel','paddingTop'),
+                        section: num('.dashboard-panel','marginTop'),
+                        status: num('.tracker-status-grid','columnGap'),
+                        card: num('.tracker-status-card','paddingTop'),
+                        font: num('.tracker-status-card','fontSize'),
+                        action: document.querySelector('.tracker-ui-action').getBoundingClientRect().height,
+                        overflow: document.documentElement.scrollWidth > innerWidth + 1
+                    };
+                }""")
+            before = metrics()
+            page.add_style_tag(content=CSS686)
+            after = metrics()
+            assert after["toolbar"] <= 2, (width,after)
+            assert after["panel"] <= 4, (width,after)
+            assert after["section"] <= 2, (width,after)
+            assert after["card"] <= 4, (width,after)
+            for name in ("toolbar","panel","section","status","card"):
+                assert after[name] < before[name], (width,name,before[name],after[name])
+            assert after["font"] == before["font"]
+            assert after["action"] >= 44
+            assert not after["overflow"]
+        finally:
+            browser.close()
