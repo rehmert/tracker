@@ -72,7 +72,7 @@ def test_678_workout_activity_links_are_styled_cards(width, active):
             assert all(card["height"] >= 44 and card["width"] > 0 for card in styles)
             assert styles[0]["background"] != styles[1]["background"]
             assert cards.first.inner_text() == (
-                "Resume Gym Mode" if active else "Open Rapid Gym Mode"
+                "Resume Gym Mode" if active else "Rapid Gym Mode"
             )
             backfill = page.locator(".tracker-workout-empty-action678")
             assert backfill.count() == 1
