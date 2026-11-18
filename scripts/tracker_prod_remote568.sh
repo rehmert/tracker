@@ -99,6 +99,10 @@ elif [[ "$RELEASE" == 667 ]]; then
 elif [[ "$RELEASE" == 668 ]]; then
   # New additive Workout tables require signed exact-source review and backup.
   DEPLOY_EXTRA=(--reviewed-workout-668 --db-migration)
+elif [[ "$RELEASE" == 691 ]]; then
+  # Each COA document gets two additive identifier columns. Enforce reviewed
+  # exact-source schema checks and verified SQLite + uploads backup on PROD.
+  DEPLOY_EXTRA=(--reviewed-coa-691 --db-migration)
 fi
 bash "$RUNNER" \
   --instance PROD \
