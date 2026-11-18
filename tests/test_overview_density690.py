@@ -11,13 +11,14 @@ ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = ROOT / "app" / "templates"
 BASE_CSS = [
     "app/static/app.css",
+    "app/static/css/tracker-workout-dashboard661.css",
     "app/static/css/tracker-workout-nav-density681.css",
     "app/static/css/tracker-layout-density685.css",
     "app/static/css/tracker-compact-aggressive686.css",
     "app/static/css/tracker-shortcuts-toolbar687.css",
     "app/static/css/tracker-dashboard-polish688.css",
     "app/static/css/tracker-workout-footnote689.css",
-    "app/static/css/tracker-workout-dashboard661.css",
+    "app/static/css/tracker-daily-flow559.css",
 ]
 NEW_CSS = "app/static/css/tracker-overview-density690.css"
 
@@ -94,7 +95,10 @@ def test_690_dashboard_asset_and_content_contract():
     dashboard = read("app/templates/dashboard.html")
     assert dashboard.count("/static/css/tracker-overview-density690.css?v=690") == 1
     assert dashboard.index("tracker-overview-density690.css?v=690") > dashboard.index(
-        "tracker-workout-dashboard661.css?v=678"
+        "tracker-daily-flow559.css?v=559"
+    )
+    assert dashboard.index("tracker-workout-dashboard661.css?v=678") < dashboard.index(
+        "{% block content %}"
     )
     css = read(NEW_CSS)
     assert "#main-content #tracker-workout-dashboard661" in css
