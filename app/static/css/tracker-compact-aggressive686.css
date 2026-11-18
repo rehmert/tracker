@@ -161,7 +161,7 @@
     .today-card,.protocol-card,.inventory-card,
     .insight-card,.tracker-status-card
   ) {
-    padding: .34rem .45rem;
+    padding: .3rem .45rem;
   }
   :root[data-density="compact"] #main-content :is(
     .tracker-ui-action,.ux673-action-row > a,.ux673-action-row > button,
