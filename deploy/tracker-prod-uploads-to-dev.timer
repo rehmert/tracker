@@ -1,0 +1,13 @@
+[Unit]
+Description=Synchronize Tracker PROD uploads into DEV every minute
+ConditionHost=tracker-dev
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=5s
+RandomizedDelaySec=0
+Persistent=false
+Unit=tracker-prod-uploads-to-dev.service
+
+[Install]
+WantedBy=timers.target
