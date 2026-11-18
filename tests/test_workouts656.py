@@ -25,7 +25,7 @@ def machine_id(name):
         )
 
 
-def test_656_per_machine_progress_and_qr_scanning_lookup():
+def test_656_per_machine_progress_and_manual_qr_lookup():
     with TestClient(app) as client:
         created = post(client, "/workouts/equipment", {
             "name": "Nautilus Progress Press 656",
@@ -44,9 +44,11 @@ def test_656_per_machine_progress_and_qr_scanning_lookup():
 
         root = client.get("/workouts")
         assert root.status_code == 200
-        assert 'data-start656' in root.text
-        assert 'data-stop656' in root.text
-        assert 'name="code"' in root.text  # manual fallback retained
+        assert 'data-start656' not in root.text
+        assert 'data-stop656' not in root.text
+        assert 'workout-qr-camera656' not in root.text
+        assert 'tracker-workouts656.js' not in root.text
+        assert 'name="code"' in root.text  # manual lookup retained
         assert "Progress &amp; History" in root.text
 
         lookup = client.get("/workouts/qr", params={
@@ -54,28 +56,13 @@ def test_656_per_machine_progress_and_qr_scanning_lookup():
         }, follow_redirects=False)
         assert lookup.status_code == 303
         assert f"machine={equipment_id}" in lookup.headers["location"]
-        camera_match = client.get("/workouts/qr/scan", params={
+        # The dedicated camera-scanner endpoint is retired. Manual lookup
+        # and equipment management remain independent and functional.
+        assert client.get("/workouts/qr/scan", params={
             "code": "https://example.invalid/nautilus?machine=656&unit=1",
-        }, follow_redirects=False)
-        assert camera_match.status_code == 303
-        assert f"machine={equipment_id}" in camera_match.headers["location"]
-
-        new_code = "https://example.invalid/unmapped?code=656&unit=2"
-        unmapped = client.get("/workouts/qr/scan", params={
-            "code": new_code
-        }, follow_redirects=False)
-        assert unmapped.status_code == 303
-        assert unmapped.headers["location"].startswith("/workouts?unmapped_qr=")
-        mapping_page = client.get(unmapped.headers["location"])
-        assert mapping_page.status_code == 200
-        assert 'id="workout-add-equipment656"' in mapping_page.text
-        assert "New QR code detected." in mapping_page.text
-        assert 'value="https://example.invalid/unmapped?code=656&amp;unit=2"' in mapping_page.text
-
-        oversized = client.get("/workouts/qr/scan", params={
-            "code": "Z" * 1025,
-        }, follow_redirects=False)
-        assert oversized.headers["location"].startswith("/workouts?err=")
+        }).status_code == 404
+        assert 'id="workout-add-equipment656"' in root.text
+        assert "New QR code detected." not in root.text
 
 
         assert post(client, "/workouts/start").status_code == 303
@@ -151,9 +138,10 @@ def test_656_ui_and_read_only_contracts():
     assert "db.commit()" not in route
     assert "db.add(" not in route
     assert "db.delete(" not in route
-    js = (ROOT / "app/static/js/tracker-workouts656.js").read_text()
-    assert "getUserMedia" in js
-    assert "BarcodeDetector" in js
-    assert 'window.location.assign("/workouts/qr/scan?code=" + encodeURIComponent(raw))' in js
-    assert "window.open(" not in js
-    assert "fetch(" not in js
+    template = (ROOT / "app/templates/workouts654.html").read_text()
+    assert "Scan QR with Camera" not in template
+    assert "getUserMedia" not in template
+    assert "tracker-workouts656.js" not in template
+    assert "/workouts/qr/scan" not in route
+    assert not (ROOT / "app/static/js/tracker-workouts656.js").exists()
+    assert not (ROOT / "scripts/tracker-workout-camera-test656.cjs").exists()
