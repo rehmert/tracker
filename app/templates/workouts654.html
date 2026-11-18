@@ -58,18 +58,6 @@
     {% endif %}
   </section>
 
-  <section>
-    <h2>Find a machine</h2>
-    <form method="get" action="/workouts/qr" class="workout-grid654">
-      <label>QR text or URL
-        <input name="code" maxlength="1024" autocomplete="off"
-               placeholder="Paste a Nautilus QR code" required>
-      </label>
-      <button type="submit">Find Machine</button>
-    </form>
-    <p class="note">Map QR codes once. Tracker never opens external QR links.</p>
-  </section>
-
   {% if active_routine and routine_total %}
     <div class="workout657-progress" role="status">
       <strong>{{ routine_logged_count }} of {{ routine_total }}</strong>
@@ -140,7 +128,7 @@
         {% endif %}
 
         <details class="workout-settings654">
-          <summary>Setup &amp; QR</summary>
+          <summary>Machine Setup</summary>
           <form method="post" action="/workouts/equipment/{{ item.id }}/settings"
                 class="workout-grid654">
             <label>Seat / backrest position
@@ -148,9 +136,6 @@
             </label>
             <label>Setup notes
               <textarea name="setup_notes" maxlength="1000" rows="2">{{ item.setup_notes }}</textarea>
-            </label>
-            <label>QR code value
-              <input name="qr_value" maxlength="1024" value="{{ item.qr_value or '' }}">
             </label>
             <button type="submit">Save Settings</button>
           </form>
@@ -226,8 +211,6 @@
       <label>Model <input name="model" maxlength="140"></label>
       <label>Seat setting <input name="seat_setting" maxlength="80"></label>
       <label>Setup notes <textarea name="setup_notes" maxlength="1000" rows="2"></textarea></label>
-      <label>QR code URL/text <input name="qr_value" maxlength="1024"
-        placeholder="Optional"></label>
       <button class="primary" type="submit">Add Equipment</button>
     </form>
   </section>
