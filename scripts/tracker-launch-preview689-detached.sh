@@ -4,10 +4,10 @@ set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 BASE=a55456b3c9e74e91dc35a7cd74579566c7a63355
-TARGET=81abf95aef9659096267fcb4222b386f3b1d6e21
+TARGET=ae8c75ef39ed26fa505be17e0d8b6152542cbf36
 OPS=ops/689-detached-preview
 REF=release/689-workout-footnote-spacing
-WORKER_SHA=8c6082270ee828d6009e031ffe492c4cb90e3f47
+WORKER_SHA=52926b52ab85e34f80f616def1dca91547b55127
 WORKER_PATH=scripts/tracker-preview689-detached-worker.sh
 fail(){ echo "RELEASE_689_LAUNCH_ERROR=$*" >&2; exit 1; }
 [[ "$(id -u)" -eq 0 && "$(hostname -s)" == tracker-dev ]] || fail "Root on tracker-dev required"
@@ -32,7 +32,7 @@ EXPECTED="$(printf '%s\n' \
   tests/test_workout_footnote_spacing689.py | LC_ALL=C sort)"
 ACTUAL="$(git diff --name-only "$BASE" "$TARGET" | LC_ALL=C sort)"
 [[ "$EXPECTED" == "$ACTUAL" ]] || fail "Unexpected source files in candidate"
-"$APP/.venv/bin/python" -c 'import ast,subprocess; ast.parse(subprocess.check_output(["git","show","81abf95aef9659096267fcb4222b386f3b1d6e21:tests/test_workout_footnote_spacing689.py"], text=True))'
+"$APP/.venv/bin/python" -c 'import ast,subprocess; ast.parse(subprocess.check_output(["git","show","ae8c75ef39ed26fa505be17e0d8b6152542cbf36:tests/test_workout_footnote_spacing689.py"], text=True))'
 for script in scripts/tracker-preview689.sh scripts/tracker-release-scoped689.sh; do
   git show "$TARGET:$script" | bash -n
 done
