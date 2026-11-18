@@ -1,0 +1,136 @@
+/* Release 676: match the established Today/Daily Shortcuts button tiles.
+   Keep GET navigation as real anchors; never nest links inside buttons.
+   Loaded after the app-wide 673 stylesheet to win the CSS cascade. */
+#main-content nav.ux675-actions {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:stretch;
+  gap:.55rem;
+  margin:.75rem 0 1rem;
+  width:100%;
+  min-width:0;
+}
+#main-content nav.ux675-actions > a,
+#main-content nav.ux675-actions > details.ux675-more > summary,
+#main-content nav.ux675-actions > details.ux675-more > div > a,
+#main-content a.ux675-inline-action {
+  box-sizing:border-box;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  min-width:0;
+  min-height:3.2rem;
+  padding:.65rem .5rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.85rem;
+  background:var(--surface,#fff);
+  color:var(--ink,#192c31);
+  font-weight:750;
+  line-height:1.3;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  box-shadow:0 1px 2px rgba(15,23,42,.07);
+  transition:background-color .12s ease,border-color .12s ease,box-shadow .12s ease;
+}
+#main-content nav.ux675-actions > a.ux675-primary {
+  background:var(--teal,#1265ad);
+  border-color:var(--teal,#1265ad);
+  color:var(--teal-ink,#fff);
+}
+#main-content nav.ux675-actions > details.ux675-more {
+  display:block;
+  position:static;
+  min-width:0;
+  width:100%;
+  padding:0;
+  margin:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+#main-content nav.ux675-actions > details.ux675-more > summary {
+  cursor:pointer;
+  list-style:none;
+  width:100%;
+  height:100%;
+  min-height:3.2rem;
+  margin:0;
+}
+#main-content nav.ux675-actions > details.ux675-more > summary::-webkit-details-marker {display:none;}
+#main-content nav.ux675-actions > details.ux675-more > div {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.55rem;
+  box-sizing:border-box;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  margin-top:.5rem;
+  padding:.6rem;
+  background:var(--wash,#f1f5f9);
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.85rem;
+}
+#main-content nav.ux675-actions > details.ux675-more[open] {grid-column:1/-1;}
+#main-content nav.ux675-actions > details.ux675-more[open] > summary {
+  height:auto;
+}
+#main-content nav.ux675-actions > a:hover,
+#main-content nav.ux675-actions > details.ux675-more > summary:hover,
+#main-content nav.ux675-actions > details.ux675-more > div > a:hover,
+#main-content a.ux675-inline-action:hover {
+  background:var(--wash,#f1f5f9);
+  border-color:var(--teal,#1265ad);
+  box-shadow:0 2px 6px rgba(15,23,42,.12);
+  filter:none;
+}
+#main-content nav.ux675-actions > a.ux675-primary:hover {
+  background:var(--teal,#1265ad);
+  color:var(--teal-ink,#fff);
+  filter:brightness(1.08);
+}
+#main-content nav.ux675-actions > a:focus-visible,
+#main-content nav.ux675-actions > details.ux675-more > summary:focus-visible,
+#main-content nav.ux675-actions > details.ux675-more > div > a:focus-visible,
+#main-content a.ux675-inline-action:focus-visible {
+  outline:3px solid var(--teal,#1265ad);
+  outline-offset:2px;
+}
+/* Preserve the existing compact group when embedded inside a routine card. */
+#main-content nav.ux675-actions.ux675-compact {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  max-width:30rem;
+  gap:.4rem;
+  margin:.35rem 0;
+}
+#main-content nav.ux675-actions.ux675-compact > a,
+#main-content nav.ux675-actions.ux675-compact > details.ux675-more > summary {
+  padding:.5rem .5rem;
+  min-height:3rem;
+}
+@media (max-width:760px) {
+  #main-content nav.ux675-actions {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:.45rem;
+  }
+  #main-content nav.ux675-actions > details.ux675-more > div {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:.45rem;
+  }
+  #main-content nav.ux675-actions > a,
+  #main-content nav.ux675-actions > details.ux675-more > summary,
+  #main-content nav.ux675-actions > details.ux675-more > div > a {min-height:3.2rem;}
+}
+@media(max-width:350px) {
+  #main-content nav.ux675-actions,
+  #main-content nav.ux675-actions.ux675-compact,
+  #main-content nav.ux675-actions > details.ux675-more > div {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #main-content nav.ux675-actions a,
+  #main-content nav.ux675-actions summary {transition:none;}
+}
