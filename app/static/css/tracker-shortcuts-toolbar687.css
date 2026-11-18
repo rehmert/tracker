@@ -1,0 +1,155 @@
+/* Release 687: Daily Shortcuts and top-bar refinement.
+   Compact affects all viewport widths; controls retain readable sizing. */
+
+/* Never show the discontinued Recent Pages button. The DOM stays in place
+   temporarily because page-finder keyboard shortcuts share its JS init. */
+#main-content > .workspace-toolbar > #tracker-recent-pages[hidden] {
+  display: none !important;
+}
+
+/* Accounts is a real button-styled navigation action, not plain underlined text. */
+#main-content > .workspace-toolbar .tracker-account-action687 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: .4rem .75rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: .6rem;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#main-content > .workspace-toolbar .tracker-account-action687:hover {
+  background: var(--wash, #f1f5f9);
+  border-color: var(--teal, #1265ad);
+}
+#main-content > .workspace-toolbar .tracker-account-action687:focus-visible {
+  outline: 3px solid var(--teal, #1265ad);
+  outline-offset: 2px;
+}
+
+/* Preferences belongs with primary top-bar controls and must not be forced
+   underneath by the large minimum widths of the two search widgets. */
+@media (min-width: 761px) {
+  #main-content > .workspace-toolbar {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: .3rem;
+  }
+  #main-content > .workspace-toolbar > :is(form, .ux-add-menu, .workspace-settings) {
+    flex: 0 0 auto;
+  }
+  #main-content > .workspace-toolbar > .workspace-search {
+    flex: 1 1 9rem;
+    width: auto;
+    min-width: 7rem;
+  }
+  #main-content > .workspace-toolbar > .workspace-nav-find {
+    flex: 1 1 9rem;
+    width: auto;
+    min-width: 7rem;
+  }
+  #main-content > .workspace-toolbar > .workspace-settings {
+    margin-left: auto;
+  }
+  #main-content > .workspace-toolbar > .workspace-settings > button {
+    min-height: 40px;
+    white-space: nowrap;
+  }
+}
+/* At tablet and narrow desktop widths, keep Accounts/Preferences in the first
+   row; secondary search controls may occupy a subsequent row if needed. */
+@media (min-width: 761px) and (max-width: 1199px) {
+  #main-content > .workspace-toolbar {
+    flex-wrap: wrap;
+  }
+  #main-content > .workspace-toolbar > .tracker-account-action687 { order: -4; }
+  #main-content > .workspace-toolbar > form { order: -3; }
+  #main-content > .workspace-toolbar > .ux-add-menu { order: -2; }
+  #main-content > .workspace-toolbar > .workspace-settings { order: -1; margin-left: auto; }
+  #main-content > .workspace-toolbar > .workspace-search,
+  #main-content > .workspace-toolbar > .workspace-nav-find {
+    flex: 1 1 12rem;
+    min-width: 9rem;
+  }
+}
+@media (max-width: 760px) {
+  #main-content > .workspace-toolbar {
+    gap: .25rem;
+  }
+  #main-content > .workspace-toolbar > .tracker-account-action687 {
+    order: -4;
+    min-height: 44px;
+  }
+  #main-content > .workspace-toolbar > form { order: -3; }
+  #main-content > .workspace-toolbar > .ux-add-menu { order: -2; }
+  #main-content > .workspace-toolbar > .workspace-settings {
+    order: -1;
+    margin-left: auto;
+  }
+  #main-content > .workspace-toolbar > .workspace-settings > button {
+    min-height: 44px;
+  }
+}
+
+/* The Daily Shortcuts-specific legacy stylesheet is loaded inside Dashboard
+   content, AFTER the head; selectors are intentionally anchored/specific. */
+:root[data-density="compact"] #main-content > .tracker-daily-flow559,
+:root[data-density="compact"] #main-content section.tracker-daily-flow559 {
+  margin: .12rem 0 .2rem;
+  padding: .3rem .4rem;
+  border-radius: .5rem;
+}
+:root[data-density="compact"] #main-content .tracker-daily-flow559-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .12rem .5rem;
+  margin: 0 0 .2rem;
+}
+:root[data-density="compact"] #main-content .tracker-daily-flow559-head h2 {
+  margin: 0;
+  line-height: 1.2;
+}
+:root[data-density="compact"] #main-content .tracker-daily-flow559-head p {
+  margin: 0;
+  line-height: 1.25;
+}
+:root[data-density="compact"] #main-content nav.tracker-daily-flow559-links {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 125px), 1fr));
+  gap: .2rem;
+  margin: 0;
+}
+:root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a {
+  padding: .22rem .38rem;
+  gap: 0;
+  min-height: 40px;
+  align-items: flex-start;
+  justify-content: center;
+  border-radius: .4rem;
+  line-height: 1.2;
+}
+:root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a :is(strong, span) {
+  line-height: 1.2;
+}
+@media (max-width: 760px) {
+  :root[data-density="compact"] #main-content nav.tracker-daily-flow559-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  :root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a {
+    min-height: 44px;
+  }
+}
+@media (max-width: 359px) {
+  :root[data-density="compact"] #main-content .tracker-daily-flow559-head {
+    display: block;
+  }
+}
