@@ -22,7 +22,9 @@ CSS = [
 
 
 def workout_fragment():
-    return Environment(autoescape=True).from_string(
+    env = Environment(autoescape=True)
+    env.filters["dt"] = lambda value: str(value)
+    return env.from_string(
         src("app/templates/_workout_dashboard661.html")
     ).render(workout_summary={
         "sessions7": 0, "days7": 0, "sessions28": 0,
