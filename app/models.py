@@ -186,6 +186,8 @@ class CoaAttachment(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     coa_id: Mapped[int] = mapped_column(ForeignKey("coas.id", ondelete="CASCADE"), nullable=False, index=True)
     test_type: Mapped[str] = mapped_column(String(120), default="")
+    job_id: Mapped[str] = mapped_column(String(120), nullable=False, default="", server_default="")
+    verify_code: Mapped[str] = mapped_column(String(120), nullable=False, default="", server_default="")
     original_name: Mapped[str] = mapped_column(String(255), nullable=False)
     stored_name: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
     content_type: Mapped[str] = mapped_column(String(80), nullable=False)
