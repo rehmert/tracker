@@ -35,7 +35,7 @@ def test_691_prod_remote_must_request_migration_and_is_signed_target_bound():
     source = _read("scripts/tracker_prod_remote568.sh")
     assert 'elif [[ "$RELEASE" == 691 ]]; then' in source
     branch = source.split('elif [[ "$RELEASE" == 691 ]]; then', 1)[1]
-    assert 'DEPLOY_EXTRA=(--reviewed-coa-691 --db-migration)' in branch.split("fi", 1)[0]
+    assert 'DEPLOY_EXTRA=(--reviewed-coa-691 --db-migration)' in branch.split("\nfi\n", 1)[0]
     assert '"$TARGET:scripts/tracker-release.sh"' in source
     assert 'EXPECTED_RUNNER="$(git rev-parse "$TARGET:scripts/tracker-release.sh")"' in source
     assert 'git hash-object "$RUNNER"' in source
