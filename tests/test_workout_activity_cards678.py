@@ -19,8 +19,13 @@ def test_678_workout_activity_links_are_card_actions_not_bare_link_boxes():
         '/workouts/backfill',
     ):
         assert f'href="{url}"' in src
-    assert src.count('<a href="/workouts/') == 1  # recent session date is dynamic
-    assert src.count('<a ') == 8  # six nav actions + recent session + backfill
+    # Six navigation cards, one dynamic recent-session link, and one
+    # empty-state action are intentional. Do not confuse native anchors
+    # with unstyled hyperlinks: the Chromium test checks computed styling.
+    assert src.count('<a ') == 8
+    assert src.count('<a href="/workouts/sessions/{{ row.session_id }}">') == 1
+    assert src.count('class="tracker-workout-empty-action678"') == 1
+    assert src.count('<a href="/workouts/') == 5  # four cards plus recent session
     assert src.count('<strong>') >= 5
     assert "data-dashboard-panel=\"9\"" in src
     Environment().parse(src)
