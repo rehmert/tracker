@@ -45,7 +45,7 @@ def test_676_mobile_links_look_like_daily_shortcut_tiles(width):
                             display:s.display,height:b.height,width:b.width}
                 }"""
             )
-            reference = css(".tracker-daily-actions a")
+            reference = css(".tracker-daily-actions a:not(.tracker-daily-action-primary)")
             primary_ref = css(".tracker-daily-action-primary")
             normal = css(".ux675-actions > a:not(.ux675-primary)")
             primary = css(".ux675-actions > a.ux675-primary")
@@ -68,7 +68,7 @@ def test_676_mobile_links_look_like_daily_shortcut_tiles(width):
             )
             page.locator(".ux675-more > summary").click()
             assert page.locator(".ux675-more").evaluate("el => el.open")
-            nested = css('.ux675-more > div > a')
+            nested = css('.ux675-more > div > a:first-child')
             assert nested["background"] == reference["background"]
             assert nested["height"] >= 44
             assert page.evaluate(
