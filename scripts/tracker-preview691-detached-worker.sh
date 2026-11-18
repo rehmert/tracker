@@ -4,7 +4,7 @@ set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 REF=release/691-coa-document-identifiers
-TARGET=8b35c13a68beed4397af7fcbbb14d1b463db5e5c
+TARGET=6bdddbe0978dd8b22b57ea3b7c1a0d37f9c03ca5
 [[ "$(id -u)" -eq 0 && "$(hostname -s)" == tracker-dev ]] || {
   echo "RELEASE_691_WORKER_ERROR=Wrong host or user" >&2
   exit 2
