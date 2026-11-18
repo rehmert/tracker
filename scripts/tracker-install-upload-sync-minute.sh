@@ -31,6 +31,12 @@ for unit in "$SERVICE" "$TIMER"; do
   [[ -f "$STAGE/$unit" && ! -L "$STAGE/$unit" ]] ||
     fail "Missing or symlinked staged unit: $unit"
 done
+[[ -f "$STAGE/test_upload_sync_minute_ops.py" && ! -L "$STAGE/test_upload_sync_minute_ops.py" ]] ||
+  fail "Missing scoped safety tests"
+UPLOAD_SYNC_STAGE="$STAGE" "$APP/.venv/bin/python" -m pytest -q --tb=short --maxfail=1 \
+  "$STAGE/test_upload_sync_minute_ops.py" ||
+  fail "Upload sync safety tests did not pass"
+echo "UPLOAD_SYNC_SCOPED_TESTS=PASSED"
 systemd-analyze verify "$STAGE/$SERVICE" "$STAGE/$TIMER" ||
   fail "systemd unit verification failed"
 ssh -n -T -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=yes \
