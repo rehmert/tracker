@@ -143,7 +143,7 @@ def test_661_dashboard_http_readonly_quick_links_and_customization():
         assert 'href="/workouts/quick"' in html
         assert 'href="/workouts/analytics"' in html
         assert 'href="/workouts"' in html
-        assert "tracker-workout-dashboard661.css?v=661" in html
+        assert "tracker-workout-dashboard661.css?v=678" in html
         assert 'id="dashboard-customize"' in html
 
         with SessionLocal() as db:
