@@ -55,11 +55,12 @@ def main():
         try:
             for name in args.pages:
                 for view, (width, height) in VIEWPORTS.items():
+                  for theme in ("light", "dark"):
                     context = browser.new_context(
                         storage_state=str(args.storage_state),
                         viewport={"width": width, "height": height},
                         device_scale_factor=1,
-                        color_scheme="dark" if view == "desktop" else "light",
+                        color_scheme=theme,
                     )
                     page = context.new_page()
                     expected = base + PAGES[name]
@@ -68,18 +69,18 @@ def main():
                         if response is None or response.status >= 400:
                             raise RuntimeError(f"{name} {view}: non-success response")
                         page.locator("#main-content").wait_for(state="visible", timeout=10000)
-                        if not urlparse(page.url).path.startswith(PAGES[name]):
+                        if urlparse(page.url).path.rstrip("/") != PAGES[name].rstrip("/"):
                             raise RuntimeError(f"{name} {view}: unexpected redirect (possible login)")
                         # Avoid accidental captures of pages not authenticated to the app.
                         if page.locator('input[type="password"]').count():
                             raise RuntimeError(f"{name} {view}: login form detected")
                         # Fixed deterministic viewport; snapshots are review material, not baselines.
-                        page.screenshot(path=str(args.output_dir / f"{name}-{view}.png"),
+                        page.screenshot(path=str(args.output_dir / f"{name}-{view}-{theme}.png"),
                                         full_page=True, animations="disabled")
                         overflow = page.evaluate(
                             "() => document.documentElement.scrollWidth > innerWidth + 1"
                         )
-                        print(f"VISUAL679_CAPTURE={name}:{view}:OK;HORIZONTAL_OVERFLOW={int(overflow)}")
+                        print(f"VISUAL679_CAPTURE={name}:{view}:{theme}:OK;HORIZONTAL_OVERFLOW={int(overflow)}")
                     finally:
                         context.close()
         finally:
