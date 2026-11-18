@@ -14,9 +14,10 @@ from app.models import Compound, Purchase, Vial
 @pytest.mark.parametrize("width", [320, 390, 768, 1280])
 @pytest.mark.parametrize("scheme", ["light", "dark"])
 def test_684_vial_picker_vendor_and_lot_visible_after_selection(width, scheme):
+    compound_name = f"Recon684 Blue Peptide {scheme} {width}"
     with TestClient(app) as client:
         with SessionLocal() as db:
-            compound = Compound(name="Recon684 Blue Peptide", primary_unit="mg")
+            compound = Compound(name=compound_name, primary_unit="mg")
             purchase = Purchase(vendor="Recon684 Example Supplier", purchased_on=date(2026, 11, 18))
             db.add_all([compound, purchase])
             db.flush()
@@ -52,7 +53,7 @@ def test_684_vial_picker_vendor_and_lot_visible_after_selection(width, scheme):
             assert detail.is_visible()
             assert "Recon684 Example Supplier" in detail.inner_text()
             assert "BATCH-684-VISIBLE" in detail.inner_text()
-            assert "Recon684 Blue Peptide" in detail.inner_text()
+            assert compound_name in detail.inner_text()
             assert "Vial #684" in detail.inner_text()
             for name in ("vendor", "lot"):
                 node = page.locator("#recon-selected-" + name + "684")
