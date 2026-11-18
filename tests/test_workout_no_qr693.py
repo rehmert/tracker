@@ -40,14 +40,32 @@ def test_693_main_workout_ui_is_equipment_first_and_qr_free():
 
 
 def test_693_qr_lookup_endpoints_retired_but_gym_name_finder_remains():
+    # Gym Mode intentionally shows its name-based finder only when a workout
+    # is active and at least one equipment item exists. Cover the real state.
+    name = "QA693 Name Finder " + uuid4().hex[:9]
     with TestClient(app) as client:
         for path in ("/workouts/qr", "/workouts/qr/scan"):
             assert client.get(path, params={"code": "old-code"}).status_code == 404
-        quick = client.get("/workouts/quick")
-        assert quick.status_code == 200
-        assert "Find Machine" in quick.text
-        assert 'id="workout662-search"' in quick.text
-        assert 'id="workout659-machine-select"' in quick.text
+        created = client.post("/workouts/equipment", data={
+            "name": name, "kind": "selectorized", "gym": "Merritt Eldersburg",
+        }, follow_redirects=False)
+        assert created.status_code == 303
+        with SessionLocal() as db:
+            equipment_id = db.scalar(select(WorkoutEquipment654.id).where(
+                WorkoutEquipment654.name == name
+            ))
+        assert equipment_id is not None
+        started = client.post("/workouts/start", follow_redirects=False)
+        assert started.status_code == 303
+        try:
+            quick = client.get(f"/workouts/quick?machine={equipment_id}")
+            assert quick.status_code == 200
+            assert "Find Machine" in quick.text
+            assert 'id="workout662-search"' in quick.text
+            assert 'id="workout659-machine-select"' in quick.text
+            assert name in quick.text
+        finally:
+            assert client.post("/workouts/finish", follow_redirects=False).status_code == 303
     source = (ROOT / "app/routers/workouts654.py").read_text(encoding="utf-8")
     assert '@router.get("/workouts/qr")' not in source
     assert "qr_value: str = Form" not in source
