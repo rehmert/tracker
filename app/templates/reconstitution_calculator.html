@@ -31,19 +31,52 @@
       <option value="">Select a vial</option>
       {% for v in recent_vials %}
       <option value="{{ v.id }}"
-        {% if initial and initial.vial_id == v.id %}selected{% endif %}>
-        {{ v.compound.name }} ·
-        {{ v.label or ('#' ~ v.id) }} ·
-        Vendor: {{ v.purchase.vendor if v.purchase and v.purchase.vendor else '—' }} ·
-        Lot: {{ v.lot or '—' }} ·
-        {{ v.status|replace('_',' ') }}
-      </option>
+        data-compound="{{ v.compound.name }}"
+        data-vendor="{{ v.purchase.vendor if v.purchase and v.purchase.vendor else '—' }}"
+        data-lot="{{ v.lot or '—' }}"
+        data-vial="{{ v.label or ('#' ~ v.id) }}"
+        data-status="{{ v.status|replace('_',' ') }}"
+        {% if initial and initial.vial_id == v.id %}selected{% endif %}>{{ v.compound.name }} · {{ v.purchase.vendor if v.purchase and v.purchase.vendor else '—' }} · Lot: {{ v.lot or '—' }} · {{ v.label or ('#' ~ v.id) }}</option>
       {% endfor %}
     </select>
 
     <button type="submit">Load vial</button>
     <a href="/vials">Browse all vials</a>
   </div>
+
+  <p id="recon-selected-vial684" class="recon-picker-selection" role="status" aria-live="polite" hidden>
+    <strong>Selected vial</strong>
+    <span id="recon-selected-compound684"></span>
+    <span id="recon-selected-vendor684"></span>
+    <span id="recon-selected-lot684"></span>
+    <span id="recon-selected-label684"></span>
+    <span id="recon-selected-status684"></span>
+  </p>
+  <script>
+    (() => {
+      const picker = document.getElementById('recon-vial-select');
+      const details = document.getElementById('recon-selected-vial684');
+      if (!picker || !details) return;
+      function renderSelectedVial() {
+        const option = picker.selectedOptions[0];
+        const selected = option && option.value;
+        details.hidden = !selected;
+        if (!selected) return;
+        const values = {
+          compound: option.dataset.compound || '—',
+          vendor: 'Vendor: ' + (option.dataset.vendor || '—'),
+          lot: 'Lot: ' + (option.dataset.lot || '—'),
+          label: 'Vial: ' + (option.dataset.vial || '—'),
+          status: 'Status: ' + (option.dataset.status || '—'),
+        };
+        for (const [name, value] of Object.entries(values)) {
+          document.getElementById('recon-selected-' + name + '684').textContent = value;
+        }
+      }
+      picker.addEventListener('change', renderSelectedVial);
+      renderSelectedVial();
+    })();
+  </script>
 
   <p class="muted">
     Shows the most recent 250 sealed or in-use vials.
