@@ -422,6 +422,12 @@ PY
   timeout 360 bash "$QA/scripts/tracker-release-scoped654.sh" "$PY"
   echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
  fi
+ if [[ "$INSTANCE" == PROD && "$REVIEWED_COA_691" == 1 ]]; then
+  echo "=== RELEASE 691 PROD SCOPED COA DOCUMENT QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped691.sh" "$PY"
+  echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
+  echo "COA_691_PROD_FOCUSED_TESTS=PASSED"
+ fi
  if [[ "$INSTANCE" == PROD && "$REVIEWED_COA_652" == 1 ]]; then
   timeout 360 bash "$QA/scripts/tracker-release-scoped652.sh" "$PY"
   echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
@@ -616,7 +622,7 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -ge 12 && $# -le 18 ]] || fail "Bad worker arguments"
+ [[ $# -ge 12 && $# -le 19 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
