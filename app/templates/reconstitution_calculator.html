@@ -34,6 +34,8 @@
         {% if initial and initial.vial_id == v.id %}selected{% endif %}>
         {{ v.compound.name }} ·
         {{ v.label or ('#' ~ v.id) }} ·
+        Vendor: {{ v.purchase.vendor if v.purchase and v.purchase.vendor else '—' }} ·
+        Lot: {{ v.lot or '—' }} ·
         {{ v.status|replace('_',' ') }}
       </option>
       {% endfor %}
