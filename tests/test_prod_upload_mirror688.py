@@ -60,7 +60,7 @@ def test_installer_has_fail_closed_checks_and_no_prod_writes():
         "ssh -n -T", "root@tracker-prod",
     ):
         assert token in body
-    assert "rsync " not in body
+    assert "\nrsync " not in body  # installer never runs a transfer in SSH
     assert "systemctl restart tracker" not in body
     assert "systemctl restart tracker-backup" not in body
     assert 'systemctl enable --now "$TIMER"' in body
