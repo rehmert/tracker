@@ -14,7 +14,7 @@ def _post(client, path, data=None):
     return client.post(path, data=data or {}, follow_redirects=False)
 
 
-def test_654_catalog_qr_free_weights_and_session_logging():
+def test_654_catalog_manual_equipment_free_weights_and_session_logging():
     with TestClient(app) as client:
         assert {
             "workout_equipment654", "workout_sessions654", "workout_sets654"
@@ -22,7 +22,8 @@ def test_654_catalog_qr_free_weights_and_session_logging():
 
         page = client.get("/workouts")
         assert page.status_code == 200
-        assert "Find a machine" in page.text
+        assert "Find a machine" not in page.text
+        assert "Equipment &amp; Logging" in page.text
 
         created = _post(client, "/workouts/equipment", {
             "name": "Nautilus Chest Press", "kind": "selectorized",
@@ -33,11 +34,12 @@ def test_654_catalog_qr_free_weights_and_session_logging():
         assert created.headers["location"].startswith("/workouts?msg=")
 
         duplicate = _post(client, "/workouts/equipment", {
-            "name": "Duplicate Chest Press", "kind": "selectorized",
+            "name": "Another Chest Press", "kind": "selectorized",
             "qr_value": "https://example.invalid/nautilus/test-654",
         })
+        # Obsolete QR form input must be ignored, not stored or rejected.
         assert duplicate.status_code == 303
-        assert duplicate.headers["location"].startswith("/workouts?err=")
+        assert duplicate.headers["location"].startswith("/workouts?msg=")
 
         home = client.get("/workouts").text
         assert "Nautilus Chest Press" in home
@@ -50,17 +52,14 @@ def test_654_catalog_qr_free_weights_and_session_logging():
                 WorkoutEquipment654.name == "Nautilus Chest Press"
             ).one()
             machine_id = machine.id
+            assert machine.qr_value is None
+            assert db.query(WorkoutEquipment654).filter(
+                WorkoutEquipment654.name == "Another Chest Press"
+            ).one().qr_value is None
 
-        found = client.get("/workouts/qr", params={
+        assert client.get("/workouts/qr", params={
             "code": "https://example.invalid/nautilus/test-654"
-        }, follow_redirects=False)
-        assert found.status_code == 303
-        assert f"machine={machine_id}" in found.headers["location"]
-        unknown = client.get(
-            "/workouts/qr", params={"code": "not-a-known-machine"},
-            follow_redirects=False,
-        )
-        assert unknown.headers["location"].startswith("/workouts?err=")
+        }).status_code == 404
 
         free = _post(client, "/workouts/equipment", {
             "name": "Dumbbell Curl", "kind": "free_weight", "gym": "Home"
