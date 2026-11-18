@@ -23,7 +23,7 @@ systemctl is-active --quiet tracker || {
   echo "RELEASE_687_LAUNCH_ERROR=Tracker service not active" >&2; exit 1;
 }
 git fetch origin "refs/heads/$OPS_REF:refs/remotes/origin/$OPS_REF"
-[[ "$(git rev-parse refs/remotes/origin/$OPS_REF)" == "$EXPECTED_WORKER_SHA" ]] || {
+git merge-base --is-ancestor "$EXPECTED_WORKER_SHA" "refs/remotes/origin/$OPS_REF" || {
   echo "RELEASE_687_LAUNCH_ERROR=Ops branch moved" >&2; exit 1;
 }
 STAGE="$(mktemp -d /tmp/tracker-687-detached.XXXXXXXX)"
