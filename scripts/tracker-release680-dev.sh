@@ -36,8 +36,9 @@ ACTUAL="$(git diff --name-only "$BASE" "$TARGET" | LC_ALL=C sort)"
 STAGE="$(mktemp -d /tmp/tracker-680-dev.XXXXXXXX)"
 trap 'rm -rf -- "$STAGE"' EXIT
 git show "$TARGET:scripts/tracker-release.sh" > "$STAGE/runner.sh"
-[[ "$(git hash-object "$STAGE/runner.sh")" ==
-   "$(git rev-parse "$TARGET:scripts/tracker-release.sh")" ]] ||
+EXPECTED_RUNNER_BLOB="$(git rev-parse "$TARGET:scripts/tracker-release.sh")"
+ACTUAL_RUNNER_BLOB="$(git hash-object "$STAGE/runner.sh")"
+[[ "$ACTUAL_RUNNER_BLOB" == "$EXPECTED_RUNNER_BLOB" ]] ||
   fail "Pinned deployment engine hash mismatch"
 bash -n "$STAGE/runner.sh"
 echo "RELEASE_680_TEST_SCOPE=FOCUSED_NO_FULL_SUITE"
