@@ -32,6 +32,11 @@ SCP = [
 # advancing main; PROD itself must still match the installed Release 646 base.
 RECOVERY_648_MAIN = "cd041ba1dfefe6e2de7db72c8bfdf8f9949e6dc6"
 RECOVERY_648_PROD_BASE = "61b3016eed48527c61a5173d94ee0f58b859f81a"
+# Release 677: Release 676 was promoted to main but rejected by PROD's
+# focused CSS serialization assertion. Recovery may skip only this exact
+# approved-but-not-installed 676 main commit, from exact installed 675 base.
+RECOVERY_677_MAIN = "3646f5ebf39f0b0ff2759c35e75df46120a72c7c"
+RECOVERY_677_PROD_BASE = "2e8f65d7c61c522a5ab01f78cd3783e15559ece3"
 
 QUALIFICATION = (
     "ISOLATED_BROWSER=PASSED",
@@ -135,6 +140,20 @@ def recovery_648_main_allowed(main: str, target: str, base: str) -> bool:
     return True
 
 
+def recovery_677_main_allowed(main: str, target: str, base: str) -> bool:
+    """Fail closed unless this is exactly the documented 676-to-677 recovery."""
+    if main != RECOVERY_677_MAIN or base != RECOVERY_677_PROD_BASE:
+        return False
+    try:
+        run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
+             "merge-base", "--is-ancestor", base, main])
+        run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
+             "merge-base", "--is-ancestor", main, target])
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
 def preflight(release: int, target: str, base: str, ref: str) -> None:
     if os.geteuid() != 0 or output(["hostname", "-s"]) != "tracker-dev":
         raise ReleaseError("Run as root on tracker-dev only")
@@ -156,13 +175,18 @@ def preflight(release: int, target: str, base: str, ref: str) -> None:
         "fetch", "origin", "main", f"refs/heads/{ref}:refs/remotes/origin/{ref}",
     ])
     main = git("rev-parse", "origin/main")
-    allowed_intermediate = (
-        release == 648 and recovery_648_main_allowed(main, target, base)
+    allowed_648 = release == 648 and recovery_648_main_allowed(
+        main, target, base
     )
-    if main not in (base, target) and not allowed_intermediate:
+    allowed_677 = release == 677 and recovery_677_main_allowed(
+        main, target, base
+    )
+    if main not in (base, target) and not (allowed_648 or allowed_677):
         raise ReleaseError(f"GitHub main changed unexpectedly: {main}")
-    if allowed_intermediate:
+    if allowed_648:
         print(f"PROD_RECOVERY_648_ANCESTOR_VERIFIED={main}", flush=True)
+    if allowed_677:
+        print(f"PROD_RECOVERY_677_ANCESTOR_VERIFIED={main}", flush=True)
     if git("rev-parse", f"refs/remotes/origin/{ref}") != target:
         raise ReleaseError("Release branch differs from exact qualified commit")
     run([
@@ -232,7 +256,8 @@ def promote(target: str, base: str) -> None:
     run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
          "fetch", "origin", "main"])
     main = git("rev-parse", "origin/main")
-    if main == base or recovery_648_main_allowed(main, target, base):
+    if (main == base or recovery_648_main_allowed(main, target, base)
+            or recovery_677_main_allowed(main, target, base)):
         # Ordinary fast-forward only. Never rewrite GitHub main history.
         run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
              "push", "origin", f"{target}:refs/heads/main"])
