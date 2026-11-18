@@ -108,7 +108,10 @@ def test_687_compact_shortcuts_and_toolbar(width):
             assert after["accountUnderline"]=="none"
             assert after["accountHeight"] >= (44 if width<=760 else 40)
             assert not after["recentShown"]
-            if width >= 768:\n                assert after["preferenceY"] < after["accountY"]+50, (width,after)\n            else:\n                assert after["preferenceY"] < after["accountY"]+110, (width,after)
+            if width >= 768:
+                assert after["preferenceY"] < after["accountY"]+50, (width,after)
+            else:
+                assert after["preferenceY"] < after["accountY"]+110, (width,after)
             assert not after["overflow"], (width,after)
             page.add_script_tag(content=WORKSPACE)
             page.locator("#workspace-settings-toggle").click()
