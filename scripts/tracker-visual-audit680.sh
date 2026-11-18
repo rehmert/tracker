@@ -88,7 +88,7 @@ with sync_playwright() as p:
        hasMain:!!document.querySelector('#main-content'),
        overflow:document.documentElement.scrollWidth>innerWidth+1,
        missingStyles:[...document.querySelectorAll('link[rel="stylesheet"]')].filter(x=>!x.sheet).length,
-       found680:!![...document.querySelectorAll('link[rel="stylesheet"]')].find(x=>x.href.includes('tracker-ui-foundation680.css')),
+       found680:!![...document.querySelectorAll('link[rel="stylesheet"]')].find(x=>x.href.includes('tracker-ui-foundation679.css')),
        tinyTargets:[...document.querySelectorAll('#main-content button,#main-content a')].filter(x=>{
         const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&(r.width<30||r.height<30);
        }).length
