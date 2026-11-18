@@ -16,7 +16,7 @@ cd "$APP"
 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
 [[ "$(git branch --show-current)" == main && -z "$(git status --porcelain)" ]] ||
   fail "Require clean installed DEV main"
-[[ "$(git rev-parse HEAD)" == "$BASE" ]] || fail "Require DEV Release 688 baseline"
+[[ "$(git rev-parse HEAD)" == "$BASE" ]] || fail "Require DEV Release 687 baseline"
 systemctl is-active --quiet tracker || fail "Tracker service is not active"
 git fetch origin "refs/heads/$OPS:refs/remotes/origin/$OPS" "refs/heads/$REF:refs/remotes/origin/$REF"
 git merge-base --is-ancestor "$WORKER_COMMIT" "refs/remotes/origin/$OPS" ||
