@@ -42,6 +42,7 @@ EXPECTED="$(printf '%s\n' \
  scripts/tracker-preview684.sh | LC_ALL=C sort)"
 ACTUAL="$(git diff --name-only "$BASE" "$TARGET" | LC_ALL=C sort)"
 [[ "$ACTUAL" == "$EXPECTED" ]] || fail "Unexpected source changes"
+"$PY" scripts/tracker-impact-preflight604.py --base "$BASE" --target "$TARGET" --root "$QA"
 bash scripts/tracker-release-scoped684.sh "$PY"
 echo "RELEASE_684_PREVIEW_QUALIFIED=$TARGET"
 echo "RELEASE_684_PREVIEW=PASSED_ISOLATED_NO_INSTALL"
