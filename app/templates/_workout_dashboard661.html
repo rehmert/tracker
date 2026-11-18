@@ -9,13 +9,14 @@
       <h2 id="tracker-workout-heading661">Workout Activity</h2>
       <p class="note">Completed workouts with recorded sets, using the original workout dates.</p>
     </div>
-    <nav class="tracker-workout-actions661" aria-label="Workout shortcuts">
-      <a href="/workouts/quick">{{ 'Resume Gym Mode' if workout_summary.in_progress else 'Open Rapid Gym Mode' }}</a>
-      <a href="/workouts/analytics">Strength Progress</a>
-      <a href="/workouts/insights">28-Day Insights</a>
-      <a href="/workouts/routines">Routine Schedules</a>
-      <a href="/workouts/calendar">Workout Calendar</a>
-      <a href="/workouts">All Workouts</a>
+    <nav class="tracker-workout-actions661 tracker-workout-shortcuts678"
+         aria-label="Workout shortcuts">
+      <a class="tracker-workout-primary678" href="/workouts/quick"><strong>{{ 'Resume Gym Mode' if workout_summary.in_progress else 'Open Rapid Gym Mode' }}</strong></a>
+      <a href="/workouts/analytics"><strong>Strength Progress</strong></a>
+      <a href="/workouts/insights"><strong>28-Day Insights</strong></a>
+      <a href="/workouts/routines"><strong>Routine Schedules</strong></a>
+      <a href="/workouts/calendar"><strong>Workout Calendar</strong></a>
+      <a href="/workouts"><strong>All Workouts</strong></a>
     </nav>
   </div>
 
@@ -59,7 +60,7 @@
       </ul>
     {% else %}
       <p class="note">No completed workouts with recorded sets yet.</p>
-      <p><a href="/workouts/backfill">Log a Previous Workout</a> to begin your training history.</p>
+      <p><a class="tracker-workout-empty-action678" href="/workouts/backfill"><strong>Log a Previous Workout</strong></a></p>
     {% endif %}
   </div>
   <p class="note tracker-workout-footnote661">
