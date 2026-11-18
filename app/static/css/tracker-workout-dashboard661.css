@@ -15,3 +15,76 @@
 .tracker-workout-footnote661 { margin-top:.9rem; }
 @media(max-width:760px){.tracker-workout-summary661{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:420px){.tracker-workout-actions661 a{flex:1 1 100%;}.tracker-workout-summary661>div{padding:.7rem;}}
+
+/* Release 678: Overview Workout Activity uses the same button-card treatment
+   as "Your Daily Shortcuts", not underlined text in outlined link boxes.
+   Scoped ID specificity protects against global dashboard anchor styling. */
+#tracker-workout-dashboard661 .tracker-workout-head661 {
+  display:block;
+}
+#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:stretch;
+  gap:.55rem;
+  margin:.8rem 0 1rem;
+  width:100%;
+  min-width:0;
+}
+#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a,
+#tracker-workout-dashboard661 a.tracker-workout-empty-action678 {
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  min-height:3.25rem;
+  padding:.75rem;
+  border:1px solid var(--border,#d4dbe4);
+  border-radius:9px;
+  background:var(--surface,#fff);
+  color:var(--ink,inherit);
+  text-decoration:none;
+  text-align:center;
+  font-weight:700;
+  line-height:1.3;
+  overflow-wrap:anywhere;
+  box-shadow:0 1px 2px rgba(15,23,42,.06);
+}
+#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a strong,
+#tracker-workout-dashboard661 a.tracker-workout-empty-action678 strong {
+  color:inherit;
+  font-size:.95rem;
+  font-weight:750;
+  text-decoration:none;
+}
+#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a.tracker-workout-primary678,
+#tracker-workout-dashboard661 a.tracker-workout-empty-action678 {
+  background:var(--teal,#1265ad);
+  color:var(--teal-ink,#fff);
+  border-color:var(--teal,#1265ad);
+}
+#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a:hover,
+#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a:focus-visible,
+#tracker-workout-dashboard661 a.tracker-workout-empty-action678:hover,
+#tracker-workout-dashboard661 a.tracker-workout-empty-action678:focus-visible {
+  outline:2px solid var(--accent,#3478bd);
+  outline-offset:2px;
+}
+#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a:not(.tracker-workout-primary678):hover {
+  background:var(--wash,#f1f5f9);
+}
+#tracker-workout-dashboard661 a.tracker-workout-empty-action678 {
+  display:inline-flex;
+  max-width:100%;
+}
+@media(max-width:760px){
+  #tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:350px){
+  #tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
