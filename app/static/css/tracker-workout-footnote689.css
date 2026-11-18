@@ -1,0 +1,8 @@
+/* Release 689: remove the compounded empty-state paragraph spacing
+   between Log a Previous Workout and the explanation below it. */
+#main-content #tracker-workout-dashboard661 .tracker-workout-recent661 > p:last-child {
+  margin-bottom: 0;
+}
+#main-content #tracker-workout-dashboard661 > .tracker-workout-footnote661 {
+  margin: .35rem 0 0;
+}
