@@ -1,6 +1,7 @@
 """Release 676: Chromium checks for *computed* shortcut-button styling."""
 from pathlib import Path
 import os
+import re
 import pytest
 from playwright.sync_api import sync_playwright
 
@@ -51,13 +52,23 @@ def test_676_mobile_links_look_like_daily_shortcut_tiles(width):
             primary = css(".ux675-actions > a.ux675-primary")
             summary = css(".ux675-more > summary")
             inline = css(".ux675-inline-action")
+            def opaque_rgb(value):
+                # Browser CSS serialization may use rgb(...) or rgba(..., 1)
+                # for the same fully opaque color. Compare channel values.
+                match = re.fullmatch(r"rgba?\\(([^)]*)\\)", value)
+                assert match is not None, value
+                channels = [float(item.strip()) for item in match.group(1).split(",")]
+                assert len(channels) in (3, 4), value
+                assert len(channels) == 3 or channels[3] == 1, value
+                return tuple(round(v) for v in channels[:3])
+
             for cell in (normal, summary, inline):
-                assert cell["background"] == reference["background"], (cell, reference)
+                assert opaque_rgb(cell["background"]) == opaque_rgb(reference["background"]), (cell, reference)
                 assert cell["weight"] == reference["weight"]
                 assert cell["radius"] == reference["radius"]
                 assert cell["border"] == "solid"
                 assert cell["height"] >= 44
-            assert primary["background"] == primary_ref["background"]
+            assert opaque_rgb(primary["background"]) == opaque_rgb(primary_ref["background"])
             assert primary["color"] == primary_ref["color"]
             assert primary["height"] >= 44
             assert page.locator(".ux675-actions").evaluate(
@@ -69,7 +80,7 @@ def test_676_mobile_links_look_like_daily_shortcut_tiles(width):
             page.locator(".ux675-more > summary").click()
             assert page.locator(".ux675-more").evaluate("el => el.open")
             nested = css('.ux675-more > div > a:first-child')
-            assert nested["background"] == reference["background"]
+            assert opaque_rgb(nested["background"]) == opaque_rgb(reference["background"])
             assert nested["height"] >= 44
             assert page.evaluate(
                 "() => document.documentElement.scrollWidth <= innerWidth + 1"
