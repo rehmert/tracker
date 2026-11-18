@@ -25,7 +25,7 @@ git fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
 git merge-base --is-ancestor "$BASE" "$TARGET" ||
   fail "Target not descended from installed DEV baseline"
 git diff --check "$BASE" "$TARGET"
-EXPECTED="$(printf '%s\\n' \
+EXPECTED="$(printf '%s\n' \
   app/templates/dashboard.html \
   scripts/tracker-preview682.sh \
   scripts/tracker-release-scoped682.sh \
