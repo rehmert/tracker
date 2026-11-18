@@ -74,6 +74,8 @@ def calculator_page(
             "volume_ml": vial.volume_ml,
             "vial_id": vial.id,
             "label": vial.label or f"#{vial.id}",
+            "lot": vial.lot or "",
+            "vendor": vial.purchase.vendor if vial.purchase else "",
             "label_amount": vial.content_value,
             "content_source": (
                 "COA average" if coa_applied else "label"
@@ -88,7 +90,7 @@ def calculator_page(
 
     recent = list(db.scalars(
         select(Vial)
-        .options(selectinload(Vial.compound))
+        .options(selectinload(Vial.compound), selectinload(Vial.purchase))
         .where(Vial.status.in_(("sealed", "in_use")))
         .order_by(Vial.id.desc())
         .limit(250)
