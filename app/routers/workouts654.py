@@ -1,7 +1,7 @@
 """Release 654 Workout: scoped, server-rendered Nautilus/free-weight logging.
 
 HTML forms inherit Tracker's established session authentication, origin guard
-and signed CSRF-token handling; QR values are never fetched from the network.
+and signed CSRF-token handling. Retired QR mappings remain stored unchanged.
 """
 from datetime import datetime
 import math
@@ -119,22 +119,20 @@ def create_equipment654(
     name: str = Form(""), kind: str = Form("selectorized"),
     gym: str = Form("Merritt Athletic Club - Eldersburg"),
     manufacturer: str = Form(""), model: str = Form(""),
-    qr_value: str = Form(""), seat_setting: str = Form(""),
-    setup_notes: str = Form(""),
+    seat_setting: str = Form(""), setup_notes: str = Form(""),
     db: Session = Depends(get_scoped_db390),
 ):
-    name, gym, qr = name.strip(), gym.strip(), qr_value.strip() or None
+    name, gym = name.strip(), gym.strip()
     if not name or len(name) > 140 or not gym or len(gym) > 140:
         return services.flash_redirect("/workouts", err="Enter a machine name and gym, up to 140 characters.")
     if kind not in KINDS654:
         return services.flash_redirect("/workouts", err="Invalid equipment type.")
     if (len(manufacturer) > 100 or len(model) > 140 or
-            len(seat_setting) > 80 or len(setup_notes) > 1000 or
-            (qr and len(qr) > 1024)):
+            len(seat_setting) > 80 or len(setup_notes) > 1000):
         return services.flash_redirect("/workouts", err="One or more fields are too long.")
     item = WorkoutEquipment654(
         name=name, gym=gym, kind=kind, manufacturer=manufacturer.strip(),
-        model=model.strip(), qr_value=qr, seat_setting=seat_setting.strip(),
+        model=model.strip(), seat_setting=seat_setting.strip(),
         setup_notes=setup_notes.strip(),
     )
     db.add(item)
@@ -142,41 +140,29 @@ def create_equipment654(
         db.commit()
     except IntegrityError:
         db.rollback()
-        return services.flash_redirect("/workouts", err="That QR code is already assigned to equipment.")
+        return services.flash_redirect("/workouts", err="Equipment could not be saved.")
     return services.flash_redirect("/workouts", msg="Equipment saved.")
 
 
 @router.post("/workouts/equipment/{equipment_id}/settings")
 def update_settings654(
     equipment_id: int, seat_setting: str = Form(""), setup_notes: str = Form(""),
-    qr_value: str = Form(""), db: Session = Depends(get_scoped_db390),
+    db: Session = Depends(get_scoped_db390),
 ):
     machine = db.get(WorkoutEquipment654, equipment_id)
     if machine is None:
         raise HTTPException(404, "Equipment not found")
-    qr = qr_value.strip() or None
-    if len(seat_setting) > 80 or len(setup_notes) > 1000 or (qr and len(qr) > 1024):
+    if len(seat_setting) > 80 or len(setup_notes) > 1000:
         return services.flash_redirect("/workouts", err="Settings exceed the allowed length.")
-    machine.seat_setting, machine.setup_notes, machine.qr_value = (
-        seat_setting.strip(), setup_notes.strip(), qr
-    )
+    # Preserve legacy QR data; the QR feature has been retired without a data migration.
+    machine.seat_setting, machine.setup_notes = seat_setting.strip(), setup_notes.strip()
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        return services.flash_redirect("/workouts", err="QR code belongs to another machine.")
+        return services.flash_redirect("/workouts", err="Machine settings could not be saved.")
     return services.flash_redirect("/workouts", msg="Machine settings saved.")
 
-
-@router.get("/workouts/qr")
-def lookup_qr654(code: str = "", db: Session = Depends(get_scoped_db390)):
-    code = code.strip()
-    if not code or len(code) > 1024:
-        return services.flash_redirect("/workouts", err="Enter a valid QR code.")
-    machine = db.scalar(select(WorkoutEquipment654).where(WorkoutEquipment654.qr_value == code))
-    if machine is None:
-        return services.flash_redirect("/workouts", err="QR code not mapped. Add it to the equipment catalog.")
-    return services.flash_redirect(f"/workouts?machine={machine.id}", msg=f"Matched {machine.name}.")
 
 
 @router.post("/workouts/start")
