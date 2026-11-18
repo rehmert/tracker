@@ -55,7 +55,7 @@ EXPECTED="$(printf '%s\n' \
 [[ -z "$(g diff --name-only "$BASE" "$TARGET" -- app/models.py app/migrations.py app/db.py app/workout_models654.py app/scoped_db390.py)" ]] ||
   fail "Unexpected schema changes"
 g diff --check "$BASE" "$TARGET"
-STAGE="$(mktemp -d /tmp/tracker-692-release.XXXXXXXX)"
+STAGE="$(mktemp -d /tmp/tracker-693-release.XXXXXXXX)"
 chmod 700 "$STAGE"
 g show "$TARGET:scripts/tracker-release.sh" > "$STAGE/runner.sh"
 [[ "$(g hash-object "$STAGE/runner.sh")" == "$(g rev-parse "$TARGET:scripts/tracker-release.sh")" ]] ||
