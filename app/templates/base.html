@@ -121,6 +121,8 @@
   <link rel="stylesheet" href="/static/css/tracker-compact-aggressive686.css?v=686">
   <!-- Release 687: toolbar arrangement and actual compact Daily Shortcuts. -->
   <link rel="stylesheet" href="/static/css/tracker-shortcuts-toolbar687.css?v=687">
+  <!-- Release 688: consistent toolbar, compact section jump, dashboard and workout polish. -->
+  <link rel="stylesheet" href="/static/css/tracker-dashboard-polish688.css?v=688">
 </head>
 <body>
 <a class="tracker-skip-link" href="#main-content">Skip to Content</a>
@@ -209,6 +211,17 @@
         <button type="button" id="workspace-settings-toggle" aria-expanded="false" aria-controls="workspace-settings-panel" aria-haspopup="true">⚙ Preferences</button>
         <section id="workspace-settings-panel" class="workspace-settings-panel" aria-label="Workspace preferences" hidden>
           <div class="workspace-settings-head"><strong>Workspace preferences</strong><button type="button" id="workspace-settings-close" aria-label="Close preferences">✕</button></div>
+           {% if path == '/' %}
+           <div class="workspace-dashboard-customize688">
+             <button type="button" id="dashboard-customize" aria-expanded="false"
+                     aria-controls="dashboard-customize-panel">Customize Dashboard</button>
+             <div id="dashboard-customize-panel" class="customize-panel" hidden>
+               <p>Show or hide sections. Use the arrows to reorder them. Your choices stay in this browser.</p>
+               <div id="dashboard-customize-list"></div>
+               <button type="button" id="dashboard-reset">Reset layout</button>
+             </div>
+           </div>
+           {% endif %}
           <div class="density-picker" role="group" aria-label="Display density">
             <span class="density-label">Display density</span>
             <div class="density-options"><button type="button" data-density-choice="comfortable" aria-pressed="false">Comfortable</button><button type="button" data-density-choice="balanced" aria-pressed="true">Balanced</button><button type="button" data-density-choice="compact" aria-pressed="false">Compact</button></div>
