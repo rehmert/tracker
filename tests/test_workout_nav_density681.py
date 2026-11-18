@@ -112,7 +112,7 @@ def test_681_overview_workout_shortcuts_content_fit(width):
             page.add_style_tag(content=STYLE_661 + STYLE_681)
             nav = page.locator(".tracker-workout-shortcuts678")
             assert nav.evaluate("e=>getComputedStyle(e).display") == "flex"
-            sizes = nav.locator("> a").evaluate_all(
+            sizes = nav.locator(":scope > a").evaluate_all(
                 "es=>es.map(e=>({w:e.getBoundingClientRect().width,"
                 "h:e.getBoundingClientRect().height}))"
             )
