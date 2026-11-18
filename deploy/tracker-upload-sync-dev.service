@@ -1,0 +1,18 @@
+[Unit]
+Description=Tracker additive PROD to DEV upload synchronization (DEV only)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/tracker
+Environment=PROD_SSH=root@tracker-prod
+ExecStart=/usr/bin/bash /opt/tracker/scripts/tracker-prod-uploads-to-dev645.sh
+UMask=0077
+TimeoutStartSec=900
+MemoryAccounting=yes
+MemoryMax=1G
+TasksMax=64
+Nice=10
