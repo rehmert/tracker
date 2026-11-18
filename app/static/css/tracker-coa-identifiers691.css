@@ -1,0 +1,28 @@
+/* Release 691: compact, readable inline per-document COA identifiers.
+   Table remains horizontally scrollable on narrow screens. */
+#test-documents .coa-document-table .coa-identifier691-cell {
+  min-width: 11rem;
+  padding: .3rem .42rem;
+  vertical-align: middle;
+}
+#test-documents .coa-document-table .coa-identifier691-cell input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 10rem;
+  min-height: 36px;
+  margin: 0;
+  padding: .32rem .45rem;
+  font: inherit;
+  font-size: .88rem;
+}
+#test-documents .coa-identifier691-label {
+  display: block;
+  margin: 0 0 .12rem;
+  color: var(--muted, #64748b);
+  font-size: .75rem;
+}
+#test-documents .coa-bulk-save-bar {
+  flex-wrap: wrap;
+  gap: .38rem;
+}
