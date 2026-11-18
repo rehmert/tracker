@@ -93,7 +93,16 @@ with sync_playwright() as p:
         const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&(r.width<30||r.height<30);
        }).length
       })""")
-      record=dict(page=name,theme=theme,viewport=view,status=response.status if response else 0,errors=errors[:3],**data)
+      # Diagnostic only: no link destinations, labels, content, or records emitted.
+      small=page.evaluate("""() => [...document.querySelectorAll('#main-content button,#main-content a')]
+       .filter(x=>{const r=x.getBoundingClientRect();return r.width>0&&r.height>0&&(r.width<30||r.height<30)})
+       .map(x=>{const r=x.getBoundingClientRect(),s=getComputedStyle(x);
+        return {tag:x.tagName.toLowerCase(),id:x.id.slice(0,70),
+         classes:[...x.classList].slice(0,5).map(v=>v.slice(0,45)),
+         width:Math.round(r.width),height:Math.round(r.height),
+         visibility:s.visibility,role:x.getAttribute('role')||''};})
+       .slice(0,25)""")
+      record=dict(page=name,theme=theme,viewport=view,status=response.status if response else 0,errors=errors[:3],smallTargets:small,**data)
       if record['status']==200 and data['hasMain']:
        page.screenshot(path=str(out/f'{name}-{view}-{theme}.png'),full_page=True,animations='disabled')
      except Exception as e:
