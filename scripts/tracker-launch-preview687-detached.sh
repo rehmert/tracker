@@ -7,7 +7,7 @@ umask 077
 APP=/opt/tracker
 OPS_REF=ops/687-ssh-disconnect-investigation
 WORKER_PATH=scripts/tracker-preview687-detached-worker.sh
-EXPECTED_WORKER_SHA=0a9ae720f20a3a0ab6ddf2bbfd5120eb7aae462f
+EXPECTED_WORKER_SHA=e2f31ede8d22cd7476a248b8cd1a01691572173d
 [[ "$(id -u)" -eq 0 && "$(hostname -s)" == tracker-dev ]] || {
   echo "RELEASE_687_LAUNCH_ERROR=Only root on tracker-dev" >&2; exit 1;
 }
@@ -26,6 +26,10 @@ git fetch origin "refs/heads/$OPS_REF:refs/remotes/origin/$OPS_REF"
 git merge-base --is-ancestor "$EXPECTED_WORKER_SHA" "refs/remotes/origin/$OPS_REF" || {
   echo "RELEASE_687_LAUNCH_ERROR=Ops branch moved" >&2; exit 1;
 }
+# Lightweight no-browser syntax preflight before scheduling the bounded worker.
+# The worker independently checks the pinned candidate before the real tests.
+"$APP/.venv/bin/python" -c 'import ast,subprocess; ast.parse(subprocess.check_output(["git","show","6c47f765e76d4e4609f1d36c06226f439b28334d:tests/test_shortcuts_toolbar687.py"], text=True))'
+echo "RELEASE_687_SYNTAX_PREFLIGHT=PASSED"
 STAGE="$(mktemp -d /tmp/tracker-687-detached.XXXXXXXX)"
 chmod 700 "$STAGE"
 WORKER="$STAGE/worker.sh"
@@ -37,7 +41,7 @@ bash -n "$WORKER"
 chmod 700 "$WORKER"
 UNIT="tracker-preview687-$(date -u +%Y%m%d%H%M%S)-$$"
 echo "RELEASE_687_LAUNCH_UNIT=$UNIT"
-if ! systemd-run --no-block --collect --unit="$UNIT" \
+if ! systemd-run --no-block --unit="$UNIT" \
   --property=MemoryAccounting=yes \
   --property=MemoryMax=2G \
   --property=TasksMax=96 \
@@ -52,6 +56,6 @@ fi
 echo "RELEASE_687_LAUNCH=DETACHED"
 echo "RELEASE_687_PREVIEW=RUNNING_OR_QUEUED_NOT_YET_QUALIFIED"
 echo "RELEASE_687_LOG_COMMAND=journalctl --no-pager -u $UNIT -o cat"
-echo "RELEASE_687_STATUS_COMMAND=systemctl status $UNIT --no-pager"
+echo "RELEASE_687_STATUS_COMMAND=systemctl status $UNIT --no-pager (journal is authoritative for past failures)"
 echo "RELEASE_687_STAGING=$STAGE"
 echo "RELEASE_687_INSTALLATION=NOT_REQUESTED"
