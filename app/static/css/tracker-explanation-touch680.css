@@ -1,0 +1,27 @@
+/* Release 680: scoped usability correction for Release 598's "More/Less".
+   Minimum target sizing and focus feedback; no changes to JS or unrelated links. */
+#main-content .tracker-explanation598 {
+  align-items: center;
+}
+#main-content .tracker-explanation598-toggle:not([hidden]) {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: .45rem .55rem;
+  border: 1px solid transparent;
+  border-radius: .55rem;
+  line-height: 1.25;
+  text-align: center;
+  text-underline-offset: 2px;
+}
+#main-content .tracker-explanation598-toggle:not([hidden]):hover {
+  background: var(--wash, #f1f5f9);
+}
+#main-content .tracker-explanation598-toggle:not([hidden]):focus-visible {
+  outline: 3px solid var(--teal, #1265ad);
+  outline-offset: 2px;
+}
