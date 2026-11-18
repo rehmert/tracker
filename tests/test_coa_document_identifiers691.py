@@ -220,6 +220,63 @@ def test_691_metadata_only_record_does_not_render_fake_original_document():
         assert "lab-test-1.pdf" in html
 
 
+
+def test_691_legacy_root_mirror_keeps_one_table_row_and_synced_identifiers():
+    with TestClient(app) as client:
+        cid = _coa()
+        # Saving a test selection for the first file creates the normal
+        # compatibility mirror without copying the original attachment.
+        response = client.post(
+            f"/coas/{cid}/attachments/test-types",
+            files=[
+                ("test_types_original", (None, "")),
+                ("test_types_original", (None, "Purity")),
+                ("custom_test_type_original", (None, "")),
+                ("original_test_type_original", (None, "")),
+            ],
+            headers={"Accept": "application/json"},
+        )
+        assert response.status_code == 200, response.text
+        with SessionLocal() as db:
+            coa = db.get(Coa, cid)
+            mirrors = [x for x in coa.attachments if x.stored_name == coa.stored_name]
+            assert len(mirrors) == 1
+            mirror = mirrors[0]
+            assert (mirror.job_id, mirror.verify_code) == ("0001-ROOT", "VERIFY-ROOT")
+            form = _form(coa, [x for x in coa.attachments if x.id != mirror.id])
+        form["job_id_original"] = "ORIGINAL-ALPHA"
+        form["verify_code_original"] = "Verify-ZERO"
+        saved = _save(client, cid, form)
+        assert saved.status_code == 200, saved.text
+        with SessionLocal() as db:
+            coa = db.get(Coa, cid)
+            mirror = next(x for x in coa.attachments if x.stored_name == coa.stored_name)
+            assert (coa.job_id, coa.verify_code) == ("ORIGINAL-ALPHA", "Verify-ZERO")
+            assert (mirror.job_id, mirror.verify_code) == ("ORIGINAL-ALPHA", "Verify-ZERO")
+            # Root file shown once even though its metadata is mirrored.
+            html = client.get(f"/coas/{cid}").text
+            assert html.count(f'href="/coas/{cid}/original-file"') == 1
+            assert f'name="job_id_{mirror.id}"' not in html
+
+
+def test_691_native_form_redirect_and_html_escaping():
+    with TestClient(app) as client:
+        cid = _coa()
+        with SessionLocal() as db:
+            coa, docs = _rows(db, cid)
+            data = _form(coa, docs)
+            data[f"verify_code_{docs[0].id}"] = "<example & verify>"
+        response = client.post(
+            f"/coas/{cid}/attachments/identifiers",
+            data=data,
+            follow_redirects=False,
+        )
+        assert response.status_code == 303, response.text
+        assert "#test-documents" in response.headers["location"]
+        html = client.get(f"/coas/{cid}").text
+        assert "&lt;example &amp; verify&gt;" in html
+        assert 'value="<example & verify>"' not in html
+
 def test_691_single_upload_identifiers_and_multifile_rejection():
     with TestClient(app) as client:
         cid = _coa()
