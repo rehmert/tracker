@@ -4,7 +4,7 @@
 set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
-BASE=893b78db3a83fb16db54c3850a6b660f03611a6c
+BASE=a8bd5a5a09a3e8274944b24e366a8b4840bcb9df
 TARGET=893b78db3a83fb16db54c3850a6b660f03611a6c
 REF=release/681-compact-workout-navigation
 PY="$APP/.venv/bin/python"
