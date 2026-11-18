@@ -102,7 +102,7 @@ with sync_playwright() as p:
          width:Math.round(r.width),height:Math.round(r.height),
          visibility:s.visibility,role:x.getAttribute('role')||''};})
        .slice(0,25)""")
-      record=dict(page=name,theme=theme,viewport=view,status=response.status if response else 0,errors=errors[:3],smallTargets:small,**data)
+      record=dict(page=name,theme=theme,viewport=view,status=response.status if response else 0,errors=errors[:3],smallTargets=small,**data)
       if record['status']==200 and data['hasMain']:
        page.screenshot(path=str(out/f'{name}-{view}-{theme}.png'),full_page=True,animations='disabled')
      except Exception as e:
