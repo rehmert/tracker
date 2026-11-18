@@ -3,9 +3,12 @@
 Runs against the existing pytest-managed disposable application database.
 No live data, schema migration, hardware camera, or external QR destination.
 """
+import os
 from pathlib import Path
 from uuid import uuid4
 
+import pytest
+from playwright.sync_api import expect, sync_playwright
 from fastapi.testclient import TestClient
 from sqlalchemy import inspect, select
 
@@ -109,3 +112,30 @@ def test_692_database_model_and_upload_storage_unchanged():
     assert "db.commit(" not in source
     assert "db.add(" not in source
     assert "db.delete(" not in source
+
+
+@pytest.mark.parametrize("width", [375, 1280])
+def test_692_real_browser_workout_navigation_and_manual_equipment_lookup(width):
+    with TestClient(app) as client:
+        html = client.get("/workouts").text
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            executable_path=os.environ.get("TRACKER_TEST_CHROMIUM_PATH") or None,
+        )
+        try:
+            page = browser.new_page(viewport={"width": width, "height": 812})
+            page.set_content(html)
+            expect(page.get_by_role("heading", name="Workouts", exact=True)).to_be_visible()
+            expect(page.get_by_role("heading", name="Find a machine")).to_be_visible()
+            expect(page.get_by_role("button", name="Find Machine")).to_be_visible()
+            expect(page.get_by_role("link", name="Gym Mode")).to_be_visible()
+            expect(page.get_by_role("link", name="Progress", exact=True)).to_be_visible()
+            expect(page.get_by_role("heading", name="Equipment & Logging")).to_be_visible()
+            assert page.get_by_role("button", name="Scan QR with Camera").count() == 0
+            assert page.locator("video").count() == 0
+            assert page.locator('script[src*="tracker-workouts656.js"]').count() == 0
+            assert page.locator('[data-start656], [data-stop656], [data-preview656]').count() == 0
+            assert page.locator('form[action="/workouts/qr"] input[name="code"]').count() == 1
+        finally:
+            browser.close()
