@@ -4,7 +4,7 @@ set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 REF=release/693-retire-workout-qr-mapping-ui
-TARGET=cac841fa38287532705ae60624d011b81df63dee
+TARGET=4d752be1a62ffa8a5feba78a50033e980a30b26c
 fail(){ echo "RELEASE_693_DETACHED_PREVIEW_ERROR=$*" >&2; exit 1; }
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev &&
    -n "$(printenv INVOCATION_ID || true)" ]] ||
