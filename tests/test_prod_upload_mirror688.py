@@ -15,7 +15,7 @@ def test_mirror_remains_additive_and_dev_only():
     assert "UPLOAD_REPLICATION=PASSED" in body
     assert "--ignore-existing" in body
     assert "--no-owner --no-group" in body
-    assert "--delete" in body  # source explicitly prohibits --delete
+    assert "no --delete" in body  # source explicitly prohibits deletion
     assert "rsync -rt" in body
     assert 'exec 9>/run/lock/tracker-db-sync.lock' in body
     assert 'labels[0].upper() != "DEV"' in body
@@ -55,15 +55,15 @@ def test_installer_has_fail_closed_checks_and_no_prod_writes():
     for token in (
         "tracker-dev", "tracker-instance-check653.py",
         "tracker-db-sync.lock", "systemd-analyze verify",
-        "systemctl enable --now tracker-prod-uploads-to-dev.timer",
-        "systemctl start --no-block tracker-prod-uploads-to-dev.service",
+        'systemctl enable --now "$TIMER"',
+        'systemctl start --no-block "$SERVICE"',
         "ssh -n -T", "root@tracker-prod",
     ):
         assert token in body
     assert "rsync " not in body
     assert "systemctl restart tracker" not in body
     assert "systemctl restart tracker-backup" not in body
-    assert "systemctl enable --now tracker-prod-uploads-to-dev.timer" in body
+    assert 'systemctl enable --now "$TIMER"' in body
     assert "PROD_DATABASE=UNMODIFIED" not in body  # no false install success claim
     result = subprocess.run(["bash", "-n", str(INSTALLER)], capture_output=True)
     assert result.returncode == 0, result.stderr.decode()
