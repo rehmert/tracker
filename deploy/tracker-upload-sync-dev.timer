@@ -1,0 +1,12 @@
+[Unit]
+Description=Check PROD uploads for missing DEV copies every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=tracker-upload-sync-dev.service
+
+[Install]
+WantedBy=timers.target
