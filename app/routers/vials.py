@@ -704,6 +704,9 @@ async def bulk_update_vials(
 def vial_detail(vid: int, request: Request, db: Session = Depends(get_scoped_db390)):
     v = _get(db, vid)
     vd = services.vial_views(db, [v])[v.id]
+    # One source of truth: the same effective content used by inventory/COA logic.
+    recon_unit = 'IU' if v.content_unit == 'IU' else 'mg'
+    recon_content = U.from_base(vd.content_base, recon_unit)
     label_base, _ = U.to_base(v.content_value, v.content_unit)
     coa_variance = None
     measurements = []
@@ -727,6 +730,7 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_scoped_db3
     ))
 
     return render(request, "vial_detail.html", v=v, vd=vd, label_base=label_base,
+                   recon_unit=recon_unit, recon_content=recon_content,
                   coa_variance=coa_variance, rows=rows, statuses=VIAL_STATUSES,
                   extras=vd.landed_cents - v.unit_price_cents, today=date.today().isoformat(),
                   bac_supplies=list(db.scalars(select(Supply).where(Supply.kind == "bac_water", Supply.remaining_qty > 0))),
