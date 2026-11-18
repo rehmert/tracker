@@ -104,6 +104,8 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
                 raise ValueError("The COA's unit must match the vial's (mass vs IU).")
             unit = u.name
         tested = services.parse_date(tested_on)
+        job_id = _document_identifier691(job_id, "Task number")
+        verify_code = _document_identifier691(verify_code, "Verification number")
         endotoxin_kind, endotoxin = _parse_endotoxin645(endotoxin_result_kind, endotoxin_eu_per_vial)
         if file and file.filename:
             stored = await services.save_upload(file, attachment_directory400("coa"))
@@ -769,6 +771,8 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
         if content is not None and any(U.parse_unit(v.content_unit).dim != U.parse_unit(unit).dim for v in coa.all_vials):
             raise ValueError("Reported content unit must match linked vials.")
         tested = services.parse_date(tested_on)
+        job_id = _document_identifier691(job_id, "Task number")
+        verify_code = _document_identifier691(verify_code, "Verification number")
         if file and file.filename:
             new_file = await services.save_upload(file, attachment_directory400("coa"))
     except ValueError as exc:
