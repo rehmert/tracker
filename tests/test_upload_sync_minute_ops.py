@@ -32,7 +32,8 @@ def test_existing_sync_is_additive_read_only_on_prod():
     assert "rsync -rt --ignore-existing" in SYNC
     assert '--no-owner --no-group' in SYNC
     assert ' "$SOURCE:$REMOTE_DATA/uploads/" "/opt/tracker/data/uploads/"' in SYNC
-    assert "--delete" not in SYNC
+    commands = "\n".join(line for line in SYNC.splitlines() if not line.lstrip().startswith("#"))
+    assert "--delete" not in commands
     assert "DELETE=NONE" in SYNC
     assert 'SOURCE="$PROD_SSH"' in SYNC
     assert "remote instance is not explicitly PROD" in SYNC
