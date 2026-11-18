@@ -1,0 +1,14 @@
+/* Release 679: opt-in component primitives; no legacy selectors overridden.
+   Use tracker-ui-* on new/migrated markup only. Theme tokens inherit from Tracker. */
+.tracker-ui-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:stretch;min-width:0}
+.tracker-ui-action{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:44px;min-width:0;padding:.65rem .85rem;border:1px solid var(--rule,#cbd5e1);border-radius:.75rem;background:var(--surface,#fff);color:var(--ink,#192c31);font:inherit;font-weight:700;line-height:1.3;text-align:center;text-decoration:none;overflow-wrap:anywhere;cursor:pointer}
+.tracker-ui-action--primary{background:var(--teal,#1265ad);border-color:var(--teal,#1265ad);color:var(--teal-ink,#fff)}
+.tracker-ui-action:focus-visible{outline:3px solid var(--teal,#1265ad);outline-offset:2px}
+.tracker-ui-action:disabled,.tracker-ui-action[aria-disabled="true"]{opacity:.6;cursor:not-allowed}
+.tracker-ui-card{box-sizing:border-box;min-width:0;padding:1rem;border:1px solid var(--rule,#cbd5e1);border-radius:.85rem;background:var(--surface,#fff);color:var(--ink,#192c31)}
+.tracker-ui-card__label{font-size:.875rem;line-height:1.4;opacity:.82}
+.tracker-ui-card__value{font-size:clamp(1.4rem,2.4vw,2rem);font-weight:750;line-height:1.2;overflow-wrap:anywhere}
+.tracker-ui-feedback{padding:.7rem .85rem;border:1px solid var(--rule,#cbd5e1);border-radius:.65rem;background:var(--wash,#f1f5f9);color:var(--ink,#192c31)}
+.tracker-ui-field-error{display:block;margin:.25rem 0 0;color:var(--danger,#b42318)}
+@media(max-width:390px){.tracker-ui-actions>.tracker-ui-action{flex:1 1 100%}}
+@media(prefers-reduced-motion:reduce){.tracker-ui-action{transition:none}}
