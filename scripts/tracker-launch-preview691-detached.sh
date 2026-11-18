@@ -7,8 +7,8 @@ OPS=ops/691-detached-preview
 REF=release/691-coa-document-identifiers
 BASE=6a8cd357e7e8925228d1a37c50572f93c4ec0943
 EARLIER_DEV=ae8c75ef39ed26fa505be17e0d8b6152542cbf36
-TARGET=8b35c13a68beed4397af7fcbbb14d1b463db5e5c
-WORKER_SHA=3edfe4145b445c08cbde77d6d7059e6b52cd19b7
+TARGET=6bdddbe0978dd8b22b57ea3b7c1a0d37f9c03ca5
+WORKER_SHA=f9413d4c87a1e46155a81f3694972554a894702b
 WORKER_PATH=scripts/tracker-preview691-detached-worker.sh
 fail(){ echo "RELEASE_691_LAUNCH_ERROR=$*" >&2; exit 1; }
 [[ "$(id -u)" -eq 0 && "$(hostname -s)" == tracker-dev ]] ||
@@ -44,7 +44,7 @@ ACTUAL="$(git diff --name-only "$BASE" "$TARGET" | LC_ALL=C sort)"
 [[ "$ACTUAL" == "$EXPECTED" ]] || fail "Unexpected source files"
 "$APP/.venv/bin/python" - <<'PY'
 import ast, subprocess
-target = "8b35c13a68beed4397af7fcbbb14d1b463db5e5c"
+target = "6bdddbe0978dd8b22b57ea3b7c1a0d37f9c03ca5"
 for path in (
     "app/models.py", "app/migrations.py", "app/routers/coas.py",
     "scripts/tracker_schema_review691.py", "tests/test_coa_document_identifiers691.py",
