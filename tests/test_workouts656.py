@@ -1,4 +1,4 @@
-"""Release 656: progress history, QR lookup and schema-free UI contracts."""
+"""Release 656: progress history and schema-free UI contracts after QR retirement."""
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -25,7 +25,7 @@ def machine_id(name):
         )
 
 
-def test_656_per_machine_progress_and_manual_qr_lookup():
+def test_656_per_machine_progress_and_manual_selection():
     with TestClient(app) as client:
         created = post(client, "/workouts/equipment", {
             "name": "Nautilus Progress Press 656",
@@ -48,19 +48,16 @@ def test_656_per_machine_progress_and_manual_qr_lookup():
         assert 'data-stop656' not in root.text
         assert 'workout-qr-camera656' not in root.text
         assert 'tracker-workouts656.js' not in root.text
-        assert 'name="code"' in root.text  # manual lookup retained
+        assert 'name="code"' not in root.text
+        assert 'action="/workouts/qr"' not in root.text
+        assert "Find a machine" not in root.text
+        assert 'name="qr_value"' not in root.text
         assert "Progress &amp; History" in root.text
 
-        lookup = client.get("/workouts/qr", params={
-            "code": "https://example.invalid/nautilus?machine=656&unit=1",
-        }, follow_redirects=False)
-        assert lookup.status_code == 303
-        assert f"machine={equipment_id}" in lookup.headers["location"]
-        # The dedicated camera-scanner endpoint is retired. Manual lookup
-        # and equipment management remain independent and functional.
-        assert client.get("/workouts/qr/scan", params={
-            "code": "https://example.invalid/nautilus?machine=656&unit=1",
-        }).status_code == 404
+        assert client.get(f"/workouts?machine={equipment_id}").status_code == 200
+        # Both QR lookup routes are retired, without affecting machine selection.
+        assert client.get("/workouts/qr", params={"code": "legacy"}).status_code == 404
+        assert client.get("/workouts/qr/scan", params={"code": "legacy"}).status_code == 404
         assert 'id="workout-add-equipment656"' in root.text
         assert "New QR code detected." not in root.text
 
