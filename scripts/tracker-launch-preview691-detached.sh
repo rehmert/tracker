@@ -7,8 +7,8 @@ OPS=ops/691-detached-preview
 REF=release/691-coa-document-identifiers
 BASE=6a8cd357e7e8925228d1a37c50572f93c4ec0943
 EARLIER_DEV=ae8c75ef39ed26fa505be17e0d8b6152542cbf36
-TARGET=6bdddbe0978dd8b22b57ea3b7c1a0d37f9c03ca5
-WORKER_SHA=f9413d4c87a1e46155a81f3694972554a894702b
+TARGET=c809c1d42e2211395d5c6cfc36f23a258d95a936
+WORKER_SHA=6fa29f7b6d44a2ae2f7e2aa61e8aa223fc3c30c0
 WORKER_PATH=scripts/tracker-preview691-detached-worker.sh
 fail(){ echo "RELEASE_691_LAUNCH_ERROR=$*" >&2; exit 1; }
 [[ "$(id -u)" -eq 0 && "$(hostname -s)" == tracker-dev ]] ||
@@ -39,12 +39,13 @@ EXPECTED="$(printf '%s\n' \
   scripts/tracker-release-scoped691.sh \
   scripts/tracker-release.sh \
   scripts/tracker_schema_review691.py \
-  tests/test_coa_document_identifiers691.py | LC_ALL=C sort)"
+  tests/test_coa_document_identifiers691.py \
+  tests/test_coa_csrf_surface691.py | LC_ALL=C sort)"
 ACTUAL="$(git diff --name-only "$BASE" "$TARGET" | LC_ALL=C sort)"
 [[ "$ACTUAL" == "$EXPECTED" ]] || fail "Unexpected source files"
 "$APP/.venv/bin/python" - <<'PY'
 import ast, subprocess
-target = "6bdddbe0978dd8b22b57ea3b7c1a0d37f9c03ca5"
+target = "c809c1d42e2211395d5c6cfc36f23a258d95a936"
 for path in (
     "app/models.py", "app/migrations.py", "app/routers/coas.py",
     "scripts/tracker_schema_review691.py", "tests/test_coa_document_identifiers691.py",
