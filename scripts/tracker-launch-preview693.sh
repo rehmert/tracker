@@ -4,10 +4,10 @@ set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 BASE=696fe7f482436090df5342f76cd65b9fb5febad4
-TARGET=cac841fa38287532705ae60624d011b81df63dee
+TARGET=4d752be1a62ffa8a5feba78a50033e980a30b26c
 OPS=ops/693-qr-retirement-preview
 REF=release/693-retire-workout-qr-mapping-ui
-WORKER_SHA=ffa50aad9ab88a4ae057a686997f21ad1e917107
+WORKER_SHA=7482d1753dbe4d2631df9ea48881768daf4ef1f2
 WORKER_PATH=scripts/tracker-preview693-detached-worker.sh
 fail(){ echo "RELEASE_693_PREVIEW_LAUNCH_ERROR=$*" >&2; exit 1; }
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev ]] ||
