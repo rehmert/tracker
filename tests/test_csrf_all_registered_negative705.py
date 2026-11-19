@@ -62,7 +62,10 @@ def enumerate_unsafe_routes(route_items) -> set[tuple[str, str]]:
                 continue
             methods = getattr(route, "methods", None)
             if methods is not None:
-                for method in {str(item).upper() for item in methods} & METHODS:
+                names = {methods.upper()} if isinstance(methods, str) else {
+                    str(item).upper() for item in methods
+                }
+                for method in names & METHODS:
                     if not (
                         method == "POST"
                         and full_path in SIGNED_SESSION_POST_PATHS520
@@ -102,6 +105,35 @@ def sample_path(template: str) -> str:
     # All replacements are non-existent synthetic IDs or names. Missing or
     # forged CSRF must fail in middleware before the route is ever executed.
     return re.sub(r"\{[^{}]+\}", "999999999", template)
+
+
+def test_705_route_enumeration_handles_wrapped_routes_and_nested_mounts():
+    from types import SimpleNamespace
+
+    # Dependency/library class identity must not decide route coverage.
+    # Registered method metadata is the contract; session and secondary
+    # routes have independent CSRF ownership.
+    entries = [
+        SimpleNamespace(path="/compounds", methods={"POST"}),
+        SimpleNamespace(path="/vitals/{rid}", methods={"DELETE", "GET"}),
+        SimpleNamespace(path="/custom", methods="PATCH"),
+        SimpleNamespace(
+            path="/tools", methods=None,
+            routes=[SimpleNamespace(path="/write", methods={"PUT"})],
+        ),
+        SimpleNamespace(
+            path="/secondary", methods=None,
+            routes=[SimpleNamespace(path="/vitals/new", methods={"POST"})],
+        ),
+        SimpleNamespace(path="/login", methods={"POST"}),
+        SimpleNamespace(path="/static", methods=None),
+    ]
+    assert enumerate_unsafe_routes(entries) == {
+        ("POST", "/compounds"),
+        ("DELETE", "/vitals/{rid}"),
+        ("PATCH", "/custom"),
+        ("PUT", "/tools/write"),
+    }
 
 
 def test_705_all_registered_unsafe_routes_reject_missing_and_forged_csrf(
