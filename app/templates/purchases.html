@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
 <link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 <script defer src="/static/js/tracker-purchase-mobile603.js?v=603"></script>
+<link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 <h1>Purchases</h1>
 <nav class="ux675-actions ux-shortcuts" aria-label="Purchase actions">
   <a class="ux675-primary" href="#new-purchase">New Order</a>
@@ -20,12 +21,27 @@
 <details id="purchase-review-guide618" class="card">
   <summary><strong>Order Steps</strong></summary>
   <p class="note">1. Enter vendor + order details. 2. Save. 3. Add inventory. 4. Review costs.</p>
-  <nav class="ux675-actions ux675-compact" aria-label="Purchase review tools">
-    <a href="#new-purchase">Order Form</a><a href="#purchase-history">History</a>
-    <a href="/vendor-prices">Prices</a><a href="/inventory-health">Stock Health</a>
-  </nav>
-
 </details>
+<!-- Release 696: put the primary new-order form ahead of the history table. -->
+<section>
+  <h2 id="new-purchase">New Order</h2><p class="note">Save first; add inventory next.</p>
+  <form method="post" action="/purchases" class="grid"><input type="hidden" name="submission_token" value="{{ submission_token }}">
+    <label class="field"><span>Vendor</span><input name="vendor" required></label>
+    <label class="field"><span>Date</span><input type="date" name="purchased_on" value="{{ today }}"></label>
+    <label class="field"><span>Order reference</span><input name="order_ref"></label>
+    <details class="purchase-optional603 wide" data-mobile-optional603 open>
+      <summary>Shipping, tax, discount &amp; notes (optional)</summary>
+      <div class="purchase-optional-grid603">
+        <label class="field"><span>Shipping ({{ currency }})</span><input name="shipping" type="number" step="0.01" min="0" value="0"></label>
+        <label class="field"><span>Tax ({{ currency }})</span><input name="tax" type="number" step="0.01" min="0" value="0"></label>
+        <label class="field"><span>Discount ({{ currency }})</span><input name="discount" type="number" step="0.01" min="0" value="0"></label>
+        <label class="field wide"><span>Notes</span><input name="notes"></label>
+      </div>
+    </details>
+    <div><button class="primary">Save, then add items</button></div>
+  </form>
+</section>
+
 <section id="purchase-history" aria-labelledby="purchase-history-title">
   <h2 id="purchase-history-title">Purchase history</h2>
   <p class="note"><strong>Needs items</strong> = no inventory added yet. Totals may show $0 until items are entered.</p>
@@ -115,22 +131,4 @@
   <p class="note">Totals are allocated item costs, not payments. Filters and CSV exports never change records.</p>
 </section>
 
-<section>
-  <h2 id="new-purchase">New Order</h2><p class="note">Save first; add inventory next.</p>
-  <form method="post" action="/purchases" class="grid"><input type="hidden" name="submission_token" value="{{ submission_token }}">
-    <label class="field"><span>Vendor</span><input name="vendor" required></label>
-    <label class="field"><span>Date</span><input type="date" name="purchased_on" value="{{ today }}"></label>
-    <label class="field"><span>Order reference</span><input name="order_ref"></label>
-    <details class="purchase-optional603 wide" data-mobile-optional603 open>
-      <summary>Shipping, tax, discount &amp; notes (optional)</summary>
-      <div class="purchase-optional-grid603">
-        <label class="field"><span>Shipping ({{ currency }})</span><input name="shipping" type="number" step="0.01" min="0" value="0"></label>
-        <label class="field"><span>Tax ({{ currency }})</span><input name="tax" type="number" step="0.01" min="0" value="0"></label>
-        <label class="field"><span>Discount ({{ currency }})</span><input name="discount" type="number" step="0.01" min="0" value="0"></label>
-        <label class="field wide"><span>Notes</span><input name="notes"></label>
-      </div>
-    </details>
-    <div><button class="primary">Save, then add items</button></div>
-  </form>
-</section>
 {% endblock %}
