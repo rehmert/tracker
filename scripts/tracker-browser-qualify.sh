@@ -421,7 +421,8 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == quick603 ]]; then
     TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
     TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
     "$PY" -B -m pytest -q --tb=short --maxfail=1 \
-    "tests/browser/test_strict_csrf521.py::test_603_vials_navigation_and_daily_action_filter"
+    "tests/browser/test_strict_"\
+"csrf521.py::test_603_vials_navigation_and_daily_action_filter"
   echo "TARGETED_QUICK603_HTTP_HTTPS=PASSED"
   exit 0
 fi

@@ -115,8 +115,8 @@ def test_705_quick_entry_daily_filter_matches_current_seven_recording_actions():
     runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
     preview = (ROOT / "scripts/tracker-browser-preview705.sh").read_text()
 
-    tags = re.findall(r"<a\\b[^>]*\\bdata-quick-action\\b[^>]*>", quick, re.S)
-    daily_tags = [tag for tag in tags if re.search(r"\\bdata-quick-daily\\b", tag)]
+    tags = re.findall(r"<a\b[^>]*\bdata-quick-action\b[^>]*>", quick, re.S)
+    daily_tags = [tag for tag in tags if re.search(r"\bdata-quick-daily\b", tag)]
     hrefs = [re.search(r'href="([^"]+)"', tag).group(1) for tag in daily_tags]
     expected = {
         "/food#food-quick-log", "/food#food-water", "/doses", "/vitals",
@@ -138,5 +138,5 @@ def test_705_quick_entry_daily_filter_matches_current_seven_recording_actions():
     assert 'RELEASE_705_TARGETED_QUICK603=PASSED_NOT_FULL_QA' in preview
     assert '--targeted-strict quick603' in preview
     assert preview.index('--targeted-strict quick603') < preview.index(
-        'bash scripts/tracker-browser-qualify.sh "$QA" "$PY"\\n'
+        'timeout --signal=TERM --kill-after=30s 2100'
     )
