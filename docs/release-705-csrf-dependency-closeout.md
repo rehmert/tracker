@@ -68,8 +68,24 @@ current registered ordinary write route with **both** missing and forged
 CSRF submissions. An explicit observed-route/case-set assertion prevents
 silently skipping an enumerated route. A signed but invalid Compound form
 must still reach application validation (422), proving strict mode is not
-simply blocking all writes. The real full source preview **must rerun**
-against the corrected exact SHA; the earlier attempt exited 1.
+simply blocking all writes.
+
+A **second** isolated preview still stopped before requests, reporting
+that all 15 critical write routes were absent. That means the test's
+existing `isinstance(route, APIRoute)`-only discovery path was unusable
+for this runtime; the exact route-class discrepancy remains to be
+confirmed by a real diagnostic. The revised test enumerates actual
+ASGI route metadata (`path` and `methods`) without depending on
+one FastAPI class identity, handles nested non-secondary mounts, and
+has an independent fake-route-shape regression. If critical routes are
+still missing, the failure reports top-level registered route count
+plus sanitized path/method/class samples. The strict 403 negative
+matrix and 15 critical-route sentinels remain unchanged.
+
+The real full source preview **must rerun** against the corrected exact
+SHA; neither earlier preview passed, and no DEV/PROD deployment is
+authorized. The registered-route canary now executes **first**, before
+longer historical regression tests.
 
 **Required before activating strict mode on any installed host:**
 
