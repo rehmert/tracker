@@ -157,12 +157,18 @@ def test_705_acquisition_never_calls_install_or_modifies_prod():
     assert 'scripts/tracker_dependency_readiness705.py' in bash
     assert '--execute-download' in bash
     assert 'git worktree add --detach' in bash
+    # Comments describing prohibited operations are not executable shell.
+    # Keep the forbidden-command guard, but apply it only to shell code.
+    executable_shell = "\n".join(
+        line for line in bash.splitlines()
+        if not line.lstrip().startswith("#")
+    )
     for forbidden in (
         'pip install', 'pip download', 'systemctl restart', 'systemctl stop',
         'git reset', 'git push', 'TRACKER_CSRF_ENFORCE=1',
         '/etc/tracker.env', 'tracker-release.sh',
     ):
-        assert forbidden not in bash
+        assert forbidden not in executable_shell
     for forbidden in (
         '"install"', '"uninstall"', '"upgrade"', '"systemctl"',
         'TRACKER_CSRF_ENFORCE=1', '/etc/tracker.env',

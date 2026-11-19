@@ -394,8 +394,14 @@ def test_705_download_only_acquisition_guarded_and_separate_from_installs():
     assert 'PYPI_INDEX = "https://pypi.org/simple"' in python
     assert 'record.get("digests", {}).get("sha256") != row["sha256"]' in python
     assert "DEPENDENCY_705_REPLAY=NOT_EXECUTED" in python
+    # Comments are documentation, not shell commands. Validate the
+    # executable lines while preserving the sensitive-operation guard.
+    executable_shell = "\n".join(
+        line for line in source.splitlines()
+        if not line.lstrip().startswith("#")
+    )
     for forbidden in (
         'pip install', 'systemctl restart', 'git reset',
         'TRACKER_CSRF_ENFORCE=1', '/etc/tracker.env', 'tracker-release.sh',
     ):
-        assert forbidden not in source
+        assert forbidden not in executable_shell
