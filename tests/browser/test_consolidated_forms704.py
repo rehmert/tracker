@@ -285,6 +285,11 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                             !document.documentElement.classList.contains('tracker-mobile-editing')
                         """)
                         expect(dock).to_be_visible()
+                        if kind == "lab":
+                            page.wait_for_function("""() =>
+                                document.querySelector("form[data-lab-manual-entry]")
+                                  .classList.contains("tracker-lab-actions704-active")
+                            """)
                         assert row.evaluate("el=>getComputedStyle(el).position") == "sticky"
 
             # Confirm one native submit without posting any data.
