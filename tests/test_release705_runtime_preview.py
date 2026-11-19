@@ -79,3 +79,25 @@ def test_705_https_vitals_522_uses_shipped_edit_get_form():
     assert 'edit_url.scheme == "https"' in fixture
     assert 'edit_url.path == edit_path' in fixture
     assert "row.locator('a[href*=\"/edit\"]')" not in fixture
+
+
+def test_705_vials_603_reports_navigation_opens_visible_disclosure():
+    # Strict HTTP and HTTPS must use the actual Release 696 mobile Vials
+    # disclosure; merely finding a hidden Reports anchor is not coverage.
+    vials = (ROOT / "app/templates/vials.html").read_text()
+    fixture = (ROOT / "tests/browser/test_strict_csrf521.py").read_text()
+    css = (ROOT / "app/static/css/tracker-integrated-flow696.css").read_text()
+    assert '<details class="tracker-flow696-more">' in vials
+    assert '<summary>More inventory tools</summary>' in vials
+    assert '<a href="#tracker-inventory-reports">Reports</a>' in vials
+    assert '.tracker-flow696-more > div > a' in css
+    assert 'more = navigation.locator("details.tracker-flow696-more")' in fixture
+    assert 'expect(more).not_to_have_attribute("open", "")' in fixture
+    assert 'more.locator("summary").click()' in fixture
+    assert 'expect(more).to_have_attribute("open", "")' in fixture
+    assert 'expect(report_link).to_be_visible()' in fixture
+    assert 'report_link.click()' in fixture
+    assert 'expect(reports).to_have_attribute("open", "")' in fixture
+    assert 'page.evaluate("location.hash")' in fixture
+    assert 'navigation.locator(\'a[href="#tracker-inventory-reports"]\').click()' not in fixture
+    assert "def test_603_vials_navigation_and_daily_action_filter(tab, scheme):" in fixture

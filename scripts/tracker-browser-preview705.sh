@@ -51,6 +51,7 @@ while IFS= read -r path; do
     scripts/tracker_csrf_reconcile627.py|\
     scripts/tracker-browser-qualify.sh|\
     tests/browser/test_vitals_proxy_host522.py|\
+    tests/browser/test_strict_csrf521.py|\
     scripts/tracker-browser-preview705.sh|\
     scripts/tracker-release-scoped705.sh|\
     scripts/tracker-preview705.sh|\

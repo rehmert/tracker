@@ -2624,9 +2624,21 @@ def test_603_vials_navigation_and_daily_action_filter(tab, scheme):
     assert page.locator("#tracker-vials-sortable").count() == 1
     assert page.locator("#bulk-selection-toolbar").count() == 1
     assert page.locator("#bulk-delete-selected").count() == 1
+    # Release 696 moved optional Vials section shortcuts behind the
+    # "More inventory tools" disclosure on mobile. Exercise the genuine
+    # visible disclosure before clicking its Reports link (no force/JS).
+    more = navigation.locator("details.tracker-flow696-more")
+    expect(more).to_have_count(1)
+    expect(more).not_to_have_attribute("open", "")
+    report_link = more.locator('a[href="#tracker-inventory-reports"]')
+    expect(report_link).to_be_hidden()
+    more.locator("summary").click()
+    expect(more).to_have_attribute("open", "")
+    expect(report_link).to_be_visible()
+    report_link.click()
     reports = page.locator("#tracker-inventory-reports")
-    navigation.locator('a[href="#tracker-inventory-reports"]').click()
-    assert reports.evaluate("(el) => el.open") is True
+    expect(reports).to_have_attribute("open", "")
+    assert page.evaluate("location.hash") == "#tracker-inventory-reports"
 
     response = page.goto(base + "/quick-entry", wait_until="networkidle")
     assert response is not None and response.status == 200

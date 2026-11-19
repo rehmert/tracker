@@ -327,3 +327,26 @@ against reverting to the obsolete link selector. No app route, UI,
 middleware, installed data or security behavior is changed. A fresh
 exact-SHA runtime pass is still necessary before any positive browser
 evidence can be counted.
+
+
+### Full strict browser qualification — mobile Vials Reports disclosure
+
+The exact-SHA a9685b3 isolated full browser preview passed **195 standard
+browser tests** (2 skipped), then passed the separate native HTTPS Labs
+module (2 tests). In strict-CSRF qualification **117 tests passed** and
+**2 failed** in the same Release 603 Vials navigation test, parameterized
+for HTTP and HTTPS. The existing Reports anchor was found but hidden.
+
+The root cause is a stale browser fixture: Release 696 moved the optional
+Vials section links into a collapsed native `details.tracker-flow696-more`
+with a visible `More inventory tools` summary. The original Release 603
+test tries to click Reports without opening that disclosure.
+
+The updated test now asserts that Reports initially is hidden, clicks the
+real native summary, verifies the disclosure and Reports link become
+visible, clicks Reports without forcing pointer input, and verifies the
+underlying `#tracker-inventory-reports` disclosure expands and the URL
+fragment matches, for **both** HTTP and HTTPS. No app UI, CSS, server,
+CSRF middleware, database, or configuration changes. A source contract
+and Python syntax preflight protect this exact fixture. An isolated
+DEV execution is still required for security acceptance.
