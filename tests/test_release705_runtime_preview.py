@@ -17,6 +17,9 @@ def test_705_full_browser_preview_is_guarded_and_noninstalling():
         'git rev-parse HEAD',
         'systemctl is-active --quiet tracker',
         'flock -n 9',
+        'tracker705-browser-preview.lock',
+        'RELEASE_705_INSTALLED_SOURCE_UNCHANGED=VERIFIED',
+        'VENDOR_SHA_BEFORE',
         'git fetch origin',
         'git merge-base --is-ancestor',
         'git diff --check',
@@ -34,6 +37,10 @@ def test_705_full_browser_preview_is_guarded_and_noninstalling():
     )
     assert source.index("RELEASE_705_SOURCE_REVALIDATED=PASSED") < source.index(
         "RELEASE_705_BROWSER_MODE=FULL_DISPOSABLE_HTTP_HTTPS_STRICT"
+    )
+    assert "tracker-db-sync.lock" not in source
+    assert source.index("RELEASE_705_INSTALLED_SOURCE_UNCHANGED=VERIFIED") < source.index(
+        "RELEASE_705_BROWSER_FULL=PASSED_DISPOSABLE_NO_INSTALL"
     )
     for forbidden in (
         'systemctl restart', 'git reset', 'git push', 'pip install',

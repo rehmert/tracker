@@ -24,9 +24,20 @@ export GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
    "$(git rev-parse HEAD)" == "$BASE" ]] ||
   fail 'Clean installed DEV main at Release 704 required'
 systemctl is-active --quiet tracker || fail 'Installed DEV service inactive'
-# Lock out concurrent deploy/database replication while testing. No live DB reads.
-exec 9>/run/lock/tracker-db-sync.lock
-flock -n 9 || fail 'Release or database replication lock is held'
+# The test server/database are disposable; routine live database replication
+# must not block browser QA. Serialize only other Release 705 browser previews.
+exec 9>/run/lock/tracker705-browser-preview.lock
+flock -n 9 || fail 'Another Release 705 full browser preview is active'
+echo 'RELEASE_705_DB_SYNC_LOCK=NOT_ACQUIRED_DISPOSABLE_ONLY'
+# The browser runner reads one installed vendor asset into the isolated
+# worktree. Verify it is unchanged after QA and never accept a live checkout
+# drift as valid candidate evidence.
+VENDOR=/opt/tracker/app/static/vendor/htmx.min.js
+[[ -f "$VENDOR" && ! -L "$VENDOR" ]] ||
+  fail 'Trusted installed HTMX asset unavailable'
+VENDOR_SHA_BEFORE="$(sha256sum "$VENDOR" | awk '{print $1}')"
+[[ "$VENDOR_SHA_BEFORE" =~ ^[0-9a-f]{64}$ ]] ||
+  fail 'Trusted vendor asset fingerprint unavailable'
 git fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] ||
   fail 'Release 705 branch moved; no unreviewed candidate will run'
@@ -91,6 +102,14 @@ echo 'RELEASE_705_BROWSER_MODE=FULL_DISPOSABLE_HTTP_HTTPS_STRICT'
 # 16-worker standard/strict tests, cleanup and error propagation.
 timeout --signal=TERM --kill-after=30s 2100 \
   bash scripts/tracker-browser-qualify.sh "$QA" "$PY"
+[[ "$(git -C "$APP" rev-parse HEAD)" == "$BASE" &&
+   "$(git -C "$APP" branch --show-current)" == main &&
+   -z "$(git -C "$APP" status --porcelain)" ]] ||
+  fail 'Installed DEV checkout changed during isolated browser qualification'
+[[ -f "$VENDOR" && ! -L "$VENDOR" &&
+   "$(sha256sum "$VENDOR" | awk '{print $1}')" == "$VENDOR_SHA_BEFORE" ]] ||
+  fail 'Installed HTMX asset changed during isolated browser qualification'
+echo 'RELEASE_705_INSTALLED_SOURCE_UNCHANGED=VERIFIED'
 echo 'RELEASE_705_BROWSER_FULL=PASSED_DISPOSABLE_NO_INSTALL'
 echo 'RELEASE_705_BROWSER_ISSUE9=BLOCKED_PENDING_POSITIVE_COVERAGE'
 echo 'RELEASE_705_DEPENDENCY_ISSUE10=NOT_REPLAYED'

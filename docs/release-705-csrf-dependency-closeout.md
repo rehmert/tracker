@@ -289,3 +289,21 @@ The shell runner and a focused source contract are included in the Release
 operator stage**; GitHub source review alone does not certify runtime success.
 The full backend suite, independent offline wheelhouse replay, and positive
 signed business flows still require separate evidence before approval.
+
+### Browser preview synchronization correction
+
+The first exact-SHA browser preview was blocked immediately by an active
+`/run/lock/tracker-db-sync.lock`, before tests started. This was an
+unnecessary coupling: the existing browser runner works exclusively on
+disposable localhost HTTP/HTTPS services and temporary SQLite data, so
+it does not participate in production database replication or migration.
+
+The new full-browser preview now uses its own
+`/run/lock/tracker705-browser-preview.lock` to serialize **browser
+previews only**. It does not touch, wait on or clear the installed
+database-replication/deployment lock. Instead, it requires installed DEV
+main to be clean at the pinned Release 704 SHA before execution, verifies
+it again after the suite, and fingerprints the locally reused HTMX vendor
+asset before and after. If a concurrent deployment changes the installed
+source or the trusted vendor byte content, the qualification fails closed.
+The source and browser runner remain isolated from installed DB records.
