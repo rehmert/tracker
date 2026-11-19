@@ -49,12 +49,16 @@ SQLite data directories and two isolated `127.0.0.1` servers.
    3 densities (Compact/Balanced/Comfortable), 2 themes and 2 style modes
    (687 only, combined): 60 strict comparisons**. Every computed property
    and geometry value must match; every pixel must be identical. Any
-   horizontal overflow change also fails. The strict browser harness
-   compares baseline and candidate **in the same foreground tab**, first
-   requiring the baseline screenshot itself to repeat identically; it
-   disables transitions/animations, awaits fonts and paint, and blocks
-   all external asset requests. This prevents cross-tab focus paint
-   differences from being misclassified as a CSS change.
+   horizontal overflow change also fails. The revised strict browser
+   harness **renders one baseline DOM exactly once** and obtains two
+   unchanged baseline screenshots to verify stability. It then replaces
+   only the live Release 687 stylesheet contents in-place, retaining the
+   same DOM, focused control, viewport and every other CSS rule, and
+   compares against the candidate CSS. Finally, it restores the original
+   CSS and requires an exact pixel/geometry round trip. This avoids
+   document re-creation and active-focus repaint artifacts while keeping
+   the zero-pixel threshold. It disables animations, awaits fonts/paint,
+   and blocks external requests.
 3. The **existing Release 698 real-page visual gate** runs unchanged after
    the strict CSS tests: 10 real pages, 4 widths, 2 themes and 7 additional
    anchored sections, totaling **136 comparisons** with the previously
