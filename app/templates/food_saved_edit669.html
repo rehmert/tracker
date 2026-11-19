@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Edit Saved Food{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-saved-food-actions702.css?v=702">
 <section class="food-saved-edit669" style="max-width:850px;margin:0 auto">
   <nav aria-label="Food editor navigation">
-    <a href="/food?day={{ day }}#food-search">← Back to Food Journal</a>
+    <a class="tracker-food-editor-back702" href="/food?day={{ day }}#food-search">← Back to Food Journal</a>
   </nav>
   <h1>Edit Saved Food</h1>
   {% if saved %}
@@ -47,7 +48,7 @@
         and historical totals. This action does not create a new food version.</p>
       </div>
     {% endif %}
-    <div class="ux673-action-row" aria-label="Saved food editor actions">
+    <div class="ux673-action-row tracker-food-editor-actions702" aria-label="Saved food editor actions">
       <button type="submit" class="primary">Save Food Changes</button>
       <a class="btn" href="/food?day={{ day }}#food-search">Cancel</a>
     </div>
