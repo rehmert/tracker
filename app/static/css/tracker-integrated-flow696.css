@@ -1,0 +1,128 @@
+/* Release 696: scoped everyday and inventory workflow refinement.
+   One release covers the previously planned 696–697 and 701–702 work.
+   This stylesheet never hides canonical forms, data rows or actions. */
+.tracker-flow696-actions {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.45rem;
+  margin:.6rem 0 .8rem;
+  min-width:0;
+}
+.tracker-flow696-actions > a,
+.tracker-flow696-actions > details > summary,
+.tracker-flow696-more > summary {
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:.45rem .72rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.65rem;
+  color:var(--ink,#192c31);
+  background:var(--surface,#fff);
+  text-decoration:none;
+  font-weight:650;
+  cursor:pointer;
+}
+.tracker-flow696-actions > a.tracker-flow696-primary {
+  background:var(--teal,#1265ad);
+  color:var(--teal-ink,#fff);
+  border-color:var(--teal,#1265ad);
+}
+.tracker-flow696-more {
+  min-width:0;
+  flex:0 1 auto;
+}
+.tracker-flow696-more > summary { list-style-position:inside; }
+.tracker-flow696-more[open] { flex-basis:100%; }
+.tracker-flow696-more > div {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.4rem;
+  margin:.4rem 0 .15rem;
+}
+.tracker-flow696-more > div > a {
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
+  padding:.45rem .65rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.55rem;
+  color:inherit;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+}
+.tracker-flow696-actions :is(a,summary):focus-visible,
+.tracker-flow696-finish :is(button,summary):focus-visible,
+.tracker-flow696-guide > summary:focus-visible {
+  outline:3px solid var(--tracker-brand-blue,#1686df);
+  outline-offset:2px;
+}
+.tracker-flow696-guide {
+  margin:.45rem 0 .7rem;
+  padding:.15rem .7rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.65rem;
+  background:var(--surface,#fff);
+  max-width:85ch;
+}
+.tracker-flow696-guide > summary {
+  display:list-item;
+  cursor:pointer;
+  min-height:44px;
+  padding:.7rem .15rem;
+  font-weight:650;
+}
+.tracker-flow696-guide > :not(summary) { margin:.35rem 0 .65rem; }
+.tracker-flow696-finish {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.45rem;
+  min-width:0;
+}
+.tracker-flow696-finish > button.primary { min-height:48px; }
+.tracker-flow696-finish > details > summary {
+  min-height:44px;
+  padding:.5rem .6rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.6rem;
+  cursor:pointer;
+  font-weight:650;
+}
+.tracker-flow696-finish > details[open] { flex-basis:100%; }
+.tracker-flow696-finish > details button { min-height:44px; margin:.25rem 0; }
+.tracker-flow696-coa-tools {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:end;
+  gap:.55rem;
+  margin:.6rem 0 .85rem;
+}
+.tracker-flow696-coa-tools > label { min-width:min(100%,15rem); flex:1 1 16rem; }
+.tracker-flow696-coa-tools input {
+  width:100%;
+  box-sizing:border-box;
+  min-height:44px;
+  font-size:16px;
+}
+.tracker-flow696-coa-tools button { min-height:44px; }
+.tracker-flow696-coa-tools p { flex:1 1 100%; margin:0; }
+.tracker-flow696-coa-table tbody tr[hidden],
+.tracker-flow696-coa-tools [hidden] { display:none !important; }
+.tracker-flow696-coa-table { width:100%; }
+@media(max-width:760px) {
+  .tracker-flow696-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .tracker-flow696-actions > a,
+  .tracker-flow696-actions > details > summary { width:100%; text-align:center; }
+  .tracker-flow696-actions > details[open] { grid-column:1/-1; }
+  .tracker-flow696-more > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .tracker-flow696-finish > button.primary { flex:1 1 100%; }
+  .tracker-flow696-coa-tools > label { flex:1 1 100%; }
+}
+@media(max-width:350px) {
+  .tracker-flow696-actions, .tracker-flow696-more > div { grid-template-columns:1fr; }
+}
