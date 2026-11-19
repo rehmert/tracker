@@ -64,12 +64,12 @@ cleanup() {
     fi
   done
   if ((status != 0)); then
-    echo "=== RELEASE 698 BASELINE SERVER LOG (last 25 lines) ==="
+    echo "=== RELEASE 699 BASELINE SERVER LOG (last 25 lines) ==="
     [[ ! -f "$BASE_LOG" ]] || tail -n 25 "$BASE_LOG" || true
-    echo "=== RELEASE 698 CANDIDATE SERVER LOG (last 25 lines) ==="
+    echo "=== RELEASE 699 CANDIDATE SERVER LOG (last 25 lines) ==="
     [[ ! -f "$CANDIDATE_LOG" ]] || tail -n 25 "$CANDIDATE_LOG" || true
     if [[ -d "$ARTIFACTS" ]]; then
-      PRIVATE="$(mktemp -d /tmp/tracker-visual698-review.XXXXXXXX)"
+      PRIVATE="$(mktemp -d /tmp/tracker-visual699-review.XXXXXXXX)"
       chmod 700 "$PRIVATE"
       cp -a "$ARTIFACTS"/. "$PRIVATE"/
       echo "RELEASE_699_PRIVATE_DIFF_REVIEW=$PRIVATE"
