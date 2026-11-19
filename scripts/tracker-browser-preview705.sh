@@ -80,8 +80,10 @@ mkdir -m 700 "$RUN/test-data"
 export PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data"
 cd "$QA"
 bash -n scripts/tracker-browser-qualify.sh
-"$PY" -m pytest -q --tb=short --maxfail=1 \
-  tests/test_browser_qualification511.py::test_511_every_browser_module_in_disposable_qualification
+# One invocation revalidates the entire source-only contract for this exact
+# candidate SHA before any full browser traffic is generated.
+bash scripts/tracker-release-scoped705.sh "$PY"
+echo 'RELEASE_705_SOURCE_REVALIDATED=PASSED'
 echo 'RELEASE_705_BROWSER_INVENTORY_PREFLIGHT=PASSED'
 echo "RELEASE_705_BROWSER_EXECUTED_CANDIDATE=$TARGET"
 echo 'RELEASE_705_BROWSER_MODE=FULL_DISPOSABLE_HTTP_HTTPS_STRICT'

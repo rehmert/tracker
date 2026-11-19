@@ -21,6 +21,7 @@ def test_705_full_browser_preview_is_guarded_and_noninstalling():
         'git merge-base --is-ancestor',
         'git diff --check',
         'git worktree add --detach',
+        'bash scripts/tracker-release-scoped705.sh "$PY"',
         'git -C "$APP" worktree remove --force',
         'TRACKER_DATA_DIR="$RUN/test-data"',
         'tests/test_browser_qualification511.py::test_511_every_browser_module_in_disposable_qualification',
@@ -29,8 +30,11 @@ def test_705_full_browser_preview_is_guarded_and_noninstalling():
     )
     for marker in required:
         assert marker in source, marker
-    assert source.index("RELEASE_705_BROWSER_INVENTORY_PREFLIGHT=PASSED") < source.index(
+    assert source.index('bash scripts/tracker-release-scoped705.sh "$PY"') < source.index(
         'bash scripts/tracker-browser-qualify.sh "$QA" "$PY"'
+    )
+    assert source.index("RELEASE_705_SOURCE_REVALIDATED=PASSED") < source.index(
+        "RELEASE_705_BROWSER_MODE=FULL_DISPOSABLE_HTTP_HTTPS_STRICT"
     )
     for forbidden in (
         'systemctl restart', 'git reset', 'git push', 'pip install',
