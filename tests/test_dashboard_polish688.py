@@ -5,7 +5,7 @@ import re
 from types import SimpleNamespace
 
 import pytest
-from jinja2 import Environment
+from jinja2 import Environment, FileSystemLoader
 from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,24 +34,25 @@ SCRIPTS = [
     "app/static/js/tracker-section-deep-links.js",
 ]
 EXPECTED = [
-    ("Calendar", "/calendar"),
-    ("Dose Workspace", "/dose-workspace"),
-    ("Inventory", "/replenishment-review"),
-    ("Lab Results", "/labs"),
+    ("Today", "/mobile"),
     ("Log Dose", "/doses#quick-dose-entry"),
     ("Log Food", "/food#food-quick-log"),
     ("Log Vitals", "/mobile#mobile-quick-vitals"),
-    ("Log Water", "/food#food-water"),
-    ("Progress", "/health-insights"),
-    ("Today", "/mobile"),
-    ("Vial Inventory", "/vials"),
+    ("Workout", "/workouts/quick"),
+    ("Inventory", "/vials"),
+    ("More Actions", "/quick-entry"),
 ]
 
 
 def shortcut_html():
     start = DASH.index('<section class="tracker-daily-flow559"')
     end = DASH.index("</section>", start) + len("</section>")
-    return DASH[start:end]
+    # Render the Release 694 shared macro, not literal Jinja source.
+    env = Environment(loader=FileSystemLoader(ROOT / "app/templates"), autoescape=True)
+    return env.from_string(
+        '{% from "_daily_actions694.html" import daily_actions694 %}' +
+        DASH[start:end]
+    ).render()
 
 
 def toolbar_html(path="/"):
@@ -87,7 +88,7 @@ def test_688_source_and_template_contract():
     assert "Open Rapid Gym Mode" not in WORKOUT
     assert "'Rapid Gym Mode'" in WORKOUT
     links = re.findall(
-        r'<a href="([^"]+)"><strong>([^<]+)</strong></a>',
+        r'<a href="([^"]+)"(?:\s+[^>]*)?><strong>([^<]+)</strong></a>',
         shortcut_html(),
     )
     assert [(label, url) for url, label in links] == EXPECTED
@@ -134,7 +135,7 @@ def test_688_real_template_controls_and_compact_metrics(width):
             expect(page.locator(".tracker-copy-section-link")).to_be_visible()
             expect(page.locator(".workspace-toolbar #dashboard-customize")).to_have_count(1)
             expect(page.locator(".dashboard-personalize")).to_have_count(0)
-            expect(page.locator(".tracker-daily-flow559-links a")).to_have_count(11)
+            expect(page.locator(".tracker-daily-flow559-links a")).to_have_count(7)
             assert page.locator(".tracker-daily-flow559-links a").all_text_contents() == [
                 label for label, _ in EXPECTED
             ]
