@@ -31,8 +31,13 @@ UX/accessibility issue or server performance bottleneck is eliminated.
   controls share a keyboard-aware action region. Add row stays a separate
   HTMX button in the original form, not a submission. All three use a
   single three-column row on phones: a two-row 121px-high bar overlapped
-  the dock at 320px in the initial isolated preview. The separate CSV
-  import form, manual entry
+  the dock at 320px in the initial isolated preview. The second browser
+  preview found that even the 85px three-column bar overlapped by 13.625px
+  because the sticky element could not rise above its **form** container
+  beginning at y=700px. The revised Lab-only CSS removes the top margin,
+  reduces grid gaps and internal padding, and maintains minimum 48px
+  touch targets; the original hard dock-overlap assertion remains.
+  The separate CSV import form, manual entry
   data and upload, existing duplicate-analyte warnings, completeness
   review and unsaved-change guard are untouched.
 
