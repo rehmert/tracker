@@ -10,7 +10,7 @@ from app.main import app
 ROOT = Path(__file__).resolve().parents[1]
 TODAY = ROOT / "app/templates/mobile_today509.html"
 QUICK = ROOT / "app/templates/quick_entry.html"
-STYLES = ROOT / "app/static/css/tracker-productivity674.css"
+STYLES = ROOT / "app/static/css/tracker-today695.css"
 
 ACTIONS = (
     "#mobile-quick-vitals",
@@ -67,7 +67,8 @@ def test_695_summary_reviews_are_contextual_and_read_only():
     assert ".tracker-daily509 .ux695-summary-link" in css
     assert "min-height: 44px;" in css
     assert "grid-template-columns: repeat(2,minmax(0,1fr))" in css
-    assert "tracker-productivity674.css?v=695" in html
+    assert "tracker-productivity674.css?v=674" in html
+    assert "tracker-today695.css?v=695" in html
 
 
 def test_695_quick_entry_exposes_same_missing_recording_destinations():
