@@ -205,11 +205,11 @@
   line-height: 1.2;
   text-align: center;
 }
-/* Compact only changes the target height and padding; centered alignment
-   already comes from the shared Daily Shortcuts action rule above. */
 :root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a {
   min-height: 44px;
   padding: .18rem .38rem;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Workout metrics: six useful cards on one desktop row, without dead space. */
