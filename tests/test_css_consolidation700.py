@@ -81,6 +81,18 @@ def test_700_preview_is_pinned_scoped_private_and_runs_both_visual_gates():
     assert "ref_page, candidate_page" not in PARITY
     assert "STABLE_STYLE" in PARITY
     assert "save_private_diff" in PARITY
+    # The 700 pixel comparison must reuse the SAME live DOM and focus
+    # state; only the stylesheet ElementHandle is replaced in place.
+    assert "verify_unmodified_css(baseline, candidate)" in PARITY
+    assert "target_style = render_fixture(" in PARITY
+    assert 'target_style.evaluate(' in PARITY
+    assert "replacement_css" in PARITY
+    assert "original_css" in PARITY
+    assert "CSS round-trip pixels changed:" in PARITY
+    assert "page.set_content(HTML)" in PARITY
+    assert "page.set_content(HTML)" not in PARITY.split(
+        "def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():", 1
+    )[1]
     assert "scripts/tracker_visual_regression698.py" in PREVIEW
     assert "RELEASE_700_PREVIEW=PASSED_ISOLATED_NO_INSTALL" in PREVIEW
     assert "git worktree add --detach" in PREVIEW
