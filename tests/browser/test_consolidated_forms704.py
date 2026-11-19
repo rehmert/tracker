@@ -166,44 +166,35 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                         expect(dock).to_be_visible()
                         expect(row).to_be_visible()
                         if kind == "lab":
-                            # At the top of the page, the CSV form precedes
-                            # the manual form. The latter can start within
-                            # the dock's region in Comfortable density.
-                            # Require the original action row to stay in
-                            # natural flow until the manual form reaches the
-                            # genuinely safe sticky region.
-                            safe_at_top = page.evaluate("""() => {
-                                const form = document.querySelector(
-                                    "form[data-lab-manual-entry]"
-                                );
-                                const bar = form.querySelector(
-                                    ":scope > .tracker-form-actions704--lab"
-                                );
-                                const dock = document.querySelector(
-                                    ".tracker-mobile-dock"
-                                );
-                                return form.getBoundingClientRect().top +
-                                    bar.getBoundingClientRect().height + 16 <=
-                                    dock.getBoundingClientRect().top;
-                            }""")
-                            page.wait_for_function("""expected =>
-                                document.querySelector("form[data-lab-manual-entry]")
-                                  .classList.contains("tracker-lab-actions704-active")
-                                  === expected
-                            """, arg=safe_at_top)
-                            if not safe_at_top:
-                                assert row.evaluate(
-                                    "el=>getComputedStyle(el).position"
-                                ) == "static"
-                                offscreen = row.bounding_box()
-                                nav_initial = dock.bounding_box()
-                                assert offscreen and nav_initial
-                                assert (offscreen["y"] >=
-                                        nav_initial["y"] + nav_initial["height"]) or (
-                                    offscreen["y"] + offscreen["height"] <=
-                                    nav_initial["y"] - 4
-                                ), (kind, width, density, scheme,
-                                    "nonsticky_must_not_cover_dock", offscreen, nav_initial)
+                            # CSV import precedes manual Lab entry. Do not
+                            # activate sticky actions while that earlier
+                            # workflow still occupies the viewport.
+                            page.evaluate("""() => new Promise(resolve =>
+                                requestAnimationFrame(() =>
+                                    requestAnimationFrame(resolve))
+                            )""")
+                            form_top = form.evaluate(
+                                "el => el.getBoundingClientRect().top"
+                            )
+                            assert form_top > 120, (
+                                kind, width, density, scheme,
+                                "manual_form_entered_at_page_top", form_top
+                            )
+                            assert not form.evaluate("""el =>
+                                el.classList.contains("tracker-lab-actions704-active")
+                            """), (kind, width, density, scheme, form_top)
+                            assert row.evaluate(
+                                "el => getComputedStyle(el).position"
+                            ) == "static"
+                            offscreen = row.bounding_box()
+                            nav_initial = dock.bounding_box()
+                            assert offscreen and nav_initial
+                            assert (offscreen["y"] >=
+                                    nav_initial["y"] + nav_initial["height"]) or (
+                                offscreen["y"] + offscreen["height"] <=
+                                nav_initial["y"] - 4
+                            ), (kind, width, density, scheme,
+                                "nonsticky_must_not_cover_dock", offscreen, nav_initial)
                             # Enter the manual form. The original actions
                             # must then activate without crossing the dock.
                             page.evaluate("""() => {
@@ -215,10 +206,41 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                                     form.getBoundingClientRect().top - 120
                                 );
                             }""")
-                            page.wait_for_function("""() =>
-                                document.querySelector("form[data-lab-manual-entry]")
-                                  .classList.contains("tracker-lab-actions704-active")
-                            """)
+                            try:
+                                page.wait_for_function("""() =>
+                                    document.querySelector("form[data-lab-manual-entry]")
+                                      .classList.contains("tracker-lab-actions704-active")
+                                """, timeout=3000)
+                            except Exception as exc:
+                                details = page.evaluate("""() => {
+                                    const f = document.querySelector(
+                                        "form[data-lab-manual-entry]"
+                                    );
+                                    const bar = f.querySelector(
+                                        ":scope > .tracker-form-actions704--lab"
+                                    );
+                                    const dock = document.querySelector(
+                                        ".tracker-mobile-dock"
+                                    );
+                                    return {
+                                        scrollY, density: document.documentElement.dataset.density,
+                                        formTop: f.getBoundingClientRect().top,
+                                        barHeight: bar.getBoundingClientRect().height,
+                                        dockTop: dock.getBoundingClientRect().top,
+                                        position: getComputedStyle(bar).position,
+                                        active: f.classList.contains(
+                                            "tracker-lab-actions704-active"
+                                        ),
+                                        editing: document.documentElement.classList.contains(
+                                            "tracker-mobile-editing"
+                                        ),
+                                        dockDisplay: getComputedStyle(dock).display,
+                                    };
+                                }""")
+                                raise AssertionError(
+                                    (kind, width, density, scheme,
+                                     "lab_scroll_activation", details)
+                                ) from exc
                         assert row.evaluate("el=>getComputedStyle(el).position") == "sticky"
                         controls = [save, cancel]
                         if kind == "lab":
@@ -286,10 +308,22 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                         """)
                         expect(dock).to_be_visible()
                         if kind == "lab":
+                            # Focusing the first input may scroll back toward
+                            # the manual form's top. Return to the safe
+                            # scrolled state before requiring sticky actions.
+                            page.evaluate("""() => {
+                                const f = document.querySelector(
+                                    "form[data-lab-manual-entry]"
+                                );
+                                window.scrollTo(
+                                    0, window.scrollY +
+                                    f.getBoundingClientRect().top - 120
+                                );
+                            }""")
                             page.wait_for_function("""() =>
                                 document.querySelector("form[data-lab-manual-entry]")
                                   .classList.contains("tracker-lab-actions704-active")
-                            """)
+                            """, timeout=3000)
                         assert row.evaluate("el=>getComputedStyle(el).position") == "sticky"
 
             # Confirm one native submit without posting any data.
