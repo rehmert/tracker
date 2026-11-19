@@ -51,11 +51,59 @@ POST_645_UNQUALIFIED_COA_ROUTES = frozenset({
 POST_647_UNQUALIFIED_COA_ROUTES = frozenset({
     ("POST", "/coas/{cid}/attachments/test-types"),
 })
+# Exact unsafe declarations added after the previously frozen Release 653
+# source inventory. Read from the Release 653..704 router diff; these are NOT
+# signed-positive CSRF witnesses. Any new/removed route changes must be reviewed
+# explicitly rather than hidden by incrementing a numeric threshold.
+POST_654_PLUS_UNQUALIFIED_ROUTES = frozenset({
+    ("POST", "/coas/{cid}/attachments/identifiers"),
+    ("POST", "/food/saved/{product_id}/edit"),
+    ("POST", "/workouts/backfill"),
+    ("POST", "/workouts/backfill/import.csv"),
+    ("POST", "/workouts/equipment"),
+    ("POST", "/workouts/equipment/{equipment_id}/load"),
+    ("POST", "/workouts/equipment/{equipment_id}/settings"),
+    ("POST", "/workouts/finish"),
+    ("POST", "/workouts/finish-review"),
+    ("POST", "/workouts/quick/finish"),
+    ("POST", "/workouts/quick/offline-sync"),
+    ("POST", "/workouts/quick/repeat"),
+    ("POST", "/workouts/quick/routines/{routine_id}/start"),
+    ("POST", "/workouts/quick/sets"),
+    ("POST", "/workouts/quick/start"),
+    ("POST", "/workouts/routines"),
+    ("POST", "/workouts/routines/{routine_id}/duplicate"),
+    ("POST", "/workouts/routines/{routine_id}/equipment"),
+    ("POST", "/workouts/routines/{routine_id}/groups"),
+    ("POST", "/workouts/routines/{routine_id}/groups/{group_id}/remove"),
+    ("POST", "/workouts/routines/{routine_id}/items/{item_id}/move"),
+    ("POST", "/workouts/routines/{routine_id}/items/{item_id}/remove"),
+    ("POST", "/workouts/routines/{routine_id}/items/{item_id}/substitute"),
+    ("POST", "/workouts/routines/{routine_id}/program/import"),
+    ("POST", "/workouts/routines/{routine_id}/program/import.csv"),
+    ("POST", "/workouts/routines/{routine_id}/program/items/{item_id}"),
+    ("POST", "/workouts/routines/{routine_id}/program/rest"),
+    ("POST", "/workouts/routines/{routine_id}/schedule"),
+    ("POST", "/workouts/routines/{routine_id}/schedule/clear"),
+    ("POST", "/workouts/routines/{routine_id}/start"),
+    ("POST", "/workouts/sessions/{session_id}/reuse-as-routine"),
+    ("POST", "/workouts/sessions/{session_id}/sets/{set_id}/correct"),
+    ("POST", "/workouts/sessions/{session_id}/sets/{set_id}/corrections/{change_id}/undo"),
+    ("POST", "/workouts/sets"),
+    ("POST", "/workouts/sets/repeat"),
+    ("POST", "/workouts/sets/{set_id}/delete"),
+    ("POST", "/workouts/sets/{set_id}/edit"),
+    ("POST", "/workouts/start"),
+})
+
 POST_BASELINE_ADDITIONS = (
     POST_627_UNQUALIFIED_ROUTES |
     POST_635_UNQUALIFIED_ROUTES |
     POST_643_UNQUALIFIED_COA_ROUTES | POST_645_UNQUALIFIED_COA_ROUTES |
     POST_647_UNQUALIFIED_COA_ROUTES
+)
+CURRENT_UNQUALIFIED_ADDITIONS = (
+    POST_BASELINE_ADDITIONS | POST_654_PLUS_UNQUALIFIED_ROUTES
 )
 
 
@@ -182,12 +230,18 @@ def build() -> dict:
 
     if len(mapped) != 27 or not set(mapped) <= remaining or set(mapped) & known:
         raise ValueError("Release 627 source witnesses differ from baseline gap")
-    if (report["total_unsafe_routes"] != 144 + len(POST_BASELINE_ADDITIONS)
+    # Preserve the exact historic 144/83/61 Release 627 baseline while
+    # accounting explicitly for all 17 pre-653 additions and all 38 new
+    # Release 654..704 unsafe routes. Never silently accept an unreviewed
+    # route addition, a removed route, or a missing historical witness.
+    if (len(POST_654_PLUS_UNQUALIFIED_ROUTES) != 38
+            or POST_BASELINE_ADDITIONS & POST_654_PLUS_UNQUALIFIED_ROUTES
+            or report["total_unsafe_routes"] != 144 + len(CURRENT_UNQUALIFIED_ADDITIONS)
             or len(known) != 83
-            or len(remaining) != 61 + len(POST_BASELINE_ADDITIONS)
-            or not POST_BASELINE_ADDITIONS <= remaining
-            or POST_BASELINE_ADDITIONS & known):
-        raise ValueError("Baseline unsafe-route inventory changed; manual reassessment required")
+            or len(remaining) != 61 + len(CURRENT_UNQUALIFIED_ADDITIONS)
+            or not CURRENT_UNQUALIFIED_ADDITIONS <= remaining
+            or CURRENT_UNQUALIFIED_ADDITIONS & known):
+        raise ValueError("Unsafe-route inventory differs from pinned 627+705 evidence; manual reassessment required")
 
     uncovered = [
         {"method": method, "path": path, "workstream": path.strip("/").split("/")[0]}
@@ -205,6 +259,11 @@ def build() -> dict:
             for method, path in sorted(POST_627_UNQUALIFIED_ROUTES)
         ],
         "current_unsafe_routes": report["total_unsafe_routes"],
+        "historical_653_unsafe_routes": 144 + len(POST_BASELINE_ADDITIONS),
+        "post_654_plus_unqualified_routes": [
+            {"method": method, "path": path}
+            for method, path in sorted(POST_654_PLUS_UNQUALIFIED_ROUTES)
+        ],
         "post_634_unqualified_regimen_routes": [
             {"method": method, "path": path}
             for method, path in sorted(POST_635_UNQUALIFIED_ROUTES)
