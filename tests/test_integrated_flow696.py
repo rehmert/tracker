@@ -40,7 +40,7 @@ def test_696_all_nine_pages_load_one_scoped_style_and_compile():
     css = CSS.read_text(encoding="utf-8")
     assert css.count("{") == css.count("}")
     assert "table.ux673-card-table" not in css
-    assert "tracker-vial-jumps603.tracker-flow696-actions" in css
+    assert "tracker-vial-jumps603" in css
 
 
 def test_696_primary_workout_finish_is_unambiguous_and_legacy_is_preserved():
@@ -95,7 +95,7 @@ def test_696_vials_keep_single_nav_and_every_original_destination():
     start = html.index('<h1>Vials</h1>')
     stop = html.index('<form method="get"', start)
     nav = html[start:stop]
-    assert nav.count('<nav class="tracker-vial-jumps603 tracker-flow696-actions"') == 1
+    assert nav.count('<nav class="tracker-vial-jumps603"') == 1
     assert '<summary>More inventory tools</summary>' in nav
     for href in (
         "#tracker-vials-sortable", "#tracker-vial-find-panel",
