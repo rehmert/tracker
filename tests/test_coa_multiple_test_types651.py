@@ -284,10 +284,11 @@ def test_651_new_ajax_callsite_is_inventory_reviewed_but_not_historically_cleare
 
     root = Path(__file__).resolve().parents[1]
     tracked = reviewed_js_source_callsites(root)
-    assert tracked["tracked_js_callsites"] == 50
+    assert tracked["tracked_js_callsites"] == 51
     assert tracked["witnessed_js_callsites"] == 2
-    assert tracked["not_witnessed_in_579"] == 48
+    assert tracked["not_witnessed_in_579"] == 49
     assert tracked["unqualified_coa_multi651_callsites"] == 1
+    assert tracked["unqualified_workout_offline668_callsites"] == 1
     assert COA_MULTI651_SOURCE not in TRACKED_FETCH_SOURCES
     source = triage(root)
     matches = [row for row in source["callsites"]

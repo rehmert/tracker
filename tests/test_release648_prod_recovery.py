@@ -72,13 +72,14 @@ def test_648_other_intermediate_main_fails_before_push(monkeypatch):
 def test_648_historical_csrf_witnesses_stay_unqualified():
     from scripts.tracker_csrf_runtime_report579 import reviewed_js_source_callsites
     report = reviewed_js_source_callsites(ROOT)
-    assert report["tracked_js_callsites"] == 50
+    assert report["tracked_js_callsites"] == 51
     assert report["witnessed_js_callsites"] == 2
-    assert report["not_witnessed_in_579"] == 48
+    assert report["not_witnessed_in_579"] == 49
     assert report["unqualified_coa_multi651_callsites"] == 1
+    assert report["unqualified_workout_offline668_callsites"] == 1
     from scripts.tracker_csrf_route_ledger578 import build
     ledger = build(ROOT)
-    assert ledger["summary"]["javascript_callsites"] == 50
+    assert ledger["summary"]["javascript_callsites"] == 51
     assert ledger["summary"]["js_runtime_verified"] == 0
     assert any(row["file"] == "app/static/js/tracker-coa-types647.js"
                for row in ledger["javascript"])
