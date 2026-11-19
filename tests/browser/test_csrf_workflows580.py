@@ -159,7 +159,9 @@ def test_580_compound_create_edit_delete_real_native_forms(tab, scheme):
     create.locator('input[name="name"]').fill(name)
     created = _submit(page, create.get_by_role("button", name="Add compound"),
                       "POST", "/compounds", 303)
-    assert urlsplit(created.headers.get("location", "")).path == "/compounds"
+    created_target = urlsplit(created.headers.get("location", ""))
+    assert created_target.path == "/compounds"
+    assert parse_qs(created_target.query) == {"msg": [f"Added {name}."]}
     # The 303 POST response arrives before its navigation necessarily
     # completes, and the flash message repeats this name. Independently
     # GET the persisted table instead of mistaking flash text for a row.
@@ -175,7 +177,9 @@ def test_580_compound_create_edit_delete_real_native_forms(tab, scheme):
     edit.locator('input[name="name"]').fill(changed)
     updated = _submit(page, edit.get_by_role("button", name="Save changes"),
                       "POST", edit_path, 303)
-    assert urlsplit(updated.headers.get("location", "")).path == "/compounds"
+    updated_target = urlsplit(updated.headers.get("location", ""))
+    assert updated_target.path == "/compounds"
+    assert parse_qs(updated_target.query) == {"msg": [f"Updated {changed}."]}
     _visit(page, base, "/compounds")
     row = page.locator("tr").filter(has_text=changed)
     expect(row).to_have_count(1)
@@ -186,7 +190,9 @@ def test_580_compound_create_edit_delete_real_native_forms(tab, scheme):
     page.on("dialog", lambda dialog: dialog.accept())
     deleted = _submit(page, row.locator('form[action$="/delete"] button'),
                       "POST", delete_path, 303)
-    assert urlsplit(deleted.headers.get("location", "")).path == "/compounds"
+    deleted_target = urlsplit(deleted.headers.get("location", ""))
+    assert deleted_target.path == "/compounds"
+    assert parse_qs(deleted_target.query) == {"msg": [f"Deleted {changed}."]}
     # Verify deletion against a newly retrieved table; the 303 can be
     # observed while the browser still displays the pre-delete row.
     _visit(page, base, "/compounds")

@@ -279,8 +279,15 @@ def test_705_580_compound_lifecycle_waits_for_persisted_table_after_303():
     assert 'expect(page.locator("body")).to_contain_text(name)' not in body
     assert 'expect(page.locator("body")).to_contain_text(changed)' not in body
     assert body.count('    _visit(page, base, "/compounds")') == 3
-    for status in ("created", "updated", "deleted"):
-        assert f'urlsplit({status}.headers.get("location", "")).path == "/compounds"' in body
+    for status, verb, variable in (
+        ("created", "Added", "name"),
+        ("updated", "Updated", "changed"),
+        ("deleted", "Deleted", "changed"),
+    ):
+        assert f'{status}_target = urlsplit({status}.headers.get("location", ""))' in body
+        assert f'assert {status}_target.path == "/compounds"' in body
+        assert 'assert parse_qs(' + status + '_target.query) == ' in body
+        assert f'f"{verb} {{{variable}}}."' in body
     for marker in (
         'row = page.locator("tr").filter(has_text=name)',
         'row = page.locator("tr").filter(has_text=changed)',
