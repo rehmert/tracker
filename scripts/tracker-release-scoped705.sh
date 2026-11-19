@@ -18,6 +18,8 @@ bash -n scripts/tracker-preview705.sh
 "$PY" -m py_compile \
   scripts/tracker_dependency_lock705.py \
   scripts/tracker_csrf_closeout705.py \
+  scripts/tracker_csrf_reconcile627.py \
+  tests/test_release627_csrf_reconciliation.py \
   tests/test_release705_combined.py \
   tests/test_csrf_all_registered_negative705.py
 # The ASGI route inventory has twice failed before any requests were
@@ -26,6 +28,14 @@ bash -n scripts/tracker-preview705.sh
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_csrf_all_registered_negative705.py
 echo 'RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED'
+
+# A Release 627 source baseline count cannot stay frozen after 38 new
+# Release 654..704 unsafe routes. Check exact source reconciliation first;
+# unexpected additions/removals still block, rather than masking evidence.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release627_csrf_reconciliation.py \
+  -k 'signed_route_reconciliation_stays_blocked or signed_route_manifest_has_no_duplicate_or_unmapped_routes'
+echo 'RELEASE_705_HISTORICAL_CSRF_RECONCILIATION=PASSED'
 
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release705_combined.py \
