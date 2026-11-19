@@ -1,8 +1,9 @@
-"""Release 700: deterministic Chromium CSS and pixel parity for shared UI.
+"""Release 700: deterministic Chromium computed-style and zero-pixel CSS parity.
 
-Compare pinned Release 699 and candidate source in one active browser tab,
-resetting the same fixture between renders to avoid cross-tab focus paint
-variance. No authentication, external assets, user data or golden images.
+Render pinned Release 699 fixture once, snapshot its stable pixels, then
+change ONLY the live Release 687 style element to candidate CSS in place.
+Never recreate the DOM or browser focus state between the A/B screenshots.
+No authentication, external assets, live data or golden images.
 """
 from io import BytesIO
 from pathlib import Path
@@ -145,11 +146,16 @@ def css_root(name: str) -> Path:
     return root
 
 
-def css_sources(root: Path, mode: str) -> list[str]:
-    names = COMMON + (TOOLBAR,)
-    if mode == "combined":
-        names += ADDITIONAL
-    return [(root / name).read_text(encoding="utf-8") for name in names]
+def sheet(root: Path, name: str) -> str:
+    return (root / name).read_text(encoding="utf-8")
+
+
+def verify_unmodified_css(baseline: Path, candidate: Path) -> None:
+    """Every non-687 stylesheet must be byte-identical across both sources."""
+    for name in COMMON + ADDITIONAL:
+        assert sheet(baseline, name) == sheet(candidate, name), (
+            f"Non-target stylesheet changed unexpectedly: {name}"
+        )
 
 
 def measured(page):
@@ -174,13 +180,20 @@ def measured(page):
     }""" % repr(list(PROPS)), list(SELECTORS))
 
 
-def render(page, root: Path, width: int, theme: str, density: str, mode: str):
+def settle(page):
+    # Keep DOM, focus state, scroll position, and all non-target styles fixed.
+    page.evaluate("() => document.fonts.ready")
+    page.evaluate("""() => new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)))""")
+
+
+def render_fixture(page, baseline: Path, theme: str, density: str, mode: str):
+    """One initial render. Return the ONLY style element allowed to change."""
     page.set_content(HTML)
     page.evaluate("""([theme,density]) => {
       document.documentElement.dataset.theme=theme;
       document.documentElement.dataset.density=density;
     }""", [theme, density])
-    # Minimal declared theme tokens; source CSS remains unmodified.
     palette = (
         ":root{--surface:#fff;--ink:#172b39;--rule:#bdc8d4;"
         "--wash:#eef4f8;--teal:#1265ad;--teal-ink:#fff}"
@@ -190,17 +203,21 @@ def render(page, root: Path, width: int, theme: str, density: str, mode: str):
         "--teal:#78baff;--teal-ink:#091725}"
     )
     page.add_style_tag(content=palette)
-    for source in css_sources(root, mode):
-        page.add_style_tag(content=source)
-    # Force an identical focus state in the same foreground page for both
-    # sources. Separate tabs can paint the active focus outline differently
-    # even when all computed styles and element bounds match.
+    for name in COMMON:
+        page.add_style_tag(content=sheet(baseline, name))
+    target_style = page.add_style_tag(content=sheet(baseline, TOOLBAR))
+    if mode == "combined":
+        for name in ADDITIONAL:
+            page.add_style_tag(content=sheet(baseline, name))
     page.add_style_tag(content=STABLE_STYLE)
     page.locator("#command-open").focus()
-    page.evaluate("() => document.fonts.ready")
     page.evaluate("() => window.scrollTo(0, 0)")
-    page.evaluate("""() => new Promise(resolve =>
-        requestAnimationFrame(() => requestAnimationFrame(resolve)))""")
+    settle(page)
+    return target_style
+
+
+def capture(page):
+    settle(page)
     return measured(page), page.screenshot(animations="disabled", caret="hide")
 
 
@@ -233,6 +250,10 @@ def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():
     baseline = css_root("TRACKER_700_BASE_SOURCE")
     candidate = css_root("TRACKER_700_CANDIDATE_SOURCE")
     assert baseline != candidate
+    verify_unmodified_css(baseline, candidate)
+    original_css = sheet(baseline, TOOLBAR)
+    replacement_css = sheet(candidate, TOOLBAR)
+    assert original_css != replacement_css, "No Release 687 CSS change to qualify"
     comparisons = 0
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
@@ -249,20 +270,17 @@ def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():
                         reduced_motion="reduce",
                     )
                     try:
-                        # The same tab renders baseline and candidate in turn;
-                        # unlike two concurrent tabs, focus/foreground state
-                        # cannot diverge. Abort external assets entirely.
                         context.route("**/*", lambda route: route.abort())
                         page = context.new_page()
                         for density in DENSITIES:
                             for mode in MODES:
                                 label = f"{width}:{theme}:{density}:{mode}"
-                                a, img_a = render(page, baseline, width, theme, density, mode)
-                                # Validate our baseline screenshot is stable
-                                # before judging any candidate-side difference.
-                                stable, img_stable = render(
-                                    page, baseline, width, theme, density, mode
+                                target_style = render_fixture(
+                                    page, baseline, theme, density, mode
                                 )
+                                # Two images of the exact same untouched DOM.
+                                a, img_a = capture(page)
+                                stable, img_stable = capture(page)
                                 assert a == stable, f"Baseline geometry unstable: {label}"
                                 with Image.open(BytesIO(img_a)) as first, Image.open(BytesIO(img_stable)) as second:
                                     jitter = ImageChops.difference(
@@ -275,20 +293,49 @@ def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():
                                 assert jitter is None, (
                                     f"Baseline screenshot not deterministic: {label} bbox={jitter}"
                                 )
-                                b, img_b = render(
-                                    page, candidate, width, theme, density, mode
+
+                                # CSS-only A/B: retain the EXACT same DOM,
+                                # focused control, scroll position and all
+                                # non-target styles, changing one style tag.
+                                target_style.evaluate(
+                                    "(node, css) => { node.textContent = css; }",
+                                    replacement_css
                                 )
+                                b, img_b = capture(page)
                                 assert a == b, f"Computed style/geometry changed: {label}"
-                                with Image.open(BytesIO(img_a)) as left, Image.open(BytesIO(img_b)) as right:
-                                    difference = ImageChops.difference(
-                                        left.convert("RGB"), right.convert("RGB")
-                                    )
-                                    bbox = difference.getbbox()
+                                with Image.open(BytesIO(img_a)) as first, Image.open(BytesIO(img_b)) as second:
+                                    bbox = ImageChops.difference(
+                                        first.convert("RGB"), second.convert("RGB")
+                                    ).getbbox()
                                 if bbox is not None:
                                     save_private_diff(label, img_a, img_b)
                                 assert bbox is None, f"Screenshot changed: {label} bbox={bbox}"
                                 assert b["overflow"] == a["overflow"], (
                                     f"Horizontal overflow changed: {label}"
+                                )
+
+                                # Round-trip the CSS. If source replacement
+                                # itself changed paint state irreversibly,
+                                # fail rather than misreport exact equality.
+                                target_style.evaluate(
+                                    "(node, css) => { node.textContent = css; }",
+                                    original_css
+                                )
+                                roundtrip, img_roundtrip = capture(page)
+                                assert a == roundtrip, (
+                                    f"CSS round-trip geometry changed: {label}"
+                                )
+                                with Image.open(BytesIO(img_a)) as first, Image.open(BytesIO(img_roundtrip)) as second:
+                                    roundtrip_bbox = ImageChops.difference(
+                                        first.convert("RGB"), second.convert("RGB")
+                                    ).getbbox()
+                                if roundtrip_bbox is not None:
+                                    save_private_diff(
+                                        label + ":css-roundtrip", img_a, img_roundtrip
+                                    )
+                                assert roundtrip_bbox is None, (
+                                    f"CSS round-trip pixels changed: {label} "
+                                    f"bbox={roundtrip_bbox}"
                                 )
                                 comparisons += 1
                     finally:
