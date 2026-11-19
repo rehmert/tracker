@@ -163,9 +163,26 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                         expect(dock).to_be_visible()
                         expect(row).to_be_visible()
                         assert row.evaluate("el=>getComputedStyle(el).position") == "sticky"
-                        for el in (save, cancel):
+                        controls = [save, cancel]
+                        if kind == "lab":
+                            add_row = row.locator('button[type="button"][hx-get="/labs/row"]')
+                            controls.insert(0, add_row)
+                            assert row.evaluate("""el =>
+                                getComputedStyle(el).gridTemplateColumns.split(' ').length
+                            """) == 3
+                        boxes = []
+                        for el in controls:
                             box = el.bounding_box()
-                            assert box and box["height"] >= 44, (kind,width,density,scheme,box)
+                            assert box and box["height"] >= 44, (
+                                kind, width, density, scheme, box
+                            )
+                            boxes.append(box)
+                        if kind == "lab":
+                            # Add row / Save / Cancel should share one compact
+                            # row, not force a tall second row behind the dock.
+                            assert abs(boxes[0]["y"] - boxes[1]["y"]) <= 2
+                            assert abs(boxes[1]["y"] - boxes[2]["y"]) <= 2
+                            assert boxes[0]["x"] < boxes[1]["x"] < boxes[2]["x"]
                         action = row.bounding_box()
                         nav = dock.bounding_box()
                         assert action and nav
