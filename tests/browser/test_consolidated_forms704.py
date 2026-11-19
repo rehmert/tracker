@@ -187,9 +187,29 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                         nav = dock.bounding_box()
                         assert action and nav
                         assert action["y"] >= -1
-                        assert action["y"] + action["height"] <= nav["y"] - 4, (
-                            kind,width,density,scheme,action,nav
-                        )
+                        clearance = nav["y"] - (action["y"] + action["height"])
+                        if clearance < 4:
+                            diagnostics = row.evaluate("""el => {
+                                const chain = [];
+                                for (let n = el; n && chain.length < 7; n = n.parentElement) {
+                                    const s = getComputedStyle(n), r = n.getBoundingClientRect();
+                                    chain.push({
+                                        tag: n.tagName, className: String(n.className).slice(0,90),
+                                        position: s.position, bottom: s.bottom,
+                                        overflowX: s.overflowX, overflowY: s.overflowY,
+                                        top: Math.round(r.top), height: Math.round(r.height),
+                                        scrollTop: n.scrollTop
+                                    });
+                                }
+                                return {
+                                    viewport: innerHeight, windowY: scrollY,
+                                    documentHeight: document.documentElement.scrollHeight, chain
+                                };
+                            }""")
+                            raise AssertionError(
+                                (kind, width, density, scheme, action, nav,
+                                 "dock_clearance", clearance, diagnostics)
+                            )
                     else:
                         expect(dock).to_be_hidden()
                         assert row.evaluate("el=>getComputedStyle(el).position") == "static"
