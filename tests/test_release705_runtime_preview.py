@@ -266,3 +266,34 @@ def test_705_583_reconstitution_calculator_field_is_associated_with_signed_post(
     assert 'scripts/tracker_csrf_runtime_report583.py' in runner
     assert 'scripts/tracker_csrf_fixture583.py" verify' in runner
     assert runner.count("tests/browser/test_csrf_preparations583.py") == 1
+
+
+def test_705_580_compound_lifecycle_waits_for_persisted_table_after_303():
+    # A redirect flash message can contain the just-created/edited name
+    # even though the table is still the pre-navigation DOM. Never use
+    # flash body text to certify Compound persistence.
+    text = (ROOT / "tests/browser/test_csrf_workflows580.py").read_text()
+    start = text.index("def test_580_compound_create_edit_delete_real_native_forms")
+    end = text.index("def test_580_vitals_create_edit_htmx_delete")
+    body = text[start:end]
+    assert 'expect(page.locator("body")).to_contain_text(name)' not in body
+    assert 'expect(page.locator("body")).to_contain_text(changed)' not in body
+    assert body.count('    _visit(page, base, "/compounds")') == 3
+    for status in ("created", "updated", "deleted"):
+        assert f'urlsplit({status}.headers.get("location", "")).path == "/compounds"' in body
+    for marker in (
+        'row = page.locator("tr").filter(has_text=name)',
+        'row = page.locator("tr").filter(has_text=changed)',
+        'expect(page.locator("tr").filter(has_text=changed)).to_have_count(0)',
+    ):
+        assert marker in body
+    assert body.index('created = _submit(') < body.index(
+        '    _visit(page, base, "/compounds")'
+    ) < body.index('row = page.locator("tr").filter(has_text=name)')
+    assert body.index('updated = _submit(') < body.index(
+        'row = page.locator("tr").filter(has_text=changed)'
+    )
+    assert body.index('deleted = _submit(') < body.rindex(
+        'expect(page.locator("tr").filter(has_text=changed)).to_have_count(0)'
+    )
+    assert 'assert page.request.get(base + edit_path, max_redirects=0).status == 303' in body

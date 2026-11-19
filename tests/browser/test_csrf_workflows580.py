@@ -157,9 +157,13 @@ def test_580_compound_create_edit_delete_real_native_forms(tab, scheme):
     assert create.locator('input[name="csrf_token"]').input_value() == token
     _forgery(page, base, "POST", "/compounds", data={"name": "QA forged 580"})
     create.locator('input[name="name"]').fill(name)
-    _submit(page, create.get_by_role("button", name="Add compound"), "POST", "/compounds", 303)
-    expect(page.locator("body")).to_contain_text(name)
-
+    created = _submit(page, create.get_by_role("button", name="Add compound"),
+                      "POST", "/compounds", 303)
+    assert urlsplit(created.headers.get("location", "")).path == "/compounds"
+    # The 303 POST response arrives before its navigation necessarily
+    # completes, and the flash message repeats this name. Independently
+    # GET the persisted table instead of mistaking flash text for a row.
+    _visit(page, base, "/compounds")
     row = page.locator("tr").filter(has_text=name)
     expect(row).to_have_count(1)
     edit_path, token = _open_native_get_edit(page, base, row, "compounds")
@@ -169,9 +173,10 @@ def test_580_compound_create_edit_delete_real_native_forms(tab, scheme):
     _forgery(page, base, "POST", edit_path, data={"name": "QA forged edit 580"})
     changed = name + " edited"
     edit.locator('input[name="name"]').fill(changed)
-    _submit(page, edit.get_by_role("button", name="Save changes"), "POST", edit_path, 303)
-    expect(page.locator("body")).to_contain_text(changed)
-
+    updated = _submit(page, edit.get_by_role("button", name="Save changes"),
+                      "POST", edit_path, 303)
+    assert urlsplit(updated.headers.get("location", "")).path == "/compounds"
+    _visit(page, base, "/compounds")
     row = page.locator("tr").filter(has_text=changed)
     expect(row).to_have_count(1)
     delete_path = row.locator('form[action$="/delete"]').get_attribute("action")
@@ -179,9 +184,12 @@ def test_580_compound_create_edit_delete_real_native_forms(tab, scheme):
     _forgery(page, base, "POST", delete_path)
     expect(row).to_have_count(1)
     page.on("dialog", lambda dialog: dialog.accept())
-    _submit(page, row.locator('form[action$="/delete"] button'), "POST", delete_path, 303)
-    # A successful deletion leaves a flash notification containing the
-    # deleted name; assert against the table, not the entire page body.
+    deleted = _submit(page, row.locator('form[action$="/delete"] button'),
+                      "POST", delete_path, 303)
+    assert urlsplit(deleted.headers.get("location", "")).path == "/compounds"
+    # Verify deletion against a newly retrieved table; the 303 can be
+    # observed while the browser still displays the pre-delete row.
+    _visit(page, base, "/compounds")
     expect(page.locator("tr").filter(has_text=changed)).to_have_count(0)
     assert page.request.get(base + edit_path, max_redirects=0).status == 303
     assert not errors, errors

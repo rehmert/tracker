@@ -465,3 +465,28 @@ HTTP/HTTPS module, including its genuine fixture and private evidence
 checks. A full preview first runs targeted 603, 580, and 583 cases
 before the expensive full suite. Targeted success is explicitly not
 full CSRF qualification.
+
+
+### Release 580 intermittent Compound create table race (strict preflight)
+
+The full-preview preflight intermittently failed the Compound create
+case (HTTP only, 13 of 14 Release 580 browser cases passed) even after
+the native GET Edit control repair. The failing line was a missing
+new Compound table row immediately after a 303 POST response. The
+test's prior `expect(body).to_contain_text(name)` can pass on the
+`Added NAME` flash message; it does not establish that the redirect
+has completed or that a persisted table row is visible.
+
+The repaired test now independently GETs `/compounds` after successful
+create, edit and delete POST/303 responses, checks the redirect
+destination, and verifies each record in the newly loaded table.
+It retains its real browser clicks, CSRF signed status, forged 403
+rejection, record edit and deletion checks, and strict private
+evidence receipt. This follows the existing race-safe pattern in
+the Vitals workflow. No time sleeps, forced DOM interaction, test
+skips or user-facing application changes were introduced.
+
+Because the failure was intermittent, repeat the complete isolated
+Release 580 targeted gate on separate disposable worktrees before
+attempting another full browser run. A targeted result is not a
+full-suite or global CSRF approval.
