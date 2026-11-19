@@ -14,14 +14,19 @@ No user-visible feature, form behavior or database change is intended.
   already shared identical 761px+ sizing. Factor both into the same
   `:is()` selector in the general desktop rule and the 761–1199px rule,
   preserving specificity, properties, breakpoints and media order.
-- `app/static/css/tracker-dashboard-polish688.css`: the compact Daily
-  Shortcuts tile selector repeated `align-items:center` and
-  `justify-content:center` already established for that same element in
-  the preceding shared shortcut action rule. Remove only the redundant
-  declarations, retaining compact min-height 44px and custom padding.
-- `app/templates/base.html`: update only the two CSS asset query strings
-  to `v=687-css700` and `v=688-css700` so browsers do not reuse cached
-  pre-consolidation styles. Asset order and HTML structure are unchanged.
+- `app/static/css/tracker-dashboard-polish688.css`: **unchanged**.
+  The isolated preview caught a failed attempt to remove Compact shortcut
+  centering: the earlier Release 687 stylesheet uses a more specific
+  `align-items:flex-start` rule. The later Compact `align-items:center`
+  and `justify-content:center` declarations are required for appearance
+  parity and remain intact.
+- `app/templates/base.html`: update only the changed Release 687 CSS URL
+  to `v=687-css700` so browsers do not reuse cached pre-consolidation
+  styles. The unchanged Release 688 CSS retains `v=688`; asset order and
+  HTML structure are unchanged.
+- `tests/test_shortcuts_toolbar687.py` and
+  `tests/test_dashboard_polish688.py`: align only historical asset-key
+  assertions with the 687 cache refresh; preserve behavioral assertions.
 
 No other app styles, HTML structure, Python code, JavaScript, schemas,
 endpoints, authentication, CSRF, logging or existing records are modified.
@@ -33,8 +38,9 @@ candidate in separate detached worktrees, using separate empty disposable
 SQLite data directories and two isolated `127.0.0.1` servers.
 
 1. `scripts/tracker-release-scoped700.sh` runs shell and Python syntax,
-   template parsing, new Release 700 source contracts, and the existing
-   Release 687/688/689 tests plus Release 690 asset/source guard.
+   template parsing, new Release 700 source contracts including an explicit
+   assertion that Compact centering **must override** Release 687, and
+   the existing Release 687/688/689 tests plus Release 690 source guard.
 2. `tests/browser/test_css_parity700.py` compares the real
    `app.css`, 685, 686, 687 and, where appropriate, 688/689/Workout/Daily
    CSS in actual Chromium. The static fixture covers toolbar controls,
@@ -48,7 +54,7 @@ SQLite data directories and two isolated `127.0.0.1` servers.
    the strict CSS tests: 10 real pages, 4 widths, 2 themes and 7 additional
    anchored sections, totaling **136 comparisons** with the previously
    defined small difference threshold and overflow protection.
-4. The preview enforces an exact eight-file allowlist and strict baseline
+4. The preview enforces an exact nine-file allowlist and strict baseline
    and candidate SHA verification. It will not install, change main or
    touch production, and makes no network downloads.
 
