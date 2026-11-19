@@ -10,6 +10,7 @@ BASE = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
 CSS687 = (ROOT / "app/static/css/tracker-shortcuts-toolbar687.css").read_text(encoding="utf-8")
 CSS688 = (ROOT / "app/static/css/tracker-dashboard-polish688.css").read_text(encoding="utf-8")
 PREVIEW = (ROOT / "scripts/tracker-preview700.sh").read_text(encoding="utf-8")
+PARITY = (ROOT / "tests/browser/test_css_parity700.py").read_text(encoding="utf-8")
 
 
 def test_700_shared_search_sizing_is_deduplicated_at_both_breakpoints():
@@ -73,6 +74,13 @@ def test_700_preview_is_pinned_scoped_private_and_runs_both_visual_gates():
     assert 'TRACKER_DATA_DIR="$BASE_DATA"' in PREVIEW
     assert 'TRACKER_DATA_DIR="$CANDIDATE_DATA"' in PREVIEW
     assert "tests/browser/test_css_parity700.py" in PREVIEW
+    assert 'TRACKER_700_PARITY_ARTIFACT_DIR="$ARTIFACTS"' in PREVIEW
+    assert "context.route(\"**/*\", lambda route: route.abort())" in PARITY
+    assert "Baseline screenshot not deterministic" in PARITY
+    assert "page = context.new_page()" in PARITY
+    assert "ref_page, candidate_page" not in PARITY
+    assert "STABLE_STYLE" in PARITY
+    assert "save_private_diff" in PARITY
     assert "scripts/tracker_visual_regression698.py" in PREVIEW
     assert "RELEASE_700_PREVIEW=PASSED_ISOLATED_NO_INSTALL" in PREVIEW
     assert "git worktree add --detach" in PREVIEW
