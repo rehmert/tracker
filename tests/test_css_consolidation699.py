@@ -1,7 +1,7 @@
 """Release 699: source contracts for the first CSS consolidation increment.
 
-Only the Release 685/686 density stylesheets may change. Earlier computed
-behavior is independently tested in the original 685 and 686 test modules.
+Only the Release 685/686 density stylesheets and their cache-key references
+in base.html may change. The original 685/686 tests retain prior behavior.
 """
 from pathlib import Path
 
