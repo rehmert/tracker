@@ -71,21 +71,31 @@ must still reach application validation (422), proving strict mode is not
 simply blocking all writes.
 
 A **second** isolated preview still stopped before requests, reporting
-that all 15 critical write routes were absent. That means the test's
-existing `isinstance(route, APIRoute)`-only discovery path was unusable
-for this runtime; the exact route-class discrepancy remains to be
-confirmed by a real diagnostic. The revised test enumerates actual
-ASGI route metadata (`path` and `methods`) without depending on
-one FastAPI class identity, handles nested non-secondary mounts, and
-has an independent fake-route-shape regression. If critical routes are
-still missing, the failure reports top-level registered route count
-plus sanitized path/method/class samples. The strict 403 negative
-matrix and 15 critical-route sentinels remain unchanged.
+that all 15 critical write routes were absent. An attempted structural
+fallback also failed in the third preview. The third diagnostic
+identified the actual FastAPI 0.162.0 runtime layout: 76 top-level ASGI
+entries, including multiple `fastapi.routing._IncludedRouter` objects
+whose `path` and `methods` attributes are both absent.
 
-The real full source preview **must rerun** against the corrected exact
-SHA; neither earlier preview passed, and no DEV/PROD deployment is
-authorized. The registered-route canary now executes **first**, before
-longer historical regression tests.
+**Verified root cause from the exact upstream FastAPI 0.162.0 source:**
+`include_router()` uses lazy `_IncludedRouter` wrappers. FastAPI's
+`iter_route_contexts(app.routes)` resolves these via
+`_IncludedRouter.effective_route_contexts()`, returning effective
+`RouteContext.path` and `RouteContext.methods` with nested prefixes
+preserved. Reading either only top-level `APIRoute` objects or only
+top-level `path`/`methods` inevitably misses the business routes.
+The test now calls that exact framework iterator, and exercises it
+against **real FastAPI nested include_router registrations**, not a
+home-grown SimpleNamespace that could never catch this regression.
+
+The strict 403 negative matrix and 15 critical-route sentinels remain
+unchanged. The registered-route smoke runs first, followed by historical
+source contracts, and exposes safe inventory diagnostics on mismatch.
+No installed DEV or PROD configuration has been changed.
+
+The isolated preview **must run** against the corrected exact SHA. All
+three previous previews exited 1; no source-only pass, security
+activation, reproducibility certification or deployment is claimed.
 
 **Required before activating strict mode on any installed host:**
 
