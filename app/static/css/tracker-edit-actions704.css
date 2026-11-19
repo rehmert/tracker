@@ -1,0 +1,88 @@
+/* Release 704 — one reusable phone edit-actions pattern for remaining forms.
+   Applies ONLY to explicit opt-in form action rows; desktop layout unchanged.
+   Historical 702/703 editors retain their already-qualified rules. */
+@media screen and (max-width: 760px) {
+  #main-content form > .tracker-edit-actions704 {
+    position: sticky;
+    bottom: calc(4.7rem + env(safe-area-inset-bottom, 0px));
+    z-index: 29; /* The fixed mobile dock is z-index 30. */
+    box-sizing: border-box;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: .45rem;
+    width: 100%;
+    min-width: 0;
+    margin: .7rem 0 .3rem;
+    padding: .55rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .75rem;
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    box-shadow: 0 -3px 16px rgba(0,0,0,.1);
+  }
+
+  #main-content form > .tracker-edit-actions704 > :is(button, a) {
+    box-sizing: border-box;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    margin: 0;
+    padding: .55rem .4rem;
+    border-radius: .65rem;
+    text-decoration: none;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Navigation remains a real anchor; only its appearance changes. */
+  #main-content form > .tracker-edit-actions704 > a {
+    border: 1px solid var(--rule, #cbd5e1);
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    font-weight: 650;
+  }
+
+  /* Notes' Discard local draft is a separate, non-submitting button.
+     Let the third existing action occupy a full row at narrow widths. */
+  #main-content form > .tracker-edit-actions704:has(#notes-discard-draft) > a {
+    grid-column: 1 / -1;
+  }
+
+  #main-content form > .tracker-edit-actions704 > :is(a,button):focus-visible {
+    outline: 3px solid var(--teal, #1265ad);
+    outline-offset: 2px;
+  }
+
+  #main-content .tracker-edit-feedback704[role="alert"]:not([hidden]) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin: .4rem 0;
+    padding: .65rem .75rem;
+    border: 1px solid var(--brick, #b54141);
+    border-radius: .6rem;
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    grid-column: 1 / -1;
+  }
+
+  /* Existing shell hides bottom navigation while focused in an editable
+     control; the action row also returns to document flow in this state. */
+  :root.tracker-mobile-editing #main-content form > .tracker-edit-actions704 {
+    position: static;
+  }
+}
+
+@media print {
+  #main-content form > .tracker-edit-actions704 {
+    position: static !important;
+    box-shadow: none !important;
+  }
+}
