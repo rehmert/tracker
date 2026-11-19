@@ -27,7 +27,7 @@ print("RELEASE_695_JINJA_SYNTAX=PASSED")
 PY
 "$PY" - <<'PY'
 from pathlib import Path
-css = Path("app/static/css/tracker-productivity674.css").read_text(encoding="utf-8")
+css = Path("app/static/css/tracker-today695.css").read_text(encoding="utf-8")
 assert css.count("{") == css.count("}")
 assert ".tracker-daily509 .ux695-summary-link" in css
 print("RELEASE_695_SCOPED_CSS=PASSED")
