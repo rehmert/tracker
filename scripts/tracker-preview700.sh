@@ -30,12 +30,13 @@ git merge-base --is-ancestor "$BASE" "$TARGET" ||
   fail "No candidate changes"
 git diff --check "$BASE" "$TARGET"
 
-# Permit only two shared CSS files, their cache-tag updates, tests and docs.
+# Permit one shared CSS file, its cache tag, focused tests and docs.
 while IFS= read -r file; do
   case "$file" in
     app/templates/base.html|\
     app/static/css/tracker-shortcuts-toolbar687.css|\
-    app/static/css/tracker-dashboard-polish688.css|\
+    tests/test_shortcuts_toolbar687.py|\
+    tests/test_dashboard_polish688.py|\
     tests/test_css_consolidation700.py|\
     tests/browser/test_css_parity700.py|\
     scripts/tracker-release-scoped700.sh|\
