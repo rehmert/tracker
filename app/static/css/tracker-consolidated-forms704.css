@@ -47,10 +47,12 @@
     grid-column: 1 / -1;
   }
 
-  /* The manual Lab form's Add Row is not a submit. Keep it reachable
-     while Save/Cancel share the next row, in original DOM order. */
-  #main-content form > .tracker-form-actions704--lab > :first-child {
-    grid-column: 1 / -1;
+  /* Three short Lab actions fit side by side at 320px. A two-row
+     sticky bar was 121px tall and overlapped the bottom dock on the
+     narrowest phone; keep the original Add Row / Save / Cancel order
+     in one touch-friendly row without changing their form behavior. */
+  #main-content form > .tracker-form-actions704--lab {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   #main-content form > .tracker-form-actions704 > a.btn {
