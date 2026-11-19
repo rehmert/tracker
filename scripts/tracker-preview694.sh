@@ -7,7 +7,7 @@ umask 077
 APP=/opt/tracker
 PY="$APP/.venv/bin/python"
 BASE=4d752be1a62ffa8a5feba78a50033e980a30b26c
-REF=release-694-navigation-focus
+REF=release/694-navigation-focus
 
 fail() { echo "RELEASE_694_PREVIEW_ERROR=$*" >&2; exit 1; }
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev &&
@@ -36,7 +36,7 @@ while IFS= read -r path; do
   case "$path" in
     app/static/tracker_focus.js|app/static/nav_sort.js|app/templates/base.html|\
     tests/test_navigation_focus.py|tests/browser/test_navigation.py|\
-    scripts/tracker-preview694.sh) ;;
+    scripts/tracker-preview694.sh|scripts/tracker-release-scoped694.sh) ;;
     *) fail "Out-of-scope candidate path: $path" ;;
   esac
 done < <(git diff --name-only "$BASE" "$TARGET")
@@ -74,25 +74,7 @@ export PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/test-data"
 mkdir -m 700 "$TRACKER_DATA_DIR"
 cd "$QA"
 
-"$PY" -m py_compile tests/test_navigation_focus.py tests/browser/test_navigation.py
-"$PY" - <<'PY'
-from jinja2 import Environment
-from pathlib import Path
-Environment().parse(Path("app/templates/base.html").read_text(encoding="utf-8"))
-print("RELEASE_694_JINJA_SYNTAX=PASSED")
-PY
-if command -v node >/dev/null 2>&1; then
-  node --check app/static/tracker_focus.js
-  node --check app/static/nav_sort.js
-  echo "RELEASE_694_JS_SYNTAX=PASSED"
-else
-  echo "RELEASE_694_JS_SYNTAX=NOT_RUN_NODE_UNAVAILABLE"
-fi
-"$PY" -m pytest -q --tb=short --maxfail=1 \
-  tests/test_navigation_focus.py \
-  tests/test_nav_preferences_v23.py \
-  tests/test_inventory_alerts_nav.py
-echo "RELEASE_694_SOURCE_TESTS=PASSED"
+bash scripts/tracker-release-scoped694.sh "$PY"
 
 # Run only focused browser navigation tests against an isolated loopback
 # candidate. Never point Playwright at installed DEV or production.
