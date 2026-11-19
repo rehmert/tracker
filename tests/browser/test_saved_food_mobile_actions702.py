@@ -90,7 +90,12 @@ def test_702_mobile_food_editor_actions_reachable_without_duplicate_submit(width
             requests = []
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.on("request", lambda request: requests.append(request.url))
+            # The real editor template includes a CSS link; about:blank
+            # may attempt a GET before the local stylesheet is injected.
+            # Track only writes: opening/editing must never send a POST.
+            page.on("request", lambda request: requests.append(
+                (request.method, request.url)
+            ) if request.method.upper() != "GET" else None)
             page.route("**/*", lambda route: route.abort())
             page.set_content(render_editor())
             page.add_style_tag(content=BASE_CSS)
@@ -174,6 +179,9 @@ def test_702_mobile_food_editor_actions_reachable_without_duplicate_submit(width
                     window.__saveData = [...new FormData(form).keys()];
                 });
             }""")
+            submit.focus()
+            page.keyboard.press("Tab")
+            expect(cancel).to_be_focused()
             submit.click()
             assert page.evaluate("window.__saveAttempts") == 1
             assert page.evaluate(
