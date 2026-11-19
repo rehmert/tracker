@@ -51,15 +51,21 @@
      sticky bar was 121px tall and overlapped the bottom dock on the
      narrowest phone; keep the original Add Row / Save / Cancel order
      in one touch-friendly row without changing their form behavior. */
+  /* Manual Labs has a separate CSV form above it. When the manual form
+     starts below the safe sticky area, CSS sticky is constrained by the
+     form's top boundary and can cover the mobile dock. Default to normal
+     flow until the read-only Release 704 scroll guard observes enough
+     room to make this action row sticky without overlap. */
   #main-content form > .tracker-form-actions704--lab {
+    position: static;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    /* When the manual form begins near the viewport bottom, sticky
-       positioning cannot lift this row above its containing form.
-       Remove the leading margin and minimize chrome instead of
-       shrinking the 48px touch targets or ignoring dock overlap. */
     margin-top: 0;
     gap: .25rem;
     padding: .35rem;
+  }
+
+  #main-content form.tracker-lab-actions704-active > .tracker-form-actions704--lab {
+    position: sticky;
   }
 
   #main-content form > .tracker-form-actions704--lab > :is(button, a) {
