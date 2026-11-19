@@ -3,10 +3,17 @@
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-labs-overview.css?v=20261109-527">
 <script src="/static/js/tracker-labs-overview.js?v=20261108-497" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 <h1>Lab results</h1>
-<p class="note">Enter results exactly as printed on your report, including the unit and the lab's own reference range if it shows one. The charts show your numbers over time with that printed range shaded. This page doesn't tell you what a result means.</p>
-<p class="row">
-  <a class="btn primary" href="/labs/new">Add a lab report</a>
+<p class="note">Add reports and find saved results here. Trends appear below your reports.</p>
+<details class="tracker-flow696-guide">
+  <summary>About lab data and printed reference ranges</summary>
+  <p class="note">Enter results exactly as printed on your report, including the unit and the lab's own reference range if it shows one. The charts show your numbers over time with that printed range shaded. This page doesn't tell you what a result means.</p>
+</details>
+<p class="row tracker-flow696-actions">
+  <a class="btn primary tracker-flow696-primary" href="/labs/new">Add a lab report</a>
+  <a class="btn" href="#labs-reports-section">Saved reports</a>
+  {% if cards %}<a class="btn" href="#lab-trends-section">Analyte trends</a>{% endif %}
   <a class="btn" href="/labs/compare">Compare two reports</a>
   {% if reports %}
   <a class="btn" href="/labs/new?copy_from={{ reports[0].id }}">
@@ -14,6 +21,35 @@
   </a>
   {% endif %}
 </p>
+
+<!-- Release 696: recent reports before potentially long analyte chart grid. -->
+<section id="labs-reports-section">
+  <h2>Reports</h2>
+  <div class="labs-reports-controls">
+    <label class="field" for="labs-report-search"><span>Find report by date or lab</span>
+      <input id="labs-report-search" type="search" placeholder="Search saved reports…" autocomplete="off" aria-controls="labs-reports-table">
+    </label>
+    <label class="field" for="labs-reports-sort"><span>Report order</span>
+      <select id="labs-reports-sort" aria-controls="labs-reports-table">
+        <option value="date-desc" selected>Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="lab-asc">Lab name A–Z</option>
+        <option value="results-desc">Most results</option>
+      </select>
+    </label>
+    <button type="button" id="labs-reports-clear">Reset report filters</button>
+    <span id="labs-reports-count" role="status" aria-live="polite">Showing {{ reports|length }} of {{ reports|length }} reports.</span>
+  </div>
+  <p id="labs-reports-empty" class="note" hidden>No reports match that search.</p>
+  <div class="scroll"><table id="labs-reports-table">
+    <thead><tr><th>Drawn</th><th>Lab</th><th class="n">Results</th><th>File</th></tr></thead>
+    <tbody>
+    {% for r in reports %}
+    <tr data-labs-report-row data-lab-report-date="{{ r.drawn_on.isoformat() }}" data-lab-report-name="{{ r.lab_name }}" data-lab-report-results="{{ r.results|length }}"><td><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td><td>{{ r.lab_name or '—' }}</td><td class="n">{{ r.results|length }}</td><td>{{ 'yes' if r.stored_name else '—' }}</td></tr>
+    {% else %}<tr><td colspan="4" class="empty">No lab reports yet.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
 
 {% if cards %}
 <section id="lab-trends-section">
@@ -96,31 +132,4 @@
 </section>
 {% endif %}
 
-<section id="labs-reports-section">
-  <h2>Reports</h2>
-  <div class="labs-reports-controls">
-    <label class="field" for="labs-report-search"><span>Find report by date or lab</span>
-      <input id="labs-report-search" type="search" placeholder="Search saved reports…" autocomplete="off" aria-controls="labs-reports-table">
-    </label>
-    <label class="field" for="labs-reports-sort"><span>Report order</span>
-      <select id="labs-reports-sort" aria-controls="labs-reports-table">
-        <option value="date-desc" selected>Newest first</option>
-        <option value="date-asc">Oldest first</option>
-        <option value="lab-asc">Lab name A–Z</option>
-        <option value="results-desc">Most results</option>
-      </select>
-    </label>
-    <button type="button" id="labs-reports-clear">Reset report filters</button>
-    <span id="labs-reports-count" role="status" aria-live="polite">Showing {{ reports|length }} of {{ reports|length }} reports.</span>
-  </div>
-  <p id="labs-reports-empty" class="note" hidden>No reports match that search.</p>
-  <div class="scroll"><table id="labs-reports-table">
-    <thead><tr><th>Drawn</th><th>Lab</th><th class="n">Results</th><th>File</th></tr></thead>
-    <tbody>
-    {% for r in reports %}
-    <tr data-labs-report-row data-lab-report-date="{{ r.drawn_on.isoformat() }}" data-lab-report-name="{{ r.lab_name }}" data-lab-report-results="{{ r.results|length }}"><td><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td><td>{{ r.lab_name or '—' }}</td><td class="n">{{ r.results|length }}</td><td>{{ 'yes' if r.stored_name else '—' }}</td></tr>
-    {% else %}<tr><td colspan="4" class="empty">No lab reports yet.</td></tr>{% endfor %}
-    </tbody>
-  </table></div>
-</section>
 {% endblock %}
