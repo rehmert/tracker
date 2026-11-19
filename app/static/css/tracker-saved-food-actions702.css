@@ -1,0 +1,78 @@
+/* Release 702 — only the existing Saved Food editor actions are sticky.
+   No clone controls, no changes to form submission or desktop layout. */
+@media screen and (max-width: 760px) {
+  #main-content .food-saved-edit669 .tracker-food-editor-back702 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 44px;
+    max-width: 100%;
+    padding: .48rem .75rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .65rem;
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    text-decoration: none;
+    font-weight: 650;
+  }
+
+  /* Bottom dock is ~4rem tall. Reserve additional clearance and safe area,
+     while allowing the original action row to return to normal document flow. */
+  #main-content .food-saved-edit669 form > .ux673-action-row.tracker-food-editor-actions702 {
+    position: sticky;
+    bottom: calc(4.7rem + env(safe-area-inset-bottom, 0px));
+    z-index: 29; /* Below the existing mobile dock's z-index: 30. */
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    gap: .45rem;
+    padding: .55rem;
+    margin: .7rem 0 .3rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .75rem;
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    box-shadow: 0 -3px 16px rgba(0, 0, 0, .1);
+  }
+
+  #main-content .food-saved-edit669 .tracker-food-editor-actions702 > :is(button, a) {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: .55rem .4rem;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  #main-content .food-saved-edit669 :is(
+    .tracker-food-editor-back702,
+    .tracker-food-editor-actions702 > button,
+    .tracker-food-editor-actions702 > a
+  ):focus-visible {
+    outline: 3px solid var(--teal, #1265ad);
+    outline-offset: 2px;
+  }
+
+  /* The OS keyboard hides the dock while a field is focused.
+     Avoid a floating form bar obscuring active inputs in this state. */
+  :root.tracker-mobile-editing #main-content .food-saved-edit669
+  form > .ux673-action-row.tracker-food-editor-actions702 {
+    position: static;
+  }
+}
+
+@media print {
+  #main-content .food-saved-edit669 form > .ux673-action-row.tracker-food-editor-actions702 {
+    position: static !important;
+    box-shadow: none !important;
+  }
+}
