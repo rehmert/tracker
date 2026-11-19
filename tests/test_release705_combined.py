@@ -93,6 +93,25 @@ def test_705_no_symlinks_or_public_receipts(tmp_path, monkeypatch):
         lock.create(wheels, output)
 
 
+def test_705_exact_post653_unqualified_routes_exist_in_current_source():
+    from scripts.tracker_csrf_reconcile627 import (
+        POST_654_PLUS_UNQUALIFIED_ROUTES,
+        POST_BASELINE_ADDITIONS,
+    )
+    from scripts.tracker_csrf_route_inventory620 import inventory
+
+    declared = {
+        (method, record["route"])
+        for record in inventory(ROOT)
+        for method in record["methods"]
+        if record["route"] != "<dynamic>"
+    }
+    assert len(POST_654_PLUS_UNQUALIFIED_ROUTES) == 38
+    assert POST_654_PLUS_UNQUALIFIED_ROUTES.isdisjoint(POST_BASELINE_ADDITIONS)
+    assert all(method == "POST" for method, _ in POST_654_PLUS_UNQUALIFIED_ROUTES)
+    assert POST_654_PLUS_UNQUALIFIED_ROUTES <= declared
+
+
 def test_705_stays_read_only_and_preserves_historical_qualifiers():
     lock_source = (ROOT / "scripts/tracker_dependency_lock705.py").read_text()
     csrf_source = (ROOT / "scripts/tracker_csrf_closeout705.py").read_text()
@@ -124,6 +143,7 @@ def test_705_stays_read_only_and_preserves_historical_qualifiers():
     ):
         assert module in gate
     assert "RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED" in gate
+    assert "RELEASE_705_HISTORICAL_CSRF_RECONCILIATION=PASSED" in gate
     preview = (ROOT / "scripts/tracker-preview705.sh").read_text()
     assert "BASE=24cb9ec47417e001c3f96dfed630e3b8b0264d93" in preview
     assert "RELEASE_705_PREVIEW=PASSED_ISOLATED_NO_INSTALL" in preview
