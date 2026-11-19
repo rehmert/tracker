@@ -3,6 +3,8 @@
 <link rel="stylesheet" href="/static/notes_release_47_50b.css">
 {% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-edit-actions704.css?v=704">
+<script defer src="/static/js/tracker-edit-feedback704.js?v=704"></script>
 <h1>{{ 'Edit page' if p else 'New page' }}</h1>
 <form method="post" action="{{ '/pages/' ~ p.id if p else '/pages' }}">
   <div class="grid">
@@ -76,7 +78,8 @@
   <link rel="stylesheet" href="/static/notes_editor.css">
   <script src="/static/notes_editor.js" defer></script>
 
-  <p class="row">
+  <p class="tracker-edit-feedback704" role="alert" hidden></p>
+  <p class="row tracker-edit-actions704" aria-label="Notes editor actions">
     <button class="primary">Save page</button>
     <button type="button" id="notes-discard-draft">Discard local draft</button>
     <a class="btn" href="{{ '/pages/' ~ p.id if p else '/pages' }}">Cancel</a>
