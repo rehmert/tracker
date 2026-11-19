@@ -44,6 +44,7 @@ STYLES = (
     A / "css/tracker-consolidated-forms704.css",
 )
 MOBILE_JS = (A / "js/tracker-mobile-shell507.js").read_text(encoding="utf-8")
+LAB_STICKY_JS = (A / "js/tracker-lab-sticky-actions704.js").read_text(encoding="utf-8")
 DENSITIES = ("compact", "balanced", "comfortable")
 SCHEMES = ("light", "dark")
 WIDTHS = (320, 390, 430, 760, 1024)
@@ -105,6 +106,8 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                     A / "css/tracker-workouts658.css"
                 ).read_text(encoding="utf-8"))
             page.add_script_tag(content=MOBILE_JS)
+            if kind == "lab":
+                page.add_script_tag(content=LAB_STICKY_JS)
 
             if kind == "notes":
                 form = page.locator('form[action="/pages"]')
@@ -162,6 +165,60 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                     if width <= 760:
                         expect(dock).to_be_visible()
                         expect(row).to_be_visible()
+                        if kind == "lab":
+                            # At the top of the page, the CSV form precedes
+                            # the manual form. The latter can start within
+                            # the dock's region in Comfortable density.
+                            # Require the original action row to stay in
+                            # natural flow until the manual form reaches the
+                            # genuinely safe sticky region.
+                            safe_at_top = page.evaluate("""() => {
+                                const form = document.querySelector(
+                                    "form[data-lab-manual-entry]"
+                                );
+                                const bar = form.querySelector(
+                                    ":scope > .tracker-form-actions704--lab"
+                                );
+                                const dock = document.querySelector(
+                                    ".tracker-mobile-dock"
+                                );
+                                return form.getBoundingClientRect().top +
+                                    bar.getBoundingClientRect().height + 16 <=
+                                    dock.getBoundingClientRect().top;
+                            }""")
+                            page.wait_for_function("""expected =>
+                                document.querySelector("form[data-lab-manual-entry]")
+                                  .classList.contains("tracker-lab-actions704-active")
+                                  === expected
+                            """, arg=safe_at_top)
+                            if not safe_at_top:
+                                assert row.evaluate(
+                                    "el=>getComputedStyle(el).position"
+                                ) == "static"
+                                offscreen = row.bounding_box()
+                                nav_initial = dock.bounding_box()
+                                assert offscreen and nav_initial
+                                assert (offscreen["y"] >=
+                                        nav_initial["y"] + nav_initial["height"]) or (
+                                    offscreen["y"] + offscreen["height"] <=
+                                    nav_initial["y"] - 4
+                                ), (kind, width, density, scheme,
+                                    "nonsticky_must_not_cover_dock", offscreen, nav_initial)
+                            # Enter the manual form. The original actions
+                            # must then activate without crossing the dock.
+                            page.evaluate("""() => {
+                                const form = document.querySelector(
+                                    "form[data-lab-manual-entry]"
+                                );
+                                window.scrollTo(
+                                    0, window.scrollY +
+                                    form.getBoundingClientRect().top - 120
+                                );
+                            }""")
+                            page.wait_for_function("""() =>
+                                document.querySelector("form[data-lab-manual-entry]")
+                                  .classList.contains("tracker-lab-actions704-active")
+                            """)
                         assert row.evaluate("el=>getComputedStyle(el).position") == "sticky"
                         controls = [save, cancel]
                         if kind == "lab":
