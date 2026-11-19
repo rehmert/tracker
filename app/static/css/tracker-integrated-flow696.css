@@ -129,16 +129,23 @@
 /* The legacy Vials jump bar scrolls sideways on phones. A nested disclosure
    needs visible overflow, so let this one bar wrap rather than clip its links. */
 @media(max-width:760px) {
-  .tracker-vial-jumps603.tracker-flow696-actions {
+  .tracker-vial-jumps603 {
     overflow:visible;
     flex-wrap:wrap;
     overscroll-behavior:auto;
     padding:0;
   }
-  .tracker-vial-jumps603.tracker-flow696-actions > .tracker-flow696-more {
+  .tracker-vial-jumps603 > .tracker-flow696-more {
     grid-column:1/-1;
   }
-  .tracker-vial-jumps603.tracker-flow696-actions > .tracker-flow696-more > summary {
+  .tracker-vial-jumps603 > .tracker-flow696-more > summary {
     width:100%;
   }
 }
+
+.tracker-vial-jumps603 > a.tracker-flow696-primary {
+  background:var(--teal,#1265ad);
+  color:var(--teal-ink,#fff);
+  border-color:var(--teal,#1265ad);
+}
+.tracker-vial-jumps603 > a { min-height:44px; }
