@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import re
 
-from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 from app import config
@@ -41,26 +40,63 @@ CRITICAL_WRITES = frozenset({
 })
 
 
-def registered_writes() -> tuple[tuple[str, str], ...]:
+def enumerate_unsafe_routes(route_items) -> set[tuple[str, str]]:
+    """Inspect actual ASGI registered routes by shape, not a class assumption.
+
+    FastAPI/Starlette route classes and wrappers can change independently of
+    the route metadata. Recurse only into mounted non-secondary applications.
+    Avoid a guessed minimum route count: fail closed on critical sentinels
+    after examining the runtime route inventory.
+    """
     routes = set()
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
-            continue
-        for method in (route.methods or set()) & METHODS:
-            if route.path in SIGNED_SESSION_POST_PATHS520:
+
+    def visit(items, prefix="", depth=0):
+        if depth > 4:
+            raise AssertionError("Unexpectedly nested ASGI router hierarchy")
+        for route in items:
+            path = getattr(route, "path", "")
+            if not isinstance(path, str) or not path.startswith("/"):
                 continue
-            # Mounted /secondary has independent session CSRF ownership.
-            if route.path.startswith("/secondary/"):
+            full_path = prefix + path
+            if full_path.startswith(("/secondary/", "/static/")):
                 continue
-            routes.add((method, route.path))
+            methods = getattr(route, "methods", None)
+            if methods is not None:
+                for method in {str(item).upper() for item in methods} & METHODS:
+                    if not (
+                        method == "POST"
+                        and full_path in SIGNED_SESSION_POST_PATHS520
+                    ):
+                        routes.add((method, full_path))
+            nested = getattr(route, "routes", None)
+            if nested is not None and not methods:
+                visit(nested, full_path.rstrip("/"), depth + 1)
+
+    visit(route_items)
+    return routes
+
+
+def registered_writes() -> tuple[tuple[str, str], ...]:
+    actual = tuple(app.routes)
+    routes = enumerate_unsafe_routes(actual)
     missing = CRITICAL_WRITES - routes
     if missing:
+        # Display only route classes, safe route paths and methods. Never
+        # expose cookies, tokens, user data, credentials or payloads.
+        examples = [
+            (type(route).__module__ + "." + type(route).__name__,
+             getattr(route, "path", None),
+             sorted(str(x) for x in (getattr(route, "methods", None) or ())))
+            for route in actual[:24]
+        ]
         raise AssertionError(
-            "Critical registered write routes disappeared: "
+            "Critical registered write routes missing after ASGI inspection: "
             + repr(sorted(missing))
+            + "; routes discovered=" + str(len(routes))
+            + "; total top-level ASGI entries=" + str(len(actual))
+            + "; sample=" + repr(examples)
         )
     return tuple(sorted(routes))
-
 
 def sample_path(template: str) -> str:
     # All replacements are non-existent synthetic IDs or names. Missing or
