@@ -18,7 +18,8 @@ bash -n scripts/tracker-preview705.sh
 "$PY" -m py_compile \
   scripts/tracker_dependency_lock705.py \
   scripts/tracker_csrf_closeout705.py \
-  tests/test_release705_combined.py
+  tests/test_release705_combined.py \
+  tests/test_csrf_all_registered_negative705.py
 # The ASGI route inventory has twice failed before any requests were
 # exercised. Check it FIRST, including the exact missing/forged-token
 # matrix, before the historical dependency and CSRF regression set.
