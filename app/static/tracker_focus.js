@@ -1,18 +1,30 @@
+/* Release 694: everyday sidebar by default; preserve user opt-out and every route. */
 (() => {
   'use strict';
   const KEY = 'tracker.navigation.focus.v1';
+  // A concise daily navigation; every other page remains reachable through
+  // the Show all pages control and the existing page finder/search.
   const ESSENTIAL = new Set([
-    '/', '/workflow-hub', '/activity', '/calendar', '/quick-entry',
-    '/protocols', '/doses', '/dose-workspace', '/pk', '/vials',
-    '/compounds', '/purchases', '/supplies', '/coas', '/vitals',
-    '/labs', '/reports', '/backups'
+    '/', '/mobile', '/calendar', '/quick-entry', '/doses',
+    '/dose-workspace', '/protocols', '/pk', '/vials', '/purchases',
+    '/coas', '/vitals', '/workouts', '/food', '/regimen',
+    '/labs', '/health-insights', '/backups'
   ]);
+
   function init() {
     const toggle = document.getElementById('tracker-focus-toggle');
+    const sidebar = document.getElementById('tracker-focus-sidebar-toggle');
     const nav = document.getElementById('nav-sortable');
     if (!toggle || !nav) return;
-    let enabled = false;
-    try { enabled = localStorage.getItem(KEY) === 'true'; } catch (_) {}
+
+    // Existing browser choices win. Only a new/empty browser profile adopts
+    // the everyday default. Storage-blocked browsers get the same safe view.
+    let enabled = true;
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved !== null) enabled = saved === 'true';
+    } catch (_) {}
+
     function apply() {
       const active = new Set();
       nav.querySelectorAll('a[aria-current="page"]').forEach(a => {
@@ -29,13 +41,22 @@
         section.classList.toggle('tracker-focus-hidden', visible === 0);
       });
       toggle.checked = enabled;
+      if (sidebar) {
+        sidebar.textContent = enabled ? 'Show all pages' : 'Show everyday pages';
+        sidebar.setAttribute('aria-expanded', String(!enabled));
+      }
     }
-    toggle.addEventListener('change', () => {
-      enabled = toggle.checked;
+
+    function setEnabled(value) {
+      enabled = value;
       try { localStorage.setItem(KEY, String(enabled)); } catch (_) {}
       apply();
-    });
+    }
+
+    toggle.addEventListener('change', () => setEnabled(toggle.checked));
+    sidebar?.addEventListener('click', () => setEnabled(!enabled));
     apply();
+
     // Existing sidebar preferences may reorder links; reapply only on changes
     // to the navigation structure, not to class/style attributes.
     const observer = new MutationObserver(records => {
