@@ -105,6 +105,7 @@ bash scripts/tracker-release-scoped700.sh "$PY"
 TRACKER_CSS_PARITY700=1 \
 TRACKER_700_BASE_SOURCE="$BASE_QA" \
 TRACKER_700_CANDIDATE_SOURCE="$CANDIDATE_QA" \
+TRACKER_700_PARITY_ARTIFACT_DIR="$ARTIFACTS" \
   "$PY" -m pytest -q -s --tb=short --maxfail=1 \
   tests/browser/test_css_parity700.py
 echo "RELEASE_700_CSS_PARITY_BROWSER=PASSED"
