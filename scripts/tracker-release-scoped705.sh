@@ -23,17 +23,32 @@ bash -n scripts/tracker-browser-preview705.sh
   tests/test_release627_csrf_reconciliation.py \
   scripts/tracker_csrf_runtime_report579.py \
   tests/test_release579_csrf_runtime_report.py \
+  tests/test_release575_csrf_js_review.py \
+  tests/test_release576_csrf_js_triage.py \
+  tests/test_release578_csrf_route_ledger.py \
+  tests/test_release640_csrf_inventory.py \
+  tests/test_release648_prod_recovery.py \
+  tests/test_coa_multiple_test_types651.py \
   tests/test_release705_combined.py \
   tests/test_csrf_all_registered_negative705.py \
   tests/browser/test_vitals_proxy_host522.py \
   tests/browser/test_strict_csrf521.py
+# Reconcile every historical source/ledger test that pinned 50 -> 51
+# before any expensive HTTP/HTTPS browser qualification.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release575_csrf_js_review.py \
+  tests/test_release576_csrf_js_triage.py \
+  tests/test_release578_csrf_route_ledger.py \
+  tests/test_release579_csrf_runtime_report.py \
+  tests/test_release640_csrf_inventory.py \
+  tests/test_release648_prod_recovery.py::test_648_historical_csrf_witnesses_stay_unqualified \
+  tests/test_coa_multiple_test_types651.py::test_651_new_ajax_callsite_is_inventory_reviewed_but_not_historically_cleared
+echo 'RELEASE_705_51_TRACKED_JS_SOURCE_LEDGER=PASSED'
+
 # Check the exact-commit runtime runner contract before any ASGI requests.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
-  tests/test_release705_runtime_preview.py \
-  tests/test_release579_csrf_runtime_report.py::test_579_two_tracked_javascript_callsites_not_overclaimed \
-  tests/test_release579_csrf_runtime_report.py::test_705_579_only_ignores_known_gitignored_htmx_asset
+  tests/test_release705_runtime_preview.py
 echo 'RELEASE_705_BROWSER_RUNNER_CONTRACT=PASSED'
-echo 'RELEASE_705_579_SOURCE_INVENTORY=PASSED'
 
 # Check the read-only browser gate inventory FIRST; failure before ASGI.
 "$PY" -m pytest -q --tb=short --maxfail=1 \

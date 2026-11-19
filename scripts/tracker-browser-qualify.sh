@@ -63,12 +63,13 @@ else
 fi
 
 echo "ISOLATED_HTMX_VENDOR=VERIFIED"
-# Release 705: fail fast on historical tracked-JS witness drift AFTER
-# copying the ignored HTMX vendor, before launching any browser server.
+# Release 705: fail fast on all 51 tracked app callsites and the
+# explicitly unqualified Release 668 workout POST before launching browsers.
 cd "$SOURCE"
 "$PY" -B -m pytest -q --tb=short --maxfail=1 \
   tests/test_release579_csrf_runtime_report.py::test_579_two_tracked_javascript_callsites_not_overclaimed \
-  tests/test_release579_csrf_runtime_report.py::test_705_579_only_ignores_known_gitignored_htmx_asset
+  tests/test_release579_csrf_runtime_report.py::test_705_668_offline_sync_is_explicitly_pending_positive_browser_evidence \
+  tests/test_release579_csrf_runtime_report.py::test_705_668_offline_sync_request_is_reviewed_not_witnessed
 echo 'RELEASE_705_579_TRACKED_JS_PREFLIGHT=PASSED'
 ROOT="$(mktemp -d /tmp/tracker-browser-qa.XXXXXXXX)"
 DATA="$ROOT/data"
