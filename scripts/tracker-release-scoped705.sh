@@ -15,6 +15,7 @@ ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
 }
 bash -n scripts/tracker-release-scoped705.sh
 bash -n scripts/tracker-preview705.sh
+bash -n scripts/tracker-browser-preview705.sh
 "$PY" -m py_compile \
   scripts/tracker_dependency_lock705.py \
   scripts/tracker_csrf_closeout705.py \
@@ -22,6 +23,11 @@ bash -n scripts/tracker-preview705.sh
   tests/test_release627_csrf_reconciliation.py \
   tests/test_release705_combined.py \
   tests/test_csrf_all_registered_negative705.py
+# Check the exact-commit runtime runner contract before any ASGI requests.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release705_runtime_preview.py
+echo 'RELEASE_705_BROWSER_RUNNER_CONTRACT=PASSED'
+
 # Check the read-only browser gate inventory FIRST; failure before ASGI.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_browser_qualification511.py::test_511_every_browser_module_in_disposable_qualification

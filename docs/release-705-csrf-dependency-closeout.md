@@ -261,3 +261,31 @@ configuration/dependency change, and use the standard DEV-controlled
 production preflight and `--execute`.
 
 **Do not deploy or close Issues #9/#10 from a source-only preview.**
+
+## After successful 705 source preview: isolated full browser runtime stage
+
+On 2026-11-19 the operator observed a successful exact-SHA source preview
+at `fbf78b2b771ceb69712334c233fe2554c01ef6ce`:
+the Release 511 inventory (1 pass), ASGI CSRF negative canary (3 passes),
+Release 627 reconciliation (2 passes), and broader source checks
+(44 passes). The source readiness report still lists **92** routes without
+positive witnesses, **155** manual reviews, and **6** session/account routes.
+
+A separate operator-invoked `scripts/tracker-browser-preview705.sh`
+now runs the **existing full disposable 16-worker browser gate**, including
+the normal browser pass, localhost HTTP and HTTPS proxy, strict CSRF browser
+tests, and all 45 registered browser modules. It requires the exact Release
+705 candidate SHA as an argument, a clean Release 704 installed DEV main,
+the active installed DEV service, a root systemd unit, the deployment lock,
+an explicit changed-file allowlist, and a detached worktree. This is a
+**runtime qualification only**: no source deployment, systemd restart,
+database migration, dependency install, downloaded artifacts, or CSRF flag
+activation. Its temp source and data are discarded afterward. CSS parity
+699/700 are expected to skip in the ordinary full gate unless the separate
+pinned baseline inputs are provided and verified.
+
+The shell runner and a focused source contract are included in the Release
+705 source preview allowlist. Running it on DEV is the **next required
+operator stage**; GitHub source review alone does not certify runtime success.
+The full backend suite, independent offline wheelhouse replay, and positive
+signed business flows still require separate evidence before approval.
