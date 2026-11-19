@@ -87,6 +87,9 @@ def test_698_real_page_coverage_and_no_production_capture():
                        "httpx.post(", "github.com", "storage_state="):
         assert prohibited not in script
     assert 'save_failure(artifact_dir, key, old, new)' in script
+    assert 'context.route("**/*", isolated_request)' in script
+    assert 'route.abort()' in script
+    assert 'allowed_ports = {urlsplit(baseline_url).port, urlsplit(candidate_url).port}' in script
 
 
 def test_698_preview_uses_exact_pinned_checkout_and_disposable_data():
