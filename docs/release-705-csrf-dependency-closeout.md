@@ -307,3 +307,23 @@ it again after the suite, and fingerprints the locally reused HTMX vendor
 asset before and after. If a concurrent deployment changes the installed
 source or the trusted vendor byte content, the qualification fails closed.
 The source and browser runner remain isolated from installed DB records.
+
+
+### Isolated full browser QA — Release 522 Vitals fixture repair
+
+A full disposable HTTP/HTTPS browser run reached **194 passed, 2 skipped,
+1 failed**, then stopped in the Release 522 Vitals HTTPS proxy test:
+the created Vitals row was found successfully, but the test still
+waited for an obsolete `<a href="…/edit">` element. The shipped
+`vitals.html` uses a native `GET` form with a visible **Edit** button
+and hidden `days`/`events` parameters.
+
+The Release 522 browser test now checks the actual native form, clicks
+its Edit button through the HTTPS proxy, verifies the resulting GET
+response, HTTPS origin and preserved query parameters, then proceeds
+with its preexisting signed POST edit, persisted result and HTMX delete
+assertions. A Release 705 static source regression protects the fixture
+against reverting to the obsolete link selector. No app route, UI,
+middleware, installed data or security behavior is changed. A fresh
+exact-SHA runtime pass is still necessary before any positive browser
+evidence can be counted.

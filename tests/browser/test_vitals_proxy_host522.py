@@ -9,7 +9,7 @@ Never collect against an installed DEV/PROD service or real user database.
 import os
 import re
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
@@ -135,9 +135,24 @@ def test_522_real_native_https_vitals_create_edit_and_htmx_delete(tab):
     _go(page, "/vitals?days=3650")
     row = page.locator("tr").filter(has_text=label)
     expect(row).to_have_count(1)
-    edit_link = row.locator('a[href*="/edit"]').get_attribute("href")
-    assert edit_link and re.match(r"^/vitals/[1-9][0-9]*/edit", edit_link)
-    _go(page, edit_link)
+    # The shipped Vitals table renders Edit as a native GET form, not an
+    # anchor. Exercise the actual browser control through the HTTPS proxy;
+    # this preserves the user's current range/events query context.
+    edit_form = row.locator('form[method="get"][action$="/edit"]')
+    expect(edit_form).to_have_count(1)
+    edit_path = edit_form.get_attribute("action")
+    assert edit_path and re.fullmatch(r"/vitals/[1-9][0-9]*/edit", edit_path)
+    expect(edit_form.locator('input[name="days"]')).to_have_value("3650")
+    expect(edit_form.locator('input[name="events"]')).to_have_value("1")
+    with page.expect_navigation(wait_until="domcontentloaded") as nav:
+        edit_form.get_by_role("button", name="Edit", exact=True).click()
+    response = nav.value
+    assert response is not None and response.status == 200
+    edit_url = urlsplit(page.url)
+    assert edit_url.scheme == "https" and edit_url.netloc == HTTPS.netloc
+    assert edit_url.path == edit_path
+    assert parse_qs(edit_url.query) == {"days": ["3650"], "events": ["1"]}
+    assert page.evaluate("window.trackerCsrfToken?.() || ''").startswith("v1.")
     edit = page.locator('form[data-tracker-vitals-entry="edit"]')
     _fill_vitals_datetime522(edit, "2026-11-08T20:31")
     edit.locator('input[name="context"]').fill("QA Host Rewrite Edited 522")

@@ -61,3 +61,20 @@ def test_705_full_browser_preview_is_allowed_by_exact_sha_source_gate():
     assert scoped.index('RELEASE_705_BROWSER_RUNNER_CONTRACT=PASSED') < scoped.index(
         'RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED'
     )
+
+
+def test_705_https_vitals_522_uses_shipped_edit_get_form():
+    # A focused source-contract check that runs BEFORE the heavyweight
+    # browser suite; full HTTPS create/edit/delete evidence still requires
+    # executing tests/browser/test_vitals_proxy_host522.py on DEV.
+    vitals = (ROOT / "app/templates/vitals.html").read_text()
+    fixture = (ROOT / "tests/browser/test_vitals_proxy_host522.py").read_text()
+    assert 'form method="get" action="/vitals/{{ r.id }}/edit"' in vitals
+    assert 'name="days" value="{{ days }}"' in vitals
+    assert 'name="events" value="{{ 1 if events_on else 0 }}"' in vitals
+    assert "row.locator('form[method=\"get\"][action$=\"/edit\"]')" in fixture
+    assert 'get_by_role("button", name="Edit", exact=True).click()' in fixture
+    assert 'parse_qs(edit_url.query)' in fixture
+    assert 'edit_url.scheme == "https"' in fixture
+    assert 'edit_url.path == edit_path' in fixture
+    assert "row.locator('a[href*=\"/edit\"]')" not in fixture
