@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release 696: isolated Today and Quick Entry presentation preview.
+# Release 696: isolated combined daily and inventory workflow preview.
 # Never installs, promotes, or reads the installed Tracker SQLite database.
 set -Eeuo pipefail
 umask 077
@@ -80,7 +80,7 @@ cd "$QA"
 
 bash scripts/tracker-release-scoped696.sh "$PY"
 
-# Run only focused browser daily-workflow tests against an isolated loopback
+# Run only focused browser integrated-workflow tests against an isolated loopback
 # candidate. Never point Playwright at installed DEV or production.
 VENDOR_SRC="$APP/app/static/vendor/htmx.min.js"
 VENDOR_DST="$QA/app/static/vendor/htmx.min.js"
