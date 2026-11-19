@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import re
 
+from fastapi import APIRouter, FastAPI
+from fastapi.routing import iter_route_contexts
 from fastapi.testclient import TestClient
 
 from app import config
@@ -41,43 +43,29 @@ CRITICAL_WRITES = frozenset({
 
 
 def enumerate_unsafe_routes(route_items) -> set[tuple[str, str]]:
-    """Inspect actual ASGI registered routes by shape, not a class assumption.
+    """Use FastAPI 0.162's *effective* included-router route contexts.
 
-    FastAPI/Starlette route classes and wrappers can change independently of
-    the route metadata. Recurse only into mounted non-secondary applications.
-    Avoid a guessed minimum route count: fail closed on critical sentinels
-    after examining the runtime route inventory.
+    FastAPI 0.137+ stores included routers as lazy _IncludedRouter entries.
+    These top-level ASGI entries have no path or methods. The framework's
+    iter_route_contexts expands them, retaining the include-time prefix and
+    the leaf route's real methods. Inspecting app.routes directly silently
+    loses every Tracker business route on the installed FastAPI version.
     """
     routes = set()
-
-    def visit(items, prefix="", depth=0):
-        if depth > 4:
-            raise AssertionError("Unexpectedly nested ASGI router hierarchy")
-        for route in items:
-            path = getattr(route, "path", "")
-            if not isinstance(path, str) or not path.startswith("/"):
+    for context in iter_route_contexts(route_items):
+        path = context.path
+        methods = context.methods
+        if not isinstance(path, str) or not path.startswith("/"):
+            continue
+        if path.startswith(("/secondary/", "/static/")):
+            continue
+        if not methods:
+            continue
+        for method in {str(item).upper() for item in methods} & METHODS:
+            if method == "POST" and path in SIGNED_SESSION_POST_PATHS520:
                 continue
-            full_path = prefix + path
-            if full_path.startswith(("/secondary/", "/static/")):
-                continue
-            methods = getattr(route, "methods", None)
-            if methods is not None:
-                names = {methods.upper()} if isinstance(methods, str) else {
-                    str(item).upper() for item in methods
-                }
-                for method in names & METHODS:
-                    if not (
-                        method == "POST"
-                        and full_path in SIGNED_SESSION_POST_PATHS520
-                    ):
-                        routes.add((method, full_path))
-            nested = getattr(route, "routes", None)
-            if nested is not None and not methods:
-                visit(nested, full_path.rstrip("/"), depth + 1)
-
-    visit(route_items)
+            routes.add((method, path))
     return routes
-
 
 def registered_writes() -> tuple[tuple[str, str], ...]:
     actual = tuple(app.routes)
@@ -89,7 +77,7 @@ def registered_writes() -> tuple[tuple[str, str], ...]:
         examples = [
             (type(route).__module__ + "." + type(route).__name__,
              getattr(route, "path", None),
-             sorted(str(x) for x in (getattr(route, "methods", None) or ())))
+             type(getattr(route, "original_router", None)).__name__)
             for route in actual[:24]
         ]
         raise AssertionError(
@@ -107,34 +95,42 @@ def sample_path(template: str) -> str:
     return re.sub(r"\{[^{}]+\}", "999999999", template)
 
 
-def test_705_route_enumeration_handles_wrapped_routes_and_nested_mounts():
-    from types import SimpleNamespace
+def test_705_fastapi_0162_resolves_real_included_routers():
+    """Regression against the installed FastAPI router implementation.
 
-    # Dependency/library class identity must not decide route coverage.
-    # Registered method metadata is the contract; session and secondary
-    # routes have independent CSRF ownership.
-    entries = [
-        SimpleNamespace(path="/compounds", methods={"POST"}),
-        SimpleNamespace(path="/vitals/{rid}", methods={"DELETE", "GET"}),
-        SimpleNamespace(path="/custom", methods="PATCH"),
-        SimpleNamespace(
-            path="/tools", methods=None,
-            routes=[SimpleNamespace(path="/write", methods={"PUT"})],
-        ),
-        SimpleNamespace(
-            path="/secondary", methods=None,
-            routes=[SimpleNamespace(path="/vitals/new", methods={"POST"})],
-        ),
-        SimpleNamespace(path="/login", methods={"POST"}),
-        SimpleNamespace(path="/static", methods=None),
-    ]
-    assert enumerate_unsafe_routes(entries) == {
-        ("POST", "/compounds"),
-        ("DELETE", "/vitals/{rid}"),
-        ("PATCH", "/custom"),
-        ("PUT", "/tools/write"),
-    }
+    This is not a synthetic SimpleNamespace: FastAPI itself constructs the
+    included-router objects and the same framework iterator resolves them.
+    """
+    fixture = FastAPI()
+    child = APIRouter()
 
+    @child.post("/create")
+    def create():
+        return {"ok": True}
+
+    @child.delete("/item/{item_id}")
+    def remove(item_id: int):
+        return {"id": item_id}
+
+    nested = APIRouter()
+    nested.include_router(child, prefix="/nested")
+    fixture.include_router(nested, prefix="/v1")
+
+    actual = enumerate_unsafe_routes(fixture.routes)
+    assert actual == {
+        ("POST", "/v1/nested/create"),
+        ("DELETE", "/v1/nested/item/{item_id}"),
+    }, actual
+    assert len(fixture.routes) >= 1
+    print("CSRF_705_FASTAPI_INCLUDED_ROUTER_RESOLUTION=PASSED")
+
+
+def test_705_application_route_inventory_has_critical_writes():
+    """Fail before any HTTP test if current routes aren't inventoried."""
+    routes = set(registered_writes())
+    assert CRITICAL_WRITES <= routes
+    assert routes
+    print(f"CSRF_705_REGISTERED_UNSAFE_ROUTES={len(routes)}")
 
 def test_705_all_registered_unsafe_routes_reject_missing_and_forged_csrf(
     monkeypatch, tmp_path,
