@@ -14,6 +14,8 @@ ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
 }
 bash -n scripts/tracker-preview704.sh
 bash -n scripts/tracker-release-scoped704.sh
+node --check app/static/js/tracker-lab-sticky-actions704.js
+echo "RELEASE_704_LAB_GUARD_JS_SYNTAX=PASSED"
 "$PY" -m py_compile \
   tests/test_consolidated_forms704.py \
   tests/browser/test_consolidated_forms704.py
