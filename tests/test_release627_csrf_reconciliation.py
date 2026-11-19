@@ -1,5 +1,5 @@
 """Release 627 source reconciliation contracts; no production runtime effects."""
-from scripts.tracker_csrf_reconcile627 import build
+from scripts.tracker_csrf_reconcile627 import build, POST_654_PLUS_UNQUALIFIED_ROUTES
 
 
 def test_627_signed_route_reconciliation_stays_blocked():
@@ -8,7 +8,11 @@ def test_627_signed_route_reconciliation_stays_blocked():
     assert report["global_enforcement_authorized"] is False
     assert report["full_dev_qualification_observed_by_this_report"] is False
     assert report["original_unsafe_routes"] == 144
-    assert report["current_unsafe_routes"] == 161
+    assert report["historical_653_unsafe_routes"] == 161
+    assert report["current_unsafe_routes"] == 199
+    assert len(POST_654_PLUS_UNQUALIFIED_ROUTES) == 38
+    assert {(r["method"], r["path"]) for r in report["post_654_plus_unqualified_routes"]} == POST_654_PLUS_UNQUALIFIED_ROUTES
+    assert all(r["method"] == "POST" for r in report["post_654_plus_unqualified_routes"])
     assert {(x["method"], x["path"]) for x in report["post_627_unqualified_routes"]} == {
         ("POST", "/food/duplicates/merge"),
         ("POST", "/food/duplicates/resolve-unused"),
@@ -29,7 +33,7 @@ def test_627_signed_route_reconciliation_stays_blocked():
     assert report["previously_observed_targeted_positive_routes"] == 19
     assert report["new_unexecuted_protocol_route_tests"] == 5
     assert report["new_unexecuted_blend_preview_route_tests"] == 3
-    assert report["remaining_without_positive_source_witness"] == 51
+    assert report["remaining_without_positive_source_witness"] == 89
     assert report["manual_review_items_unchanged"] >= 110
     assert report["session_account_routes_not_certified"] == 6
 
@@ -41,11 +45,13 @@ def test_627_signed_route_manifest_has_no_duplicate_or_unmapped_routes():
     pkeys = {(r["method"], r["path"]) for r in positive}
     rkeys = {(r["method"], r["path"]) for r in remaining}
     assert len(pkeys) == len(positive) == 27
-    assert len(rkeys) == len(remaining) == 51
+    assert len(rkeys) == len(remaining) == 89
     assert pkeys.isdisjoint(rkeys)
-    assert len(pkeys | rkeys) == 78
+    assert len(pkeys | rkeys) == 116
     assert all(not row["full_dev_runtime_qualified"] for row in positive)
-    assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == 51
+    assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == 89
+    assert POST_654_PLUS_UNQUALIFIED_ROUTES <= rkeys
+    assert POST_654_PLUS_UNQUALIFIED_ROUTES.isdisjoint(pkeys)
 
 def test_627_blend_browser_fixture_uses_only_disposable_database():
     from pathlib import Path
