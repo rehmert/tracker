@@ -69,7 +69,7 @@ cleanup() {
   if ((status != 0)); then
     echo "=== RELEASE 703 BASELINE SERVER LOG (last 25 lines) ==="
     [[ ! -f "$BASE_LOG" ]] || tail -n 25 "$BASE_LOG" || true
-    echo "=== RELEASE 699 CANDIDATE SERVER LOG (last 25 lines) ==="
+    echo "=== RELEASE 704 CANDIDATE SERVER LOG (last 25 lines) ==="
     [[ ! -f "$CANDIDATE_LOG" ]] || tail -n 25 "$CANDIDATE_LOG" || true
     if [[ -d "$ARTIFACTS" ]]; then
       PRIVATE="$(mktemp -d /tmp/tracker-visual704-review.XXXXXXXX)"
