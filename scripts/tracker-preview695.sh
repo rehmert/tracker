@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release 695: read-only navigation consolidation preview on disposable data.
+# Release 695: isolated Today and Quick Entry presentation preview.
 # Never installs, promotes, or reads the installed Tracker SQLite database.
 set -Eeuo pipefail
 umask 077
@@ -31,13 +31,13 @@ git merge-base --is-ancestor "$BASE" "$TARGET" ||
   fail "Candidate contains no changes"
 git diff --check "$BASE" "$TARGET"
 
-# Refuse unrelated changes: navigation, its focused tests, and this wrapper only.
+# Refuse unrelated changes: daily presentation, scoped tests, docs and gates only.
 while IFS= read -r path; do
   case "$path" in
     app/templates/mobile_today509.html|app/templates/quick_entry.html|\
     app/static/css/tracker-productivity674.css|tests/test_daily_flow695.py|\
     tests/browser/test_daily_flow695.py|scripts/tracker-preview695.sh|\
-    scripts/tracker-release-scoped695.sh) ;;
+    scripts/tracker-release-scoped695.sh|docs/release-695-daily-flow.md) ;;
     *) fail "Out-of-scope candidate path: $path" ;;
   esac
 done < <(git diff --name-only "$BASE" "$TARGET")
@@ -77,7 +77,7 @@ cd "$QA"
 
 bash scripts/tracker-release-scoped695.sh "$PY"
 
-# Run only focused browser navigation tests against an isolated loopback
+# Run only focused browser daily-workflow tests against an isolated loopback
 # candidate. Never point Playwright at installed DEV or production.
 VENDOR_SRC="$APP/app/static/vendor/htmx.min.js"
 VENDOR_DST="$QA/app/static/vendor/htmx.min.js"
