@@ -104,3 +104,34 @@ def test_696_coa_local_search_only_filters_visible_rows():
             expect(page.locator("[data-flow696-empty]")).to_be_hidden()
         finally:
             browser.close()
+
+
+@pytest.mark.parametrize("path,anchor", (
+    ("/food", "#food-quick-log"),
+    ("/doses", "#dose-history"),
+    ("/vitals", "#quick-vitals-entry"),
+))
+@pytest.mark.parametrize("width", (390, 1280))
+def test_696_daily_entry_guidance_is_optional_and_original_targets_remain(path, anchor, width):
+    assert BASE_URL.startswith("http://127.0.0.1:")
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(
+            headless=True,
+            executable_path=os.environ.get("TRACKER_TEST_CHROMIUM_PATH") or None,
+        )
+        try:
+            page = browser.new_page(viewport={"width":width,"height":850})
+            response = page.goto(BASE_URL + path, wait_until="networkidle")
+            assert response is not None and response.status == 200, path
+            guide = page.locator("details.tracker-flow696-guide").first
+            expect(guide.locator("summary")).to_be_visible()
+            assert not guide.evaluate("el => el.open")
+            assert page.locator(anchor).count() == 1
+            assert guide.locator("summary").evaluate(
+                "el => el.getBoundingClientRect().height >= 44"
+            )
+            guide.locator("summary").click()
+            assert guide.evaluate("el => el.open")
+            expect(guide).to_be_visible()
+        finally:
+            browser.close()
