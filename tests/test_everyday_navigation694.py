@@ -97,6 +97,7 @@ def _fixture():
         '</style></head><body>' + nav +
         '<label>Show everyday pages only'
         '<input type="checkbox" id="tracker-focus-toggle"></label>'
+        '<label>Find a page<input type="search" id="nav-filter"></label>'
         '</body></html>'
     )
 
@@ -153,6 +154,16 @@ def test_694_everyday_default_all_pages_toggle_and_persisted_choice():
                 assert not today.evaluate(
                     "e => e.classList.contains('tracker-focus-hidden')"
                 )
+                assert advanced.evaluate(
+                    "e => e.classList.contains('tracker-focus-hidden')"
+                )
+                # Sidebar search can surface hidden advanced pages temporarily.
+                finder = page.locator("#nav-filter")
+                finder.fill("sqlite")
+                assert not advanced.evaluate(
+                    "e => e.classList.contains('tracker-focus-hidden')"
+                )
+                finder.fill("")
                 assert advanced.evaluate(
                     "e => e.classList.contains('tracker-focus-hidden')"
                 )
