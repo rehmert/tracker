@@ -77,7 +77,7 @@ def workout_html():
 def test_688_source_and_template_contract():
     assert BASE.count("/static/css/tracker-dashboard-polish688.css?v=688") == 1
     assert BASE.index("tracker-dashboard-polish688.css?v=688") > BASE.index(
-        "tracker-shortcuts-toolbar687.css?v=687"
+        "tracker-shortcuts-toolbar687.css?v=687-css700"
     )
     assert 'id="dashboard-customize"' not in DASH
     assert BASE.count('id="dashboard-customize"') == 1
