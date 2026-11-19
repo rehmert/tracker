@@ -1,0 +1,53 @@
+/* Release 694: compact, accessible secondary daily actions on Overview/Today. */
+.tracker-daily-extra694 {
+  margin: .45rem 0 .1rem;
+  min-width: 0;
+}
+.tracker-daily-extra694 > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: .45rem .7rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: .65rem;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tracker-daily-extra694 > summary:focus-visible,
+.tracker-daily-extra694 nav a:focus-visible {
+  outline: 3px solid var(--teal, #1265ad);
+  outline-offset: 2px;
+}
+.tracker-daily-extra694 nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin: .45rem 0 .2rem;
+  min-width: 0;
+}
+.tracker-daily-extra694 nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 0;
+  padding: .55rem .7rem;
+  border-radius: .65rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+@media (max-width: 390px) {
+  .tracker-daily-extra694 nav { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .tracker-daily-extra694 nav a { overflow-wrap: anywhere; }
+}
+@media print {
+  .tracker-daily-extra694 { display: none !important; }
+}
