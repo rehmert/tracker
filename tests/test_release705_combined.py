@@ -107,7 +107,10 @@ def test_705_stays_read_only_and_preserves_historical_qualifiers():
     assert "if len(routes) < 120" not in route_test
     assert "if not isinstance(route, APIRoute)" not in route_test
     assert "def enumerate_unsafe_routes(route_items)" in route_test
-    assert "test_705_route_enumeration_handles_wrapped_routes_and_nested_mounts" in route_test
+    assert "from fastapi.routing import iter_route_contexts" in route_test
+    assert "for context in iter_route_contexts(route_items):" in route_test
+    assert "test_705_fastapi_0162_resolves_real_included_routers" in route_test
+    assert "test_705_application_route_inventory_has_critical_writes" in route_test
     assert "missing = CRITICAL_WRITES - routes" in route_test
     assert "assert observed == {" in route_test
     assert 'signed_invalid.status_code == 422' in route_test
