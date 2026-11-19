@@ -20,6 +20,7 @@ def test_release559_templates_compile():
         "dashboard.html",
         "mobile_today509.html",
         "quick_entry.html",
+        "_daily_actions694.html",
     ):
         env.parse((TEMPLATES / name).read_text())
 
@@ -61,7 +62,7 @@ def test_release559_daily_workflow_destinations_exist():
 
 
 def test_release559_dashboard_shortcuts():
-    html = read("app/templates/dashboard.html")
+    html = read("app/templates/dashboard.html") + read("app/templates/_daily_actions694.html")
 
     for url in (
         "/mobile",
@@ -81,7 +82,7 @@ def test_release559_dashboard_shortcuts():
 
 
 def test_release559_mobile_shortcuts():
-    html = read("app/templates/mobile_today509.html")
+    html = read("app/templates/mobile_today509.html") + read("app/templates/_daily_actions694.html")
 
     for url in (
         "/food#food-quick-log",
@@ -133,7 +134,7 @@ def test_release559_styles_are_scoped():
 
 
 def test_release559_preserves_existing_dashboard_workflows():
-    html = read("app/templates/dashboard.html")
+    html = read("app/templates/dashboard.html") + read("app/templates/_daily_actions694.html")
 
     for url in (
         "/dose-workspace",
