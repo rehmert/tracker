@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/static/css/tracker-workout-gym667.css?v=667">
 <link rel="stylesheet" href="/static/css/tracker-workout-ux673.css?v=673">
 <link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
+<link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 <script src="/static/js/tracker-workout-gym667.js?v=667" defer></script>
 <script src="/static/js/tracker-workout-drafts668.js?v=668" defer></script>
 <script src="/static/js/tracker-workout-progression674.js?v=674" defer></script>
@@ -369,9 +370,12 @@
       </section>
     {% endif %}
     <section class="workout659-end">
-      <form method="post" action="/workouts/quick/finish">
+      <form method="post" action="/workouts/quick/finish" class="tracker-flow696-finish">
         <button type="submit" class="primary" formaction="/workouts/finish-review">Finish &amp; Review</button>
-        <button type="submit">Finish Workout</button>
+        <details>
+          <summary>Other finish option</summary>
+          <button type="submit">Finish Workout</button>
+        </details>
       </form>
       <a class="ux675-inline-action" href="/workouts">All Workouts</a>
     </section>
