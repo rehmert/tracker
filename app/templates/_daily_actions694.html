@@ -1,0 +1,11 @@
+{# Release 694: one canonical set of daily action destinations across Overview and Today.
+   These are links to existing safe recording workflows, never direct data writes. #}
+{% macro daily_actions694() -%}
+<a href="/mobile"><strong>Today</strong></a>
+<a href="/doses#quick-dose-entry"><strong>Log Dose</strong></a>
+<a href="/food#food-quick-log"><strong>Log Food</strong></a>
+<a href="/mobile#mobile-quick-vitals" class="tracker-daily-action-primary"><strong>Log Vitals</strong></a>
+<a href="/workouts/quick"><strong>Workout</strong></a>
+<a href="/vials"><strong>Inventory</strong></a>
+<a href="/quick-entry"><strong>More Actions</strong></a>
+{%- endmacro %}
