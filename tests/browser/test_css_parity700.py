@@ -1,7 +1,8 @@
-"""Release 700: real Chromium computed-style and pixel parity for shared UI.
+"""Release 700: deterministic Chromium CSS and pixel parity for shared UI.
 
-Compare exact pinned Release 699 and candidate CSS in disposable worktrees.
-No authentication, network, installed user records or golden images.
+Compare pinned Release 699 and candidate source in one active browser tab,
+resetting the same fixture between renders to avoid cross-tab focus paint
+variance. No authentication, external assets, user data or golden images.
 """
 from io import BytesIO
 from pathlib import Path
@@ -19,6 +20,13 @@ WIDTHS = (320, 390, 768, 1280, 1920)
 DENSITIES = ("compact", "balanced", "comfortable")
 THEMES = ("light", "dark")
 MODES = ("toolbar687", "combined")
+STABLE_STYLE = """
+*, *::before, *::after {
+  animation: none !important;
+  transition: none !important;
+  caret-color: transparent !important;
+}
+"""
 
 # Real application styles, in the relevant applied order for the Dashboard.
 COMMON = (
@@ -184,7 +192,15 @@ def render(page, root: Path, width: int, theme: str, density: str, mode: str):
     page.add_style_tag(content=palette)
     for source in css_sources(root, mode):
         page.add_style_tag(content=source)
+    # Force an identical focus state in the same foreground page for both
+    # sources. Separate tabs can paint the active focus outline differently
+    # even when all computed styles and element bounds match.
+    page.add_style_tag(content=STABLE_STYLE)
     page.locator("#command-open").focus()
+    page.evaluate("() => document.fonts.ready")
+    page.evaluate("() => window.scrollTo(0, 0)")
+    page.evaluate("""() => new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)))""")
     return measured(page), page.screenshot(animations="disabled", caret="hide")
 
 
@@ -208,18 +224,38 @@ def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():
                         reduced_motion="reduce",
                     )
                     try:
-                        ref_page, candidate_page = context.new_page(), context.new_page()
+                        # The same tab renders baseline and candidate in turn;
+                        # unlike two concurrent tabs, focus/foreground state
+                        # cannot diverge. Abort external assets entirely.
+                        context.route("**/*", lambda route: route.abort())
+                        page = context.new_page()
                         for density in DENSITIES:
                             for mode in MODES:
                                 label = f"{width}:{theme}:{density}:{mode}"
-                                a, img_a = render(ref_page, baseline, width, theme, density, mode)
-                                b, img_b = render(candidate_page, candidate, width, theme, density, mode)
+                                a, img_a = render(page, baseline, width, theme, density, mode)
+                                # Validate our baseline screenshot is stable
+                                # before judging any candidate-side difference.
+                                stable, img_stable = render(
+                                    page, baseline, width, theme, density, mode
+                                )
+                                assert a == stable, f"Baseline geometry unstable: {label}"
+                                with Image.open(BytesIO(img_a)) as first, Image.open(BytesIO(img_stable)) as second:
+                                    jitter = ImageChops.difference(
+                                        first.convert("RGB"), second.convert("RGB")
+                                    ).getbbox()
+                                assert jitter is None, (
+                                    f"Baseline screenshot not deterministic: {label} bbox={jitter}"
+                                )
+                                b, img_b = render(
+                                    page, candidate, width, theme, density, mode
+                                )
                                 assert a == b, f"Computed style/geometry changed: {label}"
                                 with Image.open(BytesIO(img_a)) as left, Image.open(BytesIO(img_b)) as right:
                                     difference = ImageChops.difference(
                                         left.convert("RGB"), right.convert("RGB")
                                     )
-                                    assert difference.getbbox() is None, f"Screenshot changed: {label}"
+                                    bbox = difference.getbbox()
+                                    assert bbox is None, f"Screenshot changed: {label} bbox={bbox}"
                                 assert b["overflow"] == a["overflow"], (
                                     f"Horizontal overflow changed: {label}"
                                 )
