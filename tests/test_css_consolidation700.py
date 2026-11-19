@@ -29,36 +29,38 @@ def test_700_shared_search_sizing_is_deduplicated_at_both_breakpoints():
     assert "display: none !important" in CSS687
 
 
-def test_700_shared_daily_shortcut_alignment_is_inherited_not_repeated():
+def test_700_compact_daily_alignment_must_override_687_specificity():
+    # 687 sets compact links to flex-start with a :root[data-density]
+    # selector; the later 688 rule must explicitly re-center them.
     base_selector = "#main-content nav.tracker-daily-flow559-links > a {"
     compact_selector = (
         ':root[data-density="compact"] '
         '#main-content nav.tracker-daily-flow559-links > a {'
     )
-    assert CSS688.count(base_selector) == 2  # includes the compact selector
     base_rules = CSS688.split(base_selector, 1)[1].split("}", 1)[0]
     compact_rules = CSS688.split(compact_selector, 1)[1].split("}", 1)[0]
+    assert "align-items: flex-start;" in CSS687
+    assert "justify-content: center;" in CSS687
     for expected in ("display: flex;", "align-items: center;",
                      "justify-content: center;", "min-height: 48px;"):
         assert expected in base_rules
-    for expected in ("min-height: 44px;", "padding: .18rem .38rem;"):
+    for expected in ("min-height: 44px;", "padding: .18rem .38rem;",
+                     "align-items: center;", "justify-content: center;"):
         assert expected in compact_rules
-    for duplicate in ("align-items:", "justify-content:", "display:"):
-        assert duplicate not in compact_rules
     assert "display: none" not in CSS688
     assert "font-size: 0" not in CSS688
 
 
 def test_700_asset_cache_refresh_and_original_component_order():
     assert BASE.count("/static/css/tracker-shortcuts-toolbar687.css?v=687-css700") == 1
-    assert BASE.count("/static/css/tracker-dashboard-polish688.css?v=688-css700") == 1
+    assert BASE.count("/static/css/tracker-dashboard-polish688.css?v=688") == 1
     assert BASE.index("tracker-compact-aggressive686.css?v=686") < BASE.index(
         "tracker-shortcuts-toolbar687.css?v=687-css700"
     )
     assert BASE.index("tracker-shortcuts-toolbar687.css?v=687-css700") < BASE.index(
-        "tracker-dashboard-polish688.css?v=688-css700"
+        "tracker-dashboard-polish688.css?v=688"
     )
-    assert BASE.index("tracker-dashboard-polish688.css?v=688-css700") < BASE.index(
+    assert BASE.index("tracker-dashboard-polish688.css?v=688") < BASE.index(
         "tracker-workout-footnote689.css?v=689"
     )
 
