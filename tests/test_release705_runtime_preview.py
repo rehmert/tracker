@@ -265,4 +265,4 @@ def test_705_583_reconstitution_calculator_field_is_associated_with_signed_post(
     )
     assert 'scripts/tracker_csrf_runtime_report583.py' in runner
     assert 'scripts/tracker_csrf_fixture583.py" verify' in runner
-    assert runner.count("tests/browser/test_csrf_preparations583.py") >= 2
+    assert runner.count("tests/browser/test_csrf_preparations583.py") == 1
