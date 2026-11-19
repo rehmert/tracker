@@ -1,6 +1,17 @@
 /* Release 703: Vitals and Compound edit Save/Cancel accessibility.
    Only existing form controls; no cloned buttons, routes, or behavior. */
 
+/* Vitals previously used inline desktop flex styling. Keep identical
+   flex/gap/alignment above the phone breakpoint without touching Compound
+   editing's existing ux673-action-row desktop layout. */
+@media screen and (min-width: 761px) {
+  #main-content form > .tracker-mobile-edit-actions703:not(.ux673-action-row) {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+}
+
 @media screen and (max-width: 760px) {
   /* Both edit forms are grids. Span all columns so actions are reachable
      even when the form's field layout is two columns. */
