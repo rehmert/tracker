@@ -45,10 +45,11 @@ def test_579_manifest_is_exact_and_covers_source_workflows(report):
 
 def test_579_two_tracked_javascript_callsites_not_overclaimed(report):
     source = report.reviewed_js_source_callsites(ROOT)
-    assert source["tracked_js_callsites"] == 50
+    assert source["tracked_js_callsites"] == 51
     assert source["witnessed_js_callsites"] == 2
-    assert source["not_witnessed_in_579"] == 48
+    assert source["not_witnessed_in_579"] == 49
     assert source["unqualified_coa_multi651_callsites"] == 1
+    assert source["unqualified_workout_offline668_callsites"] == 1
     assert len(source["source_refs"]) == 2
     assert any("tracker-mobile-quick528.js:" in ref
                for ref in source["source_refs"])
@@ -151,25 +152,39 @@ def test_579_runner_shell_syntax_is_valid():
     assert outcome.returncode == 0, outcome.stderr
 
 
-def test_705_579_only_ignores_known_gitignored_htmx_asset(report):
-    sources = [
-        {"file": "app/static/js/new-unsafe-fetch.js", "line": 1,
-         "kind": "fetch_callsite"},
-        {"file": "app/static/vendor/htmx.min.js", "line": 1,
-         "kind": "fetch_callsite"},
+@pytest.mark.parametrize("before,after", [
+    ('"/workouts/quick/offline-sync"', '"/workouts/quick/other"'),
+    ('method: "POST"', 'method: "GET"'),
+    ('credentials: "same-origin"', 'credentials: "omit"'),
+    ('"X-Tracker-CSRF": window.trackerCsrfToken?.() || ""',
+     '"X-Tracker-CSRF": ""'),
+    ('redirect: "manual"', 'redirect: "follow"'),
+])
+def test_705_668_offline_sync_request_is_reviewed_not_witnessed(report, before, after):
+    source = (ROOT / report.WORKOUT_OFFLINE668_SOURCE).read_text()
+    lines = source.splitlines()
+    callsites = [
+        index for index, line in enumerate(lines)
+        if 'window.fetch("/workouts/quick/offline-sync", {' in line
     ]
-    tracked, vendor = report.partition_tracked_js_callsites(sources)
-    assert len(tracked) == 1
-    assert tracked[0]["file"] == "app/static/js/new-unsafe-fetch.js"
-    assert len(vendor) == 1
-    assert vendor[0]["file"] == report.ISOLATED_HTMX_VENDOR
-    with pytest.raises(ValueError, match="Unknown untracked vendor"):
-        report.partition_tracked_js_callsites([
-            {"file": "app/static/vendor/other.js", "line": 1,
-             "kind": "fetch_callsite"}
-        ])
-    observed = report.reviewed_js_source_callsites(ROOT)
-    assert observed["tracked_js_callsites"] == 50
-    assert observed["witnessed_js_callsites"] == 2
-    assert observed["not_witnessed_in_579"] == 48
-    assert observed["unqualified_ignored_vendor_callsites"] >= 0
+    assert len(callsites) == 1
+    offset = callsites[0]
+    report.verify_workout_offline668_request_lines(lines, offset)
+    modified = list(lines)
+    index = next(
+        i for i in range(offset, offset + len(report.WORKOUT_OFFLINE668_REQUEST_LINES))
+        if before in modified[i]
+    )
+    modified[index] = modified[index].replace(before, after)
+    with pytest.raises(ValueError, match="re-review required"):
+        report.verify_workout_offline668_request_lines(modified, offset)
+    assert report.WORKOUT_OFFLINE668_SOURCE not in report.TRACKED_FETCH_SOURCES
+
+
+def test_705_668_offline_sync_is_explicitly_pending_positive_browser_evidence(report):
+    source = report.reviewed_js_source_callsites(ROOT)
+    assert source["tracked_js_callsites"] == 51
+    assert source["witnessed_js_callsites"] == 2
+    assert source["not_witnessed_in_579"] == 49
+    assert source["unqualified_workout_offline668_callsites"] == 1
+    assert report.WORKOUT_OFFLINE668_SOURCE not in report.TRACKED_FETCH_SOURCES
