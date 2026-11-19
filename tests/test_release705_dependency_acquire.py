@@ -54,8 +54,10 @@ def test_705_download_subprocess_uses_clean_environment(monkeypatch, tmp_path):
     acquisition.run_pip_download(["python", "-m", "pip", "download"], tmp_path)
     env = observed["kwargs"]["env"]
     assert set(env) == {
-        "HOME", "PATH", "LANG", "PYTHONNOUSERSITE", "PYTHONDONTWRITEBYTECODE"
+        "HOME", "PATH", "LANG", "PYTHONNOUSERSITE", "PYTHONDONTWRITEBYTECODE",
+        "PIP_CONFIG_FILE"
     }
+    assert env["PIP_CONFIG_FILE"] == "/dev/null"
     assert "PIP_INDEX_URL" not in env
     assert "GITHUB_TOKEN" not in env
     assert "AWS_SECRET_ACCESS_KEY" not in env

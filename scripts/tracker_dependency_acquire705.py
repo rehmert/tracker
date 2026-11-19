@@ -73,6 +73,9 @@ def run_pip_download(command: list[str], home: Path) -> None:
         "LANG": "C.UTF-8",
         "PYTHONNOUSERSITE": "1",
         "PYTHONDONTWRITEBYTECODE": "1",
+        # pip --isolated ignores user settings, but global/site config
+        # can still add other indexes. Disable all pip config files.
+        "PIP_CONFIG_FILE": os.devnull,
     }
     print("DEPENDENCY_705_DOWNLOAD=STARTED_PYPI_ONLY", flush=True)
     process = subprocess.Popen(

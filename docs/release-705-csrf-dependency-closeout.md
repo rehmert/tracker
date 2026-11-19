@@ -547,8 +547,10 @@ staging root and writes a separate private wheelhouse, exact pinned
 requirements, and private hash receipts. Pip runs only `download`
 with exact 44 pins, `--isolated`, HTTPS PyPI index, `--no-deps`,
 `--no-cache-dir`, `--only-binary=:all:`, `--no-input` and a
-bounded subprocess. No preexisting cache, requirements or active
-environment is modified. No browser is fetched.
+bounded subprocess. `PIP_CONFIG_FILE=/dev/null` suppresses
+global and site pip config that could inject unexpected indexes.
+No preexisting cache, requirements or active environment is modified.
+No browser is fetched.
 
 After download it calls the previous read-only 705 archive and ABI
 validator; verifies the exact 44-wheel filename/sha256 inventory;
