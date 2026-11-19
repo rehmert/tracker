@@ -52,6 +52,25 @@ This is **negative security coverage**, not a claim that valid signed
 data and file uploads work. Browser lifecycle positive evidence is still
 required for every write flow over both HTTP and HTTPS.
 
+### Release 705 preview defect corrected after first isolated run
+
+The first isolated preview stopped **before sending any negative requests**:
+the newly authored route test required `len(routes) >= 120` even though
+the 161-item historical source-route inventory counts declarations that
+are not equivalent to the current runtime `APIRoute` list (and includes
+excluded session-owned scope). That hard-coded minimum had no measured
+runtime basis. It was a test-design defect, not an observed CSRF bypass.
+
+The corrected test instead requires 15 specific, verified critical write
+routes across Compound, COA, Dose, Food, Lab, Notes, Protocol, Purchase,
+Regimen, Supply, Vitals, Vials and Workout modules, then checks every
+current registered ordinary write route with **both** missing and forged
+CSRF submissions. An explicit observed-route/case-set assertion prevents
+silently skipping an enumerated route. A signed but invalid Compound form
+must still reach application validation (422), proving strict mode is not
+simply blocking all writes. The real full source preview **must rerun**
+against the corrected exact SHA; the earlier attempt exited 1.
+
 **Required before activating strict mode on any installed host:**
 
 1. Reconcile the current actual registered unsafe-route inventory
