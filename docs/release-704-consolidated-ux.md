@@ -38,10 +38,11 @@ UX/accessibility issue or server performance bottleneck is eliminated.
   a 60.5px bar intersecting the dock by 31.625px when the form itself
   began at y=753px. Shrinking padding is insufficient: a sticky child
   cannot escape its containing form's top boundary. The correct solution
-  defaults the Lab row to **normal flow** before the user reaches the
-  manual form, then a small read-only scroll/resize/density guard enables
-  sticky positioning only when the containing form has at least the
-  bar's height plus 16px of space above the dock. The real browser gate
+  defaults the Lab row to **normal flow** while the CSV import section
+  is being viewed, then a small read-only scroll/resize/density guard
+  enables sticky positioning only after the manual form reaches the
+  upper 120px of the viewport **and** has at least the bar's height
+  plus 16px of space above the dock. The real browser gate
   verifies no overlap *before* and *after* entering the manual form,
   preserving the same strict 4px dock-clearance requirement when sticky.
   No controls are hidden or cloned. The separate CSV import form,
@@ -100,9 +101,11 @@ no dependencies are downloaded.
   single Save/Cancel, no horizontal document overflow, sticky clearance
   above the dock, safe keyboard behavior, 44px+ controls, keyboard
   order and one intercepted native Save without HTTP writes. The Lab
-  fixture explicitly checks its initial nonsticky state when the form
-  starts below the safe dock region, then scrolls into that form and
-  requires sticky activation, with the original overlap check still hard.
+  fixture explicitly checks the initial nonsticky state while the CSV
+  form is visible, then scrolls the manual form to 80px from the top
+  (past the 120px activation boundary) and requires sticky activation.
+  The original hard 4px dock-overlap check remains, with a bounded 3s
+  diagnostic failure instead of a 30s unexplained timeout.
 - Repeat prior Release 702/703 browser tests and historical 603 dock
   pointer/673 integrated-mobile regressions.
 - Run unmodified Release 698 **dual-server real-page screenshot** gate
