@@ -49,8 +49,8 @@
   <script src="/static/page_finder.js?v=20261103-release" defer></script>
   <link rel="stylesheet" href="/static/css/tracker-nav-productivity.css?v=20261103-release">
   <script src="/static/js/tracker-nav-productivity.js?v=20261103-release" defer></script>
-  <link rel="stylesheet" href="/static/tracker_focus.css?v=1">
-  <script src="/static/tracker_focus.js?v=1" defer></script>
+  <link rel="stylesheet" href="/static/tracker_focus.css?v=694">
+  <script src="/static/tracker_focus.js?v=694" defer></script>
   <script src="/static/dose_context.js?v=20261030-210017" defer></script>
   <link rel="stylesheet" href="/static/tool_pages.css?v=release82-88">
   <link rel="stylesheet" href="/static/core_workflow_97_104.css?v=1">
@@ -137,6 +137,8 @@
     <div class="nav-scroll">
       <ul class="nav-links nav-pinned"><li data-nav-key="/"><a href="/" title="Overview" {% if path == '/' %}aria-current="page"{% endif %}><span class="nav-dot"></span><span class="nav-text">Dashboard</span></a></li></ul>
       <div id="nav-favorites" class="nav-favorites" hidden><div class="nav-section-title">★ Favorites</div><ul class="nav-links" id="nav-favorite-links"></ul></div>
+      <button type="button" id="tracker-focus-sidebar-toggle" class="tracker-focus-sidebar-toggle"
+              aria-controls="nav-sortable" aria-expanded="false">Show all pages</button>
       {% set sections = [
       ('Overview & Planning', [('/mobile','Today · Mobile'),('/workflow-hub','Workflow hub'),('/activity','Daily activity'),('/calendar','Calendar'),('/quick-entry','Quick entry'),('/pages','Notes'),('/record-explorer/notes','Notes history')]),
       ('Protocols & Dosing', [('/protocols','Protocols'),('/protocol-tools','Protocol tools'),('/protocol-coverage','Protocol coverage'),('/doses','Dose log'),('/dose-workspace','Dose Workspace'),('/pk','PK Simulator'),('/blends','Blends'),('/reconstitution-calculator','Reconstitution calculator')]),
@@ -241,7 +243,7 @@
       <button type="button" id="tracker-collapse-nav">Collapse All Categories</button>
     </div>
           </div>
-          <div class="workspace-nav-order"><strong>Navigation focus</strong><p class="muted">Hide advanced tools from the sidebar without removing their pages or search results.</p><label class="tracker-focus-setting"><input id="tracker-focus-toggle" type="checkbox"> Show essential pages only</label></div>
+          <div class="workspace-nav-order"><strong>Navigation focus</strong><p class="muted">Hide advanced tools from the sidebar without removing their pages or search results.</p><label class="tracker-focus-setting"><input id="tracker-focus-toggle" type="checkbox"> Show everyday pages only</label></div>
           <div class="workspace-nav-order"><strong>Sidebar categories</strong><p class="muted">Use the arrows beside category names to change their order, or reset your navigation below.</p><div id="nav-category-preferences"></div><button type="button" id="nav-reset-all">Reset categories, favorites &amp; hidden links</button></div>
           <div class="workspace-nav-order"><strong>Show / hide links</strong><p class="muted">Hidden links remain available through their URLs.</p><div id="nav-visibility-preferences"></div></div>
           <div class="workspace-shortcuts"><strong>Keyboard shortcuts</strong><p><kbd>Ctrl</kbd>+<kbd>K</kbd> Search · <kbd>/</kbd> Search Navigation · <kbd>Esc</kbd> Clear</p><p><kbd>Alt</kbd>+<kbd>1</kbd> Overview · <kbd>Alt</kbd>+<kbd>2</kbd> Doses · <kbd>Alt</kbd>+<kbd>3</kbd> Vitals</p></div>
