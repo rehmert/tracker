@@ -213,19 +213,39 @@ For #10 completion, additionally capture and retain:
 No unreviewed dependency update, network download, installed venv
 mutation or requirement rewrite is authorized by this release.
 
+## Browser suite inventory repair
+
+A Release 705 isolated preview passed the ASGI CSRF negative canary
+(**3 passed**) and historical 627 source reconciliation (**2 passed**),
+then failed the Release 511 full-browser inventory requirement for
+`tests/browser/test_consolidated_forms704.py`. A complete comparison of
+45 `tests/browser/test_*.py` modules against the guarded full runner
+found **15 omitted modules** from Workout 659–667 and mobile/UX 695–704.
+
+The existing disposable standard 16-worker browser gate now registers all
+15 omitted modules exactly once. A source-only Release 511 inventory check
+runs at the start of the Release 705 preview before ASGI requests or
+broader regression checks. All 15 modules remain in the guarded candidate
+environment, not the live DEV or PROD service.
+
+The Release 699/700 CSS parity modules need separate pinned-baseline preview
+inputs and will be **skipped** during an ordinary full browser gate. Merely
+listing them does not constitute executed parity evidence. The other
+13 modules require real guarded browser execution before any promotion.
+
 ## Single release qualification and deployment limits
 
-The candidate's exact nine-file diff comprises two new read-only
-scripts, the audited Release 627 historical reconciler and its regression
-test, two release-scoped/isolated preview scripts, two focused Release 705
-test files (including the registered unsafe-route negative matrix), and
-this document. It intentionally changes **no application code,
-security middleware, server settings, requirements, database, JS, or
-browser suite**. Source-preview success only means the new tools
-are safe and report existing issues correctly.
+The candidate's exact ten-file diff comprises two new read-only
+scripts, the audited Release 627 reconciler and its test,
+two release-scoped/isolated preview scripts, two focused Release 705
+test files, the guarded browser qualification runner, and this document.
+It changes **no application code, security middleware, server settings,
+requirements, database, JS, or browser test sources**. The guarded runner
+only registers existing test modules. Source-preview success does not
+establish executed positive browser coverage.
 
 The preview demands pinned 704 DEV main, a root systemd worker,
-a clean checkout, a nine-file allowlist, detached candidate checkout,
+a clean checkout, a ten-file allowlist, detached candidate checkout,
 disposable SQLite directory, no download, and syntax/focused historic
 regressions. It prints the blocked issues rather than inventing a
 security or reproducibility certification.

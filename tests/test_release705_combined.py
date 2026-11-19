@@ -148,6 +148,38 @@ def test_705_stays_read_only_and_preserves_historical_qualifiers():
     ):
         assert module in gate
     assert "RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED" in gate
+    assert "RELEASE_705_BROWSER_MODULE_INVENTORY=PASSED" in gate
+    assert gate.index("RELEASE_705_BROWSER_MODULE_INVENTORY=PASSED") < gate.index(
+        "RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED"
+    )
+    standard = (ROOT / "scripts/tracker-browser-qualify.sh").read_text().split(
+        "# Release 521: a second browser gate", 1
+    )[0]
+    previously_missing = (
+        "tests/browser/test_consolidated_forms704.py",
+        "tests/browser/test_css_parity699.py",
+        "tests/browser/test_css_parity700.py",
+        "tests/browser/test_daily_flow695.py",
+        "tests/browser/test_integrated_flow696.py",
+        "tests/browser/test_mobile_edit_actions703.py",
+        "tests/browser/test_mobile_quick_actions701.py",
+        "tests/browser/test_saved_food_mobile_actions702.py",
+        "tests/browser/test_workout_calendar664.py",
+        "tests/browser/test_workout_dashboard661.py",
+        "tests/browser/test_workout_plan665.py",
+        "tests/browser/test_workout_program667.py",
+        "tests/browser/test_workout_targets666.py",
+        "tests/browser/test_workouts_quick659.py",
+        "tests/browser/test_workouts_quick662.py",
+    )
+    assert len(previously_missing) == 15
+    for module in previously_missing:
+        assert standard.count(module) == 1, module
+    for number in (699, 700):
+        # Browser registration is not executed parity QA without both roots.
+        parity = (ROOT / f"tests/browser/test_css_parity{number}.py").read_text()
+        assert f"TRACKER_CSS_PARITY{number}" in parity
+        assert "pytest.mark.skipif" in parity
     assert "RELEASE_705_HISTORICAL_CSRF_RECONCILIATION=PASSED" in gate
     preview = (ROOT / "scripts/tracker-preview705.sh").read_text()
     assert "BASE=24cb9ec47417e001c3f96dfed630e3b8b0264d93" in preview

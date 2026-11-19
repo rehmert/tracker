@@ -297,6 +297,8 @@ run_isolated_browser_module() {
 }
 
 if [[ "$MODE" == full ]]; then
+# Release 705: register 15 omitted modules in existing disposable
+# 16-worker standard gate. Parity 699/700 skip without pinned preview roots.
 echo "=== OFFLINE FOOD AND LABS BROWSER TESTS + LIVE NAVIGATION ==="
 set +e
 env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
@@ -326,7 +328,22 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
     tests/browser/test_regimen_catalog638_ui.py \
     tests/browser/test_regimen_facts639_ui.py \
     tests/browser/test_pk_smoke_281.py \
-    tests/browser/test_stage33_live_sorting.py 2>&1 | tee "$TEST_LOG"
+    tests/browser/test_stage33_live_sorting.py \
+    tests/browser/test_consolidated_forms704.py \
+    tests/browser/test_css_parity699.py \
+    tests/browser/test_css_parity700.py \
+    tests/browser/test_daily_flow695.py \
+    tests/browser/test_integrated_flow696.py \
+    tests/browser/test_mobile_edit_actions703.py \
+    tests/browser/test_mobile_quick_actions701.py \
+    tests/browser/test_saved_food_mobile_actions702.py \
+    tests/browser/test_workout_calendar664.py \
+    tests/browser/test_workout_dashboard661.py \
+    tests/browser/test_workout_plan665.py \
+    tests/browser/test_workout_program667.py \
+    tests/browser/test_workout_targets666.py \
+    tests/browser/test_workouts_quick659.py \
+    tests/browser/test_workouts_quick662.py 2>&1 | tee "$TEST_LOG"
 BROWSER_EXIT=${PIPESTATUS[0]}
 set -e
 echo "BROWSER_PYTEST_EXIT=$BROWSER_EXIT"

@@ -22,9 +22,12 @@ bash -n scripts/tracker-preview705.sh
   tests/test_release627_csrf_reconciliation.py \
   tests/test_release705_combined.py \
   tests/test_csrf_all_registered_negative705.py
-# The ASGI route inventory has twice failed before any requests were
-# exercised. Check it FIRST, including the exact missing/forged-token
-# matrix, before the historical dependency and CSRF regression set.
+# Check the read-only browser gate inventory FIRST; failure before ASGI.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_browser_qualification511.py::test_511_every_browser_module_in_disposable_qualification
+echo 'RELEASE_705_BROWSER_MODULE_INVENTORY=PASSED'
+
+# ASGI negative matrix next, before broader historical source regressions.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_csrf_all_registered_negative705.py
 echo 'RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED'

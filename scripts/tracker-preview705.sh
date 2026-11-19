@@ -28,6 +28,7 @@ while IFS= read -r path; do
     scripts/tracker_dependency_lock705.py|\
     scripts/tracker_csrf_closeout705.py|\
     scripts/tracker_csrf_reconcile627.py|\
+    scripts/tracker-browser-qualify.sh|\
     scripts/tracker-release-scoped705.sh|\
     scripts/tracker-preview705.sh|\
     tests/test_release705_combined.py|\
