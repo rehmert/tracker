@@ -24,7 +24,7 @@ def ledger():
 def test_578_all_existing_js_and_routes_preserved_without_false_clearance(ledger):
     report = ledger.build(ROOT)
     assert report["status"] == "source_only_not_strict_csrf_clearance"
-    assert report["summary"]["javascript_callsites"] == 50
+    assert report["summary"]["javascript_callsites"] == 51
     assert any(row["file"] == "app/static/js/tracker-coa-types647.js"
                for row in report["javascript"])
     coa_multi = [row for row in report["javascript"]
@@ -32,6 +32,11 @@ def test_578_all_existing_js_and_routes_preserved_without_false_clearance(ledger
     assert len(coa_multi) == 1
     assert coa_multi[0]["runtime_executed"] is False
     assert coa_multi[0]["csrf_compatible"] is None
+    workout = [row for row in report["javascript"]
+               if row["file"] == "app/static/js/tracker-workout-drafts668.js"]
+    assert len(workout) == 1
+    assert workout[0]["runtime_executed"] is False
+    assert workout[0]["csrf_compatible"] is None
     assert report["summary"]["javascript_callsites"] == len(report["javascript"])
     assert report["summary"]["unsafe_routes"] == len(report["routes"])
     assert report["summary"]["native_or_htmx_sites"] == len(report["native"])
@@ -45,7 +50,7 @@ def test_578_all_existing_js_and_routes_preserved_without_false_clearance(ledger
         key=lambda row: (row["priority"], row["file"], row["line"], row["kind"]),
     )
     assert report["summary"]["runtime_qualified_routes"] == 0
-    assert report["summary"]["js_literal_source_pair_hints"] + report["summary"]["js_unresolved"] == 50
+    assert report["summary"]["js_literal_source_pair_hints"] + report["summary"]["js_unresolved"] == 51
     assert all(r["runtime_qualified"] is False and
                r["strict_csrf_compatible"] is None for r in report["routes"])
     assert all(r["runtime_executed"] is False and
@@ -112,7 +117,7 @@ def test_578_private_report_path_and_permissions(ledger, tmp_path):
         output = Path(name) / "ledger.json"
         assert ledger.main(["--json", str(output)]) == 0
         report = json.loads(output.read_text(encoding="utf-8"))
-        assert report["summary"]["javascript_callsites"] == 50
+        assert report["summary"]["javascript_callsites"] == 51
         assert output.stat().st_mode & 0o077 == 0
         with pytest.raises(SystemExit):
             ledger.main(["--json", str(output)])
