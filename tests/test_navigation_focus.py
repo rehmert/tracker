@@ -10,7 +10,12 @@ def test_focus_controls_present():
 
 def test_focus_preserves_critical_navigation_and_active_page():
     script = (ROOT / 'app/static/tracker_focus.js').read_text()
-    for route in ('/doses', '/vials', '/protocols', '/labs', '/pk'):
+    for route in ('/mobile', '/calendar', '/doses', '/vials', '/workouts', '/food', '/vitals', '/labs', '/regimen'):
         assert repr(route) in script
     assert 'active.has(href)' in script
     assert 'localStorage' in script
+
+def test_focus_defaults_on_for_new_browser_without_overriding_existing_choice():
+    script = (ROOT / 'app/static/tracker_focus.js').read_text()
+    assert "let enabled = true" in script
+    assert "if (saved !== null) enabled = saved === 'true'" in script
