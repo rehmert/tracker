@@ -14,7 +14,7 @@ WORKSPACE = (ROOT / "app/static/workspace_toolbar.js").read_text()
 
 
 def test_687_markup_and_asset_contract():
-    assert BASE.count('/static/css/tracker-shortcuts-toolbar687.css?v=687') == 1
+    assert BASE.count('/static/css/tracker-shortcuts-toolbar687.css?v=687-css700') == 1
     assert BASE.index('tracker-shortcuts-toolbar687.css?v=687') > BASE.index(
         'tracker-compact-aggressive686.css?v=686')
     assert 'class="tracker-account-action687">Accounts</a>' in BASE
