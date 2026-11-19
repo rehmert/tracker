@@ -1,0 +1,88 @@
+/* Release 703: Vitals and Compound edit Save/Cancel accessibility.
+   Only existing form controls; no cloned buttons, routes, or behavior. */
+
+@media screen and (max-width: 760px) {
+  /* Both edit forms are grids. Span all columns so actions are reachable
+     even when the form's field layout is two columns. */
+  #main-content form > .tracker-mobile-edit-actions703 {
+    position: sticky;
+    bottom: calc(4.7rem + env(safe-area-inset-bottom, 0px));
+    z-index: 29; /* The existing mobile dock has z-index: 30. */
+    box-sizing: border-box;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    gap: .45rem;
+    width: 100%;
+    min-width: 0;
+    margin: .7rem 0 .3rem;
+    padding: .55rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .75rem;
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    box-shadow: 0 -3px 16px rgba(0, 0, 0, .1);
+  }
+
+  /* The Vitals guard adds one Restore button and status AFTER the
+     existing Save/Cancel pair. Keep these in row two and in DOM order. */
+  #main-content .tracker-mobile-edit-actions703 > :is(
+    button, a, .tracker-vitals-dirty-status
+  ) {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 48px;
+    margin: 0;
+    padding: .55rem .4rem;
+    overflow-wrap: anywhere;
+  }
+
+  #main-content .tracker-mobile-edit-actions703 > :is(button, a) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border-radius: .65rem;
+    text-align: center;
+    text-decoration: none;
+    white-space: normal;
+  }
+
+  /* Vitals Cancel was formerly an underlined text link, not a full
+     touch target. Preserve the data attribute used by the dirty guard. */
+  #main-content .tracker-mobile-edit-actions703 > a[data-vitals-edit-cancel] {
+    border: 1px solid var(--rule, #cbd5e1);
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    font-weight: 650;
+  }
+
+  #main-content .tracker-mobile-edit-actions703 > .tracker-vitals-dirty-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.35;
+    padding: .35rem .15rem;
+  }
+
+  #main-content .tracker-mobile-edit-actions703 > :is(button, a):focus-visible {
+    outline: 3px solid var(--teal, #1265ad);
+    outline-offset: 2px;
+  }
+
+  /* Hide sticky positioning while typing: the existing shell suppresses
+     the bottom dock for the virtual keyboard. No input is obscured. */
+  :root.tracker-mobile-editing #main-content form > .tracker-mobile-edit-actions703 {
+    position: static;
+  }
+}
+
+@media print {
+  #main-content form > .tracker-mobile-edit-actions703 {
+    position: static !important;
+    box-shadow: none !important;
+  }
+}
