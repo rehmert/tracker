@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import gauge %}
+{% from "_daily_actions694.html" import daily_actions694 %}
 {% block title %}Overview{% endblock %}
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workout-dashboard661.css?v=678">
@@ -27,20 +28,20 @@
     <p>Record the essentials or jump straight to the information you need.</p>
   </div>
 
-  <nav class="tracker-daily-flow559-links"
-       aria-label="Everyday workflow shortcuts">
-    <a href="/calendar"><strong>Calendar</strong></a>
-    <a href="/dose-workspace"><strong>Dose Workspace</strong></a>
-    <a href="/replenishment-review"><strong>Inventory</strong></a>
-    <a href="/labs"><strong>Lab Results</strong></a>
-    <a href="/doses#quick-dose-entry"><strong>Log Dose</strong></a>
-    <a href="/food#food-quick-log"><strong>Log Food</strong></a>
-    <a href="/mobile#mobile-quick-vitals"><strong>Log Vitals</strong></a>
-    <a href="/food#food-water"><strong>Log Water</strong></a>
-    <a href="/health-insights"><strong>Progress</strong></a>
-    <a href="/mobile"><strong>Today</strong></a>
-    <a href="/vials"><strong>Vial Inventory</strong></a>
+  <nav class="tracker-daily-flow559-links" aria-label="Everyday workflow shortcuts">
+    {{ daily_actions694() }}
   </nav>
+  <details class="tracker-daily-extra694">
+    <summary>Other shortcuts</summary>
+    <nav aria-label="Additional everyday shortcuts">
+      <a href="/calendar">Calendar</a>
+      <a href="/dose-workspace">Dose Workspace</a>
+      <a href="/replenishment-review">Stock Needs</a>
+      <a href="/labs">Lab Results</a>
+      <a href="/food#food-water">Log Water</a>
+      <a href="/health-insights">Progress</a>
+    </nav>
+  </details>
 </section>
 {% include '_workout_dashboard661.html' %}
 <header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div><div class="hero-actions"><a class="dashboard-action" href="/doses">+ Record dose</a><a class="dashboard-action secondary" href="/vitals">+ Add vitals</a></div></header>
