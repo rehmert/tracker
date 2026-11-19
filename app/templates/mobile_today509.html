@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_daily_actions694.html" import daily_actions694 %}
 {% block title %}Today{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-mobile-daily509.css?v=510">
@@ -59,15 +60,16 @@
     <a href="#mobile-upcoming-heading"><strong>{{ summary.upcoming|length }}</strong> projected next 7 days</a>
   </nav>
 
-  <nav class="tracker-daily-actions" aria-label="Common recording actions">
-    <a href="#mobile-quick-vitals"
-       class="tracker-daily-action-primary">+ Log Vitals</a>
-    <a href="/doses#quick-dose-entry">+ Log Dose</a>
-    <a href="/food#food-quick-log">+ Log Food</a>
-    <a href="/regimen#reg635-today">+ Log Supplement / Medication</a>
-    <a href="/food#food-water">+ Log Water</a>
-    <a href="/quick-entry">More Actions</a>
+  <nav class="tracker-daily-actions" aria-label="Daily recording actions">
+    {{ daily_actions694() }}
   </nav>
+  <details class="tracker-daily-extra694">
+    <summary>Other daily actions</summary>
+    <nav aria-label="Additional daily recording actions">
+      <a href="/food#food-water">Log Water</a>
+      <a href="/regimen#reg635-today">Log Supplement / Medication</a>
+    </nav>
+  </details>
 
   <nav class="tracker-daily-flow559-compact"
        aria-label="Daily review shortcuts">
