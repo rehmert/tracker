@@ -140,3 +140,23 @@ def test_705_quick_entry_daily_filter_matches_current_seven_recording_actions():
     assert preview.index('--targeted-strict quick603') < preview.index(
         'timeout --signal=TERM --kill-after=30s 2100'
     )
+
+
+def test_705_579_runtime_js_inventory_is_checked_before_browser_start():
+    report = (ROOT / "scripts/tracker_csrf_runtime_report579.py").read_text()
+    runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
+    preview = (ROOT / "scripts/tracker-browser-preview705.sh").read_text()
+    source = (ROOT / "scripts/tracker-preview705.sh").read_text()
+    scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
+    assert 'ISOLATED_HTMX_VENDOR = "app/static/vendor/htmx.min.js"' in report
+    assert 'partition_tracked_js_callsites(inventory["callsites"])' in report
+    assert 'Unknown untracked vendor JS requires source review' in report
+    assert 'RELEASE_705_579_TRACKED_JS_PREFLIGHT=PASSED' in runner
+    assert 'tests/test_release579_csrf_runtime_report.py::test_705_579_only_ignores_known_gitignored_htmx_asset' in runner
+    assert runner.index('ISOLATED_HTMX_VENDOR=VERIFIED') < runner.index(
+        'RELEASE_705_579_TRACKED_JS_PREFLIGHT=PASSED'
+    ) < runner.index('=== ISOLATED CANDIDATE SERVER ===')
+    for script in (preview, source):
+        assert 'scripts/tracker_csrf_runtime_report579.py|\\' in script
+        assert 'tests/test_release579_csrf_runtime_report.py|\\' in script
+    assert 'RELEASE_705_579_SOURCE_INVENTORY=PASSED' in scoped
