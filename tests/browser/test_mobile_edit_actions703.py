@@ -207,6 +207,27 @@ def test_703_original_save_cancel_responsive_layout_and_original_guard(kind, wid
                 expect(row.locator(".tracker-vitals-dirty-status")).to_have_text(
                     "No Unsaved Changes"
                 )
+
+                # The original unsaved-changes Cancel interception still
+                # fires. Dismiss the confirmation: no navigation is allowed.
+                input_name.fill("263")
+                page.evaluate("""() => {
+                    window.__discardPrompts703 = [];
+                    window.confirm = msg => {
+                        window.__discardPrompts703.push(msg);
+                        return false;
+                    };
+                }""")
+                cancel.click()
+                assert page.evaluate(
+                    "window.__discardPrompts703.length"
+                ) == 1
+                assert "Discard unsaved changes" in page.evaluate(
+                    "window.__discardPrompts703[0]"
+                )
+                expect(input_name).to_have_value("263")
+                restore.click()
+                expect(input_name).to_have_value("265")
             # Save sends one native form submit without duplicate control or
             # network request. Prevent default (no real mutation/redirect).
             form.evaluate("""form => {
