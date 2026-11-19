@@ -27,10 +27,12 @@ while IFS= read -r path; do
   case "$path" in
     scripts/tracker_dependency_lock705.py|\
     scripts/tracker_csrf_closeout705.py|\
+    scripts/tracker_csrf_reconcile627.py|\
     scripts/tracker-release-scoped705.sh|\
     scripts/tracker-preview705.sh|\
     tests/test_release705_combined.py|\
     tests/test_csrf_all_registered_negative705.py|\
+    tests/test_release627_csrf_reconciliation.py|\
     docs/release-705-csrf-dependency-closeout.md) ;;
     *) fail "Out-of-scope path: $path" ;;
   esac
