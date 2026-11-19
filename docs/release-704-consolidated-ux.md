@@ -29,8 +29,10 @@ UX/accessibility issue or server performance bottleneck is eliminated.
   form is submitted.
 - **Manual Lab entry:** the *original* Add row, Save report and Cancel
   controls share a keyboard-aware action region. Add row stays a separate
-  HTMX button in the original form, not a submission; its full-width
-  row is above Save/Cancel. The separate CSV import form, manual entry
+  HTMX button in the original form, not a submission. All three use a
+  single three-column row on phones: a two-row 121px-high bar overlapped
+  the dock at 320px in the initial isolated preview. The separate CSV
+  import form, manual entry
   data and upload, existing duplicate-analyte warnings, completeness
   review and unsaved-change guard are untouched.
 
