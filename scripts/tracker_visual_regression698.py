@@ -147,6 +147,25 @@ def visual_run(baseline_url: str, candidate_url: str, artifact_dir: Path) -> tup
 
     comparisons = 0
     failures = 0
+    allowed_ports = {urlsplit(baseline_url).port, urlsplit(candidate_url).port}
+
+    def isolated_request(route):
+        # Fail closed on external assets, trackers and unintended localhost
+        # services; only our two isolated loopback servers may receive traffic.
+        parsed = urlsplit(route.request.url)
+        try:
+            allowed = (
+                parsed.scheme == "http"
+                and parsed.hostname == "127.0.0.1"
+                and parsed.port in allowed_ports
+            )
+        except ValueError:
+            allowed = False
+        if allowed:
+            route.continue_()
+        else:
+            route.abort()
+
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
             headless=True,
@@ -163,6 +182,7 @@ def visual_run(baseline_url: str, candidate_url: str, artifact_dir: Path) -> tup
                         locale="en-US",
                         timezone_id="America/New_York",
                     )
+                    context.route("**/*", isolated_request)
                     # Every origin receives the same preference before its theme
                     # script executes; separate page/session state by context.
                     context.add_init_script(
