@@ -1,0 +1,79 @@
+/* Release 704 — one mobile action treatment for Notes, previous workouts,
+   and manual Labs. Do not clone controls or alter existing form handlers.
+   Earlier 702/703 edit-form rules remain unchanged and separately scoped. */
+@media screen and (max-width: 760px) {
+  #main-content form > .tracker-form-actions704 {
+    position: sticky;
+    bottom: calc(4.7rem + env(safe-area-inset-bottom, 0px));
+    z-index: 29; /* Below Tracker's fixed mobile dock (30). */
+    box-sizing: border-box;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: .45rem;
+    width: 100%;
+    min-width: 0;
+    padding: .55rem;
+    margin: .7rem 0 .3rem;
+    border: 1px solid var(--rule, #cbd5e1);
+    border-radius: .75rem;
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+    box-shadow: 0 -3px 16px rgba(0, 0, 0, .1);
+  }
+
+  #main-content form > .tracker-form-actions704 > :is(button, a) {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    padding: .55rem .5rem;
+    margin: 0;
+    text-align: center;
+    text-decoration: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    border-radius: .65rem;
+  }
+
+  /* Notes draft discard remains a separate non-submit control.
+     The one Save action is clearly distinguished at narrow widths. */
+  #main-content form > .tracker-form-actions704--notes > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  /* The manual Lab form's Add Row is not a submit. Keep it reachable
+     while Save/Cancel share the next row, in original DOM order. */
+  #main-content form > .tracker-form-actions704--lab > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  #main-content form > .tracker-form-actions704 > a.btn {
+    border: 1px solid var(--rule, #cbd5e1);
+    background: var(--surface, #fff);
+    color: var(--ink, #192c31);
+  }
+
+  #main-content form > .tracker-form-actions704 > :is(button, a):focus-visible {
+    outline: 3px solid var(--teal, #1265ad);
+    outline-offset: 2px;
+  }
+
+  /* The soft keyboard hides the dock via existing mobile shell JS.
+     Return actions to natural document flow to avoid covering active fields. */
+  :root.tracker-mobile-editing #main-content form > .tracker-form-actions704 {
+    position: static;
+  }
+}
+
+@media print {
+  #main-content form > .tracker-form-actions704 {
+    position: static !important;
+    box-shadow: none !important;
+  }
+}
