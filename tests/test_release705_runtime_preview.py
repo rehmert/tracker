@@ -47,6 +47,6 @@ def test_705_full_browser_preview_is_allowed_by_exact_sha_source_gate():
     scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
     assert 'bash -n scripts/tracker-browser-preview705.sh' in scoped
     assert 'tests/test_release705_runtime_preview.py' in scoped
-    assert scoped.index('tests/test_release705_runtime_preview.py') < scoped.index(
-        'tests/test_csrf_all_registered_negative705.py'
+    assert scoped.index('RELEASE_705_BROWSER_RUNNER_CONTRACT=PASSED') < scoped.index(
+        'RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED'
     )
