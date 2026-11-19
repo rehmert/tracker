@@ -235,10 +235,10 @@ listing them does not constitute executed parity evidence. The other
 
 ## Single release qualification and deployment limits
 
-The candidate's exact ten-file diff comprises two new read-only
-scripts, the audited Release 627 reconciler and its test,
-two release-scoped/isolated preview scripts, two focused Release 705
-test files, the guarded browser qualification runner, and this document.
+The candidate's exact fourteen-file diff includes the CSRF and dependency
+readiness scripts, audited historical reconciliation, source and full-browser
+preview gates, the guarded browser qualification runner, focused Release 705
+regressions, corrected legacy Vitals and Vials browser tests, and this document.
 It changes **no application code, security middleware, server settings,
 requirements, database, JS, or browser test sources**. The guarded runner
 only registers existing test modules. Source-preview success does not
