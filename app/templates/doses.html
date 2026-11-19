@@ -25,6 +25,7 @@
 <link rel="stylesheet"
  href="/static/css/tracker-dose-mobile104.css?v=bundle104">
 <link rel="stylesheet" href="/static/css/tracker-calendar-dose-mobile369.css?v=366">
+<link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 <h1>Dose log</h1>
 {% if planned_handoff %}
 <nav class="calendar-dose-shortcut" aria-label="Calendar dose entry">
@@ -32,7 +33,19 @@
   <a href="#calendar-vial-picker">Confirm vial and record ↓</a>
 </nav>
 {% endif %}
-{% if repeat_notice %}<p class="note" role="status" id="dose-repeat-notice">{{ repeat_notice }}</p>{% endif %}{% if calendar_vial_notice %}<p class="note" role="status" id="dose-calendar-vial-notice">{{ calendar_vial_notice }}</p>{% endif %}<p class="note">Use “Prepare similar” in History to load previous recorded details for review. It never records an administration, and does not copy the previous time, notes, or supplies.</p><p class="note">Record an actual administration here. To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Recording a dose may update inventory; merely opening a planned entry does not.</p><nav class="ux-shortcuts"><a href="/calendar">Log from calendar</a><a href="#dose-history">View history ↓</a></nav>
+{% if repeat_notice %}<p class="note" role="status" id="dose-repeat-notice">{{ repeat_notice }}</p>{% endif %}
+{% if calendar_vial_notice %}<p class="note" role="status" id="dose-calendar-vial-notice">{{ calendar_vial_notice }}</p>{% endif %}
+<p class="note">Record an actual administration only. Saving may update inventory; opening a plan does not.</p>
+<nav class="ux-shortcuts tracker-flow696-actions" aria-label="Dose entry shortcuts">
+  <a class="tracker-flow696-primary" href="#calendar-vial-picker">Record Dose</a>
+  <a href="/calendar">Log from calendar</a>
+  <a href="#dose-history">View history ↓</a>
+</nav>
+<details class="tracker-flow696-guide">
+  <summary>About dose drafts and planned entries</summary>
+  <p class="note">Use “Prepare similar” in History to load previous recorded details for review. It never records an administration, and does not copy the previous time, notes, or supplies.</p>
+  <p class="note">To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Confirm the current vial, amount, time and supplies before saving.</p>
+</details>
 
 {% if active_blends %}
 <section class="card" id="dose-blend-picker" aria-labelledby="dose-blend-heading">
