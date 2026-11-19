@@ -148,15 +148,43 @@ def test_705_579_runtime_js_inventory_is_checked_before_browser_start():
     preview = (ROOT / "scripts/tracker-browser-preview705.sh").read_text()
     source = (ROOT / "scripts/tracker-preview705.sh").read_text()
     scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
-    assert 'ISOLATED_HTMX_VENDOR = "app/static/vendor/htmx.min.js"' in report
-    assert 'partition_tracked_js_callsites(inventory["callsites"])' in report
-    assert 'Unknown untracked vendor JS requires source review' in report
+
+    # This is an app-source addition, not a third-party vendor asset:
+    # the 51st callsite must be individually inventoried and never credited
+    # with the Release 579 positive browser evidence.
+    assert 'WORKOUT_OFFLINE668_SOURCE = "app/static/js/tracker-workout-drafts668.js"' in report
+    assert 'verify_workout_offline668_request_lines' in report
+    assert 'len(items) != 51' in report
+    assert 'len(new_workout) != 1' in report
+    assert 'New workout fetch cannot inherit 579 browser witnesses' in report
+    assert 'len(selected) != 2' in report
+    assert 'len(catalog) != 2' in report
+    assert 'len(new_coa) != 1 or len(new_multi_coa) != 1' in report
     assert 'RELEASE_705_579_TRACKED_JS_PREFLIGHT=PASSED' in runner
-    assert 'tests/test_release579_csrf_runtime_report.py::test_705_579_only_ignores_known_gitignored_htmx_asset' in runner
+    for test in (
+        'test_579_two_tracked_javascript_callsites_not_overclaimed',
+        'test_705_668_offline_sync_is_explicitly_pending_positive_browser_evidence',
+        'test_705_668_offline_sync_request_is_reviewed_not_witnessed',
+    ):
+        assert test in runner
     assert runner.index('ISOLATED_HTMX_VENDOR=VERIFIED') < runner.index(
         'RELEASE_705_579_TRACKED_JS_PREFLIGHT=PASSED'
     ) < runner.index('=== ISOLATED CANDIDATE SERVER ===')
-    for script in (preview, source):
-        assert 'scripts/tracker_csrf_runtime_report579.py|\\' in script
-        assert 'tests/test_release579_csrf_runtime_report.py|\\' in script
-    assert 'RELEASE_705_579_SOURCE_INVENTORY=PASSED' in scoped
+
+    historical_tests = (
+        "tests/test_release575_csrf_js_review.py",
+        "tests/test_release576_csrf_js_triage.py",
+        "tests/test_release578_csrf_route_ledger.py",
+        "tests/test_release579_csrf_runtime_report.py",
+        "tests/test_release640_csrf_inventory.py",
+        "tests/test_release648_prod_recovery.py",
+        "tests/test_coa_multiple_test_types651.py",
+    )
+    for path in historical_tests:
+        assert path in scoped
+        for script in (preview, source):
+            assert path + "|\\" in script
+    assert "RELEASE_705_51_TRACKED_JS_SOURCE_LEDGER=PASSED" in scoped
+    assert scoped.index("RELEASE_705_51_TRACKED_JS_SOURCE_LEDGER=PASSED") < scoped.index(
+        "RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED"
+    )
