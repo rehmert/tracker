@@ -102,9 +102,16 @@ def test_705_stays_read_only_and_preserves_historical_qualifiers():
             "pip install -U", "TRACKER_CSRF_ENFORCE=1",
         ):
             assert forbidden not in source
+    route_test = (ROOT / "tests/test_csrf_all_registered_negative705.py").read_text()
+    assert "CRITICAL_WRITES = frozenset({" in route_test
+    assert "if len(routes) < 120" not in route_test
+    assert "missing = CRITICAL_WRITES - routes" in route_test
+    assert "assert observed == {" in route_test
+    assert 'signed_invalid.status_code == 422' in route_test
     gate = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
     for module in (
         "tests/test_release705_combined.py",
+        "tests/test_csrf_all_registered_negative705.py",
         "tests/test_release627_csrf_reconciliation.py",
         "tests/test_release569_dependency_baseline.py",
         "tests/test_release570_freshenv.py",
