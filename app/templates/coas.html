@@ -1,12 +1,75 @@
 {% extends "base.html" %}
 {% block title %}Certificates of analysis{% endblock %}
 {% block content %}
-<h1>Certificates of analysis</h1>
-<p class="note">Manage certificates, test results, documents, and vial assignments in one place.</p>
-<p><a class="primary button" href="/coas/new">+ Add COA</a> · <a href="/coa-test-types">Manage test types</a></p>
-<form method="get" class="inline"><label class="field"><span>Compound</span><select name="compound_id" onchange="this.form.submit()"><option value="">All compounds</option>{% for compound in compounds %}<option value="{{ compound.id }}" {% if compound_id == compound.id %}selected{% endif %}>{{ compound.name }}</option>{% endfor %}</select></label><button>Filter</button></form>
-<section><div class="scroll"><table class="ux673-card-table"><thead><tr><th>COA</th><th>Compound / linked vials</th><th>Lab</th><th>Test date</th><th>Purity</th><th>Review</th><th>Document</th><th>Actions</th></tr></thead><tbody>
-{% for c in coas %}<tr><td data-label="COA"><a href="/coas/{{ c.id }}">#{{ c.id }}</a></td><td data-label="Compound" data-ux673-full>{% if c.all_vials %}{{ c.all_vials[0].compound.name }} · {{ c.all_vials|length }} vial(s){% else %}Unassigned{% endif %}</td><td data-label="Lab">{{ c.lab_name or '—' }}</td><td data-label="Test date">{{ c.tested_on|dt }}</td><td data-label="Purity">{{ (c.purity_pct|num ~ '%') if c.purity_pct is not none else '—' }}</td><td data-label="Review">{{ c.verification_status|replace("_", " ")|title }}</td><td data-label="Document">{% if c.original_name or c.attachments %}<a href="/coas/{{ c.id }}">{{ (1 if c.original_name else 0) + (c.attachments|length) }} document(s)</a>{% else %}Metadata only{% endif %}</td><td data-label="Actions" data-ux673-action><a href="/coas/{{ c.id }}">View / edit</a></td></tr>
-{% else %}<tr><td colspan="8">No certificates yet. Select Add COA to create one.</td></tr>{% endfor %}
-</tbody></table></div></section>
+<link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
+<script defer src="/static/js/tracker-coa-find696.js?v=696"></script>
+<section data-flow696-coas>
+  <h1>Certificates of analysis</h1>
+  <p class="note">Review certificate results, documents and vial assignments.</p>
+  <nav class="tracker-flow696-actions" aria-label="Certificate actions">
+    <a class="tracker-flow696-primary" href="/coas/new">+ Add COA</a>
+    <a href="#tracker-flow696-coa-filters">Find certificates</a>
+    <details class="tracker-flow696-more">
+      <summary>More COA tools</summary>
+      <div><a href="/coa-test-types">Manage test types</a></div>
+    </details>
+  </nav>
+
+  <form method="get" class="inline" id="tracker-flow696-coa-filters">
+    <label class="field">
+      <span>Compound</span>
+      <select name="compound_id" onchange="this.form.submit()">
+        <option value="">All compounds</option>
+        {% for compound in compounds %}
+        <option value="{{ compound.id }}" {% if compound_id == compound.id %}selected{% endif %}>{{ compound.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Filter</button>
+  </form>
+
+  <div class="tracker-flow696-coa-tools" role="search" aria-label="Search listed certificates">
+    <label class="field">
+      <span>Search displayed certificates</span>
+      <input type="search" data-flow696-search
+             placeholder="Lab, compound, COA number…"
+             autocomplete="off" aria-controls="tracker-flow696-coa-table">
+    </label>
+    <button type="button" data-flow696-reset>Clear search</button>
+    <p class="note" data-flow696-count role="status" aria-live="polite"></p>
+    <p class="note" data-flow696-empty hidden>No displayed certificates match your search.</p>
+  </div>
+
+  <section aria-label="Certificate records">
+    <div class="scroll">
+      <table class="ux673-card-table tracker-flow696-coa-table" id="tracker-flow696-coa-table">
+        <thead>
+          <tr><th>COA</th><th>Compound / linked vials</th><th>Lab</th><th>Test date</th><th>Purity</th><th>Review</th><th>Document</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for c in coas %}
+          <tr data-flow696-coa-row>
+            <td data-label="COA"><a href="/coas/{{ c.id }}">#{{ c.id }}</a></td>
+            <td data-label="Compound" data-ux673-full>
+              {% if c.all_vials %}{{ c.all_vials[0].compound.name }} · {{ c.all_vials|length }} vial(s){% else %}Unassigned{% endif %}
+            </td>
+            <td data-label="Lab">{{ c.lab_name or '—' }}</td>
+            <td data-label="Test date">{{ c.tested_on|dt }}</td>
+            <td data-label="Purity">{{ (c.purity_pct|num ~ '%') if c.purity_pct is not none else '—' }}</td>
+            <td data-label="Review">{{ c.verification_status|replace("_", " ")|title }}</td>
+            <td data-label="Document">
+              {% if c.original_name or c.attachments %}
+                <a href="/coas/{{ c.id }}">{{ (1 if c.original_name else 0) + (c.attachments|length) }} document(s)</a>
+              {% else %}Metadata only{% endif %}
+            </td>
+            <td data-label="Actions" data-ux673-action><a href="/coas/{{ c.id }}">View / edit</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8">No certificates yet. Select Add COA to create one.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
 {% endblock %}
