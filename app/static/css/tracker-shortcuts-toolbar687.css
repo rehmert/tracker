@@ -47,12 +47,8 @@
   #main-content > .workspace-toolbar > :is(form, .ux-add-menu, .workspace-settings) {
     flex: 0 0 auto;
   }
-  #main-content > .workspace-toolbar > .workspace-search {
-    flex: 1 1 9rem;
-    width: auto;
-    min-width: 7rem;
-  }
-  #main-content > .workspace-toolbar > .workspace-nav-find {
+  /* Search widgets use the same desktop sizing and shrink together. */
+  #main-content > .workspace-toolbar > :is(.workspace-search,.workspace-nav-find) {
     flex: 1 1 9rem;
     width: auto;
     min-width: 7rem;
@@ -75,8 +71,7 @@
   #main-content > .workspace-toolbar > form { order: -3; }
   #main-content > .workspace-toolbar > .ux-add-menu { order: -2; }
   #main-content > .workspace-toolbar > .workspace-settings { order: -1; margin-left: auto; }
-  #main-content > .workspace-toolbar > .workspace-search,
-  #main-content > .workspace-toolbar > .workspace-nav-find {
+  #main-content > .workspace-toolbar > :is(.workspace-search,.workspace-nav-find) {
     flex: 1 1 12rem;
     min-width: 9rem;
   }
