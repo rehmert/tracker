@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/static/css/tracker-workouts657.css?v=657">
 <script src="/static/js/tracker-workouts655.js?v=655" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
+<link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 {% endblock %}
 {% block content %}
 <section class="workout654">
@@ -32,7 +33,13 @@
           · <a href="/workouts/routines/{{ active_routine.id }}">{{ active_routine.name }}</a>
         {% endif %}
       </span>
-      <form method="post" action="/workouts/finish"><button type="submit" class="primary" formaction="/workouts/finish-review">Finish &amp; Review</button> <button type="submit">Finish Workout</button></form>
+      <form method="post" action="/workouts/finish" class="tracker-flow696-finish">
+        <button type="submit" class="primary" formaction="/workouts/finish-review">Finish &amp; Review</button>
+        <details>
+          <summary>Other finish option</summary>
+          <button type="submit">Finish Workout</button>
+        </details>
+      </form>
     </div>
   {% else %}
     <form method="post" action="/workouts/start">
