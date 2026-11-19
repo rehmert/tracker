@@ -33,7 +33,11 @@ git diff --check "$BASE" "$TARGET"
 # Guard against any application or database changes in this tooling-only release.
 while IFS= read -r file; do
   case "$file" in
-    scripts/tracker_visual_regression698.py|    scripts/tracker-release-scoped698.sh|    scripts/tracker-preview698.sh|    tests/test_visual_regression698.py|    docs/release-698-visual-regression.md) ;;
+    scripts/tracker_visual_regression698.py|\
+    scripts/tracker-release-scoped698.sh|\
+    scripts/tracker-preview698.sh|\
+    tests/test_visual_regression698.py|\
+    docs/release-698-visual-regression.md) ;;
     *) fail "Out-of-scope Release 698 path: $file" ;;
   esac
 done < <(git diff --name-only "$BASE" "$TARGET")
