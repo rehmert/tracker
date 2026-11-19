@@ -18,6 +18,28 @@ from app.main import app
 
 METHODS = frozenset(("POST", "PUT", "PATCH", "DELETE"))
 
+# Independent, explicit critical-write sentinels grounded in registered
+# application routes. The historical source report's 161 declarations include
+# scopes and conventions not identical to FastAPI's runtime APIRoute list.
+# Do not invent a total-route threshold and call it an application regression.
+CRITICAL_WRITES = frozenset({
+    ("POST", "/compounds"),
+    ("POST", "/coas/new"),
+    ("POST", "/doses"),
+    ("DELETE", "/doses/{did}"),
+    ("POST", "/food/water"),
+    ("POST", "/labs"),
+    ("POST", "/pages"),
+    ("POST", "/protocols"),
+    ("POST", "/purchases"),
+    ("POST", "/regimen/items"),
+    ("POST", "/supplies"),
+    ("DELETE", "/vitals/{rid}"),
+    ("POST", "/vitals"),
+    ("POST", "/vials/bulk"),
+    ("POST", "/workouts/backfill"),
+})
+
 
 def registered_writes() -> tuple[tuple[str, str], ...]:
     routes = set()
@@ -31,8 +53,12 @@ def registered_writes() -> tuple[tuple[str, str], ...]:
             if route.path.startswith("/secondary/"):
                 continue
             routes.add((method, route.path))
-    if len(routes) < 120:
-        raise AssertionError("Registered unsafe-route inventory shrank unexpectedly")
+    missing = CRITICAL_WRITES - routes
+    if missing:
+        raise AssertionError(
+            "Critical registered write routes disappeared: "
+            + repr(sorted(missing))
+        )
     return tuple(sorted(routes))
 
 
@@ -53,10 +79,20 @@ def test_705_all_registered_unsafe_routes_reject_missing_and_forged_csrf(
 
     routes = registered_writes()
     failures = []
+    observed = set()
     with TestClient(app) as client:
         page = client.get("/labs")
         assert page.status_code == 200
-        assert client.cookies.get(COOKIE_NAME)
+        token = client.cookies.get(COOKIE_NAME)
+        assert token
+        # A valid token reaches route validation (but the deliberately empty
+        # Compound name cannot create a record). This confirms strict mode
+        # is not merely rejecting all writes indiscriminately.
+        signed_invalid = client.post(
+            "/compounds", data={"name": ""},
+            headers={HEADER_NAME: token}, follow_redirects=False,
+        )
+        assert signed_invalid.status_code == 422
         for method, declared in routes:
             url = sample_path(declared)
             for label, headers in (
@@ -67,9 +103,14 @@ def test_705_all_registered_unsafe_routes_reject_missing_and_forged_csrf(
                     method, url, data={"csrf_probe_705": "invalid"},
                     headers=headers, follow_redirects=False,
                 )
+                observed.add((method, declared, label))
                 if result.status_code != 403:
                     failures.append((method, declared, label, result.status_code))
     assert not failures, failures[:25]
+    assert observed == {
+        (method, path, label)
+        for method, path in routes for label in ("missing", "forged")
+    }
     print(f"CSRF_705_REGISTERED_UNSAFE_ROUTES={len(routes)}")
     print(f"CSRF_705_FORGED_DENIAL_CASES={len(routes) * 2}")
     print("CSRF_705_NEGATIVE_MATRIX=PASSED_NOT_POSITIVE_EVIDENCE")
