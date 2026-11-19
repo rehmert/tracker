@@ -93,6 +93,7 @@ def test_704_css_is_keyboard_safe_and_scoped_to_three_editor_action_rows():
         'tracker-form-actions704--lab',
         'tracker-mobile-editing',
         'getBoundingClientRect()',
+        'const manualFormEntered = formTop <= 120',
         'formTop + barHeight + 16 <= dockTop',
         'window.addEventListener("scroll", schedule, { passive: true })',
         'requestAnimationFrame(refresh)',
