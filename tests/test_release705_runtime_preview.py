@@ -349,3 +349,53 @@ def test_705_dependency_preview_is_exact_sha_disposable_and_read_only():
             'tests/test_release705_dependency_readiness.py',
         ):
             assert path + "|\\" in data
+
+
+def test_705_download_only_acquisition_guarded_and_separate_from_installs():
+    source = (ROOT / "scripts/tracker-dependency-acquire705.sh").read_text()
+    scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
+    python = (ROOT / "scripts/tracker_dependency_acquire705.py").read_text()
+    for item in (
+        "APP=/opt/tracker",
+        "BASE=24cb9ec47417e001c3f96dfed630e3b8b0264d93",
+        "REF=release/705-csrf-dependency-closeout",
+        "INVOCATION_ID",
+        "tracker-dev",
+        'flock -n 9',
+        'git merge-base --is-ancestor',
+        'git worktree add --detach',
+        'git -C "$APP" worktree remove --force',
+        'bash scripts/tracker-release-scoped705.sh "$PY"',
+        'scripts/tracker_dependency_readiness705.py',
+        'scripts/tracker_dependency_acquire705.py --execute-download',
+        "DEPENDENCY_705_INSTALLED_SOURCE_UNCHANGED=VERIFIED",
+        "DEPENDENCY_705_ACQUIRE_PREVIEW=PASSED_NO_INSTALL",
+    ):
+        assert item in source, item
+    assert source.index("DEPENDENCY_705_ACQUIRE_BASELINE_PREFLIGHT=PASSED") < source.index(
+        "scripts/tracker_dependency_acquire705.py --execute-download"
+    )
+    assert "bash -n scripts/tracker-dependency-acquire705.sh" in scoped
+    assert "tests/test_release705_dependency_acquire.py" in scoped
+    assert "DEPENDENCY_705_ACQUIRE_SOURCE_CONTRACT=PASSED" in scoped
+    for source_gate in (
+        ROOT / "scripts/tracker-preview705.sh",
+        ROOT / "scripts/tracker-browser-preview705.sh",
+    ):
+        data = source_gate.read_text()
+        for item in (
+            "scripts/tracker_dependency_acquire705.py",
+            "scripts/tracker-dependency-acquire705.sh",
+            "tests/test_release705_dependency_acquire.py",
+        ):
+            assert item + "|\\" in data
+    assert '"--only-binary=:all:", "--no-deps"' in python
+    assert '"--no-cache-dir"' in python
+    assert 'PYPI_INDEX = "https://pypi.org/simple"' in python
+    assert 'record.get("digests", {}).get("sha256") != row["sha256"]' in python
+    assert "DEPENDENCY_705_REPLAY=NOT_EXECUTED" in python
+    for forbidden in (
+        'pip install', 'systemctl restart', 'git reset',
+        'TRACKER_CSRF_ENFORCE=1', '/etc/tracker.env', 'tracker-release.sh',
+    ):
+        assert forbidden not in source

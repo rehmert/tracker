@@ -235,7 +235,7 @@ listing them does not constitute executed parity evidence. The other
 
 ## Single release qualification and deployment limits
 
-The candidate's exact twenty-four-file diff includes the CSRF and dependency
+The candidate's exact thirty-file diff includes the CSRF and dependency
 readiness scripts, audited historical reconciliation, source and full-browser
 preview gates, the guarded browser qualification runner, focused Release 705
 regressions, corrected legacy Vitals and Vials browser tests, and this document.
@@ -531,3 +531,48 @@ three-file allowlist additions. Because this changes the candidate
 commit only in QA/readiness tools, the earlier full browser success
 remains attributable to its *previous* exact SHA; it is not silently
 reassigned to this SHA. Full DEV promotion remains blocked.
+
+
+## Release 705 Issue #10 approved download-only PyPI wheel acquisition
+
+On 2026-11-19 the operator approved acquisition of the 44 exact
+Release 569 Python distribution wheels, with **no installation**.
+A search of DEV /tmp, /root/.cache/pip and /opt/tracker found only
+synthetic pytest wheel fixtures, not a real approved wheelhouse.
+
+New `scripts/tracker_dependency_acquire705.py` is opt-in with
+`--execute-download` and restricted to root on tracker-dev. It
+creates an exclusive private `/tmp/tracker705-wheel-acquire.XXXXXXXX`
+staging root and writes a separate private wheelhouse, exact pinned
+requirements, and private hash receipts. Pip runs only `download`
+with exact 44 pins, `--isolated`, HTTPS PyPI index, `--no-deps`,
+`--no-cache-dir`, `--only-binary=:all:`, `--no-input` and a
+bounded subprocess. No preexisting cache, requirements or active
+environment is modified. No browser is fetched.
+
+After download it calls the previous read-only 705 archive and ABI
+validator; verifies the exact 44-wheel filename/sha256 inventory;
+checks each wheel byte count and SHA-256 against the named file in
+PyPI's HTTPS JSON release API, disallowing mismatched, yanked or
+unexpected-host artifacts; creates and re-verifies the exact SHA-256
+lock and requirements file. It retains the private /tmp root on
+success or failure and prints its location. **PyPI digest agreement
+is not an independent provenance attestation**, vulnerability review,
+browser pin, OS reproducibility, replay, rollback proof or Issue #10
+closure.
+
+New `scripts/tracker-dependency-acquire705.sh` is an exact-SHA,
+DEV-only guarded acquisition wrapper. It checks clean installed
+Release 704, active DEV, exact candidate branch, diff allowlist,
+1 GiB free /tmp capacity, full Release 705 source qualification and
+read-only installed Python baseline before any network call.
+Acquisition is serialized using the existing dependency-preview
+lock. All downloaded bytes stay in the private retained /tmp root
+outside the transient candidate source worktree. It makes no
+installed Python/DEV/PROD changes or global CSRF activation.
+
+The changed-file allowlists and release source gate include
+the new scripts and offline-only tests. A full browser pass on a
+previous SHA is not silently assigned to the new SHA; the 705 release
+remains unapproved pending the remaining security and independent
+dependency replay evidence.

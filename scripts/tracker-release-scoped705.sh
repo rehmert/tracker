@@ -17,9 +17,12 @@ bash -n scripts/tracker-release-scoped705.sh
 bash -n scripts/tracker-preview705.sh
 bash -n scripts/tracker-browser-preview705.sh
 bash -n scripts/tracker-dependency-preview705.sh
+bash -n scripts/tracker-dependency-acquire705.sh
 "$PY" -m py_compile \
   scripts/tracker_dependency_lock705.py \
   scripts/tracker_dependency_readiness705.py \
+  scripts/tracker_dependency_acquire705.py \
+  tests/test_release705_dependency_acquire.py \
   tests/test_release705_dependency_readiness.py \
   scripts/tracker_csrf_closeout705.py \
   scripts/tracker_csrf_reconcile627.py \
@@ -55,6 +58,12 @@ echo 'RELEASE_705_51_TRACKED_JS_SOURCE_LEDGER=PASSED'
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release705_dependency_readiness.py
 echo 'DEPENDENCY_705_SOURCE_READINESS_CONTRACT=PASSED'
+
+# Validate download-only CLI shape, PyPI digest/host/yank matching, and
+# no-install environment guarantees before any browser or ASGI tests.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release705_dependency_acquire.py
+echo 'DEPENDENCY_705_ACQUIRE_SOURCE_CONTRACT=PASSED'
 
 # Check the exact-commit runtime runner contract before any ASGI requests.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
