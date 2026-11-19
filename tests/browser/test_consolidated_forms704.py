@@ -203,7 +203,7 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                                 );
                                 window.scrollTo(
                                     0, window.scrollY +
-                                    form.getBoundingClientRect().top - 120
+                                    form.getBoundingClientRect().top - 80
                                 );
                             }""")
                             try:
@@ -317,7 +317,7 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                                 );
                                 window.scrollTo(
                                     0, window.scrollY +
-                                    f.getBoundingClientRect().top - 120
+                                    f.getBoundingClientRect().top - 80
                                 );
                             }""")
                             page.wait_for_function("""() =>
