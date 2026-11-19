@@ -235,7 +235,7 @@ listing them does not constitute executed parity evidence. The other
 
 ## Single release qualification and deployment limits
 
-The candidate's exact fourteen-file diff includes the CSRF and dependency
+The candidate's exact sixteen-file diff includes the CSRF and dependency
 readiness scripts, audited historical reconciliation, source and full-browser
 preview gates, the guarded browser qualification runner, focused Release 705
 regressions, corrected legacy Vitals and Vials browser tests, and this document.
