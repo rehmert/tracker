@@ -30,6 +30,7 @@ while IFS= read -r path; do
     scripts/tracker-release-scoped705.sh|\
     scripts/tracker-preview705.sh|\
     tests/test_release705_combined.py|\
+    tests/test_csrf_all_registered_negative705.py|\
     docs/release-705-csrf-dependency-closeout.md) ;;
     *) fail "Out-of-scope path: $path" ;;
   esac
