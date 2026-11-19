@@ -21,6 +21,7 @@ bash -n scripts/tracker-preview705.sh
   tests/test_release705_combined.py
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release705_combined.py \
+  tests/test_csrf_all_registered_negative705.py \
   tests/test_release569_dependency_baseline.py \
   tests/test_release570_freshenv.py \
   tests/test_release627_csrf_reconciliation.py \
