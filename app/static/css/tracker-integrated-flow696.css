@@ -111,9 +111,9 @@
 }
 .tracker-flow696-coa-tools button { min-height:44px; }
 .tracker-flow696-coa-tools p { flex:1 1 100%; margin:0; }
-.tracker-flow696-coa-table tbody tr[hidden],
+#tracker-flow696-coa-table tbody tr[hidden],
 .tracker-flow696-coa-tools [hidden] { display:none !important; }
-.tracker-flow696-coa-table { width:100%; }
+#tracker-flow696-coa-table { width:100%; }
 @media(max-width:760px) {
   .tracker-flow696-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
   .tracker-flow696-actions > a,
