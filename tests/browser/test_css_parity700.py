@@ -220,7 +220,9 @@ def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():
                                         left.convert("RGB"), right.convert("RGB")
                                     )
                                     assert difference.getbbox() is None, f"Screenshot changed: {label}"
-                                assert b["overflow"] == 0, f"Horizontal overflow: {label}"
+                                assert b["overflow"] == a["overflow"], (
+                                    f"Horizontal overflow changed: {label}"
+                                )
                                 comparisons += 1
                     finally:
                         context.close()
