@@ -2647,17 +2647,53 @@ def test_603_vials_navigation_and_daily_action_filter(tab, scheme):
     expect(daily).to_be_visible()
     daily.click()
     expect(daily).to_have_attribute("aria-pressed", "true")
+    # Release 705 reconciliation: Quick Entry now has seven explicitly
+    # Daily-tagged actions. Verify the actual destinations and both sides
+    # of the filter, rather than assuming Release 603's five-card count.
+    expected_daily_actions = {
+        "/food#food-quick-log",
+        "/food#food-water",
+        "/doses",
+        "/vitals",
+        "/workouts/quick",
+        "/regimen#reg635-today",
+        "/supplies",
+    }
+    daily_cards = page.locator('a[data-quick-action][data-quick-daily]')
+    daily_targets = daily_cards.evaluate_all(
+        "(items) => items.map(item => item.getAttribute('href'))"
+    )
+    assert len(daily_targets) == len(expected_daily_actions)
+    assert set(daily_targets) == expected_daily_actions
+    visible_actions = page.locator('a[data-quick-action]:not([hidden])')
+    visible_targets = visible_actions.evaluate_all(
+        "(items) => items.map(item => item.getAttribute('href'))"
+    )
+    assert len(visible_targets) == len(expected_daily_actions)
+    assert set(visible_targets) == expected_daily_actions
     assert page.locator(
-        "a[data-quick-action]:not([hidden])"
-    ).count() == 5
+        'a[data-quick-action]:not([data-quick-daily])'
+    ).evaluate_all("(items) => items.every(item => item.hidden)")
+    expect(page.locator("[data-quick-count]")).to_have_text(
+        f"Showing {len(expected_daily_actions)} of {all_actions.count()} actions"
+    )
+
     page.locator("[data-quick-search]").fill("water")
-    assert page.locator(
-        "a[data-quick-action]:not([hidden])"
-    ).count() == 1
+    expect(visible_actions).to_have_count(1)
+    assert visible_actions.first.get_attribute("href") == "/food#food-water"
+    expect(page.locator("[data-quick-count]")).to_have_text(
+        f"Showing 1 of {all_actions.count()} actions"
+    )
+
     page.locator("[data-quick-reset]").click()
-    assert page.locator(
-        "a[data-quick-action]:not([hidden])"
-    ).count() == all_actions.count()
+    expect(daily).to_have_attribute("aria-pressed", "false")
+    expect(page.locator('button[data-quick-category="all"]')).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    expect(visible_actions).to_have_count(all_actions.count())
+    expect(page.locator("[data-quick-count]")).to_have_text(
+        f"Showing {all_actions.count()} of {all_actions.count()} actions"
+    )
     assert not errors, errors
 
 

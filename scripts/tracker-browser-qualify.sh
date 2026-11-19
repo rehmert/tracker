@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -409,6 +409,22 @@ for _ in range(60):
 else:
     raise SystemExit("ERROR: strict candidate did not become ready or enforce CSRF")
 PY
+
+# Release 705: narrow HTTP + HTTPS strict-Vials / Quick Entry browser
+# preflight. Two real Chromium cases; no writes to installed DEV/PROD and
+# NOT a substitute for the full standard + strict suites.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == quick603 ]]; then
+  echo "TARGETED_QUICK603_SCOPE=HTTP_HTTPS_STRICT_ONLY_NOT_FULL_QA"
+  env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" \
+    TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
+    TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
+    TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
+    "$PY" -B -m pytest -q --tb=short --maxfail=1 \
+    "tests/browser/test_strict_csrf521.py::test_603_vials_navigation_and_daily_action_filter"
+  echo "TARGETED_QUICK603_HTTP_HTTPS=PASSED"
+  exit 0
+fi
 
 # Release 635: exact failing Notes title lifecycle only (HTTP + HTTPS).
 # This preflight is NOT full browser qualification or a DEV approval receipt.

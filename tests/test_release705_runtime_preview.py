@@ -101,3 +101,42 @@ def test_705_vials_603_reports_navigation_opens_visible_disclosure():
     assert 'page.evaluate("location.hash")' in fixture
     assert 'navigation.locator(\'a[href="#tracker-inventory-reports"]\').click()' not in fixture
     assert "def test_603_vials_navigation_and_daily_action_filter(tab, scheme):" in fixture
+
+
+def test_705_quick_entry_daily_filter_matches_current_seven_recording_actions():
+    import re
+
+    # Release 603's five-action fixture was stale after new daily workflows.
+    # Static template inventory and runtime browser test pin the same 7 real
+    # recording destinations; the JS filter must honor data-quick-daily.
+    quick = (ROOT / "app/templates/quick_entry.html").read_text()
+    js = (ROOT / "app/static/js/tracker-quick-entry.js").read_text()
+    browser = (ROOT / "tests/browser/test_strict_csrf521.py").read_text()
+    runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
+    preview = (ROOT / "scripts/tracker-browser-preview705.sh").read_text()
+
+    tags = re.findall(r"<a\\b[^>]*\\bdata-quick-action\\b[^>]*>", quick, re.S)
+    daily_tags = [tag for tag in tags if re.search(r"\\bdata-quick-daily\\b", tag)]
+    hrefs = [re.search(r'href="([^"]+)"', tag).group(1) for tag in daily_tags]
+    expected = {
+        "/food#food-quick-log", "/food#food-water", "/doses", "/vitals",
+        "/workouts/quick", "/regimen#reg635-today", "/supplies",
+    }
+    assert len(hrefs) == len(expected)
+    assert set(hrefs) == expected
+    assert len(tags) > len(daily_tags)
+    assert "action.hasAttribute('data-quick-daily')" in js
+    assert "category === 'daily'" in js
+    assert "expected_daily_actions = {" in browser
+    assert "assert set(visible_targets) == expected_daily_actions" in browser
+    assert "items.every(item => item.hidden)" in browser
+    assert "== 5" not in browser[browser.index(
+        "def test_603_vials_navigation_and_daily_action_filter"):browser.index(
+        "def test_604_navigation_shortcuts_are_collapsed")]
+    assert '[[ "$MODE" == targeted && "$TARGETED_MODULE" == quick603 ]]' in runner
+    assert 'TARGETED_QUICK603_HTTP_HTTPS=PASSED' in runner
+    assert 'RELEASE_705_TARGETED_QUICK603=PASSED_NOT_FULL_QA' in preview
+    assert '--targeted-strict quick603' in preview
+    assert preview.index('--targeted-strict quick603') < preview.index(
+        'bash scripts/tracker-browser-qualify.sh "$QA" "$PY"\\n'
+    )

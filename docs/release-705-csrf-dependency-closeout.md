@@ -350,3 +350,29 @@ fragment matches, for **both** HTTP and HTTPS. No app UI, CSS, server,
 CSRF middleware, database, or configuration changes. A source contract
 and Python syntax preflight protect this exact fixture. An isolated
 DEV execution is still required for security acceptance.
+
+
+### Strict Vials / Quick Entry test — Daily filter contract and focused preflight
+
+Following the Reports disclosure fix, strict Chromium advanced to the Daily
+filter assertions in the same Release 603 test. Both HTTP and HTTPS observed
+**seven** visible Daily actions while the historical test expected five.
+Current `quick_entry.html` explicitly marks seven as `data-quick-daily`:
+Log Food, Log Water, Record Dose, Record Vitals, Log Workout Set,
+Log Supplements / Meds, and Record Supply Usage. The JS filter correctly
+keys on that attribute. No app bug or security bypass was observed.
+
+The repaired fixture verifies the exact seven destination URLs, requires
+all non-Daily cards to be hidden, checks live result counts, verifies
+that the Water search narrows to its correct action, and ensures Clear
+restores all actions and the accessible category state for both protocols.
+The old magic count is removed instead of simply replacing 5 with 7.
+
+To avoid another expensive full-suite failure from the exact same
+navigation fixture, the guarded browser runner now permits a **single**
+`--targeted-strict quick603` scope: both parameterized HTTP and HTTPS
+cases against the disposable strict-CSRF server. The Release 705 wrapper
+executes this focused scope first and only launches the complete
+unchanged standard and strict Chromium suites if it passes. Targeted
+success cannot certify full browser QA. No live data, settings,
+dependency bundle, or user-facing application files change.

@@ -100,6 +100,13 @@ echo 'RELEASE_705_SOURCE_REVALIDATED=PASSED'
 echo 'RELEASE_705_BROWSER_INVENTORY_PREFLIGHT=PASSED'
 echo "RELEASE_705_BROWSER_EXECUTED_CANDIDATE=$TARGET"
 echo 'RELEASE_705_BROWSER_MODE=FULL_DISPOSABLE_HTTP_HTTPS_STRICT'
+# Exercise the exact previously failing HTTP and HTTPS Vials / Daily
+# action behavior in a separate strict disposable server before spending
+# several minutes on full browser QA. This gate is NOT full qualification.
+echo '=== RELEASE 705 STRICT QUICK ENTRY TARGETED PREFLIGHT ==='
+timeout --signal=TERM --kill-after=30s 300 \
+  bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict quick603
+echo 'RELEASE_705_TARGETED_QUICK603=PASSED_NOT_FULL_QA'
 # Existing runner owns disposable HTTP and HTTPS proxies, test database,
 # 16-worker standard/strict tests, cleanup and error propagation.
 timeout --signal=TERM --kill-after=30s 2100 \
