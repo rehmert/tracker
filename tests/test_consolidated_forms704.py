@@ -75,6 +75,14 @@ def test_704_css_is_keyboard_safe_and_scoped_to_three_editor_action_rows():
         assert forbidden not in CSS
     assert 'tracker-form-actions704--lab' in CSS
     assert 'grid-template-columns: repeat(3, minmax(0, 1fr));' in CSS
+    # A 320px form that begins near the dock cannot push a sticky bar
+    # above the containing form's top; enforce compact chrome, not
+    # smaller touch targets or relaxed overlap checks.
+    assert 'margin-top: 0;' in CSS
+    assert 'gap: .25rem;' in CSS
+    assert 'padding: .35rem;' in CSS
+    assert 'padding: .25rem .12rem;' in CSS
+    assert 'line-height: 1.2;' in CSS
     assert 'tracker-form-actions704--notes' in CSS
 
 
