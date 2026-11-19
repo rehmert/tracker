@@ -24,7 +24,7 @@ Branch: `release/695-daily-flow`.
 
 ## Scope and safety
 
-Template/CSS changes only to existing Today and Quick Entry pages.
+Changes to Today and Quick Entry templates plus a dedicated, Today-only\n`app/static/css/tracker-today695.css` stylesheet. Shared Release 674 CSS\nand the Data Quality page's asset reference remain unchanged.
 No changes to authentication, CSRF, underlying FastAPI routes, models,
 SQLite schema, saving behavior, data queries or production data.
 Links always navigate to existing record/review forms. The embedded Today
