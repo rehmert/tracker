@@ -49,7 +49,12 @@ SQLite data directories and two isolated `127.0.0.1` servers.
    3 densities (Compact/Balanced/Comfortable), 2 themes and 2 style modes
    (687 only, combined): 60 strict comparisons**. Every computed property
    and geometry value must match; every pixel must be identical. Any
-   horizontal overflow change also fails.
+   horizontal overflow change also fails. The strict browser harness
+   compares baseline and candidate **in the same foreground tab**, first
+   requiring the baseline screenshot itself to repeat identically; it
+   disables transitions/animations, awaits fonts and paint, and blocks
+   all external asset requests. This prevents cross-tab focus paint
+   differences from being misclassified as a CSS change.
 3. The **existing Release 698 real-page visual gate** runs unchanged after
    the strict CSS tests: 10 real pages, 4 widths, 2 themes and 7 additional
    anchored sections, totaling **136 comparisons** with the previously
@@ -58,9 +63,12 @@ SQLite data directories and two isolated `127.0.0.1` servers.
    and candidate SHA verification. It will not install, change main or
    touch production, and makes no network downloads.
 
-All captured content is generated from empty disposable data. The browser
-may only load assets from the two loopback servers. Any screenshot mismatch
-leaves a 0700 private review directory containing only the failure images.
+All captured content is generated from empty disposable data. The real-page
+browser may only load assets from the two loopback servers; the strict
+CSS parity browser blocks network requests altogether. Any screenshot
+mismatch, including an unstable baseline, leaves locally private baseline,
+candidate and diff images for diagnosis. The threshold is **still zero
+changed pixels** for strict CSS parity.
 Never publish these images without inspection.
 
 The strict parity checks complement, but do not replace, the limited
