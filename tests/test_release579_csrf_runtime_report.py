@@ -149,3 +149,27 @@ def test_579_runner_shell_syntax_is_valid():
     outcome = subprocess.run(["bash", "-n", str(RUNNER)],
                              capture_output=True, text=True, check=False)
     assert outcome.returncode == 0, outcome.stderr
+
+
+def test_705_579_only_ignores_known_gitignored_htmx_asset(report):
+    sources = [
+        {"file": "app/static/js/new-unsafe-fetch.js", "line": 1,
+         "kind": "fetch_callsite"},
+        {"file": "app/static/vendor/htmx.min.js", "line": 1,
+         "kind": "fetch_callsite"},
+    ]
+    tracked, vendor = report.partition_tracked_js_callsites(sources)
+    assert len(tracked) == 1
+    assert tracked[0]["file"] == "app/static/js/new-unsafe-fetch.js"
+    assert len(vendor) == 1
+    assert vendor[0]["file"] == report.ISOLATED_HTMX_VENDOR
+    with pytest.raises(ValueError, match="Unknown untracked vendor"):
+        report.partition_tracked_js_callsites([
+            {"file": "app/static/vendor/other.js", "line": 1,
+             "kind": "fetch_callsite"}
+        ])
+    observed = report.reviewed_js_source_callsites(ROOT)
+    assert observed["tracked_js_callsites"] == 50
+    assert observed["witnessed_js_callsites"] == 2
+    assert observed["not_witnessed_in_579"] == 48
+    assert observed["unqualified_ignored_vendor_callsites"] >= 0
