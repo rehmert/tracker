@@ -204,6 +204,31 @@ def render(page, root: Path, width: int, theme: str, density: str, mode: str):
     return measured(page), page.screenshot(animations="disabled", caret="hide")
 
 
+def save_private_diff(label: str, original: bytes, current: bytes) -> None:
+    """Retain synthetic fixture evidence locally on DEV only, on failure."""
+    folder_name = os.environ.get("TRACKER_700_PARITY_ARTIFACT_DIR")
+    if not folder_name:
+        return
+    folder = Path(folder_name)
+    if (not folder.is_absolute() or folder.is_symlink()
+            or folder.name != "visual-failures"
+            or "/tmp/tracker-preview700." not in str(folder)):
+        raise AssertionError("Refusing non-private CSS parity artifact path")
+    folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+    folder.chmod(0o700)
+    safe = label.replace(":", "-")
+    if not safe.replace("-", "").isalnum():
+        raise AssertionError("Unexpected CSS parity artifact filename")
+    (folder / f"{safe}-baseline.png").write_bytes(original)
+    (folder / f"{safe}-candidate.png").write_bytes(current)
+    with Image.open(BytesIO(original)) as left, Image.open(BytesIO(current)) as right:
+        ImageChops.difference(left.convert("RGB"), right.convert("RGB")).save(
+            folder / f"{safe}-diff.png"
+        )
+    for file in folder.glob(f"{safe}-*.png"):
+        file.chmod(0o600)
+
+
 def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():
     baseline = css_root("TRACKER_700_BASE_SOURCE")
     candidate = css_root("TRACKER_700_CANDIDATE_SOURCE")
@@ -243,6 +268,10 @@ def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():
                                     jitter = ImageChops.difference(
                                         first.convert("RGB"), second.convert("RGB")
                                     ).getbbox()
+                                if jitter is not None:
+                                    save_private_diff(
+                                        label + ":baseline-instability", img_a, img_stable
+                                    )
                                 assert jitter is None, (
                                     f"Baseline screenshot not deterministic: {label} bbox={jitter}"
                                 )
@@ -255,7 +284,9 @@ def test_700_exact_rendered_toolbar_shortcuts_and_workout_parity():
                                         left.convert("RGB"), right.convert("RGB")
                                     )
                                     bbox = difference.getbbox()
-                                    assert bbox is None, f"Screenshot changed: {label} bbox={bbox}"
+                                if bbox is not None:
+                                    save_private_diff(label, img_a, img_b)
+                                assert bbox is None, f"Screenshot changed: {label} bbox={bbox}"
                                 assert b["overflow"] == a["overflow"], (
                                     f"Horizontal overflow changed: {label}"
                                 )
