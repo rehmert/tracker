@@ -3,6 +3,8 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workouts658.css?v=658">
+<link rel="stylesheet" href="/static/css/tracker-edit-actions704.css?v=704">
+<script defer src="/static/js/tracker-edit-feedback704.js?v=704"></script>
 <script src="/static/js/tracker-workouts658.js?v=658" defer></script>
 {% endblock %}
 {% block content %}
@@ -118,7 +120,8 @@
       </div>
       <p class="note">Optional set time must fall between your start and end times. If omitted, Tracker uses the workout start time only to order the set in history; it does not infer when you performed it. Same-day sessions only, up to 12 hours and {{ max_rows }} sets.</p>
       <p id="workout658-row-status" class="note" role="status" aria-live="polite"></p>
-      <div class="workout658-save-actions">
+      <p class="tracker-edit-feedback704" role="alert" hidden></p>
+      <div class="workout658-save-actions tracker-edit-actions704" aria-label="Previous workout actions">
         <button class="primary" type="submit" id="workout658-save">Save Completed Workout</button>
         <a class="btn" href="/workouts">Cancel</a>
       </div>
