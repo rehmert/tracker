@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Add lab report{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-edit-actions704.css?v=704">
+<script defer src="/static/js/tracker-edit-feedback704.js?v=704"></script>
 <link rel="stylesheet"
       href="/static/css/tracker-lab-entry-review.css?v=20261103-picker">
 <script defer
@@ -148,8 +150,9 @@
     <tbody id="lab-rows">{% for row in rows %}{% include "_lab_row.html" %}{% endfor %}</tbody>
   </table></div>
   <datalist id="analyte-names">{% for n in names %}<option value="{{ n }}">{% endfor %}</datalist>
-  <p class="row">
-    <button type="button" hx-get="/labs/row" hx-target="#lab-rows" hx-swap="beforeend">Add row</button>
+  <p class="row tracker-lab-add-row704"><button type="button" hx-get="/labs/row" hx-target="#lab-rows" hx-swap="beforeend">Add row</button></p>
+  <p class="tracker-edit-feedback704" role="alert" hidden></p>
+  <p class="row tracker-edit-actions704" aria-label="Manual lab report actions">
     <button class="primary">Save report</button>
     <a class="btn" href="/labs">Cancel</a>
   </p>
