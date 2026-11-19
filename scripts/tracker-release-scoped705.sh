@@ -22,7 +22,8 @@ bash -n scripts/tracker-browser-preview705.sh
   scripts/tracker_csrf_reconcile627.py \
   tests/test_release627_csrf_reconciliation.py \
   tests/test_release705_combined.py \
-  tests/test_csrf_all_registered_negative705.py
+  tests/test_csrf_all_registered_negative705.py \
+  tests/browser/test_vitals_proxy_host522.py
 # Check the exact-commit runtime runner contract before any ASGI requests.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release705_runtime_preview.py
