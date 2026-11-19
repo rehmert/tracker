@@ -50,6 +50,9 @@ def test_703_compound_edit_keeps_unit_lock_and_post_and_single_cancel():
 
 def test_703_css_preserves_mobile_dock_keyboard_and_dirty_indicators():
     assert '@media screen and (max-width: 760px)' in CSS
+    assert '@media screen and (min-width: 761px)' in CSS
+    assert 'display: flex;' in CSS
+    assert 'gap: 12px;' in CSS
     assert 'bottom: calc(4.7rem + env(safe-area-inset-bottom, 0px))' in CSS
     assert 'grid-column: 1 / -1;' in CSS
     assert 'z-index: 29;' in CSS
