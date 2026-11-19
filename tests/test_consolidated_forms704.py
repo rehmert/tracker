@@ -12,6 +12,7 @@ CSS = (ROOT / "app/static/css/tracker-consolidated-forms704.css").read_text(enco
 NOTES = (T / "page_edit.html").read_text(encoding="utf-8")
 WORKOUT = (T / "workout_backfill658.html").read_text(encoding="utf-8")
 LAB = (T / "lab_form.html").read_text(encoding="utf-8")
+LAB_GATE = (ROOT / "app/static/js/tracker-lab-sticky-actions704.js").read_text(encoding="utf-8")
 PREVIEW = (ROOT / "scripts/tracker-preview704.sh").read_text(encoding="utf-8")
 
 
@@ -44,6 +45,7 @@ def test_704_only_original_workout_actions_and_actual_set_protection():
 
 def test_704_only_manual_lab_actions_csv_and_dynamic_add_untouched():
     assert LAB.count("tracker-consolidated-forms704.css?v=704") == 1
+    assert LAB.count("tracker-lab-sticky-actions704.js?v=704") == 1
     assert LAB.count('class="row tracker-form-actions704 tracker-form-actions704--lab"') == 1
     assert LAB.count('action="/labs/import-csv"') == 1
     assert LAB.count('action="/labs"') == 1
@@ -75,6 +77,8 @@ def test_704_css_is_keyboard_safe_and_scoped_to_three_editor_action_rows():
         assert forbidden not in CSS
     assert 'tracker-form-actions704--lab' in CSS
     assert 'grid-template-columns: repeat(3, minmax(0, 1fr));' in CSS
+    assert 'form.tracker-lab-actions704-active' in CSS
+    assert 'position: static;' in CSS
     # A 320px form that begins near the dock cannot push a sticky bar
     # above the containing form's top; enforce compact chrome, not
     # smaller touch targets or relaxed overlap checks.
@@ -84,6 +88,23 @@ def test_704_css_is_keyboard_safe_and_scoped_to_three_editor_action_rows():
     assert 'padding: .25rem .12rem;' in CSS
     assert 'line-height: 1.2;' in CSS
     assert 'tracker-form-actions704--notes' in CSS
+    for token in (
+        'form[data-lab-manual-entry]',
+        'tracker-form-actions704--lab',
+        'tracker-mobile-editing',
+        'getBoundingClientRect()',
+        'formTop + barHeight + 16 <= dockTop',
+        'window.addEventListener("scroll", schedule, { passive: true })',
+        'requestAnimationFrame(refresh)',
+        'MutationObserver(schedule)',
+        'tracker-lab-actions704-active',
+    ):
+        assert token in LAB_GATE
+    for forbidden in (
+        'fetch(', 'XMLHttpRequest', 'localStorage', 'sessionStorage',
+        'requestSubmit(', '.submit(', 'form.action', 'window.location=',
+    ):
+        assert forbidden not in LAB_GATE
 
 
 def test_704_preview_guards_scope_and_disposable_data():
@@ -96,5 +117,6 @@ def test_704_preview_guards_scope_and_disposable_data():
     for path in ("app/templates/page_edit.html", "app/templates/workout_backfill658.html",
                  "app/templates/lab_form.html",
                  "app/static/css/tracker-consolidated-forms704.css",
+                 "app/static/js/tracker-lab-sticky-actions704.js",
                  "tests/browser/test_consolidated_forms704.py"):
         assert path in PREVIEW
