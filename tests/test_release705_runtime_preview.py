@@ -188,3 +188,49 @@ def test_705_579_runtime_js_inventory_is_checked_before_browser_start():
     assert scoped.index("RELEASE_705_51_TRACKED_JS_SOURCE_LEDGER=PASSED") < scoped.index(
         "RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED"
     )
+
+
+def test_705_580_http_https_compound_vitals_real_get_edit_buttons():
+    compounds = (ROOT / "app/templates/compounds.html").read_text()
+    vitals = (ROOT / "app/templates/vitals.html").read_text()
+    workflow = (ROOT / "tests/browser/test_csrf_workflows580.py").read_text()
+    preview = (ROOT / "scripts/tracker-browser-preview705.sh").read_text()
+    runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
+    source = (ROOT / "scripts/tracker-preview705.sh").read_text()
+    scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
+    assert 'method="get" action="/compounds/{{ c.id }}/edit"' in compounds
+    assert 'method="get" action="/vitals/{{ r.id }}/edit"' in vitals
+    assert 'name="days" value="{{ days }}"' in vitals
+    assert 'name="events" value="{{ 1 if events_on else 0 }}"' in vitals
+    assert "def _open_native_get_edit(page, base, row, kind, expected_query=None):" in workflow
+    assert "page.expect_navigation(wait_until=\"domcontentloaded\")" in workflow
+    assert 'form.get_by_role("button", name="Edit", exact=True).click()' in workflow
+    assert 'parse_qs(observed.query)' in workflow
+    assert '"vitals", {"days": "3650", "events": "0"}' in workflow
+    assert 'edit_path, token = _open_native_get_edit(page, base, row, "compounds")' in workflow
+    assert 'row.locator(\'a[href$="/edit"]\')' not in workflow
+    assert 'row.locator(\'a[href*="/edit"]\')' not in workflow
+    assert '--targeted-strict workflows580' in preview
+    assert 'TARGETED_WORKFLOWS580_HTTP_HTTPS=PASSED_NOT_FULL_QA' in runner
+    assert 'tests/browser/"test_csrf_workflows580.py"' in runner
+    assert runner.count('tests/browser/test_csrf_workflows580.py') == 1
+    assert 'scripts/tracker_csrf_runtime_report580.py' in runner
+    for gate in (source, preview):
+        assert 'tests/browser/test_csrf_workflows580.py|\\' in gate
+    assert 'tests/browser/test_csrf_workflows580.py' in scoped
+    assert preview.index('RELEASE_705_TARGETED_WORKFLOWS580=PASSED_NOT_FULL_QA') < preview.index(
+        'timeout --signal=TERM --kill-after=30s 2100'
+    )
+    assert "RELEASE_705_TARGETED_WORKFLOWS580_PREVIEW=PASSED_ISOLATED_NO_FULL_QA" in preview
+
+
+def test_705_future_strict_dose_and_preparations_still_use_real_links():
+    # The downstream Release 582 and 583 selectors are not obsolete.
+    dose = (ROOT / "app/templates/_dose_rows.html").read_text()
+    vial = (ROOT / "app/templates/vial_detail.html").read_text()
+    dose_test = (ROOT / "tests/browser/test_csrf_dose_lifecycle582.py").read_text()
+    preparation_test = (ROOT / "tests/browser/test_csrf_preparations583.py").read_text()
+    assert '<a href="/doses/{{ r.dose.id }}/edit">Edit</a>' in dose
+    assert "a[href^=\"/doses/\"][href$=\"/edit\"]" in dose_test
+    assert "href='/vials/{{ v.id }}/preparations/{{ e.id }}/edit'" in vial
+    assert "history.locator('a[href$=\"/edit\"]')" in preparation_test

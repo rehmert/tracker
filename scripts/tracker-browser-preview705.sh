@@ -9,9 +9,15 @@ BASE=24cb9ec47417e001c3f96dfed630e3b8b0264d93
 REF=release/705-csrf-dependency-closeout
 fail() { echo "RELEASE_705_BROWSER_PREVIEW_ERROR=$*" >&2; exit 1; }
 
-[[ "$#" == 1 && "$1" =~ ^[0-9a-f]{40}$ ]] ||
-  fail 'One exact 40-character candidate SHA required'
+[[ "$#" -ge 1 && "$#" -le 2 && "$1" =~ ^[0-9a-f]{40}$ ]] ||
+  fail 'Exact candidate SHA and optional --targeted-workflows580 required'
 TARGET="$1"
+PREVIEW_MODE=full
+if [[ "$#" == 2 ]]; then
+  [[ "$2" == --targeted-workflows580 ]] ||
+    fail 'Only --targeted-workflows580 is supported as a second argument'
+  PREVIEW_MODE=workflows580
+fi
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev &&
    -n "${INVOCATION_ID:-}" ]] ||
   fail 'Run as root systemd worker on tracker-dev'
@@ -60,6 +66,7 @@ while IFS= read -r path; do
     scripts/tracker-browser-qualify.sh|\
     tests/browser/test_vitals_proxy_host522.py|\
     tests/browser/test_strict_csrf521.py|\
+    tests/browser/test_csrf_workflows580.py|\
     scripts/tracker-browser-preview705.sh|\
     scripts/tracker-release-scoped705.sh|\
     scripts/tracker-preview705.sh|\
@@ -108,17 +115,27 @@ echo 'RELEASE_705_SOURCE_REVALIDATED=PASSED'
 echo 'RELEASE_705_BROWSER_INVENTORY_PREFLIGHT=PASSED'
 echo "RELEASE_705_BROWSER_EXECUTED_CANDIDATE=$TARGET"
 echo 'RELEASE_705_BROWSER_MODE=FULL_DISPOSABLE_HTTP_HTTPS_STRICT'
-# Exercise the exact previously failing HTTP and HTTPS Vials / Daily
-# action behavior in a separate strict disposable server before spending
-# several minutes on full browser QA. This gate is NOT full qualification.
-echo '=== RELEASE 705 STRICT QUICK ENTRY TARGETED PREFLIGHT ==='
-timeout --signal=TERM --kill-after=30s 300 \
-  bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict quick603
-echo 'RELEASE_705_TARGETED_QUICK603=PASSED_NOT_FULL_QA'
-# Existing runner owns disposable HTTP and HTTPS proxies, test database,
-# 16-worker standard/strict tests, cleanup and error propagation.
-timeout --signal=TERM --kill-after=30s 2100 \
-  bash scripts/tracker-browser-qualify.sh "$QA" "$PY"
+if [[ "$PREVIEW_MODE" == workflows580 ]]; then
+  echo 'RELEASE_705_MODE=TARGETED_WORKFLOWS580_NOT_FULL_QUALIFICATION'
+  timeout --signal=TERM --kill-after=30s 420 \
+    bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict workflows580
+  echo 'RELEASE_705_TARGETED_WORKFLOWS580=PASSED_NOT_FULL_QA'
+else
+  # Source-qualified candidate only. Each targeted preflight must pass
+  # independently before the complete 16-worker suite is attempted.
+  echo '=== RELEASE 705 STRICT QUICK ENTRY TARGETED PREFLIGHT ==='
+  timeout --signal=TERM --kill-after=30s 300 \
+    bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict quick603
+  echo 'RELEASE_705_TARGETED_QUICK603=PASSED_NOT_FULL_QA'
+  echo '=== RELEASE 705 STRICT WORKFLOWS580 TARGETED PREFLIGHT ==='
+  timeout --signal=TERM --kill-after=30s 420 \
+    bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict workflows580
+  echo 'RELEASE_705_TARGETED_WORKFLOWS580=PASSED_NOT_FULL_QA'
+  # Existing runner owns the disposable HTTP/HTTPS servers and DB,
+  # complete 16-worker browser gates and fail-closed evidence reports.
+  timeout --signal=TERM --kill-after=30s 2100 \
+    bash scripts/tracker-browser-qualify.sh "$QA" "$PY"
+fi
 [[ "$(git -C "$APP" rev-parse HEAD)" == "$BASE" &&
    "$(git -C "$APP" branch --show-current)" == main &&
    -z "$(git -C "$APP" status --porcelain)" ]] ||
@@ -127,6 +144,10 @@ timeout --signal=TERM --kill-after=30s 2100 \
    "$(sha256sum "$VENDOR" | awk '{print $1}')" == "$VENDOR_SHA_BEFORE" ]] ||
   fail 'Installed HTMX asset changed during isolated browser qualification'
 echo 'RELEASE_705_INSTALLED_SOURCE_UNCHANGED=VERIFIED'
+if [[ "$PREVIEW_MODE" == workflows580 ]]; then
+  echo 'RELEASE_705_TARGETED_WORKFLOWS580_PREVIEW=PASSED_ISOLATED_NO_FULL_QA'
+  exit 0
+fi
 echo 'RELEASE_705_BROWSER_FULL=PASSED_DISPOSABLE_NO_INSTALL'
 echo 'RELEASE_705_BROWSER_ISSUE9=BLOCKED_PENDING_POSITIVE_COVERAGE'
 echo 'RELEASE_705_DEPENDENCY_ISSUE10=NOT_REPLAYED'

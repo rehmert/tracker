@@ -414,3 +414,30 @@ runner repeats the narrow 579 review after copying its vendor asset,
 before starting the HTTP/HTTPS servers. The changed-file allowlists
 are exact. Runtime validation is pending and global CSRF enforcement
 remains blocked.
+
+
+### Release 580 strict HTTP/HTTPS edit navigation: source/API boundary
+
+After Release 579 witness validation passed, strict-CSRF Release 580 reached
+10 passed / 4 failed; failures were limited to compound and vitals
+create/edit/delete workflows on both HTTP and HTTPS. Source review confirms
+both affected list rows now offer a *native GET form and an Edit button*
+instead of the older edit anchor.
+
+The repaired Release 580 test clicks the actual GET Edit button without
+forced interaction, verifies the HTTP/HTTPS origin and path of the returned
+200 response, checks the preserved Vitals `days=3650&events=0` context,
+and verifies a signed token on the edit page. Original signed POST edit,
+unsigned 403 replay, HTMX delete, persistence and private receipt assertions
+are retained.
+
+The subsequent Release 582 Dose edit links and Release 583 Preparation
+history edit links were separately compared with their shipped templates.
+They still exist and were not modified. The browser runner now provides
+one explicit `--targeted-strict workflows580` mode which runs all 14
+Release 580 browser scenarios and validates its six private lifecycle
+receipts, without claiming full qualification. The Release 705 preview
+supports `--targeted-workflows580` and can run that scope alone after
+source preflight; full mode additionally preflights both Quick Entry and
+Workflows 580 before the expensive complete browser run.
+No deployed application code or live data is modified.

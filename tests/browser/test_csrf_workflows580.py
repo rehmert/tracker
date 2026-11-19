@@ -9,7 +9,7 @@ import json
 import os
 import re
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
 import pytest
@@ -81,6 +81,31 @@ def _visit(page, base, path):
     return token
 
 
+def _open_native_get_edit(page, base, row, kind, expected_query=None):
+    """Use the real row Edit button; prove HTTPS/HTTP and form context."""
+    assert kind in ("compounds", "vitals")
+    query = expected_query or {}
+    form = row.locator('form[method="get"][action$="/edit"]')
+    expect(form).to_have_count(1)
+    edit_path = form.get_attribute("action")
+    assert edit_path and re.fullmatch(rf"/{kind}/[1-9][0-9]*/edit", edit_path)
+    for name, value in query.items():
+        expect(form.locator(f'input[type="hidden"][name="{name}"]')).to_have_value(value)
+    with page.expect_navigation(wait_until="domcontentloaded") as navigation:
+        form.get_by_role("button", name="Edit", exact=True).click()
+    response = navigation.value
+    assert response is not None and response.status == 200
+    observed = urlsplit(page.url)
+    origin = urlsplit(base)
+    assert (observed.scheme, observed.netloc, observed.path) == (
+        origin.scheme, origin.netloc, edit_path
+    )
+    assert parse_qs(observed.query) == {key: [value] for key, value in query.items()}
+    token = page.evaluate("window.trackerCsrfToken?.() || ''")
+    assert token.startswith("v1.")
+    return edit_path, token
+
+
 def _record(scheme, flow, observed):
     assert flow in OPERATIONS
     assert tuple(observed) == OPERATIONS[flow]
@@ -137,9 +162,7 @@ def test_580_compound_create_edit_delete_real_native_forms(tab, scheme):
 
     row = page.locator("tr").filter(has_text=name)
     expect(row).to_have_count(1)
-    edit_path = row.locator('a[href$="/edit"]').get_attribute("href")
-    assert edit_path and re.fullmatch(r"/compounds/[0-9]+/edit", edit_path)
-    token = _visit(page, base, edit_path)
+    edit_path, token = _open_native_get_edit(page, base, row, "compounds")
     edit = page.locator('form[method="post"][action="' + edit_path + '"]')
     assert edit.count() == 1
     assert edit.locator('input[name="csrf_token"]').input_value() == token
@@ -184,11 +207,9 @@ def test_580_vitals_create_edit_htmx_delete(tab, scheme):
     _visit(page, base, "/vitals?days=3650&events=0")
     row = page.locator("tr").filter(has_text=label)
     expect(row).to_have_count(1)
-    edit_url = row.locator('a[href*="/edit"]').get_attribute("href")
-    assert edit_url
-    edit_path = urlsplit(edit_url).path
-    assert re.fullmatch(r"/vitals/[0-9]+/edit", edit_path)
-    token = _visit(page, base, edit_path)
+    edit_path, token = _open_native_get_edit(
+        page, base, row, "vitals", {"days": "3650", "events": "0"}
+    )
     edit = page.locator('form[action="' + edit_path + '"][method="post"]')
     assert edit.count() == 1
     assert edit.locator('input[name="csrf_token"]').input_value() == token

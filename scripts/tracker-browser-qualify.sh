@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -432,6 +432,20 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == quick603 ]]; then
     "tests/browser/test_strict_"\
 "csrf521.py::test_603_vials_navigation_and_daily_action_filter"
   echo "TARGETED_QUICK603_HTTP_HTTPS=PASSED"
+  exit 0
+fi
+
+# Release 705: targeted signed create/edit/delete plus negative probes for
+# the complete Release 580 module in disposable strict HTTP and HTTPS.
+# A focused pass never earns the full browser qualification marker.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == workflows580 ]]; then
+  echo "TARGETED_WORKFLOWS580_SCOPE=HTTP_HTTPS_FULL_MODULE_NOT_FULL_QA"
+  run_isolated_browser_module \
+      tests/browser/"test_csrf_workflows580.py" \
+      1 "$ROOT/targeted-workflows580.log"
+  "$PY" "$SOURCE/scripts/tracker_csrf_runtime_report580.py" \
+      --directory "$ROOT/csrf-runtime580"
+  echo "TARGETED_WORKFLOWS580_HTTP_HTTPS=PASSED_NOT_FULL_QA"
   exit 0
 fi
 
