@@ -15,6 +15,7 @@
     const toggle = document.getElementById('tracker-focus-toggle');
     const sidebar = document.getElementById('tracker-focus-sidebar-toggle');
     const nav = document.getElementById('nav-sortable');
+    const filter = document.getElementById('nav-filter');
     if (!toggle || !nav) return;
 
     // Existing browser choices win. Only a new/empty browser profile adopts
@@ -26,6 +27,9 @@
     } catch (_) {}
 
     function apply() {
+      // Searching must expose matching advanced destinations even when
+      // Everyday mode is active; otherwise results appear hidden in sidebar.
+      const query = (filter?.value || '').trim().toLocaleLowerCase();
       const active = new Set();
       nav.querySelectorAll('a[aria-current="page"]').forEach(a => {
         active.add(a.getAttribute('href'));
@@ -34,7 +38,12 @@
         let visible = 0;
         section.querySelectorAll('li[data-nav-key]').forEach(item => {
           const href = item.dataset.navKey;
-          const show = !enabled || ESSENTIAL.has(href) || active.has(href);
+          const label = item.querySelector('a')?.textContent.toLocaleLowerCase() || '';
+          const heading = section.dataset.section?.toLocaleLowerCase() || '';
+          const matchesSearch = Boolean(query) &&
+            (label.includes(query) || heading.includes(query));
+          const show = !enabled || ESSENTIAL.has(href) ||
+            active.has(href) || matchesSearch;
           item.classList.toggle('tracker-focus-hidden', !show);
           if (show) visible++;
         });
@@ -55,6 +64,7 @@
 
     toggle.addEventListener('change', () => setEnabled(toggle.checked));
     sidebar?.addEventListener('click', () => setEnabled(!enabled));
+    filter?.addEventListener('input', apply);
     apply();
 
     // Existing sidebar preferences may reorder links; reapply only on changes
