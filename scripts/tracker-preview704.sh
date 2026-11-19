@@ -30,14 +30,15 @@ git merge-base --is-ancestor "$BASE" "$TARGET" ||
   fail "No candidate changes"
 git diff --check "$BASE" "$TARGET"
 
-# One consolidated release: 3 original editors, one scoped CSS, two
-# focused test modules, the isolated gates and release documentation.
+# One consolidated release: 3 original editors, scoped CSS plus a
+# read-only Lab scroll guard, two focused tests, gates and documentation.
 while IFS= read -r file; do
   case "$file" in
     app/templates/page_edit.html|\
     app/templates/workout_backfill658.html|\
     app/templates/lab_form.html|\
     app/static/css/tracker-consolidated-forms704.css|\
+    app/static/js/tracker-lab-sticky-actions704.js|\
     tests/test_consolidated_forms704.py|\
     tests/browser/test_consolidated_forms704.py|\
     scripts/tracker-release-scoped704.sh|\
