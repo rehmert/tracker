@@ -32,7 +32,8 @@ const boot=()=>{
  const catPrefs=document.getElementById('nav-category-preferences'), visibility=document.getElementById('nav-visibility-preferences');
  let editing=false;
  function apply(){
-const alphabetical = state.mode === 'default' || state.mode === 'alpha';
+const alphabetical = state.mode === 'alpha';
+const authored = state.mode === 'default';
 
   const compareNames = (a, b) =>
     a.localeCompare(b, undefined, {
@@ -43,6 +44,10 @@ const alphabetical = state.mode === 'default' || state.mode === 'alpha';
   const categoryOrder = state.categories || [];
 
   sections().sort((a, b) => {
+    if (authored) {
+      return originalSections.indexOf(a.dataset.section) -
+        originalSections.indexOf(b.dataset.section);
+    }
     if (alphabetical) {
       return compareNames(a.dataset.section, b.dataset.section);
     }
@@ -61,6 +66,10 @@ const alphabetical = state.mode === 'default' || state.mode === 'alpha';
    const key=sec.dataset.section, list=sec.querySelector('.nav-group');
    const defaultOrder=defaults[key], custom=state.order?.[key]||[];
    [...list.children].sort((a,b)=>{
+    if (authored) {
+      return defaultOrder.indexOf(a.dataset.navKey) -
+        defaultOrder.indexOf(b.dataset.navKey);
+    }
     if (alphabetical) {
       return compareNames(
         a.querySelector('a').textContent.trim(),
