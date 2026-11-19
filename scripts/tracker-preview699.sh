@@ -104,7 +104,7 @@ bash scripts/tracker-release-scoped699.sh "$PY"
 TRACKER_CSS_PARITY699=1 \
 TRACKER_699_BASE_CSS="$BASE_QA/app/static/css" \
 TRACKER_699_CANDIDATE_CSS="$CANDIDATE_QA/app/static/css" \
-  "$PY" -m pytest -q --tb=short --maxfail=1 \
+  "$PY" -m pytest -q -s --tb=short --maxfail=1 \
   tests/browser/test_css_parity699.py
 echo "RELEASE_699_CSS_PARITY_BROWSER=PASSED"
 
