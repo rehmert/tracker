@@ -115,20 +115,16 @@ def test_dashboard_not_duplicated(page):
     ).count() == 0
 
 
-def test_categories_alphabetical(page):
+def test_categories_default_to_task_order(page):
     tab, _ = page
-
-    names = tab.locator(
-        "#nav-sortable > .nav-section"
-    ).evaluate_all("""
-    elements => elements.map(
-      element => element.dataset.section
+    names = tab.locator("#nav-sortable > .nav-section").evaluate_all(
+        "elements => elements.map(element => element.dataset.section)"
     )
-    """)
-
-    expected = sorted(names, key=str.casefold)
-
-    assert names == expected
+    assert names == [
+        "Overview & Planning", "Protocols & Dosing", "Inventory",
+        "Inventory tools", "Vendors & Pricing", "Health & Progress",
+        "Tools & Data",
+    ]
 
 
 def test_category_expands_and_collapses(page):
@@ -228,25 +224,64 @@ def test_page_finder_no_matches(page):
     ).inner_text()
 
 
-def test_page_links_alphabetical(page):
+def test_default_order_prioritizes_today_then_daily_planning(page):
     tab, _ = page
-
-    sections = tab.locator(
-        "#nav-sortable > .nav-section"
+    section = tab.locator(
+        '#nav-sortable .nav-section[data-section="Overview & Planning"]'
     )
+    hrefs = section.locator(".nav-group > li > a").evaluate_all(
+        "elements => elements.map(a => a.getAttribute('href'))"
+    )
+    assert hrefs == [
+        "/mobile", "/workflow-hub", "/activity", "/calendar",
+        "/quick-entry", "/pages", "/record-explorer/notes",
+    ]
 
-    for index in range(sections.count()):
-        section = sections.nth(index)
 
-        names = section.locator(
-            ".nav-group > li > a"
-        ).all_inner_texts()
+def test_alphabetical_navigation_is_explicit_opt_in(page):
+    tab, errors = page
+    tab.locator("#workspace-settings-toggle").click()
+    tab.locator("#nav-sort-mode").select_option("alpha")
+    names = tab.locator("#nav-sortable > .nav-section").evaluate_all(
+        "elements => elements.map(element => element.dataset.section)"
+    )
+    assert names == sorted(names, key=str.casefold)
+    for section in tab.locator("#nav-sortable > .nav-section").all():
+        labels = [label.strip() for label in
+                  section.locator(".nav-group > li > a").all_inner_texts()]
+        assert labels == sorted(labels, key=str.casefold)
+    tab.reload(wait_until="networkidle")
+    assert tab.locator("#nav-sort-mode").input_value() == "alpha"
+    assert not errors, "\n".join(errors)
 
-        normalized = [name.strip() for name in names]
-        assert normalized == sorted(
-            normalized,
-            key=str.casefold,
-        )
+
+def test_everyday_focus_default_preserves_advanced_search(page):
+    tab, errors = page
+    assert tab.locator("#tracker-focus-toggle").is_checked()
+    for route in ("/mobile", "/workouts", "/food", "/vitals", "/labs"):
+        assert not tab.locator(
+            f'#nav-sortable li[data-nav-key="{route}"]'
+        ).evaluate("(item) => item.classList.contains('tracker-focus-hidden')")
+    assert tab.locator(
+        '#nav-sortable li[data-nav-key="/inventory-forecast"]'
+    ).evaluate("(item) => item.classList.contains('tracker-focus-hidden')")
+    tab.locator("#nav-filter").fill("Inventory forecast")
+    assert tab.locator(
+        '#page-finder-results a[href="/inventory-forecast"]'
+    ).count() >= 1
+    assert not errors, "\n".join(errors)
+
+
+def test_existing_navigation_focus_choice_is_retained(page):
+    tab, errors = page
+    tab.locator("#workspace-settings-toggle").click()
+    tab.locator("#tracker-focus-toggle").uncheck()
+    tab.reload(wait_until="networkidle")
+    assert not tab.locator("#tracker-focus-toggle").is_checked()
+    assert not tab.locator(
+        '#nav-sortable li[data-nav-key="/inventory-forecast"]'
+    ).evaluate("(item) => item.classList.contains('tracker-focus-hidden')")
+    assert not errors, "\n".join(errors)
 
 
 def test_search_tracker_opens(page):
