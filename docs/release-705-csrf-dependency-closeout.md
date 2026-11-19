@@ -28,22 +28,26 @@ multipart-safe route dependency. The existing isolated
 HTTP/HTTPS reverse-proxy browser gates. NEVER replace those gates
 with static or negative-only assertions.
 
-The Release 627 historic snapshot originally had **161** unsafe route
-declarations (83 prior candidate witnesses plus 78 unqualified routes).
+The Release 627 historical baseline had **144** unsafe source declarations
+(83 candidate witnesses and 61 unqualified). Releases 628–653 introduced
+**20 more**, including **three Release 652 COA test-type catalog POST
+routes** omitted from the earlier reconciliation inventory.
+Consequently Release 653 had **164** declarations, not 161.
+
 The subsequent Release 654–704 additions include **38 further unsafe
 routes**: 35 Workout endpoints, one COA attachment-identifier endpoint,
 one saved-Food-edit endpoint and one Workout correction-undo endpoint.
 Comparing Release 653 `108bf3241bd747f6174dc7e65a8c01161af24e62`
 against Release 704 `24cb9ec47417e001c3f96dfed630e3b8b0264d93`
-identifies the exact additions without guessed numeric thresholds.
+identifies those 38 additions without guessed numeric thresholds.
 
 The reconciler now records all 38 paths in an explicit disjoint
 `POST_654_PLUS_UNQUALIFIED_ROUTES` manifest. A missing, unexpected or
 incorrectly classified source route fails the historical inventory gate.
 **None of the new routes becomes a CSRF witness merely by being listed.**
-The current expected source count is **199** (83 preexisting candidate
-routes and 116 unqualified); the previously source-mapped 27 additional
-lifecycle routes leave **89 still without positive source evidence**.
+The current expected source count is **202** (83 preexisting candidate
+routes and 119 unqualified); the previously source-mapped 27 additional
+lifecycle routes leave **92 still without positive source evidence**.
 At least 110 manual-review items and six session/account routes
 require separate authentication and identity-aware review. A zero count
 in any source report alone would not establish runtime clearance.
@@ -134,18 +138,22 @@ activation, reproducibility certification or deployment is claimed.
 
 ### Fourth isolated DEV preview — historical fixed-count failure
 
-The operator's fourth source preview finally passed the actual FastAPI 0.162
-route canary: **3 passed**. It then stopped with 27 passing historical
-regressions at `test_627_signed_route_reconciliation_stays_blocked`,
-because the Release 627 reconciler still demanded the old 161-route
-snapshot despite 38 legitimate post-653 route additions.
+The fourth source preview passed the real FastAPI 0.162 route canary
+(**3 passed**) but stopped at the Release 627 historical source ledger,
+which still expected 161 routes. A subsequent correction accounted for the
+38 Release 654–704 routes, but the next preview again stopped at the same
+guard because it omitted three Release 652 catalog writes.
 
-This is an obsolete historical source-count contract, **not** an observed
-strict-CSRF bypass. The current candidate updates both the historical
-reconciler and its tests together, pins the exact added method/path pairs,
-keeps all 38 unqualified, and adds a fail-fast 627 inventory check before
-the broader tests. Real DEV execution of the corrected candidate is
-still required: no previous preview qualified it.
+Inspection of Release 653 source independently confirmed those exact three
+routes: `POST /coa-test-types`, `POST /coa-test-types/{type_id}/edit`,
+and `POST /coa-test-types/{type_id}/toggle`. The current candidate
+records them explicitly as **unqualified**, changes the historical
+accounting to 164 then 202, and raises detailed safe diagnostic counts
+and missing route pairs on future source drift. The historic positive
+browser witness checks are retained without relaxation.
+
+This is an incomplete historical inventory, **not** an observed strict-CSRF
+bypass. Real DEV execution of the corrected exact SHA remains required.
 
 ## Issue #10 — reproducible environment acceptance
 

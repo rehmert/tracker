@@ -15,7 +15,7 @@ def test_705_csrf_source_inventory_does_not_claim_runtime_clearance():
         "remaining_without_positive_source_witness": 51,
         "manual_review_items_unchanged": 110,
         "session_account_routes_not_certified": 6,
-        "current_unsafe_routes": 161,
+        "current_unsafe_routes": 202,
         "new_627_positive_routes": [
             {"full_dev_runtime_qualified": False} for _ in range(27)
         ],
@@ -33,7 +33,7 @@ def test_705_even_zero_source_gaps_do_not_authorize_enforcement(monkeypatch):
         "remaining_without_positive_source_witness": 0,
         "manual_review_items_unchanged": 0,
         "session_account_routes_not_certified": 0,
-        "current_unsafe_routes": 161,
+        "current_unsafe_routes": 202,
         "new_627_positive_routes": [],
         "remaining_route_workstreams": [],
     })
@@ -96,6 +96,7 @@ def test_705_no_symlinks_or_public_receipts(tmp_path, monkeypatch):
 def test_705_exact_post653_unqualified_routes_exist_in_current_source():
     from scripts.tracker_csrf_reconcile627 import (
         POST_654_PLUS_UNQUALIFIED_ROUTES,
+        POST_652_UNQUALIFIED_CATALOG_ROUTES,
         POST_BASELINE_ADDITIONS,
     )
     from scripts.tracker_csrf_route_inventory620 import inventory
@@ -106,9 +107,13 @@ def test_705_exact_post653_unqualified_routes_exist_in_current_source():
         for method in record["methods"]
         if record["route"] != "<dynamic>"
     }
+    assert len(POST_652_UNQUALIFIED_CATALOG_ROUTES) == 3
+    assert POST_652_UNQUALIFIED_CATALOG_ROUTES <= POST_BASELINE_ADDITIONS
+    assert POST_652_UNQUALIFIED_CATALOG_ROUTES.isdisjoint(POST_654_PLUS_UNQUALIFIED_ROUTES)
     assert len(POST_654_PLUS_UNQUALIFIED_ROUTES) == 38
     assert POST_654_PLUS_UNQUALIFIED_ROUTES.isdisjoint(POST_BASELINE_ADDITIONS)
     assert all(method == "POST" for method, _ in POST_654_PLUS_UNQUALIFIED_ROUTES)
+    assert POST_652_UNQUALIFIED_CATALOG_ROUTES <= declared
     assert POST_654_PLUS_UNQUALIFIED_ROUTES <= declared
 
 

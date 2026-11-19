@@ -51,6 +51,15 @@ POST_645_UNQUALIFIED_COA_ROUTES = frozenset({
 POST_647_UNQUALIFIED_COA_ROUTES = frozenset({
     ("POST", "/coas/{cid}/attachments/test-types"),
 })
+# Release 652: three COA catalog management writes were introduced before
+# Release 653, but omitted from the earlier post-627 reconciliation ledger.
+# These are explicitly unqualified, never inferred as positive browser proof.
+POST_652_UNQUALIFIED_CATALOG_ROUTES = frozenset({
+    ("POST", "/coa-test-types"),
+    ("POST", "/coa-test-types/{type_id}/edit"),
+    ("POST", "/coa-test-types/{type_id}/toggle"),
+})
+
 # Exact unsafe declarations added after the previously frozen Release 653
 # source inventory. Read from the Release 653..704 router diff; these are NOT
 # signed-positive CSRF witnesses. Any new/removed route changes must be reviewed
@@ -100,7 +109,7 @@ POST_BASELINE_ADDITIONS = (
     POST_627_UNQUALIFIED_ROUTES |
     POST_635_UNQUALIFIED_ROUTES |
     POST_643_UNQUALIFIED_COA_ROUTES | POST_645_UNQUALIFIED_COA_ROUTES |
-    POST_647_UNQUALIFIED_COA_ROUTES
+    POST_647_UNQUALIFIED_COA_ROUTES | POST_652_UNQUALIFIED_CATALOG_ROUTES
 )
 CURRENT_UNQUALIFIED_ADDITIONS = (
     POST_BASELINE_ADDITIONS | POST_654_PLUS_UNQUALIFIED_ROUTES
@@ -230,18 +239,32 @@ def build() -> dict:
 
     if len(mapped) != 27 or not set(mapped) <= remaining or set(mapped) & known:
         raise ValueError("Release 627 source witnesses differ from baseline gap")
-    # Preserve the exact historic 144/83/61 Release 627 baseline while
-    # accounting explicitly for all 17 pre-653 additions and all 38 new
-    # Release 654..704 unsafe routes. Never silently accept an unreviewed
-    # route addition, a removed route, or a missing historical witness.
-    if (len(POST_654_PLUS_UNQUALIFIED_ROUTES) != 38
+    # Preserve the exact historic 144/83/61 Release 627 source baseline,
+    # explicitly accounting for 20 pre-653 additions (including three
+    # Release 652 COA catalog routes) and 38 Release 654..704 additions.
+    # No new route receives positive witness credit from this inventory.
+    missing = CURRENT_UNQUALIFIED_ADDITIONS - remaining
+    misclassified = CURRENT_UNQUALIFIED_ADDITIONS & known
+    actual_total = report["total_unsafe_routes"]
+    expected_total = 144 + len(CURRENT_UNQUALIFIED_ADDITIONS)
+    expected_remaining = 61 + len(CURRENT_UNQUALIFIED_ADDITIONS)
+    if (len(POST_652_UNQUALIFIED_CATALOG_ROUTES) != 3
+            or len(POST_654_PLUS_UNQUALIFIED_ROUTES) != 38
+            or len(POST_BASELINE_ADDITIONS) != 20
             or POST_BASELINE_ADDITIONS & POST_654_PLUS_UNQUALIFIED_ROUTES
-            or report["total_unsafe_routes"] != 144 + len(CURRENT_UNQUALIFIED_ADDITIONS)
+            or actual_total != expected_total
             or len(known) != 83
-            or len(remaining) != 61 + len(CURRENT_UNQUALIFIED_ADDITIONS)
-            or not CURRENT_UNQUALIFIED_ADDITIONS <= remaining
-            or CURRENT_UNQUALIFIED_ADDITIONS & known):
-        raise ValueError("Unsafe-route inventory differs from pinned 627+705 evidence; manual reassessment required")
+            or len(remaining) != expected_remaining
+            or missing or misclassified):
+        raise ValueError(
+            "Unsafe-route inventory differs from pinned 627+705 evidence; "
+            f"actual_total={actual_total} expected_total={expected_total} "
+            f"candidate_count={len(known)} expected_candidates=83 "
+            f"unqualified_count={len(remaining)} expected_unqualified={expected_remaining} "
+            f"missing_explicit={sorted(missing)} "
+            f"misclassified_as_candidates={sorted(misclassified)}; "
+            "manual reassessment required"
+        )
 
     uncovered = [
         {"method": method, "path": path, "workstream": path.strip("/").split("/")[0]}
@@ -257,6 +280,10 @@ def build() -> dict:
         "post_627_unqualified_routes": [
             {"method": method, "path": path}
             for method, path in sorted(POST_627_UNQUALIFIED_ROUTES)
+        ],
+        "post_652_unqualified_catalog_routes": [
+            {"method": method, "path": path}
+            for method, path in sorted(POST_652_UNQUALIFIED_CATALOG_ROUTES)
         ],
         "current_unsafe_routes": report["total_unsafe_routes"],
         "historical_653_unsafe_routes": 144 + len(POST_BASELINE_ADDITIONS),
