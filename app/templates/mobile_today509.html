@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="/static/css/tracker-mobile-daily509.css?v=510">
 <link rel="stylesheet" href="/static/css/tracker-daily-flow559.css?v=559">
 <link rel="stylesheet" href="/static/css/tracker-mobile-workflows601.css?v=601">
-<link rel="stylesheet" href="/static/css/tracker-productivity674.css?v=674">
+<link rel="stylesheet" href="/static/css/tracker-productivity674.css?v=695">
 <script defer src="/static/js/tracker-mobile-daily509.js?v=509"></script>
 
 <div class="tracker-daily509" data-mobile-daily509>
@@ -21,6 +21,24 @@
     {% endif %}
   </header>
 
+  {# Release 695: one visible recording bar, directly below today's status. #}
+  <nav class="tracker-daily-glance601" aria-label="Today's status">
+    <a href="#mobile-schedule-heading"><strong>{{ due|length }}</strong> due today</a>
+    <a href="#mobile-schedule-heading"><strong>{{ recorded|length }}</strong> recorded today</a>
+    <a href="#mobile-upcoming-heading"><strong>{{ summary.upcoming|length }}</strong> projected next 7 days</a>
+  </nav>
+
+  <nav class="tracker-daily-actions" aria-label="Record today">
+    <a href="#mobile-quick-vitals"
+       class="tracker-daily-action-primary">Log Vitals</a>
+    <a href="/doses#quick-dose-entry">Log Dose</a>
+    <a href="/food#food-quick-log">Log Food</a>
+    <a href="/food#food-water">Log Water</a>
+    <a href="/workouts/quick">Log Workout Set</a>
+    <a href="/regimen#reg635-today">Log Supplements / Meds</a>
+    <a href="/quick-entry">All Actions</a>
+  </nav>
+
   <section class="ux674-dashboard" aria-label="Daily command center">
     <div class="ux674-dashboard-head">
       <h2>Daily Command Center</h2>
@@ -31,6 +49,7 @@
         <strong>{{ daily674.food.count if daily674.food.available else '—' }}</strong>
         <span>Foods logged</span>
         <small>{{ daily674.food.coverage }}</small>
+        <a href="/food" class="ux695-summary-link">Food Journal</a>
       </article>
       <article>
         <strong>{{ daily674.food.calories if daily674.food.calories is not none else '—' }}</strong>
@@ -38,36 +57,19 @@
         <small>{% if daily674.food.available %}{{ daily674.food.coverage }}{% else %}Food unavailable{% endif %}</small>
       </article>
       <article><strong>{{ daily674.sets_today }}</strong><span>Sets today</span>
-        <small>{{ daily674.workout_today }} workout(s) started</small></article>
+        <small>{{ daily674.workout_today }} workout(s) started</small>
+        {% if daily674.last_workout %}
+          <a class="ux695-summary-link" href="/workouts/sessions/{{ daily674.last_workout.id }}/review">Recent Workout</a>
+        {% else %}
+          <a class="ux695-summary-link" href="/workouts">Workout History</a>
+        {% endif %}
+      </article>
       <article><strong>{{ daily674.inventory_attention }}</strong><span>Vials with passed dates</span>
-        <small>Review dates; not a safety determination</small></article>
+        <small>Review dates; not a safety determination</small>
+        <a class="ux695-summary-link" href="/inventory-data-quality">Review Vial Dates</a>
+      </article>
     </div>
-    <nav class="ux674-actions" aria-label="Contextual quick actions">
-      <a href="/food#food-quick-log">Repeat / Log Food</a>
-      <a href="/workouts/quick">Log Workout Set</a>
-      <a href="/vitals#quick-vitals-entry">Record Reading</a>
-      <a href="/inventory-data-quality">Review Vial Dates</a>
-      {% if daily674.last_workout %}
-        <a href="/workouts/sessions/{{ daily674.last_workout.id }}/review">Recent Workout</a>
-      {% endif %}
-    </nav>
   </section>
-
-  <nav class="tracker-daily-glance601" aria-label="Today's status">
-    <a href="#mobile-schedule-heading"><strong>{{ due|length }}</strong> due today</a>
-    <a href="#mobile-schedule-heading"><strong>{{ recorded|length }}</strong> recorded today</a>
-    <a href="#mobile-upcoming-heading"><strong>{{ summary.upcoming|length }}</strong> projected next 7 days</a>
-  </nav>
-
-  <nav class="tracker-daily-actions" aria-label="Common recording actions">
-    <a href="#mobile-quick-vitals"
-       class="tracker-daily-action-primary">+ Log Vitals</a>
-    <a href="/doses#quick-dose-entry">+ Log Dose</a>
-    <a href="/food#food-quick-log">+ Log Food</a>
-    <a href="/regimen#reg635-today">+ Log Supplement / Medication</a>
-    <a href="/food#food-water">+ Log Water</a>
-    <a href="/quick-entry">More Actions</a>
-  </nav>
 
   <nav class="tracker-daily-flow559-compact"
        aria-label="Daily review shortcuts">
