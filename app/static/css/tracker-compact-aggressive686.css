@@ -163,8 +163,9 @@
   ) {
     padding: .3rem .45rem;
   }
+  /* Release 685 already protects tracker-ui-action / ux673-action-row
+     targets at <=760px. Keep the additional Daily targets here only. */
   :root[data-density="compact"] #main-content :is(
-    .tracker-ui-action,.ux673-action-row > a,.ux673-action-row > button,
     .tracker-daily-actions a,.tracker-daily-mode button,
     .tracker-daily-list li a
   ) {
