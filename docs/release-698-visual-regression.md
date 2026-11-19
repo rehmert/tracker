@@ -48,7 +48,9 @@ documented baseline; do not bypass or silently raise the threshold.
 ## Privacy / failure artifacts
 
 Only empty-data fixtures are rendered. The runner refuses non-loopback
-origins, storage-state credentials, and alternate schemes. No screenshots
+origins, storage-state credentials, and alternate schemes; browser request
+routing also **aborts any outbound HTTP(S) resource** not directed to
+one of the two isolated localhost server ports. No screenshots
 or cookies are committed, uploaded, or sent through GitHub. The comparison
 worktree, temporary data and screenshots are removed after success.
 
