@@ -34,12 +34,19 @@ UX/accessibility issue or server performance bottleneck is eliminated.
   the dock at 320px in the initial isolated preview. The second browser
   preview found that even the 85px three-column bar overlapped by 13.625px
   because the sticky element could not rise above its **form** container
-  beginning at y=700px. The revised Lab-only CSS removes the top margin,
-  reduces grid gaps and internal padding, and maintains minimum 48px
-  touch targets; the original hard dock-overlap assertion remains.
-  The separate CSV import form, manual entry
-  data and upload, existing duplicate-analyte warnings, completeness
-  review and unsaved-change guard are untouched.
+  beginning at y=700px. A third preview at Comfortable density measured
+  a 60.5px bar intersecting the dock by 31.625px when the form itself
+  began at y=753px. Shrinking padding is insufficient: a sticky child
+  cannot escape its containing form's top boundary. The correct solution
+  defaults the Lab row to **normal flow** before the user reaches the
+  manual form, then a small read-only scroll/resize/density guard enables
+  sticky positioning only when the containing form has at least the
+  bar's height plus 16px of space above the dock. The real browser gate
+  verifies no overlap *before* and *after* entering the manual form,
+  preserving the same strict 4px dock-clearance requirement when sticky.
+  No controls are hidden or cloned. The separate CSV import form,
+  manual entry data and upload, existing duplicate-analyte warnings,
+  completeness review and unsaved-change guard are untouched.
 
 All three retain native button/tab order and focus outlines; action
 targets are at least 48 px tall on phones <=760px. Sticky behavior
@@ -58,7 +65,9 @@ Entry, Gym Mode and major Inventory/Lab/Food workflow refinements are
 - Existing 702/703 styles stay pinned so that their proven behavior and
   historical test contracts remain unchanged; removal/rewrite is **not**
   claimed as part of this release.
-- Existing record forms, JS handlers, GET/POST routes, authentication,
+- One **read-only** Lab scroll-state script gates the existing action
+  row's CSS class without submitting, fetching, storing or editing records.
+  Existing record-form JS handlers, GET/POST routes, authentication,
   CSRF, SQLite schema, caching semantics, data queries and background
   services do not change. This is not a performance-query optimization.
 
@@ -66,15 +75,16 @@ Entry, Gym Mode and major Inventory/Lab/Food workflow refinements are
 
 The guarded Release 704 preview requires clean installed DEV `main`
 at the exact Release 703 commit, a root systemd worker, active DEV
-service, candidate ancestry and an exact nine-file scope allowlist.
+service, candidate ancestry and an exact ten-file scope allowlist.
 It creates **two** detached worktrees (baseline 703 and candidate 704),
 each with a separate private empty SQLite data directory, and removes
 both afterward. No live data, installed code or PROD state are altered;
 no dependencies are downloaded.
 
-- Jinja/CSS parsing and source contracts ensure all three original
-  forms' submit, cancel, draft recovery, workout import and Lab dynamic
-  row/validation hooks remain unchanged.
+- Jinja/CSS and new read-only Lab JS syntax checks plus source
+  contracts ensure all three original forms' submit, cancel, draft
+  recovery, workout import and Lab dynamic row/validation hooks remain
+  unchanged.
 - Focused historical tests requalify 702/703 action contracts, previous
   Workout recording safeguards, Vitals dirty guard, Lab duplicate
   handling and copy-from-report restrictions.
@@ -86,7 +96,10 @@ no dependencies are downloaded.
   **90 presentation configurations**. Assertions check the original
   single Save/Cancel, no horizontal document overflow, sticky clearance
   above the dock, safe keyboard behavior, 44px+ controls, keyboard
-  order and one intercepted native Save without HTTP writes.
+  order and one intercepted native Save without HTTP writes. The Lab
+  fixture explicitly checks its initial nonsticky state when the form
+  starts below the safe dock region, then scrolls into that form and
+  requires sticky activation, with the original overlap check still hard.
 - Repeat prior Release 702/703 browser tests and historical 603 dock
   pointer/673 integrated-mobile regressions.
 - Run unmodified Release 698 **dual-server real-page screenshot** gate
