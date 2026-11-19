@@ -105,6 +105,9 @@ def test_705_stays_read_only_and_preserves_historical_qualifiers():
     route_test = (ROOT / "tests/test_csrf_all_registered_negative705.py").read_text()
     assert "CRITICAL_WRITES = frozenset({" in route_test
     assert "if len(routes) < 120" not in route_test
+    assert "if not isinstance(route, APIRoute)" not in route_test
+    assert "def enumerate_unsafe_routes(route_items)" in route_test
+    assert "test_705_route_enumeration_handles_wrapped_routes_and_nested_mounts" in route_test
     assert "missing = CRITICAL_WRITES - routes" in route_test
     assert "assert observed == {" in route_test
     assert 'signed_invalid.status_code == 422' in route_test
@@ -117,6 +120,7 @@ def test_705_stays_read_only_and_preserves_historical_qualifiers():
         "tests/test_release570_freshenv.py",
     ):
         assert module in gate
+    assert "RELEASE_705_ASGI_CSRF_NEGATIVE_CANARY=PASSED" in gate
     preview = (ROOT / "scripts/tracker-preview705.sh").read_text()
     assert "BASE=24cb9ec47417e001c3f96dfed630e3b8b0264d93" in preview
     assert "RELEASE_705_PREVIEW=PASSED_ISOLATED_NO_INSTALL" in preview
