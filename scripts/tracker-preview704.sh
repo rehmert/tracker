@@ -102,6 +102,14 @@ export PYTHONPATH="$CANDIDATE_QA" TRACKER_DATA_DIR="$CANDIDATE_DATA"
 
 bash scripts/tracker-release-scoped704.sh "$PY"
 
+# Fast fail-closed canary: the exact 320px Lab case that previously
+# failed at Compact and Comfortable densities. Do this before the broader
+# browser matrix and full isolated dual-server screenshot comparison.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/browser/test_consolidated_forms704.py \
+  -k "test_704_mobile_long_form_actions_and_original_submit_contract and 320 and lab"
+echo "RELEASE_704_320_LAB_CANARY=PASSED"
+
 # The actual Jinja Notes, Workout and Lab forms are rendered with synthetic,
 # populated values and a corrected-error fixture. Save is intercepted without
 # HTTP writes. Earlier Release 702/703 action and dock tests run too.
