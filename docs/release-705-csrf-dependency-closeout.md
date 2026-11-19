@@ -28,12 +28,25 @@ multipart-safe route dependency. The existing isolated
 HTTP/HTTPS reverse-proxy browser gates. NEVER replace those gates
 with static or negative-only assertions.
 
-The conservative Release 627 source reconciler still has 51 unsafe
-routes without mapped positive browser tests and at least 110 manual
-review items; six session/account routes need separate authentication
-and identity-aware review. Route additions since the frozen ledger may
-increase this backlog; a zero count in that historic report alone
-would not establish completeness.
+The Release 627 historic snapshot originally had **161** unsafe route
+declarations (83 prior candidate witnesses plus 78 unqualified routes).
+The subsequent Release 654–704 additions include **38 further unsafe
+routes**: 35 Workout endpoints, one COA attachment-identifier endpoint,
+one saved-Food-edit endpoint and one Workout correction-undo endpoint.
+Comparing Release 653 `108bf3241bd747f6174dc7e65a8c01161af24e62`
+against Release 704 `24cb9ec47417e001c3f96dfed630e3b8b0264d93`
+identifies the exact additions without guessed numeric thresholds.
+
+The reconciler now records all 38 paths in an explicit disjoint
+`POST_654_PLUS_UNQUALIFIED_ROUTES` manifest. A missing, unexpected or
+incorrectly classified source route fails the historical inventory gate.
+**None of the new routes becomes a CSRF witness merely by being listed.**
+The current expected source count is **199** (83 preexisting candidate
+routes and 116 unqualified); the previously source-mapped 27 additional
+lifecycle routes leave **89 still without positive source evidence**.
+At least 110 manual-review items and six session/account routes
+require separate authentication and identity-aware review. A zero count
+in any source report alone would not establish runtime clearance.
 
 `scripts/tracker_csrf_closeout705.py` reports the existing conservative
 readiness inventory, with `--json` for audit and
@@ -119,6 +132,21 @@ activation, reproducibility certification or deployment is claimed.
    Security flag enabling is an explicit operational change, not
    something the source-only Release 705 scripts perform.
 
+### Fourth isolated DEV preview — historical fixed-count failure
+
+The operator's fourth source preview finally passed the actual FastAPI 0.162
+route canary: **3 passed**. It then stopped with 27 passing historical
+regressions at `test_627_signed_route_reconciliation_stays_blocked`,
+because the Release 627 reconciler still demanded the old 161-route
+snapshot despite 38 legitimate post-653 route additions.
+
+This is an obsolete historical source-count contract, **not** an observed
+strict-CSRF bypass. The current candidate updates both the historical
+reconciler and its tests together, pins the exact added method/path pairs,
+keeps all 38 unqualified, and adds a fail-fast 627 inventory check before
+the broader tests. Real DEV execution of the corrected candidate is
+still required: no previous preview qualified it.
+
 ## Issue #10 — reproducible environment acceptance
 
 Release 569 already records 44 exact installed distributions (including
@@ -179,15 +207,17 @@ mutation or requirement rewrite is authorized by this release.
 
 ## Single release qualification and deployment limits
 
-The candidate's exact seven-file diff comprises two read-only scripts,
-two release-scoped/isolated preview scripts, two focused test files
-(including the registered unsafe-route negative matrix) and this document. It intentionally changes **no application code,
+The candidate's exact nine-file diff comprises two new read-only
+scripts, the audited Release 627 historical reconciler and its regression
+test, two release-scoped/isolated preview scripts, two focused Release 705
+test files (including the registered unsafe-route negative matrix), and
+this document. It intentionally changes **no application code,
 security middleware, server settings, requirements, database, JS, or
 browser suite**. Source-preview success only means the new tools
 are safe and report existing issues correctly.
 
 The preview demands pinned 704 DEV main, a root systemd worker,
-a clean checkout, a seven-file allowlist, detached candidate checkout,
+a clean checkout, a nine-file allowlist, detached candidate checkout,
 disposable SQLite directory, no download, and syntax/focused historic
 regressions. It prints the blocked issues rather than inventing a
 security or reproducibility certification.
