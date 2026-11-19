@@ -28,6 +28,24 @@ REGIMEN_CATALOG_GET_PATHS = (
 # Release 651 adds a second COA editor AJAX fetch. Inventory it explicitly,
 # without expanding Release 579 runtime witness scope or claiming clearance.
 COA_MULTI651_SOURCE = "app/static/js/tracker-coa-multi651.js"
+# Copied into isolated browser worktrees, but explicitly Git-ignored.
+# Third-party vendor source cannot inherit tracked app CSRF witnesses.
+ISOLATED_HTMX_VENDOR = "app/static/vendor/htmx.min.js"
+
+
+def partition_tracked_js_callsites(items: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Only exempt the one known ignored vendor asset, fail closed otherwise."""
+    tracked, vendor = [], []
+    for item in items:
+        path = item["file"]
+        if path == ISOLATED_HTMX_VENDOR:
+            vendor.append(item)
+        elif path.startswith("app/static/vendor/"):
+            raise ValueError("Unknown untracked vendor JS requires source review")
+        else:
+            tracked.append(item)
+    return tracked, vendor
+
 # Exact six-line request contract (indentation ignored). Do not relax this
 # into an inventory-count-only approval: any request edit requires review.
 COA_MULTI651_REQUEST_LINES = (
@@ -77,7 +95,7 @@ def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     inventory = module.build(root)
-    items = inventory["callsites"]
+    items, vendor = partition_tracked_js_callsites(inventory["callsites"])
     selected = [
         item for item in items
         if item["file"] in TRACKED_FETCH_SOURCES
@@ -101,7 +119,12 @@ def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
                      and item["kind"] == "fetch_callsite"]
     if (len(items) != 50 or len(selected) != 2 or len(catalog) != 2
             or len(new_coa) != 1 or len(new_multi_coa) != 1):
-        raise ValueError("JavaScript source inventory changed; re-review witnesses")
+        raise ValueError(
+            "JavaScript source inventory changed; re-review witnesses "
+            f"(tracked={len(items)} witnessed={len(selected)} "
+            f"catalog_get={len(catalog)} coa647={len(new_coa)} "
+            f"coa651={len(new_multi_coa)} vendor_unqualified={len(vendor)})"
+        )
     multi_source = (root / COA_MULTI651_SOURCE).read_text(encoding="utf-8")
     multi_lines = multi_source.splitlines()
     callsite = new_multi_coa[0]["line"] - 1
@@ -125,6 +148,7 @@ def reviewed_js_source_callsites(root: Path = ROOT) -> dict:
         "witnessed_js_callsites": len(selected),
         "not_witnessed_in_579": len(items) - len(selected),
         "unqualified_coa_multi651_callsites": len(new_multi_coa),
+        "unqualified_ignored_vendor_callsites": len(vendor),
         "source_refs": sorted(
             f"{item['file']}:{item['line']}" for item in selected
         ),
@@ -201,6 +225,7 @@ def main(argv=None) -> int:
     print(f"CSRF_579_OBSERVED_SCENARIOS={result['observed_write_scenarios']}")
     print(f"CSRF_579_TRACKED_JS_CALLSITES_WITNESSED={source['witnessed_js_callsites']}")
     print(f"CSRF_579_TRACKED_JS_CALLSITES_NOT_WITNESSED={source['not_witnessed_in_579']}")
+    print(f"CSRF_579_UNQUALIFIED_IGNORED_VENDOR_CALLSITES={source['unqualified_ignored_vendor_callsites']}")
     print("CSRF_579_TESTED_PATHS=" + ",".join(result["distinct_tested_paths"]))
     return 0
 
