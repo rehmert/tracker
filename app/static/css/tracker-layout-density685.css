@@ -31,20 +31,17 @@
   margin-bottom: .22rem;
 }
 /* The eyebrow, heading, subtitle and actions already imply grouping. */
-:root[data-density="compact"] #main-content .dashboard-hero,
-:root[data-density="compact"] #main-content .page-header {
+:root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) {
   gap: .4rem .65rem;
   padding-top: 0;
   padding-bottom: .28rem;
   margin-top: 0;
   margin-bottom: .35rem;
 }
-:root[data-density="compact"] #main-content .dashboard-hero .eyebrow,
-:root[data-density="compact"] #main-content .page-header .eyebrow {
+:root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) .eyebrow {
   margin: 0 0 .1rem;
 }
-:root[data-density="compact"] #main-content .dashboard-hero h1,
-:root[data-density="compact"] #main-content .page-header h1 {
+:root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) h1 {
   margin: 0 0 .12rem;
   line-height: 1.16;
 }
@@ -60,9 +57,8 @@
   margin-top: .35rem;
   margin-bottom: .35rem;
 }
-:root[data-density="compact"] #main-content :is(.dashboard-panel,.tracker-ui-card,.ux673-card) {
-  padding: var(--tracker685-pad-y) var(--tracker685-pad-x);
-}
+/* Compact cards share the later all-card padding rule below.  Balanced
+   retains this separate rule and is never controlled by Release 686. */
 :root[data-density="balanced"] #main-content :is(.dashboard-panel,.tracker-ui-card,.ux673-card) {
   padding: var(--tracker685-pad-y) var(--tracker685-pad-x);
 }
@@ -71,7 +67,7 @@
   margin-top: .25rem;
   margin-bottom: .4rem;
 }
-:root[data-density="compact"] #main-content :is(.insight-card,.inventory-card,.today-card,.protocol-card,.export-card,.tracker-status-card,.tracker-ui-card,.ux673-card) {
+:root[data-density="compact"] #main-content :is(.dashboard-panel,.insight-card,.inventory-card,.today-card,.protocol-card,.export-card,.tracker-status-card,.tracker-ui-card,.ux673-card) {
   padding: var(--tracker685-pad-y) var(--tracker685-pad-x);
 }
 :root[data-density="compact"] #main-content :is(.section-intro,.panel-heading) {
@@ -79,8 +75,7 @@
   margin-top: 0;
   margin-bottom: var(--tracker685-heading);
 }
-:root[data-density="compact"] #main-content .section-intro > :is(h2,h3),
-:root[data-density="compact"] #main-content .panel-heading > :is(h2,h3) {
+:root[data-density="compact"] #main-content :is(.section-intro,.panel-heading) > :is(h2,h3) {
   margin: 0;
 }
 :root[data-density="compact"] #main-content :is(h2,h3) + :is(p,.note,.muted) {
