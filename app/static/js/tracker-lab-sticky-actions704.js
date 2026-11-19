@@ -32,9 +32,13 @@
       const barHeight = actions.getBoundingClientRect().height;
       const dockTop = dock.getBoundingClientRect().top;
 
-      // A 16px margin accounts for line rounding and keeps the 4px dock
-      // clearance strict even when a density setting changes layout.
-      const safeToStick = formTop + barHeight + 16 <= dockTop;
+      // Do not activate over the earlier CSV import section even if the
+      // form's top is just barely high enough. Require the manual form
+      // to reach the upper portion of the viewport first. A 16px margin
+      // then maintains safe dock clearance across density changes.
+      const manualFormEntered = formTop <= 120;
+      const safeToStick = manualFormEntered &&
+        formTop + barHeight + 16 <= dockTop;
       form.classList.toggle(enabledClass, safeToStick);
     }
 
