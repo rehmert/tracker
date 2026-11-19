@@ -232,6 +232,10 @@ def main() -> int:
         return 1
     print(f"VISUAL698_COMPARISONS={checks}")
     print(f"VISUAL698_FAILURES={failures}")
+    minimum = len(PAGES) * len(VIEWPORTS) * len(THEMES)
+    if checks < minimum:
+        print(f"VISUAL698_ERROR=Only {checks} of {minimum} required comparisons executed", file=sys.stderr)
+        return 1
     if failures:
         print(f"VISUAL698_REVIEW_ARTIFACTS={args.artifact_dir}")
         return 1
