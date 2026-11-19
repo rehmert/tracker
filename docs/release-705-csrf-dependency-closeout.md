@@ -235,7 +235,7 @@ listing them does not constitute executed parity evidence. The other
 
 ## Single release qualification and deployment limits
 
-The candidate's exact sixteen-file diff includes the CSRF and dependency
+The candidate's exact twenty-two-file diff includes the CSRF and dependency
 readiness scripts, audited historical reconciliation, source and full-browser
 preview gates, the guarded browser qualification runner, focused Release 705
 regressions, corrected legacy Vitals and Vials browser tests, and this document.
@@ -378,29 +378,39 @@ success cannot certify full browser QA. No live data, settings,
 dependency bundle, or user-facing application files change.
 
 
-### Release 579 tracked-JavaScript source audit: isolated HTMX reconciliation
+### Release 579 source-audit root cause: Release 668 workout offline-sync
 
-The 921bc5d full-browser run passed its source preflight, targeted strict
-Quick Entry HTTP/HTTPS test (2), regular browser suite (195 passed,
-2 skipped), native HTTPS Labs (2), strict core (119), Release 627 gap
-negative probes (30), signed lifecycle and purchase/COA/protocol/blend
-modules, strict Labs and Food modules, and the twelve Release 579 runtime
-browser witnesses. The subsequent Release 579 source-inventory validator
-aborted with `JavaScript source inventory changed; re-review witnesses`.
+The Release 705 strict browser preview at `921bc5d` passed the targeted
+HTTP/HTTPS Quick Entry test, 195 regular browser checks (2 skipped),
+119 strict-CSRF core checks, additional signed-write and negative probes,
+and all 12 Release 579 strict runtime browser scenarios. It stopped
+only when the old Release 579 source audit required exactly **50**
+JavaScript callsites.
 
-The browser runner copies Git-ignored
-`app/static/vendor/htmx.min.js` into its detached source. The
-Release 579 source checker now segregates that **one known ignored
-third-party asset** from *tracked application* JavaScript callsites.
-It preserves the historical exact 50-callsite comparison, both witness
-references, both catalog GET contracts and the exact COA POST contract,
-and fails closed for unexpected vendor files or any other source-count
-change. Third-party vendor matches are reported as **unqualified**, never
-converted into positive CSRF evidence. The same two source-inventory
-tests execute in fast Release 705 source qualification and immediately
-after vendor copying, before launching the disposable Chromium server.
-This prevents another lengthy browser run from failing only at the
-later Release 579 report. The failure diagnostic includes the sanitized
-tracked/witness/catalog/COA/vendor counts for any unexpected remaining
-drift. Runtime validation on DEV remains necessary. No application,
-runtime CSRF flag, installed source, or production data changes are made.
+The initial hypothesis that the copied, Git-ignored HTMX vendor asset
+caused this mismatch was **wrong**. A subsequent source-only diagnostic
+reported `tracked=51 witnessed=2 catalog_get=2 coa647=1 coa651=1
+vendor_unqualified=0`. The added source is
+`app/static/js/tracker-workout-drafts668.js`, which implements
+`POST /workouts/quick/offline-sync`. It uses
+`credentials: "same-origin"`, the `X-Tracker-CSRF` header from
+`window.trackerCsrfToken?.()`, and `redirect: "manual"`.
+
+The Release 579 audit now expects **51 tracked application callsites**,
+preserves exactly **two** Release 579 browser-witnessed callsites,
+and counts **49** others as **not witnessed by Release 579**. It
+explicitly requires one Release 668 callsite and its exact reviewed
+POST request lines; mutations of endpoint, method, credentials, CSRF
+header or redirect behavior fail closed. This is *source review only*,
+not an executable positive/negative CSRF witness for workout offline
+sync. The incorrect HTMX source-exemption code was removed.
+
+Six older tests also hardcoded 50/48; their 575, 576, 578, 640, 648
+and 651 source-ledger expectations have been reconciled together with
+the 579 validator. All now assert the 668 source remains unqualified.
+The Release 705 source gate executes these specific historical tests
+before attempting any browser qualification, and the existing browser
+runner repeats the narrow 579 review after copying its vendor asset,
+before starting the HTTP/HTTPS servers. The changed-file allowlists
+are exact. Runtime validation is pending and global CSRF enforcement
+remains blocked.
