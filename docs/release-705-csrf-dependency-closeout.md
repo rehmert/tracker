@@ -376,3 +376,31 @@ executes this focused scope first and only launches the complete
 unchanged standard and strict Chromium suites if it passes. Targeted
 success cannot certify full browser QA. No live data, settings,
 dependency bundle, or user-facing application files change.
+
+
+### Release 579 tracked-JavaScript source audit: isolated HTMX reconciliation
+
+The 921bc5d full-browser run passed its source preflight, targeted strict
+Quick Entry HTTP/HTTPS test (2), regular browser suite (195 passed,
+2 skipped), native HTTPS Labs (2), strict core (119), Release 627 gap
+negative probes (30), signed lifecycle and purchase/COA/protocol/blend
+modules, strict Labs and Food modules, and the twelve Release 579 runtime
+browser witnesses. The subsequent Release 579 source-inventory validator
+aborted with `JavaScript source inventory changed; re-review witnesses`.
+
+The browser runner copies Git-ignored
+`app/static/vendor/htmx.min.js` into its detached source. The
+Release 579 source checker now segregates that **one known ignored
+third-party asset** from *tracked application* JavaScript callsites.
+It preserves the historical exact 50-callsite comparison, both witness
+references, both catalog GET contracts and the exact COA POST contract,
+and fails closed for unexpected vendor files or any other source-count
+change. Third-party vendor matches are reported as **unqualified**, never
+converted into positive CSRF evidence. The same two source-inventory
+tests execute in fast Release 705 source qualification and immediately
+after vendor copying, before launching the disposable Chromium server.
+This prevents another lengthy browser run from failing only at the
+later Release 579 report. The failure diagnostic includes the sanitized
+tracked/witness/catalog/COA/vendor counts for any unexpected remaining
+drift. Runtime validation on DEV remains necessary. No application,
+runtime CSRF flag, installed source, or production data changes are made.
