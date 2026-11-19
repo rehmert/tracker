@@ -1,18 +1,23 @@
 (() => {
   'use strict';
   const KEY = 'tracker.navigation.focus.v1';
+  // Daily destinations only. Advanced pages remain accessible by search and
+  // direct URL; the current page stays in the sidebar even when advanced.
   const ESSENTIAL = new Set([
-    '/', '/workflow-hub', '/activity', '/calendar', '/quick-entry',
-    '/protocols', '/doses', '/dose-workspace', '/pk', '/vials',
-    '/compounds', '/purchases', '/supplies', '/coas', '/vitals',
-    '/labs', '/reports', '/backups'
+    '/mobile', '/calendar', '/quick-entry', '/doses', '/vials',
+    '/workouts', '/food', '/vitals', '/labs', '/regimen'
   ]);
   function init() {
     const toggle = document.getElementById('tracker-focus-toggle');
     const nav = document.getElementById('nav-sortable');
     if (!toggle || !nav) return;
-    let enabled = false;
-    try { enabled = localStorage.getItem(KEY) === 'true'; } catch (_) {}
+    // Prefer the focused sidebar for new browsers, but never override an
+    // explicit preference saved by an existing user.
+    let enabled = true;
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved !== null) enabled = saved === 'true';
+    } catch (_) {}
     function apply() {
       const active = new Set();
       nav.querySelectorAll('a[aria-current="page"]').forEach(a => {
