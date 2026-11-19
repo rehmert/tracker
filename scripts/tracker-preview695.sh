@@ -35,7 +35,7 @@ git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
     app/templates/mobile_today509.html|app/templates/quick_entry.html|\
-    app/static/css/tracker-productivity674.css|tests/test_daily_flow695.py|\
+    app/static/css/tracker-today695.css|tests/test_daily_flow695.py|\
     tests/browser/test_daily_flow695.py|scripts/tracker-preview695.sh|\
     scripts/tracker-release-scoped695.sh|docs/release-695-daily-flow.md) ;;
     *) fail "Out-of-scope candidate path: $path" ;;
