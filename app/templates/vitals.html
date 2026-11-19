@@ -23,6 +23,7 @@
 
 <script defer
         src="/static/js/tracker-vitals-quick-focus.js?v=20261103"></script>
+<link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 
 <h1>Vitals</h1>
 <nav class="tracker-mobile-log-links" aria-label="Quick vitals logging">
@@ -31,12 +32,16 @@
   <a href="#quick-vitals-bp">Blood pressure</a>
   <a href="#quick-vitals-pulse">Pulse</a>
 </nav>
-<p class="note">Weight, blood pressure and pulse as you record them. This page shows your numbers and simple averages; it doesn't interpret them. Take questions about what a reading means to a clinician.</p>
-<nav class="ux-shortcuts" aria-label="Vitals related views">
-  <a href="/health-timeline?days={{ days }}">View health timeline</a>
-  <a href="/health-insights">Health insights</a>
-  <a href="/exports/vitals.csv">Export all vitals (raw CSV)</a>
-</nav>
+<p class="note">Record a reading above, or review your measurements below.</p>
+<details class="tracker-flow696-guide">
+  <summary>Vitals guidance, insights and exports</summary>
+  <p class="note">Weight, blood pressure and pulse as you record them. This page shows your numbers and simple averages; it doesn't interpret them. Take questions about what a reading means to a clinician.</p>
+  <nav class="ux-shortcuts tracker-flow696-actions" aria-label="Vitals related views">
+    <a href="/health-timeline?days={{ days }}">View health timeline</a>
+    <a href="/health-insights">Health insights</a>
+    <a href="/exports/vitals.csv">Export all vitals (raw CSV)</a>
+  </nav>
+</details>
 
 <section>
   <h2 id="quick-vitals-entry">Add a reading</h2>
