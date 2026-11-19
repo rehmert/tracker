@@ -122,7 +122,28 @@ def test_583_reconstitution_filter_correction_delete_with_stock(tab, scheme, vid
     assert reconst.count() == 1
     assert reconst.locator('input[name="csrf_token"]').input_value() == token
     _rejected(page, base, reconst_path)
-    reconst.locator('input[name="volume_ml"]').fill("2")
+    # Release 683 moved the BAC-water calculator input outside the
+    # native POST form and associated it via the HTML form attribute.
+    # Operate the actual visible input; prove it will be included in
+    # the signed form submission rather than bypassing browser UX.
+    calculator = page.locator("details#vial-reconstitution683")
+    expect(calculator).to_have_count(1)
+    if calculator.get_attribute("open") != "":
+        calculator.locator(":scope > summary").click()
+    expect(calculator).to_have_attribute("open", "")
+    water = calculator.locator(
+        'input#rc-water[name="volume_ml"][form="recon-record-form683"]'
+    )
+    expect(water).to_be_visible()
+    assert water.evaluate("(el) => el.form?.id") == "recon-record-form683"
+    assert reconst.evaluate(
+        "(form) => [...form.elements].some(el => el.id === 'rc-water')"
+    )
+    water.fill("2")
+    expect(water).to_have_value("2")
+    assert reconst.evaluate(
+        "(form) => new FormData(form).get('volume_ml')"
+    ) == "2"
     reconst.locator('select[name="supply_id"]').select_option(str(ids["water"]))
     # The genuine form keeps optional disposables inside a closed details
     # disclosure. Open it through the real UI before checking the item.

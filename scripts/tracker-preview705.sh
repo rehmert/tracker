@@ -40,6 +40,7 @@ while IFS= read -r path; do
     tests/browser/test_vitals_proxy_host522.py|\
     tests/browser/test_strict_csrf521.py|\
     tests/browser/test_csrf_workflows580.py|\
+    tests/browser/test_csrf_preparations583.py|\
     scripts/tracker-browser-preview705.sh|\
     scripts/tracker-release-scoped705.sh|\
     scripts/tracker-preview705.sh|\

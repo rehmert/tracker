@@ -33,7 +33,8 @@ bash -n scripts/tracker-browser-preview705.sh
   tests/test_csrf_all_registered_negative705.py \
   tests/browser/test_vitals_proxy_host522.py \
   tests/browser/test_strict_csrf521.py \
-  tests/browser/test_csrf_workflows580.py
+  tests/browser/test_csrf_workflows580.py \
+  tests/browser/test_csrf_preparations583.py
 # Reconcile every historical source/ledger test that pinned 50 -> 51
 # before any expensive HTTP/HTTPS browser qualification.
 "$PY" -m pytest -q --tb=short --maxfail=1 \

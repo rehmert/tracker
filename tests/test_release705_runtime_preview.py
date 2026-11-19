@@ -234,3 +234,35 @@ def test_705_future_strict_dose_and_preparations_still_use_real_links():
     assert "a[href^=\"/doses/\"][href$=\"/edit\"]" in dose_test
     assert "href='/vials/{{ v.id }}/preparations/{{ e.id }}/edit'" in vial
     assert "history.locator('a[href$=\"/edit\"]')" in preparation_test
+
+
+def test_705_583_reconstitution_calculator_field_is_associated_with_signed_post():
+    vial = (ROOT / "app/templates/vial_detail.html").read_text()
+    fixture = (ROOT / "tests/browser/test_csrf_preparations583.py").read_text()
+    preview = (ROOT / "scripts/tracker-browser-preview705.sh").read_text()
+    source = (ROOT / "scripts/tracker-preview705.sh").read_text()
+    scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
+    runner = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
+    assert 'id="vial-reconstitution683"' in vial
+    assert 'id="rc-water"' in vial
+    assert 'name="volume_ml" form="recon-record-form683" required' in vial
+    assert '<form id="recon-record-form683" method="post"' in vial
+    assert 'action="/vials/{{ v.id }}/reconstitute"' in vial
+    assert 'calculator.locator(":scope > summary").click()' in fixture
+    assert 'input#rc-water[name="volume_ml"][form="recon-record-form683"]' in fixture
+    assert 'water.evaluate("(el) => el.form?.id") == "recon-record-form683"' in fixture
+    assert "new FormData(form).get('volume_ml')" in fixture
+    assert 'water.fill("2")' in fixture
+    assert "reconst.locator('input[name=\"volume_ml\"]')" not in fixture
+    for gate in (preview, source):
+        assert "tests/browser/test_csrf_preparations583.py|\\" in gate
+    assert "tests/browser/test_csrf_preparations583.py" in scoped
+    assert '--targeted-preparations583' in preview
+    assert 'RELEASE_705_TARGETED_PREPARATIONS583=PASSED_NOT_FULL_QA' in preview
+    assert 'RELEASE_705_TARGETED_PREPARATIONS583_PREVIEW=PASSED_ISOLATED_NO_FULL_QA' in preview
+    assert preview.index('RELEASE_705_TARGETED_PREPARATIONS583=PASSED_NOT_FULL_QA') < preview.index(
+        'timeout --signal=TERM --kill-after=30s 2100'
+    )
+    assert 'scripts/tracker_csrf_runtime_report583.py' in runner
+    assert 'scripts/tracker_csrf_fixture583.py" verify' in runner
+    assert runner.count("tests/browser/test_csrf_preparations583.py") >= 2

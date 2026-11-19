@@ -10,13 +10,15 @@ REF=release/705-csrf-dependency-closeout
 fail() { echo "RELEASE_705_BROWSER_PREVIEW_ERROR=$*" >&2; exit 1; }
 
 [[ "$#" -ge 1 && "$#" -le 2 && "$1" =~ ^[0-9a-f]{40}$ ]] ||
-  fail 'Exact candidate SHA and optional --targeted-workflows580 required'
+  fail 'Exact candidate SHA and optional approved targeted mode required'
 TARGET="$1"
 PREVIEW_MODE=full
 if [[ "$#" == 2 ]]; then
-  [[ "$2" == --targeted-workflows580 ]] ||
-    fail 'Only --targeted-workflows580 is supported as a second argument'
-  PREVIEW_MODE=workflows580
+  case "$2" in
+    --targeted-workflows580) PREVIEW_MODE=workflows580 ;;
+    --targeted-preparations583) PREVIEW_MODE=preparations583 ;;
+    *) fail 'Only approved 580/583 targeted modes are supported' ;;
+  esac
 fi
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev &&
    -n "${INVOCATION_ID:-}" ]] ||
@@ -67,6 +69,7 @@ while IFS= read -r path; do
     tests/browser/test_vitals_proxy_host522.py|\
     tests/browser/test_strict_csrf521.py|\
     tests/browser/test_csrf_workflows580.py|\
+    tests/browser/test_csrf_preparations583.py|\
     scripts/tracker-browser-preview705.sh|\
     scripts/tracker-release-scoped705.sh|\
     scripts/tracker-preview705.sh|\
@@ -120,6 +123,12 @@ if [[ "$PREVIEW_MODE" == workflows580 ]]; then
   timeout --signal=TERM --kill-after=30s 420 \
     bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict workflows580
   echo 'RELEASE_705_TARGETED_WORKFLOWS580=PASSED_NOT_FULL_QA'
+elif [[ "$PREVIEW_MODE" == preparations583 ]]; then
+  echo 'RELEASE_705_MODE=TARGETED_PREPARATIONS583_NOT_FULL_QUALIFICATION'
+  timeout --signal=TERM --kill-after=30s 420 \
+    bash scripts/tracker-browser-qualify.sh "$QA" "$PY" \
+      --targeted-strict tests/browser/test_csrf_preparations583.py
+  echo 'RELEASE_705_TARGETED_PREPARATIONS583=PASSED_NOT_FULL_QA'
 else
   # Source-qualified candidate only. Each targeted preflight must pass
   # independently before the complete 16-worker suite is attempted.
@@ -131,6 +140,11 @@ else
   timeout --signal=TERM --kill-after=30s 420 \
     bash scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict workflows580
   echo 'RELEASE_705_TARGETED_WORKFLOWS580=PASSED_NOT_FULL_QA'
+  echo '=== RELEASE 705 STRICT PREPARATIONS583 TARGETED PREFLIGHT ==='
+  timeout --signal=TERM --kill-after=30s 420 \
+    bash scripts/tracker-browser-qualify.sh "$QA" "$PY" \
+      --targeted-strict tests/browser/test_csrf_preparations583.py
+  echo 'RELEASE_705_TARGETED_PREPARATIONS583=PASSED_NOT_FULL_QA'
   # Existing runner owns the disposable HTTP/HTTPS servers and DB,
   # complete 16-worker browser gates and fail-closed evidence reports.
   timeout --signal=TERM --kill-after=30s 2100 \
@@ -146,6 +160,9 @@ fi
 echo 'RELEASE_705_INSTALLED_SOURCE_UNCHANGED=VERIFIED'
 if [[ "$PREVIEW_MODE" == workflows580 ]]; then
   echo 'RELEASE_705_TARGETED_WORKFLOWS580_PREVIEW=PASSED_ISOLATED_NO_FULL_QA'
+  exit 0
+elif [[ "$PREVIEW_MODE" == preparations583 ]]; then
+  echo 'RELEASE_705_TARGETED_PREPARATIONS583_PREVIEW=PASSED_ISOLATED_NO_FULL_QA'
   exit 0
 fi
 echo 'RELEASE_705_BROWSER_FULL=PASSED_DISPOSABLE_NO_INSTALL'

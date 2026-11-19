@@ -441,3 +441,27 @@ supports `--targeted-workflows580` and can run that scope alone after
 source preflight; full mode additionally preflights both Quick Entry and
 Workflows 580 before the expensive complete browser run.
 No deployed application code or live data is modified.
+
+
+### Release 583: calculator input lives outside its reconstitution POST form
+
+The last isolated browser gate passed the Release 580 targeted tests but stopped
+at Release 583 (two HTTP/HTTPS failures). Release 683 placed the BAC-water
+calculator input `#rc-water` **outside** the `#recon-record-form683` form and
+associated it with the native POST via `form="recon-record-form683"`.
+The old test looked for `input[name="volume_ml"]` nested *inside* the
+form, so Playwright waited for a DOM descendant that does not exist.
+
+The repaired Release 583 test opens the real reconstitution disclosure
+if needed, verifies the calculator input is visible and associated with
+the actual native POST form, fills 2 mL, and verifies the unmodified
+`FormData(form)` contains `volume_ml=2`. The existing signed reconstitution,
+filtering/correction/deletion, forged 403 denials and synthetic stock
+rollback checks are retained. No user-facing application code changes.
+
+The guarded Release 705 browser preview offers a separate
+`--targeted-preparations583` execution of the existing 583 strict
+HTTP/HTTPS module, including its genuine fixture and private evidence
+checks. A full preview first runs targeted 603, 580, and 583 cases
+before the expensive full suite. Targeted success is explicitly not
+full CSRF qualification.
