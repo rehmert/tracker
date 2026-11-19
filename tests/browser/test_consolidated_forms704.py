@@ -132,9 +132,7 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
             dock = page.locator(".tracker-mobile-dock")
             assert row.count() == save.count() == cancel.count() == 1
             assert form.get_attribute("method") == "post"
-            assert row.evaluate("el => el.closest('form') === document.querySelectorAll('form')["
-                                + ("0" if kind == "notes" else "1" if kind == "lab" else "1")
-                                + "]") if False else True  # validated by form-scoped locator
+            assert row.evaluate("el => el.closest('form')?.getAttribute('method')") == "post"
             if kind == "notes":
                 assert form.get_attribute("action") == "/pages"
                 assert cancel.get_attribute("href") == "/pages"
@@ -183,10 +181,8 @@ def test_704_mobile_long_form_actions_and_original_submit_contract(kind, width):
                     ), (kind,width,density,scheme)
                     if width <= 760:
                         field = form.locator('input[name="title"]') if kind == "notes" \
-                            else form.locator('input[name="reps"]') if kind == "workout" \
+                            else form.locator('input[name="weight_lb"]').first if kind == "workout" \
                             else form.locator('input[name="lab_name"]')
-                        if kind == "workout":
-                            field = form.locator('input[name="weight_lb"]').first
                         field.focus()
                         expect(dock).to_be_hidden()
                         assert row.evaluate("el=>getComputedStyle(el).position") == "static"
