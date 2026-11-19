@@ -490,3 +490,44 @@ Because the failure was intermittent, repeat the complete isolated
 Release 580 targeted gate on separate disposable worktrees before
 attempting another full browser run. A targeted result is not a
 full-suite or global CSRF approval.
+
+
+## Release 705 Issue #10 read-only offline readiness audit
+
+After the exact candidate `ecc180cda992ddb8889da15f1ba32f2f25ba238e`
+qualified the complete disposable browser suite (exit 0, 10m 51s,
+3.9 GiB peak), the separate dependency reproducibility workstream
+still remained blocked. The source had a filename/version/hash wheel
+receipt generator but no trusted complete wheelhouse, wheel archive
+metadata/ABI verification or independent reconstruction proof.
+The Release 570 `--execute` tool fetches wheel bytes from the network
+and must NOT be used for this offline read-only stage.
+
+New `scripts/tracker_dependency_readiness705.py` adds a read-only
+installed DEV comparison to the 44 observed Release 569 pins,
+Python and SQLite versions, and `pip check` with the package index
+disabled. It never runs pip install, upgrade, download or replay.
+If a pre-existing, private `/tmp` wheelhouse is explicitly supplied,
+it additionally requires the exact 44 SHA-hashed wheel inventory,
+compatible wheel filename tags, ZIP metadata Name/Version and
+WHEEL tags, Requires-Python and active non-extra dependency pins,
+complete SHA-256 RECORD hashes and safe regular archive members.
+No wheel is extracted or executed.
+
+The dedicated `scripts/tracker-dependency-preview705.sh` is an
+exact-commit pinned, DEV-only systemd worktree audit and intentionally
+reports `DEPENDENCY_705_WHEELHOUSE=NOT_SUPPLIED` when none is provided.
+A file that passes these checks is *not* independently trusted:
+`DEPENDENCY_705_WHEEL_PROVENANCE=UNAPPROVED` and
+`DEPENDENCY_705_REPLAY=NOT_EXECUTED` remain explicit. PROD package
+parity, independently approved wheel origin and byte attestations,
+two clean isolated installation/reconstructions, Chromium and OS
+dependency pinning and rollback evidence remain separate blockers.
+No new package downloads, installed dependency changes, live data
+access, security activation or PROD actions are authorized.
+
+Source and browser gates now include the new readiness test and
+three-file allowlist additions. Because this changes the candidate
+commit only in QA/readiness tools, the earlier full browser success
+remains attributable to its *previous* exact SHA; it is not silently
+reassigned to this SHA. Full DEV promotion remains blocked.

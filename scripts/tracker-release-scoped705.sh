@@ -16,8 +16,11 @@ ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
 bash -n scripts/tracker-release-scoped705.sh
 bash -n scripts/tracker-preview705.sh
 bash -n scripts/tracker-browser-preview705.sh
+bash -n scripts/tracker-dependency-preview705.sh
 "$PY" -m py_compile \
   scripts/tracker_dependency_lock705.py \
+  scripts/tracker_dependency_readiness705.py \
+  tests/test_release705_dependency_readiness.py \
   scripts/tracker_csrf_closeout705.py \
   scripts/tracker_csrf_reconcile627.py \
   tests/test_release627_csrf_reconciliation.py \
@@ -46,6 +49,12 @@ bash -n scripts/tracker-browser-preview705.sh
   tests/test_release648_prod_recovery.py::test_648_historical_csrf_witnesses_stay_unqualified \
   tests/test_coa_multiple_test_types651.py::test_651_new_ajax_callsite_is_inventory_reviewed_but_not_historically_cleared
 echo 'RELEASE_705_51_TRACKED_JS_SOURCE_LEDGER=PASSED'
+
+# Release 705 read-only offline wheel and installed-baseline readiness
+# contracts must pass before ASGI or browser tests; no wheelhouse required.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release705_dependency_readiness.py
+echo 'DEPENDENCY_705_SOURCE_READINESS_CONTRACT=PASSED'
 
 # Check the exact-commit runtime runner contract before any ASGI requests.
 "$PY" -m pytest -q --tb=short --maxfail=1 \

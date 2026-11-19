@@ -304,3 +304,48 @@ def test_705_580_compound_lifecycle_waits_for_persisted_table_after_303():
         'expect(page.locator("tr").filter(has_text=changed)).to_have_count(0)'
     )
     assert 'assert page.request.get(base + edit_path, max_redirects=0).status == 303' in body
+
+
+def test_705_dependency_preview_is_exact_sha_disposable_and_read_only():
+    source = (ROOT / "scripts/tracker-dependency-preview705.sh").read_text()
+    scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
+    for required in (
+        'APP=/opt/tracker',
+        'BASE=24cb9ec47417e001c3f96dfed630e3b8b0264d93',
+        'REF=release/705-csrf-dependency-closeout',
+        'INVOCATION_ID',
+        'tracker-dev',
+        'git diff --check',
+        'git merge-base --is-ancestor',
+        'git worktree add --detach',
+        'git -C "$APP" worktree remove --force',
+        'TRACKER_DATA_DIR="$ROOT/test-data"',
+        'scripts/tracker_dependency_readiness705.py',
+        'DEPENDENCY_705_INSTALLED_SOURCE_UNCHANGED=VERIFIED',
+        'DEPENDENCY_705_AUDIT=COMPLETED_NO_INSTALL',
+    ):
+        assert required in source, required
+    assert 'bash scripts/tracker-release-scoped705.sh "$PY"' in source
+    assert 'DEPENDENCY_705_SOURCE_REVALIDATED=PASSED' in source
+    assert source.index('DEPENDENCY_705_SOURCE_REVALIDATED=PASSED') < source.index(
+        '"$PY" -B scripts/tracker_dependency_readiness705.py'
+    )
+    assert 'tests/test_release705_dependency_readiness.py' in scoped
+    assert 'DEPENDENCY_705_SOURCE_READINESS_CONTRACT=PASSED' in scoped
+    assert 'bash -n scripts/tracker-dependency-preview705.sh' in scoped
+    for forbidden in (
+        'pip install', 'pip download', 'systemctl restart', 'git reset',
+        'TRACKER_CSRF_ENFORCE=1', 'tracker-release.sh', '/etc/tracker.env',
+    ):
+        assert forbidden not in source
+    for source_gate in (
+        ROOT / "scripts/tracker-preview705.sh",
+        ROOT / "scripts/tracker-browser-preview705.sh",
+    ):
+        data = source_gate.read_text()
+        for path in (
+            'scripts/tracker_dependency_readiness705.py',
+            'scripts/tracker-dependency-preview705.sh',
+            'tests/test_release705_dependency_readiness.py',
+        ):
+            assert path + "|\\" in data

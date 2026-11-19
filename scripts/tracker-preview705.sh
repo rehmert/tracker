@@ -26,6 +26,9 @@ git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
     scripts/tracker_dependency_lock705.py|\
+    scripts/tracker_dependency_readiness705.py|\
+    scripts/tracker-dependency-preview705.sh|\
+    tests/test_release705_dependency_readiness.py|\
     scripts/tracker_csrf_closeout705.py|\
     scripts/tracker_csrf_reconcile627.py|\
     scripts/tracker_csrf_runtime_report579.py|\
