@@ -32,7 +32,7 @@ def test_696_integrated_navigation_and_page_order(width):
                 assert response is not None and response.status == 200, url
                 expect(page.locator('link[href="/static/css/tracker-integrated-flow696.css?v=696"]')).to_have_count(1)
                 if url == "/vials":
-                    nav = page.locator(".tracker-vial-jumps603.tracker-flow696-actions")
+                    nav = page.locator(".tracker-vial-jumps603")
                     expect(nav.locator("a")).to_have_count(9)
                     more = nav.locator("details.tracker-flow696-more")
                     more.locator("summary").click()
