@@ -21,14 +21,19 @@ bash -n scripts/tracker-browser-preview705.sh
   scripts/tracker_csrf_closeout705.py \
   scripts/tracker_csrf_reconcile627.py \
   tests/test_release627_csrf_reconciliation.py \
+  scripts/tracker_csrf_runtime_report579.py \
+  tests/test_release579_csrf_runtime_report.py \
   tests/test_release705_combined.py \
   tests/test_csrf_all_registered_negative705.py \
   tests/browser/test_vitals_proxy_host522.py \
   tests/browser/test_strict_csrf521.py
 # Check the exact-commit runtime runner contract before any ASGI requests.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
-  tests/test_release705_runtime_preview.py
+  tests/test_release705_runtime_preview.py \
+  tests/test_release579_csrf_runtime_report.py::test_579_two_tracked_javascript_callsites_not_overclaimed \
+  tests/test_release579_csrf_runtime_report.py::test_705_579_only_ignores_known_gitignored_htmx_asset
 echo 'RELEASE_705_BROWSER_RUNNER_CONTRACT=PASSED'
+echo 'RELEASE_705_579_SOURCE_INVENTORY=PASSED'
 
 # Check the read-only browser gate inventory FIRST; failure before ASGI.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
