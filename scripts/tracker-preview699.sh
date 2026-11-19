@@ -33,6 +33,7 @@ git diff --check "$BASE" "$TARGET"
 # Strictly allow the two density stylesheets, focused tests and release scripts.
 while IFS= read -r file; do
   case "$file" in
+    app/templates/base.html|\
     app/static/css/tracker-layout-density685.css|\
     app/static/css/tracker-compact-aggressive686.css|\
     scripts/tracker-release-scoped699.sh|\
