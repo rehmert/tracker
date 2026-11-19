@@ -30,6 +30,12 @@ while IFS= read -r path; do
     scripts/tracker_csrf_reconcile627.py|\
     scripts/tracker_csrf_runtime_report579.py|\
     tests/test_release579_csrf_runtime_report.py|\
+    tests/test_release575_csrf_js_review.py|\
+    tests/test_release576_csrf_js_triage.py|\
+    tests/test_release578_csrf_route_ledger.py|\
+    tests/test_release640_csrf_inventory.py|\
+    tests/test_release648_prod_recovery.py|\
+    tests/test_coa_multiple_test_types651.py|\
     scripts/tracker-browser-qualify.sh|\
     tests/browser/test_vitals_proxy_host522.py|\
     tests/browser/test_strict_csrf521.py|\
