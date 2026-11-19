@@ -6,9 +6,11 @@ Candidate branch: `release/699-css-consolidation`.
 
 ## Scope
 
-A small, controlled first pass toward CSS consolidation. Only the existing
-Release 685 and 686 density stylesheets change; no other application assets,
-server code, database schema, user data, forms or routes are touched.
+A small, controlled first pass toward CSS consolidation. The existing
+Release 685 and 686 density stylesheets change, and their versioned stylesheet
+URLs in `base.html` are refreshed to prevent stale browser caching. No other
+application assets, page structure, server code, database schema, user data,
+forms or routes are touched.
 
 **Release 685:**
 - Factor repeated compact dashboard/page-header selectors using
@@ -58,7 +60,7 @@ scoped Release 679/688/690 source tests. Full application regression
 suites are not requested. This runs in an isolated worktree on DEV.
 
 `scripts/tracker-preview699.sh` verifies the exact installed baseline,
-the candidate ref, and a **seven-file allowlist**. It first runs scoped
+the candidate ref, and an **eight-file allowlist**. It first runs scoped
 source checks, then strict three-density CSS parity, then the existing
 dual-isolated-server Release 698 visual comparisons. There are no downloads,
 installed-app mutations, main-branch changes or production operations.
