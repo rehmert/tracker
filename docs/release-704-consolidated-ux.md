@@ -88,6 +88,9 @@ no dependencies are downloaded.
 - Focused historical tests requalify 702/703 action contracts, previous
   Workout recording safeguards, Vitals dirty guard, Lab duplicate
   handling and copy-from-report restrictions.
+- The 320px Lab test runs **first as a fail-fast canary**, exercising
+  Compact, Balanced and Comfortable densities in both themes before the
+  broader form and two-server visual suites.
 - Chromium renders each **real** Jinja editor using representative
   synthetic populated data (one actual workout set, a Lab analyte and
   Notes title). The previous-workout error state is included, plus
