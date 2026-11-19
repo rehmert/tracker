@@ -53,6 +53,19 @@
      in one touch-friendly row without changing their form behavior. */
   #main-content form > .tracker-form-actions704--lab {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* When the manual form begins near the viewport bottom, sticky
+       positioning cannot lift this row above its containing form.
+       Remove the leading margin and minimize chrome instead of
+       shrinking the 48px touch targets or ignoring dock overlap. */
+    margin-top: 0;
+    gap: .25rem;
+    padding: .35rem;
+  }
+
+  #main-content form > .tracker-form-actions704--lab > :is(button, a) {
+    min-height: 48px;
+    padding: .25rem .12rem;
+    line-height: 1.2;
   }
 
   #main-content form > .tracker-form-actions704 > a.btn {
