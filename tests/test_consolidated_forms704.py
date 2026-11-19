@@ -74,6 +74,7 @@ def test_704_css_is_keyboard_safe_and_scoped_to_three_editor_action_rows():
                       "pointer-events: none", "!important; } /* disable"):
         assert forbidden not in CSS
     assert 'tracker-form-actions704--lab' in CSS
+    assert 'grid-template-columns: repeat(3, minmax(0, 1fr));' in CSS
     assert 'tracker-form-actions704--notes' in CSS
 
 
