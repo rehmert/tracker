@@ -40,6 +40,18 @@ readiness inventory, with `--json` for audit and
 `--require-complete` as an intentionally blocking closeout check.
 It does not mark any route qualified or toggle a configuration flag.
 
+`tests/test_csrf_all_registered_negative705.py` additionally enumerates
+the **current registered** ordinary unsafe routes (instead of relying only
+on the frozen Release 627 source list). A disposable TestClient, with
+strict mode enabled only in its own test environment and a synthetic
+database, attempts both missing-token and forged-token requests on every
+registered ordinary unsafe route. All must return 403. Session-owned
+account/login/logout paths are deliberately excluded because they have
+their own independent signed scheme; /secondary is separately mounted.
+This is **negative security coverage**, not a claim that valid signed
+data and file uploads work. Browser lifecycle positive evidence is still
+required for every write flow over both HTTP and HTTPS.
+
 **Required before activating strict mode on any installed host:**
 
 1. Reconcile the current actual registered unsafe-route inventory
@@ -122,15 +134,15 @@ mutation or requirement rewrite is authorized by this release.
 
 ## Single release qualification and deployment limits
 
-The candidate's exact six-file diff comprises two read-only scripts,
-two release-scoped/isolated preview scripts, one focused test file and
-this document. It intentionally changes **no application code,
+The candidate's exact seven-file diff comprises two read-only scripts,
+two release-scoped/isolated preview scripts, two focused test files
+(including the registered unsafe-route negative matrix) and this document. It intentionally changes **no application code,
 security middleware, server settings, requirements, database, JS, or
 browser suite**. Source-preview success only means the new tools
 are safe and report existing issues correctly.
 
 The preview demands pinned 704 DEV main, a root systemd worker,
-a clean checkout, a six-file allowlist, detached candidate checkout,
+a clean checkout, a seven-file allowlist, detached candidate checkout,
 disposable SQLite directory, no download, and syntax/focused historic
 regressions. It prints the blocked issues rather than inventing a
 security or reproducibility certification.
