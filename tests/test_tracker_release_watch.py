@@ -179,10 +179,10 @@ def test_triggers_queued_stage_and_follows_its_log(env):
     hook.write_text(textwrap.dedent(f'''\
         #!/bin/bash
         set -e
-        printf 'SIMULATED_SCOPED_TEST=PASSED\n' > {str(env['logs'] / (req + '.log'))!r}
+        printf 'SIMULATED_SCOPED_TEST=PASSED\\n' > {str(env['logs'] / (req + '.log'))!r}
         git -C {str(env['other'])!r} checkout -B tracker-release-receipts main >/dev/null
         mkdir -p {str(env['other'] / 'receipts')!r}
-        printf '%s\n' {json_payload!r} > {str(env['other'] / 'receipts/latest.json')!r}
+        printf '%s\\n' {json_payload!r} > {str(env['other'] / 'receipts/latest.json')!r}
         cp {str(env['other'] / 'receipts/latest.json')!r} {str(env['other'] / ('receipts/' + req + '.json'))!r}
         git -C {str(env['other'])!r} add receipts
         git -C {str(env['other'])!r} commit -m receipt >/dev/null
