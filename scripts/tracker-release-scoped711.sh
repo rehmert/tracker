@@ -16,7 +16,8 @@ for script in \
   scripts/tracker_prod_remote568.sh; do
   bash -n "$script"
 done
-"$PY" -m py_compile app/routers/doses.py app/manual_supplies.py \
+"$PY" -m py_compile app/routers/doses.py app/routers/blends.py \
+  app/blend_dose_identity711.py app/manual_supplies.py \
   tests/test_release711_blend_dose_corrections.py \
   tests/browser/test_blend_corrections711.py
 
