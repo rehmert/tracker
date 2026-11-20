@@ -41,6 +41,7 @@ STRICT_ONLY = frozenset({
     "tests/browser/test_blend_unified_dose710.py",
     "tests/browser/test_blend_corrections711.py",
     "tests/browser/test_u100_withdraw712.py",
+    "tests/browser/test_global_time24_713.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",
@@ -80,6 +81,7 @@ def test_511_every_browser_module_in_disposable_qualification():
         ("blend-vial710", "TARGETED_710_UNIFIED_BLEND_VIAL_DOSE=PASSED"),
         ("blend-correction711", "TARGETED_711_BLEND_CORRECTION_DELETE=PASSED"),
         ("u100-withdraw712", "TARGETED_712_U100_WITHDRAW=PASSED"),
+        ("global-time24-713", "TARGETED_713_GLOBAL_TIME24=PASSED"),
     )
     for mode, success_marker in targeted_627:
         begin = (f'if [[ "$MODE" == targeted && '
