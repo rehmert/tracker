@@ -109,3 +109,21 @@ def test_711_strict_browser_is_tracked_only_in_disposable_modes():
     assert "RELEASE_711_PROD_SCOPED=PASSED" in deploy
     assert "scripts/tracker-release-scoped711.sh" in deploy
     assert "--db-migration" not in source("scripts/tracker-install711.sh")
+
+
+def test_711_physical_blend_ids_remain_unique_after_audited_deletions():
+    helper = source("app/blend_dose_identity711.py")
+    ordinary = source("app/routers/doses.py")
+    legacy = source("app/routers/blends.py")
+    assert "ChangeAudit.entity_type == \"blend_dose\"" in helper
+    assert "func.max(ChangeAudit.entity_id)" in helper
+    assert "func.max(BlendDose.id)" in helper
+    assert "return max(current, audited) + 1" in helper
+    assert "id=next_blend_dose_id711(db)," in ordinary
+    assert "id=next_blend_dose_id711(db)," in legacy
+    assert ordinary.index('db.connection().exec_driver_sql("BEGIN IMMEDIATE")') < ordinary.index(
+        'id=next_blend_dose_id711(db),'
+    )
+    assert legacy.index("if not reserve_inventory_write(db):", legacy.index("@router.post('/blends/{blend_id}/doses')")) < legacy.index(
+        'id=next_blend_dose_id711(db),'
+    )
