@@ -346,6 +346,13 @@ PY
   fi
  fi
  if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped713.sh |
+      grep -qx 'scripts/tracker-release-scoped713.sh'; then
+  echo "=== RELEASE 713 PROD SCOPED GLOBAL 24-HOUR UX AND TIMELINE QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped713.sh" "$PY"
+  echo "RELEASE_713_PROD_SCOPED=PASSED"
+ fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
     g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped712.sh |
       grep -qx 'scripts/tracker-release-scoped712.sh'; then
   echo "=== RELEASE 712 PROD SCOPED U-100 WITHDRAWAL QUALIFICATION ==="
