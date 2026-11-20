@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-20T23:55:05+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_714_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_714_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_714_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_714_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/714-workout-routine-row-alignment",
+  "release": 714,
+  "request_id": "r714-44c8f7061ab3",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T23:54:50+00:00",
+  "status": "passed",
+  "target": "247f413d46f9f1b635144c7f141a57027fd26449",
+  "test_counts": [
+    "15 passed, 1 warning"
+  ]
+}
