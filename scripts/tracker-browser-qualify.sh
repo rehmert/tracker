@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == csrf-positive707 || "$TARGETED_MODULE" == csrf-positive708 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == csrf-positive707 || "$TARGETED_MODULE" == csrf-positive708 || "$TARGETED_MODULE" == csrf-positive709 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -548,6 +548,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-remaining-workout708.log"
 echo "STRICT_CSRF_708_WORKOUT_19_POSITIVE_LIFECYCLES=PASSED"
 
+# Release 709: ten remaining post-627 food/COA signed positive workflows.
+run_isolated_browser_module \
+    tests/browser/test_csrf_food_coa709.py \
+    1 "$ROOT/strict-food-coa709.log"
+echo "STRICT_CSRF_709_FOOD_COA_TEN_POSITIVE_LIFECYCLES=PASSED"
+
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
     1 "$ROOT/strict-labs500.log"
@@ -600,6 +606,16 @@ if [[ "$MODE" == targeted ]]; then
   echo "TARGETED_STRICT_PREFLIGHT=ACTIVE"
   echo "TARGETED_STRICT_MODULE=$TARGETED_MODULE"
 fi
+# Release 709: actual food/COA signed browser writes, no app installation.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive709 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_csrf_food_coa709.py \
+      1 "$ROOT/positive709-food-coa.log"
+  echo "TARGETED_CSRF_709_FOOD_COA_10_SIGNED_LIFECYCLES=PASSED"
+  echo "TARGETED_CSRF_709_SCOPE=10_REAL_WRITES_NOT_FULL_CSRF_CLEARANCE"
+  exit 0
+fi
+
 # Release 708: targeted strict HTTP/HTTPS only for newly added nineteen
 # persisted Workout actions; this is NOT global-CSRF release approval.
 if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive708 ]]; then
