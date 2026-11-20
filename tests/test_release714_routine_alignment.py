@@ -33,11 +33,17 @@ EXERCISES = [
 ]
 
 
+def gate714(stage, condition):
+    if not condition:
+        print("RELEASE_714_DIAG_" + stage + "=FAILED", flush=True)
+    assert condition, stage
+
+
 def real_routine_markup():
     source = TEMPLATE.read_text(encoding="utf-8")
-    assert source.count('<section id="routine-exercises655">') == 1
-    assert source.count("/static/css/tracker-workouts655.css?v=655") == 1
-    assert source.count("/static/css/tracker-workout-routine-alignment714.css?v=714") == 1
+    gate714("TEMPLATE_SECTION", source.count('<section id="routine-exercises655">') == 1)
+    gate714("SHARED_CSS_REF", source.count("/static/css/tracker-workouts655.css?v=655") == 1)
+    gate714("NEW_CSS_REF", source.count("/static/css/tracker-workout-routine-alignment714.css?v=714") == 1)
     section = source.split('<section id="routine-exercises655">', 1)[1].split(
         '</section>', 1
     )[0]
@@ -53,6 +59,7 @@ def real_routine_markup():
     machine = SimpleNamespace(
         id=999, name="Leg Curl", gym="Merritt Athletic Club - Eldersburg"
     )
+    print("RELEASE_714_DIAG_RENDER=STARTED", flush=True)
     body = fragment.render(
         items=items,
         routine=SimpleNamespace(id=42, name="QA714 Routine"),
@@ -85,22 +92,24 @@ def real_routine_markup():
 
 def test_714_contract_only_changes_layout_not_routine_actions():
     markup = real_routine_markup()
-    assert markup.count('class="workout-routine-row655"') == len(EXERCISES)
-    assert markup.count('name="equipment_id" required') == len(EXERCISES)
-    assert markup.count('type="submit"') >= len(EXERCISES) * 4
-    assert markup.count('name="direction" value="up"') == len(EXERCISES)
-    assert markup.count('name="direction" value="down"') == len(EXERCISES)
-    assert markup.count('/substitute"') == len(EXERCISES)
-    assert markup.count('/remove"') == len(EXERCISES)
-    assert OVERRIDE714.read_text(encoding="utf-8").count(
+    gate714("ROW_COUNT", markup.count('class="workout-routine-row655"') == len(EXERCISES))
+    gate714("SELECT_COUNT", markup.count('name="equipment_id" required') == len(EXERCISES))
+    gate714("BUTTON_COUNT", markup.count('type="submit"') >= len(EXERCISES) * 4)
+    gate714("UP_COUNT", markup.count('name="direction" value="up"') == len(EXERCISES))
+    gate714("DOWN_COUNT", markup.count('name="direction" value="down"') == len(EXERCISES))
+    gate714("SUBSTITUTE_COUNT", markup.count('/substitute"') == len(EXERCISES))
+    gate714("REMOVE_COUNT", markup.count('/remove"') == len(EXERCISES))
+    gate714("CSS_GRID_SELECTOR", OVERRIDE714.read_text(encoding="utf-8").count(
         ".workout655 .workout-routine-row655 {"
-    ) == 1
-    assert "display: grid;" in OVERRIDE714.read_text(encoding="utf-8")
+    ) == 1)
+    gate714("CSS_GRID", "display: grid;" in OVERRIDE714.read_text(encoding="utf-8"))
+    print("RELEASE_714_CONTRACT=PASSED", flush=True)
 
 
 @pytest.mark.parametrize("width", [320, 375, 390, 430, 600, 768, 1024, 1280])
 def test_714_short_row_title_stays_above_controls_no_overlap(width):
     markup = real_routine_markup()
+    print(f"RELEASE_714_DIAG_WIDTH_{width}=STARTED", flush=True)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
             headless=True,
@@ -137,26 +146,27 @@ def test_714_short_row_title_stays_above_controls_no_overlap(width):
                 actionsRight:actions.right, forms:forms.length
               };
             })""")
-            assert [b["text"] for b in boxes] == EXERCISES
-            assert [b["display"] for b in boxes] == ["grid"] * len(EXERCISES)
+            gate714(f"WIDTH_{width}_NAMES", [b["text"] for b in boxes] == EXERCISES)
+            gate714(f"WIDTH_{width}_GRID", [b["display"] for b in boxes] == ["grid"] * len(EXERCISES))
             short = next(b for b in boxes if b["text"] == "Row")
             long = next(b for b in boxes if b["text"] == "Hip Adduction")
             # Consistent card-relative starting position regardless of title length.
-            assert abs((short["headingY"] - short["cardTop"]) -
-                       (long["headingY"] - long["cardTop"])) < 2, (width, boxes)
+            gate714(f"WIDTH_{width}_HEADING", abs((short["headingY"] - short["cardTop"]) -
+                       (long["headingY"] - long["cardTop"])) < 2)
             for b in boxes:
-                assert b["headingBottom"] + 2 <= b["actionsY"], (width, b)
-                assert b["actionsBottom"] <= b["cardBottom"] + 2, (width, b)
-                assert abs(b["headingX"] - b["actionsX"]) < 2, (width, b)
-                assert b["selectWidth"] >= 100, (width, b)
-                assert b["selectRight"] <= b["cardRight"] + 2, (width, b)
-                assert b["actionsRight"] <= b["cardRight"] + 2, (width, b)
-                assert b["count"] == 4 and b["forms"] == 4, (width, b)
-                assert all(x["height"] >= 44 for x in b["buttons"]), (width, b)
-                assert all(x["right"] <= b["cardRight"] + 2
-                           for x in b["buttons"]), (width, b)
-            assert page.evaluate(
+                gate714(f"WIDTH_{width}_STACK", b["headingBottom"] + 2 <= b["actionsY"])
+                gate714(f"WIDTH_{width}_CARD_HEIGHT", b["actionsBottom"] <= b["cardBottom"] + 2)
+                gate714(f"WIDTH_{width}_COLUMN", abs(b["headingX"] - b["actionsX"]) < 2)
+                gate714(f"WIDTH_{width}_SELECT_WIDTH", b["selectWidth"] >= 100)
+                gate714(f"WIDTH_{width}_SELECT_OVERFLOW", b["selectRight"] <= b["cardRight"] + 2)
+                gate714(f"WIDTH_{width}_ACTIONS_OVERFLOW", b["actionsRight"] <= b["cardRight"] + 2)
+                gate714(f"WIDTH_{width}_FORMS", b["count"] == 4 and b["forms"] == 4)
+                gate714(f"WIDTH_{width}_BUTTON_HEIGHT", all(x["height"] >= 44 for x in b["buttons"]))
+                gate714(f"WIDTH_{width}_BUTTON_OVERFLOW", all(x["right"] <= b["cardRight"] + 2
+                           for x in b["buttons"]))
+            gate714(f"WIDTH_{width}_PAGE_OVERFLOW", page.evaluate(
                 "document.documentElement.scrollWidth <= innerWidth + 1"
-            ), f"Unexpected horizontal overflow at {width}px"
+            ))
+            print(f"RELEASE_714_DIAG_WIDTH_{width}=PASSED", flush=True)
         finally:
             browser.close()
