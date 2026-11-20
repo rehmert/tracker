@@ -17,6 +17,7 @@ bash -n scripts/tracker-install710.sh
   scripts/tracker_schema_review710.py
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release710_unified_source.py \
+  tests/test_release602_mobile_bundle.py::test_602_dose_draft_fastpath_and_original_form \
   tests/test_release710_unified_blend_dose.py \
   tests/test_release564_blend_dose_selector.py \
   tests/test_blends.py \
