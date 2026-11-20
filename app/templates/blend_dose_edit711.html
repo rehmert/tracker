@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Correct prepared-blend dose{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-mobile-log373.css?v=373">
+<script src="/static/js/tracker-time24-371.js?v=371" defer></script>
+<h1>Correct prepared-blend withdrawal #{{ dose.id }}</h1>
+<p><a href="/doses#dose-history-unified614">← Administration timeline</a> · <a href="/blends/{{ blend.id }}">Blend #{{ blend.id }}</a></p>
+<p class="note">Physical source: <strong>{{ blend.label }}</strong> (#{{ blend.id }}). The prepared container cannot be changed in a correction. Its original source-vial transfers are not deducted again.</p>
+<p><strong>Recorded:</strong> {{ dose.volume_ml|num }} mL withdrawn · <strong>Other draws plus this entry:</strong> {{ blend.final_volume_ml|num }} mL originally prepared.</p>
+
+<form method="post" action="/doses/blends/{{ dose.id }}/edit" id="tracker-dose-correction-form" class="grid">
+  <label class="field wide tracker-dose-when-field"><span>When</span>
+    <input type="datetime-local" name="taken_at" value="{{ dose.taken_at.strftime('%Y-%m-%dT%H:%M') }}" required>
+  </label>
+  <label class="field"><span>Amount</span>
+    <input name="amount" type="number" inputmode="decimal" step="any" min="0.000001" value="{{ (dose.entered_value if dose.entered_value is not none else dose.volume_ml)|num }}" required>
+  </label>
+  <label class="field"><span>Unit</span>
+    <select name="unit" required>{% for unit in allowed_units %}<option value="{{ unit }}" {% if unit == (dose.entered_unit or 'mL') %}selected{% endif %}>{{ unit }}</option>{% endfor %}</select>
+    <small>{% if allowed_units|length == 2 %}Mixed-compound draws must be entered as mL or uL.{% else %}Mass/IU entries are accepted only when compatible with the prepared compound; liquid volume is always accepted.{% endif %}</small>
+  </label>
+  <label class="field"><span>Type</span>
+    <select name="kind"><option value="dose" {% if dose.kind == "dose" %}selected{% endif %}>Administered</option><option value="waste" {% if dose.kind == "waste" %}selected{% endif %}>Discarded</option></select>
+  </label>
+  <label class="field"><span>Site</span>
+    <select name="site"><option value="">Not recorded</option>{% for value in sites %}<option value="{{ value }}" {% if dose.site == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select>
+  </label>
+  <label class="field wide"><span>Notes</span><input name="notes" value="{{ dose.notes or '' }}"></label>
+  <details class="wide" {% if used %}open{% endif %}>
+    <summary>Correct disposables{% if used %} ({{ used|length }} previously recorded){% endif %}</summary>
+    <p class="note">The original quantities are credited back before replacements are deducted. Nothing is charged twice.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Use</th><th>Supply</th><th>Available for correction</th><th>Quantity</th></tr></thead>
+      <tbody>{% for s in supplies %}
+        <tr{% if s.id in used %} class="dose-correction-original"{% endif %}>
+          <td><input type="checkbox" name="supply_id_used" value="{{ s.id }}" aria-label="Use {{ s.name }} for corrected entry" {% if s.id in used %}checked{% endif %}></td>
+          <td>{{ s.name }}{% if s.id in used %} <small>(originally recorded)</small>{% endif %}</td>
+          <td><strong>{{ (s.remaining_qty + used.get(s.id, 0))|num }} available</strong></td>
+          <td><input name="supply_qty_{{ s.id }}" type="number" inputmode="decimal" aria-label="Quantity of {{ s.name }} used" data-counted="{{ 'true' if s.kind in counted_supply_kinds else 'false' }}" data-original="{{ used.get(s.id, 0) }}" data-available="{{ s.remaining_qty + used.get(s.id, 0) }}" min="{{ '1' if s.kind in counted_supply_kinds else '0.001' }}" step="{{ '1' if s.kind in counted_supply_kinds else 'any' }}" value="{{ used.get(s.id, 1) }}"></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">No eligible disposables.</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+  </details>
+  <div id="tracker-dose-correction-review" class="wide" role="status" aria-live="polite">Review the corrected disposable usage before saving.</div>
+  <button class="primary" type="submit">Save correction</button>
+  <a href="/doses#dose-history-unified614">Cancel</a>
+</form>
+
+<section class="card wide" aria-label="Change history">
+  <h2>Change history</h2>
+  <p>Corrections preserve before-and-after values, including actual volume and disposable usage. Deleted withdrawals remain in the audit database.</p>
+  {% if history %}
+    <div class="scroll"><table>
+      <thead><tr><th>When</th><th>Action</th><th>Details</th></tr></thead>
+      <tbody>{% for event in history %}
+        {% set before = event.before_json | from_json %}{% set after = event.after_json | from_json %}
+        <tr><td>{{ event.created_at|utc_dt }}</td><td>{{ event.action }}</td><td>
+          <details class="dose-audit-details"><summary>View recorded changes</summary>
+            <div class="scroll"><table aria-label="Before and after prepared-blend correction values">
+              <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
+              <tbody>{% for key, label in correction_fields %}
+                <tr><th scope="row">{{ label }}</th>
+                  <td>{% if key == 'supplies' %}{% for sid, qty in before.get('supplies', {}).items() %}{{ supply_names.get(sid|string, 'Supply #' ~ sid) }}: {{ qty }}{% if not loop.last %}; {% endif %}{% else %}None{% endfor %}{% else %}{{ before.get(key, '—') }}{% endif %}</td>
+                  <td>{% if key == 'supplies' %}{% for sid, qty in after.get('supplies', {}).items() %}{{ supply_names.get(sid|string, 'Supply #' ~ sid) }}: {{ qty }}{% if not loop.last %}; {% endif %}{% else %}None{% endfor %}{% else %}{{ after.get(key, '—') }}{% endif %}</td>
+                </tr>
+              {% endfor %}</tbody>
+            </table></div>
+          </details>
+        </td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+  {% else %}<p>No corrections recorded.</p>{% endif %}
+</section>
+
+<section class="card wide" aria-label="Delete withdrawal">
+  <h2>Delete this withdrawal</h2>
+  <p class="note">Deleting reverses its blend-volume withdrawal and disposable usage, but does not reverse the blend's original preparation or source-vial transfers. A permanent audit snapshot is retained.</p>
+  <form method="post" action="/doses/blends/{{ dose.id }}/delete">
+    <label><input type="checkbox" name="confirm_delete" value="yes" required> I confirm this recorded withdrawal should be deleted.</label>
+    <button type="submit" class="danger">Delete withdrawal</button>
+  </form>
+</section>
+<script defer src="/static/js/tracker-dose-correction-review.js?v=20261104g"></script>
+{% endblock %}
