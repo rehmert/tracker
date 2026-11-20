@@ -1,27 +1,31 @@
 {
   "action": "qualify",
   "base": "5e78dfcdc8d9612266aa2aca26755957bad02561",
-  "exit_code": 1,
-  "failed_tests": [
-    "tests/test_release711_blend_dose_corrections.py"
-  ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-20T14:39:47+00:00",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-20T14:49:34+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_711_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_711_SCOPED_BACKEND=PASSED",
+    "TARGETED_711_BLEND_CORRECTION_DELETE=PASSED",
+    "RELEASE_711_SCOPED_BROWSER=PASSED",
+    "RELEASE_711_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
     "RELEASE_711_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_711_EXIT_STATUS=1"
+    "RELEASE_711_EXIT_STATUS=0"
   ],
   "previous_request_id": null,
   "ref": "release/711-blend-dose-corrections",
   "release": 711,
-  "request_id": "r711-8d4c6f12a905",
+  "request_id": "r711-3b7f6c20ad8e",
   "schema": 1,
-  "started_at_utc": "2026-11-20T14:39:40+00:00",
-  "status": "failed",
-  "target": "573ce28e9301b2d0e67abd0b936ca2a51d628ad5",
+  "started_at_utc": "2026-11-20T14:49:01+00:00",
+  "status": "passed",
+  "target": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
   "test_counts": [
-    "3 passed, 1 warning"
+    "68 passed, 1 warning",
+    "7 passed",
+    "2 passed"
   ]
 }
