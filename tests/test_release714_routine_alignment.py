@@ -35,7 +35,7 @@ EXERCISES = [
 
 def gate714(stage, condition):
     if not condition:
-        print("RELEASE_714_DIAG_" + stage + "=FAILED", flush=True)
+        print("TARGETED_714_" + stage + "=FAILED", flush=True)
     assert condition, stage
 
 
@@ -49,9 +49,13 @@ def real_routine_markup():
     )[0]
     # Render real template fragment, including the original signed-capable
     # POST actions. No hand-written stand-in for card structure.
-    fragment = templates.env.from_string(
-        '<section id="routine-exercises655">' + section + '</section>'
-    )
+    try:
+        fragment = templates.env.from_string(
+            '<section id="routine-exercises655">' + section + '</section>'
+        )
+    except Exception:
+        print("TARGETED_714_TEMPLATE_PARSE=FAILED", flush=True)
+        raise
     items = [
         SimpleNamespace(id=700 + i, equipment_id=800 + i)
         for i in range(len(EXERCISES))
@@ -60,13 +64,17 @@ def real_routine_markup():
         id=999, name="Leg Curl", gym="Merritt Athletic Club - Eldersburg"
     )
     print("RELEASE_714_DIAG_RENDER=STARTED", flush=True)
-    body = fragment.render(
-        items=items,
-        routine=SimpleNamespace(id=42, name="QA714 Routine"),
-        names={item.equipment_id: name for item, name in zip(items, EXERCISES)},
-        available=[machine],
-        active=None, can_resume=False, maximum=25,
-    )
+    try:
+        body = fragment.render(
+            items=items,
+            routine=SimpleNamespace(id=42, name="QA714 Routine"),
+            names={item.equipment_id: name for item, name in zip(items, EXERCISES)},
+            available=[machine],
+            active=None, can_resume=False, maximum=25,
+        )
+    except Exception:
+        print("TARGETED_714_TEMPLATE_RENDER=FAILED", flush=True)
+        raise
     return (
         '<!doctype html><html><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
