@@ -30,6 +30,14 @@ counted-quantity rules are checked BEFORE changes. Deletion restores the
 whole recorded withdrawal and its linked disposables. A second deletion
 returns 404.
 
+SQLite's historical INTEGER PRIMARY KEY can otherwise recycle the highest
+deleted BlendDose ID. Both the normal and legacy blend creation routes now
+allocate their next ID above the larger of the current physical-row maximum
+and the retained `blend_dose` audit ID maximum. This is serialized by the
+existing SQLite BEGIN IMMEDIATE inventory lock. It needs no schema change
+and prevents old deletion/correction audit histories from being linked to
+new physical withdrawals.
+
 Immutable ChangeAudit records use entity type \`blend_dose\` and the
 BlendDose ID, action \`edit\` or \`delete\`, and fully capture before/after
 physical source, time, volume, entered amount/unit, kind, site, notes and
