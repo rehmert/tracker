@@ -940,3 +940,186 @@ def dose_workspace(
         vial_date_details=vial_date_details,
         recommended_reason=recommended_reason,
     )
+
+
+# Release 711: correct the existing physical BlendDose, never constituent
+# DoseLog records. The blend itself remains the immutable source identity.
+def _blend_dose_snapshot711(draw: BlendDose, usages: list[SupplyUsage]) -> dict:
+    supplies = {}
+    for usage in usages:
+        key = str(usage.supply_id)
+        supplies[key] = supplies.get(key, 0) + usage.amount
+    return {
+        "blend_id": draw.blend_id,
+        "taken_at": draw.taken_at.isoformat(),
+        "volume_ml": draw.volume_ml,
+        "entered_value": draw.entered_value,
+        "entered_unit": draw.entered_unit,
+        "kind": draw.kind,
+        "site": draw.site or "",
+        "notes": draw.notes or "",
+        "supplies": supplies,
+    }
+
+
+def _blend_corrected_plan711(draw: BlendDose, value: float, unit: str) -> dict:
+    """Calculate stock with this historical draw credited back first.
+
+    Never transiently modify the attached ORM Blend or its historical draws;
+    the 710 converter receives a read-only synthetic view of other draws.
+    """
+    from types import SimpleNamespace
+
+    blend = draw.blend
+    if blend.status not in ("in_use", "finished"):
+        raise ValueError("This prepared blend is not eligible for correction.")
+    other_draws = [row for row in blend.doses if row.id != draw.id]
+    if sum(row.volume_ml for row in other_draws) > blend.final_volume_ml + 1e-8:
+        raise ValueError("Other recorded draws exceed this blend's capacity.")
+    view = SimpleNamespace(
+        status="in_use", final_volume_ml=blend.final_volume_ml,
+        components=blend.components, doses=other_draws,
+    )
+    return resolve_blend_draw710(view, value, unit)
+
+
+@router.get("/doses/blends/{did}/edit")
+def edit_blend_dose711(did: int, request: Request,
+                       db: Session = Depends(get_scoped_db390)):
+    draw = db.get(BlendDose, did)
+    if draw is None:
+        raise HTTPException(404, "Prepared-blend draw not found.")
+    used_rows = list(db.scalars(
+        select(SupplyUsage).where(SupplyUsage.blend_dose_id == did)
+    ))
+    used = _blend_dose_snapshot711(draw, used_rows)["supplies"]
+    used_by_id = {int(sid): qty for sid, qty in used.items()}
+    all_supplies = list(db.scalars(select(Supply).order_by(Supply.name, Supply.id)))
+    counted_supply_kinds = set(db.scalars(
+        select(SupplyCategory.key).where(SupplyCategory.unit == "count")
+    ))
+    dimensions = {row["dim"] for row in constituent_concentrations710(draw.blend)}
+    # Multiple compounds must be entered in liquid volume; one compound
+    # also permits its native mass or IU units.
+    allowed = ["mL", "uL"]
+    if len({c.compound_id for c in draw.blend.components}) == 1 and len(dimensions) == 1:
+        allowed = [u for u in U.DOSE_UNITS if U.parse_unit(u).dim in dimensions | {"volume"}]
+    return render(
+        request, "blend_dose_edit711.html", dose=draw, blend=draw.blend,
+        allowed_units=allowed, sites=INJECTION_SITES,
+        used=used_by_id, supplies=_correction_available_supplies(all_supplies, used_by_id),
+        counted_supply_kinds=counted_supply_kinds,
+        history=list(db.scalars(
+            select(ChangeAudit).where(
+                ChangeAudit.entity_type == "blend_dose",
+                ChangeAudit.entity_id == did,
+            ).order_by(ChangeAudit.id.desc())
+        )),
+        supply_names={str(s.id): s.name for s in all_supplies},
+        correction_fields=(
+            ("blend_id", "Physical blend"),
+            ("taken_at", "Recorded time"),
+            ("volume_ml", "Withdrawn volume (mL)"),
+            ("entered_value", "Entered amount"),
+            ("entered_unit", "Entered unit"),
+            ("kind", "Type"),
+            ("site", "Injection site"),
+            ("notes", "Notes"),
+            ("supplies", "Disposable usage"),
+        ),
+    )
+
+
+@router.post("/doses/blends/{did}/edit")
+async def update_blend_dose711(
+    did: int, request: Request, taken_at: str = Form(""),
+    amount: float = Form(...), unit: str = Form(...),
+    kind: str = Form("dose"), site: str = Form(""), notes: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    if not reserve_inventory_write(db):
+        raise HTTPException(409, "Inventory is busy. Please retry.")
+    draw = db.get(BlendDose, did)
+    if draw is None:
+        db.rollback()
+        raise HTTPException(404, "Prepared-blend draw not found.")
+    back = f"/doses/blends/{did}/edit"
+    try:
+        if kind not in ("dose", "waste"):
+            raise ValueError("Choose a valid administration or discard type.")
+        if site and site not in INJECTION_SITES:
+            raise ValueError("Unknown injection site.")
+        when = services.parse_datetime(taken_at)
+        plan = _blend_corrected_plan711(draw, amount, unit)
+        used = list(db.scalars(select(SupplyUsage).where(
+            SupplyUsage.blend_dose_id == did
+        )))
+        before = _blend_dose_snapshot711(draw, used)
+        credits = {int(sid): qty for sid, qty in before["supplies"].items()}
+        selected = await manual_supplies.selections(request, db, credits=credits)
+        # All validation precedes any mutation; a failed correction leaves
+        # the physical blend, usage rows, and audit history untouched.
+        manual_supplies.restore_blend_dose(db, did)
+        manual_supplies.deduct(db, selected, blend_dose_id=did)
+        draw.volume_ml = plan["volume_ml"]
+        draw.entered_value = plan["entered_value"]
+        draw.entered_unit = plan["entered_unit"]
+        draw.taken_at = when
+        draw.kind = kind
+        draw.site = site
+        draw.notes = notes.strip()
+        draw.blend.status = (
+            "finished" if plan["remaining_after_ml"] <= 1e-8 else "in_use"
+        )
+        after = _blend_dose_snapshot711(
+            draw, [SupplyUsage(supply_id=item.id, amount=qty)
+                   for item, qty in selected],
+        )
+        record(db, "blend_dose", did, "edit", before=before, after=after)
+        db.commit()
+    except (ValueError, TypeError) as exc:
+        db.rollback()
+        return services.flash_redirect(back, err=str(exc))
+    return services.flash_redirect(
+        "/doses#dose-history-unified614",
+        msg="Prepared-blend dose corrected.",
+    )
+
+
+@router.post("/doses/blends/{did}/delete")
+def delete_blend_dose711(
+    did: int, confirm_delete: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    require_inventory_write(db)
+    draw = db.get(BlendDose, did)
+    if draw is None:
+        db.rollback()
+        raise HTTPException(404, "Prepared-blend draw not found.")
+    if confirm_delete != "yes":
+        db.rollback()
+        return services.flash_redirect(
+            f"/doses/blends/{did}/edit",
+            err="Confirm deletion before removing this recorded withdrawal.",
+        )
+    blend = draw.blend
+    used = list(db.scalars(select(SupplyUsage).where(
+        SupplyUsage.blend_dose_id == did
+    )))
+    before = _blend_dose_snapshot711(draw, used)
+    # Calculate with the deleted draw excluded instead of relying on
+    # relationship collection caching after an ORM delete.
+    other_total = sum(row.volume_ml for row in blend.doses if row.id != did)
+    manual_supplies.restore_blend_dose(db, did)
+    record(db, "blend_dose", did, "delete", before=before, after={})
+    db.delete(draw)
+    if blend.status in ("in_use", "finished"):
+        blend.status = (
+            "finished" if blend.final_volume_ml - other_total <= 1e-8
+            else "in_use"
+        )
+    db.commit()
+    return services.flash_redirect(
+        "/doses#dose-history-unified614",
+        msg="Prepared-blend withdrawal deleted and inventory restored.",
+    )
