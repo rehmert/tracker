@@ -167,7 +167,8 @@ def test_710_mixed_blend_one_native_form_signed_site_supplies_replay_history():
         assert history.status_code == 200
         assert 'data-timeline-source="blend"' in history.text
         assert "Abdomen lower right" in history.text
-        assert "0.2 mL withdrawn" in history.text
+        assert "<td>0.2 mL</td>" in history.text
+        assert "0.2 mL withdrawn" not in history.text
 
 
 def test_710_same_compound_multiple_source_vials_mass_converts_one_draw():
