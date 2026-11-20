@@ -55,6 +55,8 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
                 assert page.locator(".tracker-time24-input713").count() == count, path
                 assert "tracker-time24-global713.js?v=713" in page.content()
 
+            pk_response = page.goto(base + "/pk", wait_until="networkidle")
+            assert pk_response is not None and pk_response.status == 200
             # PK's non-form datetime is enhanced, and programmatic changes
             # propagate without ever asking for AM or PM.
             pk_start = page.locator("#wiStart")
