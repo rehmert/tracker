@@ -1,0 +1,29 @@
+{
+  "action": "dev_install",
+  "base": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-20T17:26:06+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_712_SCOPED_BACKEND=PASSED",
+    "TARGETED_712_U100_WITHDRAW=PASSED",
+    "RELEASE_712_SCOPED_BROWSER=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_712_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r712-4b019ea2c5f3",
+  "ref": "release/712-u100-syringe-withdraw-units",
+  "release": 712,
+  "request_id": "r712-8c64f293b5a1",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T17:25:12+00:00",
+  "status": "passed",
+  "target": "1f2982975494ece2bceea3ce85617447f712b399",
+  "test_counts": [
+    "84 passed, 1 warning",
+    "7 passed",
+    "2 passed"
+  ]
+}
