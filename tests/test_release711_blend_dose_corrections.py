@@ -88,9 +88,11 @@ def _create(client, bid, header, supply_id=None, *, volume="0.2", kind="dose"):
     result = client.post("/doses", data=payload, headers=header, follow_redirects=False)
     assert result.status_code in (200, 303), result.text
     with SessionLocal() as db:
-        draws = list(db.scalars(select(BlendDose).where(BlendDose.blend_id == bid)))
-        assert draws
-        return draws[-1].id
+        draw = db.scalar(select(BlendDose).where(
+            BlendDose.blend_id == bid,
+        ).order_by(BlendDose.id.desc()).limit(1))
+        assert draw is not None
+        return draw.id
 
 
 def _edit(client, did, header, supply_id=None, *, amount="0.5", unit="mL",
