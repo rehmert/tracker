@@ -21,14 +21,14 @@ export GIT_CONFIG_VALUE_0="$APP"
 [[ "$(git branch --show-current)" == main &&
    "$(git rev-parse HEAD)" == "$BASE" &&
    -z "$(git status --porcelain)" ]] ||
-  fail "Clean installed Release 710 required"
+  fail "Clean installed Release 711 required"
 systemctl is-active --quiet tracker || fail "Installed DEV service inactive"
 exec 9>/run/lock/tracker712-u100-withdraw.lock
 flock -n 9 || fail "Another Release 712 QA active"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] ||
   fail "Fetched Release 712 branch SHA mismatch"
 git merge-base --is-ancestor "$BASE" "$TARGET" ||
-  fail "Candidate must be descended from Release 710"
+  fail "Candidate must descend from Release 711"
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
