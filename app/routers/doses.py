@@ -306,7 +306,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
                     if (
                         converted > 0
                         and converted <= views[matching.id].remaining_base + 1e-7
-                        and source.entered_unit in U.DOSE_UNITS
+                        and source.entered_unit in U.WITHDRAW_UNITS
                     ):
                         selected_vial_id = matching.id
                         repeat_amount = source.entered_value
@@ -1003,9 +1003,9 @@ def edit_blend_dose711(did: int, request: Request,
     dimensions = {row["dim"] for row in constituent_concentrations710(draw.blend)}
     # Multiple compounds must be entered in liquid volume; one compound
     # also permits its native mass or IU units.
-    allowed = ["mL", "uL"]
+    allowed = ["mL", "uL", "units"]
     if len({c.compound_id for c in draw.blend.components}) == 1 and len(dimensions) == 1:
-        allowed = [u for u in U.DOSE_UNITS if U.parse_unit(u).dim in dimensions | {"volume"}]
+        allowed = [u for u in U.WITHDRAW_UNITS if U.parse_unit(u).dim in dimensions | {"volume"}]
     return render(
         request, "blend_dose_edit711.html", dose=draw, blend=draw.blend,
         allowed_units=allowed, sites=INJECTION_SITES,
