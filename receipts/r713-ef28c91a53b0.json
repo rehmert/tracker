@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "1f2982975494ece2bceea3ce85617447f712b399",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-20T21:20:24+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r713-6e31c8a49db2",
+  "ref": "release/713-timeline-simple-blends-time24",
+  "release": 713,
+  "request_id": "r713-ef28c91a53b0",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T21:20:22+00:00",
+  "status": "passed",
+  "target": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
+  "test_counts": []
+}

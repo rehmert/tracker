@@ -1,29 +1,20 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "base": "1f2982975494ece2bceea3ce85617447f712b399",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-20T18:26:56+00:00",
+  "finished_at_utc": "2026-11-20T21:20:24+00:00",
   "markers": [
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_713_SCOPED_BACKEND=PASSED",
-    "TARGETED_713_GLOBAL_TIME24=PASSED",
-    "RELEASE_713_SCOPED_BROWSER=PASSED",
-    "EXIT_STATUS=0",
-    "RELEASE_713_DEV_INSTALL=SUCCESS"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r713-5e2ab0d4c63f",
+  "previous_request_id": "r713-6e31c8a49db2",
   "ref": "release/713-timeline-simple-blends-time24",
   "release": 713,
-  "request_id": "r713-6e31c8a49db2",
+  "request_id": "r713-ef28c91a53b0",
   "schema": 1,
-  "started_at_utc": "2026-11-20T18:25:49+00:00",
+  "started_at_utc": "2026-11-20T21:20:22+00:00",
   "status": "passed",
   "target": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
-  "test_counts": [
-    "56 passed, 1 warning",
-    "7 passed",
-    "2 passed"
-  ]
+  "test_counts": []
 }
