@@ -186,7 +186,8 @@
         </select></label>
       <label class="field" id="tracker-dose-amount602"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}" inputmode="decimal"></label>
       <label class="field"><span>Unit</span>
-        <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == (planned_unit if planned_unit in DOSE_UNITS else ('mL' if selected_blend_id is not none or (not vials and active_blends) else 'mg')) %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+        <select name="unit">{% for u in WITHDRAW_UNITS %}<option value="{{ u }}" {% if u == (planned_unit if planned_unit in WITHDRAW_UNITS else ('mL' if selected_blend_id is not none or (not vials and active_blends) else 'mg')) %}selected{% endif %}>{{ 'units (U-100 syringe)' if u == 'units' else u }}</option>{% endfor %}</select>
+        <small>U-100 syringe units measure liquid volume: 1 unit = 0.01 mL. IU measures potency, not syringe markings.</small></label>
     </div>
     <div id="dose-preview" class="wide preview" aria-live="polite"></div>
 
