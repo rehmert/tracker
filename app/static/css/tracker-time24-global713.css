@@ -1,0 +1,48 @@
+/* Release 713: app-wide 24-hour HH:MM entry, with native named field kept hidden. */
+.tracker-time24-original713[hidden] {
+  display: none !important;
+}
+.tracker-time24-controls713 {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 9rem) max-content;
+  gap: .5rem;
+  align-items: center;
+  max-width: 100%;
+  width: 100%;
+  min-width: 0;
+}
+.tracker-time24-controls713 > input,
+.tracker-time24-input713 {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  font-variant-numeric: tabular-nums;
+}
+.tracker-time24-input713 {
+  width: min(100%, 9rem);
+  text-align: center;
+  letter-spacing: .015em;
+}
+.tracker-time24-controls713 > .tracker-time24-input713 {
+  width: 100%;
+}
+.tracker-time24-controls713 > button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+.tracker-time24-controls713 + .tracker-time24-hint {
+  display: block;
+  margin-top: .25rem;
+  font-size: .8em;
+  opacity: .8;
+}
+@media (max-width: 700px) {
+  .tracker-time24-controls713 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tracker-time24-controls713 > button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
