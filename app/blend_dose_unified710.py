@@ -82,7 +82,7 @@ def resolve_blend_draw710(blend, value: float, unit: str, use_remaining=False) -
             if len(constituents) != 1:
                 raise ValueError(
                     "A mixed-compound blend must be logged by its actual "
-                    "withdrawn volume (mL or uL), not one compound amount."
+                    "withdrawn volume (mL, uL or U-100 units), not one compound amount."
                 )
             component = constituents[0]
             if parsed.dim != component["dim"]:
