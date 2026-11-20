@@ -49,6 +49,7 @@ while IFS= read -r path; do
     app/static/js/tracker-dose-fast602.js|\
     app/static/js/tracker-dose-source710.js|\
     app/templates/_blend_dose_preview710.html|\
+    app/templates/base.html|\
     app/templates/blend_detail.html|\
     app/templates/doses.html|\
     docs/release-710-unified-blend-dosing.md|\
