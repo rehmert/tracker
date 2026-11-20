@@ -453,6 +453,10 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
         return reject_dose(str(exc))
     if site and site not in INJECTION_SITES:
         return reject_dose("Unknown injection site.")
+    if kind not in ("dose", "waste"):
+        return reject_dose("Choose a valid administration or discard record type.")
+    if use_remaining not in ("", "yes"):
+        return reject_dose("Invalid remaining-contents selection.")
 
     if source_kind == "blend":
         blend = db.get(Blend, source_pk)
@@ -466,7 +470,7 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
             )
         try:
             draw = resolve_blend_draw710(
-                blend, amount, unit, bool(use_remaining)
+                blend, amount, unit, use_remaining == "yes"
             )
             when = services.parse_datetime(taken_at)
             selected = await manual_supplies.selections(request, db)
