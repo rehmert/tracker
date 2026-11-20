@@ -310,7 +310,7 @@
         <td>{{ item.when|dt }}</td>
         <td>Prepared blend</td><td>{{ 'Administered' if item.kind == 'dose' else 'Discarded' }}</td>
         <td>{% for component in r.components %}{{ component.name }}{% if not loop.last %}; {% endif %}{% endfor %}</td>
-        <td>{{ (r.draw.entered_value if r.draw.entered_value is not none else r.draw.volume_ml)|num }} {{ r.draw.entered_unit or 'mL' }} · {{ r.draw.volume_ml|num }} mL withdrawn{% if r.draw.site %} · {{ r.draw.site }}{% endif %}</td>
+        <td>{{ (r.draw.entered_value if r.draw.entered_value is not none else r.draw.volume_ml)|num }} {{ r.draw.entered_unit or 'mL' }}{% if r.draw.site %} · {{ r.draw.site }}{% endif %}</td>
         <td><a href="/blends/{{ r.blend.id }}">Blend #{{ r.blend.id }}</a> · <a href="/doses/blends/{{ r.draw.id }}/edit">Review entry</a></td>
       </tr>
       {% endif %}
