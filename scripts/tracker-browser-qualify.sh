@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -539,6 +539,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-blend-corrections711.log"
 echo "STRICT_711_BLEND_CORRECTION_DELETE=PASSED"
 
+# Release 712: U-100 syringe units via one standard dose form.
+run_isolated_browser_module \
+    tests/browser/test_u100_withdraw712.py \
+    1 "$ROOT/strict-u100-withdraw712.log"
+echo "STRICT_712_U100_WITHDRAW=PASSED"
+
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
     1 "$ROOT/strict-labs500.log"
@@ -610,6 +616,16 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == blend-correction711 ]]; then
       1 "$ROOT/targeted-blend-corrections711.log"
   echo "TARGETED_711_BLEND_CORRECTION_DELETE=PASSED"
   echo "TARGETED_711_SCOPE=REAL_CORRECTION_AND_DELETE_NOT_FULL_RELEASE"
+  exit 0
+fi
+
+# Release 712: one scoped real-UI browser witness for vial and prepared blend.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == u100-withdraw712 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_u100_withdraw712.py \
+      1 "$ROOT/targeted-u100-withdraw712.log"
+  echo "TARGETED_712_U100_WITHDRAW=PASSED"
+  echo "TARGETED_712_SCOPE=VIAL_AND_BLEND_U100_NOT_FULL_RELEASE"
   exit 0
 fi
 
