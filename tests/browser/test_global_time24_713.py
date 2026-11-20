@@ -104,8 +104,10 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
             # propagate without ever asking for AM or PM.
             page.locator('.pk-tab[data-pk-mode="custom"]').click()
             expect(page.locator("#whatIfCard")).to_be_visible()
+            stage = "PK_FIELD"
             pk_start = page.locator("#wiStart")
             assert pk_start.count() == 1
+            stage = "PK_ASSIGN"
             pk_start.evaluate("""el => {
               el.value='2026-11-20T19:37';
               el.dispatchEvent(new Event('change', {bubbles:true}));
@@ -113,14 +115,23 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
             label = page.locator("label:has(#wiStart)")
             clock = label.locator(".tracker-time24-input713")
             date = label.locator(".tracker-time24-date")
+            stage = "PK_INITIAL_CLOCK"
             expect(clock).to_have_value("19:37")
+            stage = "PK_INITIAL_DATE"
             expect(date).to_have_value("2026-11-20")
+            stage = "PK_EDIT_CLOCK"
             clock.fill("22:09")
+            stage = "PK_EDIT_NATIVE"
             expect(pk_start).to_have_value("2026-11-20T22:09")
+            stage = "PK_INVALID_INPUT"
             clock.fill("29:09")
+            stage = "PK_INVALID_NATIVE"
             expect(pk_start).to_have_value("")
+            stage = "PK_INVALID_VALIDITY"
             assert clock.evaluate("el => !el.checkValidity()")
+            stage = "PK_RECOVER_INPUT"
             clock.fill("00:05")
+            stage = "PK_RECOVER_NATIVE"
             expect(pk_start).to_have_value("2026-11-20T00:05")
 
             stage = "DYNAMIC_CONTROL"
