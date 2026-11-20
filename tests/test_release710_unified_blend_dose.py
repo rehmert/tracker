@@ -224,6 +224,24 @@ def test_710_full_remaining_blend_waste_closes_physical_container():
         assert db.query(DoseLog).filter(DoseLog.vial_id.in_(source_ids)).count() == 0
 
 
+def test_710_rejects_invalid_kind_and_remaining_flag_without_a_draw():
+    bid, _, _, supply_id = _seed()
+    with TestClient(app) as client:
+        headers = _signed(client)
+        for form in (
+            _form(bid, kind="unrecognized"),
+            _form(bid, use_remaining="false", amount="0"),
+        ):
+            rejected = client.post("/doses", data=form, headers=headers)
+            assert rejected.status_code == 200
+            assert ("record type" in rejected.text
+                    or "remaining-contents" in rejected.text)
+    with SessionLocal() as db:
+        assert db.query(BlendDose).filter_by(blend_id=bid).count() == 0
+        assert db.get(Supply, supply_id).remaining_qty == 5
+        assert remaining_blend_ml710(db.get(Blend, bid)) == 2
+
+
 def test_710_strict_source_identity_fail_closed_for_ambiguous_input():
     for good, expected in (
         ("7", ("vial", 7)),
