@@ -50,6 +50,14 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
                 originals = page.locator(
                     'input[type="datetime-local"], input[type="time"]'
                 )
+                if path == "/regimen" and originals.count() == 0:
+                    stage = "PAGE_REGIMEN_FIXTURE"
+                    item_form = page.locator('form[action="/regimen/items"]')
+                    item_form.locator('[name="kind"]').select_option("supplement")
+                    item_form.locator('[name="name"]').fill("QA time entry " + scheme)
+                    item_form.get_by_role("button", name="Add catalog item").click()
+                    expect(page.locator('input[name="at_time"]')).to_have_count(1)
+                    stage = "PAGE_REGIMEN_FIELDS"
                 count = originals.count()
                 assert count > 0, ("No time fields present to verify", path)
                 stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_ENHANCED"
