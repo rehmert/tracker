@@ -102,6 +102,8 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
             assert pk_response is not None and pk_response.status == 200
             # PK's non-form datetime is enhanced, and programmatic changes
             # propagate without ever asking for AM or PM.
+            page.locator('.pk-tab[data-pk-mode="custom"]').click()
+            expect(page.locator("#whatIfCard")).to_be_visible()
             pk_start = page.locator("#wiStart")
             assert pk_start.count() == 1
             pk_start.evaluate("""el => {
