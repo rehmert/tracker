@@ -72,7 +72,7 @@ def test_706_source_builds_exact_92_signed_csrf_survey_without_clearance():
         'route_helpers["registered_writes"]',
         'route_helpers["sample_path"]',
         'run_path(str(testfile))',
-        "historical_manual != EXPECTED_MANUAL",
+        "historic_manual != EXPECTED_MANUAL",
         "len(findings) != counted",
         "with TestClient(app, raise_server_exceptions=False) as client:",
         'headers={HEADER_NAME: token}',
