@@ -103,6 +103,10 @@ elif [[ "$RELEASE" == 691 ]]; then
   # Each COA document gets two additive identifier columns. Enforce reviewed
   # exact-source schema checks and verified SQLite + uploads backup on PROD.
   DEPLOY_EXTRA=(--reviewed-coa-691 --db-migration)
+elif [[ "$RELEASE" == 710 ]]; then
+  # One prepared physical blend in the standard dose form; four additive
+  # fields and a supply index require exact-source review and verified backup.
+  DEPLOY_EXTRA=(--reviewed-blend-710 --db-migration)
 fi
 bash "$RUNNER" \
   --instance PROD \
