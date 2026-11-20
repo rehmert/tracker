@@ -28,6 +28,25 @@ for name in tracker-release-agent.py tracker-release-notifier.py tracker-release
 done
 python3 -m py_compile "$STAGE/tracker-release-agent.py" "$STAGE/tracker-release-notifier.py"
 bash -n "$STAGE/tracker-release-agent-install.sh"
+
+# Run focused, entirely offline tests against the exact pinned source before
+# replacing the installed agent, notifier, or systemd service definition.
+mkdir -m 700 -p "$STAGE/qa/scripts" "$STAGE/qa/tests"
+for source in \
+  scripts/tracker-release-agent.py \
+  scripts/tracker-release-notifier.py \
+  scripts/tracker-release-agent-install.sh \
+  tests/test_tracker_release_agent_control.py \
+  tests/test_tracker_release_notifier.py; do
+  git show "$TARGET:$source" > "$STAGE/qa/$source"
+  [[ "$(git hash-object "$STAGE/qa/$source")" == "$(git rev-parse "$TARGET:$source")" ]] ||
+    fail "Offline QA source hash mismatch: $source"
+done
+"$APP/.venv/bin/python" -m pytest -q --tb=short --maxfail=1 \
+  "$STAGE/qa/tests/test_tracker_release_agent_control.py" \
+  "$STAGE/qa/tests/test_tracker_release_notifier.py" ||
+  fail 'Focused agent and notifier tests failed'
+echo 'TRACKER_PUSH_OFFLINE_QA=PASSED'
 # Ensure local tree is identical to the pinned source before installing the agent.
 [[ "$(git hash-object "$STAGE/tracker-release-agent-install.sh")" == "$(git hash-object "$0")" ]] || fail 'Installer code not pinned'
 install -d -o root -g root -m 700 /var/lib/tracker-release-agent
