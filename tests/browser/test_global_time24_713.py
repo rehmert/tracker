@@ -40,7 +40,9 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
         context = browser.new_context(ignore_https_errors=True)
         try:
             page = context.new_page()
+            stage = "PAGE_SETUP"
             for path in ("/doses", "/vitals", "/regimen", "/workouts/backfill", "/pk", "/mobile"):
+                stage = "PAGE_" + path.strip("/").replace("/", "_").upper()
                 response = page.goto(base + path, wait_until="networkidle")
                 assert response is not None and response.status == 200, (path, response)
                 originals = page.locator(
@@ -55,6 +57,7 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
                 assert page.locator(".tracker-time24-input713").count() == count, path
                 assert "tracker-time24-global713.js?v=713" in page.content()
 
+            stage = "PK_PROGRAMMATIC_SYNC"
             pk_response = page.goto(base + "/pk", wait_until="networkidle")
             assert pk_response is not None and pk_response.status == 200
             # PK's non-form datetime is enhanced, and programmatic changes
@@ -78,6 +81,7 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
             clock.fill("00:05")
             expect(pk_start).to_have_value("2026-11-20T00:05")
 
+            stage = "DYNAMIC_CONTROL"
             # Dynamic controls (workout rows / HTMX forms) receive the same
             # enhancement, without adding a duplicate named POST field.
             page.evaluate("""() => {
@@ -100,6 +104,9 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
             expect(native).to_have_value("")
             assert visible.evaluate("el => !el.checkValidity()")
             print("RELEASE_713_24H_BROWSER=PASSED_" + scheme, flush=True)
+        except Exception:
+            print("TARGETED_713_TIME24_" + stage + "=FAILED", flush=True)
+            raise
         finally:
             context.close()
             browser.close()
