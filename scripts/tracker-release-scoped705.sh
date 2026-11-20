@@ -24,6 +24,8 @@ bash -n scripts/tracker-dependency-replay705.sh
   scripts/tracker_dependency_readiness705.py \
   scripts/tracker_dependency_acquire705.py \
   scripts/tracker_dependency_replay705.py \
+  scripts/tracker_promote568.py \
+  tests/test_release705_promotion_catchup.py \
   tests/test_release705_dependency_replay.py \
   tests/test_release705_dependency_acquire.py \
   tests/test_release705_dependency_readiness.py \
@@ -73,6 +75,13 @@ echo 'DEPENDENCY_705_ACQUIRE_SOURCE_CONTRACT=PASSED'
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release705_dependency_replay.py
 echo 'DEPENDENCY_705_OFFLINE_REPLAY_SOURCE_CONTRACT=PASSED'
+
+# Release 705 signed DEV->PROD catch-up must remain narrowly restricted
+# to an already-reviewed Release 693+ PROD base and exact Release 704 main.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release568_ops_tooling.py \
+  tests/test_release705_promotion_catchup.py
+echo 'RELEASE_705_SIGNED_PROMOTION_CATCHUP_CONTRACT=PASSED'
 
 # Check the exact-commit runtime runner contract before any ASGI requests.
 "$PY" -m pytest -q --tb=short --maxfail=1 \

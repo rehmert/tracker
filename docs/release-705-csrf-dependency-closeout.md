@@ -235,7 +235,7 @@ listing them does not constitute executed parity evidence. The other
 
 ## Single release qualification and deployment limits
 
-The candidate's exact thirty-three-file diff includes the CSRF and dependency
+The candidate's exact thirty-five-file diff includes the CSRF and dependency
 readiness scripts, audited historical reconciliation, source and full-browser
 preview gates, the guarded browser qualification runner, focused Release 705
 regressions, corrected legacy Vitals and Vials browser tests, and this document.
@@ -656,3 +656,44 @@ Chromium/Playwright browser distribution, underlying OS libraries,
 independent supply-chain provenance or tested dependency rollback.
 Issue #10 remains blocked pending those separate gates; Issue #9
 remains blocked pending global strict-CSRF positive runtime coverage.
+
+
+## Release 705 expedited guarded DEV → PROD promotion
+
+The user explicitly approved moving the already-discussed improvements to
+DEV, qualifying there, and promoting to PROD quickly. The Release 705 delta
+against installed DEV Release 704 is **tooling/tests/docs only**; it does not
+change application runtime, templates, schema, dependencies, environment or
+CSRF enforcement. The previously DEV-qualified UI/UX changes from 694–704
+are carried forward to PROD if PROD is still behind.
+
+The existing signed Release 568 promoter assumed `origin/main == PROD_BASE`.
+With GitHub main already at fixed Release 704 but PROD last reported at 693,
+this would reject a valid catch-up even though 705 descends cleanly from both.
+The guarded promoter now permits a **Release 705 only** recovery when:
+(a) GitHub main is exactly Release 704
+`24cb9ec47417e001c3f96dfed630e3b8b0264d93`;
+(b) PROD's actual installed SHA is an ancestor of 704 but a descendant of
+the last observed qualified Release 693
+`4d752be1a62ffa8a5feba78a50033e980a30b26c`;
+(c) candidate HEAD equals `origin/release/705-csrf-dependency-closeout`
+and is a descendant of Release 704;
+(d) the complete main→candidate source diff is **exactly the reviewed
+35-file Release 705 QA and promotion source inventory**;
+(e) no unreviewed schema, migration or requirements paths changed between
+PROD's real installed SHA and the candidate.
+
+The original signed DEV log verification, sign-and-transfer before promotion,
+fast-forward-only GitHub push, exact PROD starting SHA, signed PROD approval,
+DEV-controlled SSH, backup/snapshot, integrity check, runtime smoke,
+and guarded rollback checks remain unchanged. Historical recovery 648/677
+policies are unchanged. The Release 705 scoped source suite includes original
+568 operator safety tests plus newly mocked positive/negative catch-up
+regressions. A failure stops before signature creation or PROD promotion.
+
+This deploys **only qualified code and tooling**. Issue #9's remaining
+92 positive-route witnesses, 155 manual reviews and 6 session/account
+reviews are still blocked; global strict CSRF is not enabled. Issue #10's
+independent Python replays passed, but browser/OS bundle, independent
+provenance and dependency rollback remain incomplete; no installed venv
+is replaced. Do not describe these issues as closed.

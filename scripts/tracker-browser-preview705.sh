@@ -58,6 +58,8 @@ while IFS= read -r path; do
     scripts/tracker_dependency_readiness705.py|\
     scripts/tracker_dependency_acquire705.py|\
     scripts/tracker_dependency_replay705.py|\
+    scripts/tracker_promote568.py|\
+    tests/test_release705_promotion_catchup.py|\
     scripts/tracker-dependency-replay705.sh|\
     tests/test_release705_dependency_replay.py|\
     scripts/tracker-dependency-acquire705.sh|\

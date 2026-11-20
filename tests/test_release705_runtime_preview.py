@@ -476,3 +476,30 @@ def test_705_offline_replay_is_network_isolated_two_pass_and_exact_sha():
     assert '"--no-index", "--no-cache-dir"' in python
     assert '"--require-hashes", "--find-links"' in python
     assert "DEPENDENCY_705_ISSUE10=BLOCKED_BROWSER_OS_ROLLBACK" in python
+
+
+def test_705_exact_dev_signed_prod_catchup_is_scoped_and_preserves_guards():
+    scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
+    assert "scripts/tracker_promote568.py" in scoped
+    assert "tests/test_release705_promotion_catchup.py" in scoped
+    assert "tests/test_release568_ops_tooling.py" in scoped
+    assert "RELEASE_705_SIGNED_PROMOTION_CATCHUP_CONTRACT=PASSED" in scoped
+    for script in (
+        "scripts/tracker-preview705.sh",
+        "scripts/tracker-browser-preview705.sh",
+    ):
+        contents = (ROOT / script).read_text()
+        for name in (
+            "scripts/tracker_promote568.py",
+            "tests/test_release705_promotion_catchup.py",
+        ):
+            assert name + "|\\" in contents
+    promoter = (ROOT / "scripts/tracker_promote568.py").read_text()
+    assert "RECOVERY_705_MAIN = " in promoter
+    assert "RECOVERY_705_PROD_FLOOR = " in promoter
+    assert "RECOVERY_705_ALLOWED = frozenset({" in promoter
+    assert "release == 705 and recovery_705_prod_lag_allowed" in promoter
+    assert "or recovery_705_prod_lag_allowed(main, target, base)" in promoter
+    assert promoter.index("sign_and_transfer(args.target)") < promoter.index(
+        "promote(args.target, args.prod_base)"
+    ) < promoter.index("deploy(args.release, args.target, args.prod_base)")

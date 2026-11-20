@@ -37,6 +37,51 @@ RECOVERY_648_PROD_BASE = "61b3016eed48527c61a5173d94ee0f58b859f81a"
 # approved-but-not-installed 676 main commit, from exact installed 675 base.
 RECOVERY_677_MAIN = "3646f5ebf39f0b0ff2759c35e75df46120a72c7c"
 RECOVERY_677_PROD_BASE = "2e8f65d7c61c522a5ab01f78cd3783e15559ece3"
+# Release 705 catch-up: DEV/GitHub main has qualified UX Releases 694–704,
+# while PROD may still be at qualified Release 693 or a later ancestor.
+# This is a ONE-RELEASE, exact-main, exact-file-scope exception; it never
+# bypasses the signed DEV receipt, exact PROD base, or fast-forward-only push.
+RECOVERY_705_MAIN = "24cb9ec47417e001c3f96dfed630e3b8b0264d93"
+RECOVERY_705_PROD_FLOOR = "4d752be1a62ffa8a5feba78a50033e980a30b26c"
+RECOVERY_705_REF = "refs/remotes/origin/release/705-csrf-dependency-closeout"
+RECOVERY_705_ALLOWED = frozenset({
+    "docs/release-705-csrf-dependency-closeout.md",
+    "scripts/tracker-browser-preview705.sh",
+    "scripts/tracker-browser-qualify.sh",
+    "scripts/tracker-dependency-acquire705.sh",
+    "scripts/tracker-dependency-preview705.sh",
+    "scripts/tracker-dependency-replay705.sh",
+    "scripts/tracker-preview705.sh",
+    "scripts/tracker-release-scoped705.sh",
+    "scripts/tracker_csrf_closeout705.py",
+    "scripts/tracker_csrf_reconcile627.py",
+    "scripts/tracker_csrf_runtime_report579.py",
+    "scripts/tracker_dependency_acquire705.py",
+    "scripts/tracker_dependency_lock705.py",
+    "scripts/tracker_dependency_readiness705.py",
+    "scripts/tracker_dependency_replay705.py",
+    "scripts/tracker_promote568.py",
+    "tests/browser/test_csrf_preparations583.py",
+    "tests/browser/test_csrf_workflows580.py",
+    "tests/browser/test_strict_csrf521.py",
+    "tests/browser/test_vitals_proxy_host522.py",
+    "tests/test_coa_multiple_test_types651.py",
+    "tests/test_csrf_all_registered_negative705.py",
+    "tests/test_release575_csrf_js_review.py",
+    "tests/test_release576_csrf_js_triage.py",
+    "tests/test_release578_csrf_route_ledger.py",
+    "tests/test_release579_csrf_runtime_report.py",
+    "tests/test_release627_csrf_reconciliation.py",
+    "tests/test_release640_csrf_inventory.py",
+    "tests/test_release648_prod_recovery.py",
+    "tests/test_release705_combined.py",
+    "tests/test_release705_dependency_acquire.py",
+    "tests/test_release705_dependency_readiness.py",
+    "tests/test_release705_dependency_replay.py",
+    "tests/test_release705_promotion_catchup.py",
+    "tests/test_release705_runtime_preview.py",
+})
+
 
 QUALIFICATION = (
     "ISOLATED_BROWSER=PASSED",
@@ -154,6 +199,48 @@ def recovery_677_main_allowed(main: str, target: str, base: str) -> bool:
     return True
 
 
+def recovery_705_prod_lag_allowed(main: str, target: str, base: str) -> bool:
+    """Exact Release 705 tooling-only catch-up, never a generic promotion bypass.
+
+    Allow signed DEV main -> PROD only when PROD is at or after qualified
+    Release 693, GitHub main remains immutable Release 704, and the Release
+    705 delta is *exactly* the reviewed tooling/test/docs path inventory.
+    """
+    if (main != RECOVERY_705_MAIN or not SHA.fullmatch(target)
+            or not SHA.fullmatch(base) or base == target):
+        return False
+    try:
+        if git("rev-parse", RECOVERY_705_REF) != target:
+            return False
+        for ancestor, descendant in (
+            (RECOVERY_705_PROD_FLOOR, base),
+            (base, main),
+            (main, target),
+        ):
+            run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
+                 "merge-base", "--is-ancestor", ancestor, descendant])
+        dev_delta = set(git("diff", "--name-only", main, target).splitlines())
+        if dev_delta != RECOVERY_705_ALLOWED:
+            return False
+        # Never carry a schema/dependency migration over the PROD gap.
+        prod_delta = set(git("diff", "--name-only", base, target).splitlines())
+        if any(
+            path.startswith(("deploy/", "alembic/"))
+            or path.startswith("requirements")
+            or path in (
+                "alembic.ini", "app/db.py", "app/models.py",
+                "app/migrations.py", "app/workout_models654.py",
+                "app/workout_models655.py", "app/workout_models667.py",
+                "app/workout_models668.py",
+            )
+            for path in prod_delta
+        ):
+            return False
+    except (subprocess.CalledProcessError, ValueError, OSError):
+        return False
+    return True
+
+
 def preflight(release: int, target: str, base: str, ref: str) -> None:
     if os.geteuid() != 0 or output(["hostname", "-s"]) != "tracker-dev":
         raise ReleaseError("Run as root on tracker-dev only")
@@ -181,12 +268,19 @@ def preflight(release: int, target: str, base: str, ref: str) -> None:
     allowed_677 = release == 677 and recovery_677_main_allowed(
         main, target, base
     )
-    if main not in (base, target) and not (allowed_648 or allowed_677):
+    allowed_705 = release == 705 and recovery_705_prod_lag_allowed(
+        main, target, base
+    )
+    if main not in (base, target) and not (
+        allowed_648 or allowed_677 or allowed_705
+    ):
         raise ReleaseError(f"GitHub main changed unexpectedly: {main}")
     if allowed_648:
         print(f"PROD_RECOVERY_648_ANCESTOR_VERIFIED={main}", flush=True)
     if allowed_677:
         print(f"PROD_RECOVERY_677_ANCESTOR_VERIFIED={main}", flush=True)
+    if allowed_705:
+        print(f"PROD_CATCHUP_705_FROM_MAIN={main}", flush=True)
     if git("rev-parse", f"refs/remotes/origin/{ref}") != target:
         raise ReleaseError("Release branch differs from exact qualified commit")
     run([
@@ -257,7 +351,8 @@ def promote(target: str, base: str) -> None:
          "fetch", "origin", "main"])
     main = git("rev-parse", "origin/main")
     if (main == base or recovery_648_main_allowed(main, target, base)
-            or recovery_677_main_allowed(main, target, base)):
+            or recovery_677_main_allowed(main, target, base)
+            or recovery_705_prod_lag_allowed(main, target, base)):
         # Ordinary fast-forward only. Never rewrite GitHub main history.
         run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
              "push", "origin", f"{target}:refs/heads/main"])
