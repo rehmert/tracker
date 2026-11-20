@@ -44,7 +44,7 @@ def test_710_one_standard_form_selects_blends_and_keeps_legacy_route():
     assert 'value="blend:{{ row.blend.id }}"' in template
     assert 'id="dose-blend-picker"' not in template
     assert "{% if vials or active_blends %}" in template
-    assert "tracker-dose-source710.js?v=710" in template
+    assert "tracker-dose-source710.js?v=712" in template
     assert 'data-physical-source="blend:{{ r.blend.id }}"' in template
     assert "r.draw.entered_value if r.draw.entered_value is not none" in template
     detail = source("app/templates/blend_detail.html")
