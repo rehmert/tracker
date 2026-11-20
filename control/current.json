@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r712-4b019ea2c5f3",
-  "action": "qualify",
+  "request_id": "r712-8c64f293b5a1",
+  "action": "dev_install",
   "release": 712,
   "target": "1f2982975494ece2bceea3ce85617447f712b399",
   "base": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
   "ref": "release/712-u100-syringe-withdraw-units",
-  "previous_request_id": null
+  "previous_request_id": "r712-4b019ea2c5f3"
 }
