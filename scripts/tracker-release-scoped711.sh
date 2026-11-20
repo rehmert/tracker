@@ -4,7 +4,7 @@ set -Eeuo pipefail
 [[ $# == 1 && -x "$1" ]] || { echo "Configured Python executable required" >&2; exit 2; }
 PY="$1"
 ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
-[[ "$PWD" == "$ROOT" && "\${TRACKER_DATA_DIR:-}" == /tmp/* ]] ||
+[[ "$PWD" == "$ROOT" && "${TRACKER_DATA_DIR:-}" == /tmp/* ]] ||
   { echo "Release 711 requires isolated source and disposable data" >&2; exit 2; }
 
 for script in \
