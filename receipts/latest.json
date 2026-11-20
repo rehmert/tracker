@@ -6,7 +6,7 @@
     "tests/test_release714_routine_alignment.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-20T23:49:26+00:00",
+  "finished_at_utc": "2026-11-20T23:52:56+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_714_IMPACT_PREFLIGHT=PASSED",
@@ -16,10 +16,10 @@
   "previous_request_id": null,
   "ref": "release/714-workout-routine-row-alignment",
   "release": 714,
-  "request_id": "r714-b57e2d19ac40",
+  "request_id": "r714-79a46e10b2d3",
   "schema": 1,
-  "started_at_utc": "2026-11-20T23:49:22+00:00",
+  "started_at_utc": "2026-11-20T23:52:52+00:00",
   "status": "failed",
-  "target": "b9798fe15ab006af19748ac1a23169a21f08950e",
+  "target": "d85f2430aeab3ac11afb57226fd9006b0fbecb22",
   "test_counts": []
 }
