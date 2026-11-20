@@ -12,7 +12,64 @@ from app.db import SessionLocal
 from app.main import app
 from app.models import Blend, BlendDose, ChangeAudit, DoseLog, Supply, SupplyUsage
 from app.blend_dose_unified710 import remaining_blend_ml710
-from tests.test_release710_unified_blend_dose import _seed, _form
+from datetime import date
+
+from app.models import BlendComponent, Compound, Purchase, Vial
+
+
+def _seed(compound_count=2):
+    from app.db import engine, Base
+    from app.migrations import migrate
+
+    migrate(engine)
+    Base.metadata.create_all(engine)
+    unique = uuid4().hex[:12]
+    with SessionLocal() as db:
+        purchase = Purchase(vendor="QA711 " + unique, purchased_on=date(2026, 11, 20))
+        db.add(purchase)
+        db.flush()
+        compounds, sources = [], []
+        for n in range(compound_count):
+            compound = Compound(name=f"QA711-{unique}-{n}", primary_unit="mg")
+            db.add(compound)
+            db.flush()
+            vial = Vial(compound_id=compound.id, purchase_id=purchase.id,
+                        content_value=10 * (n + 1), content_unit="mg",
+                        volume_ml=1, status="finished")
+            db.add(vial)
+            db.flush()
+            compounds.append(compound)
+            sources.append(vial)
+        blend = Blend(label="QA711 prepared " + unique, final_volume_ml=2,
+                      diluent_ml=0, capacity_ml=3, status="in_use")
+        db.add(blend)
+        db.flush()
+        for n, (compound, vial) in enumerate(zip(compounds, sources)):
+            db.add(BlendComponent(
+                blend_id=blend.id, source_vial_id=vial.id,
+                compound_id=compound.id, transferred_base=10000 * (n + 1),
+                transferred_ml=1, target_dose_base=1000 * (n + 1),
+                target_unit="mg",
+            ))
+        item = Supply(purchase_id=purchase.id, name="QA711 syringe " + unique,
+                      kind="pill", purchased_qty=5, remaining_qty=5,
+                      unit_price_cents=0)
+        db.add(item)
+        db.commit()
+        return blend.id, [c.id for c in compounds], [v.id for v in sources], item.id
+
+
+def _form(blend_id, token=None, **changes):
+    data = {
+        "vial_id": f"blend:{blend_id}",
+        "amount": "0.2", "unit": "mL", "kind": "dose",
+        "taken_at": "2026-11-18T08:20",
+        "site": "Abdomen lower right",
+        "notes": "QA711 synthetic draw",
+        "submission_token": token or str(uuid4()),
+    }
+    data.update(changes)
+    return data
 
 
 def _header(client):
