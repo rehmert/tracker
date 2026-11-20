@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r712-8c64f293b5a1.json",
+  "receipt_path": "receipts/r712-a6471e0c29b5.json",
   "release": 712,
-  "request_id": "r712-8c64f293b5a1",
+  "request_id": "r712-a6471e0c29b5",
   "schema": 1,
   "status": "passed",
   "target": "1f2982975494ece2bceea3ce85617447f712b399"
