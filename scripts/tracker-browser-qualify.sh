@@ -602,6 +602,17 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == blend-vial710 ]]; then
   exit 0
 fi
 
+# Release 711: signed native edit and confirmed delete over HTTP and HTTPS.
+# A targeted witness is not a full CSRF rollout qualification.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == blend-correction711 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_blend_corrections711.py \
+      1 "$ROOT/targeted-blend-corrections711.log"
+  echo "TARGETED_711_BLEND_CORRECTION_DELETE=PASSED"
+  echo "TARGETED_711_SCOPE=REAL_CORRECTION_AND_DELETE_NOT_FULL_RELEASE"
+  exit 0
+fi
+
 # Release 627: one disposable targeted smoke for only the new consolidated
 # browser modules. Not a full QA run and never a promotion receipt.
 if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-batch627 ]]; then
