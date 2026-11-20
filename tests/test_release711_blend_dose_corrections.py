@@ -247,16 +247,28 @@ def test_711_finished_blend_reopens_when_corrected_and_delete_restores_all_usage
 
 def test_711_legacy_blend_draw_without_entered_unit_can_be_corrected():
     bid, _, _, _ = _seed()
-    with SessionLocal() as db:
-        old = BlendDose(
-            blend_id=bid, taken_at=datetime(2026, 11, 16, 8, 0),
-            volume_ml=.1, kind="dose", site="", notes="Original legacy draw",
-        )
-        db.add(old)
-        db.commit()
-        did = old.id
     with TestClient(app) as client:
         header = _header(client)
+        # Use the unchanged legacy endpoint, which creates exactly the
+        # historical NULL entered-unit/value record under a write lock.
+        response = client.post(
+            f"/blends/{bid}/doses",
+            data={
+                "submission_token": str(uuid4()),
+                "taken_at": "2026-11-16T08:00",
+                "volume_ml": "0.1", "kind": "dose",
+                "notes": "Original legacy draw",
+            },
+            headers=header, follow_redirects=False,
+        )
+        assert response.status_code == 303
+        with SessionLocal() as db:
+            draw = db.scalar(select(BlendDose).where(
+                BlendDose.blend_id == bid,
+            ).order_by(BlendDose.id.desc()).limit(1))
+            assert draw is not None
+            assert draw.entered_value is None and draw.entered_unit is None
+            did = draw.id
         page = client.get(f"/doses/blends/{did}/edit")
         assert page.status_code == 200
         assert 'name="amount"' in page.text
