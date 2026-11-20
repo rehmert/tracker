@@ -27,7 +27,7 @@
         remaining.dispatchEvent(new Event('change', {bubbles: true}));
       }
       if (/^blend:[1-9]\d*$/.test(source.value) &&
-          !['mL', 'uL'].includes(unit.value)) {
+          !['mL', 'uL', 'units'].includes(unit.value)) {
         unit.value = 'mL';
         unit.dispatchEvent(new Event('change', {bubbles: true}));
       }
