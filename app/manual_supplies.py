@@ -50,3 +50,18 @@ def restore_dose(db, did):
         item = db.get(Supply, usage.supply_id)
         if item: item.remaining_qty += usage.amount
         db.delete(usage)
+
+
+def restore_blend_dose(db, did):
+    """Restore disposables linked to one physical blend draw.
+
+    Does not touch source-vial inventory, which was transferred during blend
+    preparation. The caller owns its SQLite write reservation and commit.
+    """
+    for usage in db.scalars(
+        select(SupplyUsage).where(SupplyUsage.blend_dose_id == did)
+    ).all():
+        item = db.get(Supply, usage.supply_id)
+        if item:
+            item.remaining_qty += usage.amount
+        db.delete(usage)
