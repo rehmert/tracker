@@ -93,9 +93,16 @@ def resolve_blend_draw710(blend, value: float, unit: str, use_remaining=False) -
         raise ValueError("Draw volume must be positive and finite.")
     if volume > remaining + 1e-8:
         raise ValueError("Dose exceeds remaining prepared blend volume.")
+    # Surface meaningful mg amounts as mg (1,000 mcg = 1 mg).  The global
+    # unit formatter deliberately favors mcg in other Tracker contexts.
+    def display_amount(base: float, dim: str) -> str:
+        if dim == "mass" and 1000 <= abs(base) < 1_000_000:
+            return f"{U._num(base / 1000)} mg"
+        return U.fmt_amount(base, dim)
+
     components = [
         {**row, "amount_base": volume * row["base_per_ml"],
-         "display": U.fmt_amount(volume * row["base_per_ml"], row["dim"])}
+         "display": display_amount(volume * row["base_per_ml"], row["dim"])}
         for row in constituents
     ]
     return {
