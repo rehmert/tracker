@@ -63,12 +63,30 @@ backend regressions, and signed Chromium HTTP/HTTPS browser acceptance.
 It removes temporary data and source worktree. **It never installs or
 deploys Release 710.**
 
-Because this change touches shared dose accounting and adds schema fields,
-production promotion is blocked until it passes DEV source/API/browser
-qualification, a guarded pre-deploy backup, a full shared-dose integration
-test and rollback qualification, and the normal signed DEV-controlled
-promotion procedure. Global CSRF enforcement remains disabled and is
-unrelated to this feature release.
+The DEV-only isolated source/API/browser qualification passed on
+commit `31d426763d8bfeeee31fecd7063559a4480f5d9f`.
+That candidate has NOT been installed. A follow-up installation-readiness
+change introduces the explicit `--reviewed-blend-710 --db-migration`
+gate in the standard deployer, a byte-exact source/schema reviewer,
+a focused shared-dose regression plus signed HTTP/HTTPS Chromium gate,
+and the same reviewed/backup flag in PROD's signed remote installer.
+The new candidate must be qualified again; passing the earlier commit
+does not approve new installer code.
+
+The DEV installation path is `scripts/tracker-install710.sh <pinned-commit>`.
+It invokes the existing standard release runner, which performs the
+reviewed migration checks, focused isolated tests, verified SQLite and
+present-attachment backup, isolated backup restore, fast-forward install,
+bytecode refresh, runtime smoke, and rollback attempt on install failure.
+A code-only rollback does not undo an additive SQLite schema migration.
+PROD requires a separate exact-commit signed DEV promotion receipt and
+a successful preflight with the actual installed PROD base.
+Neither workflow enables global CSRF enforcement.
+
+This is still a scoped release: no routine full application suite is
+requested; shared-dose and adjacent Calendar/inventory tests are included.
+No package downloads, GitHub-hosted backups, or uncontrolled PROD SSH
+operations are part of the release.
 
 ## Release 613/668 compatibility regression
 
