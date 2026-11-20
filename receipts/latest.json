@@ -7,22 +7,24 @@
     "tests/browser/test_global_time24_713.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-20T18:18:57+00:00",
+  "finished_at_utc": "2026-11-20T18:21:34+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_713_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_713_SCOPED_BACKEND=PASSED",
+    "TARGETED_713_TIME24_PK_PROGRAMMATIC_SYNC=FAILED",
+    "TARGETED_713_TIME24_PK_PROGRAMMATIC_SYNC=FAILED",
     "RELEASE_713_INSTALLED_DEV=UNMODIFIED",
     "RELEASE_713_EXIT_STATUS=1"
   ],
   "previous_request_id": null,
   "ref": "release/713-timeline-simple-blends-time24",
   "release": 713,
-  "request_id": "r713-0eadfe53475e",
+  "request_id": "r713-3b7e50ac91f6",
   "schema": 1,
-  "started_at_utc": "2026-11-20T18:18:32+00:00",
+  "started_at_utc": "2026-11-20T18:19:52+00:00",
   "status": "failed",
-  "target": "0eadfe53475eaf377c42eabb4b3e167e8706c64d",
+  "target": "f0483e125fddcbad75ae001f8583cf06e79ac35a",
   "test_counts": [
     "56 passed, 1 warning",
     "7 passed"
