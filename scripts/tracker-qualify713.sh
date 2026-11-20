@@ -44,6 +44,7 @@ while IFS= read -r path; do
     scripts/tracker-release.sh|\
     tests/browser/test_global_time24_713.py|\
     tests/test_browser_qualification511.py|\
+    tests/test_release710_unified_blend_dose.py|\
     tests/test_release713_timeline_time24.py) ;;
     *) fail "Unexpected Release 713 source path: $path" ;;
   esac
