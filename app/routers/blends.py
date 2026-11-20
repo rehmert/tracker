@@ -13,6 +13,7 @@ from ..scoped_db390 import get_scoped_db390
 from ..models import Blend, BlendComponent, BlendDose, Vial, PreparationEvent
 from ..templating import render
 from ..blend_workflow563 import calculate_waterfall
+from ..blend_dose_identity711 import next_blend_dose_id711
 
 router = APIRouter()
 
