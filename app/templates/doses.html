@@ -348,7 +348,7 @@
         <td>{{ 'Administered' if row.draw.kind == 'dose' else 'Discarded' }}</td>
         <td>{{ row.draw.volume_ml|num }} mL</td>
         <td>{% for item in row.components %}{{ item.name }}: {{ item.amount|num }} {{ item.unit }}{% if not loop.last %}; {% endif %}{% endfor %}</td>
-        <td>{{ row.draw.notes or '—' }}</td>
+        <td>{{ row.draw.notes or '—' }} · <a href="/doses/blends/{{ row.draw.id }}/edit">Edit</a></td>
       </tr>
     {% else %}
       <tr><td colspan="6" class="empty">No prepared blend draws recorded.</td></tr>
