@@ -17,6 +17,8 @@ def source(path):
 def test_711_all_touched_python_and_shell_scripts_parse():
     for path in (
         "app/routers/doses.py",
+        "app/routers/blends.py",
+        "app/blend_dose_identity711.py",
         "app/manual_supplies.py",
         "tests/test_release711_blend_dose_corrections.py",
         "tests/browser/test_blend_corrections711.py",
