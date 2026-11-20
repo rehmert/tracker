@@ -100,13 +100,16 @@ def real_routine_markup():
 
 def test_714_contract_only_changes_layout_not_routine_actions():
     markup = real_routine_markup()
-    gate714("ROW_COUNT", markup.count('class="workout-routine-row655"') == len(EXERCISES))
-    gate714("SELECT_COUNT", markup.count('name="equipment_id" required') == len(EXERCISES))
-    gate714("BUTTON_COUNT", markup.count('type="submit"') >= len(EXERCISES) * 4)
-    gate714("UP_COUNT", markup.count('name="direction" value="up"') == len(EXERCISES))
-    gate714("DOWN_COUNT", markup.count('name="direction" value="down"') == len(EXERCISES))
-    gate714("SUBSTITUTE_COUNT", markup.count('/substitute"') == len(EXERCISES))
-    gate714("REMOVE_COUNT", markup.count('/remove"') == len(EXERCISES))
+    # The full page includes CSS attribute selectors containing /substitute.
+    # Count actual rendered form markup only, never occurrences in CSS text.
+    body = markup.split('</style></head><body><main class="workout654 workout655">', 1)[1]
+    gate714("ROW_COUNT", body.count('class="workout-routine-row655"') == len(EXERCISES))
+    gate714("SELECT_COUNT", body.count('name="equipment_id" required') == len(EXERCISES))
+    gate714("BUTTON_COUNT", body.count('type="submit"') >= len(EXERCISES) * 4)
+    gate714("UP_COUNT", body.count('name="direction" value="up"') == len(EXERCISES))
+    gate714("DOWN_COUNT", body.count('name="direction" value="down"') == len(EXERCISES))
+    gate714("SUBSTITUTE_COUNT", body.count('/substitute"') == len(EXERCISES))
+    gate714("REMOVE_COUNT", body.count('/remove"') == len(EXERCISES))
     gate714("CSS_GRID_SELECTOR", OVERRIDE714.read_text(encoding="utf-8").count(
         ".workout655 .workout-routine-row655 {"
     ) == 1)
