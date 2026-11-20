@@ -478,6 +478,7 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
         except (ValueError, TypeError) as exc:
             return reject_dose(str(exc))
         physical = BlendDose(
+            id=next_blend_dose_id711(db),
             blend_id=blend.id, taken_at=when,
             volume_ml=draw["volume_ml"],
             entered_value=draw["entered_value"],
