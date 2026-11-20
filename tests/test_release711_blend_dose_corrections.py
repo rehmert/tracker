@@ -119,7 +119,10 @@ def test_711_rejects_overdraw_wrong_kind_site_and_unavailable_supplies_atomicall
         for change, error in scenarios:
             response = _edit(client, did, header, sid, **change)
             assert response.status_code == 303
-            assert error.lower() in response.headers.get("location", "").lower().replace("+", " ") or response.status_code == 303
+            from urllib.parse import parse_qs, urlsplit
+            location = response.headers.get("location", "")
+            actual_error = parse_qs(urlsplit(location).query).get("err", [""])[0]
+            assert error.lower() in actual_error.lower(), actual_error
             with SessionLocal() as db:
                 draw = db.get(BlendDose, did)
                 assert draw.volume_ml == .2
