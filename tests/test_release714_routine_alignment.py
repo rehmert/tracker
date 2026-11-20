@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "app/templates/workout_routine_detail655.html"
 STYLE = ROOT / "app/static/css/tracker-workouts655.css"
 STYLE654 = ROOT / "app/static/css/tracker-workouts654.css"
+OVERRIDE714 = ROOT / "app/static/css/tracker-workout-routine-alignment714.css"
 
 EXERCISES = [
     "Triceps Press",
@@ -35,7 +36,8 @@ EXERCISES = [
 def real_routine_markup():
     source = TEMPLATE.read_text(encoding="utf-8")
     assert source.count('<section id="routine-exercises655">') == 1
-    assert source.count("/static/css/tracker-workouts655.css?v=714") == 1
+    assert source.count("/static/css/tracker-workouts655.css?v=655") == 1
+    assert source.count("/static/css/tracker-workout-routine-alignment714.css?v=714") == 1
     section = source.split('<section id="routine-exercises655">', 1)[1].split(
         '</section>', 1
     )[0]
@@ -74,6 +76,8 @@ def real_routine_markup():
         + STYLE654.read_text(encoding="utf-8")
         + '</style><style>'
         + STYLE.read_text(encoding="utf-8")
+        + '</style><style>'
+        + OVERRIDE714.read_text(encoding="utf-8")
         + '</style></head><body><main class="workout654 workout655">'
         + body + '</main></body></html>'
     )
@@ -88,10 +92,10 @@ def test_714_contract_only_changes_layout_not_routine_actions():
     assert markup.count('name="direction" value="down"') == len(EXERCISES)
     assert markup.count('/substitute"') == len(EXERCISES)
     assert markup.count('/remove"') == len(EXERCISES)
-    assert STYLE.read_text(encoding="utf-8").count(
+    assert OVERRIDE714.read_text(encoding="utf-8").count(
         ".workout655 .workout-routine-row655 {"
     ) == 1
-    assert "display: grid;" in STYLE.read_text(encoding="utf-8")
+    assert "display: grid;" in OVERRIDE714.read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("width", [320, 375, 390, 430, 600, 768, 1024, 1280])
