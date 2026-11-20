@@ -67,3 +67,27 @@ every route and all manual/session reviews is completed. The remaining
 **34 old historical positive-route gaps**, 155 manual reviews, six
 independent session/account routes and full strict browser release
 qualification are still open.
+
+
+## Retry correction: parallel duplicate grouping and real form fingerprint
+
+The first Release 709 targeted Chromium run qualified 3/4 parameterized
+browser cases and failed the HTTPS food case while looking for a test-
+calculated fingerprint in the duplicate review form. Source analysis
+showed that `near_name_key641` uses the **first two normalized words**
+of a saved food name for grouping. The original test used the common
+first two words `QA709 distinct` in BOTH HTTP and HTTPS xdist workers,
+so independent scenarios could be combined in one group and the hand-
+calculated two-row fingerprint would not match the rendered multi-row
+group. No application security or CSRF logic was changed.
+
+Every test seed name now uses a unique first-word token, plus a
+distinct action name as the second word, so parallel workers cannot
+combine their groups. The review test locates the actual matching
+`section.food629-group`, asserts the exact two expected version IDs
+are rendered, and reads the SHA-256 fingerprint directly from that
+group's hidden native form field. The valid request must still persist
+the acknowledgement; tokenless and forged attempts must still deny
+without mutation. Source regression tests cover the old first-two-word
+collision and new unique namespacing. The full and targeted browser
+runner wiring and deployed app remain unchanged.

@@ -146,3 +146,27 @@ def test_709_guarded_dev_only_runner_is_immutable_and_no_prod():
         "pip download", "pip install", "ssh ",
     ):
         assert forbidden not in worker
+
+
+def test_709_food_fingerprint_uses_unique_namespaced_browser_group():
+    # 709 originally used "QA709 distinct <scheme> <unique>", but the
+    # production grouping algorithm compares only first two name words.
+    # HTTP and HTTPS xdist workers could therefore merge distinct groups.
+    from app.routers.food_duplicates629 import near_name_key641
+
+    assert near_name_key641("QA709 distinct http abc") == near_name_key641(
+        "QA709 distinct https xyz"
+    )
+    assert near_name_key641("QA709aaaaaaaaaa distinct http") != near_name_key641(
+        "QA709bbbbbbbbbb distinct https"
+    )
+    source = BROWSER.read_text(encoding="utf-8")
+    for action in ("merge", "resolve", "distinct", "editable"):
+        assert f'name = "QA709" + unique + " {action} " + scheme' in source
+    assert 'group = page.locator(' in source
+    assert 'section.food629-group[aria-label="Duplicates of {name}"]' in source
+    assert 'set(group.locator(".food629-meta-grid h3").all_inner_texts())' in source
+    assert 'fingerprint = group.locator(' in source
+    assert 'assert re.fullmatch(r"[a-f0-9]{64}", fingerprint)' in source
+    assert "sha256(" not in source
+    assert 'from hashlib import sha256' not in source

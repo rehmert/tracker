@@ -7,7 +7,6 @@ HTTP and HTTPS are exercised.
 """
 from __future__ import annotations
 
-from hashlib import sha256
 import json
 import os
 from pathlib import Path
@@ -145,7 +144,7 @@ def test_709_four_food_signed_persisted_workflows(scheme):
             nutrients["energy"] = 100
 
             # Equivalent records, atomic reference-safe consolidation.
-            name = "QA709 merge " + scheme + unique
+            name = "QA709" + unique + " merge " + scheme
             keeper = seed_food(name, nutrients)
             redundant = seed_food(name, nutrients)
             signed(page, base, "/food/duplicates/merge",
@@ -162,7 +161,7 @@ def test_709_four_food_signed_persisted_workflows(scheme):
 
             # A non-equivalent unused food can be explicitly removed, but
             # not silently merged into historical nutrient values.
-            name = "QA709 resolve " + scheme + unique
+            name = "QA709" + unique + " resolve " + scheme
             keep = seed_food(name, nutrients)
             other = seed_food(name, {**nutrients, "energy": 150})
             signed(page, base, "/food/duplicates/resolve-unused",
@@ -178,29 +177,29 @@ def test_709_four_food_signed_persisted_workflows(scheme):
 
             # A genuinely different duplicate group receives a persisted
             # fingerprint acknowledgement and retains both food products.
-            name = "QA709 distinct " + scheme + unique
+            name = "QA709" + unique + " distinct " + scheme
             one = seed_food(name, nutrients)
             two = seed_food(name, {**nutrients, "energy": 175})
-            pairs = []
-            for ident in (one, two):
-                row = read(
-                    "SELECT id,name,serving_description,barcode,nutrients "
-                    "FROM tracker_food_products WHERE id=?", (ident,),
-                )
-                assert row is not None
-                pairs.append(list(row))
-            fingerprint = sha256(json.dumps(
-                pairs, sort_keys=True, ensure_ascii=False,
-                separators=(",", ":"),
-            ).encode("utf-8")).hexdigest()
-            # The browser receives the review form; the fingerprint is
-            # calculated from the same immutable rows the server reviews.
+            # The legacy duplicate scanner groups by the FIRST TWO name
+            # words, including across concurrent HTTP/HTTPS xdist workers.
+            # Unique first-word namespace above ensures only these two rows
+            # are in the intended group, even while other workers run.
             response = page.goto(base + "/food/duplicates", wait_until="networkidle")
             assert response is not None and response.status == 200
-            assert page.locator(
-                f'form[action="/food/duplicates/keep-distinct"] '
-                f'input[name="fingerprint"][value="{fingerprint}"]'
-            ).count() == 1
+            group = page.locator(
+                f'section.food629-group[aria-label="Duplicates of {name}"]'
+            )
+            assert group.count() == 1, "Distinct-review group not rendered"
+            assert set(group.locator(".food629-meta-grid h3").all_inner_texts()) == {
+                f"Version #{one}", f"Version #{two}",
+            }, "Unrelated food rows leaked into the review group"
+            # Read the *real* fingerprint supplied by the application form.
+            # Never maintain a duplicate implementation of its hashing.
+            fingerprint = group.locator(
+                'form[action="/food/duplicates/keep-distinct"] '
+                'input[name="fingerprint"]'
+            ).input_value()
+            assert re.fullmatch(r"[a-f0-9]{64}", fingerprint)
             signed(page, base, "/food/duplicates/keep-distinct",
                    {"fingerprint": fingerprint}, token,
                    lambda: read(
@@ -215,7 +214,7 @@ def test_709_four_food_signed_persisted_workflows(scheme):
             assert read("SELECT COUNT(*) FROM tracker_food_products "
                         "WHERE id IN (?,?)", (one, two)) == (2,)
 
-            name = "QA709 editable " + scheme + unique
+            name = "QA709" + unique + " editable " + scheme
             food_id = seed_food(name, nutrients)
             response = page.goto(
                 base + f"/food/saved/{food_id}/edit?day=2026-11-16",
