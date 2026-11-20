@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
+from uuid import uuid4
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
@@ -32,8 +33,27 @@ if not (
 pytestmark = pytest.mark.browser
 
 
+def seed_regimen_catalog():
+    """Only disposable browser QA data, making conditional time fields visible."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+    from app.models import RegimenItem
+
+    db_path = (DATA / "tracker.db").resolve()
+    assert db_path.is_file() and db_path.parent == DATA
+    engine = create_engine("sqlite:///" + str(db_path))
+    with Session(engine) as db:
+        db.add(RegimenItem(
+            kind="supplement", name="QA713 24h catalog " + uuid4().hex[:12],
+            active=True,
+        ))
+        db.commit()
+    engine.dispose()
+
+
 @pytest.mark.parametrize("scheme", ("http", "https"))
 def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
+    seed_regimen_catalog()
     base = HTTP_URL if scheme == "http" else HTTPS_URL
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
