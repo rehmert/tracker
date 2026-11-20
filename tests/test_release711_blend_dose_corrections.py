@@ -262,6 +262,7 @@ def test_711_legacy_blend_draw_without_entered_unit_can_be_corrected():
             headers=header, follow_redirects=False,
         )
         assert response.status_code == 303
+        print("TARGETED_711_LEGACY_CREATE=PASSED", flush=True)
         with SessionLocal() as db:
             draw = db.scalar(select(BlendDose).where(
                 BlendDose.blend_id == bid,
@@ -269,12 +270,15 @@ def test_711_legacy_blend_draw_without_entered_unit_can_be_corrected():
             assert draw is not None
             assert draw.entered_value is None and draw.entered_unit is None
             did = draw.id
+        print("TARGETED_711_LEGACY_NULLS=PASSED", flush=True)
         page = client.get(f"/doses/blends/{did}/edit")
         assert page.status_code == 200
         assert 'name="amount"' in page.text
         assert 'value="0.1"' in page.text
+        print("TARGETED_711_LEGACY_FORM=PASSED", flush=True)
         result = _edit(client, did, header, amount=".3", unit="mL")
         assert result.status_code == 303
+        print("TARGETED_711_LEGACY_EDIT=PASSED", flush=True)
     with SessionLocal() as db:
         draw = db.get(BlendDose, did)
         assert draw.volume_ml == .3
@@ -285,6 +289,7 @@ def test_711_legacy_blend_draw_without_entered_unit_can_be_corrected():
         ))
         assert json.loads(event.before_json)["entered_value"] is None
         assert json.loads(event.before_json)["entered_unit"] is None
+        print("TARGETED_711_LEGACY_AUDIT=PASSED", flush=True)
 
 
 def test_711_single_compound_mass_correction_keeps_same_physical_blend():
