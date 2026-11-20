@@ -597,7 +597,8 @@ async def record_blend_dose(blend_id: int, request: Request, db: Session = Depen
         if kind not in ('dose', 'waste'):
             raise ValueError('Invalid record type.')
         previous_remaining = blend_remaining(blend)
-        draw = BlendDose(blend_id=blend.id, taken_at=when, volume_ml=volume,
+        draw = BlendDose(id=next_blend_dose_id711(db), blend_id=blend.id,
+                         taken_at=when, volume_ml=volume,
                          kind=kind, notes=str(form.get('notes', '')).strip())
         db.add(draw)
         db.flush()
