@@ -42,6 +42,7 @@ while IFS= read -r path; do
     scripts/tracker-browser-qualify.sh|\
     scripts/tracker-csrf-positive707.sh|\
     tests/browser/test_csrf_regimen_catalog707.py|\
+    tests/browser/test_csrf_workout_lifecycles707.py|\
     tests/test_browser_qualification511.py|\
     tests/test_release707_csrf_positive.py|\
     docs/release-707-csrf-positive.md) ;;
@@ -103,6 +104,6 @@ bash scripts/tracker-browser-qualify.sh "$QA" "$PY" \
   --targeted-strict csrf-positive707
 
 echo "RELEASE_707_TARGETED_POSITIVE=PASSED_NOT_GLOBAL_CLEARANCE"
-echo "RELEASE_707_VALIDATED_SIGNED_ROUTE_COUNT=12"
+echo "RELEASE_707_VALIDATED_SIGNED_ROUTE_COUNT=29"
 echo "RELEASE_707_UNMAPPED_HISTORICAL_ROUTE_GAPS=92_NOT_YET_RECONCILED"
 echo "RELEASE_707_GLOBAL_CSRF=BLOCKED_PENDING_OTHER_REAL_WRITES"

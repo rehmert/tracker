@@ -41,6 +41,7 @@ STRICT_ONLY = frozenset({
     # Release 707: twelve real signed positive lifecycle routes require
     # the isolated strict server, never report-only standard browser QA.
     "tests/browser/test_csrf_regimen_catalog707.py",
+    "tests/browser/test_csrf_workout_lifecycles707.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",

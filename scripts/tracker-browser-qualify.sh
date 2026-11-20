@@ -534,6 +534,13 @@ run_isolated_browser_module \
     1 "$ROOT/strict-regimen-catalog707.log"
 echo "STRICT_CSRF_707_TWELVE_POSITIVE_LIFECYCLES=PASSED"
 
+# Release 707: seventeen additional Workout writes, including offline sync.
+# The two browser schemes run sequentially to honor the singleton workout.
+run_isolated_browser_module \
+    tests/browser/test_csrf_workout_lifecycles707.py \
+    1 "$ROOT/strict-workout-positive707.log"
+echo "STRICT_CSRF_707_WORKOUT_17_POSITIVE_LIFECYCLES=PASSED"
+
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
     1 "$ROOT/strict-labs500.log"
@@ -592,8 +599,12 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive707 ]]; then
   run_isolated_browser_module \
       tests/browser/test_csrf_regimen_catalog707.py \
       1 "$ROOT/positive707-regimen-catalog.log"
+  run_isolated_browser_module \
+      tests/browser/test_csrf_workout_lifecycles707.py \
+      1 "$ROOT/positive707-workout.log"
+  echo "TARGETED_CSRF_707_WORKOUT_17_SIGNED_LIFECYCLES=PASSED"
   echo "TARGETED_CSRF_707_TWELVE_SIGNED_LIFECYCLES=PASSED"
-  echo "TARGETED_CSRF_707_SCOPE=TWELVE_REAL_WRITES_NOT_FULL_CSRF_CLEARANCE"
+  echo "TARGETED_CSRF_707_SCOPE=29_REAL_WRITES_NOT_FULL_CSRF_CLEARANCE"
   exit 0
 fi
 

@@ -70,3 +70,29 @@ A targeted Release 707 pass **never** approves global strict CSRF or
 claims Issue #9 is fully resolved. The full strict browser and backend
 security suites, independent session/secondary-account approval, and
 safely reversible DEV and PROD rollout remain required before closeout.
+
+
+## Additional 17 Workout signed positives (Release 654–668)
+
+The same Release 707 targeted and full strict-Chromium gates now run a
+second module covering seventeen new Workout write routes. It exercises
+equipment creation, settings, load interpretation, routine creation and
+equipment selection, routine scheduling and clearing, duplication and
+item removal, quick routine start, set logging, repeat, offline sync
+(including idempotent duplicate receipt), finish, historical set correction,
+completed-session reuse as routine, and free quick workout start.
+
+Each route submits the same valid business input first with missing and
+forged tokens (both must deny with 403 and leave the relevant SQLite row
+unchanged) and then with the actual browser session token (which must
+succeed, persist the expected data and report `valid`). Both HTTP and
+HTTPS are exercised SEQUENTIALLY, not in separate xdist workers, because
+Tracker has one active session per scoped workout database. The test
+finishes its synthetic active session.
+
+Thus 12 + 17 = **29 distinct previously unqualified routes have newly
+authored positive/negative browser acceptance tests**. They are not
+counted as runtime-qualified until the guarded DEV browser run passes,
+and the historical 92-route backlog is not falsified or silently
+decremented. Other 63 route gaps plus 155 manual and six session/account
+reviews remain subject to their separate witnesses.
