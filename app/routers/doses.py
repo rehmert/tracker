@@ -1080,10 +1080,11 @@ async def update_blend_dose711(
     except (ValueError, TypeError) as exc:
         db.rollback()
         return services.flash_redirect(back, err=str(exc))
-    return services.flash_redirect(
-        "/doses#dose-history-unified614",
-        msg="Prepared-blend dose corrected.",
+    response = services.flash_redirect(
+        "/doses", msg="Prepared-blend dose corrected.",
     )
+    response.headers["location"] += "#dose-history-unified614"
+    return response
 
 
 @router.post("/doses/blends/{did}/delete")
@@ -1119,7 +1120,8 @@ def delete_blend_dose711(
             else "in_use"
         )
     db.commit()
-    return services.flash_redirect(
-        "/doses#dose-history-unified614",
-        msg="Prepared-blend withdrawal deleted and inventory restored.",
+    response = services.flash_redirect(
+        "/doses", msg="Prepared-blend withdrawal deleted and inventory restored.",
     )
+    response.headers["location"] += "#dose-history-unified614"
+    return response
