@@ -50,7 +50,7 @@ def seed_time_entry_fixtures():
         ))
         db.add(WorkoutEquipment654(
             gym="QA713 Gym", name="QA713 Machine " + uuid4().hex[:12],
-            kind="machine",
+            kind="selectorized",
         ))
         db.commit()
     engine.dispose()
