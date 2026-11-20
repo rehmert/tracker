@@ -21,5 +21,17 @@ bash -n scripts/tracker-install710.sh
   tests/test_release564_blend_dose_selector.py \
   tests/test_blends.py \
   tests/test_release611_blend_calendar.py \
+  tests/test_stage17_dose_blend_integrity.py \
+  tests/test_dose_final_review.py \
+  tests/test_dose_disposable_review.py \
+  tests/test_dose_sequential_workflow.py \
+  tests/test_dose_transaction_cleanup.py \
+  tests/test_dose_unit_aware_supply_inputs.py \
+  tests/test_dose_correction_net_inventory.py \
   tests/test_browser_qualification511.py::test_511_every_browser_module_in_disposable_qualification
 echo "RELEASE_710_SCOPED_BACKEND=PASSED"
+# Re-qualify the real signed HTTP+HTTPS dose flow in an independently
+# disposable Chromium candidate before either DEV or PROD is changed.
+bash scripts/tracker-browser-qualify.sh "$ROOT" "$PY" \
+  --targeted-strict blend-vial710
+echo "RELEASE_710_SCOPED_BROWSER=PASSED"
