@@ -153,3 +153,17 @@ def test_710_guarded_install_scripts_parse_and_keep_schema_approval():
     remote = source("scripts/tracker_prod_remote568.sh")
     assert 'elif [[ "$RELEASE" == 710 ]]; then' in remote
     assert 'DEPLOY_EXTRA=(--reviewed-blend-710 --db-migration)' in remote
+
+
+def test_710_modified_static_assets_use_fresh_template_urls_before_install():
+    base = source("app/templates/base.html")
+    doses = source("app/templates/doses.html")
+    assert base.count("/static/dose_context.js?v=710") == 1
+    assert doses.count("/static/js/tracker-dose-fast602.js?v=710") == 1
+    assert "dose_context.js?v=20261030-210017" not in base
+    assert "tracker-dose-fast602.js?v=602" not in doses
+    historical = source("tests/test_release602_mobile_bundle.py")
+    assert '"tracker-dose-fast602.js?v=710"' in historical
+    worker = source("scripts/tracker-blend-vial710.sh")
+    assert "scripts/tracker-impact-preflight604.py" in worker
+    assert "RELEASE_710_ASSET_IMPACT_PREFLIGHT=PASSED" in worker
