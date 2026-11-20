@@ -1,0 +1,18 @@
+{
+  "action": "qualify",
+  "base": "1f2982975494ece2bceea3ce85617447f712b399",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "GateError",
+  "finished_at_utc": "2026-11-20T18:23:21+00:00",
+  "markers": [],
+  "previous_request_id": null,
+  "ref": "release/713-timeline-simple-blends-time24",
+  "release": 713,
+  "request_id": "r713-ba5434ac8c83",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T18:23:20+00:00",
+  "status": "failed",
+  "target": "ba5434ac8c8386cbd6689d087c6a3b606a95fb23",
+  "test_counts": []
+}
