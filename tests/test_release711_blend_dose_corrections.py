@@ -332,3 +332,42 @@ def test_711_two_draws_reserve_each_others_volume_and_corrections_reopen_stock()
             assert db.get(BlendDose, second) is not None
             assert abs(remaining_blend_ml710(blend) - 1.5) < 1e-9
             assert db.query(DoseLog).filter(DoseLog.vial_id.in_(source_ids)).count() == 0
+
+
+def test_711_deleted_blend_draw_identity_is_never_reused_for_a_new_draw():
+    # SQLite INTEGER PRIMARY KEY otherwise reuses the largest removed ID.
+    # Audit events must always belong to the ORIGINAL physical withdrawal.
+    bid, _, _, _ = _seed()
+    with TestClient(app) as client:
+        headers = _header(client)
+        original_id = _create(client, bid, headers)
+        corrected = _edit(client, original_id, headers, amount=".25")
+        assert corrected.status_code == 303
+        removed = client.post(
+            f"/doses/blends/{original_id}/delete",
+            data={"confirm_delete": "yes"},
+            headers=headers, follow_redirects=False,
+        )
+        assert removed.status_code == 303
+        new_id = _create(client, bid, headers, volume=".2")
+        assert new_id > original_id
+        legacy = client.post(
+            f"/blends/{bid}/doses",
+            data={"submission_token": str(uuid4()), "taken_at": "2026-11-20T11:00",
+                  "volume_ml": ".2", "kind": "dose", "notes": "QA711 legacy flow"},
+            headers=headers, follow_redirects=False,
+        )
+        assert legacy.status_code == 303
+        with SessionLocal() as db:
+            physical_ids = list(db.scalars(select(BlendDose.id).where(
+                BlendDose.blend_id == bid,
+            ).order_by(BlendDose.id)))
+            assert len(physical_ids) == 2
+            assert physical_ids[0] == new_id
+            assert physical_ids[1] > new_id
+            audit = list(db.scalars(select(ChangeAudit).where(
+                ChangeAudit.entity_type == "blend_dose",
+                ChangeAudit.entity_id == original_id,
+            ).order_by(ChangeAudit.id)))
+            assert [event.action for event in audit] == ["edit", "delete"]
+            assert db.get(BlendDose, original_id) is None
