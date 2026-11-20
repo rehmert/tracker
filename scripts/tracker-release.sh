@@ -81,7 +81,7 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"; FULL_SUITE="${14:-0}"; REVIEWED_WORKOUT_654="${15:-0}"; REVIEWED_WORKOUT_655="${16:-0}"; REVIEWED_WORKOUT_667="${17:-0}"; REVIEWED_WORKOUT_668="${18:-0}"; REVIEWED_COA_691="${19:-0}"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"; FULL_SUITE="${14:-0}"; REVIEWED_WORKOUT_654="${15:-0}"; REVIEWED_WORKOUT_655="${16:-0}"; REVIEWED_WORKOUT_667="${17:-0}"; REVIEWED_WORKOUT_668="${18:-0}"; REVIEWED_COA_691="${19:-0}"; REVIEWED_BLEND_710="${20:-0}"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
  [[ "$FULL_SUITE" == 0 || "$FULL_SUITE" == 1 ]] || fail "Invalid full-suite setting"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0; RESUME_645_VERIFIED=0
@@ -145,6 +145,14 @@ worker() {
    "$PY" "$QA/scripts/tracker_schema_review691.py" --root "$APP" --base "$BASE" --target "$TARGET" ||
      fail "Release 691 COA identifiers schema review failed"
    echo "COA_691_SCHEMA_PROCEDURE=AUTHORIZED"
+  elif [[ "$REVIEWED_BLEND_710" == 1 ]]; then
+   [[ "$INSTANCE" == DEV && "$REF" == release/710-unified-blend-vial-dosing ||
+      "$INSTANCE" == PROD && "$REF" == main ]] ||
+     fail "Release 710 blend schema review restricted to exact branch"
+   g worktree add --detach "$QA" "$TARGET"
+   "$PY" "$QA/scripts/tracker_schema_review710.py" --root "$APP" --base "$BASE" --target "$TARGET" ||
+     fail "Release 710 exact additive blend-dose schema review failed"
+   echo "BLEND_710_SCHEMA_PROCEDURE=AUTHORIZED"
   elif [[ "$REVIEWED_COA_652" == 1 ]]; then
    [[ "$INSTANCE" == DEV && "$REF" == release/652-coa-test-type-catalog ||
       "$INSTANCE" == PROD && "$REF" == main ]] ||
@@ -200,7 +208,7 @@ worker() {
   else
    fail "Schema changes require a reviewed schema flag"
   fi
- elif [[ "$REVIEWED_FACTS_639" == 1 || "$REVIEWED_REGIMEN_635" == 1 || "$REVIEWED_COA_643" == 1 || "$REVIEWED_COA_645" == 1 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_COA_691" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 || "$REVIEWED_WORKOUT_667" == 1 || "$REVIEWED_WORKOUT_668" == 1 ]]; then
+ elif [[ "$REVIEWED_FACTS_639" == 1 || "$REVIEWED_REGIMEN_635" == 1 || "$REVIEWED_COA_643" == 1 || "$REVIEWED_COA_645" == 1 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_COA_691" == 1 || "$REVIEWED_BLEND_710" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 || "$REVIEWED_WORKOUT_667" == 1 || "$REVIEWED_WORKOUT_668" == 1 ]]; then
   fail "Reviewed schema flag supplied without a schema change"
  fi
  if [[ "$DB_MIGRATION" == 0 ]] &&
@@ -422,6 +430,11 @@ PY
   timeout 360 bash "$QA/scripts/tracker-release-scoped654.sh" "$PY"
   echo "RELEASE_SCOPED_PREFLIGHT=PASSED"
  fi
+ if [[ "$INSTANCE" == PROD && "$REVIEWED_BLEND_710" == 1 ]]; then
+  echo "=== RELEASE 710 PROD SCOPED BLEND VIAL DOSE QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped710.sh" "$PY"
+  echo "RELEASE_710_PROD_SCOPED=PASSED"
+ fi
  if [[ "$INSTANCE" == PROD && "$REVIEWED_COA_691" == 1 ]]; then
   echo "=== RELEASE 691 PROD SCOPED COA DOCUMENT QUALIFICATION ==="
   timeout 360 bash "$QA/scripts/tracker-release-scoped691.sh" "$PY"
@@ -622,11 +635,11 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -ge 12 && $# -le 19 ]] || fail "Bad worker arguments"
+ [[ $# -ge 12 && $# -le 20 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; REVIEWED_COA_652=0; REVIEWED_WORKOUT_654=0; REVIEWED_WORKOUT_655=0; REVIEWED_WORKOUT_667=0; REVIEWED_WORKOUT_668=0; FULL_SUITE=0; RESUME_VERIFIED_645=0; REVIEWED_COA_691=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; REVIEWED_COA_652=0; REVIEWED_WORKOUT_654=0; REVIEWED_WORKOUT_655=0; REVIEWED_WORKOUT_667=0; REVIEWED_WORKOUT_668=0; FULL_SUITE=0; RESUME_VERIFIED_645=0; REVIEWED_COA_691=0; REVIEWED_BLEND_710=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
@@ -638,6 +651,7 @@ while (( $# )); do
   --reviewed-coa-645) REVIEWED_COA_645=1; shift;;
   --reviewed-coa-652) REVIEWED_COA_652=1; shift;;
   --reviewed-coa-691) REVIEWED_COA_691=1; shift;;
+  --reviewed-blend-710) REVIEWED_BLEND_710=1; shift;;
   --reviewed-workout-654) REVIEWED_WORKOUT_654=1; shift;;
   --reviewed-workout-655) REVIEWED_WORKOUT_655=1; shift;;
   --reviewed-workout-667) REVIEWED_WORKOUT_667=1; shift;;
@@ -670,8 +684,17 @@ done
 [[ "$REVIEWED_COA_645" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA 645 requires --db-migration"
 [[ "$REVIEWED_COA_652" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA 652 requires --db-migration"
 [[ "$REVIEWED_COA_691" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed COA 691 requires --db-migration"
-if [[ "$REVIEWED_COA_691" == 1 ]]; then
+[[ "$REVIEWED_BLEND_710" == 0 || "$DB_MIGRATION" == 1 ]] || fail "Reviewed blend 710 requires --db-migration"
+if [[ "$REVIEWED_BLEND_710" == 1 ]]; then
   [[ "$REVIEWED_REGIMEN_635" == 0 && "$REVIEWED_FACTS_639" == 0 &&
+     "$REVIEWED_COA_643" == 0 && "$REVIEWED_COA_645" == 0 &&
+     "$REVIEWED_COA_652" == 0 && "$REVIEWED_COA_691" == 0 &&
+     "$REVIEWED_WORKOUT_654" == 0 && "$REVIEWED_WORKOUT_655" == 0 &&
+     "$REVIEWED_WORKOUT_667" == 0 && "$REVIEWED_WORKOUT_668" == 0 ]] ||
+     fail "Release 710 must be the sole reviewed schema flag"
+fi
+if [[ "$REVIEWED_COA_691" == 1 ]]; then
+  [[ "$REVIEWED_BLEND_710" == 0 && "$REVIEWED_REGIMEN_635" == 0 && "$REVIEWED_FACTS_639" == 0 &&
      "$REVIEWED_COA_643" == 0 && "$REVIEWED_COA_645" == 0 &&
      "$REVIEWED_COA_652" == 0 && "$REVIEWED_WORKOUT_654" == 0 &&
      "$REVIEWED_WORKOUT_655" == 0 && "$REVIEWED_WORKOUT_667" == 0 &&
@@ -717,7 +740,7 @@ fi
 MEMORY_PROPERTY="MemoryMax=16G"
 echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
 systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
- /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645" "$REVIEWED_COA_652" "$FULL_SUITE" "$REVIEWED_WORKOUT_654" "$REVIEWED_WORKOUT_655" "$REVIEWED_WORKOUT_667" "$REVIEWED_WORKOUT_668" "$REVIEWED_COA_691"
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645" "$REVIEWED_COA_652" "$FULL_SUITE" "$REVIEWED_WORKOUT_654" "$REVIEWED_WORKOUT_655" "$REVIEWED_WORKOUT_667" "$REVIEWED_WORKOUT_668" "$REVIEWED_COA_691" "$REVIEWED_BLEND_710"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
 if (( FOLLOW )); then
