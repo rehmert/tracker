@@ -17,7 +17,7 @@ for script in \
 done
 
 "$PY" -m py_compile tests/test_release714_routine_alignment.py
-"$PY" -m pytest -q --tb=short --maxfail=1 \
+"$PY" -m pytest -q -s --tb=short --maxfail=1 \
   tests/test_release714_routine_alignment.py \
   tests/test_workouts655.py \
   tests/test_workout_guides668.py \
