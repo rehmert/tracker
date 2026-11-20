@@ -109,6 +109,10 @@ cd "$QA"
 export PYTHONPATH="$QA" TRACKER_DATA_DIR="$RUN/data"
 export PYTHONDONTWRITEBYTECODE=1
 
+"$PY" -B scripts/tracker-impact-preflight604.py \
+    --base "$BASE" --target "$TARGET" --root "$QA"
+echo "RELEASE_710_ASSET_IMPACT_PREFLIGHT=PASSED"
+
 bash -n scripts/tracker-blend-vial710.sh
 bash -n scripts/tracker-browser-qualify.sh
 bash -n scripts/tracker-release.sh
