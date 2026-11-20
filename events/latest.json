@@ -1,11 +1,11 @@
 {
-  "schema": 1,
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
-  "request_id": "r711-925bf13e6d74",
-  "release": 711,
-  "action": "dev_install",
-  "status": "passed",
-  "target": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r711-925bf13e6d74.json"
+  "receipt_path": "receipts/r711-53a6c812de94.json",
+  "release": 711,
+  "request_id": "r711-53a6c812de94",
+  "schema": 1,
+  "status": "passed",
+  "target": "7c662491c3a233b3df60842bbaeaa2dfbc995f06"
 }
