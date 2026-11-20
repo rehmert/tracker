@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r711-53a6c812de94",
-  "action": "prod_preflight",
+  "request_id": "r711-0c47e2b8196a",
+  "action": "prod_deploy",
   "release": 711,
   "target": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
   "base": "5e78dfcdc8d9612266aa2aca26755957bad02561",
   "ref": "release/711-blend-dose-corrections",
-  "previous_request_id": "r711-925bf13e6d74"
+  "previous_request_id": "r711-53a6c812de94"
 }
