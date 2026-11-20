@@ -11,7 +11,7 @@ fail() { echo "RELEASE_711_BLOCKED=$*" >&2; exit 1; }
   fail "Expected exact candidate SHA"
 TARGET="$1"
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev &&
-   -n "\${INVOCATION_ID:-}" ]] || fail "Root systemd worker on tracker-dev required"
+   -n "${INVOCATION_ID:-}" ]] || fail "Root systemd worker on tracker-dev required"
 [[ "$(readlink /proc/self/ns/net)" != "$(readlink /proc/1/ns/net)" ]] ||
   fail "PrivateNetwork=yes required"
 [[ -x "$PY" && -d "$APP/.git" ]] || fail "Installed DEV source missing"
