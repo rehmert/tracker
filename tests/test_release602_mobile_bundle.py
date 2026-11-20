@@ -24,7 +24,7 @@ def test_602_dose_draft_fastpath_and_original_form():
         "tracker-dose-fast602",
         "tracker-dose-progress602",
         "tracker-dose-history602.js?v=602",
-        "tracker-dose-fast602.js?v=602",
+        "tracker-dose-fast602.js?v=710",
         "tracker-mobile-daily602.css?v=602",
         'id="tracker-dose-amount602"',
         'id="tracker-dose-when602"',
