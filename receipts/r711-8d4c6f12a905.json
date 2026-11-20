@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "5e78dfcdc8d9612266aa2aca26755957bad02561",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release711_blend_dose_corrections.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-20T14:39:47+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_711_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_711_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_711_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/711-blend-dose-corrections",
+  "release": 711,
+  "request_id": "r711-8d4c6f12a905",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T14:39:40+00:00",
+  "status": "failed",
+  "target": "573ce28e9301b2d0e67abd0b936ca2a51d628ad5",
+  "test_counts": [
+    "3 passed, 1 warning"
+  ]
+}
