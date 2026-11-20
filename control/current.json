@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r713-ef28c91a53b0",
-  "action": "prod_preflight",
+  "request_id": "r713-17cb9e5f40a2",
+  "action": "prod_deploy",
   "release": 713,
   "target": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
   "base": "1f2982975494ece2bceea3ce85617447f712b399",
   "ref": "release/713-timeline-simple-blends-time24",
-  "previous_request_id": "r713-6e31c8a49db2"
+  "previous_request_id": "r713-ef28c91a53b0"
 }
