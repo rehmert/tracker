@@ -221,3 +221,117 @@ def safe_diagnostics(data: str) -> dict:
 def validate_success(command: dict, output: str) -> None:
     action = command['action']
     target = command['target']
+    lines = output.splitlines()
+    if action == 'qualify':
+        required = ['RELEASE_%s_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY' % command['release'],
+                    'RELEASE_%s_EXIT_STATUS=0' % command['release']]
+    elif action == 'dev_install':
+        required = ['RELEASE_%s_DEV_INSTALL=SUCCESS' % command['release']]
+        clean_main(target)
+    elif action == 'prod_preflight':
+        required = ['PREFLIGHT=PASSED', 'DRY_RUN=PASSED (no approval, push, or deployment performed)']
+    else:
+        required = ['DEV_CONTROLLED_RELEASE=SUCCESS', f'PROD_INSTALLED_COMMIT={target}']
+    for expected in required:
+        if expected not in lines:
+            raise GateError('Expected success marker missing: ' + expected.split('=', 1)[0])
+
+
+def atomic_json(path: Path, value: dict) -> None:
+    data = (json.dumps(value, sort_keys=True, indent=2) + '\n').encode()
+    fd, filename = tempfile.mkstemp(prefix='.pending-', dir=path.parent)
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, 'wb') as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(filename, path)
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(filename)
+
+
+def publish_receipt(receipt: dict) -> None:
+    req = receipt['request_id']
+    for attempt in range(3):
+        fetch(RECEIPT_BRANCH)
+        existing = json_read(show(RECEIPT_REF, f'receipts/{req}.json'))
+        if existing is not None:
+            if existing != receipt:
+                raise GateError('Conflicting published receipt for request ID')
+            return
+        parent = git('rev-parse', RECEIPT_REF).decode().strip()
+        with tempfile.TemporaryDirectory(prefix='tracker-index-', dir=STATE) as d:
+            env = os.environ.copy()
+            env['GIT_INDEX_FILE'] = str(Path(d) / 'index')
+            env['GIT_AUTHOR_NAME'] = 'Tracker Release Agent'
+            env['GIT_AUTHOR_EMAIL'] = 'tracker-release-agent@localhost'
+            env['GIT_COMMITTER_NAME'] = env['GIT_AUTHOR_NAME']
+            env['GIT_COMMITTER_EMAIL'] = env['GIT_AUTHOR_EMAIL']
+            git('read-tree', parent, env=env)
+            data = (json.dumps(receipt, sort_keys=True, indent=2) + '\n').encode()
+            blob = git('hash-object', '-w', '--stdin', input_bytes=data, env=env).decode().strip()
+            for path in (f'receipts/{req}.json', LATEST_PATH):
+                git('update-index', '--add', '--cacheinfo', f'100644,{blob},{path}', env=env)
+            tree = git('write-tree', env=env).decode().strip()
+            commit = git('commit-tree', tree, '-p', parent, '-m', f'Tracker {req} {receipt["action"]}: {receipt["status"]}', env=env).decode().strip()
+        process = subprocess.run(
+            ['git', '-c', f'safe.directory={APP}', '-C', str(APP),
+             'push', 'origin', f'{commit}:refs/heads/{RECEIPT_BRANCH}'],
+            capture_output=True, timeout=90,
+        )
+        if process.returncode == 0:
+            print(f'RELEASE_RECEIPT_PUBLISHED={req}', flush=True)
+            return
+        time.sleep(1 + attempt)
+    raise GateError('Unable to publish receipt (GitHub push rejected)')
+
+
+def execute(command: dict) -> dict:
+    req = command['request_id']
+    started = utcnow()
+    log_path = LOGS / f'{req}.log'
+    output = ''
+    code = 1
+    status = 'failed'
+    failure = ''
+    try:
+        with tempfile.TemporaryDirectory(prefix=f'{req}-', dir=STATE) as d:
+            argv = command_for_stage(command, Path(d))
+            with log_path.open('wb') as handle:
+                os.chmod(log_path, 0o600)
+                handle.write(f'RUN={req} ACTION={command["action"]} STARTED={started}\n'.encode())
+                handle.flush()
+                proc = subprocess.run(argv, stdout=handle, stderr=subprocess.STDOUT,
+                                      check=False, timeout=3000, stdin=subprocess.DEVNULL)
+                code = proc.returncode
+            output = log_path.read_text(encoding='utf-8', errors='replace')
+            if code:
+                failure = failure_kind(output)
+                raise GateError('Stage command failed with exit code ' + str(code))
+            validate_success(command, output)
+            status = 'passed'
+    except (GateError, OSError, subprocess.TimeoutExpired, subprocess.SubprocessError) as exc:
+        if not failure:
+            failure = type(exc).__name__
+        # Raw error message and full log remain local; only error category goes to GitHub.
+        with log_path.open('ab') as handle:
+            handle.write(('\nLOCAL_STAGE_ERROR=' + str(exc)[:600] + '\n').encode())
+        if not output and log_path.is_file():
+            output = log_path.read_text(encoding='utf-8', errors='replace')
+    receipt = {
+        **command,
+        'status': status,
+        'exit_code': code,
+        'started_at_utc': started,
+        'finished_at_utc': utcnow(),
+        'failure_category': failure or None,
+        **safe_diagnostics(output),
+    }
+    return receipt
+
+
+def main() -> int:
+    if os.geteuid() != 0 or os.uname().nodename.split('.')[0] != 'tracker-dev':
+        raise GateError('Release agent may only run as root on tracker-dev')
