@@ -19,6 +19,7 @@ from ..blend_dose_unified710 import (
     resolve_blend_draw710,
 )
 from ..inventory_lock import reserve_inventory_write, require_inventory_write
+from ..blend_dose_identity711 import next_blend_dose_id711
 from .. import manual_supplies
 from ..templating import render
 
