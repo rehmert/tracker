@@ -33,11 +33,12 @@ if not (
 pytestmark = pytest.mark.browser
 
 
-def seed_regimen_catalog():
+def seed_time_entry_fixtures():
     """Only disposable browser QA data, making conditional time fields visible."""
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
     from app.models import RegimenItem
+    from app.workout_models654 import WorkoutEquipment654
 
     db_path = (DATA / "tracker.db").resolve()
     assert db_path.is_file() and db_path.parent == DATA
@@ -47,13 +48,17 @@ def seed_regimen_catalog():
             kind="supplement", name="QA713 24h catalog " + uuid4().hex[:12],
             active=True,
         ))
+        db.add(WorkoutEquipment654(
+            gym="QA713 Gym", name="QA713 Machine " + uuid4().hex[:12],
+            kind="machine",
+        ))
         db.commit()
     engine.dispose()
 
 
 @pytest.mark.parametrize("scheme", ("http", "https"))
 def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
-    seed_regimen_catalog()
+    seed_time_entry_fixtures()
     base = HTTP_URL if scheme == "http" else HTTPS_URL
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
