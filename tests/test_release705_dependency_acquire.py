@@ -150,6 +150,10 @@ def test_705_acquisition_never_calls_install_or_modifies_prod():
     assert 'lock.create(wheels, receipts)' in python
     assert 'lock.verify(wheels, receipts)' in python
     assert 'pypi_digest_record(row)' in python
+    assert 'DEPENDENCY_705_WHEEL_DOWNLOAD=SKIPPED_REUSING_RETAINED_BYTES' in python
+    assert 'validated_retained_root(root, pins)' in python
+    assert '--verify-retained' in bash
+    assert '--verify-retained "$RETAINED"' in bash
     assert 'DEPENDENCY_705_REPLAY=NOT_EXECUTED' in python
     assert 'DEPENDENCY_705_ACQUISITION=PASSED_DOWNLOAD_ONLY' in python
     assert 'DEPENDENCY_705_INSTALLED_SOURCE_UNCHANGED=VERIFIED' in bash
@@ -175,3 +179,24 @@ def test_705_acquisition_never_calls_install_or_modifies_prod():
         '"tracker-release.sh"',
     ):
         assert forbidden not in python
+
+
+def test_705_retained_receipts_must_match_exact_root_and_pins(tmp_path, monkeypatch):
+    # The root must be an exact /tmp acquisition from this workflow, never
+    # an arbitrary pytest or user-supplied directory.
+    with pytest.raises(acquisition.AcquisitionError, match="unsafe"):
+        acquisition.validated_retained_root(tmp_path, {"pip": "25.1.1"})
+
+
+def test_705_resume_mode_skips_pip_download(monkeypatch, capsys):
+    # No host/path mutation is needed for the CLI dispatch contract.
+    observed = []
+    monkeypatch.setattr(
+        acquisition, "acquire",
+        lambda *, retained_root=None: observed.append(retained_root)
+    )
+    path = Path("/tmp/tracker705-wheel-acquire.abcdefgh")
+    assert acquisition.main(["--verify-retained", str(path)]) == 0
+    assert observed == [path]
+    assert acquisition.main([]) == 0
+    assert "DEPENDENCY_705_DOWNLOAD=NOT_EXECUTED_REQUIRE_EXPLICIT_FLAG" in capsys.readouterr().out

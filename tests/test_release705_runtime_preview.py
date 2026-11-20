@@ -405,3 +405,20 @@ def test_705_download_only_acquisition_guarded_and_separate_from_installs():
         'TRACKER_CSRF_ENFORCE=1', '/etc/tracker.env', 'tracker-release.sh',
     ):
         assert forbidden not in executable_shell
+
+
+def test_705_playwright_tag_exception_is_strict_and_retained_mode_is_no_download():
+    readiness = (ROOT / "scripts/tracker_dependency_readiness705.py").read_text()
+    acquire = (ROOT / "scripts/tracker_dependency_acquire705.py").read_text()
+    shell = (ROOT / "scripts/tracker-dependency-acquire705.sh").read_text()
+    assert 'PLAYWRIGHT_1641_SHA256' in readiness
+    assert 'name == "playwright"' in readiness
+    assert 'version == "1.64.1"' in readiness
+    assert 'path.name == PLAYWRIGHT_1641_WHEEL' in readiness
+    assert 'lock.digest(path) == PLAYWRIGHT_1641_SHA256' in readiness
+    assert 'and not filename_tags.issubset(internal_tags)' in readiness
+    assert 'readiness.wheelhouse_audit(wheels)' in acquire
+    assert 'DEPENDENCY_705_WHEEL_DOWNLOAD=SKIPPED_REUSING_RETAINED_BYTES' in acquire
+    assert 'validated_retained_root(root, pins)' in acquire
+    assert '"$PY" -B scripts/tracker_dependency_acquire705.py --verify-retained "$RETAINED"' in shell
+    assert 'scripts/tracker_dependency_acquire705.py --execute-download' in shell

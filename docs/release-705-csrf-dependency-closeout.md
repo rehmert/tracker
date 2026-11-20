@@ -578,3 +578,34 @@ the new scripts and offline-only tests. A full browser pass on a
 previous SHA is not silently assigned to the new SHA; the 705 release
 remains unapproved pending the remaining security and independent
 dependency replay evidence.
+
+
+### Exact PyPI Playwright 1.64.1 wheel-tag mismatch and retained-byte retry
+
+Download-only acquisition obtained all **44** pinned wheels but stopped
+inside the additional wheel archive validator on Playwright 1.64.1:
+the published platform-specific Linux wheel filename's compatibility
+tag disagrees with its internal `WHEEL` tags. The 1.64.1 upstream
+`setup.py` explicitly copies a base wheel to the Linux-tagged
+filename and appends the platform-specific driver, explaining the
+observed discrepancy. This was **not** evidence of failed HTTP
+downloads or installed package drift.
+
+The verification now preserves the strict tag equality requirement
+for all other wheels and allows a single documented Playwright
+exception only for
+`playwright-1.64.1-py3-none-manylinux1_x86_64.whl` whose complete
+bytes SHA-256 equal PyPI's published release checksum
+`577b8d88778c245cfbd145ae17cf53044f084b1b46c55c69081d4069d56057e2`.
+It requires compatible filename tags and the usual METADATA, dependency,
+RECORD and archive safety checks. It prints a distinct exception marker
+and never silently claims this upstream artifact has matching tags.
+
+The acquisition wrapper additionally supports
+`--verify-retained /tmp/tracker705-wheel-acquire.XXXXXXXX`: it verifies
+the exact private owner/mode, original approved 44 pins and existing
+wheelhouse, then **skips all wheel downloads**, while still checking
+PyPI's live JSON SHA-256 listing for each wheel and creating hash lock
+receipts. The retained path must be explicitly supplied; no arbitrary
+or latest directory is trusted. Installed DEV and PROD remain unchanged.
+Issue #10 still requires independent replay, OS/browser proof and rollback.

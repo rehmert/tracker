@@ -11,9 +11,16 @@ BASE=24cb9ec47417e001c3f96dfed630e3b8b0264d93
 REF=release/705-csrf-dependency-closeout
 fail() { echo "DEPENDENCY_705_ACQUIRE_ERROR=$*" >&2; exit 1; }
 
-[[ "$#" == 1 && "$1" =~ ^[0-9a-f]{40}$ ]] ||
-  fail 'Exactly one approved 40-character candidate SHA required'
+[[ ("$#" == 1 || "$#" == 3) && "$1" =~ ^[0-9a-f]{40}$ ]] ||
+  fail 'Exact candidate SHA, optional --verify-retained /tmp/PRIVATE required'
 TARGET="$1"
+RETAINED=""
+if [[ "$#" == 3 ]]; then
+  [[ "$2" == --verify-retained &&
+     "$3" =~ ^/tmp/tracker705-wheel-acquire[.][A-Za-z0-9_]{8}$ ]] ||
+    fail 'Only one explicitly named retained acquisition root may be reused'
+  RETAINED="$3"
+fi
 [[ "$(id -u)" == 0 && "$(hostname -s)" == tracker-dev &&
    -n "${INVOCATION_ID:-}" ]] ||
   fail 'Run as root systemd worker on tracker-dev'
@@ -91,9 +98,16 @@ echo 'DEPENDENCY_705_ACQUIRE_BASELINE_PREFLIGHT=PASSED'
 # Script is opt-in, downloads only wheels from HTTPS PyPI into separate
 # private /tmp storage. Retain wheelhouse and receipts independently
 # of the ephemeral source worktree even when acquisition fails.
-env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 \
-  PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1 \
-  "$PY" -B scripts/tracker_dependency_acquire705.py --execute-download
+if [[ -z "$RETAINED" ]]; then
+  env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 \
+    PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1 \
+    "$PY" -B scripts/tracker_dependency_acquire705.py --execute-download
+else
+  echo 'DEPENDENCY_705_ACQUIRE_MODE=REVERIFY_EXISTING_NO_WHEEL_DOWNLOAD'
+  env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 \
+    PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1 \
+    "$PY" -B scripts/tracker_dependency_acquire705.py --verify-retained "$RETAINED"
+fi
 
 [[ "$(git -C "$APP" branch --show-current)" == main &&
    "$(git -C "$APP" rev-parse HEAD)" == "$BASE" &&

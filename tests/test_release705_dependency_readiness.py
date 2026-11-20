@@ -142,3 +142,41 @@ def test_705_offline_dependency_preview_has_exact_sha_and_no_install_contract():
     for forbidden in ("pip install", "pip download", "systemctl restart",
                       "TRACKER_CSRF_ENFORCE=1", "tracker-release.sh"):
         assert forbidden not in source
+
+
+def test_705_only_pypi_exact_playwright_1641_hash_can_bypass_wheel_tag_parity(
+    tmp_path, monkeypatch, capsys
+):
+    target = tmp_path / readiness.PLAYWRIGHT_1641_WHEEL
+    wheel(target, name="playwright", version="1.64.1")
+    parsed = readiness.parse_tag("py3-none-manylinux1_x86_64")
+    internal = readiness.parse_tag("py3-none-any")
+    assert not readiness.documented_playwright_tag_exception(
+        target, "playwright", "1.64.1", parsed, internal
+    )
+    # Mock only the trusted PyPI byte-hash comparison; no binary download
+    # is required to regression-test the exact-name and exact-hash guard.
+    monkeypatch.setattr(
+        readiness.lock, "digest", lambda _: readiness.PLAYWRIGHT_1641_SHA256
+    )
+    assert readiness.documented_playwright_tag_exception(
+        target, "playwright", "1.64.1", parsed, internal
+    )
+    readiness.audit_wheel(target, {"playwright": "1.64.1"}, set(readiness.sys_tags()))
+    assert "DEPENDENCY_705_PLAYWRIGHT_1641_TAG_EXCEPTION=" in capsys.readouterr().out
+    assert not readiness.documented_playwright_tag_exception(
+        target, "playwright", "1.64.2", parsed, internal
+    )
+    assert not readiness.documented_playwright_tag_exception(
+        target, "other", "1.64.1", parsed, internal
+    )
+    assert not readiness.documented_playwright_tag_exception(
+        target, "playwright", "1.64.1", parsed,
+        readiness.parse_tag("py3-none-manylinux1_x86_64")
+    )
+    monkeypatch.setattr(readiness.lock, "digest", lambda _: "0" * 64)
+    assert not readiness.documented_playwright_tag_exception(
+        target, "playwright", "1.64.1", parsed, internal
+    )
+    with pytest.raises(readiness.ReadinessError, match="Wheel WHEEL tags"):
+        readiness.audit_wheel(target, {"playwright": "1.64.1"}, set(readiness.sys_tags()))

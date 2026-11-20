@@ -147,27 +147,64 @@ def write_private(path: Path, payload: bytes) -> None:
         os.fsync(output.fileno())
 
 
-def acquire() -> Path:
+def validated_retained_root(root: Path, pins: dict[str, str]) -> None:
+    # Only reuse a root created by this acquisition flow. Never scan for
+    # a "latest" path or accept an arbitrary wheelhouse.
+    if (not root.is_absolute()
+            or root.parent != Path("/tmp")
+            or not re.fullmatch(r"tracker705-wheel-acquire[.][A-Za-z0-9_]{8}", root.name)
+            or root.is_symlink() or not root.is_dir()
+            or root.stat().st_uid != 0 or root.stat().st_mode & 0o077):
+        raise AcquisitionError("Retained acquisition root is unsafe or out of scope")
+    for name in ("wheelhouse", "receipts"):
+        directory = root / name
+        if (directory.is_symlink() or not directory.is_dir()
+                or directory.stat().st_uid != 0
+                or directory.stat().st_mode & 0o077):
+            raise AcquisitionError(f"Retained {name} directory is unsafe")
+    requirements = root / "approved-pins705.txt"
+    expected = "".join(f"{name}=={pins[name]}\n" for name in sorted(pins))
+    if (requirements.is_symlink() or not requirements.is_file()
+            or requirements.stat().st_uid != 0
+            or requirements.stat().st_mode & 0o077
+            or requirements.read_text(encoding="utf-8") != expected):
+        raise AcquisitionError("Retained exact-pin inventory disagrees with baseline")
+    # Failed acquisitions before final hash lock should leave this directory
+    # empty. Never overwrite or silently trust pre-existing evidence receipts.
+    if any((root / "receipts").iterdir()):
+        raise AcquisitionError("Retained receipts already exist; refuse replacement")
+
+
+def acquire(*, retained_root: Path | None = None) -> Path:
     if os.geteuid() != 0 or socket.gethostname().split(".", 1)[0] != "tracker-dev":
         raise AcquisitionError("Approved download-only acquisition requires root on tracker-dev")
     pins = checked_pins()
-    root = Path(tempfile.mkdtemp(prefix="tracker705-wheel-acquire.", dir="/tmp"))
-    root.chmod(0o700)
-    wheels, receipts = root / "wheelhouse", root / "receipts"
-    wheels.mkdir(mode=0o700)
-    receipts.mkdir(mode=0o700)
+    if retained_root is None:
+        root = Path(tempfile.mkdtemp(prefix="tracker705-wheel-acquire.", dir="/tmp"))
+        root.chmod(0o700)
+        wheels, receipts = root / "wheelhouse", root / "receipts"
+        wheels.mkdir(mode=0o700)
+        receipts.mkdir(mode=0o700)
+        requirements = root / "approved-pins705.txt"
+        write_private(requirements, "".join(
+            f"{name}=={pins[name]}\n" for name in sorted(pins)
+        ).encode("utf-8"))
+    else:
+        root = retained_root
+        validated_retained_root(root, pins)
+        wheels, receipts = root / "wheelhouse", root / "receipts"
+        requirements = root / "approved-pins705.txt"
     print(f"DEPENDENCY_705_RETAINED_ROOT={root}", flush=True)
     print("DEPENDENCY_705_INSTALLED_VENV=UNTOUCHED", flush=True)
     print("DEPENDENCY_705_INSTALL=NOT_EXECUTED", flush=True)
     print("DEPENDENCY_705_BROWSER_DOWNLOAD=NOT_EXECUTED", flush=True)
     print(f"DEPENDENCY_705_EXPECTED_PINS={len(pins)}", flush=True)
 
-    requirements = root / "approved-pins705.txt"
-    write_private(requirements, "".join(
-        f"{name}=={pins[name]}\n" for name in sorted(pins)
-    ).encode("utf-8"))
-    command = pip_download_args(sys.executable, requirements, wheels)
-    run_pip_download(command, root)
+    if retained_root is None:
+        command = pip_download_args(sys.executable, requirements, wheels)
+        run_pip_download(command, root)
+    else:
+        print("DEPENDENCY_705_WHEEL_DOWNLOAD=SKIPPED_REUSING_RETAINED_BYTES", flush=True)
 
     readiness.safe_wheelhouse(wheels)
     rows = lock.inventory(wheels, pins)
@@ -198,14 +235,17 @@ def acquire() -> Path:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute-download", action="store_true",
-                        help="Explicitly acquire 44 pinned wheels from PyPI without installing")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--execute-download", action="store_true",
+                      help="Explicitly acquire 44 pinned wheels from PyPI without installing")
+    mode.add_argument("--verify-retained", type=Path,
+                      help="Resume validation of exact previous /tmp acquisition root (no wheel download)")
     args = parser.parse_args(argv)
-    if not args.execute_download:
+    if not args.execute_download and args.verify_retained is None:
         print("DEPENDENCY_705_DOWNLOAD=NOT_EXECUTED_REQUIRE_EXPLICIT_FLAG")
         return 0
     try:
-        acquire()
+        acquire(retained_root=args.verify_retained)
         return 0
     except (OSError, ValueError, subprocess.SubprocessError, AcquisitionError) as exc:
         print(f"DEPENDENCY_705_ACQUISITION=FAILED ({type(exc).__name__}: {exc})",

@@ -30,6 +30,29 @@ from scripts import tracker_dependency_baseline569 as baseline
 from scripts import tracker_dependency_lock705 as lock
 
 MAX_UNCOMPRESSED_WHEEL = 512 * 1024 * 1024
+# Exactly one known upstream Playwright 1.64.1 Linux x86_64 artifact
+# retains different internal wheel tags after its publisher replaces
+# the base wheel's filename with the platform-specific filename.
+# PyPI's SHA-256 of the exact published file is a prerequisite to this
+# exception. All other metadata, RECORD and dependency checks still run.
+PLAYWRIGHT_1641_WHEEL = "playwright-1.64.1-py3-none-manylinux1_x86_64.whl"
+PLAYWRIGHT_1641_SHA256 = (
+    "577b8d88778c245cfbd145ae17cf53044f084b1b46c55c69081d4069d56057e2"
+)
+
+
+def documented_playwright_tag_exception(
+    path: Path, name: str, version: str, filename_tags: set, internal_tags: set
+) -> bool:
+    return (
+        name == "playwright"
+        and version == "1.64.1"
+        and path.name == PLAYWRIGHT_1641_WHEEL
+        and filename_tags == parse_tag("py3-none-manylinux1_x86_64")
+        and bool(internal_tags)
+        and not filename_tags.issubset(internal_tags)
+        and lock.digest(path) == PLAYWRIGHT_1641_SHA256
+    )
 
 
 class ReadinessError(ValueError):
@@ -141,7 +164,18 @@ def audit_wheel(path: Path, pins: dict[str, str], supported: set) -> None:
             for text in wheel.get_all("Tag", []):
                 tags.update(parse_tag(text))
             if not tags or not filename_tags.issubset(tags):
-                raise ReadinessError(f"Wheel WHEEL tags disagree with filename: {name}")
+                if not documented_playwright_tag_exception(
+                    path, name, str(version), filename_tags, tags
+                ):
+                    raise ReadinessError(
+                        f"Wheel WHEEL tags disagree with filename: {name}; "
+                        f"internal={sorted(map(str, tags))}"
+                    )
+                print(
+                    "DEPENDENCY_705_PLAYWRIGHT_1641_TAG_EXCEPTION="
+                    "KNOWN_PYPI_SHA256_EXACT_METADATA_MISMATCH",
+                    flush=True,
+                )
             py_constraint = meta.get("Requires-Python")
             if py_constraint and not SpecifierSet(py_constraint).contains(
                     platform.python_version(), prereleases=True):
