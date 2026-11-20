@@ -533,6 +533,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-blend-unified710.log"
 echo "STRICT_710_UNIFIED_BLEND_VIAL_DOSE=PASSED"
 
+# Release 711: correct and delete an existing physical blend draw.
+run_isolated_browser_module \
+    tests/browser/test_blend_corrections711.py \
+    1 "$ROOT/strict-blend-corrections711.log"
+echo "STRICT_711_BLEND_CORRECTION_DELETE=PASSED"
+
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
     1 "$ROOT/strict-labs500.log"
