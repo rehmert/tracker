@@ -188,10 +188,12 @@ def run(test: bool = False) -> None:
 
 
 if __name__ == "__main__":
+    is_test = len(sys.argv) == 2 and sys.argv[1] == "--test"
     try:
-        run(test=(len(sys.argv) == 2 and sys.argv[1] == "--test"))
+        run(test=is_test)
     except Exception as exc:
-        # Notification delivery is advisory only; never alter the authoritative
-        # release result, or leak HTTP response body/token into the journal.
+        # Notification delivery is advisory for the systemd release hook.
+        # Explicit operator --test MUST signal failure for diagnosis.
+        # Never leak an HTTP response body, topic, or token into the journal.
         print(f"TRACKER_PUSH_ERROR={type(exc).__name__}", file=sys.stderr)
-        raise SystemExit(0)
+        raise SystemExit(1 if is_test else 0)
