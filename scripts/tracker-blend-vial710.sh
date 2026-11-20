@@ -54,6 +54,11 @@ while IFS= read -r path; do
     docs/release-710-unified-blend-dosing.md|\
     scripts/tracker-blend-vial710.sh|\
     scripts/tracker-browser-qualify.sh|\
+    scripts/tracker-install710.sh|\
+    scripts/tracker-release-scoped710.sh|\
+    scripts/tracker-release.sh|\
+    scripts/tracker_prod_remote568.sh|\
+    scripts/tracker_schema_review710.py|\
     tests/browser/test_blend_unified_dose710.py|\
     tests/test_browser_qualification511.py|\
     tests/test_release564_blend_dose_selector.py|\
@@ -104,6 +109,11 @@ export PYTHONDONTWRITEBYTECODE=1
 
 bash -n scripts/tracker-blend-vial710.sh
 bash -n scripts/tracker-browser-qualify.sh
+bash -n scripts/tracker-release.sh
+bash -n scripts/tracker_prod_remote568.sh
+bash -n scripts/tracker-install710.sh
+bash -n scripts/tracker-release-scoped710.sh
+"$PY" -B scripts/tracker_schema_review710.py --root "$APP" --base "$BASE" --target "$TARGET"
 "$PY" -B -m compileall -q app/blend_dose_unified710.py \
     app/models.py app/migrations.py app/manual_supplies.py \
     app/routers/doses.py
