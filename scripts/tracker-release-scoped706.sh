@@ -24,6 +24,16 @@ bash -n scripts/tracker-release-scoped706.sh
   tests/test_release706_gates.py
 echo 'RELEASE_706_NEW_SOURCE_CONTRACT=PASSED'
 
+# The six existing session/account routes use their own independent signed
+# CSRF scheme. Exercise their positive/forged handlers with strict GLOBAL
+# mode enabled on synthetic HTTPS TestClient data, never installed accounts.
+TRACKER_CSRF_ENFORCE=1 "$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_session_csrf3853.py \
+  tests/test_account_security386.py \
+  tests/test_user_management479.py \
+  tests/test_release589_secondary_strict_csrf.py
+echo 'CSRF_706_SESSION_ACCOUNT_STRICT_HTTPS_TESTCLIENT=PASSED_NOT_BROWSER'
+
 # Keep all prior source safety and FastAPI CSRF/negative route qualification,
 # including pinned 705 exact source and dependency evidence, without
 # repeating the full 16-worker browser suite or downloading any packages.

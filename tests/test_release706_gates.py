@@ -150,4 +150,13 @@ def test_706_only_changed_paths_and_source_scoped_gate():
     shell = (ROOT / "scripts/tracker-issue-review706.sh").read_text()
     assert 'bash scripts/tracker-release-scoped705.sh "$PY"' in gate
     assert "tests/test_release706_gates.py" in gate
+    for module in (
+        "tests/test_session_csrf3853.py",
+        "tests/test_account_security386.py",
+        "tests/test_user_management479.py",
+        "tests/test_release589_secondary_strict_csrf.py",
+    ):
+        assert module in gate
+    assert 'TRACKER_CSRF_ENFORCE=1 "$PY" -m pytest' in gate
+    assert 'CSRF_706_SESSION_ACCOUNT_STRICT_HTTPS_TESTCLIENT=PASSED_NOT_BROWSER' in gate
     assert "RELEASE_706_SOURCE_SCOPED=PASSED" in gate

@@ -111,3 +111,15 @@ separate supply-chain/vulnerability assessment, a tested guarded
 restoration for source, dependency, database and browser changes,
 and signed DEV/PROD promotion evidence. The 706 same-host replay and
 disposable rollback are only part of these requirements.
+
+
+## Additional strict session/account TestClient regression
+
+Release 706's new source gate also runs four established suites with
+`TRACKER_CSRF_ENFORCE=1`: session login/logout, account security,
+secondary-user management and independent secondary-account CSRF/isolation.
+Their fixtures bootstrap **synthetic HTTPS TestClient users and databases**
+under the disposable test data directory. This is meaningful signed
+positive/negative session-account backend evidence, but does **not**
+replace real Chromium HTTPS browser witnesses for all six routes or
+reduce the historical 6-route blocked count without separate reconciliation.
