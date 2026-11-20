@@ -49,6 +49,7 @@ while IFS= read -r path; do
     scripts/tracker-release.sh|\
     tests/browser/test_u100_withdraw712.py|\
     tests/test_browser_qualification511.py|\
+    tests/test_release710_unified_source.py|\
     tests/test_release712_u100_withdraw_units.py) ;;
     *) fail "Unexpected Release 712 source path: $path" ;;
   esac
