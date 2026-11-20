@@ -4,15 +4,20 @@ import json
 from html import escape
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, selectinload
 
 from .. import services, units as U, idempotency
 from ..scoped_db390 import get_scoped_db390
-from ..models import Blend, Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, SupplyCategory
+from ..models import Blend, BlendDose, Compound, DoseLog, Vial, SupplyUsage, Supply, ChangeAudit, SupplyCategory
+from ..audit_helpers import record
 from ..blend_administration_view import blend_history
+from ..blend_dose_unified710 import (
+    source_identity710, remaining_blend_ml710, constituent_concentrations710,
+    resolve_blend_draw710,
+)
 from ..inventory_lock import reserve_inventory_write, require_inventory_write
 from .. import manual_supplies
 from ..templating import render
@@ -180,7 +185,7 @@ def _blend_remaining_display(blend: Blend, remaining_ml: float) -> str:
 
 
 @router.get("/doses")
-def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, history_date: str = "", history_source: str = "all", history_kind: str = "all", db: Session = Depends(get_scoped_db390)):
+def doses_page(request: Request, compound_id: int | None = None, vial_id: int | None = None, source: str = "", planned_date: str = "", planned_time: str = "", planned_amount: float | None = None, planned_unit: str = "", repeat_from: int | None = None, history_date: str = "", history_source: str = "all", history_kind: str = "all", db: Session = Depends(get_scoped_db390)):
     vials = list(db.scalars(select(Vial).where(Vial.status.in_(("sealed", "in_use")))
                             .order_by(Vial.status.desc(), Vial.id.desc())))
     views = services.vial_views(db, vials)
@@ -206,6 +211,11 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         row["remaining_display"] = _blend_remaining_display(
             row["blend"], row["remaining_ml"]
         )
+        row["compound_names"] = ", ".join(sorted({
+            c.compound.name for c in row["blend"].components if c.compound
+        }))
+        row["compound_ids"] = {c.compound_id for c in row["blend"].components}
+        row["mixed"] = len(row["compound_ids"]) > 1
     planned_handoff = bool(planned_date) and compound_id is not None
     if planned_handoff:
         active_blends = [
@@ -230,6 +240,37 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
         vials, views, compound_id, vial_id, planned_date,
         planned_amount, planned_unit, recent_vial_ids,
     )
+    # Prefer an explicitly selected prepared physical vial; otherwise a
+    # planned dose may preselect a compatible blend when no ordinary vial
+    # can supply the plan. POST validates identity/quantity independently.
+    selected_blend_id = None
+    if source:
+        try:
+            requested_kind, requested_id = source_identity710(source)
+            if requested_kind == "blend" and any(
+                row["blend"].id == requested_id for row in active_blends
+            ):
+                selected_blend_id = requested_id
+                selected_vial_id = None
+        except ValueError:
+            pass
+    if selected_blend_id is None and planned_handoff and selected_vial_id is None:
+        for row in active_blends:
+            try:
+                # A multi-compound plan must not be silently reinterpreted
+                # as a single-mass draw of the mixture.
+                if planned_amount is not None and planned_amount > 0:
+                    resolve_blend_draw710(
+                        row["blend"], planned_amount, planned_unit
+                    )
+                selected_blend_id = row["blend"].id
+                calendar_vial_notice = (
+                    "Prepared blend selected. Verify all constituents and "
+                    "the actual withdrawn volume before logging."
+                )
+                break
+            except ValueError:
+                continue
     # A calendar handoff must not offer another compound's vial.
     form_vials = (
         [v for v in vials if v.compound_id == compound_id]
@@ -331,6 +372,7 @@ def doses_page(request: Request, compound_id: int | None = None, vial_id: int | 
                   combined_history=combined, history_date=history_date,
                   history_source=history_source, history_kind=history_kind,
                   vials=form_vials, views=views, active_blends=active_blends,
+                  selected_blend_id=selected_blend_id,
                   planned_handoff=planned_handoff, planned_date=planned_date, planned_time=planned_time,
                   planned_compound_name=planned_compound.name if planned_compound else "Planned compound",
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
@@ -343,9 +385,22 @@ def preview(request: Request, vial_id: str = Form(""), amount: str = Form(""),
             unit: str = Form("mg"), db: Session = Depends(get_scoped_db390)):
     """Live conversion for the log form. Arithmetic on what was typed; nothing is saved."""
     try:
-        vid, value = int(vial_id), float(amount)
-    except ValueError:
+        kind, source_id = source_identity710(vial_id)
+        value = float(amount)
+    except (ValueError, TypeError):
         return HTMLResponse("")
+    if kind == "blend":
+        blend = db.get(Blend, source_id)
+        if blend is None:
+            return HTMLResponse("")
+        try:
+            plan = resolve_blend_draw710(blend, value, unit)
+        except (ValueError, TypeError) as exc:
+            return render(request, "_blend_dose_preview710.html",
+                          error=str(exc))
+        return render(request, "_blend_dose_preview710.html",
+                      error=None, plan=plan, blend=blend)
+    vid = source_id
     vial = db.get(Vial, vid)
     if vial is None:
         return HTMLResponse("")
@@ -362,7 +417,7 @@ def preview(request: Request, vial_id: str = Form(""), amount: str = Form(""),
 
 
 @router.post("/doses")
-async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str = Form(""),
+async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str = Form(""),
                 amount: float = Form(...), unit: str = Form(...), kind: str = Form("dose"),
                 site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""), submission_token: str = Form(""),
                 db: Session = Depends(get_scoped_db390), planned_compound_id: int | None = Form(None)):
@@ -392,7 +447,63 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
     if submission_token and state != "new":
         db.rollback()
         return reject_dose("Invalid or reused submission identifier. Refresh the page.")
-    vial = db.get(Vial, vial_id)
+    try:
+        source_kind, source_pk = source_identity710(vial_id)
+    except ValueError as exc:
+        return reject_dose(str(exc))
+    if site and site not in INJECTION_SITES:
+        return reject_dose("Unknown injection site.")
+
+    if source_kind == "blend":
+        blend = db.get(Blend, source_pk)
+        if blend is None:
+            return reject_dose("Choose an available prepared blend.")
+        if (planned_compound_id is not None and
+                not any(c.compound_id == planned_compound_id
+                        for c in blend.components)):
+            return reject_dose(
+                "Selected blend does not contain the planned compound."
+            )
+        try:
+            draw = resolve_blend_draw710(
+                blend, amount, unit, bool(use_remaining)
+            )
+            when = services.parse_datetime(taken_at)
+            selected = await manual_supplies.selections(request, db)
+        except (ValueError, TypeError) as exc:
+            return reject_dose(str(exc))
+        physical = BlendDose(
+            blend_id=blend.id, taken_at=when,
+            volume_ml=draw["volume_ml"],
+            entered_value=draw["entered_value"],
+            entered_unit=draw["entered_unit"],
+            kind="waste" if kind == "waste" else "dose",
+            site=site.strip(), notes=notes.strip(),
+        )
+        db.add(physical)
+        db.flush()
+        manual_supplies.deduct(db, selected, blend_dose_id=physical.id)
+        record(db, "blend", blend.id, "draw", after={
+            "draw_id": physical.id, "kind": physical.kind,
+            "volume_ml": physical.volume_ml, "taken_at": when.isoformat(),
+            "site": physical.site, "entered_value": physical.entered_value,
+            "entered_unit": physical.entered_unit,
+            "supply_usage_count": len(selected),
+        })
+        if draw["volume_ml"] >= draw["remaining_before_ml"] - 1e-8:
+            blend.status = "finished"
+        if submission_token:
+            idempotency.record(db, submission_token, "dose_create", digest)
+        db.commit()
+        # Legacy BlendDose rows remain distinct from DoseLog; a completed
+        # mixture draw appears exactly once in the combined timeline.
+        if request.headers.get("HX-Request", "").lower() == "true":
+            return HTMLResponse("", headers={
+                "HX-Redirect": "/doses#dose-history-unified614"
+            })
+        return RedirectResponse("/doses#dose-history-unified614", status_code=303)
+
+    vial = db.get(Vial, source_pk)
     if vial is None:
         return reject_dose("Choose a vial.")
     if planned_compound_id is not None and vial.compound_id != planned_compound_id:
@@ -400,8 +511,6 @@ async def create_dose(request: Request, vial_id: int = Form(...), taken_at: str 
             "Selected vial belongs to a different compound than the calendar entry. "
             "Choose a vial for the planned compound."
         )
-    if site and site not in INJECTION_SITES:
-        return reject_dose("Unknown injection site.")
     if vial.status == "discarded":
         return reject_dose("That vial is marked discarded.")
     if amount <= 0 and not use_remaining:

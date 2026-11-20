@@ -126,6 +126,9 @@ class BlendDose(Base):
     taken_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     volume_ml: Mapped[float] = mapped_column(Float, nullable=False)
     kind: Mapped[str] = mapped_column(String(8), default="dose")
+    site: Mapped[str] = mapped_column(String(80), default="", server_default="")
+    entered_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    entered_unit: Mapped[str | None] = mapped_column(String(8), nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="")
     blend: Mapped[Blend] = relationship(back_populates="doses")
 
@@ -250,6 +253,7 @@ class SupplyUsage(Base):
     supply_id: Mapped[int] = mapped_column(ForeignKey("supplies.id"))
     vial_id: Mapped[int | None] = mapped_column(ForeignKey("vials.id"), nullable=True)
     dose_id: Mapped[int | None] = mapped_column(ForeignKey("dose_logs.id"), nullable=True)
+    blend_dose_id: Mapped[int | None] = mapped_column(ForeignKey("blend_doses.id"), nullable=True)
     amount: Mapped[float] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -527,6 +527,11 @@ run_isolated_browser_module \
     1 "$ROOT/strict-blend-previews627.log"
 echo "STRICT_CSRF_627_BLEND_PREVIEWS=PASSED"
 
+# Release 710: real mixed-compound prepared vial dose through /doses.
+run_isolated_browser_module \
+    tests/browser/test_blend_unified_dose710.py \
+    1 "$ROOT/strict-blend-unified710.log"
+echo "STRICT_710_UNIFIED_BLEND_VIAL_DOSE=PASSED"
 
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
@@ -580,6 +585,17 @@ if [[ "$MODE" == targeted ]]; then
   echo "TARGETED_STRICT_PREFLIGHT=ACTIVE"
   echo "TARGETED_STRICT_MODULE=$TARGETED_MODULE"
 fi
+# Release 710: actual HTTP and HTTPS strict-CSRF /doses browser write.
+# This targeted smoke does not certify the full release or enable global CSRF.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == blend-vial710 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_blend_unified_dose710.py \
+      1 "$ROOT/targeted-blend-unified710.log"
+  echo "TARGETED_710_UNIFIED_BLEND_VIAL_DOSE=PASSED"
+  echo "TARGETED_710_SCOPE=ONE_REAL_PHYSICAL_BLEND_WRITE_NOT_FULL_RELEASE"
+  exit 0
+fi
+
 # Release 627: one disposable targeted smoke for only the new consolidated
 # browser modules. Not a full QA run and never a promotion receipt.
 if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-batch627 ]]; then

@@ -34,11 +34,12 @@ async def selections(request: Request, db, credits=None):
     return result
 
 
-def deduct(db, selected, *, dose_id=None, vial_id=None):
+def deduct(db, selected, *, dose_id=None, vial_id=None, blend_dose_id=None):
     usages = []
     for item, qty in selected:
         item.remaining_qty -= qty
-        usage = SupplyUsage(supply_id=item.id, amount=qty, dose_id=dose_id, vial_id=vial_id)
+        usage = SupplyUsage(supply_id=item.id, amount=qty, dose_id=dose_id,
+                            vial_id=vial_id, blend_dose_id=blend_dose_id)
         db.add(usage)
         usages.append(usage)
     return usages

@@ -20,6 +20,7 @@
 <script defer src="/static/js/tracker-dose-final-review.js?v=20261103g"></script>
 <link rel="stylesheet" href="/static/css/tracker-mobile-daily602.css?v=602">
 <script defer src="/static/js/tracker-dose-fast602.js?v=602"></script>
+<script defer src="/static/js/tracker-dose-source710.js?v=710"></script>
 <script defer src="/static/js/tracker-dose-history602.js?v=602"></script>
 
 <link rel="stylesheet"
@@ -37,7 +38,7 @@
 {% if calendar_vial_notice %}<p class="note" role="status" id="dose-calendar-vial-notice">{{ calendar_vial_notice }}</p>{% endif %}
 <p class="note">Record an actual administration only. Saving may update inventory; opening a plan does not.</p>
 <nav class="ux-shortcuts tracker-flow696-actions" aria-label="Dose entry shortcuts">
-  {% if vials %}
+  {% if vials or active_blends %}
   <a class="tracker-flow696-primary" href="#calendar-vial-picker">Record Dose</a>
   {% else %}
   <a class="tracker-flow696-primary" href="/vials">Review Vials</a>
@@ -51,47 +52,12 @@
   <p class="note">To start from a planned entry, choose <a href="/calendar">Calendar → Log this dose</a>. Confirm the current vial, amount, time and supplies before saving.</p>
 </details>
 
-{% if active_blends %}
-<section class="card" id="dose-blend-picker" aria-labelledby="dose-blend-heading">
-  <h2 id="dose-blend-heading">Prepared Blend / Waterfall Vial</h2>
-  <p class="note">Waterfall results are recorded as blended vials, not individual compound vials. Choose the prepared vial below. For waterfall results, remaining stock is shown as compound content (mg or mcg); the recording form still uses the actual withdrawn volume (mL). Existing blend records and inventory stay unchanged until you submit a dose.</p>
-  <label class="field" for="dose-blend-select"><span>Finished preparation</span>
-    <select id="dose-blend-select">
-      {% for row in active_blends %}
-      <option value="{{ row.blend.id }}">{{ row.blend.label }} · #{{ row.blend.id }} · {{ row.remaining_display }}{% if (row.blend.notes or '').startswith('Waterfall:') %} · waterfall{% endif %}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <button type="button" id="dose-blend-open" class="primary">Log Dose from Selected Blend</button>
-  <p class="note">The blend dose form tracks withdrawals in mL and updates the blend's own recorded draw history. Single-vial dose entries remain below.</p>
-</section>
-<script>
-(() => {
-  const chooser = document.getElementById('dose-blend-select');
-  const button = document.getElementById('dose-blend-open');
-  if (!chooser || !button) return;
-  button.addEventListener('click', () => {
-    const id = chooser.value;
-    if (/^[1-9]\d*$/.test(id)) {
-      const scheduledDate = {{ (planned_date if planned_handoff else '')|tojson }};
-      const scheduledTime = {{ (planned_time if planned_handoff else '')|tojson }};
-      const params = new URLSearchParams();
-      if (scheduledDate) {
-        params.set('planned_date', scheduledDate);
-        if (scheduledTime) params.set('planned_time', scheduledTime);
-      }
-      const query = params.toString();
-      window.location.assign('/blends/' + encodeURIComponent(id) +
-        (query ? '?' + query : '') + '#log-blend-draw');
-    }
-  });
-})();
-</script>
-{% endif %}
+<p class="note" id="unified-physical-vials710">Select any stocked physical vial below, including a prepared blend. The same dose form records site, time, notes, and disposables. For mixed-compound blends, enter actual withdrawn liquid volume; the preview shows each compound's recorded content.</p>
+
 
 <section>
   <h2 id="quick-dose-entry">Add an entry</h2>
-  {% if vials %}
+  {% if vials or active_blends %}
   <div class="tracker-dose-fast602" data-dose-fast602>
     <nav class="tracker-dose-steps602" aria-label="Dose entry steps">
       <a href="#calendar-vial-picker" data-dose-step602="vial"><span>1</span> Vial</a>
@@ -198,7 +164,7 @@
 </div>
 
 
-  {% if vials %}
+  {% if vials or active_blends %}
   <form class="grid" hx-post="/doses" hx-target="#dose-body" hx-swap="innerHTML"
         hx-on::before-request="if(this.dataset.saving==='yes'){event.preventDefault();return;}this.dataset.saving='yes';this.querySelector('button[type=submit]').disabled=true;"
         hx-on::after-request="this.dataset.saving='';this.querySelector('button[type=submit]').disabled=false;if(event.detail.successful&&event.detail.xhr.getResponseHeader('HX-Trigger-After-Settle')&&!event.detail.xhr.getResponseHeader('HX-Retarget')){this.reset();document.getElementById('form-msg').innerHTML='';document.getElementById('dose-preview').innerHTML='';}"
@@ -208,16 +174,19 @@
     <div class="wide grid inner" hx-post="/doses/preview" hx-trigger="load, input delay:200ms, change" hx-target="#dose-preview">
       <label class="field" id="calendar-vial-picker"><span>{% if planned_handoff %}Confirm vial for {{ planned_compound_name }}{% else %}Vial{% endif %}</span>
         <select name="vial_id" required>
-          {% if selected_compound_id is not none and selected_vial_id is none %}
-          <option value="" selected disabled>Select a vial for this compound</option>
+          {% if selected_compound_id is not none and selected_vial_id is none and selected_blend_id is none %}
+          <option value="" selected disabled>Select a vial or prepared blend for this compound</option>
           {% endif %}
           {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
           <option value="{{ v.id }}" data-compound-id="{{ v.compound_id }}" data-compound-name="{{ v.compound.name|e }}" data-vial-status="{{ v.status }}" {% if selected_vial_id is not none and v.id == selected_vial_id %}selected{% endif %}>{{ v.compound.name }} · #{{ v.id }}{% if v.label %} · {{ v.label }}{% endif %}{% if v.lot %} · Lot {{ v.lot }}{% endif %} · {{ v.status|replace('_',' ') }} · {{ d.remaining_base|amt(d.dim) }}</option>
           {% endfor %}
+          {% for row in active_blends %}
+          <option value="blend:{{ row.blend.id }}" data-source="blend" data-mixed="{{ 'true' if row.mixed else 'false' }}" data-compound-id="{{ row.compound_ids|first if row.compound_ids|length == 1 else '' }}" data-compound-name="{{ row.compound_names|e }}" data-vial-status="in_use" {% if row.blend.id == selected_blend_id %}selected{% endif %}>{{ row.compound_names }} · Prepared vial #{{ row.blend.id }} · {{ row.blend.label }} · {{ row.remaining_display }}{% if (row.blend.notes or '').startswith('Waterfall:') %} · waterfall{% endif %}</option>
+          {% endfor %}
         </select></label>
       <label class="field" id="tracker-dose-amount602"><span>Amount</span><input type="number" name="amount" step="any" min="0" value="{{ planned_amount if planned_amount is not none else 0 }}" inputmode="decimal"></label>
       <label class="field"><span>Unit</span>
-        <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == (planned_unit if planned_unit in DOSE_UNITS else 'mg') %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
+        <select name="unit">{% for u in DOSE_UNITS %}<option {% if u == (planned_unit if planned_unit in DOSE_UNITS else ('mL' if selected_blend_id is not none or (not vials and active_blends) else 'mg')) %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
     </div>
     <div id="dose-preview" class="wide preview" aria-live="polite"></div>
 
@@ -298,11 +267,7 @@
   {% if planned_handoff %}
   <p class="empty">No stocked vial is available for {{ planned_compound_name }}. <a href="/dose-workspace?compound_id={{ selected_compound_id }}">Review vial inventory</a> before recording.</p>
   {% else %}
-  {% if active_blends %}
-  <p class="empty">No individual vials are available. Use the prepared blend selector above to record from a waterfall or mixed vial.</p>
-  {% else %}
-  <p class="empty">No vials in stock to log against. Add one from a <a href="/purchases">purchase</a>.</p>
-  {% endif %}
+  <p class="empty">No selectable physical vials are available. Add stock from a <a href="/purchases">purchase</a> or <a href="/blends">prepare a blend</a>.</p>
   {% endif %}
   {% endif %}
 </section>
@@ -340,11 +305,11 @@
         <td><a href="/vials/{{ r.vial.id }}">Vial #{{ r.vial.id }}</a> · <a href="/doses/{{ r.dose.id }}/edit">Review entry</a></td>
       </tr>
       {% else %}{% set r = item.blend %}
-      <tr data-timeline-source="blend" data-timeline-kind="{{ item.kind }}">
+      <tr data-timeline-source="blend" data-timeline-kind="{{ item.kind }}" data-physical-source="blend:{{ r.blend.id }}" data-dose-site="{{ (r.draw.site or '')|e }}">
         <td>{{ item.when|dt }}</td>
         <td>Prepared blend</td><td>{{ 'Administered' if item.kind == 'dose' else 'Discarded' }}</td>
         <td>{% for component in r.components %}{{ component.name }}{% if not loop.last %}; {% endif %}{% endfor %}</td>
-        <td>{{ r.draw.volume_ml|num }} mL</td>
+        <td>{{ (r.draw.entered_value if r.draw.entered_value is not none else r.draw.volume_ml)|num }} {{ r.draw.entered_unit or 'mL' }} · {{ r.draw.volume_ml|num }} mL withdrawn{% if r.draw.site %} · {{ r.draw.site }}{% endif %}</td>
         <td><a href="/blends/{{ r.blend.id }}">Blend #{{ r.blend.id }}</a></td>
       </tr>
       {% endif %}

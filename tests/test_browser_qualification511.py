@@ -38,6 +38,7 @@ STRICT_ONLY = frozenset({
     "tests/browser/test_csrf_coa_lifecycle627.py",
     "tests/browser/test_csrf_protocol_remaining627.py",
     "tests/browser/test_csrf_blend_previews627.py",
+    "tests/browser/test_blend_unified_dose710.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",
@@ -74,6 +75,7 @@ def test_511_every_browser_module_in_disposable_qualification():
         ("csrf-batch627", "TARGETED_CSRF_BATCH627=PASSED"),
         ("csrf-positive627", "TARGETED_CSRF_POSITIVE627=PASSED"),
         ("csrf-new627", "TARGETED_CSRF_NEW627=PASSED"),
+        ("blend-vial710", "TARGETED_710_UNIFIED_BLEND_VIAL_DOSE=PASSED"),
     )
     for mode, success_marker in targeted_627:
         begin = (f'if [[ "$MODE" == targeted && '

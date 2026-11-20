@@ -24,7 +24,7 @@
 
     function update() {
       pending = false;
-      const vial = /^[1-9]\d*$/.test(value('vial_id'));
+      const vial = /^(?:[1-9]\d*|blend:[1-9]\d*)$/.test(value('vial_id'));
       const numeric = Number(value('amount'));
       const useRemaining = Boolean(field('use_remaining')?.checked);
       const amount = useRemaining ||

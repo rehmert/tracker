@@ -40,24 +40,33 @@
       compoundOutput.textContent =
         compoundName || 'No compound selected';
 
-      // History rows are already sorted newest first.
-      // Exclude waste/discard entries and missing sites.
+      // Individual vials have their own dose rows; a prepared blend is
+      // one physical source in the unified timeline, not a set of
+      // phantom constituent DoseLog records.
       const recentSites = [];
-
-      document.querySelectorAll(
-        '#dose-body tr[data-dose-compound]'
-      ).forEach(row => {
-        if (
-          row.dataset.doseCompound !== compoundId ||
-          row.dataset.doseKind !== 'dose'
-        ) return;
-
-        const site = (row.dataset.doseSite || '').trim();
-
-        if (site && recentSites.length < 5) {
-          recentSites.push(site);
-        }
-      });
+      if (option?.dataset.source === 'blend') {
+        document.querySelectorAll(
+          '#dose-history-unified614 tr[data-physical-source]'
+        ).forEach(row => {
+          if (row.dataset.physicalSource !== vial.value ||
+              row.dataset.timelineKind !== 'dose') return;
+          const site = (row.dataset.doseSite || '').trim();
+          if (site && recentSites.length < 5) recentSites.push(site);
+        });
+      } else {
+        document.querySelectorAll(
+          '#dose-body tr[data-dose-compound]'
+        ).forEach(row => {
+          if (
+            row.dataset.doseCompound !== compoundId ||
+            row.dataset.doseKind !== 'dose'
+          ) return;
+          const site = (row.dataset.doseSite || '').trim();
+          if (site && recentSites.length < 5) {
+            recentSites.push(site);
+          }
+        });
+      }
 
       sitesOutput.textContent = recentSites.length
         ? recentSites.join(' · ')

@@ -94,6 +94,30 @@ def migrate(engine):
                         f"ALTER TABLE coa_attachments ADD COLUMN {name} VARCHAR(120) NOT NULL DEFAULT ''"
                     )
 
+        # Release 710: additive blend-dose parity with ordinary vial doses.
+        # Old draws retain NULL entered-value/unit; the recorded volume is
+        # still authoritative. Never create duplicate ordinary DoseLog rows.
+        if "blend_doses" in tables:
+            cols = {c["name"] for c in inspect(conn).get_columns("blend_doses")}
+            for name, sql in {
+                "site": "VARCHAR(80) NOT NULL DEFAULT ''",
+                "entered_value": "FLOAT",
+                "entered_unit": "VARCHAR(8)",
+            }.items():
+                if name not in cols:
+                    conn.exec_driver_sql(f"ALTER TABLE blend_doses ADD COLUMN {name} {sql}")
+        if "supply_usages" in tables:
+            cols = {c["name"] for c in inspect(conn).get_columns("supply_usages")}
+            if "blend_dose_id" not in cols:
+                conn.exec_driver_sql(
+                    "ALTER TABLE supply_usages ADD COLUMN blend_dose_id INTEGER "
+                    "REFERENCES blend_doses(id) ON DELETE SET NULL"
+                )
+            conn.exec_driver_sql(
+                "CREATE INDEX IF NOT EXISTS ix_supply_usages_blend_dose_id "
+                "ON supply_usages(blend_dose_id)"
+            )
+
         if "vendor_price_entries" in tables:
             cols = {c["name"] for c in inspect(conn).get_columns("vendor_price_entries")}
             if "product_url" not in cols:

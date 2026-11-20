@@ -1,0 +1,14 @@
+{% if error %}
+<p class="error" role="alert">{{ error }}</p>
+{% else %}
+<p><strong>{{ plan.volume_ml|num }} mL</strong> withdrawn from
+<strong>{{ blend.label }}</strong> ({{ plan.u100_marks|num }} marks on a U-100 syringe).
+{{ plan.remaining_after_ml|num }} mL would remain.</p>
+<ul class="blend-dose-components710">
+{% for part in plan.components %}
+<li>{{ part.name }}: <strong>{{ part.display }}</strong> in this one draw</li>
+{% endfor %}
+</ul>
+<p class="note">Calculated only from recorded blend transfers and final volume.
+No dose is saved until you select Add to log.</p>
+{% endif %}

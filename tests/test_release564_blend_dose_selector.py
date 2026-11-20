@@ -55,12 +55,15 @@ def test_existing_waterfall_blend_can_be_selected_and_logged_from_doses_page():
 
         page = client.get("/doses")
         assert page.status_code == 200
-        assert 'id="dose-blend-picker"' in page.text
-        assert 'id="dose-blend-select"' in page.text
-        assert f'<option value="{blend_id}">' in page.text
+        # Release 710: the same native vial selector offers physical
+        # prepared blends, rather than redirecting to a separate form.
+        assert 'id="dose-blend-picker"' not in page.text
+        assert 'id="dose-blend-select"' not in page.text
+        assert 'name="vial_id"' in page.text
+        assert f'<option value="blend:{blend_id}"' in page.text
         assert name in page.text
-        assert f'<option value="{blend_id}">{name} · #{blend_id} · 10 mg · waterfall</option>' in page.text
-        assert "window.location.assign('/blends/'" in page.text
+        assert '10 mg' in page.text
+        assert 'hx-post="/doses"' in page.text
 
         detail = client.get(f"/blends/{blend_id}")
         assert detail.status_code == 200
@@ -85,7 +88,8 @@ def test_existing_waterfall_blend_can_be_selected_and_logged_from_doses_page():
         # The dropdown recomputes compound stock after a recorded withdrawal.
         after = client.get("/doses")
         assert after.status_code == 200
-        assert f'<option value="{blend_id}">{name} · #{blend_id} · 8 mg · waterfall</option>' in after.text
+        assert f'<option value="blend:{blend_id}"' in after.text
+        assert "8 mg" in after.text
 
 
 def test_finished_blend_not_offered_for_new_dose():
