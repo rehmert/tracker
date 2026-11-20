@@ -43,18 +43,25 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
             stage = "PAGE_SETUP"
             for path in ("/doses", "/vitals", "/regimen", "/workouts/backfill", "/pk", "/mobile"):
                 stage = "PAGE_" + path.strip("/").replace("/", "_").upper()
+                stage += "_HTTP"
                 response = page.goto(base + path, wait_until="networkidle")
                 assert response is not None and response.status == 200, (path, response)
+                stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_FIELDS"
                 originals = page.locator(
                     'input[type="datetime-local"], input[type="time"]'
                 )
                 count = originals.count()
                 assert count > 0, ("No time fields present to verify", path)
+                stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_ENHANCED"
                 for i in range(count):
                     native = originals.nth(i)
                     expect(native).to_have_attribute("data-tracker24h-enhanced", "true")
+                    stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_HIDDEN"
                     assert not native.is_visible(), (path, i)
+                    stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_ENHANCED"
+                stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_PROXYCOUNT"
                 assert page.locator(".tracker-time24-input713").count() == count, path
+                stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_SCRIPT"
                 assert "tracker-time24-global713.js?v=713" in page.content()
 
             stage = "PK_PROGRAMMATIC_SYNC"
