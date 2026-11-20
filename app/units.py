@@ -8,8 +8,10 @@ and arithmetic:
     iu      -> IU   (International Units; NOT convertible to mass without a
                      product-specific potency, so it is its own dimension)
 
-A vial is tracked in either mass (mcg) or IU. Doses may also be entered as a
-volume (mL / uL); that is converted through the vial's concentration.
+A vial is tracked in either mass (mcg) or IU. Actual withdrawals may also be
+entered as a liquid volume (mL / uL / U-100 syringe units) and converted
+through the vial's concentration. One U-100 syringe unit is exactly 0.01 mL,
+NOT one International Unit (IU).
 """
 from __future__ import annotations
 
@@ -44,10 +46,16 @@ _reg("mass", "mg", 1_000.0)
 _reg("mass", "g", 1_000_000.0)
 _reg("volume", "mL", 1.0, "cc")
 _reg("volume", "uL", 0.001, "µl", "μl")
+# U-100 syringe markings measure liquid volume, never IU/potency.
+# Do not register a bare "U" alias: "IU" is a separate dimension.
+_reg("volume", "units", 0.01, "U-100 units", "U-100 syringe units")
 _reg("iu", "IU", 1.0)
 
 CONTENT_UNITS = ["mcg", "mg", "g", "IU"]     # what a vial can contain
-DOSE_UNITS = ["mcg", "mg", "g", "IU", "mL", "uL"]  # what a dose can be entered in
+DOSE_UNITS = ["mcg", "mg", "g", "IU", "mL", "uL"]  # protocol/potency amounts
+# Only administration withdrawals and corrections offer U-100 syringe units.
+# Do not add them to scheduled protocol quantities or vial content units.
+WITHDRAW_UNITS = [*DOSE_UNITS, "units"]
 
 
 def parse_unit(text: str) -> Unit:
