@@ -157,4 +157,4 @@ def test_notifier_contains_no_chat_api_token_or_webhook_secret():
     assert "chatgpt.com" not in code
     assert "print(config" not in code
     assert re.search(r"except Exception as exc:", code)
-    assert 'raise SystemExit(0)' in code  # best-effort never blocks releases
+    assert 'raise SystemExit(1 if is_test else 0)' in code  # explicit diagnostic fails, systemd hook does not
