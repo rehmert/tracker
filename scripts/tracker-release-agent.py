@@ -335,3 +335,74 @@ def execute(command: dict) -> dict:
 def main() -> int:
     if os.geteuid() != 0 or os.uname().nodename.split('.')[0] != 'tracker-dev':
         raise GateError('Release agent may only run as root on tracker-dev')
+    os.umask(0o077)
+    for path in (STATE, LOGS):
+        path.mkdir(mode=0o700, parents=True, exist_ok=True)
+        if path.is_symlink() or path.stat().st_uid != 0 or path.stat().st_mode & 0o077:
+            raise GateError('Unsafe agent state/log directory permissions')
+    with (STATE / 'lock').open('a+') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        pending = STATE / 'pending.json'
+        if pending.exists():
+            receipt = json.loads(pending.read_text())
+            publish_receipt(receipt)
+            pending.unlink()
+            return 0
+        fetch(REQUEST_BRANCH)
+        cmd = json_read(show(REQUEST_REF, COMMAND_PATH))
+        if cmd is None:
+            return 0
+        cmd = validate_command(cmd)
+        req = cmd['request_id']
+        seen = STATE / f'{req}.started'
+        fetch(RECEIPT_BRANCH)
+        prev = json_read(show(RECEIPT_REF, LATEST_PATH))
+        if seen.exists():
+            already = json_read(show(RECEIPT_REF, f'receipts/{req}.json'))
+            if already is not None:
+                return 0
+            # A prior service was interrupted after starting. Do not retry
+            # an operation that could already have changed the live servers.
+            unknown = {
+                **cmd, 'status': 'unknown', 'exit_code': None,
+                'started_at_utc': utcnow(), 'finished_at_utc': utcnow(),
+                'failure_category': 'InterruptedStageUnknown',
+                'markers': [], 'failed_tests': [], 'test_counts': [],
+            }
+            atomic_json(pending, unknown)
+            publish_receipt(unknown)
+            pending.unlink()
+            return 0
+        try:
+            validate_chain(cmd, prev)
+        except GateError as exc:
+            receipt = {
+                **cmd, 'status': 'blocked', 'exit_code': 1,
+                'started_at_utc': utcnow(), 'finished_at_utc': utcnow(),
+                'failure_category': 'StageChainBlocked', 'markers': [],
+                'failed_tests': [], 'test_counts': [],
+            }
+            # Fail closed on invalid transitions without attempting any execution.
+            with (STATE / f'{req}.log').open('w') as log:
+                log.write(str(exc) + '\n')
+        else:
+            receipt = None
+        # Mark *before* executing; an interrupted deployment can never be
+        # silently retried just because the agent/service restarted.
+        fd = os.open(seen, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(fd)
+        if receipt is None:
+            receipt = execute(cmd)
+        atomic_json(pending, receipt)
+        publish_receipt(receipt)
+        pending.unlink()
+        print(f'RELEASE_AGENT_STAGE={cmd["action"]} RESULT={receipt["status"]}', flush=True)
+        return 0
+
+
+if __name__ == '__main__':
+    try:
+        raise SystemExit(main())
+    except (GateError, OSError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as exc:
+        print('RELEASE_AGENT_ERROR=' + type(exc).__name__, file=sys.stderr)
+        raise SystemExit(1)
