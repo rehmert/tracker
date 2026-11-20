@@ -57,6 +57,7 @@ while IFS= read -r path; do
     tests/browser/test_blend_unified_dose710.py|\
     tests/test_browser_qualification511.py|\
     tests/test_release564_blend_dose_selector.py|\
+    tests/test_release611_blend_calendar.py|\
     tests/test_release710_unified_blend_dose.py|\
     tests/test_release710_unified_source.py) ;;
     *) fail "Unexpected Release 710 source path: $path" ;;
