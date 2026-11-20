@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -545,6 +545,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-u100-withdraw712.log"
 echo "STRICT_712_U100_WITHDRAW=PASSED"
 
+# Release 713: global HH:MM time controls across current Tracker modules.
+run_isolated_browser_module \
+    tests/browser/test_global_time24_713.py \
+    1 "$ROOT/strict-global-time24-713.log"
+echo "STRICT_713_GLOBAL_TIME24=PASSED"
+
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
     1 "$ROOT/strict-labs500.log"
@@ -626,6 +632,16 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == u100-withdraw712 ]]; then
       1 "$ROOT/targeted-u100-withdraw712.log"
   echo "TARGETED_712_U100_WITHDRAW=PASSED"
   echo "TARGETED_712_SCOPE=VIAL_AND_BLEND_U100_NOT_FULL_RELEASE"
+  exit 0
+fi
+
+# Release 713: real cross-module browser witness of 24-hour entry controls.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == global-time24-713 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_global_time24_713.py \
+      1 "$ROOT/targeted-global-time24-713.log"
+  echo "TARGETED_713_GLOBAL_TIME24=PASSED"
+  echo "TARGETED_713_SCOPE=ALL_TIME_FIELDS_NOT_FULL_RELEASE"
   exit 0
 fi
 
