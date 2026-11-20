@@ -122,7 +122,8 @@ def test_711_edit_physical_blend_adjusts_volume_supplies_audit_without_vial_rows
         assert 'value="mg"' not in page.text  # mixed blend: volume only
         result = _edit(client, did, header, sid)
         assert result.status_code == 303, result.text
-        assert "/doses#dose-history-unified614" in result.headers["location"]
+        assert result.headers["location"].endswith("#dose-history-unified614")
+        assert "/doses?msg=" in result.headers["location"]
         with SessionLocal() as db:
             draw = db.get(BlendDose, did)
             assert draw.blend_id == bid
