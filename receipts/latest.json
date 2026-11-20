@@ -1,36 +1,22 @@
 {
-  "action": "prod_deploy",
-  "base": "1f2982975494ece2bceea3ce85617447f712b399",
-  "exit_code": 0,
+  "action": "qualify",
+  "base": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
+  "exit_code": 1,
   "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-20T21:22:22+00:00",
+  "failure_category": "AssetImpactPreflight",
+  "finished_at_utc": "2026-11-20T23:46:44+00:00",
   "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=b7253f331ba3d4381328332b3a228148d6fa6d1f",
-    "PROMOTED_COMMIT=b7253f331ba3d4381328332b3a228148d6fa6d1f",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_713_SCOPED_BACKEND=PASSED",
-    "TARGETED_713_GLOBAL_TIME24=PASSED",
-    "RELEASE_713_SCOPED_BROWSER=PASSED",
-    "RELEASE_713_PROD_SCOPED=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=b7253f331ba3d4381328332b3a228148d6fa6d1f",
-    "REMOTE_DEPLOY_EXIT_STATUS=0",
-    "PROD_INSTALLED_COMMIT=b7253f331ba3d4381328332b3a228148d6fa6d1f",
-    "DEV_CONTROLLED_RELEASE=SUCCESS"
+    "RELEASE_604_IMPACT_PREFLIGHT=FAILED",
+    "RELEASE_714_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_714_EXIT_STATUS=1"
   ],
-  "previous_request_id": "r713-ef28c91a53b0",
-  "ref": "release/713-timeline-simple-blends-time24",
-  "release": 713,
-  "request_id": "r713-17cb9e5f40a2",
+  "previous_request_id": null,
+  "ref": "release/714-workout-routine-row-alignment",
+  "release": 714,
+  "request_id": "r714-0d13e28c7a91",
   "schema": 1,
-  "started_at_utc": "2026-11-20T21:21:19+00:00",
-  "status": "passed",
-  "target": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
-  "test_counts": [
-    "56 passed, 1 warning",
-    "7 passed",
-    "2 passed"
-  ]
+  "started_at_utc": "2026-11-20T23:46:42+00:00",
+  "status": "failed",
+  "target": "f2a1bec64cf209694308e77beba3b80d809ffc7f",
+  "test_counts": []
 }
