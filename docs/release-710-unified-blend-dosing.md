@@ -70,6 +70,18 @@ test and rollback qualification, and the normal signed DEV-controlled
 promotion procedure. Global CSRF enforcement remains disabled and is
 unrelated to this feature release.
 
+## Release 613/668 compatibility regression
+
+During the first DEV-only Release 710 qualification, the old Release 613
+Calendar reconciliation test failed because it asserted positional ordering.
+Release 668 intentionally sorts same-time events by compound name. Its
+post-668 behavior is correct: Example (recorded), Extra (extra), Other
+(recorded). The historical regression now verifies identity and blend
+provenance by compound ID, and independently checks the documented sort.
+The Calendar implementation was not changed. The fix is included in the
+Release 710 exact-file qualification allowlist, so the next DEV run
+executes it together with the rest of the targeted tests.
+
 ## Deliberate non-changes
 
 Existing BlendDose rows are not rewritten into DoseLog. The legacy
