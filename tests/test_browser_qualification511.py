@@ -77,6 +77,7 @@ def test_511_every_browser_module_in_disposable_qualification():
         ("csrf-positive627", "TARGETED_CSRF_POSITIVE627=PASSED"),
         ("csrf-new627", "TARGETED_CSRF_NEW627=PASSED"),
         ("blend-vial710", "TARGETED_710_UNIFIED_BLEND_VIAL_DOSE=PASSED"),
+        ("blend-correction711", "TARGETED_711_BLEND_CORRECTION_DELETE=PASSED"),
     )
     for mode, success_marker in targeted_627:
         begin = (f'if [[ "$MODE" == targeted && '
