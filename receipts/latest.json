@@ -2,17 +2,31 @@
   "action": "qualify",
   "base": "1f2982975494ece2bceea3ce85617447f712b399",
   "exit_code": 1,
-  "failed_tests": [],
-  "failure_category": "GateError",
-  "finished_at_utc": "2026-11-20T18:13:40+00:00",
-  "markers": [],
+  "failed_tests": [
+    "tests/browser/test_global_time24_713.py",
+    "tests/browser/test_global_time24_713.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-20T18:16:48+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_713_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_713_SCOPED_BACKEND=PASSED",
+    "TARGETED_713_TIME24_PAGE_WORKOUTS_BACKFILL_FIELDS=FAILED",
+    "TARGETED_713_TIME24_PAGE_WORKOUTS_BACKFILL_FIELDS=FAILED",
+    "RELEASE_713_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_713_EXIT_STATUS=1"
+  ],
   "previous_request_id": null,
   "ref": "release/713-timeline-simple-blends-time24",
   "release": 713,
-  "request_id": "r713-036851c65b2e",
+  "request_id": "r713-9f6b2c54e871",
   "schema": 1,
-  "started_at_utc": "2026-11-20T18:13:39+00:00",
+  "started_at_utc": "2026-11-20T18:16:12+00:00",
   "status": "failed",
-  "target": "036851c65b2ee6b1e140ad481361a6ad78e14b03",
-  "test_counts": []
+  "target": "06614a651c62ae3b120ec94b47ae15369edcf574",
+  "test_counts": [
+    "56 passed, 1 warning",
+    "7 passed"
+  ]
 }
