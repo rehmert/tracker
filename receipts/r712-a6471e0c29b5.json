@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-20T17:44:34+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r712-8c64f293b5a1",
+  "ref": "release/712-u100-syringe-withdraw-units",
+  "release": 712,
+  "request_id": "r712-a6471e0c29b5",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T17:44:32+00:00",
+  "status": "passed",
+  "target": "1f2982975494ece2bceea3ce85617447f712b399",
+  "test_counts": []
+}
