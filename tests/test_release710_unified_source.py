@@ -125,3 +125,31 @@ def test_710_detached_dev_candidate_only_no_installed_modification():
         "/etc/tracker.env", "pip download", "pip install",
     ):
         assert forbidden not in worker
+
+
+def test_710_guarded_install_scripts_parse_and_keep_schema_approval():
+    """Regression: the Release 710 installer must parse BEFORE deploy begins."""
+    import subprocess
+
+    for name in (
+        "scripts/tracker-install710.sh",
+        "scripts/tracker-release.sh",
+        "scripts/tracker-release-scoped710.sh",
+        "scripts/tracker-blend-vial710.sh",
+        "scripts/tracker_prod_remote568.sh",
+    ):
+        subprocess.run(["bash", "-n", str(ROOT / name)], check=True)
+    installer = source("scripts/tracker-install710.sh")
+    assert 'EXPECTED_BLOB="$(git rev-parse' in installer
+    assert 'ACTUAL_BLOB="$(git hash-object "$RUNNER")"' in installer
+    assert '[[ "$ACTUAL_BLOB" == "$EXPECTED_BLOB" ]]' in installer
+    assert '--ref "$REF" --db-migration --reviewed-blend-710' in installer
+    release = source("scripts/tracker-release.sh")
+    assert '"$PY" "$QA/scripts/tracker_schema_review710.py"' in release
+    assert 'BLEND_710_SCHEMA_PROCEDURE=AUTHORIZED' in release
+    assert 'RELEASE_710_PROD_SCOPED=PASSED' in release
+    assert 'REVIEWED_BLEND_710="${20:-0}"' in release
+    assert '[[ $# -ge 12 && $# -le 20 ]]' in release
+    remote = source("scripts/tracker_prod_remote568.sh")
+    assert 'elif [[ "$RELEASE" == 710 ]]; then' in remote
+    assert 'DEPLOY_EXTRA=(--reviewed-blend-710 --db-migration)' in remote
