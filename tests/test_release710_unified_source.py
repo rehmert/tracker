@@ -55,6 +55,16 @@ def test_710_one_standard_form_selects_blends_and_keeps_legacy_route():
     assert "option?.dataset.source === 'blend'" in source("app/static/dose_context.js")
 
 
+def test_710_switching_physical_sources_cannot_relabel_a_previous_dose():
+    script = source("app/static/js/tracker-dose-source710.js")
+    assert "let previous = source.value;" in script
+    assert "if (source.value === previous) return;" in script
+    assert "amount.value = '';" in script
+    assert "remaining.checked = false;" in script
+    assert "unit.value = 'mL';" in script
+    assert "form.addEventListener('reset'" in script
+
+
 def test_710_new_nullable_blend_fields_and_supply_fk_are_additive():
     models = source("app/models.py")
     migrations = source("app/migrations.py")
