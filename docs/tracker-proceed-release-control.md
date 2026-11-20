@@ -100,3 +100,42 @@ supported Work app-event task or a separately configured Workspace Agent
 API trigger and token. Neither is provisioned by this notifier. Notification
 latency is driven by the DEV agent and push provider, not the hourly ChatGPT
 scheduled-task interval.
+
+
+## Event-driven ChatGPT Work bridge (GitHub pull requests)
+
+The DEV agent now installs another best-effort, root-owned post-run hook:
+`/usr/local/sbin/tracker-release-pr-bridge.py`. After a release receipt
+has been committed to the receipt branch, the hook verifies that the
+immutable per-request JSON matches the latest receipt, then commits a
+minimal public-safe event pointer to the dedicated branch
+`tracker-release-events`. A single long-lived **draft PR**, titled
+`[tracker-release-event] Tracker receipt trigger — DO NOT MERGE`,
+targets `main` and remains unmerged. Each new event commit updates
+the PR head and produces a GitHub PR **synchronize** event.
+
+ChatGPT Work can use the configured GitHub PR opened/synchronize trigger
+to respond to those events. Work MUST verify the immutable receipt ID
+and its status directly on `tracker-release-receipts` before changing
+any release command. The PR body or event marker alone never proves
+qualification or installation and never authorizes PROD.
+
+The bridge does not call ChatGPT directly or store a ChatGPT API key on
+DEV. It sends only `request_id`, release number, action, status,
+40-character SHA, and the relative receipt path. Other receipt content,
+test failures, source file names, raw logs, credentials and medical data
+never enter the event PR. The normal Git checkout, code branch,
+release-control queue and application data are not altered by the hook.
+
+The permanent PR must remain a draft and **MUST NEVER BE MERGED**.
+A closed or deleted PR will prevent event delivery; the hook itself
+cannot recreate or reopen a PR. Failed GitHub delivery is logged as a
+bounded local error and retried next timer cycle (with the same receipt
+ID); it cannot change the original release result.
+
+For a root-owned diagnostic preflight on DEV:
+
+    sudo /usr/local/sbin/tracker-release-pr-bridge.py --check
+
+This validates both Git branches and the published receipt without
+triggering a new PR synchronize event.
