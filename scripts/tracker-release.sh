@@ -346,6 +346,13 @@ PY
   fi
  fi
  if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped711.sh |
+      grep -qx 'scripts/tracker-release-scoped711.sh'; then
+  echo "=== RELEASE 711 PROD SCOPED BLEND DOSE CORRECTION QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped711.sh" "$PY"
+  echo "RELEASE_711_PROD_SCOPED=PASSED"
+ fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
     g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped678.sh |
       grep -qx 'scripts/tracker-release-scoped678.sh'; then
   echo "=== RELEASE 678 PROD WORKOUT ACTIVITY SHORTCUT CARD QUALIFICATION ==="
