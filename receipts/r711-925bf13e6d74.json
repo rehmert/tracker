@@ -1,0 +1,29 @@
+{
+  "action": "dev_install",
+  "base": "5e78dfcdc8d9612266aa2aca26755957bad02561",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-20T14:54:46+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_711_SCOPED_BACKEND=PASSED",
+    "TARGETED_711_BLEND_CORRECTION_DELETE=PASSED",
+    "RELEASE_711_SCOPED_BROWSER=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_711_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r711-3b7f6c20ad8e",
+  "ref": "release/711-blend-dose-corrections",
+  "release": 711,
+  "request_id": "r711-925bf13e6d74",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T14:53:48+00:00",
+  "status": "passed",
+  "target": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
+  "test_counts": [
+    "68 passed, 1 warning",
+    "7 passed",
+    "2 passed"
+  ]
+}
