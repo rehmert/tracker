@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == csrf-positive707 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == csrf-positive707 || "$TARGETED_MODULE" == csrf-positive708 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -541,6 +541,13 @@ run_isolated_browser_module \
     1 "$ROOT/strict-workout-positive707.log"
 echo "STRICT_CSRF_707_WORKOUT_17_POSITIVE_LIFECYCLES=PASSED"
 
+# Release 708: the other 19 post-653 Workout mutations, signed and
+# persisted with tokenless/forged denial; single serial HTTP/HTTPS scenario.
+run_isolated_browser_module \
+    tests/browser/test_csrf_remaining_workout708.py \
+    1 "$ROOT/strict-remaining-workout708.log"
+echo "STRICT_CSRF_708_WORKOUT_19_POSITIVE_LIFECYCLES=PASSED"
+
 run_isolated_browser_module \
     tests/browser/test_food_labs_mutations500.py \
     1 "$ROOT/strict-labs500.log"
@@ -593,6 +600,17 @@ if [[ "$MODE" == targeted ]]; then
   echo "TARGETED_STRICT_PREFLIGHT=ACTIVE"
   echo "TARGETED_STRICT_MODULE=$TARGETED_MODULE"
 fi
+# Release 708: targeted strict HTTP/HTTPS only for newly added nineteen
+# persisted Workout actions; this is NOT global-CSRF release approval.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive708 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_csrf_remaining_workout708.py \
+      1 "$ROOT/positive708-remaining-workout.log"
+  echo "TARGETED_CSRF_708_WORKOUT_19_SIGNED_LIFECYCLES=PASSED"
+  echo "TARGETED_CSRF_708_SCOPE=19_REAL_WRITES_NOT_FULL_CSRF_CLEARANCE"
+  exit 0
+fi
+
 # Release 707: real browser HTTP + HTTPS positive lifecycle preflight.
 # This does not certify other historical route gaps or authorize PROD CSRF.
 if [[ "$MODE" == targeted && "$TARGETED_MODULE" == csrf-positive707 ]]; then
