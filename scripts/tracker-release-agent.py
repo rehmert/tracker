@@ -107,3 +107,117 @@ def validate_command(value: dict) -> dict:
     release, action = value['release'], value['action']
     if not isinstance(req, str) or not REQUEST_ID.fullmatch(req):
         raise GateError('Invalid request ID')
+    if action not in ACTION_PREVIOUS:
+        raise GateError('Unrecognized release action')
+    if type(release) is not int or not 1 <= release <= 999999:
+        raise GateError('Invalid release number')
+    if not isinstance(target, str) or not SHA.fullmatch(target):
+        raise GateError('Target must be pinned SHA')
+    if not isinstance(base, str) or not SHA.fullmatch(base) or target == base:
+        raise GateError('Base must be distinct pinned SHA')
+    m = RELEASE_BRANCH.fullmatch(ref) if isinstance(ref, str) else None
+    if not m or int(m.group(1)) != release:
+        raise GateError('Release branch number mismatch')
+    prev = value['previous_request_id']
+    if prev is not None and (not isinstance(prev, str) or not REQUEST_ID.fullmatch(prev)):
+        raise GateError('Invalid previous request ID')
+    if (action == 'qualify') != (prev is None):
+        raise GateError('Exactly one prior approved stage required except for qualify')
+    return value
+
+
+def validate_chain(command: dict, latest: dict | None) -> None:
+    stage = command['action']
+    if stage == 'qualify':
+        # A new commit must be requalified after a failure; exact same commit
+        # may be deliberately requalified with a new request ID.
+        return
+    if not latest or latest.get('status') != 'passed':
+        raise GateError('Previous stage has not passed')
+    for key in ('release', 'target', 'base', 'ref'):
+        if latest.get(key) != command[key]:
+            raise GateError('Prior receipt does not match current release')
+    if latest.get('request_id') != command['previous_request_id']:
+        raise GateError('Prior receipt ID mismatch')
+    if latest.get('action') != ACTION_PREVIOUS[stage]:
+        raise GateError('Stages must advance in order')
+
+
+def pinned_script(target: str, relative_path: str, folder: Path) -> Path:
+    data = show(target, relative_path)
+    if not data:
+        raise GateError(f'Pinned release lacks {relative_path}')
+    expected = git('rev-parse', f'{target}:{relative_path}').decode().strip()
+    actual = git('hash-object', '--stdin', input_bytes=data).decode().strip()
+    if not SHA.fullmatch(expected) or expected != actual:
+        raise GateError('Git object integrity mismatch')
+    path = folder / relative_path.rsplit('/', 1)[-1]
+    path.write_bytes(data)
+    path.chmod(0o700)
+    syntax = subprocess.run(['bash', '-n', str(path)], check=False)
+    if syntax.returncode:
+        raise GateError('Pinned release shell syntax invalid')
+    return path
+
+
+def command_for_stage(command: dict, folder: Path) -> list[str]:
+    action = command['action']
+    target, base, ref = command['target'], command['base'], command['ref']
+    release = command['release']
+    fetch(ref)
+    if git('rev-parse', f'refs/remotes/origin/{ref}').decode().strip() != target:
+        raise GateError('Release branch moved or SHA mismatch')
+    git('merge-base', '--is-ancestor', base, target)
+    clean_main(base if action in ('qualify', 'dev_install') else target)
+    if action == 'qualify':
+        worker = pinned_script(target, f'scripts/tracker-qualify{release}.sh', folder)
+        return [
+            'systemd-run', '--collect', '--wait', '--pipe',
+            f'--unit=tracker-ops-qa-{command["request_id"]}',
+            '--property=PrivateNetwork=yes', '/bin/bash', str(worker), target,
+        ]
+    if action == 'dev_install':
+        worker = pinned_script(target, f'scripts/tracker-install{release}.sh', folder)
+        return ['/bin/bash', str(worker), target]
+    runner = APP / 'scripts/tracker_promote568.py'
+    if not runner.is_file():
+        raise GateError('Installed DEV has no signed promotion runner')
+    args = [str(APP / '.venv/bin/python'), str(runner), '--release', str(release),
+            '--target', target, '--prod-base', base, '--ref', ref]
+    if action == 'prod_deploy':
+        args.append('--execute')
+    return args
+
+
+def failure_kind(data: str) -> str:
+    if 'RELEASE_604_IMPACT_PREFLIGHT=FAILED' in data:
+        return 'AssetImpactPreflight'
+    if 'syntax error near' in data or 'unexpected argument' in data:
+        return 'ShellSyntax'
+    if 'FAILED tests/' in data or '=== FAILURES ===' in data:
+        return 'TestAssertion'
+    if 'RELEASE_ERROR=' in data or 'REMOTE_FAIL:' in data:
+        return 'PromotionOrDeploymentGate'
+    if 'Permission denied' in data or 'Connection timed out' in data:
+        return 'ConnectivityOrPermission'
+    return 'StageCommandError'
+
+
+def safe_diagnostics(data: str) -> dict:
+    markers, failures, counts = [], [], []
+    for line in data.splitlines():
+        stripped = line.strip()
+        if MARKER.fullmatch(stripped) and len(markers) < 45:
+            markers.append(stripped)
+        match = TEST_FAIL.match(stripped)
+        if match and len(failures) < 12:
+            failures.append(match.group(1)[:160])
+        count = COUNTS.search(stripped)
+        if count and len(counts) < 8:
+            counts.append(count.group(1))
+    return {'markers': markers, 'failed_tests': failures, 'test_counts': counts}
+
+
+def validate_success(command: dict, output: str) -> None:
+    action = command['action']
+    target = command['target']
