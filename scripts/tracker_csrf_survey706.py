@@ -16,8 +16,7 @@ import json
 import os
 from pathlib import Path
 import re
-import sys
-from urllib.parse import urlsplit
+from runpy import run_path
 
 EXPECTED_UNMAPPED = 92
 EXPECTED_MANUAL = 155
@@ -39,6 +38,45 @@ def private_data(path: Path) -> None:
         raise SurveyError("Only a private Release 706 synthetic /tmp DB is permitted")
 
 
+def validate_inventories(historical: dict, review: dict) -> tuple[list[dict], int]:
+    """Check the independent frozen and dynamic review inventories.
+
+    The 155 unresolved items belong to the historical gap-plan ledger.
+    The prioritizer's full template/JS/route findings are a different
+    scope and must reconcile to their OWN reported total, not to 155.
+    """
+    pending = historical["remaining_routes"]
+    historic_unmapped = historical["remaining_without_positive_source_witness"]
+    historic_manual = historical["manual_review_items_unchanged"]
+    historic_sessions = historical["session_account_routes_not_certified"]
+    if (len(pending) != EXPECTED_UNMAPPED
+            or historic_unmapped != EXPECTED_UNMAPPED
+            or historic_manual != EXPECTED_MANUAL
+            or historic_sessions != EXPECTED_SESSION):
+        raise SurveyError(
+            "Frozen CSRF historical inventory changed: "
+            f"remaining={len(pending)} reported_remaining={historic_unmapped} "
+            f"historical_manual={historic_manual} "
+            f"session={historic_sessions}; expected "
+            f"{EXPECTED_UNMAPPED}/{EXPECTED_MANUAL}/{EXPECTED_SESSION}"
+        )
+    findings = review["findings"]
+    totals = review["totals"]
+    counted = totals["review_items"]
+    priorities = totals["by_priority"]
+    if (not isinstance(findings, list) or not isinstance(priorities, dict)
+            or len(findings) != counted or sum(priorities.values()) != counted
+            or any(priority not in ("P1", "P2", "P3")
+                   for priority in priorities)
+            or any(row.get("review_status") != "MANUAL_REVIEW_REQUIRED"
+                   for row in findings)):
+        raise SurveyError(
+            "Prioritized review queue inconsistent with its own totals: "
+            f"findings={len(findings)} reported={counted}"
+        )
+    return pending, counted
+
+
 def make_report() -> dict:
     # The environment must be set before app/config imports.
     data = Path(os.environ.get("TRACKER_DATA_DIR", ""))
@@ -53,17 +91,17 @@ def make_report() -> dict:
     from app.csrf_reporting import REPORT_HEADER
     from scripts.tracker_csrf_reconcile627 import build
     from scripts.tracker_csrf_review_queue623 import prioritized_report
-    from tests.test_csrf_all_registered_negative705 import (
-        registered_writes, sample_path,
-    )
+    # tests/ is intentionally not a Python package in this repository. Do
+    # not import an unrelated site-packages "tests" package by accident.
+    testfile = (Path(__file__).resolve().parents[1] /
+                "tests/test_csrf_all_registered_negative705.py")
+    route_helpers = run_path(str(testfile))
+    registered_writes = route_helpers["registered_writes"]
+    sample_path = route_helpers["sample_path"]
 
     historical = build()
-    pending = historical["remaining_routes"]
     review = prioritized_report(Path(__file__).resolve().parents[1])
-    if (len(pending) != EXPECTED_UNMAPPED
-            or len(review["findings"]) != EXPECTED_MANUAL
-            or historical["session_account_routes_not_certified"] != EXPECTED_SESSION):
-        raise SurveyError("Frozen CSRF inventory changed; manual reassessment required")
+    pending, priority_queue_size = validate_inventories(historical, review)
 
     registered = set(registered_writes())
     rows = []
@@ -121,6 +159,12 @@ def make_report() -> dict:
         "global_strict_csrf_authorized": False,
         "frozen_unmapped_routes": len(rows),
         "manual_review_items_still_unqualified": EXPECTED_MANUAL,
+        "prioritized_scan_review_items": priority_queue_size,
+        "review_count_scopes": {
+            "historical_unresolved_155": "Release 590/627 conservative gap ledger",
+            "prioritized_scan": "Release 623 template/JS/route review findings",
+            "not_equivalent_counts": True,
+        },
         "session_account_routes_still_unqualified": EXPECTED_SESSION,
         "counts": dict(sorted(totals.items())),
         "routes": rows,
@@ -160,6 +204,9 @@ def main(argv=None) -> int:
         print(f"CSRF_706_ROUTING_SURVEY_CLASSIFICATIONS={json.dumps(result['counts'], sort_keys=True)}")
         print("CSRF_706_SIGNED_PERSISTED_WRITES_CERTIFIED=0")
         print("CSRF_706_MANUAL_REVIEW_UNCHANGED=155")
+        print("CSRF_706_PRIORITIZED_REVIEW_QUEUE=" +
+              str(result["prioritized_scan_review_items"]))
+        print("CSRF_706_REVIEW_COUNTER_SCOPES=INDEPENDENT_VERIFIED")
         print("CSRF_706_SESSION_ACCOUNT_UNQUALIFIED=6")
         print("CSRF_706_GLOBAL_ENFORCEMENT=BLOCKED")
         print(f"CSRF_706_EVIDENCE={args.output}")

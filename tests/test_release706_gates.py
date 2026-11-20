@@ -69,7 +69,11 @@ def test_706_source_builds_exact_92_signed_csrf_survey_without_clearance():
         "EXPECTED_UNMAPPED = 92",
         "EXPECTED_MANUAL = 155",
         "EXPECTED_SESSION = 6",
-        "registered_writes, sample_path",
+        'route_helpers["registered_writes"]',
+        'route_helpers["sample_path"]',
+        'run_path(str(testfile))',
+        "historical_manual != EXPECTED_MANUAL",
+        "len(findings) != counted",
         "with TestClient(app, raise_server_exceptions=False) as client:",
         'headers={HEADER_NAME: token}',
         'report = signed.headers.get(REPORT_HEADER)',
@@ -160,3 +164,47 @@ def test_706_only_changed_paths_and_source_scoped_gate():
     assert 'TRACKER_CSRF_ENFORCE=1 "$PY" -m pytest' in gate
     assert 'CSRF_706_SESSION_ACCOUNT_STRICT_HTTPS_TESTCLIENT=PASSED_NOT_BROWSER' in gate
     assert "RELEASE_706_SOURCE_SCOPED=PASSED" in gate
+
+
+def test_706_historical_155_vs_complete_prioritized_queue_are_distinct_scopes():
+    historical = {
+        "remaining_routes": [
+            {"method": "POST", "path": f"/synthetic/{number}"}
+            for number in range(csrf.EXPECTED_UNMAPPED)
+        ],
+        "remaining_without_positive_source_witness": csrf.EXPECTED_UNMAPPED,
+        "manual_review_items_unchanged": csrf.EXPECTED_MANUAL,
+        "session_account_routes_not_certified": csrf.EXPECTED_SESSION,
+    }
+    # The 623 scanner covers route declarations, JS and template controls,
+    # not the same objects as the 590/627 pending-manual-work ledger.
+    findings = [
+        {"priority": "P1", "review_status": "MANUAL_REVIEW_REQUIRED"}
+        for _ in range(csrf.EXPECTED_MANUAL + 4)
+    ]
+    review = {
+        "findings": findings,
+        "totals": {
+            "review_items": len(findings),
+            "by_priority": {"P1": len(findings), "P2": 0, "P3": 0},
+        },
+    }
+    pending, priority_count = csrf.validate_inventories(historical, review)
+    assert len(pending) == 92
+    assert priority_count == 159
+    assert historical["manual_review_items_unchanged"] == 155
+
+    historical["manual_review_items_unchanged"] = 154
+    with pytest.raises(csrf.SurveyError, match="historical inventory changed"):
+        csrf.validate_inventories(historical, review)
+    historical["manual_review_items_unchanged"] = 155
+    review["totals"]["review_items"] = 160
+    with pytest.raises(csrf.SurveyError, match="Prioritized review queue inconsistent"):
+        csrf.validate_inventories(historical, review)
+
+
+def test_706_imports_local_705_route_helpers_without_site_packages_tests_shadow():
+    source = (ROOT / "scripts/tracker_csrf_survey706.py").read_text()
+    assert 'run_path(str(testfile))' in source
+    assert '"tests/test_csrf_all_registered_negative705.py"' in source
+    assert "from tests.test_csrf_all_registered_negative705 import" not in source

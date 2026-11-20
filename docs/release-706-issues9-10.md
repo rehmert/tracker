@@ -123,3 +123,27 @@ under the disposable test data directory. This is meaningful signed
 positive/negative session-account backend evidence, but does **not**
 replace real Chromium HTTPS browser witnesses for all six routes or
 reduce the historical 6-route blocked count without separate reconciliation.
+
+
+## Release 706 source survey correction (November 19, 2026)
+
+The first guarded runtime run reported
+`CSRF_706_SURVEY=FAILED (SurveyError: Frozen CSRF inventory changed)`
+after the source gate passed. Root cause: a new assertion incorrectly
+equated the **155 frozen unresolved manual-review items from the 590/627
+gap ledger** to `len(prioritized_report(...)[\"findings\"])`, the
+independently scoped 623 template/JavaScript/route priority queue. These
+inventories count different objects and need not be numerically equal.
+
+The corrected survey still **fails closed** if the frozen route count
+or frozen manual and session counts change. It also checks the dynamic
+priority queue for internal consistency (reported total, priority
+breakdown and every manual-review status), and includes both numbers
+with their distinct definitions in the retained report. A source test
+supplies 155 historical items and 159 priority-scan findings to confirm
+legitimate divergence, plus mismatched-count failure cases.
+
+The survey also loads its 705 route-enumeration helpers by explicit
+local file path rather than `from tests...`, because this repo does
+not package the tests/ directory and an installed `tests` package
+could otherwise shadow it. No global CSRF or package change occurred.
