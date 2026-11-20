@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r714-79a46e10b2d3",
+  "request_id": "r714-8c13f4d20be7",
   "action": "qualify",
   "release": 714,
-  "target": "d85f2430aeab3ac11afb57226fd9006b0fbecb22",
+  "target": "8587cbbbfc28293937a88cc20b43384da506fadb",
   "base": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
   "ref": "release/714-workout-routine-row-alignment",
   "previous_request_id": null
