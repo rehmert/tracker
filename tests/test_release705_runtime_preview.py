@@ -422,3 +422,57 @@ def test_705_playwright_tag_exception_is_strict_and_retained_mode_is_no_download
     assert 'validated_retained_root(root, pins)' in acquire
     assert '"$PY" -B scripts/tracker_dependency_acquire705.py --verify-retained "$RETAINED"' in shell
     assert 'scripts/tracker_dependency_acquire705.py --execute-download' in shell
+
+
+def test_705_offline_replay_is_network_isolated_two_pass_and_exact_sha():
+    shell = (ROOT / "scripts/tracker-dependency-replay705.sh").read_text()
+    python = (ROOT / "scripts/tracker_dependency_replay705.py").read_text()
+    scoped = (ROOT / "scripts/tracker-release-scoped705.sh").read_text()
+    for expected in (
+        'readlink /proc/self/ns/net',
+        'readlink /proc/1/ns/net',
+        'flock -n 9',
+        'BASE=24cb9ec47417e001c3f96dfed630e3b8b0264d93',
+        'refs/remotes/origin/$REF',
+        'git merge-base --is-ancestor',
+        'git worktree add --detach',
+        'git -C "$APP" worktree remove --force',
+        'bash scripts/tracker-release-scoped705.sh "$PY"',
+        'scripts/tracker_dependency_readiness705.py --wheelhouse',
+        'scripts/tracker_dependency_replay705.py',
+        '--execute-disposable',
+        'DEPENDENCY_705_REPLAY_DISPOSABLE_ENVS_REMOVED=YES',
+        'DEPENDENCY_705_REPLAY_EVIDENCE_RETAINED=',
+    ):
+        assert expected in shell, expected
+    for expected in (
+        'for number in (1, 2):',
+        'offline_install_args(python, wheelhouse, requirements)',
+        'lock.verify(wheels_root / "wheelhouse", wheels_root / "receipts")',
+        'tests/test_csrf_all_registered_negative705.py',
+        'tracker_dependency_baseline569.py',
+        'DEPENDENCY_705_TWO_OFFLINE_REPLAYS=PASSED',
+        'DEPENDENCY_705_CHROMIUM_REPLAY=NOT_EXECUTED',
+        'DEPENDENCY_705_OS_ROLLBACK=NOT_EXECUTED',
+    ):
+        assert expected in python, expected
+    assert "bash -n scripts/tracker-dependency-replay705.sh" in scoped
+    assert "tests/test_release705_dependency_replay.py" in scoped
+    assert "DEPENDENCY_705_OFFLINE_REPLAY_SOURCE_CONTRACT=PASSED" in scoped
+    assert '    scripts/tracker_dependency_replay705.py \\' in scoped
+    for gate in (
+        ROOT / "scripts/tracker-preview705.sh",
+        ROOT / "scripts/tracker-browser-preview705.sh",
+    ):
+        text = gate.read_text()
+        for changed in (
+            "scripts/tracker_dependency_replay705.py",
+            "scripts/tracker-dependency-replay705.sh",
+            "tests/test_release705_dependency_replay.py",
+        ):
+            assert changed + "|\\" in text
+    assert 'git fetch' not in shell
+    assert "No separate network namespace" in python
+    assert '"--no-index", "--no-cache-dir"' in python
+    assert '"--require-hashes", "--find-links"' in python
+    assert "DEPENDENCY_705_ISSUE10=BLOCKED_BROWSER_OS_ROLLBACK" in python

@@ -235,7 +235,7 @@ listing them does not constitute executed parity evidence. The other
 
 ## Single release qualification and deployment limits
 
-The candidate's exact thirty-file diff includes the CSRF and dependency
+The candidate's exact thirty-three-file diff includes the CSRF and dependency
 readiness scripts, audited historical reconciliation, source and full-browser
 preview gates, the guarded browser qualification runner, focused Release 705
 regressions, corrected legacy Vitals and Vials browser tests, and this document.
@@ -609,3 +609,50 @@ PyPI's live JSON SHA-256 listing for each wheel and creating hash lock
 receipts. The retained path must be explicitly supplied; no arbitrary
 or latest directory is trusted. Installed DEV and PROD remain unchanged.
 Issue #10 still requires independent replay, OS/browser proof and rollback.
+
+
+## Release 705 Issue #10 — approved two-pass offline disposable replay
+
+After the operator's 2026-11-19 verification of the 44 wheels from
+`/tmp/tracker705-wheel-acquire.u523ry6c`, the user explicitly authorized
+offline installation **only in two fresh disposable /tmp Python 3.13.5
+virtual environments**. The pinned receipts include a full SHA-256 wheel
+manifest, a hash-locked requirements file and matching PyPI release
+metadata; the published PyPI digests are **not** independent provenance
+attestations.
+
+`scripts/tracker-dependency-replay705.sh` is a guarded DEV-only,
+exact-commit source worktree entrypoint; it requires a separate Linux
+network namespace established by `systemd-run -p PrivateNetwork=yes`.
+The outer operator script fetches the pinned branch **before** entering
+the isolated namespace. The replay worker never calls git fetch,
+pip download, Playwright install or a live release installer. It checks
+a clean installed Release 704 source, the pinned candidate SHA,
+the exact allowlist, private wheel root and receipts, read-only
+installed baseline, then runs source-only Release 705 qualification.
+
+`scripts/tracker_dependency_replay705.py` rechecks every original
+wheel against the local locked SHA-256 bytes and the saved exact PyPI
+artifact receipt without network access. It then builds **two independent**
+private virtual environments under /tmp. For each pass it installs
+all exact SHA-pinned wheels via `pip --isolated install --no-index
+--no-cache-dir --only-binary=:all: --require-hashes --find-links`,
+using an empty process environment free of host secrets; performs the
+Release 569 exact Python/SQLite/44-package installed baseline audit;
+runs `pip check`; and executes the selected Release 705 backend/ASGI
+regression modules. Both passes use distinct HOME, TMPDIR,
+TRACKER_DATA_DIR and venv paths, and the wheel bytes are reverified
+between passes. Network namespace isolation is required; failure of
+any step stops immediately.
+
+The generated private `/tmp/tracker705-replay-evidence.XXXXXXXX` retains
+per-pass installation, baseline, pip check and backend test logs plus a
+two-pass SHA/commit report. Both isolated venvs, app test data and
+detached worktree are removed on success or failure. No installed
+DEV/PROD venv, database, service or user data is intentionally changed.
+
+Even successful two-pass Python/backend evidence does **not** approve
+Chromium/Playwright browser distribution, underlying OS libraries,
+independent supply-chain provenance or tested dependency rollback.
+Issue #10 remains blocked pending those separate gates; Issue #9
+remains blocked pending global strict-CSRF positive runtime coverage.
