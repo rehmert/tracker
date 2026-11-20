@@ -101,7 +101,8 @@ def test_707_dev_worker_requires_exact_sha_disposable_source_and_no_prod():
         'git worktree add --detach "$QA" "$TARGET"',
         'git -C "$APP" worktree remove --force "$QA"',
         'tests/test_release707_csrf_positive.py',
-        'scripts/tracker-browser-qualify.sh "$QA" "$PY" --targeted-strict csrf-positive707',
+        'scripts/tracker-browser-qualify.sh "$QA" "$PY" \\',
+        '--targeted-strict csrf-positive707',
         'RELEASE_707_TARGETED_POSITIVE=PASSED_NOT_GLOBAL_CLEARANCE',
     ):
         assert marker in worker, marker
