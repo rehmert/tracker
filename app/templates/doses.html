@@ -274,7 +274,7 @@
 
 <section id="dose-history-unified614">
   <h2>Administration timeline</h2>
-  <p class="note">Recent individual-vial and prepared-blend withdrawals, combined in chronological order. A blended withdrawal is shown once, not as duplicate individual-vial doses. This table is read-only; corrections use the original record links.</p>
+  <p class="note">Recent individual-vial and prepared-blend withdrawals, combined in chronological order. A blended withdrawal is shown once, not as duplicate individual-vial doses. Use Review entry to correct or delete the original vial or prepared-blend withdrawal.</p>
   <form method="get" action="/doses" class="inline" aria-label="Administration history filters">
     {% if compound_id is not none %}<input type="hidden" name="compound_id" value="{{ compound_id }}">{% endif %}
     <label class="field"><span>Date</span><input type="date" name="history_date" value="{{ history_date }}"></label>
