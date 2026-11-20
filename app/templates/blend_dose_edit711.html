@@ -16,8 +16,8 @@
     <input name="amount" type="number" inputmode="decimal" step="any" min="0.000001" value="{{ dose.entered_value if dose.entered_value is not none else dose.volume_ml }}" required>
   </label>
   <label class="field"><span>Unit</span>
-    <select name="unit" required>{% for unit in allowed_units %}<option value="{{ unit }}" {% if unit == (dose.entered_unit or 'mL') %}selected{% endif %}>{{ unit }}</option>{% endfor %}</select>
-    <small>{% if allowed_units|length == 2 %}Mixed-compound draws must be entered as mL or uL.{% else %}Mass/IU entries are accepted only when compatible with the prepared compound; liquid volume is always accepted.{% endif %}</small>
+    <select name="unit" required>{% for unit in allowed_units %}<option value="{{ unit }}" {% if unit == (dose.entered_unit or 'mL') %}selected{% endif %}>{{ 'units (U-100 syringe)' if unit == 'units' else unit }}</option>{% endfor %}</select>
+    <small>{% if allowed_units|length == 3 %}Mixed-compound draws must use liquid volume (mL, uL, or U-100 syringe units).{% else %}Mass/IU entries are allowed only when compatible with the single compound; liquid volume is always accepted.{% endif %} 1 U-100 unit = 0.01 mL; IU measures potency.</small>
   </label>
   <label class="field"><span>Type</span>
     <select name="kind"><option value="dose" {% if dose.kind == "dose" %}selected{% endif %}>Administered</option><option value="waste" {% if dose.kind == "waste" %}selected{% endif %}>Discarded</option></select>
