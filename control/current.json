@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r711-8d4c6f12a905",
+  "request_id": "r711-3b7f6c20ad8e",
   "action": "qualify",
   "release": 711,
-  "target": "573ce28e9301b2d0e67abd0b936ca2a51d628ad5",
+  "target": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
   "base": "5e78dfcdc8d9612266aa2aca26755957bad02561",
   "ref": "release/711-blend-dose-corrections",
   "previous_request_id": null
