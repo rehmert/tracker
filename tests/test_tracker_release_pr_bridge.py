@@ -167,6 +167,7 @@ def test_pr_event_contains_no_instruction_to_promote_or_merge():
     assert "git merge " not in script
     assert "tracker-release-receipts" in script
     assert "tracker-release-events" in script
-    assert "release number" not in script.lower() or True  # metadata only
+    assert "prod_deploy" in script  # event metadata, not a command executor
+    assert "subprocess.run(argv" not in script
     subprocess.run(["bash", "-n", str(ROOT / "scripts/tracker-release-agent-install.sh")],
                    check=True, capture_output=True)
