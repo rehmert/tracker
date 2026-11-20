@@ -32,7 +32,9 @@ git merge-base --is-ancestor "$BASE" "$TARGET" ||
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
+    app/blend_dose_identity711.py|\
     app/manual_supplies.py|\
+    app/routers/blends.py|\
     app/routers/doses.py|\
     app/templates/blend_dose_edit711.html|\
     app/templates/blend_detail.html|\
