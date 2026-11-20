@@ -284,3 +284,36 @@ def test_711_single_compound_mass_correction_keeps_same_physical_blend():
         assert draw.entered_value == 1 and draw.entered_unit == "mg"
         assert abs(draw.volume_ml - .2) < 1e-9
         assert db.query(DoseLog).filter(DoseLog.vial_id.in_(source_ids)).count() == 0
+
+
+def test_711_two_draws_reserve_each_others_volume_and_corrections_reopen_stock():
+    bid, _, source_ids, _ = _seed()
+    with TestClient(app) as client:
+        header = _header(client)
+        first = _create(client, bid, header, volume="1.2")
+        second = _create(client, bid, header, volume=".8")
+        with SessionLocal() as db:
+            assert db.get(Blend, bid).status == "finished"
+        over = _edit(client, first, header, amount="1.3")
+        assert over.status_code == 303
+        with SessionLocal() as db:
+            assert abs(db.get(BlendDose, first).volume_ml - 1.2) < 1e-9
+            assert abs(db.get(BlendDose, second).volume_ml - .8) < 1e-9
+        correction = _edit(client, second, header, amount=".5")
+        assert correction.status_code == 303
+        with SessionLocal() as db:
+            blend = db.get(Blend, bid)
+            assert blend.status == "in_use"
+            assert abs(remaining_blend_ml710(blend) - .3) < 1e-9
+        deletion = client.post(
+            f"/doses/blends/{first}/delete",
+            data={"confirm_delete": "yes"}, headers=header,
+            follow_redirects=False,
+        )
+        assert deletion.status_code == 303
+        with SessionLocal() as db:
+            blend = db.get(Blend, bid)
+            assert db.get(BlendDose, first) is None
+            assert db.get(BlendDose, second) is not None
+            assert abs(remaining_blend_ml710(blend) - 1.5) < 1e-9
+            assert db.query(DoseLog).filter(DoseLog.vial_id.in_(source_ids)).count() == 0
