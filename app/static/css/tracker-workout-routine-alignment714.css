@@ -1,0 +1,35 @@
+/* Release 714: saved routine editor only.
+   Force number/title above substitution controls independent of title length.
+   Preserve all original forms and machine selection logic. */
+.workout655 .workout-routine-row655 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  justify-content: stretch;
+  gap: .65rem;
+}
+.workout655 .workout-routine-heading655 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.workout655 .workout-routine-actions655 {
+  width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+}
+.workout655 .workout-routine-actions655 > form[action$="/substitute"] {
+  flex: 1 1 24rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.workout655 .workout-routine-actions655 > form[action$="/substitute"] label {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+}
+.workout655 .workout-routine-actions655 > form[action$="/substitute"] select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
