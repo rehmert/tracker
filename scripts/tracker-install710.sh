@@ -30,8 +30,9 @@ STAGE="$(mktemp -d /tmp/tracker710-install.XXXXXXXX)"
 trap 'rm -rf -- "$STAGE"' EXIT
 RUNNER="$STAGE/runner.sh"
 git show "$TARGET:scripts/tracker-release.sh" > "$RUNNER"
-[[ "$(git hash-object "$RUNNER")" ==
-   "$(git rev-parse "$TARGET:scripts/tracker-release.sh")" ]] ||
+EXPECTED_BLOB="$(git rev-parse "$TARGET:scripts/tracker-release.sh")"
+ACTUAL_BLOB="$(git hash-object "$RUNNER")"
+[[ "$ACTUAL_BLOB" == "$EXPECTED_BLOB" ]] ||
   fail "Deployment runner Git blob verification failed"
 bash -n "$RUNNER"
 echo "RELEASE_710_REVIEWED_TARGET=$TARGET"
