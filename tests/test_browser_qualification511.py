@@ -38,6 +38,9 @@ STRICT_ONLY = frozenset({
     "tests/browser/test_csrf_coa_lifecycle627.py",
     "tests/browser/test_csrf_protocol_remaining627.py",
     "tests/browser/test_csrf_blend_previews627.py",
+    # Release 707: twelve real signed positive lifecycle routes require
+    # the isolated strict server, never report-only standard browser QA.
+    "tests/browser/test_csrf_regimen_catalog707.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",
@@ -74,6 +77,7 @@ def test_511_every_browser_module_in_disposable_qualification():
         ("csrf-batch627", "TARGETED_CSRF_BATCH627=PASSED"),
         ("csrf-positive627", "TARGETED_CSRF_POSITIVE627=PASSED"),
         ("csrf-new627", "TARGETED_CSRF_NEW627=PASSED"),
+        ("csrf-positive707", "TARGETED_CSRF_707_TWELVE_SIGNED_LIFECYCLES=PASSED"),
     )
     for mode, success_marker in targeted_627:
         begin = (f'if [[ "$MODE" == targeted && '
