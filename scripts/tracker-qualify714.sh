@@ -33,11 +33,6 @@ git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
     app/static/css/tracker-workout-routine-alignment714.css|\
-    app/templates/workout_routines655.html|\
-    app/templates/workout_schedule668.html|\
-    app/templates/workout_plan665.html|\
-    app/templates/workouts654.html|\
-    app/templates/workout_program667.html|\
     app/templates/workout_routine_detail655.html|\
     docs/release-714-routine-row-alignment.md|\
     scripts/tracker-qualify714.sh|\
