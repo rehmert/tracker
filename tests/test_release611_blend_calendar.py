@@ -168,9 +168,15 @@ def test_613_reconcile_does_not_mislabel_ordinary_vial_dose_as_blend():
          "blend_id": 51},
     ]}
     entries = reconcile(planned, actual, date(2026, 11, 15))[date(2026, 11, 14)]
-    assert entries[0]["status"] == "recorded"
-    assert entries[0]["actual_blend_id"] is None
-    assert entries[1]["status"] == "recorded"
-    assert entries[1]["actual_blend_id"] == 51
-    assert entries[2]["status"] == "extra"
-    assert entries[2]["blend_id"] == 51
+    # Release 668 sorts same-time entries by compound name. Check their
+    # identity rather than relying on an obsolete input-order assumption.
+    assert len(entries) == 3
+    assert [entry["name"] for entry in entries] == ["Example", "Extra", "Other"]
+    by_compound = {entry["compound_id"]: entry for entry in entries}
+    assert set(by_compound) == {11, 12, 13}
+    assert by_compound[11]["status"] == "recorded"
+    assert by_compound[11]["actual_blend_id"] is None
+    assert by_compound[12]["status"] == "recorded"
+    assert by_compound[12]["actual_blend_id"] == 51
+    assert by_compound[13]["status"] == "extra"
+    assert by_compound[13]["blend_id"] == 51
