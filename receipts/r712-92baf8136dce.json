@@ -1,0 +1,22 @@
+{
+  "action": "qualify",
+  "base": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "AssetImpactPreflight",
+  "finished_at_utc": "2026-11-20T17:22:03+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=FAILED",
+    "RELEASE_712_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_712_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/712-u100-syringe-withdraw-units",
+  "release": 712,
+  "request_id": "r712-92baf8136dce",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T17:22:01+00:00",
+  "status": "failed",
+  "target": "f1c4501ca6abfbaa407b38c48fee0b4fa61eb23d",
+  "test_counts": []
+}
