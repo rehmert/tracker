@@ -459,7 +459,7 @@ def test_705_offline_replay_is_network_isolated_two_pass_and_exact_sha():
     assert "bash -n scripts/tracker-dependency-replay705.sh" in scoped
     assert "tests/test_release705_dependency_replay.py" in scoped
     assert "DEPENDENCY_705_OFFLINE_REPLAY_SOURCE_CONTRACT=PASSED" in scoped
-    assert '    scripts/tracker_dependency_replay705.py \\' in scoped
+    assert '  scripts/tracker_dependency_replay705.py \\' in scoped
     for gate in (
         ROOT / "scripts/tracker-preview705.sh",
         ROOT / "scripts/tracker-browser-preview705.sh",
