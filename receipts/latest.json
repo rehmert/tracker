@@ -1,36 +1,27 @@
 {
-  "action": "prod_deploy",
-  "base": "7c662491c3a233b3df60842bbaeaa2dfbc995f06",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-20T17:46:22+00:00",
-  "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=1f2982975494ece2bceea3ce85617447f712b399",
-    "PROMOTED_COMMIT=1f2982975494ece2bceea3ce85617447f712b399",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_712_SCOPED_BACKEND=PASSED",
-    "TARGETED_712_U100_WITHDRAW=PASSED",
-    "RELEASE_712_SCOPED_BROWSER=PASSED",
-    "RELEASE_712_PROD_SCOPED=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=1f2982975494ece2bceea3ce85617447f712b399",
-    "REMOTE_DEPLOY_EXIT_STATUS=0",
-    "PROD_INSTALLED_COMMIT=1f2982975494ece2bceea3ce85617447f712b399",
-    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  "action": "qualify",
+  "base": "1f2982975494ece2bceea3ce85617447f712b399",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release710_unified_blend_dose.py"
   ],
-  "previous_request_id": "r712-a6471e0c29b5",
-  "ref": "release/712-u100-syringe-withdraw-units",
-  "release": 712,
-  "request_id": "r712-c4d278e6031b",
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-20T18:04:09+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_713_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_713_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_713_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/713-timeline-simple-blends-time24",
+  "release": 713,
+  "request_id": "r713-85ce10da3bf7",
   "schema": 1,
-  "started_at_utc": "2026-11-20T17:45:28+00:00",
-  "status": "passed",
-  "target": "1f2982975494ece2bceea3ce85617447f712b399",
+  "started_at_utc": "2026-11-20T18:04:01+00:00",
+  "status": "failed",
+  "target": "b4fc88c92f74a7079906e9e0399ad80381c0de90",
   "test_counts": [
-    "84 passed, 1 warning",
-    "7 passed",
-    "2 passed"
+    "13 passed, 1 warning"
   ]
 }

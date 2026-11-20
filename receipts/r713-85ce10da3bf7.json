@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "1f2982975494ece2bceea3ce85617447f712b399",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release710_unified_blend_dose.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-20T18:04:09+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_713_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_713_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_713_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/713-timeline-simple-blends-time24",
+  "release": 713,
+  "request_id": "r713-85ce10da3bf7",
+  "schema": 1,
+  "started_at_utc": "2026-11-20T18:04:01+00:00",
+  "status": "failed",
+  "target": "b4fc88c92f74a7079906e9e0399ad80381c0de90",
+  "test_counts": [
+    "13 passed, 1 warning"
+  ]
+}
