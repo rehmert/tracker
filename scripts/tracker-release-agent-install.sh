@@ -21,12 +21,12 @@ git fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] || fail 'Ops branch has changed'
 STAGE="$(mktemp -d /tmp/tracker-agent-install.XXXXXXXX)"
 trap 'rm -rf -- "$STAGE"' EXIT
-for name in tracker-release-agent.py tracker-release-notifier.py tracker-release-agent-install.sh; do
+for name in tracker-release-agent.py tracker-release-notifier.py tracker-release-pr-bridge.py tracker-release-agent-install.sh; do
   rel="scripts/$name"
   git show "$TARGET:$rel" > "$STAGE/$name"
   [[ "$(git hash-object "$STAGE/$name")" == "$(git rev-parse "$TARGET:$rel")" ]] || fail "Object mismatch: $rel"
 done
-python3 -m py_compile "$STAGE/tracker-release-agent.py" "$STAGE/tracker-release-notifier.py"
+python3 -m py_compile "$STAGE/tracker-release-agent.py" "$STAGE/tracker-release-notifier.py" "$STAGE/tracker-release-pr-bridge.py"
 bash -n "$STAGE/tracker-release-agent-install.sh"
 
 # Run focused, entirely offline tests against the exact pinned source before
@@ -35,16 +35,19 @@ mkdir -m 700 -p "$STAGE/qa/scripts" "$STAGE/qa/tests"
 for source in \
   scripts/tracker-release-agent.py \
   scripts/tracker-release-notifier.py \
+  scripts/tracker-release-pr-bridge.py \
   scripts/tracker-release-agent-install.sh \
   tests/test_tracker_release_agent_control.py \
-  tests/test_tracker_release_notifier.py; do
+  tests/test_tracker_release_notifier.py \
+  tests/test_tracker_release_pr_bridge.py; do
   git show "$TARGET:$source" > "$STAGE/qa/$source"
   [[ "$(git hash-object "$STAGE/qa/$source")" == "$(git rev-parse "$TARGET:$source")" ]] ||
     fail "Offline QA source hash mismatch: $source"
 done
 "$APP/.venv/bin/python" -m pytest -q --tb=short --maxfail=1 \
   "$STAGE/qa/tests/test_tracker_release_agent_control.py" \
-  "$STAGE/qa/tests/test_tracker_release_notifier.py" ||
+  "$STAGE/qa/tests/test_tracker_release_notifier.py" \
+  "$STAGE/qa/tests/test_tracker_release_pr_bridge.py" ||
   fail 'Focused agent and notifier tests failed'
 echo 'TRACKER_PUSH_OFFLINE_QA=PASSED'
 # Ensure local tree is identical to the pinned source before installing the agent.
@@ -53,6 +56,7 @@ install -d -o root -g root -m 700 /var/lib/tracker-release-agent
 install -d -o root -g root -m 700 /var/log/tracker-release-agent
 install -o root -g root -m 700 "$STAGE/tracker-release-agent.py" /usr/local/sbin/tracker-release-agent.py
 install -o root -g root -m 700 "$STAGE/tracker-release-notifier.py" /usr/local/sbin/tracker-release-notifier.py
+install -o root -g root -m 700 "$STAGE/tracker-release-pr-bridge.py" /usr/local/sbin/tracker-release-pr-bridge.py
 
 # ntfy uses a secret, unguessable topic. Only the sanitized result of a
 # release stage is sent to this external notification provider. Topic and
@@ -90,6 +94,7 @@ User=root
 WorkingDirectory=/opt/tracker
 ExecStart=/usr/bin/python3 -I /usr/local/sbin/tracker-release-agent.py
 ExecStartPost=/usr/bin/python3 -I /usr/local/sbin/tracker-release-notifier.py
+ExecStartPost=/usr/bin/python3 -I /usr/local/sbin/tracker-release-pr-bridge.py
 TimeoutStartSec=55min
 UMask=0077
 UNIT
@@ -115,6 +120,7 @@ echo "TRACKER_RELEASE_AGENT_PINNED_COMMIT=$TARGET"
 echo 'TRACKER_RELEASE_AGENT_TIMER=ENABLED'
 echo 'TRACKER_RELEASE_AGENT_PROD=UNTOUCHED'
 echo 'TRACKER_PUSH_NOTIFIER=INSTALLED'
+echo 'TRACKER_RELEASE_PR_BRIDGE=INSTALLED'
 python3 - <<'PY'
 import json
 with open('/etc/tracker-release-notify.json', encoding='utf-8') as f:
