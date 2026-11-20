@@ -13,9 +13,11 @@ inconsistent vertical alignment, as observed for exercise #11.
 
 ## Fix
 
-Only `app/static/css/tracker-workouts655.css` and the corresponding
-static-asset version in `app/templates/workout_routine_detail655.html`
-change at runtime:
+Only a new page-specific stylesheet
+`app/static/css/tracker-workout-routine-alignment714.css` and its inclusion
+in `app/templates/workout_routine_detail655.html` change at runtime.
+The shared `tracker-workouts655.css` remains byte-for-byte unchanged on all
+six pages that load it:
 
 - Each routine card uses a one-column CSS grid so the exercise number
   and title **always occupy the first row**.
@@ -26,7 +28,7 @@ change at runtime:
   long exercise names can wrap instead of overflowing horizontally.
 - All original POST form actions, button labels, CSRF and data mutations,
   exercise ordering and persistence are unmodified.
-- Cache bust the stylesheet to `?v=714` so existing clients actually
+- Load the new page-specific stylesheet with `?v=714` so existing clients
   receive the corrected layout.
 
 There are no schema, API, inventory, Workout recording, or dependency changes.
