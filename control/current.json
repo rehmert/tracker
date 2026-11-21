@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r738-56d3041245c1",
+  "request_id": "r738-de867eee9300",
   "action": "qualify",
   "release": 738,
-  "target": "56d3041245c114cba9e49b6dc3900532f4cc2b08",
+  "target": "de867eee93004534fa822e7250deda75d0976558",
   "base": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
   "ref": "release/738-integrated-macd-mobile-ux",
   "previous_request_id": null
