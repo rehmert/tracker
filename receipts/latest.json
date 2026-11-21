@@ -1,24 +1,20 @@
 {
-  "action": "dev_install",
-  "base": "2421fde33dfae626022529f046c9b21035ad6d62",
+  "action": "prod_preflight",
+  "base": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-21T20:13:17+00:00",
+  "finished_at_utc": "2026-11-21T20:14:13+00:00",
   "markers": [
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "RELEASE_735_DEV_INSTALL=SUCCESS"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r735-51a4a70ed092",
+  "previous_request_id": "r735-install51a4a70ed092",
   "ref": "release/735-prod-catchup-727-to-735",
   "release": 735,
-  "request_id": "r735-install51a4a70ed092",
+  "request_id": "r735-pf51a4a70ed092",
   "schema": 1,
-  "started_at_utc": "2026-11-21T20:11:51+00:00",
+  "started_at_utc": "2026-11-21T20:14:11+00:00",
   "status": "passed",
   "target": "51a4a70ed09287dd60a108dfea3721cd53090740",
-  "test_counts": [
-    "97 passed, 1 warning"
-  ]
+  "test_counts": []
 }
