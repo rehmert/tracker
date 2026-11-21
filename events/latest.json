@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r740-78de7168566f.json",
+  "receipt_path": "receipts/r740-install78de7168.json",
   "release": 740,
-  "request_id": "r740-78de7168566f",
+  "request_id": "r740-install78de7168",
   "schema": 1,
   "status": "passed",
   "target": "78de7168566f15dcd450ee24d7f2e8fe0cdae756"
