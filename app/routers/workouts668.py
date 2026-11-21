@@ -487,6 +487,18 @@ def delete_workout_session719(
         ),
         after=dict(deleted=True),
     )
+    # Deleted offline-sync receipts need independent key tombstones. Otherwise
+    # retrying an old client UUID after session ID reuse could create a set
+    # again in a newly started workout.
+    for row in receipts:
+        audit_record717(
+            db, "workout_offline_action", row.id, "session_deleted",
+            before=dict(
+                client_key=row.client_key, session_id=session_id,
+                payload_sha256=row.payload_sha256,
+            ),
+            after=dict(deleted=True, set_id=None),
+        )
     # RESTRICT FKs require dependent rows removed first. Foreign-key cascades
     # are not relied on; all deletes and the audit commit atomically.
     for row in corrections:
@@ -758,6 +770,27 @@ def sync_offline_set668(
             raise HTTPException(409, "Offline UUID reused with different set data")
         return JSONResponse({"ok": True, "duplicate": True, "set_id": existing.set_id,
                              "deleted": existing.set_id is None})
+    # Deleted-session tombstones survive after the FK-restricted receipt is
+    # removed. Preserve the UUID idempotency contract even if SQLite reuses a
+    # previously deleted workout/session ID.
+    old_key = db.scalar(
+        select(ChangeAudit)
+        .where(
+            ChangeAudit.entity_type == "workout_offline_action",
+            ChangeAudit.action == "session_deleted",
+            func.json_extract(ChangeAudit.before_json, "$.client_key") == key,
+        )
+        .order_by(ChangeAudit.id.desc())
+        .limit(1)
+    )
+    if old_key is not None:
+        stored = json.loads(old_key.before_json)
+        if (stored["session_id"] != session_id
+                or stored["payload_sha256"] != fingerprint):
+            raise HTTPException(409, "Offline UUID belongs to a deleted workout")
+        return JSONResponse({
+            "ok": True, "duplicate": True, "set_id": None, "deleted": True,
+        })
     active = active654(db)
     if active is None or active.id != session_id:
         raise HTTPException(409, "Original workout is no longer active; nothing was synchronized")
