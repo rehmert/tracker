@@ -126,13 +126,31 @@ def validate_command(value: dict) -> dict:
     return value
 
 
-def validate_chain(command: dict, latest: dict | None) -> None:
+def validate_chain(
+    command: dict, previous: dict | None, latest: dict | None = None,
+) -> None:
     stage = command['action']
     if stage == 'qualify':
         # A new commit must be requalified after a failure; exact same commit
         # may be deliberately requalified with a new request ID.
         return
-    if not latest or latest.get('status') != 'passed':
+    # Normally the immutable previous-stage receipt is also latest. Allow a
+    # fresh request after an earlier *chain-blocked* attempt of this exact
+    # same stage, target and PROD base. That attempt was rejected before
+    # command_for_stage/execute, so no live deployment could have started.
+    # A failed/unknown/possibly executed stage is never silently retried.
+    if latest is not None and latest.get('request_id') != command['previous_request_id']:
+        recoverable = (
+            latest.get('status') == 'blocked'
+            and latest.get('failure_category') == 'StageChainBlocked'
+            and all(latest.get(key) == command[key] for key in (
+                'action', 'release', 'target', 'base', 'ref',
+                'previous_request_id',
+            ))
+        )
+        if not recoverable:
+            raise GateError('Latest receipt is not prior success or matching blocked attempt')
+    if not previous or previous.get('status') != 'passed':
         raise GateError('Previous stage has not passed')
     # A catch-up PROD promotion may begin from an older *installed PROD*
     # commit than the DEV release's qualification/install base. Verify the
@@ -140,13 +158,13 @@ def validate_chain(command: dict, latest: dict | None) -> None:
     # promotion preflight separately verifies PROD's actual installed base,
     # GitHub main, ancestry, signed DEV evidence and active services.
     for key in ('release', 'target', 'ref'):
-        if latest.get(key) != command[key]:
+        if previous.get(key) != command[key]:
             raise GateError('Prior receipt does not match current release')
-    if stage != 'prod_preflight' and latest.get('base') != command['base']:
+    if stage != 'prod_preflight' and previous.get('base') != command['base']:
         raise GateError('Prior receipt base does not match current release')
-    if latest.get('request_id') != command['previous_request_id']:
+    if previous.get('request_id') != command['previous_request_id']:
         raise GateError('Prior receipt ID mismatch')
-    if latest.get('action') != ACTION_PREVIOUS[stage]:
+    if previous.get('action') != ACTION_PREVIOUS[stage]:
         raise GateError('Stages must advance in order')
 
 
@@ -363,7 +381,13 @@ def main() -> int:
         req = cmd['request_id']
         seen = STATE / f'{req}.started'
         fetch(RECEIPT_BRANCH)
-        prev = json_read(show(RECEIPT_REF, LATEST_PATH))
+        latest = json_read(show(RECEIPT_REF, LATEST_PATH))
+        # Look up the exact immutable preceding stage rather than assuming
+        # that every more recent receipt is the same prior success.
+        prev = (
+            json_read(show(RECEIPT_REF, f'receipts/{cmd["previous_request_id"]}.json'))
+            if cmd['previous_request_id'] else None
+        )
         if seen.exists():
             already = json_read(show(RECEIPT_REF, f'receipts/{req}.json'))
             if already is not None:
@@ -381,7 +405,7 @@ def main() -> int:
             pending.unlink()
             return 0
         try:
-            validate_chain(cmd, prev)
+            validate_chain(cmd, prev, latest)
         except GateError as exc:
             receipt = {
                 **cmd, 'status': 'blocked', 'exit_code': 1,
