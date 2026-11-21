@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_735_exact_727_to_latest_source_history_is_reviewed():
-    review.review(ROOT, review.PROD_727, "HEAD")
+    review.review(ROOT, review.PROD_727, review.git(ROOT, "rev-parse", "HEAD"))
     assert [number for number, _ in review.MILESTONES] == [
         "729", "730", "731", "732", "733", "734",
     ]
@@ -17,7 +17,7 @@ def test_735_exact_727_to_latest_source_history_is_reviewed():
 
 def test_735_wrong_base_and_pre_catchup_target_are_rejected():
     with pytest.raises(ValueError, match="exact installed PROD Release 727"):
-        review.review(ROOT, review.DEV_730, "HEAD")
+        review.review(ROOT, review.DEV_730, review.git(ROOT, "rev-parse", "HEAD"))
     with pytest.raises(ValueError, match="exact Release 735 target commit"):
         review.review(ROOT, review.PROD_727, review.MILESTONES[-1][1])
     with pytest.raises(ValueError):
