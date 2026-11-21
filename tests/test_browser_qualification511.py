@@ -44,6 +44,7 @@ STRICT_ONLY = frozenset({
     "tests/browser/test_global_time24_713.py",
     "tests/browser/test_coa_untested715.py",
     "tests/browser/test_workout_active716.py",
+    "tests/browser/test_workout_completed717.py",
 })
 STRICT_REPLAY = frozenset({
     "tests/browser/test_labs_native_https501.py",
@@ -86,6 +87,7 @@ def test_511_every_browser_module_in_disposable_qualification():
         ("global-time24-713", "TARGETED_713_GLOBAL_TIME24=PASSED"),
         ("coa-untested715", "TARGETED_715_COA_UNTESTED=PASSED"),
         ("workout-active716", "TARGETED_716_ACTIVE_WORKOUT=PASSED"),
+        ("workout-completed717", "TARGETED_717_COMPLETED_WORKOUT=PASSED"),
     )
     for mode, success_marker in targeted_627:
         begin = (f'if [[ "$MODE" == targeted && '
