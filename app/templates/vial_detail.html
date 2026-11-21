@@ -2,7 +2,14 @@
 {% from "_macros.html" import gauge %}
 {% block title %}{{ v.compound.name }} {{ v.label }}{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 <h1>{{ v.compound.name }} <small class="sub">{{ v.label or ('vial #' ~ v.id) }}</small></h1>
+<nav class="tracker-macd741-actions" aria-label="Vial management">
+<a class="tracker-macd741-action" href="#vial-details741">Edit vial</a>
+<a class="tracker-macd741-action" href="#vial-coas741">Manage COAs</a>
+<a class="tracker-macd741-action" href="#vial-delete741">Delete vial</a>
+<a class="tracker-macd741-action" href="/reconciliation">Reconcile stock</a>
+</nav>
 <p><a href="/vials/{{ v.id }}/labels">Print vial/cap labels (203 DPI) →</a></p>
 
 <dl class="stats">
@@ -17,7 +24,7 @@
 {% if v.purchase %}<p class="note">Bought from <a href="/purchases/{{ v.purchase.id }}">{{ v.purchase.vendor }}</a> on {{ v.purchase.purchased_on|dt }}.</p>{% endif %}
 
 <section>
-  <h2>Certificates of analysis</h2>
+  <h2 id="vial-coas741">Certificates of analysis</h2>
   {% if coa_variance %}
   <p class="note"><strong>Average reported content:</strong> {{ coa_variance.average|num }} {{ coa_variance.unit }}
   across {{ coa_variance.count }} COA(s), {{ '%+.1f'|format(coa_variance.pct) }}% versus the label
@@ -62,7 +69,7 @@
 </section>
 
 <section>
-  <h2>Vial details</h2>
+  <h2 id="vial-details741">Vial details</h2>
 <p><a href="/reconstitution-calculator?vial_id={{ v.id }}">Open full reconstitution calculator →</a></p>
   <details id="vial-reconstitution683" {% if v.form == 'lyophilized' and not v.volume_ml %}open{% endif %}><summary>Reconstitution calculator and recording</summary><div class="grid">
   <label class="field"><span>Vial content ({{ recon_unit }})</span><input id="rc-content" type="number" step="any" value="{{ recon_content|num_input }}"></label>
@@ -129,7 +136,7 @@
     <label class="field wide"><span>Notes</span><input name="notes" value="{{ v.notes }}"></label>
     <div><button class="primary">Save changes</button></div>
   </form>
-  <form method="post" action="/vials/{{ v.id }}/delete" onsubmit="return confirm('Delete this vial and its COA files?')"><button class="link danger">Delete vial</button></form>
+  <form id="vial-delete741" method="post" action="/vials/{{ v.id }}/delete" onsubmit="return confirm('Delete this vial and its COA files?')"><button class="link danger">Delete vial</button></form>
 </section>
 
 <section>
