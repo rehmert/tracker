@@ -17,7 +17,7 @@ STYLE_681 = (CSS / "tracker-workout-nav-density681.css").read_text()
 def test_681_scope_and_stylesheet_order():
     base = (ROOT / "app/templates/base.html").read_text()
     assert base.count("tracker-workout-nav-density681.css?v=681") == 1
-    assert base.index("tracker-shortcut-buttons676.css?v=676") < base.index(
+    assert base.index("tracker-ui-foundation679.css?v=743") < base.index(
         "tracker-workout-nav-density681.css?v=681"
     )
     assert "#main-content nav.ux675-actions.ux675-gym-top" in STYLE_681
