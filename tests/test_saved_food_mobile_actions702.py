@@ -58,7 +58,7 @@ def test_702_exact_original_actions_without_duplicate_forms_or_post_changes():
 
 
 def test_702_css_is_mobile_and_keyboard_scoped_without_hidden_controls():
-    assert 'tracker-saved-food-actions702.css?v=702' in EDITOR
+    assert 'tracker-saved-food-actions702.css?v=739' in EDITOR
     assert '@media screen and (max-width: 760px)' in CSS
     assert ':root.tracker-mobile-editing' in CSS
     assert 'position: sticky;' in CSS
