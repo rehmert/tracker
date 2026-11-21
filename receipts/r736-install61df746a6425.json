@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "51a4a70ed09287dd60a108dfea3721cd53090740",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T20:29:28+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_736_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r736-61df746a6425",
+  "ref": "release/736-regimen-add-chevron",
+  "release": 736,
+  "request_id": "r736-install61df746a6425",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T20:28:22+00:00",
+  "status": "passed",
+  "target": "61df746a64259e84a6fdef23d7d8df17ef3b6e0c",
+  "test_counts": [
+    "32 passed, 1 warning"
+  ]
+}
