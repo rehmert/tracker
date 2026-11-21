@@ -39,6 +39,7 @@ while IFS= read -r path; do
     scripts/tracker-qualify726.sh|\
     scripts/tracker-release-scoped726.sh|\
     tests/browser/test_release726_labs_mobile.py|\
+    tests/test_labs_overview.py|\
     tests/test_release726_labs_mobile.py) ;;
     *) fail "Unexpected Release 726 source path: $path" ;;
   esac
