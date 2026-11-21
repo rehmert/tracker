@@ -76,3 +76,33 @@
     box-shadow: none !important;
   }
 }
+
+/* Release 739: separate Delete transaction, visually aligned with Save/Cancel.
+   The delete form remains independent, bound by the HTML form attribute. */
+#main-content .food-saved-edit669 .tracker-food-editor-delete739 {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: .55rem .75rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: .65rem;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+#main-content .food-saved-edit669 .tracker-food-editor-delete739:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+#main-content .food-saved-edit669 .tracker-food-editor-delete739:focus-visible {
+  outline: 3px solid var(--teal, #1265ad);
+  outline-offset: 2px;
+}
+@media screen and (max-width: 760px) {
+  #main-content .food-saved-edit669 .tracker-food-editor-actions702
+  > .tracker-food-editor-delete739 {
+    grid-column: 1 / -1;
+    min-height: 48px;
+  }
+}
