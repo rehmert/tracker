@@ -300,6 +300,19 @@ run_isolated_browser_module() {
     rc=${PIPESTATUS[0]}
     set -e
 
+    # Release 716: publish only fixed test-step names, never browser output,
+    # private data, or raw exception messages, when the isolated UI test fails.
+    if [[ "${module##*/}" == test_workout_active716.py ]]; then
+        local stage_file="$DATA/workout716-stages.txt"
+        if [[ -f "$stage_file" && ! -L "$stage_file" ]]; then
+            local stage
+            while IFS= read -r stage; do
+                if [[ "$stage" =~ ^TARGETED_716_(HTTP|HTTPS)_(MACHINE_ONE|CATALOG|ROUTINE_CREATED|ROUTINE_READY|STARTED|LINKS|EXISTING|NEW|FINISHED)=PASSED$ ]]; then
+                    echo "$stage"
+                fi
+            done < "$stage_file"
+        fi
+    fi
     echo "MODULE_EXIT=$rc"
     return "$rc"
 }
