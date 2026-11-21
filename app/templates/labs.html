@@ -44,11 +44,16 @@
     <span id="labs-reports-count" role="status" aria-live="polite">Showing {{ reports|length }} of {{ reports|length }} reports.</span>
   </div>
   <p id="labs-reports-empty" class="note" hidden>No reports match that search.</p>
-  <div class="scroll"><table id="labs-reports-table">
-    <thead><tr><th>Drawn</th><th>Lab</th><th class="n">Results</th><th>File</th></tr></thead>
+  <div class="scroll"><table class="ux673-card-table" id="labs-reports-table">
+    <thead><tr><th scope="col">Drawn</th><th scope="col">Lab</th><th scope="col" class="n">Results</th><th scope="col">File</th></tr></thead>
     <tbody>
     {% for r in reports %}
-    <tr data-labs-report-row data-lab-report-date="{{ r.drawn_on.isoformat() }}" data-lab-report-name="{{ r.lab_name }}" data-lab-report-results="{{ r.results|length }}"><td><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td><td>{{ r.lab_name or '—' }}</td><td class="n">{{ r.results|length }}</td><td>{{ 'yes' if r.stored_name else '—' }}</td></tr>
+    <tr data-labs-report-row data-lab-report-date="{{ r.drawn_on.isoformat() }}" data-lab-report-name="{{ r.lab_name }}" data-lab-report-results="{{ r.results|length }}">
+      <td data-label="Drawn" data-ux673-action><a href="/labs/{{ r.id }}">{{ r.drawn_on|dt }}</a></td>
+      <td data-label="Lab">{{ r.lab_name or '—' }}</td>
+      <td data-label="Results" class="n">{{ r.results|length }}</td>
+      <td data-label="File">{{ 'yes' if r.stored_name else '—' }}</td>
+    </tr>
     {% else %}<tr><td colspan="4" class="empty">No lab reports yet.</td></tr>{% endfor %}
     </tbody>
   </table></div>
