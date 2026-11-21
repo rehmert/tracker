@@ -1,24 +1,27 @@
 {
   "action": "qualify",
   "base": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
-  "exit_code": 249,
+  "exit_code": 0,
   "failed_tests": [],
-  "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-21T23:46:43+00:00",
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T23:50:43+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_743_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_743_INSTALLED_DEV=UNMODIFIED"
+    "RELEASE_743_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_743_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_743_EXIT_STATUS=0"
   ],
   "previous_request_id": null,
   "ref": "release/743-security-deps-controller-ux",
   "release": 743,
-  "request_id": "r743-a52a5d15304b",
+  "request_id": "r743-7585b65f0031",
   "schema": 1,
-  "started_at_utc": "2026-11-21T23:45:48+00:00",
-  "status": "failed",
-  "target": "a52a5d15304b287ae238835e24047735565c13f9",
+  "started_at_utc": "2026-11-21T23:48:29+00:00",
+  "status": "passed",
+  "target": "7585b65f003179fe86d0f98958fe0e63071b8e81",
   "test_counts": [
-    "50 passed, 1 warning"
+    "50 passed, 1 warning",
+    "196 passed, 1 warning"
   ]
 }
