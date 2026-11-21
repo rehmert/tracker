@@ -35,10 +35,16 @@ class EditorControls(HTMLParser):
 def test_702_exact_original_actions_without_duplicate_forms_or_post_changes():
     parser = EditorControls()
     parser.feed(EDITOR)
-    assert len(parser.forms) == 1
+    # Release 739 introduces an independent, guarded Delete form; the
+    # original edit form remains first, unchanged and non-nested.
+    assert len(parser.forms) == 2
     assert parser.forms[0]["method"] == "post"
     assert parser.forms[0]["action"] == "/food/saved/{{ product.id }}/edit"
-    assert len([x for x in parser.controls if x[0] == "save"]) == 1
+    assert parser.forms[1]["method"] == "post"
+    assert parser.forms[1]["action"] == "/food/saved/{{ product.id }}/delete"
+    submit_controls = [x[1] for x in parser.controls if x[0] == "save"]
+    assert len(submit_controls) == 2
+    assert any(x.get("form") == "food739-delete-{{ product.id }}" for x in submit_controls)
     assert len([x for x in parser.controls if x[0] == "link"]) == 2
     assert EDITOR.count('class="ux673-action-row tracker-food-editor-actions702"') == 1
     assert EDITOR.count('class="tracker-food-editor-back702"') == 1
