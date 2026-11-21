@@ -10,13 +10,14 @@ for script in scripts/tracker-qualify742.sh scripts/tracker-install742.sh \
   scripts/tracker-release-scoped742.sh scripts/tracker-release.sh; do
   bash -n "$script"
 done
-"$PY" -m py_compile \
+"$PY" -m py_compile app/routers/pages.py app/routers/supplies.py \
+  tests/test_release742_consolidated_ux_performance.py \
   scripts/tracker_security_readiness742.py \
   scripts/tracker_browser_provenance742.py \
   scripts/tracker_stage_chain742.py \
   tests/test_release742_security_deps_chain_css.py
 echo "RELEASE_742_COMPILE=PASSED"
-"$PY" -c 'from pathlib import Path; from jinja2 import Environment; Environment().parse(Path("app/templates/base.html").read_text(encoding="utf-8"))'
+"$PY" -c 'from pathlib import Path; from jinja2 import Environment; e=Environment(); [e.parse(Path(p).read_text(encoding="utf-8")) for p in ("app/templates/base.html","app/templates/supplies.html","app/templates/calendar.html")]'
 echo "RELEASE_742_BASE_TEMPLATE=PASSED"
 "$PY" -B scripts/tracker_security_readiness742.py
 echo "RELEASE_742_CURRENT_CSRF_INVENTORY=PASSED_REPORT_ONLY"
@@ -42,6 +43,9 @@ print("RELEASE_742_CHROMIUM_OS_FINGERPRINT=READ_ONLY_CAPTURED")
 PY
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release742_security_deps_chain_css.py \
+  tests/test_release742_consolidated_ux_performance.py || exit 42
+echo "RELEASE_742_INTEGRATED_NEW_TESTS=PASSED"
+"$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_ui_foundation679.py \
   tests/test_shortcut_buttons676.py \
   tests/test_shortcut_buttons_browser676.py \
@@ -58,6 +62,12 @@ PY
   tests/test_release627_csrf_reconciliation.py \
   tests/test_release621_csrf_form_crosswalk.py \
   tests/test_csrf_all_registered_negative705.py \
-  tests/test_release741_integrated_macd_mobile.py
+  tests/test_release741_integrated_macd_mobile.py \
+  tests/test_supply_stock_filters.py \
+  tests/test_supply_stock_health.py \
+  tests/test_supply_use_preview.py \
+  tests/test_calendar_workbench.py \
+  tests/test_calendar_review_agenda.py \
+  tests/test_record_explorer_template_regression.py || exit 43
 echo "RELEASE_742_SECURITY_DEPENDENCY_CONTROLLER_CSS=PASSED"
 echo "RELEASE_742_SCOPED_QUALIFICATION=PASSED_NOT_FULL_SUITE"
