@@ -23,7 +23,7 @@ export GIT_CONFIG_VALUE_0="$APP"
    -z "$(git status --porcelain)" ]] ||
   fail "Clean installed Release 741 required"
 systemctl is-active --quiet tracker || fail "Installed DEV service inactive"
-exec 9>/run/lock/tracker742-integrated-macd-mobile.lock
+exec 9>/run/lock/tracker742-consolidated-ux-performance.lock
 flock -n 9 || fail "Another Release 742 QA active"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] ||
   fail "Fetched Release 742 branch SHA mismatch"
@@ -32,21 +32,15 @@ git merge-base --is-ancestor "$BASE" "$TARGET" ||
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
-    app/routers/pages.py|\\
-    app/routers/supplies.py|\\
-    app/templates/supplies.html|\\
-    app/templates/calendar.html|\\
-    app/static/css/tracker-supplies-bundle742.css|\\
-    app/static/css/tracker-calendar-bundle742.css|\\
-    tests/test_release742_consolidated_ux_performance.py|\\
-    scripts/tracker-qualify742.sh|\\
-    scripts/tracker-install742.sh|\\
-    scripts/tracker-release-scoped742.sh|\\
+    app/routers/pages.py|app/routers/supplies.py|app/templates/supplies.html|\
+    app/templates/calendar.html|app/static/css/tracker-supplies-bundle742.css|\
+    app/static/css/tracker-calendar-bundle742.css|tests/test_release742_consolidated_ux_performance.py|\
+    scripts/tracker-qualify742.sh|scripts/tracker-install742.sh|scripts/tracker-release-scoped742.sh|\
     docs/release-742-consolidated-ux-performance.md) ;;
     *) fail "Unexpected Release 742 source path: $path" ;;
   esac
 done < <(git diff --name-only "$BASE" "$TARGET")
-RUN="$(mktemp -d /tmp/tracker742-integrated-macd-mobile.XXXXXXXX)"
+RUN="$(mktemp -d /tmp/tracker742-consolidated-ux-performance.XXXXXXXX)"
 QA="$RUN/source"
 cleanup() {
   local code=$?
