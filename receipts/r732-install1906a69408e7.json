@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "0bc005f9c1e5b1353a67755aeeb2940140a7c74f",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T19:29:30+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_732_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r732-1906a69408e7",
+  "ref": "release/732-medication-delete",
+  "release": 732,
+  "request_id": "r732-install1906a69408e7",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T19:28:42+00:00",
+  "status": "passed",
+  "target": "1906a69408e7dd00cb9044f77cd208566aed25df",
+  "test_counts": [
+    "68 passed, 4 warnings"
+  ]
+}
