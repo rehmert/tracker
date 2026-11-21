@@ -310,8 +310,10 @@ def test_743_consolidated_css_computed_accessibility_contract(width, scheme):
             page.add_style_tag(content=merged + "\n" + downstream)
             assert page.locator(".tracker-ui-action").count() == 2, "CSS743_COUNT"
             primary = page.locator(".tracker-ui-action--primary")
+            # CSS display:inline-flex blockifies to computed display:flex
+            # because this anchor is a child of a flex container.
             assert primary.evaluate(
-                "e => getComputedStyle(e).display === 'inline-flex'"
+                "e => getComputedStyle(e).display === 'flex'"
             ), "CSS743_PRIMARY_DISPLAY"
             assert primary.evaluate(
                 "e => e.getBoundingClientRect().height >= 44"
