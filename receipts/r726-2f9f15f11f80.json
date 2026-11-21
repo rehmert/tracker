@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "7cd9cd9ef76032bd6dc66131f4ccdb20fe10cb4c",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T14:33:32+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_726_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_726_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_726_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_726_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/726-labs-mobile-actions",
+  "release": 726,
+  "request_id": "r726-2f9f15f11f80",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T14:33:12+00:00",
+  "status": "passed",
+  "target": "2f9f15f11f807e4574143c49640ed62071e57df5",
+  "test_counts": [
+    "40 passed, 1 warning"
+  ]
+}
