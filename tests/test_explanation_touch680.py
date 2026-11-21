@@ -15,7 +15,7 @@ def test_680_link_order_and_existing_js_preserved():
     base = (ROOT / "app/templates/base.html").read_text()
     css = (STYLES / "tracker-explanation-touch680.css").read_text()
     assert base.count("tracker-explanation-touch680.css?v=680") == 1
-    assert base.index("tracker-shortcut-buttons676.css?v=676") < base.index(
+    assert base.index("tracker-ui-foundation679.css?v=743") < base.index(
         "tracker-explanation-touch680.css?v=680"
     )
     assert "tracker-section-explanations598.js?v=598" in base
