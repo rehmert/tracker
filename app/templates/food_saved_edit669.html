@@ -51,7 +51,29 @@
     <div class="ux673-action-row tracker-food-editor-actions702" aria-label="Saved food editor actions">
       <button type="submit" class="primary">Save Food Changes</button>
       <a class="btn" href="/food?day={{ day }}#food-search">Cancel</a>
+      {% if not usage and not template_usage %}
+      <button type="submit" form="food739-delete-{{ product.id }}"
+              class="tracker-food-editor-delete739" name="confirm_delete" value="delete">Delete Saved Food</button>
+      {% else %}
+      <button type="button" class="tracker-food-editor-delete739" disabled
+              title="Remove linked meals or templates before deleting this saved food">Delete Saved Food</button>
+      {% endif %}
     </div>
   </form>
+  {% if not usage and not template_usage %}
+  <form id="food739-delete-{{ product.id }}" method="post"
+        action="/food/saved/{{ product.id }}/delete"
+        onsubmit="return confirm('Permanently delete this saved food{% if favorite_usage %} and remove it from Favorites{% endif %}? This cannot be undone.')">
+    <input type="hidden" name="day" value="{{ day }}">
+    <input type="hidden" name="version" value="{{ version }}">
+  </form>
+  {% else %}
+  <p class="note" data-food739-delete-blocked>
+    Deletion is unavailable while this food is referenced by
+    {{ usage }} logged meal entr{{ 'y' if usage == 1 else 'ies' }} or
+    {{ template_usage }} meal template entr{{ 'y' if template_usage == 1 else 'ies' }}.
+    Edit the saved food instead; recorded meals and templates remain intact.
+  </p>
+  {% endif %}
 </section>
 {% endblock %}
