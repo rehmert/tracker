@@ -24,9 +24,9 @@ from ..audit_helpers import record as audit_record717
 from ..models import ChangeAudit
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
-from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655
+from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
 from ..workout_models654 import WorkoutSet654, WorkoutSession654, WorkoutEquipment654
-from ..workout_models667 import WorkoutSetType667
+from ..workout_models667 import WorkoutSetType667, WorkoutSessionTarget667
 from ..workout_models668 import (
     WorkoutRoutineSchedule668, WorkoutRoutineGroup668,
     WorkoutRoutineGroupMember668, WorkoutSetCorrection668,
@@ -382,6 +382,133 @@ def correct_all_machine_sets718(
     db.commit()
     return services.flash_redirect(
         url, msg=f"Moved {len(recorded)} recorded set(s) to {destination.name}; totals updated."
+    )
+
+
+@router.post("/workouts/sessions/{session_id}/delete")
+def delete_workout_session719(
+    session_id: int,
+    expected_started_at: str = Form(""),
+    confirm_delete: str = Form(""),
+    reason: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Delete an accidental active or completed workout, with a durable audit.
+
+    Snapshot every historical set/correction, frozen target, routine link,
+    and offline receipt before removing FK-restricted dependent rows. Existing
+    machine catalog and saved routine definitions remain intact.
+    """
+    session = db.get(WorkoutSession654, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    back = f"/workouts/sessions/{session_id}"
+    if expected_started_at != session.started_at.isoformat():
+        return services.flash_redirect(
+            back, err="Workout changed since this page loaded. Reload before deleting."
+        )
+    if confirm_delete != "yes":
+        return services.flash_redirect(back, err="Confirm deleting this entire workout.")
+    reason = reason.strip()
+    if not 3 <= len(reason) <= 500:
+        return services.flash_redirect(back, err="Enter a reason of 3–500 characters.")
+
+    sets = list(db.scalars(
+        select(WorkoutSet654).where(WorkoutSet654.session_id == session_id)
+        .order_by(WorkoutSet654.performed_at, WorkoutSet654.id)
+    ))
+    set_ids = [row.id for row in sets]
+    corrections = list(db.scalars(
+        select(WorkoutSetCorrection668)
+        .where(WorkoutSetCorrection668.set_id.in_(set_ids))
+        .order_by(WorkoutSetCorrection668.id)
+    )) if set_ids else []
+    types = {
+        row.set_id: row.set_type for row in db.scalars(
+            select(WorkoutSetType667).where(WorkoutSetType667.set_id.in_(set_ids))
+        )
+    } if set_ids else {}
+    frozen = list(db.scalars(
+        select(WorkoutSessionTarget667)
+        .where(WorkoutSessionTarget667.session_id == session_id)
+        .order_by(WorkoutSessionTarget667.equipment_id)
+    ))
+    routine = db.get(WorkoutSessionRoutine655, session_id)
+    receipts = list(db.scalars(
+        select(WorkoutOfflineReceipt668)
+        .where(WorkoutOfflineReceipt668.session_id == session_id)
+        .order_by(WorkoutOfflineReceipt668.id)
+    ))
+
+    # A single private event persists after session deletion. Prior ChangeAudit
+    # set corrections and machine reassignment events are also preserved.
+    audit_record717(
+        db, "workout_session", session_id, "delete",
+        before=dict(
+            started_at=session.started_at.isoformat(),
+            completed_at=(
+                session.completed_at.isoformat() if session.completed_at else None
+            ),
+            reason=reason, routine_id=routine.routine_id if routine else None,
+            sets=[
+                dict(
+                    id=row.id, equipment_id=row.equipment_id,
+                    weight_lb=row.weight_lb, reps=row.reps, effort=row.effort,
+                    set_type=types.get(row.id, "working"),
+                    performed_at=row.performed_at.isoformat(),
+                ) for row in sets
+            ],
+            corrections=[
+                dict(
+                    id=row.id, set_id=row.set_id,
+                    old_weight_lb=row.old_weight_lb, new_weight_lb=row.new_weight_lb,
+                    old_reps=row.old_reps, new_reps=row.new_reps,
+                    old_effort=row.old_effort, new_effort=row.new_effort,
+                    old_type=row.old_type, new_type=row.new_type,
+                    reason=row.reason, corrected_at=row.corrected_at.isoformat(),
+                ) for row in corrections
+            ],
+            frozen_targets=[
+                dict(
+                    equipment_id=row.equipment_id,
+                    target_sets=row.target_sets, target_reps=row.target_reps,
+                    target_weight_lb=row.target_weight_lb,
+                    rest_seconds=row.rest_seconds,
+                    setup_note=row.setup_note,
+                    captured_at=row.captured_at.isoformat(),
+                ) for row in frozen
+            ],
+            offline_receipts=[
+                dict(
+                    client_key=row.client_key, payload_sha256=row.payload_sha256,
+                    set_id=row.set_id, synced_at=row.synced_at.isoformat(),
+                ) for row in receipts
+            ],
+        ),
+        after=dict(deleted=True),
+    )
+    # RESTRICT FKs require dependent rows removed first. Foreign-key cascades
+    # are not relied on; all deletes and the audit commit atomically.
+    for row in corrections:
+        db.delete(row)
+    for row in receipts:
+        db.delete(row)
+    for row in frozen:
+        db.delete(row)
+    if routine is not None:
+        db.delete(routine)
+    if set_ids:
+        for row in db.scalars(select(WorkoutSetType667)
+                              .where(WorkoutSetType667.set_id.in_(set_ids))):
+            db.delete(row)
+    db.flush()
+    for row in sets:
+        db.delete(row)
+    db.flush()
+    db.delete(session)
+    db.commit()
+    return services.flash_redirect(
+        "/workouts", msg="Workout deleted; its recorded history was retained in the audit."
     )
 
 
