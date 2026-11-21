@@ -72,7 +72,7 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             page.wait_for_url(re.compile(re.escape(base) + r"/workouts/routines/\d+(?:[?].*)?$"))
             routine_path = urlsplit(page.url).path
             add = page.locator('form[action="' + routine_path + '/equipment"]')
-            add.locator('select[name="equipment_id"]').select_option(label=first)
+            add.locator('select[name="equipment_id"]').select_option(label=first + " — QA716 Gym")
             add.get_by_role("button", name="Add to Routine").click()
             page.wait_for_load_state("networkidle")
             page.locator('form[action="' + routine_path + '/start"]').get_by_role(
