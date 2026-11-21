@@ -37,7 +37,8 @@ def checkpoint716(scheme: str, step: str) -> None:
     """Record only predefined, non-sensitive steps in disposable browser QA."""
     allowed = {
         "MACHINE_ONE", "CATALOG", "ROUTINE_CREATED", "ROUTINE_READY",
-        "STARTED", "LINKS", "EXISTING", "NEW", "FINISHED",
+        "STARTED", "LINKS", "PANEL", "SELECTED", "POSTED",
+        "HEADING", "PROGRESS", "WIDTH", "EXISTING", "NEW", "FINISHED",
     }
     assert scheme in ("http", "https") and step in allowed
     with (DATA / "workout716-stages.txt").open("a", encoding="ascii") as stream:
@@ -105,8 +106,10 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             panel = page.locator("#workout716-add-machine")
             expect(panel).not_to_have_attribute("open", "")
             panel.locator("summary").first.click()
+            checkpoint716(scheme, "PANEL")
             choose = panel.locator('form[action="/workouts/quick/machines"]')
             choose.locator('select[name="equipment_id"]').select_option(label=second + " · QA716 Gym")
+            checkpoint716(scheme, "SELECTED")
             with page.expect_response(
                 lambda r: r.request.method == "POST"
                 and urlsplit(r.url).path == "/workouts/quick/machines"
@@ -114,9 +117,13 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
                 choose.get_by_role("button", name="Add & Open").click()
             assert pending.value.status == 303
             page.wait_for_load_state("networkidle")
+            checkpoint716(scheme, "POSTED")
             assert page.locator(".workout659-machine-heading h2").inner_text() == second
+            checkpoint716(scheme, "HEADING")
             expect(page.locator(".workout659-progress")).to_contain_text("0 of 2 exercises logged")
+            checkpoint716(scheme, "PROGRESS")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            checkpoint716(scheme, "WIDTH")
             checkpoint716(scheme, "EXISTING")
 
             # A new machine can also be cataloged directly during this session.
