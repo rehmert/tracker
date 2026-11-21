@@ -213,17 +213,25 @@ def suggestions(kind, term):
         except (HTTPError, URLError, TimeoutError, OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
             failures.append(provider_name)
             continue
-        for match in matches:
+        for match in matches[:_MAX_RESULTS]:
             unique = (match["source"], match["source_id"] or match["name"].casefold())
             if unique in seen:
                 continue
             seen.add(unique)
             results.append(match)
-            if len(results) >= _MAX_RESULTS:
-                break
-        if len(results) >= _MAX_RESULTS:
-            break
-    response = {"results": results, "unavailable": failures}
+    if kind == "medication":
+        # RxNorm concept results often provide only a drug name. They used to
+        # fill all eight slots before openFDA could return labeled ingredients,
+        # strength and dosage form. Search both bounded sources and show the
+        # actionable label matches first; never infer fields from drug names.
+        results.sort(
+            key=lambda match: (
+                sum(bool(match.get(key)) for key in ("ingredient", "strength", "form")),
+                match.get("source") == "openFDA",
+            ),
+            reverse=True,
+        )
+    response = {"results": results[:_MAX_RESULTS], "unavailable": failures}
     # Do not cache complete provider outages.
     if len(failures) < len(providers):
         with _LOCK:
