@@ -18,8 +18,17 @@
 .labs-overview-controls .field { flex:1 1 10rem; min-width:0; }
 .labs-overview-controls .field:first-child { flex:2 1 14rem; }
 .labs-reports-controls .field { flex:1 1 17rem; max-width:32rem; }
-.labs-overview-controls .field input,.labs-overview-controls .field select,
-.labs-reports-controls .field input { width:100%; }
+.labs-overview-controls .field input, .labs-overview-controls .field select,
+.labs-reports-controls .field input, .labs-reports-controls .field select {
+  box-sizing:border-box; width:100%; min-height:44px; font-size:16px;
+}
+.labs-overview-controls > button, .labs-reports-controls > button { min-height:44px; }
+.labs726-actions > .labs726-more > summary { min-height:44px; }
+@media(max-width:760px) {
+  .labs726-actions > .labs726-more { grid-column:1 / -1; }
+  .labs726-actions > .labs726-more > summary { width:100%; min-height:48px; }
+  .labs726-actions > .labs726-more > div { width:100%; }
+}
 #labs-trend-count,#labs-reports-count { display:block; font-size:.88rem; color:var(--muted,#667); }
 #labs-trend-empty,#labs-reports-empty { margin:.65rem 0; }
 #labs-trend-grid [data-labs-trend-card][hidden],
