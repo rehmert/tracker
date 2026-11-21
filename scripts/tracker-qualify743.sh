@@ -37,6 +37,7 @@ while IFS= read -r path; do
     docs/release-743-security-deps-controller-ux.md|\
     docs/tracker-readiness-matrix743.md|\
     scripts/tracker_browser_provenance743.py|\
+    scripts/tracker-browser-qualify.sh|\
     scripts/tracker_csrf_reconcile627.py|\
     scripts/tracker_security_readiness743.py|\
     scripts/tracker_stage_chain743.py|\

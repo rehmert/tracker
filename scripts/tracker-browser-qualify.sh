@@ -330,6 +330,7 @@ run_isolated_browser_module() {
 }
 
 if [[ "$MODE" == full ]]; then
+# Release 743: add six newer browser modules to the already-isolated gate.
 # Release 705: register 15 omitted modules in existing disposable
 # 16-worker standard gate. Parity 699/700 skip without pinned preview roots.
 echo "=== OFFLINE FOOD AND LABS BROWSER TESTS + LIVE NAVIGATION ==="
@@ -370,6 +371,12 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
     tests/browser/test_mobile_edit_actions703.py \
     tests/browser/test_mobile_quick_actions701.py \
     tests/browser/test_saved_food_mobile_actions702.py \
+    tests/browser/test_release723_css_parity.py \
+    tests/browser/test_release726_labs_mobile.py \
+    tests/browser/test_release727_labs_cards.py \
+    tests/browser/test_release729_lab_entry_cards.py \
+    tests/browser/test_release730_medication_prefill.py \
+    tests/browser/test_release731_tablet_tracking.py \
     tests/browser/test_workout_calendar664.py \
     tests/browser/test_workout_dashboard661.py \
     tests/browser/test_workout_plan665.py \

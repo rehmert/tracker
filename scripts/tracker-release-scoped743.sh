@@ -139,6 +139,7 @@ PY
   tests/test_release705_dependency_acquire.py \
   tests/test_release590_csrf_gap_plan.py \
   tests/test_release627_csrf_reconciliation.py \
+  tests/test_browser_qualification511.py \
   tests/test_release621_csrf_form_crosswalk.py \
   tests/test_csrf_all_registered_negative705.py \
   tests/test_release741_integrated_macd_mobile.py \

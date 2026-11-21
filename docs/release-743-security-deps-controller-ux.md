@@ -166,3 +166,13 @@ path* in a single source release. It does not pretend the outstanding strict
 CSRF opt-in, third-party supply-chain approval, host-controller integration
 or complete CSS retirement are finished. Their independent evidence remains
 operator-gated and cannot be safely satisfied by just committing source code.
+
+## Full disposable browser inventory repair
+
+The existing Release 511 browser module coverage invariant found six later
+Chromium files missing from the full 16-worker **isolated** browser gate:
+Releases 723, 726, 727, 729, 730 and 731. They are now registered in
+`scripts/tracker-browser-qualify.sh` as standard (not strict-only) modules.
+The Release 511 test remains intact and is run in Release 743 scoped QA.
+No browser test was deleted, skipped or reclassified as an unsafe strict-only
+case to obtain a passing receipt. The host agent and PROD remain untouched.
