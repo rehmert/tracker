@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T21:20:12+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_738_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r738-de867eee9300",
+  "ref": "release/738-integrated-macd-mobile-ux",
+  "release": 738,
+  "request_id": "r738-installde867eee9300",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T21:18:12+00:00",
+  "status": "passed",
+  "target": "de867eee93004534fa822e7250deda75d0976558",
+  "test_counts": [
+    "148 passed, 2 warnings"
+  ]
+}
