@@ -145,7 +145,7 @@ def test_717_remove_one_extra_set_updates_review_and_preserves_audit(completed71
     assert '3' in review.text
     assert '2' in review.text
     page = client.get(f"/workouts/sessions/{sid}/correct")
-    assert "3 recorded sets remaining" in page.text
+    assert "<strong>3</strong> recorded sets remaining" in page.text
     assert f"Set #{set_id} removed" in page.text
     assert "Extra set logged" in page.text
     again = remove717(client, sid, set_id, reason="Extra set logged",
