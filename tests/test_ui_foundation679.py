@@ -16,10 +16,9 @@ CSS = ROOT / "app/static/css/tracker-ui-foundation679.css"
 def test_679_component_layer_is_loaded_and_namespaced():
     html = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
     css = CSS.read_text(encoding="utf-8")
-    assert html.count("tracker-ui-foundation679.css?v=679") == 1
-    assert html.index("tracker-ui-foundation679.css?v=679") < html.index(
-        "tracker-shortcut-buttons676.css?v=676"
-    )
+    assert html.count("tracker-ui-foundation679.css?v=742") == 1
+    assert "tracker-shortcut-buttons676.css?v=676" not in html
+    assert "#main-content nav.ux675-actions" in css
     assert css.count("{") == css.count("}")
     for selector in (".tracker-ui-actions", ".tracker-ui-action",
                      ".tracker-ui-action--primary", ".tracker-ui-card",
