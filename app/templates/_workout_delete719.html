@@ -1,21 +1,13 @@
-{# Shared, intentionally collapsed deletion control for a single workout. #}
-<details class="workout719-delete" id="workout719-delete-{{ delete_workout.id }}">
-  <summary>Delete Workout</summary>
-  <form method="post" action="/workouts/sessions/{{ delete_workout.id }}/delete">
-    <input type="hidden" name="expected_started_at"
-           value="{{ delete_workout.started_at.isoformat() }}">
-    <p class="note">Delete the entire workout started {{ delete_workout.started_at|dt }}.
-      {% if delete_workout.completed_at %}This is a completed workout.{% else %}This workout is in progress.{% endif %}
-      All its recorded sets and session-specific links will be removed. The audit is retained.
-      Saved routines and machines will not be deleted.</p>
-    <label>Reason
-      <input type="text" name="reason" minlength="3" maxlength="500"
-             value="Started by mistake" required>
-    </label>
-    <label class="workout719-delete-confirm">
-      <input type="checkbox" name="confirm_delete" value="yes" required>
-      I want to delete this entire workout
-    </label>
-    <button type="submit">Delete Entire Workout</button>
-  </form>
-</details>
+{# Release 720: compact inline action next to Edit Workout; use the established native browser confirmation. #}
+<form class="workout720-delete-form"
+      id="workout719-delete-{{ delete_workout.id }}"
+      method="post" action="/workouts/sessions/{{ delete_workout.id }}/delete"
+      onsubmit="return confirm('Delete this entire workout and its recorded sets? This cannot be undone.');">
+  <input type="hidden" name="expected_started_at"
+         value="{{ delete_workout.started_at.isoformat() }}">
+  <input type="hidden" name="confirm_delete" value="yes">
+  <input type="hidden" name="reason"
+         value="{{ 'Started by mistake' if not delete_workout.completed_at else 'Deleted workout from history' }}">
+  <button class="ux675-inline-action workout720-delete-button" type="submit"
+          aria-label="Delete workout started {{ delete_workout.started_at|dt }}">Delete</button>
+</form>
