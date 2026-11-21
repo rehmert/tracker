@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r739-829de75d77d9",
+  "request_id": "r739-a0bd6f6f1d00",
   "action": "qualify",
   "release": 739,
-  "target": "829de75d77d9480c3d1702cca2f5b1acad65433a",
+  "target": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
   "base": "de867eee93004534fa822e7250deda75d0976558",
   "ref": "release/739-workout-food-macd-mobile",
   "previous_request_id": null
