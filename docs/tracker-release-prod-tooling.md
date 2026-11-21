@@ -14,13 +14,14 @@ sudo bash -c '
   cd /opt/tracker
   git -c safe.directory=/opt/tracker fetch --no-tags origin \
     refs/heads/tracker-release-tooling:refs/remotes/origin/tracker-release-tooling
-  git -c safe.directory=/opt/tracker show \
-    refs/remotes/origin/tracker-release-tooling:scripts/tracker-release-prod.sh \
-    | bash -s -- 726
+  SCRIPT=$(git -c safe.directory=/opt/tracker show \
+    refs/remotes/origin/tracker-release-tooling:scripts/tracker-release-prod.sh)
+  bash -n <<<"$SCRIPT"
+  bash -s -- 726 <<<"$SCRIPT"
 '
 ```
 
-Every run fetches the newest tooling version without modifying the installed checkout.
+Every run fetches the newest tooling version and checks its Bash syntax before execution, without modifying the installed checkout.
 The optional expected release argument prevents promotion of an unintended version.
 Alternatively omit the argument to select the release currently installed on DEV.
 
