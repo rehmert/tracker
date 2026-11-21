@@ -7,7 +7,7 @@
     "tests/browser/test_workout_active716.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T00:48:03+00:00",
+  "finished_at_utc": "2026-11-21T00:50:19+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_716_IMPACT_PREFLIGHT=PASSED",
@@ -31,11 +31,11 @@
   "previous_request_id": null,
   "ref": "release/716-active-workout-machine-add",
   "release": 716,
-  "request_id": "r716-0ab548e9c609",
+  "request_id": "r716-c36ef47a990e",
   "schema": 1,
-  "started_at_utc": "2026-11-21T00:46:44+00:00",
+  "started_at_utc": "2026-11-21T00:48:54+00:00",
   "status": "failed",
-  "target": "0ab548e9c609203b36b0f67902f81b7d048b7fd9",
+  "target": "c36ef47a990e80888a26d03a24f906c035cf801e",
   "test_counts": [
     "27 passed, 1 warning",
     "7 passed"
