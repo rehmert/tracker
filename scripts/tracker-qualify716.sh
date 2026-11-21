@@ -43,7 +43,8 @@ while IFS= read -r path; do
     scripts/tracker-release.sh|\
     tests/browser/test_workout_active716.py|\
     tests/test_browser_qualification511.py|\
-    tests/test_release716_active_workout.py) ;;
+    tests/test_release716_active_workout.py|\
+    tests/test_workouts659.py) ;;
     *) fail "Unexpected Release 716 source path: $path" ;;
   esac
 done < <(git diff --name-only "$BASE" "$TARGET")
