@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r732-install1906a69408e7",
-  "action": "dev_install",
-  "release": 732,
-  "target": "1906a69408e7dd00cb9044f77cd208566aed25df",
-  "base": "0bc005f9c1e5b1353a67755aeeb2940140a7c74f",
-  "ref": "release/732-medication-delete",
-  "previous_request_id": "r732-1906a69408e7"
+  "request_id": "r733-28003549a8d0",
+  "action": "qualify",
+  "release": 733,
+  "target": "28003549a8d0d69ac7ea23d8addd699a71a5a226",
+  "base": "1906a69408e7dd00cb9044f77cd208566aed25df",
+  "ref": "release/733-regimen-macd-actions",
+  "previous_request_id": null
 }
