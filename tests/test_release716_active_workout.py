@@ -19,6 +19,10 @@ from app.workout_models655 import (
 
 
 def setup716(*, routine=False):
+    # Tracker creates scoped Workout tables during the app lifespan.
+    # Initialize the disposable test app before opening SessionLocal.
+    with TestClient(app):
+        pass
     with SessionLocal() as db:
         for other in db.scalars(select(WorkoutSession654).where(
             WorkoutSession654.completed_at.is_(None)
