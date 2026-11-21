@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "c5efed6b40f4324187eff3e83dbed44d9e68f5c4",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T23:55:14+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r743-install7585b65f",
+  "ref": "release/743-security-deps-controller-ux",
+  "release": 743,
+  "request_id": "r743-preflight7585b65f",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T23:55:12+00:00",
+  "status": "passed",
+  "target": "7585b65f003179fe86d0f98958fe0e63071b8e81",
+  "test_counts": []
+}
