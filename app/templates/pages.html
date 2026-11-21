@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Notes{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 <h1>Notes</h1>
 <p class="note">Your own write-ups of things you've read or found, each with its sources. Link pages together with [[Page title]].</p>
 
@@ -36,6 +37,16 @@
       {% for t in p.tag_list %}<a class="tag" href="/pages?tag={{ t|urlencode }}">{{ t }}</a> {% endfor %}
       {% for c in p.compounds %}<a class="tag" href="/pages?compound_id={{ c.id }}">{{ c.name }}</a> {% endfor %}
       <small>{{ p.sources|length }} source{{ '' if p.sources|length == 1 else 's' }} · updated {{ p.updated_at|utc_dt }}</small>
+    </p>
+    <div class="tracker-macd741-actions" aria-label="Manage {{ p.title }}">
+      <a class="tracker-macd741-action" href="/pages/{{ p.id }}/edit">Edit note</a>
+      <a class="tracker-macd741-action" href="/pages/{{ p.id }}/history">History</a>
+      <form method="post" action="/pages/{{ p.id }}/delete"
+            onsubmit="return confirm('Permanently delete note {{ p.title }} and its sources?');">
+        <button type="submit" class="tracker-macd741-action">Delete note</button>
+      </form>
+    </div>
+    <p class="tracker-macd741-sr-note">
     </p>
   </li>
   {% endfor %}
