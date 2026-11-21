@@ -2,6 +2,7 @@
 {% block title %}Workout History{% endblock %}
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
+<link rel="stylesheet" href="/static/css/tracker-workout-session719.css?v=719">
 {% endblock %}
 {% block content %}
 <section class="workout654">
@@ -13,6 +14,9 @@
       <a href="/workouts/sessions/{{ workout.id }}/correct">Edit Completed Workout</a>
     {% endif %}
   </nav>
+  {% with delete_workout=workout %}
+    {% include "_workout_delete719.html" %}
+  {% endwith %}
   <p>Started {{ workout.started_at|dt }}</p>
   <p>{{ 'Completed ' ~ (workout.completed_at|dt) if workout.completed_at else 'In progress' }}</p>
   <section>
