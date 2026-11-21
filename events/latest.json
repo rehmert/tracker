@@ -2,10 +2,10 @@
   "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r741-03675c9cc80c.json",
+  "receipt_path": "receipts/r741-c5efed6b40f4.json",
   "release": 741,
-  "request_id": "r741-03675c9cc80c",
+  "request_id": "r741-c5efed6b40f4",
   "schema": 1,
-  "status": "failed",
-  "target": "03675c9cc80cde6d148cf5d8c12de63fe96caa63"
+  "status": "passed",
+  "target": "c5efed6b40f4324187eff3e83dbed44d9e68f5c4"
 }
