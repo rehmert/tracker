@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r730-13ed014d24ba",
-  "action": "qualify",
+  "request_id": "r730-install13ed014d24ba",
+  "action": "dev_install",
   "release": 730,
   "target": "13ed014d24ba5658a69ccb15b6d8e1a247c7575c",
   "base": "d2597c5bfab3c76e1701a42af00ab5ce41553818",
   "ref": "release/730-workout-page-query-batch",
-  "previous_request_id": null
+  "previous_request_id": "r730-13ed014d24ba"
 }
