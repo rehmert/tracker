@@ -1,0 +1,33 @@
+/* Release 716: gym-floor machine insertion and active workout edit links. */
+.workout716-edit-actions {
+  display: flex; gap: .55rem; flex-wrap: wrap; margin: .65rem 0;
+}
+.workout716-edit-actions a {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: .45rem .75rem;
+}
+.workout716-add { padding: 0; }
+.workout716-add > summary {
+  display: flex; align-items: center; cursor: pointer;
+  min-height: 54px; padding: .75rem 1rem; font-weight: 750;
+  list-style-position: inside;
+}
+.workout716-add-body { padding: 0 .95rem 1rem; }
+.workout716-add-body form label {
+  display: block; font-weight: 650; margin: .55rem 0 .3rem;
+}
+.workout716-add-body form input,
+.workout716-add-body form select { width: 100%; max-width: 100%; min-width: 0; }
+.workout716-add-body .workout659-picker-row button {
+  flex: 0 0 auto; min-width: 120px;
+}
+.workout716-new { margin-top: .8rem; border-top: 1px solid var(--border, #8998a7); }
+.workout716-new > summary { cursor: pointer; font-weight: 650; min-height: 48px; padding: .7rem 0; }
+.workout716-new form { display: grid; gap: .45rem; }
+.workout716-new form button { margin-top: .5rem; }
+@media (max-width: 650px) {
+  .workout716-edit-actions a { flex: 1 1 145px; }
+  .workout716-add-body .workout659-picker-row { flex-wrap: wrap; }
+  .workout716-add-body .workout659-picker-row select,
+  .workout716-add-body .workout659-picker-row button { flex: 1 1 100%; }
+}
