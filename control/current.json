@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r718-18a1bf7a6171",
-  "action": "qualify",
+  "request_id": "r718-d43ec6bdf920",
+  "action": "dev_install",
   "release": 718,
   "target": "18a1bf7a6171ef1eeef80e4588851cd500031cb4",
   "base": "0893bde49014616bc878b0b142ad5bfe1bbf8f16",
   "ref": "release/718-completed-machine-correction",
-  "previous_request_id": null
+  "previous_request_id": "r718-18a1bf7a6171"
 }
