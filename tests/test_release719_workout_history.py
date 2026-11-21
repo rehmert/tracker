@@ -71,12 +71,15 @@ def sessions719():
                 old_type="working", new_type="working",
                 reason="Earlier correction",
             ))
-            db.add(WorkoutOfflineReceipt668(
+            offline = WorkoutOfflineReceipt668(
                 client_key=str(uuid4()), payload_sha256="a" * 64,
                 session_id=completed.id, set_id=sets[1].id,
-            ))
+            )
+            db.add(offline)
+            db.flush()
             db.commit()
             result = dict(
+                offline_id=offline.id, offline_key=offline.client_key,
                 empty_id=accidental.id, empty_started=accidental.started_at.isoformat(),
                 sid=completed.id, started=completed.started_at.isoformat(),
                 completed_at=completed.completed_at,
@@ -112,6 +115,9 @@ def sessions719():
                 db.execute(delete(ChangeAudit).where(
                     ChangeAudit.entity_type == "workout_session",
                     ChangeAudit.entity_id.in_(sids)))
+                db.execute(delete(ChangeAudit).where(
+                    ChangeAudit.entity_type == "workout_offline_action",
+                    ChangeAudit.entity_id == result["offline_id"]))
                 db.commit()
 
 
@@ -196,6 +202,13 @@ def test_719_completed_delete_preserves_dependent_history_and_routine(sessions71
         assert old["corrections"][0]["reason"] == "Earlier correction"
         assert len(old["frozen_targets"]) == 1
         assert len(old["offline_receipts"]) == 1
+        tombstone = db.scalar(select(ChangeAudit).where(
+            ChangeAudit.entity_type == "workout_offline_action",
+            ChangeAudit.entity_id == item["offline_id"],
+            ChangeAudit.action == "session_deleted",
+        ))
+        assert tombstone is not None
+        assert json.loads(tombstone.before_json)["client_key"] == item["offline_key"]
         assert old["routine_id"] == item["routine"]
         assert old["reason"] == "Duplicate workout"
 
@@ -296,3 +309,23 @@ def test_719_dashboard_markup_defaults_closed_and_page_links_open(sessions719):
     assert "open" in current.split(">", 1)[0]
     assert f'/workouts/sessions/{item["empty_id"]}' in page.text
     assert client.get("/?workout_page=0").status_code == 422
+
+
+
+def test_719_deleted_offline_client_key_cannot_be_replayed(sessions719):
+    client, item = sessions719
+    assert delete_workout719(
+        client, item["sid"], item["started"],
+        confirm_delete="yes", reason="Delete duplicated workout",
+    ).status_code == 303
+    # Even if an old SQLite INTEGER PRIMARY KEY gets reused in the future,
+    # a deleted offline UUID must not log a new set.
+    rejected = client.post("/workouts/quick/offline-sync", data={
+        "session_id": item["sid"],
+        "equipment_id": item["machine"],
+        "client_key": item["offline_key"],
+        "weight_lb": "100", "reps": "10", "effort": "",
+        "performed_at": datetime.now().astimezone().isoformat(),
+        "set_type": "working",
+    })
+    assert rejected.status_code == 409
