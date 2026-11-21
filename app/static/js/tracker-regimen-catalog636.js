@@ -131,7 +131,12 @@
               }
             panel.replaceChildren();
             panel.hidden = true;
-            status.textContent = 'Product details filled. Review or edit before saving.';
+            const hasMedicationDetails = ['ingredient', 'strength', 'form'].some(
+              key => typeof match[key] === 'string' && Boolean(match[key].trim())
+            );
+            status.textContent = kind.value === 'medication' && !hasMedicationDetails
+              ? 'Medication name selected. This catalog result has no structured ingredient, strength, or dosage form; enter those fields manually.'
+              : 'Product details filled. Review or edit before saving.';
           });
           panel.append(option);
         }
