@@ -102,7 +102,7 @@ def test_718_correct_whole_machine_and_single_set_in_completed_workout(scheme):
             move.locator('input[name="confirm_move"]').check()
             with page.expect_response(lambda r:
                     r.request.method == "POST" and
-                    re.fullmatch(rf"/workouts/sessions/{sid}/machines/\\d+/move-sets",
+                    re.fullmatch(rf"/workouts/sessions/{sid}/machines/\d+/move-sets",
                                  urlsplit(r.url).path)) as moved:
                 move.get_by_role("button", name="Move All 3 Sets").click()
             assert moved.value.status == 303
@@ -119,7 +119,7 @@ def test_718_correct_whole_machine_and_single_set_in_completed_workout(scheme):
             )
             with page.expect_response(lambda r:
                     r.request.method == "POST" and
-                    re.fullmatch(rf"/workouts/sessions/{sid}/sets/\\d+/machine",
+                    re.fullmatch(rf"/workouts/sessions/{sid}/sets/\d+/machine",
                                  urlsplit(r.url).path)) as reassign:
                 change.get_by_role("button", name="Save Correct Machine").click()
             assert reassign.value.status == 303
