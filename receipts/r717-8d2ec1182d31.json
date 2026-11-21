@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "26aac9d781b2dacb0b73d00158d3737201ea814e",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release717_completed_edit.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T01:12:38+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_717_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_717_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_717_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/717-completed-workout-edit",
+  "release": 717,
+  "request_id": "r717-8d2ec1182d31",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T01:12:32+00:00",
+  "status": "failed",
+  "target": "8d2ec1182d31b3825973c95119a58126d3a57f04",
+  "test_counts": [
+    "1 passed, 1 warning"
+  ]
+}
