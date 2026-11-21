@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r727-3718936aedfc.json",
+  "receipt_path": "receipts/r727-install3718936aedfc.json",
   "release": 727,
-  "request_id": "r727-3718936aedfc",
+  "request_id": "r727-install3718936aedfc",
   "schema": 1,
   "status": "passed",
   "target": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2"
