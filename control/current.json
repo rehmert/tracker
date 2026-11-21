@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r726-2f9f15f11f80",
-  "action": "qualify",
+  "request_id": "r726-install2f9f15f11f80",
+  "action": "dev_install",
   "release": 726,
   "target": "2f9f15f11f807e4574143c49640ed62071e57df5",
   "base": "7cd9cd9ef76032bd6dc66131f4ccdb20fe10cb4c",
   "ref": "release/726-labs-mobile-actions",
-  "previous_request_id": null
+  "previous_request_id": "r726-2f9f15f11f80"
 }
