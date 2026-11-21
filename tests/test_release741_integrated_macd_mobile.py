@@ -144,9 +144,9 @@ def test_741_bad_supply_edits_rejected_without_mutating(env, patch):
     v, _ = version(client, sid)
     request = dict(
         version=v, name="Test Needle", notes="original",
-        kind="needle", compound_id=str(cid), **patch,
+        kind="needle", compound_id=str(cid),
     )
-    # Avoid duplicate keyword keys when patching a regular dictionary.
+    request.update(patch)
     denied = post(client, f"/supplies/{sid}/edit", request)
     assert denied.status_code == 303
     assert "err=" in denied.headers["location"]
