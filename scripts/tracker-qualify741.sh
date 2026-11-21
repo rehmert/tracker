@@ -53,7 +53,8 @@ while IFS= read -r path; do
     scripts/tracker-qualify741.sh|\
     scripts/tracker-install741.sh|\
     scripts/tracker-release-scoped741.sh|\
-    tests/test_release741_integrated_macd_mobile.py ) ;;
+    tests/test_release741_integrated_macd_mobile.py|\
+    tests/test_protocol_schedule_preview.py ) ;;
     *) fail "Unexpected Release 741 source path: $path" ;;
   esac
 done < <(git diff --name-only "$BASE" "$TARGET")
