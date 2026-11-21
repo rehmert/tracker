@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Certificates of analysis{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 <link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 <script defer src="/static/js/tracker-coa-find696.js?v=696"></script>
 <section data-flow696-coas>
@@ -62,7 +63,7 @@
                 <a href="/coas/{{ c.id }}">{{ (1 if c.original_name else 0) + (c.attachments|length) }} document(s)</a>
               {% else %}Metadata only{% endif %}
             </td>
-            <td data-label="Actions" data-ux673-action><a href="/coas/{{ c.id }}">View / edit</a></td>
+            <td data-label="Actions" data-ux673-action><div class="tracker-macd741-actions"><a class="tracker-macd741-action" href="/coas/{{ c.id }}">Edit COA</a><a class="tracker-macd741-action" href="/coas/{{ c.id }}#test-documents">Manage documents</a><a class="tracker-macd741-action" href="/coas/{{ c.id }}#coa-links741">Vial links</a></div></td>
           </tr>
           {% else %}
           <tr><td colspan="8">No certificates yet. Select Add COA to create one.</td></tr>
