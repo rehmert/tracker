@@ -3,7 +3,10 @@
 All writes use disposable SQLite. No internet, existing user files or PROD.
 """
 from decimal import Decimal
+from pathlib import Path
 from urllib.parse import urlencode
+
+from jinja2 import Environment
 
 import pytest
 from fastapi import FastAPI
@@ -253,3 +256,26 @@ def test_731_calculation_and_safe_label_parsing():
     assert catalog_tablet_strength("20 mg per tablet") == "20"
     assert catalog_tablet_strength("200 mg/mL") == ""
     assert catalog_tablet_strength("10 mg/5 mL") == ""
+
+
+
+def test_731_regimen_jinja_template_balanced_and_actual_get_renders(env):
+    # The original 635 page must render even without tablet schedules.
+    template = (Path(__file__).resolve().parents[1] /
+                "app/templates/regimen635.html").read_text(encoding="utf-8")
+    Environment().parse(template)
+    client, Session = env
+    make_item(client)
+    page = client.get("/regimen?day=2026-11-21")
+    assert page.status_code == 200
+    assert "Example tablet" in page.text
+    assert "Medication tablet quantity" in page.text
+    assert 'tracker-regimen-tablets731.js?v=731' in page.text
+    assert "data-reg731-item" in page.text
+    assert "data-reg731-panel" in page.text
+    post(client, "/regimen/schedules", plan_fields())
+    page = client.get("/regimen?day=2026-11-21")
+    assert page.status_code == 200
+    assert 'data-reg731-due' in page.text
+    assert "Ordered 10 mg from 20 mg/tablet" in page.text
+    assert 'name="tablet_count"' in page.text
