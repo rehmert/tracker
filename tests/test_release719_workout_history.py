@@ -135,7 +135,9 @@ def test_719_empty_active_workout_can_be_deleted_with_audit(sessions719):
     response = client.get("/workouts")
     assert response.status_code == 200
     assert f'workout719-delete-{sid}' in response.text
-    assert 'Delete Entire Workout' in response.text
+    assert 'workout720-delete-form' in response.text
+    assert '>Delete</button>' in response.text
+    assert 'onsubmit="return confirm(' in response.text
     history = client.get(f"/workouts/sessions/{sid}")
     assert history.status_code == 200
     assert f'/workouts/sessions/{sid}/delete' in history.text
