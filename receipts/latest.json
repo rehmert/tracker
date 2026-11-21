@@ -1,24 +1,26 @@
 {
-  "action": "dev_install",
-  "base": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
+  "action": "qualify",
+  "base": "d2597c5bfab3c76e1701a42af00ab5ce41553818",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-21T15:51:05+00:00",
+  "finished_at_utc": "2026-11-21T18:16:30+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "RELEASE_729_DEV_INSTALL=SUCCESS"
+    "RELEASE_730_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_730_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_730_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_730_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r729-d2597c5bfab3",
-  "ref": "release/729-manual-labs-mobile",
-  "release": 729,
-  "request_id": "r729-installd2597c5bfab3",
+  "previous_request_id": null,
+  "ref": "release/730-workout-page-query-batch",
+  "release": 730,
+  "request_id": "r730-13ed014d24ba",
   "schema": 1,
-  "started_at_utc": "2026-11-21T15:49:32+00:00",
+  "started_at_utc": "2026-11-21T18:16:12+00:00",
   "status": "passed",
-  "target": "d2597c5bfab3c76e1701a42af00ab5ce41553818",
+  "target": "13ed014d24ba5658a69ccb15b6d8e1a247c7575c",
   "test_counts": [
-    "65 passed"
+    "51 passed, 1 warning"
   ]
 }
