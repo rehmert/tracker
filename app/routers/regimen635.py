@@ -462,7 +462,7 @@ def stop_schedule(schedule_id: int, db: Session = Depends(get_scoped_db390)):
     return _redirect(msg="Schedule stopped; historical entries retained.")
 
 
-def _entry_values(form, db):
+def _entry_values(form, db, *, existing=None):
     try:
         item_id = int(str(form.get("item_id", "")))
     except (TypeError, ValueError):
@@ -485,8 +485,33 @@ def _entry_values(form, db):
     except ValueError:
         raise ValueError("Enter a valid local date and time.") from None
     outcome = _choice(form, "outcome", OUTCOMES)
+    mode = _tablet_mode(form)
+    dose = None
     amount = _text(form, "amount", 80)
-    if outcome == "taken" and not amount:
+    if outcome == "taken" and mode == "tablet":
+        if item.kind != "medication":
+            raise ValueError("Structured tablet logging is for medications only.")
+        plan = db.get(RegimenTabletSchedule731, schedule.id) if schedule else None
+        previous = db.get(RegimenTabletEntry731, existing.id) if existing else None
+        same_record = (
+            existing is not None and existing.item_id == item.id and
+            existing.schedule_id == (schedule.id if schedule else None)
+        )
+        # Corrections retain the original order even after a schedule edit.
+        reference = previous if previous is not None and same_record else plan
+        strength = (
+            reference.tablet_strength_mg if reference
+            else form.get("tablet_strength_mg")
+        )
+        prescribed = (
+            reference.prescribed_dose_mg if reference
+            else form.get("prescribed_dose_mg")
+        )
+        dose = tablets731.entry_values(
+            strength, prescribed, form.get("tablet_count")
+        )
+        amount = tablets731.amount(dose["tablets_taken"], dose["administered_dose_mg"])
+    elif outcome == "taken" and not amount:
         amount = schedule.amount if schedule else ""
     if outcome == "taken" and not amount:
         raise ValueError("Enter the actual amount taken.")
@@ -495,7 +520,7 @@ def _entry_values(form, db):
         logged_at=moment, outcome=outcome, amount=amount if outcome == "taken" else "",
         meal=_choice(form, "meal", MEALS),
         notes=_text(form, "notes", 2000),
-    )
+    ), dose
 
 
 def _entry_snapshot(entry):
@@ -510,7 +535,7 @@ def _entry_snapshot(entry):
 async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
     form = await request.form()
     try:
-        values = _entry_values(form, db)
+        values, tablet_dose = _entry_values(form, db)
     except ValueError as exc:
         return _redirect(err=str(exc))
     if not reserve_inventory_write(db):
@@ -528,6 +553,7 @@ async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
     entry = RegimenEntry(**values)
     db.add(entry)
     db.flush()
+    _store_tablet_entry(db, entry.id, tablet_dose)
     _audit(db, "regimen_entry", entry.id, "create", after=_entry_snapshot(entry))
     db.commit()
     return _redirect(values["logged_at"].date(), msg="Intake recorded.")
@@ -537,12 +563,12 @@ async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
 async def edit_entry(entry_id: int, request: Request, db: Session = Depends(get_scoped_db390)):
     form = await request.form()
     try:
-        values = _entry_values(form, db)
+        entry = _get(db, "entry", entry_id)
+        values, tablet_dose = _entry_values(form, db, existing=entry)
     except ValueError as exc:
         return _redirect(err=str(exc))
     if not reserve_inventory_write(db):
         return _redirect(err="Database is busy.")
-    entry = _get(db, "entry", entry_id)
     before = _entry_snapshot(entry)
     if values["schedule_id"] is not None:
         start = datetime.combine(values["logged_at"].date(), datetime.min.time())
@@ -557,6 +583,7 @@ async def edit_entry(entry_id: int, request: Request, db: Session = Depends(get_
             return _redirect(err="That schedule is already recorded on this date.")
     for key, value in values.items():
         setattr(entry, key, value)
+    _store_tablet_entry(db, entry.id, tablet_dose)
     after = _entry_snapshot(entry)
     if before != after:
         _audit(db, "regimen_entry", entry.id, "edit", before, after)
@@ -572,6 +599,7 @@ def delete_entry(entry_id: int, db: Session = Depends(get_scoped_db390)):
     before = _entry_snapshot(entry)
     day = entry.logged_at.date()
     _audit(db, "regimen_entry", entry.id, "delete", before=before)
+    _store_tablet_entry(db, entry.id, None)
     db.delete(entry)
     db.commit()
     return _redirect(day, msg="Entry deleted; audit preserved.")
