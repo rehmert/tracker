@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r716-ecd9810bdc96",
+  "request_id": "r716-5a7ef36176b2",
   "action": "qualify",
   "release": 716,
-  "target": "ecd9810bdc961961660f635fdc9368c8ccac7339",
+  "target": "5a7ef36176b2dee7ce82d291551f9515c14cc2a5",
   "base": "ab70236618df66b8a959c765abf38dbcd59b29d7",
   "ref": "release/716-active-workout-machine-add",
   "previous_request_id": null
