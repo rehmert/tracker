@@ -22,7 +22,7 @@ def test_678_workout_activity_links_are_card_actions_not_bare_link_boxes():
     # Six navigation cards, one dynamic recent-session link, and one
     # empty-state action are intentional. Do not confuse native anchors
     # with unstyled hyperlinks: the Chromium test checks computed styling.
-    assert src.count('<a ') == 8
+    assert src.count('<a ') == 10
     assert src.count('<a href="/workouts/sessions/{{ row.session_id }}">') == 1
     assert src.count('class="tracker-workout-empty-action678"') == 1
     assert src.count('<strong>') >= 5
@@ -33,7 +33,7 @@ def test_678_workout_activity_links_are_card_actions_not_bare_link_boxes():
 def test_678_dashboard_loads_fresh_scoped_stylesheet_and_matches_daily_cards():
     dashboard = DASHBOARD.read_text(encoding="utf-8")
     css = CSS.read_text(encoding="utf-8")
-    assert 'tracker-workout-dashboard661.css?v=678' in dashboard
+    assert 'tracker-workout-dashboard661.css?v=719' in dashboard
     assert dashboard.count("tracker-workout-dashboard661.css?v=") == 1
     assert "#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a" in css
     assert "text-decoration:none;" in css
