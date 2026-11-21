@@ -14,6 +14,9 @@
     {% if workout.completed_at %}
       <a class="ux675-primary" href="/workouts/sessions/{{ workout.id }}/correct">Edit Workout</a>
     {% endif %}
+    {% with delete_workout=workout %}
+      {% include "_workout_delete719.html" %}
+    {% endwith %}
     <details class="ux675-more">
       <summary>More</summary>
       <div>
@@ -35,10 +38,6 @@
       <p><strong>In progress</strong> — these figures may change until the session is finished.</p>
     {% endif %}
   </header>
-
-  {% with delete_workout=workout %}
-    {% include "_workout_delete719.html" %}
-  {% endwith %}
 
   <p class="note">Based on logged sets. Volume = load (lb) × reps; 0-lb sets contribute 0.</p>
 
