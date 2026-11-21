@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r735-pf51a4a70ed092",
-  "action": "prod_preflight",
+  "request_id": "r735-deploy51a4a70ed092",
+  "action": "prod_deploy",
   "release": 735,
   "target": "51a4a70ed09287dd60a108dfea3721cd53090740",
   "base": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
   "ref": "release/735-prod-catchup-727-to-735",
-  "previous_request_id": "r735-install51a4a70ed092"
+  "previous_request_id": "r735-pf51a4a70ed092"
 }
