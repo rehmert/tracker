@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release 730: only isolated workout-page-query-batch DEV qualification, never deploy/install anything.
+# Release 730: isolated medication catalog prefill + Workout SQL qualification, never install.
 set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
