@@ -6,7 +6,7 @@ from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from ..scoped_db390 import get_scoped_db390
-from ..models import Purchase, Supply, SupplyUsage, Compound, SupplyCategory, InventoryAdjustment, ChangeAudit
+from ..models import Purchase, Supply, SupplyUsage, Compound, SupplyCategory, SupplyProduct, InventoryAdjustment, ChangeAudit
 from ..supply_categories import DEFAULTS, ensure_categories, validate_supply
 from .. import services, idempotency
 from ..inventory_lock import reserve_inventory_write
@@ -87,7 +87,7 @@ def edit_supply741(
     db: Session = Depends(get_scoped_db390),
 ):
     """Edit stock metadata without rewriting purchase or usage quantities."""
-    back = f"/supplies#tracker-supply-{sid}"
+    back = "/supplies"
     if not reserve_inventory_write(db):
         return services.flash_redirect(back, err="Inventory is busy. Please retry.")
     s = db.get(Supply, sid)
@@ -235,7 +235,7 @@ def edit_category741(
     db: Session = Depends(get_scoped_db390),
 ):
     if not reserve_inventory_write(db):
-        return services.flash_redirect("/supplies#tracker-categories", err="Inventory is busy.")
+        return services.flash_redirect("/supplies", err="Inventory is busy.")
     cat = db.get(SupplyCategory, cid)
     if cat is None:
         db.rollback()
@@ -250,9 +250,12 @@ def edit_category741(
     if not label or len(label) > 100 or unit not in ("count", "mL", "g", "mg", "L", "boxes", "packs"):
         db.rollback()
         return services.flash_redirect("/supplies#tracker-categories", err="Enter a valid category name and unit.")
-    if unit != cat.unit and db.scalar(select(func.count()).select_from(Supply).where(Supply.kind == cat.key)):
+    if unit != cat.unit and (
+        db.scalar(select(func.count()).select_from(Supply).where(Supply.kind == cat.key))
+        or db.scalar(select(func.count()).select_from(SupplyProduct).where(SupplyProduct.kind == cat.key))
+    ):
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Cannot change the unit of a category with stock; create another category instead.")
+        return services.flash_redirect("/supplies#tracker-categories", err="Cannot change a category unit while stock or reusable purchase products use it.")
     before = {"key": cat.key, "label": cat.label, "unit": cat.unit}
     after = {"key": cat.key, "label": label, "unit": unit}
     if before == after:
@@ -289,9 +292,12 @@ def delete_category741(
     if not _custom_category741(cat) or version != _category_version741(cat) or confirm_delete != "delete":
         db.rollback()
         return services.flash_redirect("/supplies#tracker-categories", err="Category is built-in, changed, or deletion was not confirmed.")
-    if db.scalar(select(func.count()).select_from(Supply).where(Supply.kind == cat.key)):
+    if (
+        db.scalar(select(func.count()).select_from(Supply).where(Supply.kind == cat.key))
+        or db.scalar(select(func.count()).select_from(SupplyProduct).where(SupplyProduct.kind == cat.key))
+    ):
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Category contains supplies and cannot be deleted.")
+        return services.flash_redirect("/supplies#tracker-categories", err="Category has supplies or reusable purchase products and cannot be deleted.")
     db.add(ChangeAudit(entity_type="supply_category", entity_id=cid, action="delete",
                        before_json=json.dumps({"key": cat.key, "label": cat.label, "unit": cat.unit}),
                        after_json="{}"))
