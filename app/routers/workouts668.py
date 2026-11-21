@@ -7,6 +7,7 @@ through validated existing routes. No automatic sets are created.
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+import json
 import math
 import re
 import hashlib
@@ -14,11 +15,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from .. import services
+from ..audit_helpers import record as audit_record717
+from ..models import ChangeAudit
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655
@@ -234,8 +237,26 @@ def correction_page668(
         .order_by(WorkoutSetCorrection668.corrected_at.desc(),
                   WorkoutSetCorrection668.id.desc())
     ))
+    positions = {}
+    machine_counts = {}
+    for row in recorded:
+        machine_counts[row.equipment_id] = machine_counts.get(row.equipment_id, 0) + 1
+        positions[row.id] = machine_counts[row.equipment_id]
+    removals = [
+        (entry, json.loads(entry.before_json))
+        for entry in db.scalars(
+            select(ChangeAudit)
+            .where(
+                ChangeAudit.entity_type == "workout_set",
+                ChangeAudit.action == "remove_completed",
+                func.json_extract(ChangeAudit.before_json, "$.session_id") == session_id,
+            )
+            .order_by(ChangeAudit.id.desc())
+        )
+    ]
     return render(request, "workout_corrections668.html", session=session,
-                  recorded=recorded, names=names, kinds=kinds, changes=changes)
+                  recorded=recorded, names=names, kinds=kinds, changes=changes,
+                  positions717=positions, removals717=removals)
 
 
 @router.post("/workouts/sessions/{session_id}/sets/{set_id}/correct")
@@ -288,6 +309,76 @@ def correct_recorded_set668(
     db.commit()
     return services.flash_redirect(
         url, msg="Recorded set corrected; before/after audit retained.",
+    )
+
+
+@router.post("/workouts/sessions/{session_id}/sets/{set_id}/remove")
+def remove_completed_set717(
+    session_id: int, set_id: int,
+    reason: str = Form(""), confirm_remove: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Remove a mistaken set from a completed, user-scoped workout.
+
+    Snapshot the record and any earlier audited corrections before
+    deleting; no synthetic sets, migrations, or historical goal rewrites.
+    """
+    session = db.get(WorkoutSession654, session_id)
+    entry = db.get(WorkoutSet654, set_id)
+    if session is None or entry is None or entry.session_id != session_id:
+        raise HTTPException(status_code=404, detail="Workout set not found")
+    target = f"/workouts/sessions/{session_id}/correct"
+    if session.completed_at is None:
+        return services.flash_redirect(
+            target, err="Finish the workout before removing historical sets."
+        )
+    if confirm_remove != "yes":
+        return services.flash_redirect(target, err="Confirm the set removal first.")
+    reason = reason.strip()
+    if not 3 <= len(reason) <= 500:
+        return services.flash_redirect(
+            target, err="Enter a removal reason of 3–500 characters."
+        )
+    prior_kind = db.get(WorkoutSetType667, set_id)
+    corrections = list(db.scalars(
+        select(WorkoutSetCorrection668)
+        .where(WorkoutSetCorrection668.set_id == set_id)
+        .order_by(WorkoutSetCorrection668.id)
+    ))
+    history = [
+        dict(
+            id=change.id, old_weight_lb=change.old_weight_lb,
+            new_weight_lb=change.new_weight_lb,
+            old_reps=change.old_reps, new_reps=change.new_reps,
+            old_effort=change.old_effort, new_effort=change.new_effort,
+            old_type=change.old_type, new_type=change.new_type,
+            reason=change.reason, corrected_at=change.corrected_at.isoformat(),
+        )
+        for change in corrections
+    ]
+    audit_record717(
+        db, "workout_set", set_id, "remove_completed",
+        before=dict(
+            session_id=session_id, equipment_id=entry.equipment_id,
+            weight_lb=entry.weight_lb, reps=entry.reps,
+            effort=entry.effort,
+            set_type=prior_kind.set_type if prior_kind else "working",
+            performed_at=entry.performed_at.isoformat(),
+            reason=reason, correction_history=history,
+        ),
+        after=dict(removed=True),
+    )
+    # Previous audited corrections have RESTRICT foreign keys. Their
+    # complete snapshots now live in the durable ChangeAudit event.
+    for change in corrections:
+        db.delete(change)
+    if prior_kind is not None:
+        db.delete(prior_kind)
+    db.flush()
+    db.delete(entry)
+    db.commit()
+    return services.flash_redirect(
+        target, msg="Extra set removed; session totals updated and audit retained."
     )
 
 
