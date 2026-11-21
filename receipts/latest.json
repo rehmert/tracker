@@ -1,12 +1,12 @@
 {
   "action": "qualify",
   "base": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
-  "exit_code": 42,
+  "exit_code": 43,
   "failed_tests": [
-    "tests/test_release743_security_deps_chain_css.py"
+    "tests/test_release627_csrf_reconciliation.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T23:37:02+00:00",
+  "finished_at_utc": "2026-11-21T23:41:26+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_743_IMPACT_PREFLIGHT=PASSED",
@@ -15,12 +15,13 @@
   "previous_request_id": null,
   "ref": "release/743-security-deps-controller-ux",
   "release": 743,
-  "request_id": "r743-8eed9f8aa526",
+  "request_id": "r743-e7cd41be19a1",
   "schema": 1,
-  "started_at_utc": "2026-11-21T23:36:50+00:00",
+  "started_at_utc": "2026-11-21T23:39:41+00:00",
   "status": "failed",
-  "target": "8eed9f8aa5267125400db240a8177efcb328c10c",
+  "target": "e7cd41be19a1883902f811249681dc6481bb2e85",
   "test_counts": [
-    "24 passed, 1 warning"
+    "50 passed, 1 warning",
+    "93 passed, 1 warning"
   ]
 }
