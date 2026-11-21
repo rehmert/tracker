@@ -307,17 +307,17 @@ def test_743_combined_css_preserves_computed_style_and_gym_density(width, scheme
                 viewport={"width": width, "height": 844},
                 color_scheme=scheme,
             )
-            page.set_content(html)
-            css = page.locator("#change")
             selectors = [
                 ".tracker-ui-action--primary", ".tracker-ui-card",
                 ".ux675-gym-top", ".ux675-gym-top > a",
                 ".ux675-more > summary", ".ux675-inline-action",
             ]
             def record(styles):
-                css.evaluate("(element, value) => element.textContent = value",
-                             styles + "\n" + remaining)
-                return page.locator(", ".join(selectors)).evaluate_all(
+                # Fresh DOM for each baseline prevents CSS transition animations
+                # from carrying values between the two stylesheet snapshots.
+                page.set_content(html)
+                page.add_style_tag(content=styles + "\n" + remaining)
+                computed = page.locator(", ".join(selectors)).evaluate_all(
                     """nodes => nodes.map(node => {
                        const x=getComputedStyle(node), b=node.getBoundingClientRect();
                        return [x.display,x.color,x.backgroundColor,x.gridTemplateColumns,
@@ -325,9 +325,13 @@ def test_743_combined_css_preserves_computed_style_and_gym_density(width, scheme
                            Math.round(b.width),Math.round(b.height)];
                     })"""
                 )
-            assert record(original) == record(merged), (width, scheme)
-            assert page.evaluate(
-                "document.documentElement.scrollWidth <= innerWidth + 1"
-            )
+                overflow = page.evaluate(
+                    "document.documentElement.scrollWidth > innerWidth + 1"
+                )
+                return computed, overflow
+            before, baseline_overflow = record(original)
+            after, merged_overflow = record(merged)
+            assert before == after, (width, scheme)
+            assert baseline_overflow == merged_overflow, (width, scheme)
         finally:
             browser_instance.close()
