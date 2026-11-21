@@ -1,0 +1,183 @@
+/* Release 655: saved routine and one-tap workout controls. */
+.workout655 .workout-routine-row655,
+.workout654 .workout-routine-row655 {
+  display: flex; gap: .65rem; justify-content: space-between;
+  align-items: center; flex-wrap: wrap;
+  padding: .7rem .8rem; margin: .45rem 0;
+  border: 1px solid #9eafc3; border-radius: .6rem;
+}
+.workout655 .workout-routine-heading655 {
+  display: flex; gap: .65rem; align-items: center;
+}
+.workout655 .workout-routine-position655 {
+  display: inline-grid; place-items: center;
+  font-weight: 700; min-width: 2rem; min-height: 2rem;
+  border-radius: .5rem; border: 1px solid #9eafc3;
+}
+.workout655 .workout-routine-actions655,
+.workout654 .workout-routine-launch655 {
+  display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+}
+.workout655 .workout-routine-actions655 button {
+  min-width: 44px; min-height: 44px;
+}
+.workout654 .workout-routine-strip655 {
+  border: 1px solid #9eafc3; border-radius: .65rem;
+  padding: .8rem;
+}
+.workout654 .workout-routine-title655 {
+  display: flex; gap: .65rem; align-items: center;
+  justify-content: space-between; flex-wrap: wrap;
+}
+.workout654 .workout-routine-title655 h2 { margin: .2rem 0; }
+.workout654 .workout-routine-launch655 form { margin: .3rem 0; }
+.workout654 .workout-routine-marker655 {
+  font-size: .85rem; font-weight: 650;
+  margin: .4rem 0; opacity: .8;
+}
+.workout654 .workout-repeat655 { margin: .5rem 0 1rem; }
+.workout654 .workout-repeat-button655 {
+  min-height: 48px; font-weight: 700; padding: .6rem 1rem;
+  border: 1px solid #6388b8; border-radius: .6rem;
+}
+.workout654 .workout-repeat-button655:disabled { opacity: .6; }
+@media (max-width: 600px) {
+  .workout654 .workout-repeat-button655 { width: 100%; }
+  .workout655 .workout-routine-row655 { align-items: stretch; }
+}
+/* Release 714: saved routine editor only.
+   Force number/title above substitution controls independent of title length.
+   Preserve all original forms and machine selection logic. */
+.workout655 .workout-routine-row655 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  justify-content: stretch;
+  gap: .65rem;
+}
+.workout655 .workout-routine-heading655 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.workout655 .workout-routine-actions655 {
+  width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+}
+.workout655 .workout-routine-actions655 > form[action$="/substitute"] {
+  flex: 1 1 24rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.workout655 .workout-routine-actions655 > form[action$="/substitute"] label {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+}
+.workout655 .workout-routine-actions655 > form[action$="/substitute"] select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Release 739: one mobile-first MACD action system for routine list and detail. */
+.workout739-index .workout739-routine-card {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:.65rem;
+  align-items:start;
+  min-width:0;
+}
+.workout739-routine-title {
+  display:block;
+  overflow-wrap:anywhere;
+  font-size:1.05rem;
+}
+.workout739-nav,
+.workout739-actions {
+  display:flex;
+  gap:.5rem;
+  flex-wrap:wrap;
+  align-items:stretch;
+  min-width:0;
+}
+.workout739-nav { margin:.45rem 0; }
+.workout739-actions > form { margin:0; }
+.workout739-actions > .workout739-edit-panel { min-width:0; }
+.workout739-nav > a,
+.workout739-actions > form > button,
+.workout739-edit-panel > summary,
+.workout739-edit-form > button {
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  min-width:0;
+  padding:.55rem .8rem;
+  border:1px solid var(--rule,var(--border,#9eafc3));
+  border-radius:.65rem;
+  background:var(--surface,#fff);
+  color:var(--ink,inherit);
+  font:inherit;
+  font-weight:650;
+  text-align:center;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  cursor:pointer;
+}
+.workout739-edit-panel > summary {
+  display:list-item;
+  list-style-position:inside;
+  line-height:1.3;
+  cursor:pointer;
+}
+.workout739-edit-panel[open] {
+  flex-basis:100%;
+  order:5;
+  max-width:100%;
+}
+.workout739-edit-form {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:.55rem;
+  margin:.7rem 0 0;
+  min-width:0;
+}
+.workout739-edit-form label {
+  display:grid;
+  gap:.3rem;
+  min-width:0;
+}
+.workout739-edit-form input {
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  min-height:44px;
+  padding:.5rem;
+}
+.workout739-edit-form > button { justify-self:start; }
+.workout739-history-lock {
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
+  padding:.45rem .55rem;
+  color:var(--muted,var(--ink,#536474));
+  font-size:.87rem;
+}
+.workout739-nav > a:focus-visible,
+.workout739-actions :is(button,summary,input):focus-visible {
+  outline:3px solid var(--teal,#1265ad);
+  outline-offset:2px;
+}
+@media(max-width:430px) {
+  .workout739-nav > a { flex:1 1 100%; }
+  .workout739-actions > form,
+  .workout739-actions > .workout739-edit-panel:not([open]) { flex:1 1 calc(50% - .5rem); }
+  .workout739-actions > form > button { width:100%; min-height:48px; }
+  .workout739-edit-panel > summary { min-height:48px; }
+  .workout739-edit-panel[open] { flex:1 1 100%; }
+  .workout739-edit-form > button { width:100%; }
+}
