@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
+  "exit_code": 42,
+  "failed_tests": [
+    "tests/test_release743_security_deps_chain_css.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T23:33:04+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_743_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_743_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/743-security-deps-controller-ux",
+  "release": 743,
+  "request_id": "r743-b4b24e61fece",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T23:32:52+00:00",
+  "status": "failed",
+  "target": "b4b24e61fece75f1bb48aba5febb35420a63d388",
+  "test_counts": [
+    "24 passed, 1 warning"
+  ]
+}
