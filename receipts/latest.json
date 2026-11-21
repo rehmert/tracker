@@ -1,31 +1,20 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "247f413d46f9f1b635144c7f141a57027fd26449",
-  "exit_code": 0,
+  "exit_code": 1,
   "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-21T00:16:28+00:00",
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-21T00:17:25+00:00",
   "markers": [
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_715_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_715_SCOPED_BACKEND=PASSED",
-    "TARGETED_715_COA_UNTESTED=PASSED",
-    "RELEASE_715_SCOPED_BROWSER=PASSED",
-    "RELEASE_715_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_715_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_715_EXIT_STATUS=0"
+    "EXIT_STATUS=1"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r715-9f28e6b4d1a0",
   "ref": "release/715-coa-endotoxin-untested-default",
   "release": 715,
-  "request_id": "r715-9f28e6b4d1a0",
+  "request_id": "r715-bc72e09f146a",
   "schema": 1,
-  "started_at_utc": "2026-11-21T00:15:52+00:00",
-  "status": "passed",
+  "started_at_utc": "2026-11-21T00:17:22+00:00",
+  "status": "failed",
   "target": "355d479e5fc864142543f56303db8de410ab0822",
-  "test_counts": [
-    "27 passed, 1 warning",
-    "7 passed",
-    "2 passed"
-  ]
+  "test_counts": []
 }

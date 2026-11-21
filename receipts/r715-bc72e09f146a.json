@@ -1,0 +1,20 @@
+{
+  "action": "dev_install",
+  "base": "247f413d46f9f1b635144c7f141a57027fd26449",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-21T00:17:25+00:00",
+  "markers": [
+    "EXIT_STATUS=1"
+  ],
+  "previous_request_id": "r715-9f28e6b4d1a0",
+  "ref": "release/715-coa-endotoxin-untested-default",
+  "release": 715,
+  "request_id": "r715-bc72e09f146a",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T00:17:22+00:00",
+  "status": "failed",
+  "target": "355d479e5fc864142543f56303db8de410ab0822",
+  "test_counts": []
+}
