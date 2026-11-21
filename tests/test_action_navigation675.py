@@ -22,8 +22,14 @@ def test_675_changed_templates_parse_and_load_shared_mobile_styles():
     for name in PAGES:
         src = page(name)
         Environment().parse(src)
-        assert 'tracker-action-nav675.css?v=675' in src, name
-        assert src.count('tracker-action-nav675.css?v=675') == 1
+        asset = ('tracker-action-flow738.css?v=738'
+                 if name in ('workouts654.html', 'workout_quick659.html')
+                 else 'tracker-action-nav675.css?v=675')
+        assert asset in src, name
+        assert src.count(asset) == 1
+    composite = (ROOT / 'app/static/css/tracker-action-flow738.css').read_text()
+    original = CSS.read_text()
+    assert composite.startswith(original.rstrip() + "\n")
 
 
 def test_675_workout_home_has_named_touch_actions_and_retains_routes():
