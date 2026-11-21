@@ -126,6 +126,46 @@ def test_721_catchup_rejects_unpassed_or_wrong_previous_stage():
             agent.validate_chain(agent.validate_command(request), old)
 
 
+def test_721_recover_only_same_never_executed_chain_block():
+    previous_id = 'r711-abcdef012345'
+    request = cmd('prod_preflight', previous_id, 'r711-222222222222')
+    request['base'] = 'ab70236618df66b8a959c765abf38dbcd59b29d7'
+    approved = receipt('dev_install', previous_id)
+    blocked = {
+        **request, 'request_id': 'r711-111111111111', 'status': 'blocked',
+        'failure_category': 'StageChainBlocked', 'exit_code': 1,
+    }
+    agent.validate_chain(agent.validate_command(request), approved, blocked)
+    agent.validate_chain(agent.validate_command(request), approved, approved)
+
+    for wrong in (
+        {**blocked, 'status': 'unknown'},
+        {**blocked, 'status': 'failed'},
+        {**blocked, 'failure_category': 'PromotionOrDeploymentGate'},
+        {**blocked, 'action': 'prod_deploy'},
+        {**blocked, 'target': BASE},
+        {**blocked, 'base': BASE},
+        {**blocked, 'ref': 'release/711-other-slug'},
+        {**blocked, 'previous_request_id': 'r711-333333333333'},
+    ):
+        with pytest.raises(agent.GateError):
+            agent.validate_chain(agent.validate_command(request), approved, wrong)
+
+
+def test_721_immutable_previous_stage_must_pass_even_after_blocked_attempt():
+    previous_id = 'r711-abcdef012345'
+    request = cmd('prod_preflight', previous_id, 'r711-222222222222')
+    request['base'] = 'ab70236618df66b8a959c765abf38dbcd59b29d7'
+    blocked = {
+        **request, 'request_id': 'r711-111111111111', 'status': 'blocked',
+        'failure_category': 'StageChainBlocked',
+    }
+    for invalid in (None, receipt('dev_install', previous_id, status='failed'),
+                    receipt('qualify', previous_id)):
+        with pytest.raises(agent.GateError):
+            agent.validate_chain(agent.validate_command(request), invalid, blocked)
+
+
 def test_711_qualification_success_requires_both_completion_markers():
     data = '''RELEASE_711_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY
 RELEASE_711_EXIT_STATUS=0
