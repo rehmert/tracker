@@ -77,17 +77,21 @@ def test_661_rolling_calendar_frequency_and_backdated_order(tmp_path):
             assert result["sessions28"] == 5
             assert result["days28"] == 4
             assert result["in_progress"] is True
-            assert result["limit"] == 5
+            assert result["limit"] == 10
             recent_ids = [row.session_id for row in result["recent"]]
             assert recent_ids == [
-                afternoon.id, morning.id, six_days.id,
-                seven_days.id, twenty_seven.id,
+                afternoon.id, unfinished.id, empty.id, morning.id,
+                six_days.id, seven_days.id, twenty_seven.id,
+                twenty_eight.id, ancient.id,
             ]
             morning_view = next(row for row in result["recent"]
                                 if row.session_id == morning.id)
             assert (morning_view.sets, morning_view.machines) == (3, 2)
-            assert all(row.id not in recent_ids for row in
-                       (twenty_eight, ancient, unfinished, empty, future))
+            assert future.id not in recent_ids
+            assert result["recent_total"] == 9
+            assert result["recent_page"] == 1
+            assert result["recent_pages"] == 1
+            assert result["recent_expanded"] is False
             assert result["recent"][0].started_at == afternoon.started_at
 
             # Counted only completed sessions with sets, not set count.
@@ -137,13 +141,14 @@ def test_661_dashboard_http_readonly_quick_links_and_customization():
         assert "Workout Activity" in html
         assert "Training days · last 7 days" in html
         assert "Sessions · last 28 days" in html
-        assert "Recent Completed Workouts" in html
+        assert "Recent Workouts" in html
+        assert '<details class="tracker-workout-recent661"' in html
         assert f'href="/workouts/sessions/{sid}"' in html
         assert "1 set · 1 machine" in html
         assert 'href="/workouts/quick"' in html
         assert 'href="/workouts/analytics"' in html
         assert 'href="/workouts"' in html
-        assert "tracker-workout-dashboard661.css?v=678" in html
+        assert "tracker-workout-dashboard661.css?v=719" in html
         assert 'id="dashboard-customize"' in html
 
         with SessionLocal() as db:
@@ -169,6 +174,8 @@ def test_661_dashboard_empty_state_and_source_contract(tmp_path):
             assert empty["sessions28"] == 0
             assert empty["days28"] == 0
             assert empty["recent"] == []
+            assert empty["recent_total"] == 0
+            assert empty["recent_pages"] == 1
             assert empty["in_progress"] is False
     finally:
         eng.dispose()
@@ -184,7 +191,7 @@ def test_661_dashboard_empty_state_and_source_contract(tmp_path):
         "completed_at.is_not(None)", "completed_at.is_(None)",
         "WorkoutSet654.session_id == WorkoutSession654.id",
         "func.distinct(func.date(WorkoutSession654.started_at))",
-        "RECENT_WORKOUT_LIMIT661 = 5", "RECENT_DAYS661 = 7",
+        "RECENT_WORKOUT_LIMIT661 = 10", "RECENT_DAYS661 = 7",
         "LONG_DAYS661 = 28", ".limit(RECENT_WORKOUT_LIMIT661)",
         "WorkoutSession654.started_at.desc()",
     ):
@@ -196,7 +203,8 @@ def test_661_dashboard_empty_state_and_source_contract(tmp_path):
         assert forbidden not in source
     dashboard = (ROOT / "app/routers/dashboard.py").read_text()
     assert "from ..workout_dashboard661 import workout_dashboard661" in dashboard
-    assert "workout_summary=workout_dashboard661(db, today_date)" in dashboard
+    assert "workout_summary=workout_dashboard661(" in dashboard
+    assert "expanded=workout_page is not None" in dashboard
     html = (ROOT / "app/templates/dashboard.html").read_text()
     assert "{% include '_workout_dashboard661.html' %}" in html
     assert (ROOT / "app/static/css/tracker-workout-dashboard661.css").is_file()
