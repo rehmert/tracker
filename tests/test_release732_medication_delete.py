@@ -238,3 +238,72 @@ def test_732_live_regimen_form_shows_visible_delete_and_dependency_counts(env):
     with Session() as db:
         assert db.get(RegimenItem, 1) is not None
         assert db.get(RegimenEntry, 1) is not None
+
+
+
+def test_732_chromium_mobile_delete_requires_confirm_and_posts_to_server(env):
+    from playwright.sync_api import expect, sync_playwright
+
+    client, Session = env
+    create_item(client, "Accidental medication")
+    create_tablet_schedule(client)
+    create_tablet_intake(client)
+    markup = client.get("/regimen?day=2026-11-21").text
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=True)
+        try:
+            page = browser.new_page(viewport={"width": 390, "height": 844})
+            submissions = []
+            dialogs = []
+            page.route("http://tracker.test/regimen", lambda route: route.fulfill(
+                status=200, content_type="text/html", body=markup,
+            ))
+            page.route("http://tracker.test/static/**", lambda route: route.fulfill(
+                status=200, content_type="application/javascript", body="",
+            ))
+
+            def handle_delete(route):
+                submissions.append(route.request.post_data or "")
+                result = client.post(
+                    "/regimen/items/1/delete",
+                    content=route.request.post_data or "",
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                )
+                assert result.status_code == 303
+                route.fulfill(status=200, content_type="text/html",
+                              body="<p>Request processed</p>")
+            page.route("http://tracker.test/regimen/items/1/delete",
+                       handle_delete)
+            page.goto("http://tracker.test/regimen")
+            button = page.locator(
+                'form[action="/regimen/items/1/delete"] button'
+            )
+            expect(button).to_be_visible()
+            assert button.bounding_box()["height"] >= 44
+            assert page.evaluate(
+                "document.documentElement.scrollWidth <= innerWidth"
+            )
+
+            def dismiss(dialog):
+                dialogs.append(dialog.message)
+                dialog.dismiss()
+            page.once("dialog", dismiss)
+            button.click()
+            assert not submissions
+            assert len(dialogs) == 1
+            assert "1 schedule(s)" in dialogs[0]
+            assert "1 intake record(s)" in dialogs[0]
+            with Session() as db:
+                assert db.get(RegimenItem, 1) is not None
+
+            page.once("dialog", lambda dialog: dialog.accept())
+            button.click()
+            expect(page.locator("body")).to_contain_text("Request processed")
+            assert len(submissions) == 1
+            assert "confirm_delete=delete" in submissions[0]
+            with Session() as db:
+                assert db.get(RegimenItem, 1) is None
+                assert db.get(RegimenEntry, 1) is None
+        finally:
+            browser.close()
