@@ -102,6 +102,58 @@ def category_version(client, category_id):
     return m.group(1)
 
 
+def test_741_diag_fixture_supply_list(env):
+    client, _ = env
+    assert client.get("/supplies").status_code == 200
+
+
+def test_741_diag_seed_and_render(env):
+    client, Session = env
+    sid, pid, cid = seed(Session)
+    assert sid > 0 and pid > 0 and cid > 0
+    response = client.get("/supplies")
+    assert response.status_code == 200
+    assert "Test Needle" in response.text
+
+
+def test_741_diag_version_form(env):
+    client, Session = env
+    sid, _, _ = seed(Session)
+    v, html = version(client, sid)
+    assert len(v) == 64 and f'action="/supplies/{sid}/edit"' in html
+
+
+def test_741_diag_edit_post_response(env):
+    client, Session = env
+    sid, _, cid = seed(Session)
+    v, _ = version(client, sid)
+    response = post(client, f"/supplies/{sid}/edit", dict(
+        version=v, name=" Needles box ", notes="  Cabinet A ",
+        kind="needle", compound_id=str(cid),
+    ))
+    assert response.status_code == 303
+    assert "err=" not in response.headers["location"], response.headers["location"]
+
+
+def test_741_diag_edit_persisted_audit(env):
+    client, Session = env
+    sid, _, cid = seed(Session)
+    v, _ = version(client, sid)
+    response = post(client, f"/supplies/{sid}/edit", dict(
+        version=v, name=" Needles box ", notes="  Cabinet A ",
+        kind="needle", compound_id=str(cid),
+    ))
+    assert response.status_code == 303 and "err=" not in response.headers["location"]
+    with Session() as db:
+        record = db.get(Supply, sid)
+        assert record.name == "Needles box" and record.notes == "Cabinet A"
+        audit = db.scalar(select(ChangeAudit).where(
+            ChangeAudit.entity_type == "supply",
+            ChangeAudit.entity_id == sid, ChangeAudit.action == "edit",
+        ))
+        assert audit is not None and json.loads(audit.after_json)["name"] == record.name
+
+
 def test_741_supply_edit_preserves_ledger_and_records_private_audit(env):
     client, Session = env
     sid, pid, cid = seed(Session)
