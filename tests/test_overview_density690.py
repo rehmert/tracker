@@ -37,6 +37,7 @@ def render_fragments():
     ).render(workout_summary=SimpleNamespace(
         in_progress=False, sessions7=0, days7=0,
         sessions28=0, days28=0, sets28=0, reps28=0, recent=[],
+        recent_expanded=True,  # The density test measures the expanded empty-state button.
     ))
     dash = read("app/templates/dashboard.html")
     start = dash.index('<section data-dashboard-panel="1" data-dashboard-title="At a glance"')
