@@ -14,6 +14,7 @@
 <script src="/static/js/tracker-workout-gym667.js?v=667" defer></script>
 <script src="/static/js/tracker-workout-drafts668.js?v=668" defer></script>
 <script src="/static/js/tracker-workout-progression674.js?v=674" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-workouts716.css?v=716">
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
@@ -39,6 +40,68 @@
       <span class="workout659-state">Workout active</span>
     {% endif %}
   </header>
+
+  {% if active %}
+    <nav class="workout716-edit-actions" aria-label="Edit the current workout">
+      <a class="ux675-inline-action" href="/workouts#workout-sets657">Edit Workout Sets</a>
+      {% if routine %}
+        <a class="ux675-inline-action" href="/workouts/routines/{{ routine.id }}#routine-exercises655">Edit Routine Order</a>
+      {% endif %}
+    </nav>
+    <details class="workout659-panel workout716-add" id="workout716-add-machine">
+      <summary>Add Machine to Workout</summary>
+      <div class="workout716-add-body">
+        <p class="workout659-muted">Choose a machine and continue logging without ending your workout.</p>
+        {% if available_to_add716 %}
+          <form method="post" action="/workouts/quick/machines" id="workout716-existing-form">
+            <input type="hidden" name="session_id" value="{{ active.id }}">
+            <label for="workout716-existing">Available machines</label>
+            <div class="workout659-picker-row">
+              <select name="equipment_id" id="workout716-existing" required>
+                {% for item in available_to_add716 %}
+                  <option value="{{ item.id }}">{{ item.name }} · {{ item.gym }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="primary">{{ 'Add & Open' if routine else 'Open Machine' }}</button>
+            </div>
+          </form>
+          {% if routine %}
+            <p class="workout659-muted">Adding a machine also updates your saved routine for future workouts. Today's existing sets and targets stay unchanged.</p>
+          {% else %}
+            <p class="workout659-muted">Free workout: the machine is included when you log its first set.</p>
+          {% endif %}
+        {% elif routine %}
+          <p class="workout659-muted">Every cataloged machine is already in this routine.</p>
+        {% endif %}
+        <details class="workout716-new">
+          <summary>New machine not listed? Create it here</summary>
+          <form method="post" action="/workouts/quick/machines/new" id="workout716-new-form">
+            <input type="hidden" name="session_id" value="{{ active.id }}">
+            <label for="workout716-new-name">Machine name
+              <input id="workout716-new-name" name="name" required maxlength="140" placeholder="e.g. Nautilus Leg Curl">
+            </label>
+            <label for="workout716-new-kind">Equipment type
+              <select id="workout716-new-kind" name="kind">
+                {% for kind in equipment_kinds716 %}
+                  <option value="{{ kind }}">{{ kind|replace('_', ' ')|title }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label for="workout716-new-gym">Gym
+              <input id="workout716-new-gym" name="gym" required maxlength="140" value="Merritt Athletic Club - Eldersburg">
+            </label>
+            <label for="workout716-new-brand">Manufacturer (optional)
+              <input id="workout716-new-brand" name="manufacturer" maxlength="100" placeholder="Nautilus">
+            </label>
+            <label for="workout716-new-seat">Seat setting (optional)
+              <input id="workout716-new-seat" name="seat_setting" maxlength="80">
+            </label>
+            <button type="submit" class="primary">Create & Open Machine</button>
+          </form>
+        </details>
+      </div>
+    </details>
+  {% endif %}
 
   {% if not equipment %}
     <section class="workout659-panel">
