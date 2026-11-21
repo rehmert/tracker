@@ -47,7 +47,23 @@
   outline:2px solid var(--teal);outline-offset:3px;
 }
 .reg733-action-row>form>button{box-sizing:border-box;min-height:44px}
-.reg733-add-trigger{display:inline-flex;align-items:center;min-height:44px;padding:.55rem .85rem;cursor:pointer}
+/* Release 736: flex summaries suppress the browser's native details marker.
+   Draw a consistent visible chevron for both Add disclosures in every theme. */
+summary.reg733-add-trigger{
+  display:inline-flex;align-items:center;gap:.65rem;
+  min-height:44px;padding:.55rem .85rem;cursor:pointer;list-style:none;
+}
+summary.reg733-add-trigger::-webkit-details-marker{display:none}
+summary.reg733-add-trigger::marker{content:""}
+summary.reg733-add-trigger::after{
+  content:"";display:block;flex:0 0 .55rem;width:.55rem;height:.55rem;
+  border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+  transform:translateY(-2px) rotate(45deg);
+  transition:transform .15s ease;
+}
+details[open]>summary.reg733-add-trigger::after{
+  transform:translateY(2px) rotate(225deg);
+}
 @media(max-width:760px){.reg733-action-row>details[open]{flex-basis:100%;width:100%}}
 .reg635-history{overflow:auto}
 .reg635-history table{width:100%}
