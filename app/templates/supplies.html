@@ -1,22 +1,23 @@
 {% extends "base.html" %}{% block title %}Supplies{% endblock %}{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-supplies-bundle742.css?v=742">
 
-<link rel="stylesheet"
-      href="/static/css/tracker-supply-use-preview.css?v=20261103">
+
 <script defer
         src="/static/js/tracker-supply-use-preview.js?v=20261103"></script>
 
 
-<link rel="stylesheet"
-      href="/static/css/tracker-stock-health.css?v=20261103">
-
-
-<link rel="stylesheet"
-      href="/static/css/tracker-stock-filters.css?v=20261103-batch4">
 <script defer
         src="/static/js/tracker-stock-filters.js?v=20261103-batch4"></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 
-<h1>Supplies & disposable inventory</h1><p class="note">BAC water is tracked in mL, without an active ingredient. Add BAC water vials directly from a purchase using the dedicated BAC water form.</p><section><h2>Add purchased inventory</h2><p class="note">Choose an order to add bulk packages or individual supplies. Package quantities, line prices, and live inventory previews are managed together on the purchase page.</p><div class="row">{% for p in purchases[:10] %}<a class="button" href="/purchases/{{ p.id }}">#{{ p.id }} · {{ p.vendor }}</a>{% endfor %}<a class="button" href="/purchases">All purchases</a></div></section>
+<h1>Supplies & disposable inventory</h1>
+<nav class="tracker-ux742-jumps" aria-label="Supplies sections">
+<a href="#tracker-stock-section">Stock &amp; use</a>
+<a href="#tracker-supply-category-create">Create category</a>
+<a href="#tracker-categories">Manage categories</a>
+<a href="/reconciliation">Reconcile stock</a>
+</nav>
+<p class="note">BAC water is tracked in mL, without an active ingredient. Add BAC water vials directly from a purchase using the dedicated BAC water form.</p><section><h2>Add purchased inventory</h2><p class="note">Choose an order to add bulk packages or individual supplies. Package quantities, line prices, and live inventory previews are managed together on the purchase page.</p><div class="row">{% for p in purchases %}<a class="button" href="/purchases/{{ p.id }}">#{{ p.id }} · {{ p.vendor }}</a>{% endfor %}<a class="button" href="/purchases">All purchases</a></div></section>
 <section id="tracker-stock-section">
 <h2>Stock</h2>
 {% set stock = namespace(available=0, low=0, depleted=0) %}
@@ -149,7 +150,7 @@
 <span class="tracker-macd741-guard" data-macd741-supply-guard>{{ refs.get('usage',0) }} use(s), {{ refs.get('adjustments',0) }} adjustment(s) retained</span>
 {% endif %}
 </div></td></tr>{% else %}<tr><td colspan="8">No supplies.</td></tr>{% endfor %}</tbody></table></div></section>
-<section><h2>Create inventory category</h2><p class="note">Create additional types for needles, syringes, cartridges, sterile vials, or any other consumable. Existing stock and usage history are preserved.</p>
+<section id="tracker-supply-category-create"><h2>Create inventory category</h2><p class="note">Create additional types for needles, syringes, cartridges, sterile vials, or any other consumable. Existing stock and usage history are preserved.</p>
 <form method="post" action="/supplies/categories" class="grid">
 <label class="field"><span>Category name</span><input name="label" maxlength="100" placeholder="e.g. Sharps containers" required></label>
 <label class="field"><span>Unit</span><select name="unit"><option value="count">count (individual items)</option><option value="packs">packs</option><option value="boxes">boxes</option><option value="mL">mL</option><option value="L">L</option><option value="g">g</option><option value="mg">mg</option></select></label>
