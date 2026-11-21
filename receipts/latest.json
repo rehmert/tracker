@@ -1,24 +1,25 @@
 {
-  "action": "dev_install",
-  "base": "28003549a8d0d69ac7ea23d8addd699a71a5a226",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-21T19:56:16+00:00",
+  "action": "qualify",
+  "base": "2421fde33dfae626022529f046c9b21035ad6d62",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release735_prod_catchup.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T20:08:07+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "RELEASE_734_DEV_INSTALL=SUCCESS"
+    "RELEASE_735_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_735_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_735_EXIT_STATUS=1"
   ],
-  "previous_request_id": "r734-2421fde33dfa",
-  "ref": "release/734-regimen-action-button-parity",
-  "release": 734,
-  "request_id": "r734-install2421fde33dfa",
+  "previous_request_id": null,
+  "ref": "release/735-prod-catchup-727-to-735",
+  "release": 735,
+  "request_id": "r735-7ef6aa871695",
   "schema": 1,
-  "started_at_utc": "2026-11-21T19:55:22+00:00",
-  "status": "passed",
-  "target": "2421fde33dfae626022529f046c9b21035ad6d62",
-  "test_counts": [
-    "23 passed, 1 warning"
-  ]
+  "started_at_utc": "2026-11-21T20:08:01+00:00",
+  "status": "failed",
+  "target": "7ef6aa87169537a7ad5ee041e5d32a67844600f2",
+  "test_counts": []
 }
