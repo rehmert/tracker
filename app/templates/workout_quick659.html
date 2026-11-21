@@ -41,66 +41,8 @@
     {% endif %}
   </header>
 
-  {% if active %}
-    <nav class="workout716-edit-actions" aria-label="Edit the current workout">
-      <a class="ux675-inline-action" href="/workouts#workout-sets657">Edit Workout Sets</a>
-      {% if routine %}
-        <a class="ux675-inline-action" href="/workouts/routines/{{ routine.id }}#routine-exercises655">Edit Routine Order</a>
-      {% endif %}
-    </nav>
-    <details class="workout659-panel workout716-add" id="workout716-add-machine">
-      <summary>Add Machine to Workout</summary>
-      <div class="workout716-add-body">
-        <p class="workout659-muted">Choose a machine and continue logging without ending your workout.</p>
-        {% if available_to_add716 %}
-          <form method="post" action="/workouts/quick/machines" id="workout716-existing-form">
-            <input type="hidden" name="session_id" value="{{ active.id }}">
-            <label for="workout716-existing">Available machines</label>
-            <div class="workout659-picker-row">
-              <select name="equipment_id" id="workout716-existing" required>
-                {% for item in available_to_add716 %}
-                  <option value="{{ item.id }}">{{ item.name }} · {{ item.gym }}</option>
-                {% endfor %}
-              </select>
-              <button type="submit" class="primary">{{ 'Add & Open' if routine else 'Open Machine' }}</button>
-            </div>
-          </form>
-          {% if routine %}
-            <p class="workout659-muted">Adding a machine also updates your saved routine for future workouts. Today's existing sets and targets stay unchanged.</p>
-          {% else %}
-            <p class="workout659-muted">Free workout: the machine is included when you log its first set.</p>
-          {% endif %}
-        {% elif routine %}
-          <p class="workout659-muted">Every cataloged machine is already in this routine.</p>
-        {% endif %}
-        <details class="workout716-new">
-          <summary>New machine not listed? Create it here</summary>
-          <form method="post" action="/workouts/quick/machines/new" id="workout716-new-form">
-            <input type="hidden" name="session_id" value="{{ active.id }}">
-            <label for="workout716-new-name">Machine name
-              <input id="workout716-new-name" name="name" required maxlength="140" placeholder="e.g. Nautilus Leg Curl">
-            </label>
-            <label for="workout716-new-kind">Equipment type
-              <select id="workout716-new-kind" name="kind">
-                {% for kind in equipment_kinds716 %}
-                  <option value="{{ kind }}">{{ kind|replace('_', ' ')|title }}</option>
-                {% endfor %}
-              </select>
-            </label>
-            <label for="workout716-new-gym">Gym
-              <input id="workout716-new-gym" name="gym" required maxlength="140" value="Merritt Athletic Club - Eldersburg">
-            </label>
-            <label for="workout716-new-brand">Manufacturer (optional)
-              <input id="workout716-new-brand" name="manufacturer" maxlength="100" placeholder="Nautilus">
-            </label>
-            <label for="workout716-new-seat">Seat setting (optional)
-              <input id="workout716-new-seat" name="seat_setting" maxlength="80">
-            </label>
-            <button type="submit" class="primary">Create & Open Machine</button>
-          </form>
-        </details>
-      </div>
-    </details>
+  {% if active and not equipment %}
+    {% include "_workout_quick_tools722.html" %}
   {% endif %}
 
   {% if not equipment %}
@@ -137,29 +79,6 @@
             <a href="/workouts/routines/{{ routine.id }}/schedule">Schedule</a>
           </div></details>
         </nav>
-      </section>
-    {% endif %}
-
-    {% if routine and grouped668 %}
-      <section class="workout659-panel" aria-label="Planned Supersets and Circuits">
-        <h2>Planned Training Groups</h2>
-        <p class="workout659-muted">Planned order only · Log each set yourself.</p>
-        {% for group in grouped668 %}
-          <details>
-            <summary>{{ group.group.group_name }} — {{ group.group.group_type|title }} · {{ group.group.rounds }} rounds</summary>
-            <nav aria-label="{{ group.group.group_name }} exercises">
-              {% for equipment_item in group.machines %}
-                <a href="/workouts/quick?machine={{ equipment_item.id }}">{{ equipment_item.name }}</a>
-                <small> · {{ group.progress[equipment_item.id] }}/{{ group.group.rounds }} working sets</small>
-              {% endfor %}
-            </nav>
-            {% if group.complete %}
-              <p class="workout659-muted">All planned rounds have been logged.</p>
-            {% elif group.next_machine %}
-              <p><a class="ux675-inline-action" href="/workouts/quick?machine={{ group.next_machine.id }}">Next: {{ group.next_machine.name }}</a></p>
-            {% endif %}
-          </details>
-        {% endfor %}
       </section>
     {% endif %}
 
@@ -204,39 +123,6 @@
             <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
           {% endif %}
         </div>
-        <details class="workout659-panel">
-          <summary>Load Setup</summary>
-          <p class="workout659-muted">Choose stack, plates, dumbbells, or added bodyweight. These settings explain load only; recorded values never change.</p>
-          <form method="post" action="/workouts/equipment/{{ machine.id }}/load">
-            <label>Load representation
-              <select name="load_mode">
-                {% for key, description in (
-                  ('stack', 'Stack displayed total (lb)'),
-                  ('total_plates', 'Combined plate load (lb)'),
-                  ('per_side', 'Plates on one side (lb)'),
-                  ('pair_total', 'Total of dumbbell pair (lb)'),
-                  ('bodyweight_added', 'Added resistance above bodyweight (lb)')
-                ) %}
-                  <option value="{{ key }}" {% if load_config668 and load_config668.load_mode == key %}selected{% endif %}>{{ description }}</option>
-                {% endfor %}
-              </select>
-            </label>
-            <label>Reference multiplier
-              <input type="number" name="multiplier" min="0.01" max="10" step="0.01"
-                     value="{{ load_config668.multiplier if load_config668 else 1 }}" required>
-            </label>
-            <label>Equipment offset (lb; e.g. sled)
-              <input type="number" name="offset_lb" min="0" max="500" step="any"
-                     value="{{ load_config668.offset_lb if load_config668 else 0 }}" required>
-            </label>
-            <label>Machine-specific load notes
-              <textarea name="note" maxlength="500" rows="2">{{ load_config668.note if load_config668 else '' }}</textarea>
-            </label>
-            <button type="submit">Save Machine Load Setup</button>
-          </form>
-          <p class="workout659-muted">These values do not alter recorded weight
-            or calculate strength between different machine designs.</p>
-        </details>
         <div class="workout659-prior">
           {% if last %}
             <span>Last recorded</span>
@@ -347,21 +233,6 @@
             {{ 'Restore last recorded values' if last else 'Clear entries' }}
           </button>
         </form>
-        <details class="ux673-gym-offline" aria-label="Offline and draft tools">
-          <summary>Offline &amp; Draft Tools</summary>
-          <div class="ux673-gym-offline-content">
-            <h3>Offline Draft</h3>
-          <p class="workout659-muted">Drafts stay on this device; they are not logged. Queued sets sync while this page is open and online. Failed items stay queued for review.</p>
-          <button type="button" id="workout668-draft-save">Save Local Draft</button>
-          <button type="button" id="workout668-draft-restore">Restore Draft</button>
-          <button type="button" id="workout668-queue-set">Queue This Set for Offline Sync</button>
-          <button type="button" id="workout668-sync-now">Synchronize Pending Sets</button>
-          <button type="button" id="workout668-queue-discard">Discard All Pending Sets</button>
-          <button type="button" id="workout668-draft-clear">Delete Draft</button>
-          <p id="workout668-sync-status" role="status" aria-live="polite"></p>
-          <p id="workout668-draft-status" role="status" aria-live="polite"></p>
-          </div>
-        </details>
         {% if last %}
           <form method="post" action="/workouts/quick/repeat" class="workout659-repeat">
             <input type="hidden" name="equipment_id" value="{{ machine.id }}">
@@ -381,8 +252,81 @@
             {% endif %}
           </nav>
         {% endif %}
+        <details class="workout659-panel">
+          <summary>Load Setup</summary>
+          <p class="workout659-muted">Choose stack, plates, dumbbells, or added bodyweight. These settings explain load only; recorded values never change.</p>
+          <form method="post" action="/workouts/equipment/{{ machine.id }}/load">
+            <label>Load representation
+              <select name="load_mode">
+                {% for key, description in (
+                  ('stack', 'Stack displayed total (lb)'),
+                  ('total_plates', 'Combined plate load (lb)'),
+                  ('per_side', 'Plates on one side (lb)'),
+                  ('pair_total', 'Total of dumbbell pair (lb)'),
+                  ('bodyweight_added', 'Added resistance above bodyweight (lb)')
+                ) %}
+                  <option value="{{ key }}" {% if load_config668 and load_config668.load_mode == key %}selected{% endif %}>{{ description }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>Reference multiplier
+              <input type="number" name="multiplier" min="0.01" max="10" step="0.01"
+                     value="{{ load_config668.multiplier if load_config668 else 1 }}" required>
+            </label>
+            <label>Equipment offset (lb; e.g. sled)
+              <input type="number" name="offset_lb" min="0" max="500" step="any"
+                     value="{{ load_config668.offset_lb if load_config668 else 0 }}" required>
+            </label>
+            <label>Machine-specific load notes
+              <textarea name="note" maxlength="500" rows="2">{{ load_config668.note if load_config668 else '' }}</textarea>
+            </label>
+            <button type="submit">Save Machine Load Setup</button>
+          </form>
+          <p class="workout659-muted">These values do not alter recorded weight
+            or calculate strength between different machine designs.</p>
+        </details>
+        <details class="ux673-gym-offline" aria-label="Offline and draft tools">
+          <summary>Offline &amp; Draft Tools</summary>
+          <div class="ux673-gym-offline-content">
+            <h3>Offline Draft</h3>
+          <p class="workout659-muted">Drafts stay on this device; they are not logged. Queued sets sync while this page is open and online. Failed items stay queued for review.</p>
+          <button type="button" id="workout668-draft-save">Save Local Draft</button>
+          <button type="button" id="workout668-draft-restore">Restore Draft</button>
+          <button type="button" id="workout668-queue-set">Queue This Set for Offline Sync</button>
+          <button type="button" id="workout668-sync-now">Synchronize Pending Sets</button>
+          <button type="button" id="workout668-queue-discard">Discard All Pending Sets</button>
+          <button type="button" id="workout668-draft-clear">Delete Draft</button>
+          <p id="workout668-sync-status" role="status" aria-live="polite"></p>
+          <p id="workout668-draft-status" role="status" aria-live="polite"></p>
+          </div>
+        </details>
       {% endif %}
     </section>
+
+    {% include "_workout_quick_tools722.html" %}
+
+    {% if routine and grouped668 %}
+      <section class="workout659-panel" aria-label="Planned Supersets and Circuits">
+        <h2>Planned Training Groups</h2>
+        <p class="workout659-muted">Planned order only · Log each set yourself.</p>
+        {% for group in grouped668 %}
+          <details>
+            <summary>{{ group.group.group_name }} — {{ group.group.group_type|title }} · {{ group.group.rounds }} rounds</summary>
+            <nav aria-label="{{ group.group.group_name }} exercises">
+              {% for equipment_item in group.machines %}
+                <a href="/workouts/quick?machine={{ equipment_item.id }}">{{ equipment_item.name }}</a>
+                <small> · {{ group.progress[equipment_item.id] }}/{{ group.group.rounds }} working sets</small>
+              {% endfor %}
+            </nav>
+            {% if group.complete %}
+              <p class="workout659-muted">All planned rounds have been logged.</p>
+            {% elif group.next_machine %}
+              <p><a class="ux675-inline-action" href="/workouts/quick?machine={{ group.next_machine.id }}">Next: {{ group.next_machine.name }}</a></p>
+            {% endif %}
+          </details>
+        {% endfor %}
+      </section>
+    {% endif %}
 
     <section class="workout659-panel workout659-rest-panel" aria-label="Rest timer">
       <div class="workout659-rest-header">

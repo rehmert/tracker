@@ -107,6 +107,24 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
                 'a[href="' + routine_path + '#routine-exercises655"]'
             ).count() == 1
             checkpoint716(scheme, "LINKS")
+            # Release 722: verify primary set logging is ahead of optional tools.
+            log_form = page.locator("#workout659-log-form")
+            expect(log_form).to_be_visible()
+            assert log_form.evaluate(
+                "(el) => Boolean(el.compareDocumentPosition("
+                "document.querySelector('#workout716-add-machine'))"
+                " & Node.DOCUMENT_POSITION_FOLLOWING)"
+            )
+            assert log_form.evaluate(
+                "(el) => Boolean(el.compareDocumentPosition("
+                "document.querySelector('form[action$=\"/load\"]'))"
+                " & Node.DOCUMENT_POSITION_FOLLOWING)"
+            )
+            for width in (320, 390, 430):
+                page.set_viewport_size({"width": width, "height": 844})
+                expect(log_form.get_by_role("button", name="Save Set")).to_be_visible()
+                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            page.set_viewport_size({"width": 390, "height": 844})
             panel = page.locator("#workout716-add-machine")
             expect(panel).not_to_have_attribute("open", "")
             panel.locator("summary").first.click()
