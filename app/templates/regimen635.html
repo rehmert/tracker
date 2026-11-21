@@ -321,7 +321,7 @@ summary.reg737-native-disclosure{
         onsubmit="return confirm('Permanently delete this supplement, {{ schedule_counts.get(item.id, 0) }} schedule(s), and {{ entry_counts.get(item.id, 0) }} intake record(s)? This cannot be undone. The audit trail remains.')">
     <button type="submit" class="reg734-macd-action" name="confirm_delete" value="delete">Delete supplement</button>
   </form>
-  {% endif %
+  {% endif %}
   </div>
 </article>
 {% else %}<p>No supplements or medications have been entered.</p>{% endfor %}
