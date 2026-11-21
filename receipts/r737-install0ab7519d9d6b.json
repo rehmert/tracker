@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "61df746a64259e84a6fdef23d7d8df17ef3b6e0c",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T20:48:59+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_737_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r737-0ab7519d9d6b",
+  "ref": "release/737-native-regimen-disclosures",
+  "release": 737,
+  "request_id": "r737-install0ab7519d9d6b",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T20:47:49+00:00",
+  "status": "passed",
+  "target": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+  "test_counts": [
+    "35 passed, 1 warning"
+  ]
+}
