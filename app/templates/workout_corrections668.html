@@ -3,7 +3,7 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workout-review663.css?v=663">
-<link rel="stylesheet" href="/static/css/tracker-workout-completed717.css?v=717">
+<link rel="stylesheet" href="/static/css/tracker-workout-completed717.css?v=718">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout717-editor">
@@ -14,11 +14,43 @@
   <h1>Edit Completed Workout</h1>
   <p class="note">Started {{ session.started_at|dt }} ·
     {% if session.completed_at %}Completed {{ session.completed_at|dt }}{% else %}In progress{% endif %}</p>
-  <p>Correct a set or remove an accidental extra set. Your workout stays completed, and every change is audited. Totals update automatically.</p>
+  <p>Correct a set, move sets recorded under the wrong machine, or remove an extra set. The workout stays completed; changes are audited and totals update automatically.</p>
   {% if not session.completed_at %}
     <p>Finish this workout before correcting historical results.</p>
   {% else %}
     <p class="workout717-count"><strong>{{ recorded|length }}</strong> recorded set{{ '' if recorded|length == 1 else 's' }} remaining</p>
+    {% if groups718 and equipment_options718|length > 1 %}
+      <section class="workout718-bulk">
+        <h2>Wrong Machine for Several Sets?</h2>
+        <p class="note">Move every set recorded under one machine to the correct machine, all at once. Other sets stay where they are.</p>
+        {% for source in groups718 %}
+          <details class="workout718-bulk-machine">
+            <summary data-no-title-case>Change machine for {{ source.count }} set{{ '' if source.count == 1 else 's' }} on {{ source.name }}</summary>
+            <form method="post" action="/workouts/sessions/{{ session.id }}/machines/{{ source.id }}/move-sets">
+              <input type="hidden" name="expected_set_ids" value="{{ source.set_ids }}">
+              <label>Correct machine
+                <select name="target_equipment_id" required>
+                  <option value="" selected disabled>Choose the correct machine</option>
+                  {% for option in equipment_options718 %}
+                    {% if option.id != source.id %}
+                      <option value="{{ option.id }}">{{ option.name }} · {{ option.gym }}</option>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+              </label>
+              <label>Reason for correction
+                <input name="reason" value="Wrong machine selected" minlength="3" maxlength="500" required>
+              </label>
+              <label class="workout717-confirm">
+                <input type="checkbox" name="confirm_move" value="yes" required>
+                Move all {{ source.count }} recorded set{{ '' if source.count == 1 else 's' }} on this machine
+              </label>
+              <button type="submit" class="primary">Move All {{ source.count }} Sets</button>
+            </form>
+          </details>
+        {% endfor %}
+      </section>
+    {% endif %}
     {% for item in recorded %}
       <section class="workout717-set" id="workout717-set-{{ item.id }}">
         <div class="workout717-set-summary">
@@ -31,7 +63,26 @@
           </div>
         </div>
         <details class="workout717-actions">
-          <summary>Edit or Remove This Set</summary>
+          <summary>Edit Set / Change Machine / Remove</summary>
+          {% if equipment_options718|length > 1 %}
+            <form class="workout718-single-machine" method="post"
+                  action="/workouts/sessions/{{ session.id }}/sets/{{ item.id }}/machine">
+              <h2>Correct Recorded Machine</h2>
+              <input type="hidden" name="expected_equipment_id" value="{{ item.equipment_id }}">
+              <label>Machine
+                <select name="equipment_id" required>
+                  {% for option in equipment_options718 %}
+                    <option value="{{ option.id }}" {% if option.id == item.equipment_id %}selected{% endif %}>{{ option.name }} · {{ option.gym }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>Reason
+                <input name="reason" value="Wrong machine selected" minlength="3" maxlength="500" required>
+              </label>
+              <button type="submit" class="primary">Save Correct Machine</button>
+              <p class="note">Moves only this set. To move every set on the machine, use the option above.</p>
+            </form>
+          {% endif %}
           <h2>Edit Set {{ positions717[item.id] }}</h2>
           <form method="post" action="/workouts/sessions/{{ session.id }}/sets/{{ item.id }}/correct">
           <label>Load (lb)
@@ -80,6 +131,12 @@
   {% endif %}
   <section class="workout717-audit">
     <h2>Change History</h2>
+    {% for audit, before, after in moves718 %}
+      <article class="workout718-machine-event">
+        <p><strong>Set #{{ audit.entity_id }} machine corrected</strong> · {{ audit.created_at|utc_dt }}</p>
+        <p data-no-title-case>{{ before.equipment_name }} → {{ after.equipment_name }} · Reason: {{ before.reason }}</p>
+      </article>
+    {% endfor %}
     {% set recovery674 = namespace(seen=[]) %}
     {% for change in changes %}
       <article>
