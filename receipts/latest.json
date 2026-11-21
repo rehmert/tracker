@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "de867eee93004534fa822e7250deda75d0976558",
+  "action": "qualify",
+  "base": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-21T22:05:24+00:00",
+  "finished_at_utc": "2026-11-21T22:15:48+00:00",
   "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
-    "PROMOTED_COMMIT=a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
-    "REMOTE_DEPLOY_EXIT_STATUS=0",
-    "PROD_INSTALLED_COMMIT=a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
-    "DEV_CONTROLLED_RELEASE=SUCCESS"
+    "RELEASE_740_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_740_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_740_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_740_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r739-preflighta0bd6f",
-  "ref": "release/739-workout-food-macd-mobile",
-  "release": 739,
-  "request_id": "r739-deploya0bd6f6f",
+  "previous_request_id": null,
+  "ref": "release/740-equipment-macd-mobile",
+  "release": 740,
+  "request_id": "r740-78de7168566f",
   "schema": 1,
-  "started_at_utc": "2026-11-21T22:04:57+00:00",
+  "started_at_utc": "2026-11-21T22:14:42+00:00",
   "status": "passed",
-  "target": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
-  "test_counts": []
+  "target": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
+  "test_counts": [
+    "71 passed, 2 warnings"
+  ]
 }
