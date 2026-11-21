@@ -15,7 +15,8 @@ def test_assets_registered():
     html = read("app/templates/supplies.html")
 
     assert "tracker-supply-use-preview.js" in html
-    assert "tracker-supply-use-preview.css" in html
+    assert "tracker-supplies-bundle742.css?v=742" in html
+    assert read("app/static/css/tracker-supply-use-preview.css").rstrip() in read("app/static/css/tracker-supplies-bundle742.css")
     assert "data-tracker-supply-use" in html
     assert 'data-remaining="{{ s.remaining_qty }}"' in html
     assert 'name="submission_token"' in html
