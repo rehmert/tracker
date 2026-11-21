@@ -1,0 +1,22 @@
+{
+  "action": "qualify",
+  "base": "0893bde49014616bc878b0b142ad5bfe1bbf8f16",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "AssetImpactPreflight",
+  "finished_at_utc": "2026-11-21T01:25:34+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=FAILED",
+    "RELEASE_718_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_718_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/718-completed-machine-correction",
+  "release": 718,
+  "request_id": "r718-03fbe85270c9",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T01:25:32+00:00",
+  "status": "failed",
+  "target": "03fbe85270c9a0a921cf2391a26ba2d00ffed211",
+  "test_counts": []
+}
