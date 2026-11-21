@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "51a4a70ed09287dd60a108dfea3721cd53090740",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T20:54:54+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r737-install0ab7519d9d6b",
+  "ref": "release/737-native-regimen-disclosures",
+  "release": 737,
+  "request_id": "r737-preflight0ab7519",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T20:54:52+00:00",
+  "status": "passed",
+  "target": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+  "test_counts": []
+}
