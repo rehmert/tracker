@@ -2,10 +2,10 @@
   "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r716-c36ef47a990e.json",
+  "receipt_path": "receipts/r716-ecd9810bdc96.json",
   "release": 716,
-  "request_id": "r716-c36ef47a990e",
+  "request_id": "r716-ecd9810bdc96",
   "schema": 1,
   "status": "failed",
-  "target": "c36ef47a990e80888a26d03a24f906c035cf801e"
+  "target": "ecd9810bdc961961660f635fdc9368c8ccac7339"
 }
