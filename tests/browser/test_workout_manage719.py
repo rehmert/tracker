@@ -32,6 +32,12 @@ if not (
 pytestmark = pytest.mark.browser
 
 
+def mark719(scheme: str, stage: str) -> None:
+    # Fixed milestones only; no browser response content or personal data.
+    with (DATA / "workout719-stages.txt").open("a", encoding="utf-8") as out:
+        out.write(f"TARGETED_719_{scheme.upper()}_{stage}=PASSED\n")
+
+
 @pytest.mark.parametrize("scheme", ("http", "https"))
 def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
     base = HTTP_URL if scheme == "http" else HTTPS_URL
