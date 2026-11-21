@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 || "$TARGETED_MODULE" == workout-active716 || "$TARGETED_MODULE" == workout-completed717 || "$TARGETED_MODULE" == workout-machine718 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 || "$TARGETED_MODULE" == workout-active716 || "$TARGETED_MODULE" == workout-completed717 || "$TARGETED_MODULE" == workout-machine718 || "$TARGETED_MODULE" == workout-manage719 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -552,6 +552,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-workout-machine718.log"
 echo "STRICT_718_MACHINE_CORRECTION=PASSED"
 
+# Release 719: signed empty/completed workout delete and collapsed dashboard.
+run_isolated_browser_module \
+    tests/browser/test_workout_manage719.py \
+    1 "$ROOT/strict-workout-manage719.log"
+echo "STRICT_719_WORKOUT_MANAGEMENT=PASSED"
+
 echo "=== STRICT CSRF REMAINING PROTOCOL SIGNED LIFECYCLES ==="
 run_isolated_browser_module \
     tests/browser/test_csrf_protocol_remaining627.py \
@@ -709,6 +715,16 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == workout-machine718 ]]; then
       1 "$ROOT/targeted-workout-machine718.log"
   echo "TARGETED_718_MACHINE_CORRECTION=PASSED"
   echo "TARGETED_718_SCOPE=COMPLETED_MACHINE_REASSIGNMENT_NOT_FULL_RELEASE"
+  exit 0
+fi
+
+# Release 719: isolated signed completed and active workout deletion.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == workout-manage719 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_workout_manage719.py \
+      1 "$ROOT/targeted-workout-manage719.log"
+  echo "TARGETED_719_WORKOUT_MANAGEMENT=PASSED"
+  echo "TARGETED_719_SCOPE=SIGNED_WORKOUT_DELETE_AND_COLLAPSED_DASHBOARD_NOT_FULL_RELEASE"
   exit 0
 fi
 
