@@ -150,7 +150,7 @@ def delete_supply741(
     db: Session = Depends(get_scoped_db390),
 ):
     """Only delete an unused, never-reconciled purchase supply line."""
-    back = f"/supplies#tracker-supply-{sid}"
+    back = "/supplies"
     if not reserve_inventory_write(db):
         return services.flash_redirect(back, err="Inventory is busy. Please retry.")
     s = db.get(Supply, sid)
@@ -243,30 +243,30 @@ def edit_category741(
     label = label.strip()
     if not _custom_category741(cat):
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Built-in category definitions cannot be edited.")
+        return services.flash_redirect("/supplies", err="Built-in category definitions cannot be edited.")
     if version != _category_version741(cat):
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Category changed; reload before editing.")
+        return services.flash_redirect("/supplies", err="Category changed; reload before editing.")
     if not label or len(label) > 100 or unit not in ("count", "mL", "g", "mg", "L", "boxes", "packs"):
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Enter a valid category name and unit.")
+        return services.flash_redirect("/supplies", err="Enter a valid category name and unit.")
     if unit != cat.unit and (
         db.scalar(select(func.count()).select_from(Supply).where(Supply.kind == cat.key))
         or db.scalar(select(func.count()).select_from(SupplyProduct).where(SupplyProduct.kind == cat.key))
     ):
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Cannot change a category unit while stock or reusable purchase products use it.")
+        return services.flash_redirect("/supplies", err="Cannot change a category unit while stock or reusable purchase products use it.")
     before = {"key": cat.key, "label": cat.label, "unit": cat.unit}
     after = {"key": cat.key, "label": label, "unit": unit}
     if before == after:
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", msg="Category unchanged.")
+        return services.flash_redirect("/supplies", msg="Category unchanged.")
     duplicate = db.scalar(select(SupplyCategory.id).where(
         SupplyCategory.label == label, SupplyCategory.id != cid
     ))
     if duplicate is not None:
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Category name already exists.")
+        return services.flash_redirect("/supplies", err="Category name already exists.")
     cat.label, cat.unit = label, unit
     db.add(ChangeAudit(entity_type="supply_category", entity_id=cid, action="edit",
                        before_json=json.dumps(before), after_json=json.dumps(after)))
@@ -274,8 +274,8 @@ def edit_category741(
         db.commit()
     except IntegrityError:
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Category could not be saved.")
-    return services.flash_redirect("/supplies#tracker-categories", msg="Category saved.")
+        return services.flash_redirect("/supplies", err="Category could not be saved.")
+    return services.flash_redirect("/supplies", msg="Category saved.")
 
 
 @router.post("/supplies/categories/{cid}/delete")
@@ -284,20 +284,20 @@ def delete_category741(
     db: Session = Depends(get_scoped_db390),
 ):
     if not reserve_inventory_write(db):
-        return services.flash_redirect("/supplies#tracker-categories", err="Inventory is busy.")
+        return services.flash_redirect("/supplies", err="Inventory is busy.")
     cat = db.get(SupplyCategory, cid)
     if cat is None:
         db.rollback()
         raise HTTPException(404, "Category not found")
     if not _custom_category741(cat) or version != _category_version741(cat) or confirm_delete != "delete":
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Category is built-in, changed, or deletion was not confirmed.")
+        return services.flash_redirect("/supplies", err="Category is built-in, changed, or deletion was not confirmed.")
     if (
         db.scalar(select(func.count()).select_from(Supply).where(Supply.kind == cat.key))
         or db.scalar(select(func.count()).select_from(SupplyProduct).where(SupplyProduct.kind == cat.key))
     ):
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Category has supplies or reusable purchase products and cannot be deleted.")
+        return services.flash_redirect("/supplies", err="Category has supplies or reusable purchase products and cannot be deleted.")
     db.add(ChangeAudit(entity_type="supply_category", entity_id=cid, action="delete",
                        before_json=json.dumps({"key": cat.key, "label": cat.label, "unit": cat.unit}),
                        after_json="{}"))
@@ -306,8 +306,8 @@ def delete_category741(
         db.commit()
     except IntegrityError:
         db.rollback()
-        return services.flash_redirect("/supplies#tracker-categories", err="Category has dependent records.")
-    return services.flash_redirect("/supplies#tracker-categories", msg="Unused custom category deleted.")
+        return services.flash_redirect("/supplies", err="Category has dependent records.")
+    return services.flash_redirect("/supplies", msg="Unused custom category deleted.")
 
 
 @router.post("/supplies/categories")
