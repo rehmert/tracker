@@ -3,23 +3,37 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workout-review663.css?v=663">
+<link rel="stylesheet" href="/static/css/tracker-workout-completed717.css?v=717">
 {% endblock %}
 {% block content %}
-<section class="workout654">
-  <p><a href="/workouts/sessions/{{ session.id }}/review">← Session Review</a></p>
-  <h1>Correct Recorded Sets</h1>
-  <p class="note">Completed workout: {{ session.started_at|dt }}.
-    Corrections update the recorded set and append an audit of the old and new
-    values with your explanation. They do not modify the original session
-    date, machine identity, or frozen goals.</p>
+<section class="workout654 workout717-editor">
+  <nav class="workout717-navigation" aria-label="Completed workout navigation">
+    <a href="/workouts/sessions/{{ session.id }}/review">← Session Review</a>
+    <a href="/workouts">Workouts</a>
+  </nav>
+  <h1>Edit Completed Workout</h1>
+  <p class="note">Started {{ session.started_at|dt }} ·
+    {% if session.completed_at %}Completed {{ session.completed_at|dt }}{% else %}In progress{% endif %}</p>
+  <p>Correct a set or remove an accidental extra set. Your workout stays completed, and every change is audited. Totals update automatically.</p>
   {% if not session.completed_at %}
     <p>Finish this workout before correcting historical results.</p>
   {% else %}
+    <p class="workout717-count"><strong>{{ recorded|length }}</strong> recorded set{{ '' if recorded|length == 1 else 's' }} remaining</p>
     {% for item in recorded %}
-      <section>
-        <h2>{{ names[item.equipment_id] }} · Set #{{ item.id }}</h2>
-        <p>Logged {{ item.performed_at|dt }}</p>
-        <form method="post" action="/workouts/sessions/{{ session.id }}/sets/{{ item.id }}/correct">
+      <section class="workout717-set" id="workout717-set-{{ item.id }}">
+        <div class="workout717-set-summary">
+          <div>
+            <strong data-no-title-case>{{ names[item.equipment_id] }} · Set {{ positions717[item.id] }}</strong>
+            <p>{{ '%.1f'|format(item.weight_lb) }} lb × {{ item.reps }} reps
+              {% if item.effort is not none %} · Effort {{ item.effort }}/10{% endif %}
+              · {{ kinds.get(item.id, 'working')|title }}</p>
+            <small>Logged {{ item.performed_at|dt }} · Record #{{ item.id }}</small>
+          </div>
+        </div>
+        <details class="workout717-actions">
+          <summary>Edit or Remove This Set</summary>
+          <h2>Edit Set {{ positions717[item.id] }}</h2>
+          <form method="post" action="/workouts/sessions/{{ session.id }}/sets/{{ item.id }}/correct">
           <label>Load (lb)
             <input type="number" name="weight_lb" min="0" max="2000" step="any"
                    value="{{ item.weight_lb }}" required>
@@ -42,15 +56,30 @@
             <input name="reason" minlength="3" maxlength="500" required
                    placeholder="Correcting entered load">
           </label>
-          <button type="submit">Save Audited Correction</button>
-        </form>
+          <button type="submit" class="primary">Save Audited Correction</button>
+          </form>
+          <form class="workout717-remove-form" method="post"
+                action="/workouts/sessions/{{ session.id }}/sets/{{ item.id }}/remove">
+            <h3>Remove Extra Set</h3>
+            <p class="note">Removes this recorded set from all workout totals. The deleted values and earlier corrections remain in the audit.</p>
+            <label>Reason
+              <input name="reason" required minlength="3" maxlength="500"
+                     value="Extra set logged">
+            </label>
+            <label class="workout717-confirm">
+              <input type="checkbox" name="confirm_remove" value="yes" required>
+              Confirm removal of this specific set
+            </label>
+            <button type="submit">Remove This Set</button>
+          </form>
+        </details>
       </section>
     {% else %}
       <p>No recorded sets available for correction.</p>
     {% endfor %}
   {% endif %}
-  <section>
-    <h2>Correction History</h2>
+  <section class="workout717-audit">
+    <h2>Change History</h2>
     {% set recovery674 = namespace(seen=[]) %}
     {% for change in changes %}
       <article>
@@ -69,7 +98,24 @@
         {% set recovery674.seen = recovery674.seen + [change.set_id] %}
       </article>
     {% else %}
-      <p>No historical corrections recorded.</p>
+      <p>No earlier value corrections.</p>
+    {% endfor %}
+    {% for audit, removed in removals717 %}
+      <article class="workout717-removal-event">
+        <p><strong>Set #{{ audit.entity_id }} removed</strong> · {{ audit.created_at|utc_dt }}</p>
+        <p>{{ removed.weight_lb }} lb × {{ removed.reps }} reps · {{ removed.set_type }}
+          · Reason: {{ removed.reason }}</p>
+        {% if removed.correction_history %}
+          <details>
+            <summary>Earlier corrections ({{ removed.correction_history|length }})</summary>
+            {% for prior in removed.correction_history %}
+              <p>Correction #{{ prior.id }}: {{ prior.reason }}
+                · {{ prior.old_weight_lb }} → {{ prior.new_weight_lb }} lb
+                · {{ prior.old_reps }} → {{ prior.new_reps }} reps</p>
+            {% endfor %}
+          </details>
+        {% endif %}
+      </article>
     {% endfor %}
   </section>
 </section>
