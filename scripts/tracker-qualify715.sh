@@ -32,7 +32,6 @@ git merge-base --is-ancestor "$BASE" "$TARGET" ||
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
-    app/models.py|\
     app/routers/coas.py|\
     app/templates/coa_edit.html|\
     app/templates/vial_detail.html|\
