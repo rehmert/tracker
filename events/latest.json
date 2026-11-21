@@ -1,11 +1,11 @@
 {
-  "action": "prod_preflight",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r726-pf2f9f15f11f80.json",
-  "release": 726,
-  "request_id": "r726-pf2f9f15f11f80",
+  "receipt_path": "receipts/r727-3718936aedfc.json",
+  "release": 727,
+  "request_id": "r727-3718936aedfc",
   "schema": 1,
-  "status": "blocked",
-  "target": "2f9f15f11f807e4574143c49640ed62071e57df5"
+  "status": "passed",
+  "target": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2"
 }
