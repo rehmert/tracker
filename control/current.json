@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r741-installc5efed6b",
-  "action": "dev_install",
+  "request_id": "r741-preflightc5efed6b",
+  "action": "prod_preflight",
   "release": 741,
   "target": "c5efed6b40f4324187eff3e83dbed44d9e68f5c4",
   "base": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
   "ref": "release/741-integrated-macd-mobile",
-  "previous_request_id": "r741-c5efed6b40f4"
+  "previous_request_id": "r741-installc5efed6b"
 }
