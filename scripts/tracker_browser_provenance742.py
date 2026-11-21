@@ -152,6 +152,8 @@ def main(argv=None) -> int:
     p.add_argument("--require-complete", action="store_true",
                    help="Fail without independent browser, OS and rollback clearance")
     args = p.parse_args(argv)
+    if args.compare is not None and args.output is not None:
+        p.error("--output may only be used with --capture")
     try:
         if args.capture is not None:
             report = validate(snapshot(args.capture))
