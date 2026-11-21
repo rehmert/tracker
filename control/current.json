@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r718-85202595f989",
+  "request_id": "r718-18a1bf7a6171",
   "action": "qualify",
   "release": 718,
-  "target": "85202595f989624d7c7f74661cd33172e8b34eb7",
+  "target": "18a1bf7a6171ef1eeef80e4588851cd500031cb4",
   "base": "0893bde49014616bc878b0b142ad5bfe1bbf8f16",
   "ref": "release/718-completed-machine-correction",
   "previous_request_id": null
