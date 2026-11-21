@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Protocols{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 
 <link rel="stylesheet"
       href="/static/css/tracker-protocol-dashboard-3494.css">
@@ -60,7 +61,7 @@
 </div>
 
 <div class="scroll"><table data-tracker-protocol-table>
-  <thead><tr><th>Name</th><th>Status</th><th class="n">Items</th><th class="n">Est. cost / month</th><th>Updated</th><th>Next planned (60 days)</th></tr></thead>
+  <thead><tr><th>Name</th><th>Status</th><th class="n">Items</th><th class="n">Est. cost / month</th><th>Updated</th><th>Next planned (60 days)</th><th>Manage</th></tr></thead>
   <tbody>
   {% for r in rows %}
   <tr data-next-planned="{{ r.schedule.next.date.isoformat() if r.schedule.next else '' }}"><td><a href="/protocols/{{ r.p.id }}">{{ r.p.name }}</a></td><td>{{ "Active" if r.p.is_active else "What-if" }}</td><td class="n">{{ r.p.items|length }}</td><td class="n">{{ r.t.month|money }}</td><td>{{ r.p.updated_at|utc_dt }}</td><td>
@@ -80,8 +81,17 @@
   {% else %}
     <span class="note">{{ r.schedule.detail }}</span>
   {% endif %}
-</td></tr>
-  {% else %}<tr><td colspan="6" class="empty">No protocols yet. Create one below to start planning.</td></tr>{% endfor %}
+</td>
+<td data-label="Manage">
+<div class="tracker-macd741-actions">
+<a href="/protocols/{{ r.p.id }}" class="tracker-macd741-action">Edit schedule</a>
+<form method="post" action="/protocols/{{ r.p.id }}/duplicate"><button type="submit" class="tracker-macd741-action">Duplicate</button></form>
+<form method="post" action="/protocols/{{ r.p.id }}/active" onsubmit="return confirm('{{ 'Stop projected schedule' if r.p.is_active else 'Activate protocol schedule' }} for {{ r.p.name }}? Recorded doses will not change.');">
+<button type="submit" class="tracker-macd741-action">{{ 'Stop schedule' if r.p.is_active else 'Activate' }}</button></form>
+<form method="post" action="/protocols/{{ r.p.id }}/delete" onsubmit="return confirm('Delete protocol {{ r.p.name }}? Existing dose logs will not be deleted.');">
+<button type="submit" class="tracker-macd741-action">Delete protocol</button></form>
+</div></td></tr>
+  {% else %}<tr><td colspan="7" class="empty">No protocols yet. Create one below to start planning.</td></tr>{% endfor %}
   </tbody>
 </table></div>
 <section>
