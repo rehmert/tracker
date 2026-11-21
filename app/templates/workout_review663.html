@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
 <link rel="stylesheet" href="/static/css/tracker-workout-review663.css?v=663">
 <link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
+<link rel="stylesheet" href="/static/css/tracker-workout-session719.css?v=719">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout663" id="workout663-review">
@@ -34,6 +35,10 @@
       <p><strong>In progress</strong> — these figures may change until the session is finished.</p>
     {% endif %}
   </header>
+
+  {% with delete_workout=workout %}
+    {% include "_workout_delete719.html" %}
+  {% endwith %}
 
   <p class="note">Based on logged sets. Volume = load (lb) × reps; 0-lb sets contribute 0.</p>
 
