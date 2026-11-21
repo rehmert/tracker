@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T15:51:05+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_729_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r729-d2597c5bfab3",
+  "ref": "release/729-manual-labs-mobile",
+  "release": 729,
+  "request_id": "r729-installd2597c5bfab3",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T15:49:32+00:00",
+  "status": "passed",
+  "target": "d2597c5bfab3c76e1701a42af00ab5ce41553818",
+  "test_counts": [
+    "65 passed"
+  ]
+}

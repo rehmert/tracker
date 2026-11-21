@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-21T15:46:59+00:00",
+  "finished_at_utc": "2026-11-21T15:51:05+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_729_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_729_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_729_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_729_EXIT_STATUS=0"
+    "EXIT_STATUS=0",
+    "RELEASE_729_DEV_INSTALL=SUCCESS"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r729-d2597c5bfab3",
   "ref": "release/729-manual-labs-mobile",
   "release": 729,
-  "request_id": "r729-d2597c5bfab3",
+  "request_id": "r729-installd2597c5bfab3",
   "schema": 1,
-  "started_at_utc": "2026-11-21T15:45:52+00:00",
+  "started_at_utc": "2026-11-21T15:49:32+00:00",
   "status": "passed",
   "target": "d2597c5bfab3c76e1701a42af00ab5ce41553818",
   "test_counts": [
