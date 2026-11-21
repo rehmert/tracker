@@ -30,7 +30,9 @@ def mock_document661():
             ),
         ],
         "in_progress": True,
-        "limit": 5,
+        "limit": 10, "recent_total": 1, "recent_pages": 1,
+        "recent_page": 1, "recent_first": 1, "recent_last": 1,
+        "recent_expanded": False,
     }
     fragment = templates.env.get_template("_workout_dashboard661.html").render(
         workout_summary=summary
@@ -77,6 +79,10 @@ def test_661_phone_card_and_dashboard_personalization(width, height):
             expect(card.get_by_role("link", name="Strength Progress")).to_have_attribute(
                 "href", "/workouts/analytics"
             )
+            recent_panel = card.locator(".tracker-workout-recent661")
+            assert not recent_panel.evaluate("(node) => node.open")
+            expect(card.get_by_role("link", name="2026-11-16 09:00 EST")).to_be_hidden()
+            recent_panel.locator("summary").click()
             expect(card.get_by_role("link", name="2026-11-16 09:00 EST")).to_have_attribute(
                 "href", "/workouts/sessions/75"
             )
