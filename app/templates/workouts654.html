@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Workouts{% endblock %}
 {% block page_assets %}
-<link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
-<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+<link rel="stylesheet" href="/static/css/tracker-workout-equipment740.css?v=740">
 <link rel="stylesheet" href="/static/css/tracker-workouts656.css?v=692">
 <link rel="stylesheet" href="/static/css/tracker-workouts657.css?v=657">
 <script src="/static/js/tracker-workouts655.js?v=655" defer></script>
@@ -95,6 +94,48 @@
         </p>
         {% if item.setup_notes %}<p>{{ item.setup_notes }}</p>{% endif %}
         <p><a class="ux675-inline-action" href="/workouts/equipment/{{ item.id }}/progress">Progress &amp; History</a></p>
+        <div class="workout740-actions" aria-label="Manage {{ item.name }}" data-workout740-equipment-actions>
+          <details class="workout740-edit-equipment">
+            <summary class="workout740-action">Edit equipment</summary>
+            <form method="post" action="/workouts/equipment/{{ item.id }}/edit"
+                  class="workout-grid654 workout740-edit-form">
+              <input type="hidden" name="version" value="{{ equipment_versions740[item.id] }}">
+              <label>Equipment name
+                <input name="name" maxlength="140" value="{{ item.name }}" required>
+              </label>
+              <label>Gym
+                <input name="gym" maxlength="140" value="{{ item.gym }}" required>
+              </label>
+              <label>Manufacturer
+                <input name="manufacturer" maxlength="100" value="{{ item.manufacturer or '' }}">
+              </label>
+              <label>Model
+                <input name="model" maxlength="140" value="{{ item.model or '' }}">
+              </label>
+              <p class="note workout740-edit-note">
+                Equipment type and retired QR mapping remain unchanged.
+                Seat settings and setup notes can be edited under Machine Setup.
+              </p>
+              <button type="submit" class="workout740-action">Save equipment changes</button>
+            </form>
+          </details>
+          {% set linked = equipment_links740.get(item.id, {}) %}
+          {% if not (linked.get('sets', 0) or linked.get('routines', 0) or linked.get('targets', 0)) %}
+          <form method="post" action="/workouts/equipment/{{ item.id }}/delete"
+                onsubmit="return confirm('Permanently delete unused equipment {{ item.name }}? This removes its saved setup but never any workout sets. This cannot be undone.')">
+            <input type="hidden" name="version" value="{{ equipment_versions740[item.id] }}">
+            <button type="submit" class="workout740-action" name="confirm_delete" value="delete">Delete equipment</button>
+          </form>
+          {% else %}
+          <button type="button" class="workout740-action" disabled
+                  title="Equipment referenced by recorded sets, saved routines or session targets cannot be deleted">Delete equipment</button>
+          <span class="workout740-deletion-guard" data-workout740-linked>
+            In use: {{ linked.get('sets', 0) }} logged set{{ '' if linked.get('sets', 0) == 1 else 's' }},
+            {{ linked.get('routines', 0) }} routine{{ '' if linked.get('routines', 0) == 1 else 's' }},
+            {{ linked.get('targets', 0) }} saved workout target{{ '' if linked.get('targets', 0) == 1 else 's' }}.
+          </span>
+          {% endif %}
+        </div>
         {% if latest[item.id] %}
           <p><strong>Previous:</strong> {{ '%.1f'|format(latest[item.id].weight_lb) }} lb × {{ latest[item.id].reps }} reps</p>
           {% if active %}
