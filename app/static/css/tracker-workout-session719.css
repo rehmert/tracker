@@ -1,33 +1,48 @@
-/* Release 719: clear intentional controls for permanent workout deletion. */
-.workout719-delete {
-  margin:.6rem 0;
-  padding:.55rem .65rem;
-  border:1px solid var(--border,#8999a7);
-  border-radius:.7rem;
+/* Release 720: compact inline workout deletion beside the Edit action. */
+.workout720-row-actions {
+  display:inline-flex;
+  gap:.45rem;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.workout720-delete-form {
+  display:inline-flex;
+  align-items:center;
+  margin:0;
+  padding:0;
+  width:auto;
   min-width:0;
+  flex:none;
 }
-.workout719-delete > summary {
-  cursor:pointer; font-weight:700; min-height:44px;
-  display:flex; align-items:center;
+.workout720-delete-form > .workout720-delete-button {
+  box-sizing:border-box;
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  min-height:44px;
+  min-width:72px;
+  width:auto;
+  padding:.54rem .77rem;
+  margin:0;
+  border:1px solid var(--border,#9caab7);
+  border-radius:.65rem;
+  background:var(--surface,#fff);
+  color:var(--brick,#a52b2b);
+  font:inherit;
+  font-weight:650;
+  line-height:1.25;
+  cursor:pointer;
 }
-.workout719-delete form {
-  display:flex; flex-direction:column; gap:.7rem;
-  min-width:0; max-width:540px; padding:.35rem 0;
+.workout720-delete-form > .workout720-delete-button:hover {
+  background:var(--wash,#f1f5f9);
 }
-.workout719-delete form label {
-  display:flex; flex-direction:column; gap:.25rem; min-width:0;
+.workout720-delete-form > .workout720-delete-button:focus-visible {
+  outline:2px solid var(--accent,#3478bd);
+  outline-offset:2px;
 }
-.workout719-delete form input[type="text"] {
-  min-height:44px; width:100%; min-width:0;
+.workout717-history-row .workout720-row-actions {
+  justify-content:flex-end;
 }
-.workout719-delete .workout719-delete-confirm {
-  flex-direction:row; gap:.6rem; align-items:center; min-height:44px;
-  font-weight:600;
-}
-.workout719-delete .workout719-delete-confirm input {
-  width:22px; height:22px; flex:none;
-}
-.workout719-delete button { min-height:48px; width:100%; }
-.workout717-history-row .workout719-delete {
-  flex-basis:100%;
+.workout717-history-actions .workout720-delete-form {
+  align-self:center;
 }
