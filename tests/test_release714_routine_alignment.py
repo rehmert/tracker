@@ -42,8 +42,9 @@ def gate714(stage, condition):
 def real_routine_markup():
     source = TEMPLATE.read_text(encoding="utf-8")
     gate714("TEMPLATE_SECTION", source.count('<section id="routine-exercises655">') == 1)
-    gate714("SHARED_CSS_REF", source.count("/static/css/tracker-workouts655.css?v=655") == 1)
-    gate714("NEW_CSS_REF", source.count("/static/css/tracker-workout-routine-alignment714.css?v=714") == 1)
+    gate714("MERGED_CSS_REF", source.count("/static/css/tracker-workout-routines739.css?v=739") == 1)
+    gate714("OLD_CSS_RETIRED", "/static/css/tracker-workouts655.css?v=655" not in source
+            and "/static/css/tracker-workout-routine-alignment714.css?v=714" not in source)
     section = source.split('<section id="routine-exercises655">', 1)[1].split(
         '</section>', 1
     )[0]
