@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release 737 guarded Regimen Add disclosure chevron visibility DEV install; exact qualified SHA only.
+# Release 737 guarded native Regimen disclosure triangles DEV install; exact qualified SHA only.
 set -Eeuo pipefail
 umask 077
 APP=/opt/tracker

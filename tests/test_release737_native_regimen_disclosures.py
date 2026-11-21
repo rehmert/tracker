@@ -66,7 +66,7 @@ def test_737_native_marker_left_and_keyboard_toggle_matches_quick_log(scheme):
                     """el => ({
                         listType: getComputedStyle(el).listStyleType,
                         marker: getComputedStyle(el, '::marker').content,
-                        leftGap: el.querySelector('strong').getBoundingClientRect().left -
+                        leftGap: el.querySelector('strong').getClientRects()[0].left -
                                  el.getBoundingClientRect().left
                     })"""
                 )

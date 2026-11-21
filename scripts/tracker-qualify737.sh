@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release 737: isolated rendered chevron visibility and state for Regimen Add controls; never install.
+# Release 737: isolated native marker parity and state for Regimen Add controls; never install.
 set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
@@ -21,14 +21,14 @@ export GIT_CONFIG_VALUE_0="$APP"
 [[ "$(git branch --show-current)" == main &&
    "$(git rev-parse HEAD)" == "$BASE" &&
    -z "$(git status --porcelain)" ]] ||
-  fail "Clean installed Release 735 required"
+  fail "Clean installed Release 736 required"
 systemctl is-active --quiet tracker || fail "Installed DEV service inactive"
 exec 9>/run/lock/tracker737-native-regimen-disclosures.lock
 flock -n 9 || fail "Another Release 737 QA active"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] ||
   fail "Fetched Release 737 branch SHA mismatch"
 git merge-base --is-ancestor "$BASE" "$TARGET" ||
-  fail "Candidate must descend from Release 735"
+  fail "Candidate must descend from Release 736"
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in

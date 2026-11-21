@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Release 737: visual Add disclosure arrows, no backend or schema changes.
+# Release 737: native left-side Regimen disclosure triangles, no backend or schema changes.
 set -Eeuo pipefail
 [[ $# == 1 && -x "$1" ]] || { echo "Configured Python required" >&2; exit 2; }
 PY="$1"
@@ -17,5 +17,5 @@ done
   tests/test_release734_regimen_button_parity.py \
   tests/test_release733_regimen_macd_actions.py \
   tests/test_release732_medication_delete.py
-echo "RELEASE_737_DISCLOSURE_CHEVRON_TESTS=PASSED"
+echo "RELEASE_737_NATIVE_DISCLOSURE_TESTS=PASSED"
 echo "RELEASE_737_SCOPED_QUALIFICATION=PASSED_NOT_FULL_SUITE"

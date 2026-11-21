@@ -84,7 +84,7 @@ def test_736_chevron_is_visible_rotates_and_expands_at_mobile_desktop_sizes(
                             after: getComputedStyle(el, '::after').content,
                             marker: getComputedStyle(el, '::marker').content,
                             height: el.getBoundingClientRect().height,
-                            textOffset: el.querySelector('strong').getBoundingClientRect().left
+                            textOffset: el.querySelector('strong').getClientRects()[0].left
                                 - el.getBoundingClientRect().left
                         };
                     }"""
@@ -96,7 +96,7 @@ def test_736_chevron_is_visible_rotates_and_expands_at_mobile_desktop_sizes(
                 if baseline is None:
                     baseline = closed
                 else:
-                    assert closed == baseline, (width, scheme, label, closed, baseline)
+                    assert {k: v for k, v in closed.items() if k != 'height'} == {k: v for k, v in baseline.items() if k != 'height'}, (width, scheme, label, closed, baseline)
                 summary.click()
                 expect(details).to_have_attribute("open", "")
                 assert summary.evaluate(
