@@ -8,10 +8,13 @@ T = ROOT / "app/templates"
 
 def test_676_shared_css_loaded_after_global_mobile_styles():
     base = (T / "base.html").read_text(encoding="utf-8")
-    assert base.count("tracker-shortcut-buttons676.css?v=676") == 1
+    assert "tracker-shortcut-buttons676.css?v=676" not in base
+    assert base.count("tracker-ui-foundation679.css?v=743") == 1
     assert base.index("tracker-mobile-ux673.css?v=673") < base.index(
-        "tracker-shortcut-buttons676.css?v=676"
+        "tracker-ui-foundation679.css?v=743"
     )
+    bundled = (ROOT / "app/static/css/tracker-ui-foundation679.css").read_text()
+    assert "#main-content nav.ux675-actions" in bundled
     css = (ROOT / "app/static/css/tracker-shortcut-buttons676.css").read_text()
     daily = (ROOT / "app/static/css/tracker-mobile-daily509.css").read_text()
     for token in ("--surface", "--rule", "--ink", "--teal", "min-height:3.2rem",
