@@ -5,7 +5,7 @@
 ## Requested UI correction
 **Workouts → Recent Workouts** must show a compact **Delete** button immediately beside **Edit Workout** for each completed session. No full-width expandable form, no extra text field, no checkbox. Clicking Delete opens the existing native browser confirmation; Cancel leaves the workout untouched. Confirm sends the existing signed POST to `/workouts/sessions/{id}/delete` with an exact started-at stale guard, confirm flag and a meaningful default audit reason. The existing Release 719 atomic removal and private audit remain unchanged.
 
-Use the same compact action on the active session, in Rapid Gym Mode, session history navigation and review navigation, so users can delete accidentally started sessions. Touch targets are at least 44px and grouped actions remain adjacent on mobile.
+Use the same compact action on the active-session panel, session history navigation and review navigation. Rapid Gym Mode retains its established **Delete Accidental Workout** link, which opens that session's compact Delete action without altering Gym Mode's start or logging flow. Touch targets are at least 44px and grouped actions remain adjacent on mobile.
 
 The dashboard's collapsed ten-at-a-time Recent Workouts history from Release 719 is unchanged.
 
