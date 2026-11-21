@@ -41,7 +41,7 @@ def checkpoint716(scheme: str, step: str) -> None:
     }
     assert scheme in ("http", "https") and step in allowed
     with (DATA / "workout716-stages.txt").open("a", encoding="ascii") as stream:
-        stream.write(f"TARGETED_716_{scheme.upper()}_{step}=PASSED\\n")
+        stream.write(f"TARGETED_716_{scheme.upper()}_{step}=PASSED\n")
 
 
 @pytest.mark.parametrize("scheme", ("http", "https"))
