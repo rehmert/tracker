@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "28003549a8d0d69ac7ea23d8addd699a71a5a226",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T19:54:28+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_734_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_734_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_734_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_734_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/734-regimen-action-button-parity",
+  "release": 734,
+  "request_id": "r734-2421fde33dfa",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T19:54:01+00:00",
+  "status": "passed",
+  "target": "2421fde33dfae626022529f046c9b21035ad6d62",
+  "test_counts": [
+    "23 passed, 1 warning"
+  ]
+}
