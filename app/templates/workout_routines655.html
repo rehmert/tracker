@@ -2,10 +2,10 @@
 {% block title %}Workout Routines{% endblock %}
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
-<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
+<link rel="stylesheet" href="/static/css/tracker-workout-routines739.css?v=739">
 {% endblock %}
 {% block content %}
-<section class="workout654 workout655">
+<section class="workout654 workout655 workout739-index">
   <p><a href="/workouts">← Workouts</a></p>
   <h1>Saved Routines</h1>
   <p class="note">Build a sequence of gym machines or free-weight exercises, then start it whenever you train.</p>
@@ -19,16 +19,39 @@
   <section>
     <h2>My Routines</h2>
     {% for routine in routines %}
-      <div class="workout-routine-row655">
-        <a href="/workouts/routines/{{ routine.id }}"><strong>{{ routine.name }}</strong></a>
-        <a href="/workouts/routines/{{ routine.id }}/program">Plan &amp; Compare (Synced)</a> · <a href="/workouts/routines/{{ routine.id }}/schedule">Schedule &amp; Groups</a> · <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Browser Planner</a>
-        <form method="post" action="/workouts/routines/{{ routine.id }}/duplicate">
-          <button type="submit" aria-label="Duplicate {{ routine.name }}">Duplicate</button>
-        </form>
-        <form method="post" action="/workouts/routines/{{ routine.id }}/start">
-          <button type="submit">Start</button>
-        </form>
-      </div>
+      <article class="workout-routine-row655 workout739-routine-card" data-workout739-routine>
+        <a class="workout739-routine-title" href="/workouts/routines/{{ routine.id }}"><strong>{{ routine.name }}</strong></a>
+        <nav class="workout739-nav" aria-label="Routine {{ routine.name }} links">
+          <a href="/workouts/routines/{{ routine.id }}/program">Plan &amp; Compare (Synced)</a>
+          <a href="/workouts/routines/{{ routine.id }}/schedule">Schedule &amp; Groups</a>
+          <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Browser Planner</a>
+        </nav>
+        <div class="workout739-actions" aria-label="Manage {{ routine.name }}">
+          <details class="workout739-edit-panel">
+            <summary>Edit routine</summary>
+            <form method="post" action="/workouts/routines/{{ routine.id }}/rename" class="workout739-edit-form">
+              <label>Routine name <input name="name" value="{{ routine.name }}" maxlength="120" required></label>
+              <button type="submit">Save name</button>
+            </form>
+          </details>
+          <form method="post" action="/workouts/routines/{{ routine.id }}/duplicate">
+            <button type="submit" aria-label="Duplicate {{ routine.name }}">Duplicate</button>
+          </form>
+          <form method="post" action="/workouts/routines/{{ routine.id }}/start">
+            <button type="submit">Start</button>
+          </form>
+          {% if not used.get(routine.id, 0) %}
+          <form method="post" action="/workouts/routines/{{ routine.id }}/delete"
+                onsubmit="return confirm('Permanently delete this unused routine and all its planned exercises, groups and schedules? This cannot be undone; recorded workouts are never deleted.')">
+            <button type="submit" name="confirm_delete" value="delete">Delete routine</button>
+          </form>
+          {% else %}
+          <span class="workout739-history-lock" title="Routine deletion cannot erase or unlink workout history">
+            Used by {{ used[routine.id] }} workout{{ '' if used[routine.id] == 1 else 's' }} · deletion unavailable
+          </span>
+          {% endif %}
+        </div>
+      </article>
     {% else %}
       <p>No routines yet. Create one above, then add equipment in order.</p>
     {% endfor %}
