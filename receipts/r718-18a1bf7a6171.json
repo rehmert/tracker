@@ -1,0 +1,31 @@
+{
+  "action": "qualify",
+  "base": "0893bde49014616bc878b0b142ad5bfe1bbf8f16",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T01:29:23+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_718_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_718_SCOPED_BACKEND=PASSED",
+    "TARGETED_718_MACHINE_CORRECTION=PASSED",
+    "RELEASE_718_SCOPED_BROWSER=PASSED",
+    "RELEASE_718_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_718_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_718_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/718-completed-machine-correction",
+  "release": 718,
+  "request_id": "r718-18a1bf7a6171",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T01:28:32+00:00",
+  "status": "passed",
+  "target": "18a1bf7a6171ef1eeef80e4588851cd500031cb4",
+  "test_counts": [
+    "33 passed, 1 warning",
+    "7 passed",
+    "2 passed"
+  ]
+}
