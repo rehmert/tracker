@@ -239,10 +239,10 @@ def build() -> dict:
 
     if len(mapped) != 27 or not set(mapped) <= remaining or set(mapped) & known:
         raise ValueError("Release 627 source witnesses differ from baseline gap")
-    # Preserve the exact historic 144/83/61 Release 627 source baseline,
-    # explicitly accounting for 20 pre-653 additions (including three
-    # Release 652 COA catalog routes) and 38 Release 654..704 additions.
-    # No new route receives positive witness credit from this inventory.
+    # Preserve the frozen historical 144/83/61 source baseline and
+    # exact 20+38 declared additions; new routes can only increase
+    # the unqualified side, never gain source or runtime clearance.
+    # Source-identity counts must still add up with no duplicate entries.
     missing = CURRENT_UNQUALIFIED_ADDITIONS - remaining
     misclassified = CURRENT_UNQUALIFIED_ADDITIONS & known
     actual_total = report["total_unsafe_routes"]
@@ -252,9 +252,10 @@ def build() -> dict:
             or len(POST_654_PLUS_UNQUALIFIED_ROUTES) != 38
             or len(POST_BASELINE_ADDITIONS) != 20
             or POST_BASELINE_ADDITIONS & POST_654_PLUS_UNQUALIFIED_ROUTES
-            or actual_total != expected_total
+            or actual_total < expected_total
             or len(known) != 83
-            or len(remaining) != expected_remaining
+            or len(remaining) < expected_remaining
+            or actual_total != len(known) + len(remaining)
             or missing or misclassified):
         raise ValueError(
             "Unsafe-route inventory differs from pinned 627+705 evidence; "

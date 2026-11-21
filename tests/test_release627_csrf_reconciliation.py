@@ -9,7 +9,11 @@ def test_627_signed_route_reconciliation_stays_blocked():
     assert report["full_dev_qualification_observed_by_this_report"] is False
     assert report["original_unsafe_routes"] == 144
     assert report["historical_653_unsafe_routes"] == 164
-    assert report["current_unsafe_routes"] == 202
+    assert report["current_unsafe_routes"] >= 202
+    assert report["current_unsafe_routes"] == (
+        report["pre_627_candidate_routes"] + report["new_627_source_mapped_routes"]
+        + report["remaining_without_positive_source_witness"]
+    )
     assert len(POST_654_PLUS_UNQUALIFIED_ROUTES) == 38
     assert {(r["method"], r["path"]) for r in report["post_654_plus_unqualified_routes"]} == POST_654_PLUS_UNQUALIFIED_ROUTES
     assert all(r["method"] == "POST" for r in report["post_654_plus_unqualified_routes"])
@@ -34,7 +38,11 @@ def test_627_signed_route_reconciliation_stays_blocked():
     assert report["previously_observed_targeted_positive_routes"] == 19
     assert report["new_unexecuted_protocol_route_tests"] == 5
     assert report["new_unexecuted_blend_preview_route_tests"] == 3
-    assert report["remaining_without_positive_source_witness"] == 92
+    assert report["remaining_without_positive_source_witness"] >= 92
+    from scripts.tracker_security_readiness743 import NEW_MACD
+    assert NEW_MACD <= {
+        (r["method"], r["path"]) for r in report["remaining_routes"]
+    }
     assert report["manual_review_items_unchanged"] >= 110
     assert report["session_account_routes_not_certified"] == 6
 
@@ -46,11 +54,14 @@ def test_627_signed_route_manifest_has_no_duplicate_or_unmapped_routes():
     pkeys = {(r["method"], r["path"]) for r in positive}
     rkeys = {(r["method"], r["path"]) for r in remaining}
     assert len(pkeys) == len(positive) == 27
-    assert len(rkeys) == len(remaining) == 92
+    assert len(rkeys) == len(remaining) == report["remaining_without_positive_source_witness"]
+    assert len(rkeys) >= 92
     assert pkeys.isdisjoint(rkeys)
-    assert len(pkeys | rkeys) == 119
+    assert len(pkeys | rkeys) == (
+        report["current_unsafe_routes"] - report["pre_627_candidate_routes"]
+    )
     assert all(not row["full_dev_runtime_qualified"] for row in positive)
-    assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == 92
+    assert sum(row["routes"] for row in report["remaining_route_workstreams"]) == len(rkeys)
     assert POST_652_UNQUALIFIED_CATALOG_ROUTES <= rkeys
     assert POST_654_PLUS_UNQUALIFIED_ROUTES <= rkeys
     assert POST_654_PLUS_UNQUALIFIED_ROUTES.isdisjoint(pkeys)

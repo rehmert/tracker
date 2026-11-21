@@ -37,12 +37,14 @@ while IFS= read -r path; do
     docs/release-743-security-deps-controller-ux.md|\
     docs/tracker-readiness-matrix743.md|\
     scripts/tracker_browser_provenance743.py|\
+    scripts/tracker_csrf_reconcile627.py|\
     scripts/tracker_security_readiness743.py|\
     scripts/tracker_stage_chain743.py|\
     scripts/tracker-qualify743.sh|\
     scripts/tracker-install743.sh|\
     scripts/tracker-release-scoped743.sh|\
     tests/test_release743_security_deps_chain_css.py|\
+    tests/test_release627_csrf_reconciliation.py|\
     tests/test_ui_foundation679.py|\
     tests/test_shortcut_buttons676.py|\
     tests/test_explanation_touch680.py|\

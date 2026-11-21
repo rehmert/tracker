@@ -17,6 +17,12 @@ network calls or GitHub-uploaded raw evidence.
 
 Release 743 adds `scripts/tracker_security_readiness743.py`, a deterministic
 read-only scan using the existing registered unsafe route-declaration scanner.
+Release 743 reconciles the historical Release 627 regression against newer
+unsafe routes: original candidate/source-witness counts remain exact; later
+unsafe declarations only increase the unqualified side, all nine new
+MACD writes remain unqualified, and missing or misclassified historic
+routes still fail closed. This does not certify runtime CSRF protection.
+
 The frozen historical Release 627/705 CSRF counts are not treated as proof
 for newer endpoints. Recent Supply, Supply Category, Workout Equipment,
 Workout Routine and Saved Food MACD writes are explicitly reported as
