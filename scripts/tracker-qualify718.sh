@@ -34,6 +34,7 @@ while IFS= read -r path; do
   case "$path" in
     app/routers/workouts668.py|\
     app/templates/workout_corrections668.html|\
+    app/templates/workouts654.html|\
     app/static/css/tracker-workout-completed717.css|\
     docs/release-718-machine-correction.md|\
     scripts/tracker-browser-qualify.sh|\
