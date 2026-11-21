@@ -21,6 +21,42 @@ echo "RELEASE_741_COMPILE_TESTS=PASSED"
 echo "RELEASE_741_COMPILE=PASSED"
 "$PY" -c 'from pathlib import Path; from jinja2 import Environment; e=Environment(); [e.parse(Path(p).read_text(encoding="utf-8")) for p in ("app/templates/supplies.html","app/templates/coas.html","app/templates/coa_edit.html","app/templates/vials.html","app/templates/vial_detail.html","app/templates/blend_detail.html","app/templates/labs.html","app/templates/lab_report.html","app/templates/protocols.html","app/templates/calendar.html","app/templates/pages.html","app/templates/page_view.html")]' || exit 31
 echo "RELEASE_741_JINJA=PASSED"
+# Read-only exception classifier for the disposable initial Supplies GET.
+# No raw traceback, user data or private server diagnostics leave the QA worker.
+"$PY" - <<'PY'
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import os, runpy, sys
+from jinja2 import TemplateError
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.routing import NoMatchFound
+from fastapi import HTTPException
+data = runpy.run_path("tests/test_release741_integrated_macd_mobile.py")
+with TemporaryDirectory(dir=os.environ["TRACKER_DATA_DIR"]) as tmp:
+    g = data["env"].__wrapped__(Path(tmp))
+    try:
+        client, Session = next(g)
+    except TemplateError:
+        sys.exit(61)
+    except SQLAlchemyError:
+        sys.exit(62)
+    except NoMatchFound:
+        sys.exit(63)
+    except HTTPException:
+        sys.exit(64)
+    except AssertionError:
+        sys.exit(65)
+    except TypeError:
+        sys.exit(66)
+    except RuntimeError:
+        sys.exit(67)
+    except Exception:
+        sys.exit(68)
+    else:
+        g.close()
+PY
+echo "RELEASE_741_DISPOSABLE_SUPPLIES_GET=PASSED"
+
 # Locate exact first failing operation using immutable nonrepeated stage codes.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release741_integrated_macd_mobile.py::test_741_diag_fixture_supply_list || exit 51
