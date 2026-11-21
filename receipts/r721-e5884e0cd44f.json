@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "dc4e3b1d72fa3fd96751424e1b91af42bb0409d7",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/browser/test_workout_dashboard661.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T02:16:50+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_721_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_721_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_721_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/721-dashboard-recent-chevron",
+  "release": 721,
+  "request_id": "r721-e5884e0cd44f",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T02:16:22+00:00",
+  "status": "failed",
+  "target": "e5884e0cd44f99f0af7cb21505a9c51d708969ee",
+  "test_counts": [
+    "25 passed, 1 warning"
+  ]
+}
