@@ -10,7 +10,9 @@
   <nav class="workout663-topnav ux675-actions" aria-label="Workout review navigation">
     <a href="/workouts">← Workouts</a>
     <a href="/workouts/sessions/{{ workout.id }}">All Sets</a>
-    <a href="/workouts/sessions/{{ workout.id }}/correct">Corrections</a>
+    {% if workout.completed_at %}
+      <a class="ux675-primary" href="/workouts/sessions/{{ workout.id }}/correct">Edit Workout</a>
+    {% endif %}
     <details class="ux675-more">
       <summary>More</summary>
       <div>
