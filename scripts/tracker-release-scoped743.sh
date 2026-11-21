@@ -41,6 +41,47 @@ assert result["python"].startswith("3.13.")
 assert result["playwright"] == "1.64.1"
 print("RELEASE_743_CHROMIUM_OS_FINGERPRINT=READ_ONLY_CAPTURED")
 PY
+# Isolate browser CSS contract failures as sanitized stage exit categories;
+# raw pytest output and JUnit remain ONLY in disposable private /tmp QA data.
+"$PY" - <<'PY'
+from pathlib import Path
+import os
+import subprocess
+import sys
+from xml.etree import ElementTree
+
+root = Path(os.environ["TRACKER_DATA_DIR"])
+xml = root / "css743-diagnostic.xml"
+log = root / "css743-diagnostic.log"
+names = (
+    "CSS743_COUNT", "CSS743_PRIMARY_DISPLAY", "CSS743_PRIMARY_HEIGHT",
+    "CSS743_GYM_NAV_DISPLAY", "CSS743_TARGET_COUNT", "CSS743_TARGET_HEIGHT",
+    "CSS743_KEYBOARD_FOCUS", "CSS743_MENU_OPEN", "CSS743_OVERFLOW",
+)
+cmd = [
+    sys.executable, "-m", "pytest", "-q", "--tb=short", "--maxfail=1",
+    "--junitxml=" + str(xml),
+    "tests/test_release743_security_deps_chain_css.py::test_743_consolidated_css_computed_accessibility_contract",
+]
+with log.open("x", encoding="utf-8") as output:
+    result = subprocess.run(cmd, stdout=output, stderr=subprocess.STDOUT,
+                            check=False)
+if result.returncode:
+    found = ""
+    try:
+        failure = ElementTree.parse(xml).getroot().find(".//failure")
+        if failure is not None:
+            message = str(failure.attrib.get("message", "")) + str(failure.text or "")
+            found = next((name for name in names if name in message), "")
+    except (OSError, ElementTree.ParseError):
+        pass
+    if not found:
+        print("RELEASE_743_CSS_DIAGNOSTIC=UNCLASSIFIED", flush=True)
+        sys.exit(69)
+    print("RELEASE_743_CSS_DIAGNOSTIC=" + found, flush=True)
+    sys.exit(51 + names.index(found))
+print("RELEASE_743_CSS_CHROMIUM=PASSED_ALL_WIDTHS_AND_THEMES", flush=True)
+PY
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release743_security_deps_chain_css.py \
   tests/test_release742_consolidated_ux_performance.py || exit 42
