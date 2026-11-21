@@ -1,0 +1,50 @@
+{
+  "action": "qualify",
+  "base": "ab70236618df66b8a959c765abf38dbcd59b29d7",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/browser/test_workout_active716.py",
+    "tests/browser/test_workout_active716.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T00:55:56+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_716_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_716_SCOPED_BACKEND=PASSED",
+    "TARGETED_716_HTTP_MACHINE_ONE=PASSED",
+    "TARGETED_716_HTTP_CATALOG=PASSED",
+    "TARGETED_716_HTTP_ROUTINE_CREATED=PASSED",
+    "TARGETED_716_HTTP_ROUTINE_READY=PASSED",
+    "TARGETED_716_HTTP_STARTED=PASSED",
+    "TARGETED_716_HTTP_LINKS=PASSED",
+    "TARGETED_716_HTTP_PANEL=PASSED",
+    "TARGETED_716_HTTP_SELECTED=PASSED",
+    "TARGETED_716_HTTP_POSTED=PASSED",
+    "TARGETED_716_HTTP_SERVER_OK=PASSED",
+    "TARGETED_716_HTTP_PAGE_GYM=PASSED",
+    "TARGETED_716_HTTP_ID_MATCH=PASSED",
+    "TARGETED_716_HTTP_LABEL_SECOND=PASSED",
+    "TARGETED_716_HTTP_HEADING_OTHER=PASSED",
+    "TARGETED_716_HTTP_HEADING_ROW=PASSED",
+    "TARGETED_716_HTTP_HEADING_NOT_QA=PASSED",
+    "TARGETED_716_HTTPS_MACHINE_ONE=PASSED",
+    "TARGETED_716_HTTPS_CATALOG=PASSED",
+    "TARGETED_716_HTTPS_ROUTINE_CREATED=PASSED",
+    "TARGETED_716_HTTPS_ROUTINE_READY=PASSED",
+    "RELEASE_716_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_716_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/716-active-workout-machine-add",
+  "release": 716,
+  "request_id": "r716-5a7ef36176b2",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T00:54:31+00:00",
+  "status": "failed",
+  "target": "5a7ef36176b2dee7ce82d291551f9515c14cc2a5",
+  "test_counts": [
+    "27 passed, 1 warning",
+    "7 passed"
+  ]
+}
