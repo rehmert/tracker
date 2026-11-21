@@ -54,6 +54,20 @@ summary.reg737-native-disclosure{
 }
 @media(max-width:760px){.reg733-action-row>details[open]{flex-basis:100%;width:100%}}
 .reg635-history{overflow:auto}
+.reg738-history-guard{align-self:center;color:var(--muted,#546373);font-size:.85rem}
+.reg738-intake-actions{gap:.45rem}
+@media(max-width:760px){
+  #reg635-history .reg635-history{overflow:visible}
+  #reg635-history table,#reg635-history tbody,#reg635-history tr,#reg635-history td{display:block;width:100%;box-sizing:border-box}
+  #reg635-history thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  #reg635-history tr{border:1px solid var(--border,#80808055);border-radius:.75rem;margin:.65rem 0;padding:.55rem;min-width:0}
+  #reg635-history td{padding:.4rem .3rem;border:0;min-width:0;overflow-wrap:anywhere}
+  #reg635-history td:not([data-label="Actions"])::before{content:attr(data-label) ": ";font-weight:700}
+  #reg635-history td[data-label="Actions"]::before{content:"Actions";display:block;font-weight:700;margin-bottom:.4rem}
+  #reg635-history .reg738-intake-actions{display:flex;flex-wrap:wrap;gap:.45rem}
+  #reg635-history .reg738-intake-actions>details[open]{flex-basis:100%}
+  #reg635-history .reg738-intake-actions :is(summary,button){min-height:44px}
+}
 .reg635-history table{width:100%}
 .reg635-entry{margin:1rem 0}
 .reg635-form input,.reg635-form select,.reg635-form textarea{max-width:100%;width:100%}
@@ -302,7 +316,12 @@ summary.reg737-native-disclosure{
         onsubmit="return confirm('Permanently delete this medication, {{ schedule_counts.get(item.id, 0) }} schedule(s), and {{ entry_counts.get(item.id, 0) }} intake record(s)? This cannot be undone. The audit trail remains.')">
     <button type="submit" class="reg734-macd-action" name="confirm_delete" value="delete">Delete medication</button>
   </form>
-  {% endif %}
+  {% else %}
+  <form method="post" action="/regimen/items/{{ item.id }}/delete-supplement" class="reg635-actions" data-reg738-delete-supplement
+        onsubmit="return confirm('Permanently delete this supplement, {{ schedule_counts.get(item.id, 0) }} schedule(s), and {{ entry_counts.get(item.id, 0) }} intake record(s)? This cannot be undone. The audit trail remains.')">
+    <button type="submit" class="reg734-macd-action" name="confirm_delete" value="delete">Delete supplement</button>
+  </form>
+  {% endif %
   </div>
 </article>
 {% else %}<p>No supplements or medications have been entered.</p>{% endfor %}
@@ -403,6 +422,14 @@ summary.reg737-native-disclosure{
 </form>
 </details>
 {% if schedule.active %}<form method="post" action="/regimen/schedules/{{ schedule.id }}/stop" onsubmit="return confirm('Stop future occurrences? History is retained.')"><button type="submit" class="reg734-macd-action">Stop schedule</button></form>{% endif %}
+{% if not schedule_entry_counts.get(schedule.id, 0) %}
+<form method="post" action="/regimen/schedules/{{ schedule.id }}/delete" data-reg738-delete-schedule
+      onsubmit="return confirm('Permanently delete this schedule? No intake is associated with it. This cannot be undone; the audit trail remains.')">
+  <button type="submit" class="reg734-macd-action" name="confirm_delete" value="delete">Delete schedule</button>
+</form>
+{% else %}
+<span class="reg738-history-guard" title="Stop rather than delete schedules with recorded intake">Intake history retained</span>
+{% endif %}
 </div>
 </article>
 {% else %}<p>No schedules have been created.</p>{% endfor %}
@@ -414,8 +441,9 @@ summary.reg737-native-disclosure{
 <p class="note">The 50 most recent actual records. You can correct or delete each one; Tracker preserves an audit entry for every change.</p>
 <div class="reg635-history"><table><thead><tr><th>Date/time</th><th>Item</th><th>Result</th><th>Amount</th><th>Meal</th><th>Actions</th></tr></thead><tbody>
 {% for entry in history %}
-<tr><td>{{ entry.logged_at|dt }}</td><td>{{ entry.item.name }}</td><td>{{ entry.outcome }}</td><td>{{ entry.amount }}</td><td>{{ entry.meal or '—' }}</td><td>
-<details><summary>Edit</summary>
+<tr><td data-label="Date/time">{{ entry.logged_at|dt }}</td><td data-label="Item">{{ entry.item.name }}</td><td data-label="Result">{{ entry.outcome }}</td><td data-label="Amount">{{ entry.amount }}</td><td data-label="Meal">{{ entry.meal or '—' }}</td><td data-label="Actions">
+<div class="reg635-actions ux673-action-row reg733-action-row reg738-intake-actions" data-reg738-intake-actions>
+<details class="reg733-edit-panel"><summary class="reg733-edit-trigger reg734-macd-action" data-reg733-edit>Edit intake</summary>
 <form method="post" action="/regimen/entries/{{ entry.id }}/edit" class="reg635-form">
 <label class="field">Item <select name="item_id" data-reg731-item>{% for item in items %}<option value="{{ item.id }}" data-reg731-kind="{{ item.kind }}" data-reg731-strength="{{ tablet_strengths.get(item.id, '') }}" {% if item.id == entry.item_id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></label>
 <input type="hidden" name="schedule_id" value="{{ entry.schedule_id or '' }}">
@@ -454,8 +482,9 @@ summary.reg737-native-disclosure{
 <label class="field">Notes <textarea name="notes" maxlength="2000">{{ entry.notes }}</textarea></label>
 <button>Save correction</button>
 </form>
-<form method="post" action="/regimen/entries/{{ entry.id }}/delete" onsubmit="return confirm('Delete this intake record? The audit trail remains.')"><button>Delete record</button></form>
 </details>
+<form method="post" action="/regimen/entries/{{ entry.id }}/delete" onsubmit="return confirm('Delete this intake record? The audit trail remains.')"><button type="submit" class="reg734-macd-action">Delete intake</button></form>
+</div>
 </td></tr>
 {% else %}<tr><td colspan="6">No intake has been recorded.</td></tr>{% endfor %}
 </tbody></table></div>
