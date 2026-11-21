@@ -11,6 +11,11 @@
 .reg635-card{border:1px solid var(--border, #80808055);border-radius:10px;padding:1rem}
 .reg635-card h3{margin-top:0}
 .reg635-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.reg635-actions>details[open]{flex-basis:100%;min-width:0;order:2}
+.reg635-actions>details[open]>.reg635-form{min-width:0}
+.reg635-actions>form{margin:0}
+.reg635-actions>form button{min-height:44px}
+.reg635-actions>details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
 .reg635-history{overflow:auto}
 .reg635-history table{width:100%}
 .reg635-entry{margin:1rem 0}
