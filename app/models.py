@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from sqlalchemy import (LargeBinary, Boolean, CheckConstraint, Column, Date, DateTime, Float, ForeignKey,
-                        Index, Integer, String, Table, Text, func)
+                        Index, Integer, Numeric, String, Table, Text, func)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -613,6 +613,29 @@ class RegimenEntry(Base):
     meal: Mapped[str] = mapped_column(String(20), default="")
     notes: Mapped[str] = mapped_column(Text, default="")
     item: Mapped["RegimenItem"] = relationship(back_populates="entries")
+
+
+# Release 731: separate, structured tablet plans and immutable-per-entry
+# snapshots. Existing free-text regimen records need no destructive ALTER.
+class RegimenTabletSchedule731(Base):
+    __tablename__ = "regimen_tablet_schedule731"
+    schedule_id: Mapped[int] = mapped_column(
+        ForeignKey("regimen_schedules635.id", ondelete="CASCADE"), primary_key=True
+    )
+    tablet_strength_mg: Mapped[float] = mapped_column(Numeric(12, 3), nullable=False)
+    prescribed_dose_mg: Mapped[float] = mapped_column(Numeric(12, 3), nullable=False)
+    tablets_planned: Mapped[float] = mapped_column(Numeric(9, 3), nullable=False)
+
+
+class RegimenTabletEntry731(Base):
+    __tablename__ = "regimen_tablet_entry731"
+    entry_id: Mapped[int] = mapped_column(
+        ForeignKey("regimen_entries635.id", ondelete="CASCADE"), primary_key=True
+    )
+    tablet_strength_mg: Mapped[float] = mapped_column(Numeric(12, 3), nullable=False)
+    prescribed_dose_mg: Mapped[float] = mapped_column(Numeric(12, 3), nullable=False)
+    tablets_taken: Mapped[float] = mapped_column(Numeric(9, 3), nullable=False)
+    administered_dose_mg: Mapped[float] = mapped_column(Numeric(12, 3), nullable=False)
 
 
 class RegimenProductFacts639(Base):
