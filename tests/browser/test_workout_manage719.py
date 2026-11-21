@@ -61,6 +61,18 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
             assert recent.evaluate("(el) => el.open")
             mark719(scheme, "HOME_EXPANDED")
 
+            page.goto(base + "/workouts", wait_until="networkidle")
+            name = "QA719 Press " + uuid4().hex[:12]
+            creation = page.locator("#workout-add-equipment656 form")
+            creation.locator('input[name="name"]').fill(name)
+            creation.locator('input[name="gym"]').fill("QA719 Gym")
+            with page.expect_response(lambda r:
+                    r.request.method == "POST" and
+                    urlsplit(r.url).path == "/workouts/equipment") as posted_machine:
+                creation.get_by_role("button", name="Add Equipment").click()
+            assert posted_machine.value.status == 303
+            mark719(scheme, "MACHINE")
+
             page.goto(base + "/workouts/quick", wait_until="networkidle")
             page.get_by_role("button", name="Start Free Workout").click()
             page.wait_for_load_state("networkidle")
@@ -91,16 +103,6 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
             # A finished workout with a recorded set is also deletable.
-            name = "QA719 Press " + uuid4().hex[:12]
-            creation = page.locator("#workout-add-equipment656 form")
-            creation.locator('input[name="name"]').fill(name)
-            creation.locator('input[name="gym"]').fill("QA719 Gym")
-            with page.expect_response(lambda r:
-                    r.request.method == "POST" and
-                    urlsplit(r.url).path == "/workouts/equipment") as posted_machine:
-                creation.get_by_role("button", name="Add Equipment").click()
-            assert posted_machine.value.status == 303
-            mark719(scheme, "MACHINE")
             page.goto(base + "/workouts/quick", wait_until="networkidle")
             page.get_by_role("button", name="Start Free Workout").click()
             page.wait_for_load_state("networkidle")
