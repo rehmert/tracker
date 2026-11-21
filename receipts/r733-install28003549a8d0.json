@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "1906a69408e7dd00cb9044f77cd208566aed25df",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T19:43:58+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_733_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r733-28003549a8d0",
+  "ref": "release/733-regimen-macd-actions",
+  "release": 733,
+  "request_id": "r733-install28003549a8d0",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T19:43:12+00:00",
+  "status": "passed",
+  "target": "28003549a8d0d69ac7ea23d8addd699a71a5a226",
+  "test_counts": [
+    "61 passed, 1 warning"
+  ]
+}
