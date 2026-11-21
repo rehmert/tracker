@@ -50,7 +50,7 @@
     <label class="field"><span>Lab</span><input name="lab_name"></label>
     <label class="field"><span>Test date</span><input type="date" name="tested_on"></label>
     <label class="field"><span>Purity (%)</span><input type="number" name="purity_pct" step="any" min="0" max="100"></label>
-    <label class="field"><span>Endotoxin result (EU/vial)</span><select name="endotoxin_result_kind"><option value="lt1" selected>&lt;1 EU/vial (reported below 1)</option><option value="exact">Exact numeric result</option></select></label>
+    <label class="field"><span>Endotoxin result (EU/vial)</span><select name="endotoxin_result_kind"><option value="untested" selected>Untested</option><option value="lt1">&lt;1 EU/vial (reported below 1)</option><option value="exact">Exact numeric result</option></select></label>
     <label class="field"><span>Exact endotoxins (EU/vial, if selected)</span><input type="number" name="endotoxin_eu_per_vial" step="any" min="0" placeholder="Required for exact result"></label>
     <label class="field"><span>Job/task ID</span><input name="job_id"></label>
     <label class="field"><span>Verify code</span><input name="verify_code"></label>
