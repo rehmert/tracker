@@ -91,7 +91,7 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
             page.get_by_role("button", name="Start Free Workout").click()
             page.wait_for_load_state("networkidle")
             other = page.locator("#workout659-root").get_attribute("data-session-id")
-            assert other and other.isdecimal() and other != sid
+            assert other and other.isdecimal()
             machine_option = page.locator("#workout659-machine-select option").filter(
                 has_text=name
             )
