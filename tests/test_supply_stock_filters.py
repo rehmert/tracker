@@ -16,7 +16,7 @@ def test_filter_assets_and_markup():
 
     for token in (
         "tracker-stock-filters.js",
-        "tracker-stock-filters.css",
+        "tracker-supplies-bundle742.css?v=742",
         "data-stock-filter-toolbar",
         "data-stock-search",
         "data-stock-status-filter",

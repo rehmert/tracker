@@ -25,6 +25,9 @@ One change-scoped integrated release on `release/742-consolidated-ux-performance
   checks, actual rendered-HTML HTTP tests, bounded SQL query counts,
   Chromium 320/390/430/760/1024 in light/dark with keyboard and overflow
   checks; Release 741, Supplies, Calendar, Notes regressions.
+- Legacy asset-name assertions in the four affected regression files were
+  updated to verify the intentional bundle name; their behavioral, read-only
+  JS and accessibility assertions remain. Original stylesheet files stay in Git.
 - Full app-wide suite deliberately not run. No schema, dependency, release
   controller, auth or PROD changes; receipts stay sanitized in release branches.
 

@@ -21,6 +21,7 @@ echo "RELEASE_742_BUNDLE_READ_BROWSER=PASSED"
   tests/test_release741_integrated_macd_mobile.py \
   tests/test_supply_stock_filters.py \
   tests/test_supply_stock_health.py \
+  tests/test_supply_use_preview.py \
   tests/test_calendar_workbench.py \
   tests/test_calendar_review_agenda.py \
   tests/test_record_explorer_template_regression.py || exit 43

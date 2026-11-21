@@ -15,7 +15,7 @@ def test_stock_health_template():
     html = read("app/templates/supplies.html")
 
     assert "data-stock-health-summary" in html
-    assert "tracker-stock-health.css" in html
+    assert "tracker-supplies-bundle742.css?v=742" in html
 
     for value in (
         "Total Products",

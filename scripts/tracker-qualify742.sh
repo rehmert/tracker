@@ -33,7 +33,8 @@ git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
     app/routers/pages.py|app/routers/supplies.py|app/templates/supplies.html|\
-    app/templates/calendar.html|app/static/css/tracker-supplies-bundle742.css|\
+    app/templates/calendar.html|tests/test_supply_stock_filters.py|tests/test_supply_stock_health.py|\
+    tests/test_supply_use_preview.py|tests/test_calendar_workbench.py|app/static/css/tracker-supplies-bundle742.css|\
     app/static/css/tracker-calendar-bundle742.css|tests/test_release742_consolidated_ux_performance.py|\
     scripts/tracker-qualify742.sh|scripts/tracker-install742.sh|scripts/tracker-release-scoped742.sh|\
     docs/release-742-consolidated-ux-performance.md) ;;
