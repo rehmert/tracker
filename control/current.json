@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r741-deployc5efed6b",
-  "action": "prod_deploy",
-  "release": 741,
-  "target": "c5efed6b40f4324187eff3e83dbed44d9e68f5c4",
-  "base": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
-  "ref": "release/741-integrated-macd-mobile",
-  "previous_request_id": "r741-preflightc5efed6b"
+  "request_id": "r742-8cac771fcf3b",
+  "action": "qualify",
+  "release": 742,
+  "target": "8cac771fcf3b14bbd13ddb3b6fc2d1fdd9f29a22",
+  "base": "c5efed6b40f4324187eff3e83dbed44d9e68f5c4",
+  "ref": "release/742-consolidated-ux-performance",
+  "previous_request_id": null
 }
