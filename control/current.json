@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r731-install6def88ca0c8e",
-  "action": "dev_install",
+  "request_id": "r731-0bc005f9c1e5",
+  "action": "qualify",
   "release": 731,
-  "target": "6def88ca0c8e57833ebb000fd59074996029fc22",
+  "target": "0bc005f9c1e5b1353a67755aeeb2940140a7c74f",
   "base": "13ed014d24ba5658a69ccb15b6d8e1a247c7575c",
   "ref": "release/731-tablet-dose-tracking",
-  "previous_request_id": "r731-6def88ca0c8e"
+  "previous_request_id": null
 }
