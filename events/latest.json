@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r735-51a4a70ed092.json",
+  "receipt_path": "receipts/r735-install51a4a70ed092.json",
   "release": 735,
-  "request_id": "r735-51a4a70ed092",
+  "request_id": "r735-install51a4a70ed092",
   "schema": 1,
   "status": "passed",
   "target": "51a4a70ed09287dd60a108dfea3721cd53090740"
