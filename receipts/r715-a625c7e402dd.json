@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "247f413d46f9f1b635144c7f141a57027fd26449",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T00:25:14+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r715-e42f9d16ac30",
+  "ref": "release/715-coa-endotoxin-untested-default",
+  "release": 715,
+  "request_id": "r715-a625c7e402dd",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T00:25:12+00:00",
+  "status": "passed",
+  "target": "ab70236618df66b8a959c765abf38dbcd59b29d7",
+  "test_counts": []
+}
