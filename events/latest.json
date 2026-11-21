@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r736-61df746a6425.json",
+  "receipt_path": "receipts/r736-install61df746a6425.json",
   "release": 736,
-  "request_id": "r736-61df746a6425",
+  "request_id": "r736-install61df746a6425",
   "schema": 1,
   "status": "passed",
   "target": "61df746a64259e84a6fdef23d7d8df17ef3b6e0c"
