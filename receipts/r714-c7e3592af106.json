@@ -1,0 +1,31 @@
+{
+  "action": "prod_deploy",
+  "base": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T00:04:57+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=247f413d46f9f1b635144c7f141a57027fd26449",
+    "PROMOTED_COMMIT=247f413d46f9f1b635144c7f141a57027fd26449",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_714_PROD_SCOPED=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=247f413d46f9f1b635144c7f141a57027fd26449",
+    "REMOTE_DEPLOY_EXIT_STATUS=0",
+    "PROD_INSTALLED_COMMIT=247f413d46f9f1b635144c7f141a57027fd26449",
+    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  ],
+  "previous_request_id": "r714-a85c2107df39",
+  "ref": "release/714-workout-routine-row-alignment",
+  "release": 714,
+  "request_id": "r714-c7e3592af106",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T00:04:18+00:00",
+  "status": "passed",
+  "target": "247f413d46f9f1b635144c7f141a57027fd26449",
+  "test_counts": [
+    "15 passed, 1 warning"
+  ]
+}
