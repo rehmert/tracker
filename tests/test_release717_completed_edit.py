@@ -326,7 +326,7 @@ def test_718_move_every_set_on_wrong_machine_in_one_atomic_change(completed717):
      "reason": "Wrong machine"},
     {"target_equipment_id": "{target}", "confirm_move": "yes", "reason": "x"},
     {"target_equipment_id": "{target}", "confirm_move": "yes",
-     "reason": "Wrong machine", "expected_set_ids": "1,2,3"},
+     "reason": "Wrong machine", "expected_set_ids": "0"},
 ])
 def test_718_bulk_move_validation_fails_closed(completed717, fields):
     client, ids = completed717
