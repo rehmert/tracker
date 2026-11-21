@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r714-3d8a5c4170be",
-  "action": "dev_install",
+  "request_id": "r714-a85c2107df39",
+  "action": "prod_preflight",
   "release": 714,
   "target": "247f413d46f9f1b635144c7f141a57027fd26449",
   "base": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
   "ref": "release/714-workout-routine-row-alignment",
-  "previous_request_id": "r714-44c8f7061ab3"
+  "previous_request_id": "r714-3d8a5c4170be"
 }
