@@ -1,0 +1,18 @@
+{
+  "action": "prod_preflight",
+  "base": "4983aa242665937f7b851292246b90310b6d50d2",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "StageChainBlocked",
+  "finished_at_utc": "2026-11-21T14:41:01+00:00",
+  "markers": [],
+  "previous_request_id": "r726-install2f9f15f11f80",
+  "ref": "release/726-labs-mobile-actions",
+  "release": 726,
+  "request_id": "r726-pf2f9f15f11f80",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T14:41:01+00:00",
+  "status": "blocked",
+  "target": "2f9f15f11f807e4574143c49640ed62071e57df5",
+  "test_counts": []
+}
