@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r722-40088e446b66",
-  "action": "qualify",
+  "request_id": "r722-e4de80864a98",
+  "action": "dev_install",
   "release": 722,
   "target": "40088e446b66285aaa07caf40566e4de80864a98",
   "base": "4983aa242665937f7b851292246b90310b6d50d2",
   "ref": "release/722-gym-first-set",
-  "previous_request_id": null
+  "previous_request_id": "r722-40088e446b66"
 }
