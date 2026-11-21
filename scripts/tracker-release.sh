@@ -346,6 +346,13 @@ PY
   fi
  fi
  if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped720.sh |
+      grep -qx 'scripts/tracker-release-scoped720.sh'; then
+   echo "=== RELEASE 720 PROD SCOPED INLINE WORKOUT DELETE QUALIFICATION ==="
+   timeout 360 bash "$QA/scripts/tracker-release-scoped720.sh" "$PY"
+   echo "RELEASE_720_PROD_SCOPED=PASSED"
+ fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
     g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped719.sh |
       grep -qx 'scripts/tracker-release-scoped719.sh'; then
    echo "=== RELEASE 719 PROD SCOPED WORKOUT MANAGEMENT QUALIFICATION ==="
