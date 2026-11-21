@@ -105,7 +105,7 @@ coverage; **the host-side release-event agent is outside this GitHub
 source tree and has not been modified**. Issue #11 cannot be closed until
 its implementation and a real catch-up preflight are reviewed and pass.
 
-## Global UI/CSS request consolidation (remaining issue #54)
+## Global, Supplies and Calendar CSS / query performance (remaining issue #54)
 
 - The base template's adjacent, global Release 679 component and Release
   676 shortcut layers now load from the **same existing**
@@ -117,11 +117,21 @@ its implementation and a real catch-up preflight are reviewed and pass.
 - All original selector specificity, media rules, dark/light tokens,
   44px tap targets and downstream Rapid Gym `tracker-workout-nav-density681`
   order are preserved.
-- Add Chromium computed-style parity on 320, 390, 430, 760 and 1024px
-  in light/dark preferences, plus the legacy 676/679/680/681 tests.
+- Supplies: three page-specific stylesheet requests are consolidated into
+  one ordered CSS bundle; all original rules remain, plus a compact Stock /
+  Create category / Manage categories / Reconcile Stock navigation row.
+- Calendar: five page-specific CSS requests become one ordered bundle;
+  its JS and protocol/dose behavior are unchanged.
+- Supplies purchase links now use LIMIT 10 at the database rather than
+  fetching entire purchase history and truncating only in Jinja.
+- Notes list/search batch-load source and compound relationships to prevent
+  per-note lazy queries (N+1), preserving actual note content and search.
+- Add rendered SQL-query bound tests, 320/390/430/760/1024px Chromium
+  light/dark navigation parity, plus the legacy 676/679/680/681 tests.
 
 The current application still has many historical CSS files; this release
-consolidates one proven safe global request pair, not the whole application
+consolidates three measured safe stylesheet groups (one global pair and two
+high-use page bundles), not the whole application
 stylesheet library. Do not remove files used by historical tests or
 other templates without reference- and browser-parity review.
 
@@ -130,8 +140,9 @@ other templates without reference- and browser-parity review.
 - Pinned Release 741 clean DEV baseline, exact candidate SHA, private
   systemd network namespace, diff allowlist, immutable receipts.
 - Syntax/import, static route and CSRF default, provenance and stage-chain
-  forged receipt cases, source asset integrity, Chromium computed parity,
-  and focused existing CSS/security/dependency/controller regressions.
+  forged receipt cases, CSS order integrity, mobile rendered UI and SQL
+  query bounds, Chromium computed parity, and existing CSS/security/
+  dependency/Inventory/Calendar/Notes regressions.
 - Guarded DEV installation only after qualification passes; no PROD
   preflight or deployment without a separate explicit instruction.
 - Full browser/full backend tests may be run for shared-security changes;
