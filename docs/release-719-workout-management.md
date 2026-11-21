@@ -19,7 +19,7 @@ The Overview **Workout Activity → Recent Workouts** section is also collapsed 
 - Authenticated scoped SQLite dependency and existing CSRF/origin guard. Exact session ID and original started-at hidden value prevent accidental stale/wrong-session deletion. Confirm and reason validations fail closed.
 - **No schema migration**. Before deletion, a single durable private `ChangeAudit` snapshot stores start/completion times, original sets (weight/reps/effort/type/equipment/timestamp), the prior audited corrections, frozen session goals, associated routine ID, and offline-sync receipts, with user explanation. Earlier ChangeAudit entries are not removed.
 - In the same atomic DB transaction, delete FK-restricted correction and offline receipt records and session-specific targets/associations before recorded sets and the session. The machine catalog and reusable routine definition remain.
-- An offline sync for a deleted session is refused, because the original session ID is no longer active. Other sessions and records are unaffected.
+- Offline-sync UUID tombstones are retained in private ChangeAudit records. An old offline UUID cannot create a new set after deletion, even if SQLite later reuses the session ID. Replays are rejected on mismatched payloads; matching deleted actions are acknowledged as deleted. Other sessions and records are unaffected.
 - Historical charts/totals read actual surviving sets and automatically exclude deleted sessions.
 
 ## Isolated qualification
