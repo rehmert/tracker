@@ -2,6 +2,7 @@
 {% from "_macros.html" import gauge %}
 {% block title %}Vials{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 <link rel="stylesheet" href="/static/css/tracker-mobile-workflows601.css?v=601">
 <link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
 <script defer src="/static/js/tracker-vial-jumps603.js?v=603"></script>
@@ -708,7 +709,7 @@ document.addEventListener("DOMContentLoaded", () => {
       data-attention-beyond-use="{{ v.beyond_use_on.isoformat() if v.beyond_use_on else '' }}">
     <td><input type="checkbox" class="bulk-vial-check" name="vial_ids" value="{{ v.id }}" form="bulk-vials" aria-label="Select vial #{{ v.id }}{% if v.label %} {{ v.label }}{% endif %}{% if v.lot %}, lot {{ v.lot }}{% endif %}"></td>
     <td>{{ v.compound.name }}</td>
-    <td><a href="/vials/{{ v.id }}">#{{ v.id }}{% if v.label %} · {{ v.label }}{% endif %}</a>{% if v.lot %}<br><small>Lot: {{ v.lot }}</small>{% endif %}</td>
+    <td><a href="/vials/{{ v.id }}">#{{ v.id }}{% if v.label %} · {{ v.label }}{% endif %}</a> <a class="tracker-macd741-action" href="/vials/{{ v.id }}#vial-details741">Edit</a>{% if v.lot %}<br><small>Lot: {{ v.lot }}</small>{% endif %}</td>
     <td>{{ gauge(d.pct_remaining, v.status) }}</td>
     <td class="n">{{ d.remaining_base|amt(d.dim) }} <small>of {{ d.content_base|amt(d.dim) }}</small></td>
     <td class="n">{{ d.landed_cents|money }}</td>
