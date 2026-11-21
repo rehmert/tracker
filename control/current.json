@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r738-deployde867eee",
-  "action": "prod_deploy",
-  "release": 738,
-  "target": "de867eee93004534fa822e7250deda75d0976558",
-  "base": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
-  "ref": "release/738-integrated-macd-mobile-ux",
-  "previous_request_id": "r738-preflightde867ee"
+  "request_id": "r739-07c7cdcbdcc6",
+  "action": "qualify",
+  "release": 739,
+  "target": "07c7cdcbdcc62ce301c127951bf12de3a2fbd305",
+  "base": "de867eee93004534fa822e7250deda75d0976558",
+  "ref": "release/739-workout-food-macd-mobile",
+  "previous_request_id": null
 }
