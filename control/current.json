@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r737-deploy0ab7519d",
-  "action": "prod_deploy",
-  "release": 737,
-  "target": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
-  "base": "51a4a70ed09287dd60a108dfea3721cd53090740",
-  "ref": "release/737-native-regimen-disclosures",
-  "previous_request_id": "r737-preflight0ab7519"
+  "request_id": "r738-9f0dfba7465c",
+  "action": "qualify",
+  "release": 738,
+  "target": "9f0dfba7465c43a0fed334002d741f7f1aef0979",
+  "base": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+  "ref": "release/738-integrated-macd-mobile-ux",
+  "previous_request_id": null
 }
