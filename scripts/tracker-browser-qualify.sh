@@ -313,6 +313,18 @@ run_isolated_browser_module() {
             done < "$stage_file"
         fi
     fi
+    # Release 719: only fixed safe mobile workflow checkpoints are emitted.
+    if [[ "${module##*/}" == test_workout_manage719.py ]]; then
+        local stage_file719="$DATA/workout719-stages.txt"
+        if [[ -f "$stage_file719" && ! -L "$stage_file719" ]]; then
+            local milestone719
+            while IFS= read -r milestone719; do
+                if [[ "$milestone719" =~ ^TARGETED_719_(HTTP|HTTPS)_(HOME_LOADED|HOME_EXPANDED|STARTED|DELETE_LINK|ACTIVE_FORM|ACTIVE_POST|ACTIVE_RETURN|MACHINE|RESTARTED|LOGGED|FINISHED|FINISHED_FORM|FINISHED_POST|END)=PASSED$ ]]; then
+                    echo "$milestone719"
+                fi
+            done < "$stage_file719"
+        fi
+    fi
     echo "MODULE_EXIT=$rc"
     return "$rc"
 }
