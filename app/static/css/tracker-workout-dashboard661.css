@@ -145,7 +145,7 @@
   display:none;
 }
 #tracker-workout-dashboard661 .tracker-workout-recent661 > summary::after {
-  content:"▾";
+  content:"\25BE";
   display:inline-block;
   flex:none;
   margin-inline-start:.5rem;
