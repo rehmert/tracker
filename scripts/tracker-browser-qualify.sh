@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 || "$TARGETED_MODULE" == workout-active716 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 || "$TARGETED_MODULE" == workout-active716 || "$TARGETED_MODULE" == workout-completed717 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -540,6 +540,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-workout-active716.log"
 echo "STRICT_716_ACTIVE_WORKOUT=PASSED"
 
+# Release 717: completed-session edit and confirmed removal, signed HTTP/HTTPS.
+run_isolated_browser_module \
+    tests/browser/test_workout_completed717.py \
+    1 "$ROOT/strict-workout-completed717.log"
+echo "STRICT_717_COMPLETED_WORKOUT=PASSED"
+
 echo "=== STRICT CSRF REMAINING PROTOCOL SIGNED LIFECYCLES ==="
 run_isolated_browser_module \
     tests/browser/test_csrf_protocol_remaining627.py \
@@ -677,6 +683,16 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == workout-active716 ]]; then
       1 "$ROOT/targeted-workout-active716.log"
   echo "TARGETED_716_ACTIVE_WORKOUT=PASSED"
   echo "TARGETED_716_SCOPE=ACTIVE_MACHINE_ADD_AND_NEW_NOT_FULL_RELEASE"
+  exit 0
+fi
+
+# Release 717: isolated browser check for editing a completed workout.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == workout-completed717 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_workout_completed717.py \
+      1 "$ROOT/targeted-workout-completed717.log"
+  echo "TARGETED_717_COMPLETED_WORKOUT=PASSED"
+  echo "TARGETED_717_SCOPE=HISTORICAL_SET_REMOVAL_NOT_FULL_RELEASE"
   exit 0
 fi
 
