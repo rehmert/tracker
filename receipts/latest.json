@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "de867eee93004534fa822e7250deda75d0976558",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-21T21:49:13+00:00",
+  "finished_at_utc": "2026-11-21T21:51:29+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_739_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_739_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_739_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_739_EXIT_STATUS=0"
+    "EXIT_STATUS=0",
+    "RELEASE_739_DEV_INSTALL=SUCCESS"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r739-a0bd6f6f1d00",
   "ref": "release/739-workout-food-macd-mobile",
   "release": 739,
-  "request_id": "r739-a0bd6f6f1d00",
+  "request_id": "r739-installa0bd6f6f1d",
   "schema": 1,
-  "started_at_utc": "2026-11-21T21:48:17+00:00",
+  "started_at_utc": "2026-11-21T21:50:07+00:00",
   "status": "passed",
   "target": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
   "test_counts": [
