@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 || "$TARGETED_MODULE" == workout-active716 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -521,6 +521,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-coa-untested715.log"
 echo "STRICT_715_COA_UNTESTED=PASSED"
 
+# Release 716: real signed, mobile workout machine editing on HTTP and HTTPS.
+run_isolated_browser_module \
+    tests/browser/test_workout_active716.py \
+    1 "$ROOT/strict-workout-active716.log"
+echo "STRICT_716_ACTIVE_WORKOUT=PASSED"
+
 echo "=== STRICT CSRF REMAINING PROTOCOL SIGNED LIFECYCLES ==="
 run_isolated_browser_module \
     tests/browser/test_csrf_protocol_remaining627.py \
@@ -648,6 +654,16 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == coa-untested715 ]]; then
       1 "$ROOT/targeted-coa-untested715.log"
   echo "TARGETED_715_COA_UNTESTED=PASSED"
   echo "TARGETED_715_SCOPE=COA_CREATE_EDIT_VIAL_NOT_FULL_RELEASE"
+  exit 0
+fi
+
+# Release 716: one scoped strict HTTP/HTTPS in-workout machine edit witness.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == workout-active716 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_workout_active716.py \
+      1 "$ROOT/targeted-workout-active716.log"
+  echo "TARGETED_716_ACTIVE_WORKOUT=PASSED"
+  echo "TARGETED_716_SCOPE=ACTIVE_MACHINE_ADD_AND_NEW_NOT_FULL_RELEASE"
   exit 0
 fi
 
