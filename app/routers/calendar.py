@@ -145,7 +145,7 @@ def _month_events(shown: date, db: Session):
             for when in cal.staged_occurrences(item, protocol.start_date, days_to_project):
                 if first <= when < end and (protocol.end_date is None or when <= protocol.end_date) and not excluded(rules, item.id, when):
                     planned.setdefault(when, []).append({
-                        'protocol_item_id': item.id, 'compound_id': item.compound_id, 'amount_value': item.amount_value, 'amount_unit': item.amount_unit,
+                        'protocol_id': protocol.id, 'protocol_item_id': item.id, 'compound_id': item.compound_id, 'amount_value': item.amount_value, 'amount_unit': item.amount_unit,
                         'name': item.compound.name, 'protocol': protocol.name,
                         'dose': f'{item.amount_value:g} {item.amount_unit}',
                         'dose_time': cal.occurrence_time(item, protocol.start_date, when), 'fasting_hours': item.fasting_hours})
