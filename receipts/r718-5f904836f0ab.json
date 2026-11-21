@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "0893bde49014616bc878b0b142ad5bfe1bbf8f16",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release717_completed_edit.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T01:26:35+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_718_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_718_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_718_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/718-completed-machine-correction",
+  "release": 718,
+  "request_id": "r718-5f904836f0ab",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T01:26:28+00:00",
+  "status": "failed",
+  "target": "5f904836f0ab3b07de4279b9909aa4d1768d343a",
+  "test_counts": [
+    "9 passed, 1 warning"
+  ]
+}
