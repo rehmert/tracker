@@ -60,6 +60,12 @@ def test_716_active_free_workout_select_machine_without_creating_fake_sets():
         page = client.get("/workouts/quick")
         assert page.status_code == 200
         assert 'id="workout716-add-machine"' in page.text
+        # Global page-title casing would otherwise modify equipment labels.
+        assert '<h2 data-no-title-case>' in page.text
+        assert '[data-no-title-case]' in (
+            __import__("pathlib").Path(__file__).resolve().parents[1] /
+            "app/static/js/tracker-page-title-case.js"
+        ).read_text(encoding="utf-8")
         assert 'href="/workouts#workout-sets657"' in page.text
         assert 'action="/workouts/quick/machines"' in page.text
         response = client.post("/workouts/quick/machines", data={
