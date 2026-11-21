@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r740-install78de7168.json",
+  "receipt_path": "receipts/r740-preflight78de7168.json",
   "release": 740,
-  "request_id": "r740-install78de7168",
+  "request_id": "r740-preflight78de7168",
   "schema": 1,
   "status": "passed",
   "target": "78de7168566f15dcd450ee24d7f2e8fe0cdae756"
