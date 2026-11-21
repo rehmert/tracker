@@ -2,12 +2,13 @@
 
 No dosing recommendations, implicit food-nutrient additions or vial mutations.
 """
+from collections import Counter
 from datetime import date, datetime, timedelta
 import json
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..inventory_lock import reserve_inventory_write
@@ -305,6 +306,11 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
         for item_id, facts in product_facts_display.items()
     }
     schedules = list(db.scalars(select(RegimenSchedule).order_by(RegimenSchedule.id.desc())))
+    schedule_counts = Counter(schedule.item_id for schedule in schedules)
+    entry_counts = dict(db.execute(
+        select(RegimenEntry.item_id, func.count(RegimenEntry.id))
+        .group_by(RegimenEntry.item_id)
+    ).all())
     tablet_plans = {
         p.schedule_id: p for p in db.scalars(select(RegimenTabletSchedule731))
     }
@@ -334,6 +340,7 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
         kinds=KINDS, meals=MEALS,
         tablet_plans=tablet_plans, tablet_entries=tablet_entries,
         tablet_strengths=tablet_strengths, tablet_fmt=tablets731.format_number,
+        schedule_counts=schedule_counts, entry_counts=entry_counts,
     )
 
 
@@ -392,6 +399,87 @@ def archive_item(item_id: int, db: Session = Depends(get_scoped_db390)):
         _audit(db, "regimen_item", item.id, "archive", before, {"active": False})
     db.commit()
     return _redirect(msg="Item archived; history retained.")
+
+
+@router.post("/regimen/items/{item_id}/delete")
+async def delete_medication(item_id: int, request: Request,
+                            db: Session = Depends(get_scoped_db390)):
+    """Explicitly remove one medication and its dependent regimen records.
+
+    All mutations are one transaction in the existing scoped database.
+    Individual audit snapshots remain, but the regular intake history and
+    schedules are permanently removed. Supplements cannot use this route.
+    """
+    form = await request.form()
+    if str(form.get("confirm_delete", "")) != "delete":
+        return _redirect(err="Confirm medication deletion.")
+    if not reserve_inventory_write(db):
+        return _redirect(err="Database is busy.")
+    item = _get(db, "item", item_id)
+    if item.kind != "medication":
+        db.rollback()
+        return _redirect(err="This delete action is for medications only.")
+
+    schedules = list(db.scalars(
+        select(RegimenSchedule).where(RegimenSchedule.item_id == item_id)
+        .order_by(RegimenSchedule.id)
+    ))
+    entries = list(db.scalars(
+        select(RegimenEntry).where(RegimenEntry.item_id == item_id)
+        .order_by(RegimenEntry.id)
+    ))
+
+    # Fail closed rather than delete another item's intake if malformed
+    # legacy data references a schedule from this medication.
+    mismatched = db.scalar(
+        select(RegimenEntry.id)
+        .join(RegimenSchedule, RegimenEntry.schedule_id == RegimenSchedule.id)
+        .where(RegimenSchedule.item_id == item_id,
+               RegimenEntry.item_id != item_id)
+        .limit(1)
+    )
+    if mismatched is not None:
+        db.rollback()
+        return _redirect(err="Medication has conflicting schedule links; deletion blocked.")
+
+    for entry in entries:
+        _audit(db, "regimen_entry", entry.id, "delete",
+               before=_entry_snapshot(entry))
+        _store_tablet_entry(db, entry.id, None)
+        db.delete(entry)
+    db.flush()
+
+    for schedule in schedules:
+        _audit(db, "regimen_schedule", schedule.id, "delete", before={
+            "item_id": item_id,
+            "cadence": schedule.cadence,
+            "amount": schedule.amount,
+            "active": schedule.active,
+        })
+        _store_tablet_plan(db, schedule.id, None)
+        db.delete(schedule)
+    db.flush()
+
+    facts = db.scalar(select(RegimenProductFacts639).where(
+        RegimenProductFacts639.item_id == item_id
+    ))
+    if facts is not None:
+        _audit(db, "regimen_product_facts", item_id, "delete", before={
+            "brand": facts.brand, "source": facts.source,
+            "source_id": facts.source_id,
+        })
+        db.delete(facts)
+    _audit(db, "regimen_item", item.id, "delete", before={
+        "kind": item.kind,
+        "name": item.name,
+        "active": item.active,
+        "schedules_deleted": len(schedules),
+        "intakes_deleted": len(entries),
+        "product_facts_deleted": facts is not None,
+    })
+    db.delete(item)
+    db.commit()
+    return _redirect(msg="Medication and associated regimen records permanently deleted.")
 
 
 @router.post("/regimen/schedules")
