@@ -31,8 +31,16 @@ remain on DEV at /var/log/tracker-release-agent/<request_id>.log.
 
 Each request includes exact release number, base SHA, candidate SHA, branch,
 action, unique ID and previous request ID. All non-qualify actions require a
-matching prior success, the same exact target/base/ref/release, clean installed
-source, and unchanged GitHub release ref. No stage is silently skipped.
+matching successful preceding stage with the same exact release, target and ref.
+Qualification → DEV installation and PROD preflight → PROD deployment additionally
+require the same base as the previous stage. **The sole exception is
+DEV installation → PROD preflight:** PROD may legitimately be multiple releases
+behind DEV, so `prod_preflight.base` is the exact installed **PROD** commit rather
+than DEV's earlier qualification base. The pinned promotion runner independently
+checks that commit against the live PROD HEAD and GitHub main, plus target ancestry,
+DEV's signed qualification log, active services and approved release ref. A
+mismatched installed PROD base fails closed; the exception does not skip any
+stage or permit a different target.
 
 The agent never runs arbitrary shell commands from the command branch. It
 extracts only the known, versioned Git scripts from the exact release commit
