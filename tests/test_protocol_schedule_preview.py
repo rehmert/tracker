@@ -186,4 +186,6 @@ def test_protocol_table_keeps_existing_filter_column_contract():
     assert "row.cells[1]?.textContent" in js
     assert "row.cells[2]?.textContent" in js
     assert "Next planned (60 days)" in table
-    assert 'colspan="6"' in table
+    # Release 741 adds a record-level Manage column to the protocol table.
+    assert '<th>Manage</th>' in table
+    assert 'colspan="7"' in table
