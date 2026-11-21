@@ -33,7 +33,7 @@ def test_678_workout_activity_links_are_card_actions_not_bare_link_boxes():
 def test_678_dashboard_loads_fresh_scoped_stylesheet_and_matches_daily_cards():
     dashboard = DASHBOARD.read_text(encoding="utf-8")
     css = CSS.read_text(encoding="utf-8")
-    assert 'tracker-workout-dashboard661.css?v=719' in dashboard
+    assert 'tracker-workout-dashboard661.css?v=721' in dashboard
     assert dashboard.count("tracker-workout-dashboard661.css?v=") == 1
     assert "#tracker-workout-dashboard661 nav.tracker-workout-shortcuts678 > a" in css
     assert "text-decoration:none;" in css
