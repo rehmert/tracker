@@ -179,7 +179,7 @@ def _schedule_tablet(form, item):
 
 def _store_tablet_plan(db, schedule_id, values):
     existing = db.get(RegimenTabletSchedule731, schedule_id)
-    before = {key: str(getattr(existing, key)) for key in (
+    before = {key: tablets731.format_number(getattr(existing, key)) for key in (
         "tablet_strength_mg", "prescribed_dose_mg", "tablets_planned",
     )} if existing else None
     if values is None:
@@ -192,7 +192,7 @@ def _store_tablet_plan(db, schedule_id, values):
         db.add(existing)
     for name, value in values.items():
         setattr(existing, name, value)
-    after = {key: str(value) for key, value in values.items()}
+    after = {key: tablets731.format_number(value) for key, value in values.items()}
     if before != after:
         _audit(db, "regimen_tablet_schedule", schedule_id,
                "create" if before is None else "edit", before=before, after=after)
@@ -202,7 +202,7 @@ def _store_tablet_entry(db, entry_id, values):
     existing = db.get(RegimenTabletEntry731, entry_id)
     fields = ("tablet_strength_mg", "prescribed_dose_mg",
               "tablets_taken", "administered_dose_mg")
-    before = {key: str(getattr(existing, key)) for key in fields} if existing else None
+    before = {key: tablets731.format_number(getattr(existing, key)) for key in fields} if existing else None
     if values is None:
         if existing:
             db.delete(existing)
@@ -213,7 +213,7 @@ def _store_tablet_entry(db, entry_id, values):
         db.add(existing)
     for name, value in values.items():
         setattr(existing, name, value)
-    after = {key: str(value) for key, value in values.items()}
+    after = {key: tablets731.format_number(value) for key, value in values.items()}
     if before != after:
         _audit(db, "regimen_tablet_entry", entry_id,
                "create" if before is None else "edit", before=before, after=after)
@@ -499,6 +499,11 @@ def _entry_values(form, db, *, existing=None):
         )
         # Corrections retain the original order even after a schedule edit.
         reference = previous if previous is not None and same_record else plan
+        # Historical correction explicitly supplies its stored reference
+        # values; this lets a user correct a mistaken entry without adopting
+        # a newer schedule's strength or prescribed dose.
+        if existing is not None and str(form.get("tablet_edit_snapshot", "")) == "yes":
+            reference = None
         strength = (
             reference.tablet_strength_mg if reference
             else form.get("tablet_strength_mg")
