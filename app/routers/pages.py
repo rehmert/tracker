@@ -1,4 +1,5 @@
 import re
+import json
 from datetime import date
 from urllib.parse import quote
 
@@ -9,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from .. import markup, services
 from ..scoped_db390 import get_scoped_db390
-from ..models import SOURCE_KINDS, Compound, Page, PageRevision, Source
+from ..models import SOURCE_KINDS, Compound, Page, PageRevision, Source, ChangeAudit
 from ..templating import render
 
 router = APIRouter()
@@ -226,9 +227,19 @@ def restore_page(
 
 @router.post("/pages/{pid}/delete")
 def delete_page(pid: int, db: Session = Depends(get_scoped_db390)):
-    db.delete(_get(db, pid))
+    p = _get(db, pid)
+    # Audit structural metadata, not the text being deliberately deleted.
+    db.add(ChangeAudit(
+        entity_type="notes_page", entity_id=pid, action="delete",
+        before_json=json.dumps({
+            "title": p.title, "tags": p.tags,
+            "source_count": len(p.sources), "compound_ids": [c.id for c in p.compounds],
+        }, ensure_ascii=False),
+        after_json="{}",
+    ))
+    db.delete(p)
     db.commit()
-    return services.flash_redirect("/pages", msg="Page deleted.")
+    return services.flash_redirect("/pages", msg="Page deleted; metadata audit retained.")
 
 
 @router.post("/pages/{pid}/sources")
