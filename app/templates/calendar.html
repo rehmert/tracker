@@ -10,7 +10,13 @@
 <script src="/static/js/tracker-calendar-day-context.js?v=20261103" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-calendar-day-navigation.css?v=20261103">
 <script src="/static/js/tracker-calendar-day-navigation.js?v=20261103" defer></script>
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 <h1>Protocol calendar</h1>
+<nav class="tracker-macd741-actions" aria-label="Calendar schedule management">
+<a class="tracker-macd741-action" href="/protocols">Manage protocols</a>
+<a class="tracker-macd741-action" href="#calendar-review-agenda">Review projected events</a>
+<a class="tracker-macd741-action" href="#calendar-exclusions741">Hidden projections</a>
+</nav>
 <p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
 {% if missing_start %}<section><h2>Start dates needed</h2><p class="note">These active protocols have no start date, so no doses are projected for them:</p>
 {% for p in missing_start %}<p><a href="/protocols/{{ p.id }}">{{ p.name }}</a> — set a start date</p>{% endfor %}</section>{% endif %}
@@ -77,6 +83,7 @@
         <td class="calendar-review-actions">
           <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;planned_date={{ item.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">Log this dose</a>
           <a class="tag" href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ item.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">Choose vial first</a>
+          <a class="tracker-macd741-action" href="/protocols/{{ x.protocol_id }}">Edit schedule</a>
         </td>
       </tr>
       {% else %}
@@ -121,6 +128,7 @@
      href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ d.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">
     Choose vial first
   </a>
+  <a class="tracker-macd741-action" href="/protocols/{{ x.protocol_id }}">Edit schedule</a>
   <form method="post" action="/calendar/exclude" class="inline" onsubmit="return confirm('Hide this projected dose? Actual administration records will not be changed.');">
     <input type="hidden" name="protocol_item_id" value="{{ x.protocol_item_id }}">
     <input type="hidden" name="scheduled_on" value="{{ d.date.isoformat() }}">
@@ -137,7 +145,7 @@
 </div>
 <p class="note">✓ Recorded · ! Past projection without a matching log · ◉ Projected today · ○ Upcoming. A missing log does not prove a dose was missed. Monthly and fractional-day frequencies use an approximate cadence.</p>
 <p class="note" id="calendar-print-caption">Displayed month: {{ shown.strftime('%B %Y') }}. Counts describe matching calendar entries, not verification of doses or clinical correctness.</p>
-<details><summary>Manage hidden projections ({{ exclusions|length }})</summary>
+<details id="calendar-exclusions741"><summary>Manage hidden projections ({{ exclusions|length }})</summary>
 <p class="note">Restoring a projection does not create or change administration records. If a protocol item was deleted, its exclusions are removed with it.</p>
 {% for rule in exclusions %}
 <div class="row">
