@@ -166,7 +166,7 @@ def test_659_routine_start_machine_navigation_and_progress():
         assert name in page.text
         assert "0 of 2 exercises logged" in page.text
         assert f'href="/workouts/quick?machine={second}"' in page.text
-        assert "Next: " + second_name in page.text
+        assert "Next Machine: " + second_name in page.text
         assert "This session on " + first_name in page.text
 
         logged = post(client, "/workouts/quick/sets", {
@@ -222,6 +222,6 @@ def test_659_reuse_existing_protection_and_no_schema():
     assert "workout659-rest-display" in page
     assert "workout659-machine-select" in page
     assert 'name="source_set_id"' in page
-    assert "Next: " in page
+    assert "Next Machine: " in page
     assert (ROOT / "app/static/js/tracker-workouts659.js").is_file()
     assert (ROOT / "app/static/css/tracker-workouts659.css").is_file()

@@ -107,6 +107,10 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
                 'a[href="' + routine_path + '#routine-exercises655"]'
             ).count() == 1
             checkpoint716(scheme, "LINKS")
+            # Release 724: no navigation is needed for a one-machine routine.
+            # The duplicate bottom navigation must never reappear.
+            expect(page.locator("nav.workout662-nav")).to_have_count(0)
+            expect(page.locator("nav.workout659-move")).to_have_count(0)
             # Release 722: verify primary set logging is ahead of optional tools.
             log_form = page.locator("#workout659-log-form")
             expect(log_form).to_be_visible()
@@ -174,6 +178,16 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
                 checkpoint716(scheme, "HEADING_QA" if value.startswith("QA716-") else "HEADING_NOT_QA")
             expect(heading).to_have_text(second)
             checkpoint716(scheme, "HEADING")
+            # Once the second machine joins the routine, one previous link
+            # appears after set entry; there is no redundant bottom nav.
+            nav = page.locator("nav.workout662-nav")
+            expect(nav).to_have_count(1)
+            expect(nav.locator('a[href^="/workouts/quick?machine="]')).to_have_count(1)
+            expect(page.locator("nav.workout659-move")).to_have_count(0)
+            assert nav.evaluate(
+                "(el) => Boolean(document.querySelector('#workout659-save')"
+                ".compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)"
+            )
             expect(page.locator(".workout659-progress")).to_contain_text("0 of 2 exercises logged")
             checkpoint716(scheme, "PROGRESS")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")

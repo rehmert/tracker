@@ -8,12 +8,13 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[2]
 CSS = ROOT / "app/static/css"
 BASE = "40088e446b66285aaa07caf40566e4de80864a98"
+RELEASE_723 = "764efd20f0fe6ac643d7940eb8178387a530f842"
 
 
-def old(path):
+def old(path, ref=BASE):
     return subprocess.check_output(
         ["git", "-c", f"safe.directory={ROOT}", "-C", str(ROOT),
-         "show", f"{BASE}:app/static/css/{path}"], text=True
+         "show", f"{ref}:app/static/css/{path}"], text=True
     )
 
 
@@ -65,7 +66,7 @@ def test_723_gym_css_screenshot_and_style_parity():
         old("tracker-workouts716.css"),
     ))
     merged_css = "\n".join(
-        (CSS / x).read_text(encoding="utf-8") for x in (
+        old(x, RELEASE_723) for x in (
             "tracker-workouts659.css", "tracker-workout-targets666.css",
             "tracker-workout-gym667.css", "tracker-action-nav675.css",
             "tracker-integrated-flow696.css", "tracker-workouts716.css",

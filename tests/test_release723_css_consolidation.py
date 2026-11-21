@@ -6,14 +6,15 @@ from jinja2 import Environment
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "40088e446b66285aaa07caf40566e4de80864a98"
+RELEASE_723 = "764efd20f0fe6ac643d7940eb8178387a530f842"
 CSS = ROOT / "app/static/css"
 TPL = ROOT / "app/templates/workout_quick659.html"
 
 
-def historical(path):
+def historical(path, ref=BASE):
     return subprocess.check_output(
         ["git", "-c", f"safe.directory={ROOT}", "-C", str(ROOT),
-         "show", f"{BASE}:{path}"], text=True
+         "show", f"{ref}:{path}"], text=True
     )
 
 
@@ -22,8 +23,8 @@ def test_723_merged_styles_are_byte_for_byte_ordered():
     old662 = historical("app/static/css/tracker-workouts662.css")
     old667 = historical("app/static/css/tracker-workout-gym667.css")
     old673 = historical("app/static/css/tracker-workout-ux673.css")
-    merged659 = (CSS / "tracker-workouts659.css").read_text(encoding="utf-8")
-    merged667 = (CSS / "tracker-workout-gym667.css").read_text(encoding="utf-8")
+    merged659 = historical("app/static/css/tracker-workouts659.css", RELEASE_723)
+    merged667 = historical("app/static/css/tracker-workout-gym667.css", RELEASE_723)
     assert merged659 == (old659 + "\n/* Release 723: consolidated former 662 machine finder, stepping and navigation rules. */\n" + old662)
     assert merged667 == (old667 + "\n/* Release 723: consolidated former 673 gym offline/draft UX rules. */\n" + old673)
     assert not (CSS / "tracker-workouts662.css").exists()
@@ -31,7 +32,7 @@ def test_723_merged_styles_are_byte_for_byte_ordered():
 
 
 def test_723_live_asset_reference_order_and_native_actions():
-    html = TPL.read_text(encoding="utf-8")
+    html = historical("app/templates/workout_quick659.html", RELEASE_723)
     Environment().parse(html)
     assert html.count('tracker-workouts659.css?v=723') == 1
     assert html.count('tracker-workout-gym667.css?v=723') == 1

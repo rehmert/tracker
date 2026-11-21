@@ -58,7 +58,7 @@ def test_673_gym_keeps_recording_and_offline_sync_but_defers_advanced_tools():
     for name in ("draft-save", "draft-restore", "queue-set",
                  "sync-now", "queue-discard", "draft-clear"):
         assert f'id="workout668-{name}"' in html
-    assert 'tracker-workout-gym667.css?v=723' in html
+    assert 'tracker-workout-gym667.css?v=724' in html
     assert 'tracker-workout-ux673.css' not in html
     Environment().parse(html)
 

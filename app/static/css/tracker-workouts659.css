@@ -32,9 +32,6 @@
 .workout659-rest-header select { min-width: 96px; }
 #workout659-rest-display { display: block; text-align: center; font-size: clamp(3rem, 12vw, 5rem); font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; margin: .8rem 0; }
 .workout659-rest-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
-.workout659-move { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; margin: 1rem 0; }
-.workout659-move-button { display: flex; align-items: center; justify-content: center; padding: 1rem; text-align: center; border: 1px solid var(--border, #8998a7); border-radius: .75rem; min-height: 65px; font-weight: 700; text-decoration: none; }
-.workout659-move-next { border-width: 2px; }
 .workout659-logged p { border-bottom: 1px solid var(--border, #8998a7); padding-bottom: .45rem; }
 .workout659-end { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 .workout659-routine-list { display: grid; gap: .7rem; }
