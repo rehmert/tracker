@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r743-install7585b65f",
-  "action": "dev_install",
+  "request_id": "r743-preflight7585b65f",
+  "action": "prod_preflight",
   "release": 743,
   "target": "7585b65f003179fe86d0f98958fe0e63071b8e81",
-  "base": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
+  "base": "c5efed6b40f4324187eff3e83dbed44d9e68f5c4",
   "ref": "release/743-security-deps-controller-ux",
-  "previous_request_id": "r743-7585b65f0031"
+  "previous_request_id": "r743-install7585b65f"
 }
