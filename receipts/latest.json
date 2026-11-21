@@ -1,18 +1,26 @@
 {
-  "action": "prod_preflight",
-  "base": "4983aa242665937f7b851292246b90310b6d50d2",
-  "exit_code": 1,
+  "action": "qualify",
+  "base": "2f9f15f11f807e4574143c49640ed62071e57df5",
+  "exit_code": 0,
   "failed_tests": [],
-  "failure_category": "StageChainBlocked",
-  "finished_at_utc": "2026-11-21T14:41:01+00:00",
-  "markers": [],
-  "previous_request_id": "r726-install2f9f15f11f80",
-  "ref": "release/726-labs-mobile-actions",
-  "release": 726,
-  "request_id": "r726-pf2f9f15f11f80",
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T15:06:35+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_727_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_727_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_727_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_727_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/727-labs-report-cards",
+  "release": 727,
+  "request_id": "r727-3718936aedfc",
   "schema": 1,
-  "started_at_utc": "2026-11-21T14:41:01+00:00",
-  "status": "blocked",
-  "target": "2f9f15f11f807e4574143c49640ed62071e57df5",
-  "test_counts": []
+  "started_at_utc": "2026-11-21T15:06:01+00:00",
+  "status": "passed",
+  "target": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
+  "test_counts": [
+    "51 passed, 1 warning"
+  ]
 }
