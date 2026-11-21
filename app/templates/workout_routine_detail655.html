@@ -2,15 +2,37 @@
 {% block title %}{{ routine.name }}{% endblock %}
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workouts654.css?v=654">
-<link rel="stylesheet" href="/static/css/tracker-workouts655.css?v=655">
-<link rel="stylesheet" href="/static/css/tracker-workout-routine-alignment714.css?v=714">
+<link rel="stylesheet" href="/static/css/tracker-workout-routines739.css?v=739">
 {% endblock %}
 {% block content %}
 <section class="workout654 workout655">
   <p><a href="/workouts/routines">← Saved Routines</a></p>
   <h1>{{ routine.name }}</h1>
-  <p><a href="/workouts/routines/{{ routine.id }}/schedule">Schedule &amp; Supersets/Circuits</a></p>
-  <form method="post" action="/workouts/routines/{{ routine.id }}/duplicate"><button type="submit">Duplicate This Routine</button></form>
+  <nav class="workout739-nav" aria-label="Routine planning">
+    <a href="/workouts/routines/{{ routine.id }}/program">Plan &amp; Compare</a>
+    <a href="/workouts/routines/{{ routine.id }}/schedule">Schedule &amp; Supersets/Circuits</a>
+    <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Browser Planner</a>
+  </nav>
+  <div class="workout739-actions workout739-detail-actions" data-workout739-actions>
+    <details class="workout739-edit-panel">
+      <summary>Edit routine</summary>
+      <form method="post" action="/workouts/routines/{{ routine.id }}/rename" class="workout739-edit-form">
+        <label>Routine name <input name="name" value="{{ routine.name }}" maxlength="120" required></label>
+        <button type="submit">Save name</button>
+      </form>
+    </details>
+    <form method="post" action="/workouts/routines/{{ routine.id }}/duplicate">
+      <button type="submit">Duplicate This Routine</button>
+    </form>
+    {% if not linked_sessions %}
+    <form method="post" action="/workouts/routines/{{ routine.id }}/delete"
+          onsubmit="return confirm('Permanently delete this unused routine and all planned exercises, groups and schedules? This cannot be undone.')">
+      <button type="submit" name="confirm_delete" value="delete">Delete routine</button>
+    </form>
+    {% else %}
+    <span class="workout739-history-lock">Used by {{ linked_sessions }} workout{{ '' if linked_sessions == 1 else 's' }} · deletion unavailable</span>
+    {% endif %}
+  </div>
   <p class="note">Exercises appear in the order below during this routine's workout.</p>
   <p><a href="/workouts/routines/{{ routine.id }}/program"><strong>Open Persistent Workout Program</strong></a> · <a href="/workouts/routines/{{ routine.id }}/plan">Legacy Browser Planner</a></p>
   {% if items %}
