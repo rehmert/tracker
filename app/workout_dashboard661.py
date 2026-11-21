@@ -11,16 +11,20 @@ from sqlalchemy.orm import Session
 
 from .workout_models654 import WorkoutSession654, WorkoutSet654
 
-RECENT_WORKOUT_LIMIT661 = 5
+RECENT_WORKOUT_LIMIT661 = 10
 RECENT_DAYS661 = 7
 LONG_DAYS661 = 28
 
 
-def workout_dashboard661(db: Session, today: date) -> dict:
-    """Five most recent completed sessions and rolling 7/28 calendar-day counts.
+def workout_dashboard661(
+    db: Session, today: date, *, page: int = 1, expanded: bool = False,
+) -> dict:
+    """Rolling 7/28 activity and ten-at-a-time history, including empty sessions.
 
-    All operations execute in the caller's authenticated scoped DB session.
-    Workouts with no sets and all incomplete sessions are excluded.
+    The activity metrics still count only completed workouts with real sets.
+    History intentionally includes in-progress and empty accidental sessions
+    so that the user can locate and delete them.
+    All reads stay in the authenticated, scoped database.
     """
     tomorrow = datetime.combine(today + timedelta(days=1), time.min)
     completed = WorkoutSession654.completed_at.is_not(None)
@@ -66,6 +70,15 @@ def workout_dashboard661(db: Session, today: date) -> dict:
         )
     ).one()
 
+    recent_total = int(db.scalar(
+        select(func.count(WorkoutSession654.id)).where(
+            WorkoutSession654.started_at < tomorrow
+        )
+    ) or 0)
+    page_count = max(1, (recent_total + RECENT_WORKOUT_LIMIT661 - 1)
+                     // RECENT_WORKOUT_LIMIT661)
+    page = max(1, min(page, page_count))
+
     recent = list(db.execute(
         select(
             WorkoutSession654.id.label("session_id"),
@@ -75,13 +88,10 @@ def workout_dashboard661(db: Session, today: date) -> dict:
             func.count(func.distinct(WorkoutSet654.equipment_id)).label("machines"),
         )
         .select_from(WorkoutSession654)
-        .join(
+        .outerjoin(
             WorkoutSet654, WorkoutSet654.session_id == WorkoutSession654.id,
         )
-        .where(
-            completed,
-            WorkoutSession654.started_at < tomorrow,
-        )
+        .where(WorkoutSession654.started_at < tomorrow)
         .group_by(
             WorkoutSession654.id,
             WorkoutSession654.started_at,
@@ -92,6 +102,7 @@ def workout_dashboard661(db: Session, today: date) -> dict:
             WorkoutSession654.id.desc(),
         )
         .limit(RECENT_WORKOUT_LIMIT661)
+        .offset((page - 1) * RECENT_WORKOUT_LIMIT661)
     ).all())
 
     in_progress = db.scalar(
@@ -110,4 +121,10 @@ def workout_dashboard661(db: Session, today: date) -> dict:
         "recent": recent,
         "in_progress": in_progress,
         "limit": RECENT_WORKOUT_LIMIT661,
+        "recent_total": recent_total,
+        "recent_page": page,
+        "recent_pages": page_count,
+        "recent_first": (page - 1) * RECENT_WORKOUT_LIMIT661 + 1 if recent_total else 0,
+        "recent_last": min(page * RECENT_WORKOUT_LIMIT661, recent_total),
+        "recent_expanded": expanded,
     }
