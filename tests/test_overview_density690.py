@@ -97,7 +97,7 @@ def test_690_dashboard_asset_and_content_contract():
     assert dashboard.index("tracker-overview-density690.css?v=690") > dashboard.index(
         "tracker-daily-flow559.css?v=559"
     )
-    assert dashboard.index("tracker-workout-dashboard661.css?v=678") < dashboard.index(
+    assert dashboard.index("tracker-workout-dashboard661.css?v=719") < dashboard.index(
         "{% block content %}"
     )
     css = read(NEW_CSS)
