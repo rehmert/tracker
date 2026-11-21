@@ -1,31 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
+  "action": "qualify",
+  "base": "51a4a70ed09287dd60a108dfea3721cd53090740",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-21T20:16:44+00:00",
+  "finished_at_utc": "2026-11-21T20:27:32+00:00",
   "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=51a4a70ed09287dd60a108dfea3721cd53090740",
-    "PROMOTED_COMMIT=51a4a70ed09287dd60a108dfea3721cd53090740",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_735_PROD_SCOPED=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=51a4a70ed09287dd60a108dfea3721cd53090740",
-    "REMOTE_DEPLOY_EXIT_STATUS=0",
-    "PROD_INSTALLED_COMMIT=51a4a70ed09287dd60a108dfea3721cd53090740",
-    "DEV_CONTROLLED_RELEASE=SUCCESS"
+    "RELEASE_736_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_736_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_736_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_736_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r735-pf51a4a70ed092",
-  "ref": "release/735-prod-catchup-727-to-735",
-  "release": 735,
-  "request_id": "r735-deploy51a4a70ed092",
+  "previous_request_id": null,
+  "ref": "release/736-regimen-add-chevron",
+  "release": 736,
+  "request_id": "r736-61df746a6425",
   "schema": 1,
-  "started_at_utc": "2026-11-21T20:15:07+00:00",
+  "started_at_utc": "2026-11-21T20:26:52+00:00",
   "status": "passed",
-  "target": "51a4a70ed09287dd60a108dfea3721cd53090740",
+  "target": "61df746a64259e84a6fdef23d7d8df17ef3b6e0c",
   "test_counts": [
-    "97 passed, 1 warning"
+    "32 passed, 1 warning"
   ]
 }
