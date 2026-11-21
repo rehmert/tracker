@@ -58,9 +58,7 @@
           {% for row in workout_summary.recent %}
             <li>
               <a href="/workouts/sessions/{{ row.session_id }}">{{ row.started_at|dt }}</a>
-              <span>{{ row.sets }} set{{ '' if row.sets == 1 else 's' }}
-                · {{ row.machines }} machine{{ '' if row.machines == 1 else 's' }}
-                · {{ 'Completed' if row.completed_at else 'In progress' }}</span>
+              <span>{{ row.sets }} set{{ '' if row.sets == 1 else 's' }} · {{ row.machines }} machine{{ '' if row.machines == 1 else 's' }} · {{ 'Completed' if row.completed_at else 'In progress' }}</span>
             </li>
           {% endfor %}
         </ul>
