@@ -1,7 +1,7 @@
 # Release 742 — Combined outstanding CSS, mobile navigation and read-performance cleanup
 
 Base: Release 741 DEV/PROD/main exact `c5efed6b40f4324187eff3e83dbed44d9e68f5c4`.
-One change-scoped integrated release on `release/742-consolidated-ux-performance`.
+Integrated into the single final Release 742 candidate on `release/742-security-deps-controller-ux`; see `docs/release-742-security-deps-controller-ux.md` for full scope and safety gates. The earlier UX-only qualification request was failed and never installed.
 
 ## Changes
 - **Supplies:** consolidate three page-specific CSS assets to one file, in
