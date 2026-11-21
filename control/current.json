@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r737-preflight0ab7519",
-  "action": "prod_preflight",
+  "request_id": "r737-deploy0ab7519d",
+  "action": "prod_deploy",
   "release": 737,
   "target": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
   "base": "51a4a70ed09287dd60a108dfea3721cd53090740",
   "ref": "release/737-native-regimen-disclosures",
-  "previous_request_id": "r737-install0ab7519d9d6b"
+  "previous_request_id": "r737-preflight0ab7519"
 }
