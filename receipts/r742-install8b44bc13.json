@@ -1,0 +1,25 @@
+{
+  "action": "dev_install",
+  "base": "c5efed6b40f4324187eff3e83dbed44d9e68f5c4",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T23:23:54+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_742_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r742-8b44bc133d7a",
+  "ref": "release/742-consolidated-ux-performance",
+  "release": 742,
+  "request_id": "r742-install8b44bc13",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T23:22:47+00:00",
+  "status": "passed",
+  "target": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
+  "test_counts": [
+    "16 passed, 1 warning",
+    "87 passed, 1 warning"
+  ]
+}
