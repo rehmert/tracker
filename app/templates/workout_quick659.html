@@ -15,7 +15,6 @@
 <script src="/static/js/tracker-workout-drafts668.js?v=668" defer></script>
 <script src="/static/js/tracker-workout-progression674.js?v=674" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-workouts716.css?v=716">
-<link rel="stylesheet" href="/static/css/tracker-workout-session719.css?v=720">
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
@@ -442,9 +441,7 @@
         </details>
       </form>
       <a class="ux675-inline-action" href="/workouts">All Workouts</a>
-      {% with delete_workout=active %}
-        {% include "_workout_delete719.html" %}
-      {% endwith %}
+      <a class="ux675-inline-action" href="/workouts/sessions/{{ active.id }}#workout719-delete-{{ active.id }}">Delete Accidental Workout</a>
     </section>
   {% endif %}
 </section>
