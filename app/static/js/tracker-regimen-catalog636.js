@@ -78,8 +78,12 @@
           option.addEventListener('click', () => {
             for (const key of ['name', 'ingredient', 'strength', 'form']) {
               const field = form.elements.namedItem(key);
-              if (field && typeof match[key] === 'string' && match[key]) {
-                field.value = match[key].slice(0, field.maxLength > 0 ? field.maxLength : 160);
+              if (field) {
+                // A new selection must clear fields absent from its label:
+                // otherwise an earlier medication's strength can silently
+                // remain attached to a different medication name.
+                const value = typeof match[key] === 'string' ? match[key] : '';
+                field.value = value.slice(0, field.maxLength > 0 ? field.maxLength : 160);
                 field.dispatchEvent(new Event('change', {bubbles: true}));
               }
             }
