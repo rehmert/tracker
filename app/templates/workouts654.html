@@ -236,9 +236,11 @@
         {% if session.completed_at %}
           <a class="ux675-inline-action" href="/workouts/sessions/{{ session.id }}/correct">Edit Workout</a>
         {% endif %}
-        {% with delete_workout=session %}
-          {% include "_workout_delete719.html" %}
-        {% endwith %}
+        {% if not active or active.id != session.id %}
+          {% with delete_workout=session %}
+            {% include "_workout_delete719.html" %}
+          {% endwith %}
+        {% endif %}
       </div>
     {% else %}
       <p>No workouts yet.</p>
