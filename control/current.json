@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r737-0ab7519d9d6b",
-  "action": "qualify",
+  "request_id": "r737-install0ab7519d9d6b",
+  "action": "dev_install",
   "release": 737,
   "target": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
   "base": "61df746a64259e84a6fdef23d7d8df17ef3b6e0c",
   "ref": "release/737-native-regimen-disclosures",
-  "previous_request_id": null
+  "previous_request_id": "r737-0ab7519d9d6b"
 }
