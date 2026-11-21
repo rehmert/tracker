@@ -55,3 +55,39 @@
   .workout717-actions form label { grid-column:1/-1; }
   .workout717-editor { padding-inline:.1rem; }
 }
+
+/* Release 718: machine correction is prominent and finger-friendly. */
+.workout718-bulk {
+  border:1px solid var(--border,#8998a7);
+  border-radius:.85rem;
+  padding:.85rem;
+  margin:1rem 0 1.2rem;
+}
+.workout718-bulk h2 { margin:.1rem 0 .5rem; font-size:1.1rem; }
+.workout718-bulk-machine { margin:.55rem 0; }
+.workout718-bulk-machine > summary {
+  min-height:48px; display:flex; align-items:center; cursor:pointer;
+  padding:.45rem .65rem; border:1px solid var(--border,#8998a7);
+  border-radius:.6rem; font-weight:650;
+}
+.workout718-bulk form {
+  display:flex; flex-direction:column; gap:.7rem; padding:.6rem .1rem .9rem;
+}
+.workout718-bulk form label,
+.workout718-single-machine label { display:flex; flex-direction:column; gap:.25rem; min-width:0; }
+.workout718-bulk form select,
+.workout718-bulk form input:not([type="checkbox"]) {
+  min-height:44px; width:100%; min-width:0;
+}
+.workout718-bulk form .workout717-confirm {
+  display:flex; flex-direction:row; gap:.5rem; align-items:center; min-height:44px;
+}
+.workout718-bulk .workout717-confirm input { width:22px; height:22px; flex:none; }
+.workout718-bulk form button { min-height:48px; }
+.workout717-actions .workout718-single-machine {
+  border-bottom:1px solid var(--border,#8998a7);
+  padding:.7rem 0 1.1rem;
+}
+.workout718-single-machine h2,
+.workout718-single-machine p { grid-column:1/-1; margin:.15rem 0; }
+.workout718-single-machine label:first-of-type { grid-column:1/-1; }
