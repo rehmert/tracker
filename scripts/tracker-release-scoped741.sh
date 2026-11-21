@@ -21,6 +21,18 @@ echo "RELEASE_741_COMPILE_TESTS=PASSED"
 echo "RELEASE_741_COMPILE=PASSED"
 "$PY" -c 'from pathlib import Path; from jinja2 import Environment; e=Environment(); [e.parse(Path(p).read_text(encoding="utf-8")) for p in ("app/templates/supplies.html","app/templates/coas.html","app/templates/coa_edit.html","app/templates/vials.html","app/templates/vial_detail.html","app/templates/blend_detail.html","app/templates/labs.html","app/templates/lab_report.html","app/templates/protocols.html","app/templates/calendar.html","app/templates/pages.html","app/templates/page_view.html")]' || exit 31
 echo "RELEASE_741_JINJA=PASSED"
+# Locate exact first failing operation using immutable nonrepeated stage codes.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release741_integrated_macd_mobile.py::test_741_diag_fixture_supply_list || exit 51
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release741_integrated_macd_mobile.py::test_741_diag_seed_and_render || exit 52
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release741_integrated_macd_mobile.py::test_741_diag_version_form || exit 53
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release741_integrated_macd_mobile.py::test_741_diag_edit_post_response || exit 54
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release741_integrated_macd_mobile.py::test_741_diag_edit_persisted_audit || exit 55
+echo "RELEASE_741_FIRST_DB_DIAGNOSTICS=PASSED"
 # Isolate the first database/API fixture test to produce a distinct stage exit.
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release741_integrated_macd_mobile.py::test_741_supply_edit_preserves_ledger_and_records_private_audit || exit 41
