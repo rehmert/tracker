@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "51a4a70ed09287dd60a108dfea3721cd53090740",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T20:56:15+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+    "PROMOTED_COMMIT=0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+    "REMOTE_DEPLOY_EXIT_STATUS=0",
+    "PROD_INSTALLED_COMMIT=0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  ],
+  "previous_request_id": "r737-preflight0ab7519",
+  "ref": "release/737-native-regimen-disclosures",
+  "release": 737,
+  "request_id": "r737-deploy0ab7519d",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T20:55:48+00:00",
+  "status": "passed",
+  "target": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+  "test_counts": []
+}
