@@ -77,7 +77,8 @@ def test_675_quick_entry_preserves_all_15_original_fast_destinations():
     assert fast.count('<a href=') == 15
     assert '<summary>More Actions</summary>' in fast
     assert 'aria-label="Blood pressure">BP</a>' in fast
-    assert src.count('data-quick-daily') == 5
+    # The original quick actions have expanded to seven daily entry cards.
+    assert src.count('data-quick-daily') == 7
     assert 'data-quick-category="all"' in src
     assert 'data-quick-search' in src
     assert src.count('data-quick-action') >= 14
