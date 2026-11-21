@@ -11,6 +11,7 @@ for script in scripts/tracker-qualify738.sh scripts/tracker-install738.sh \
   bash -n "$script"
 done
 "$PY" -m py_compile app/routers/regimen635.py tests/test_release738_integrated_macd_mobile.py
+"$PY" -c 'from pathlib import Path; from jinja2 import Environment; e=Environment(); [e.parse(Path(p).read_text(encoding="utf-8")) for p in ("app/templates/regimen635.html","app/templates/food.html","app/templates/workouts654.html","app/templates/workout_quick659.html")]'
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_release738_integrated_macd_mobile.py \
   tests/test_release737_native_regimen_disclosures.py \
