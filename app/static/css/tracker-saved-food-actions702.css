@@ -106,3 +106,11 @@
     min-height: 48px;
   }
 }
+
+/* Release 739: equal-size actions on desktop as well as in the phone dock.
+   The original mobile 48px rule continues to override this minimum. */
+#main-content .food-saved-edit669 .tracker-food-editor-actions702
+> :is(button,a) {
+  box-sizing:border-box;
+  min-height:44px;
+}
