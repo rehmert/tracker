@@ -40,7 +40,9 @@ def _custom_category741(c: SupplyCategory) -> bool:
 
 
 def _category_supply_counts741(db: Session) -> dict[str, int]:
-    return dict(db.execute(select(Supply.kind, func.count()).group_by(Supply.kind)))
+    return {kind: int(count) for kind, count in db.execute(
+        select(Supply.kind, func.count()).group_by(Supply.kind)
+    ).all()}
 
 
 def _supply_references741(db: Session) -> dict[int, dict[str, int]]:
