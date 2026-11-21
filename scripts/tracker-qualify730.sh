@@ -32,6 +32,12 @@ git merge-base --is-ancestor "$BASE" "$TARGET" ||
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
+    app/routers/regimen_catalog636.py|\
+    app/static/js/tracker-regimen-catalog636.js|\
+    app/templates/regimen635.html|\
+    tests/browser/test_release730_medication_prefill.py|\
+    tests/test_release636_regimen_catalog.py|\
+    tests/test_release730_medication_prefill.py|\
     app/routers/workouts654.py|\
     docs/release-730-workout-page-query-batch.md|\
     scripts/tracker-install730.sh|\
