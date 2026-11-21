@@ -1,13 +1,12 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "18a1bf7a6171ef1eeef80e4588851cd500031cb4",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-21T01:56:32+00:00",
+  "finished_at_utc": "2026-11-21T01:58:59+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_719_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_719_SCOPED_BACKEND=PASSED",
     "TARGETED_719_HTTP_HOME_LOADED=PASSED",
     "TARGETED_719_HTTP_HOME_EXPANDED=PASSED",
@@ -39,16 +38,15 @@
     "TARGETED_719_HTTPS_END=PASSED",
     "TARGETED_719_WORKOUT_MANAGEMENT=PASSED",
     "RELEASE_719_SCOPED_BROWSER=PASSED",
-    "RELEASE_719_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_719_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_719_EXIT_STATUS=0"
+    "EXIT_STATUS=0",
+    "RELEASE_719_DEV_INSTALL=SUCCESS"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r719-9fd92b3ac305",
   "ref": "release/719-workout-delete-dashboard-pagination",
   "release": 719,
-  "request_id": "r719-9fd92b3ac305",
+  "request_id": "r719-84eb20cbf38a",
   "schema": 1,
-  "started_at_utc": "2026-11-21T01:55:21+00:00",
+  "started_at_utc": "2026-11-21T01:57:22+00:00",
   "status": "passed",
   "target": "9fd92b3ac3057af99f8b9e468e27e64bcb2b9e68",
   "test_counts": [
