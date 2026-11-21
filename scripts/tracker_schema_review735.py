@@ -76,7 +76,7 @@ def review(root: Path, base: str, target: str) -> None:
 
     # Reapply the original Release 731 exact-source schema proof against its
     # immutable first installation commit, not the later application changes.
-    reviewer = root / "scripts/tracker_schema_review731.py"
+    reviewer = Path(__file__).parent / "tracker_schema_review731.py"
     if (not reviewer.is_file() or reviewer.is_symlink() or
             reviewer.read_text().strip() != git(
                 root, "show", f"{SCHEMA_INTRO}:scripts/tracker_schema_review731.py"
