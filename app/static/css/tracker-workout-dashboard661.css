@@ -119,3 +119,19 @@
   #tracker-workout-dashboard661 .workout719-pager a { flex:1 1 auto; }
   #tracker-workout-dashboard661 .workout719-pager span { order:-1; width:100%; text-align:center; }
 }
+
+/* Release 719: preserve the earlier compact dashboard density now that
+   Recent Workouts is a native disclosure with an inner content wrapper. */
+#tracker-workout-dashboard661 details.tracker-workout-recent661 {
+  margin:.5rem 0 0;
+  padding:.25rem .8rem 0;
+}
+#tracker-workout-dashboard661 .tracker-workout-recent-content719 {
+  padding:.25rem 0 0;
+}
+#tracker-workout-dashboard661 .tracker-workout-recent-content719 > p.note {
+  max-width:none; margin:.06rem 0 .16rem; line-height:1.22;
+}
+#tracker-workout-dashboard661 .tracker-workout-recent-content719 > p:last-child {
+  display:flex; align-items:center; margin:.1rem 0 0; line-height:1.15;
+}
