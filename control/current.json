@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r740-install78de7168",
-  "action": "dev_install",
+  "request_id": "r740-preflight78de7168",
+  "action": "prod_preflight",
   "release": 740,
   "target": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
   "base": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
   "ref": "release/740-equipment-macd-mobile",
-  "previous_request_id": "r740-78de7168566f"
+  "previous_request_id": "r740-install78de7168"
 }
