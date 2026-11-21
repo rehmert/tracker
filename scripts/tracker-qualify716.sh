@@ -32,17 +32,17 @@ git merge-base --is-ancestor "$BASE" "$TARGET" ||
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
   case "$path" in
-    app/routers/workouts659.py|\\
-    app/templates/workout_quick659.html|\\
-    app/static/css/tracker-workouts716.css|\\
-    docs/release-716-active-workout.md|\\
-    scripts/tracker-browser-qualify.sh|\\
-    scripts/tracker-install716.sh|\\
-    scripts/tracker-qualify716.sh|\\
-    scripts/tracker-release-scoped716.sh|\\
-    scripts/tracker-release.sh|\\
-    tests/browser/test_workout_active716.py|\\
-    tests/test_browser_qualification511.py|\\
+    app/routers/workouts659.py|\
+    app/templates/workout_quick659.html|\
+    app/static/css/tracker-workouts716.css|\
+    docs/release-716-active-workout.md|\
+    scripts/tracker-browser-qualify.sh|\
+    scripts/tracker-install716.sh|\
+    scripts/tracker-qualify716.sh|\
+    scripts/tracker-release-scoped716.sh|\
+    scripts/tracker-release.sh|\
+    tests/browser/test_workout_active716.py|\
+    tests/test_browser_qualification511.py|\
     tests/test_release716_active_workout.py) ;;
     *) fail "Unexpected Release 716 source path: $path" ;;
   esac
