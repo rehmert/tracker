@@ -307,7 +307,7 @@ run_isolated_browser_module() {
         if [[ -f "$stage_file" && ! -L "$stage_file" ]]; then
             local stage
             while IFS= read -r stage; do
-                if [[ "$stage" =~ ^TARGETED_716_(HTTP|HTTPS)_(MACHINE_ONE|CATALOG|ROUTINE_CREATED|ROUTINE_READY|STARTED|LINKS|PANEL|SELECTED|POSTED|HEADING|PROGRESS|WIDTH|EXISTING|NEW|FINISHED)=PASSED$ ]]; then
+                if [[ "$stage" =~ ^TARGETED_716_(HTTP|HTTPS)_(MACHINE_ONE|CATALOG|ROUTINE_CREATED|ROUTINE_READY|STARTED|LINKS|PANEL|SELECTED|POSTED|HEADING|PROGRESS|WIDTH|EXISTING|NEW|FINISHED|SERVER_OK|SERVER_FAIL|PAGE_GYM|PAGE_OTHER|HEADING_SAME|HEADING_FIRST|HEADING_OTHER|HEADING_MISSING)=PASSED$ ]]; then
                     echo "$stage"
                 fi
             done < "$stage_file"
