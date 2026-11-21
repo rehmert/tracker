@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r726-2f9f15f11f80.json",
+  "receipt_path": "receipts/r726-install2f9f15f11f80.json",
   "release": 726,
-  "request_id": "r726-2f9f15f11f80",
+  "request_id": "r726-install2f9f15f11f80",
   "schema": 1,
   "status": "passed",
   "target": "2f9f15f11f807e4574143c49640ed62071e57df5"
