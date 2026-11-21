@@ -13,7 +13,7 @@ CSS = ROOT / "app/static/css"
 def test_682_overview_moves_workout_styles_to_head_before_681():
     dashboard = (ROOT / "app/templates/dashboard.html").read_text()
     base = (ROOT / "app/templates/base.html").read_text()
-    link = 'tracker-workout-dashboard661.css?v=719'
+    link = 'tracker-workout-dashboard661.css?v=721'
     assert dashboard.count(link) == 1
     head = dashboard.split("{% block page_assets %}", 1)[1].split(
         "{% endblock %}", 1
