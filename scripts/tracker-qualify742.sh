@@ -46,7 +46,19 @@ while IFS= read -r path; do
     tests/test_ui_foundation679.py|\
     tests/test_shortcut_buttons676.py|\
     tests/test_explanation_touch680.py|\
-    tests/test_workout_nav_density681.py ) ;;
+    tests/test_workout_nav_density681.py|\
+    app/routers/pages.py|\
+    app/routers/supplies.py|\
+    app/static/css/tracker-calendar-bundle742.css|\
+    app/static/css/tracker-supplies-bundle742.css|\
+    app/templates/calendar.html|\
+    app/templates/supplies.html|\
+    docs/release-742-consolidated-ux-performance.md|\
+    tests/test_release742_consolidated_ux_performance.py|\
+    tests/test_supply_stock_filters.py|\
+    tests/test_supply_stock_health.py|\
+    tests/test_supply_use_preview.py|\
+    tests/test_calendar_workbench.py ) ;;
     *) fail "Unexpected Release 742 source path: $path" ;;
   esac
 done < <(git diff --name-only "$BASE" "$TARGET")
