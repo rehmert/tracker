@@ -1,25 +1,25 @@
 {
   "action": "qualify",
   "base": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
-  "exit_code": 43,
-  "failed_tests": [
-    "tests/test_protocol_schedule_preview.py"
-  ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T23:02:01+00:00",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T23:03:36+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_741_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_741_INSTALLED_DEV=UNMODIFIED"
+    "RELEASE_741_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_741_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_741_EXIT_STATUS=0"
   ],
   "previous_request_id": null,
   "ref": "release/741-integrated-macd-mobile",
   "release": 741,
-  "request_id": "r741-03675c9cc80c",
+  "request_id": "r741-c5efed6b40f4",
   "schema": 1,
-  "started_at_utc": "2026-11-21T23:01:18+00:00",
-  "status": "failed",
-  "target": "03675c9cc80cde6d148cf5d8c12de63fe96caa63",
+  "started_at_utc": "2026-11-21T23:02:52+00:00",
+  "status": "passed",
+  "target": "c5efed6b40f4324187eff3e83dbed44d9e68f5c4",
   "test_counts": [
     "1 passed, 1 warning",
     "1 passed, 1 warning",
@@ -28,6 +28,6 @@
     "1 passed, 1 warning",
     "1 passed, 1 warning",
     "48 passed, 1 warning",
-    "41 passed, 1 warning"
+    "67 passed, 1 warning"
   ]
 }
