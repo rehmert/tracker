@@ -16,6 +16,25 @@
 .reg635-actions>form{margin:0}
 .reg635-actions>form button{min-height:44px}
 .reg635-actions>details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+.reg733-action-row{align-items:flex-start;min-width:0}
+.reg733-action-row>details{min-width:0;max-width:100%}
+.reg733-action-row>details[open]{width:100%;max-width:100%}
+.reg733-action-row>details[open]>.reg635-form{margin-top:.8rem;max-width:100%}
+.reg733-edit-trigger{
+  display:inline-flex;align-items:center;justify-content:center;gap:.45rem;
+  box-sizing:border-box;list-style:none;cursor:pointer;
+  min-height:44px;padding:.55rem .85rem;max-width:100%;
+  border:1px solid var(--rule,var(--border,#9caab7));
+  border-radius:.7rem;background:var(--surface,#fff);color:var(--ink,inherit);
+  font-weight:650;text-align:center;line-height:1.3;
+}
+.reg733-edit-trigger::-webkit-details-marker{display:none}
+.reg733-edit-trigger::after{content:"⌄";opacity:.75}
+details[open]>.reg733-edit-trigger::after{content:"⌃"}
+.reg733-edit-trigger:focus-visible{outline:3px solid var(--accent,#5479ac);outline-offset:2px}
+.reg733-action-row>form>button{box-sizing:border-box;min-height:44px}
+.reg733-add-trigger{display:inline-flex;align-items:center;min-height:44px;padding:.55rem .85rem;cursor:pointer}
+@media(max-width:760px){.reg733-action-row>details[open]{flex-basis:100%;width:100%}}
 .reg635-history{overflow:auto}
 .reg635-history table{width:100%}
 .reg635-entry{margin:1rem 0}
@@ -132,7 +151,7 @@
 
 <section class="card" id="reg635-catalog">
 <h2>Catalog</h2>
-<details><summary><strong>Add supplement or medication</strong></summary>
+<details><summary class="reg733-add-trigger"><strong>Add supplement or medication</strong></summary>
   <form method="post" action="/regimen/items" class="reg635-form" data-reg636-catalog>
     <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}">{{ kind|capitalize }}</option>{% endfor %}</select></label>
     <label class="field">Name <input name="name" maxlength="160" required></label>
@@ -211,8 +230,8 @@
       {% if facts.imported_at %} Imported {{ facts.imported_at }} UTC.{% endif %}</p>
     </details>
   {% endif %}
-  <div class="reg635-actions" data-reg732-item-actions>
-  <details><summary>Edit item</summary>
+  <div class="reg635-actions ux673-action-row reg733-action-row" data-reg732-item-actions data-reg733-item-actions>
+  <details class="reg733-edit-panel"><summary class="reg733-edit-trigger" data-reg733-edit> Edit {{ item.kind }}</summary>
     <form method="post" action="/regimen/items/{{ item.id }}/edit" class="reg635-form" data-reg636-catalog>
       <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}" {% if kind == item.kind %}selected{% endif %}>{{ kind|capitalize }}</option>{% endfor %}</select></label>
       <label class="field">Name <input name="name" value="{{ item.name }}" required maxlength="160"></label>
@@ -275,7 +294,7 @@
 <section class="card" id="reg635-schedules">
 <h2>Schedules &amp; protocols</h2>
 <p class="note">Regimen schedules are independent from injectable PK protocols. Monday=0 through Sunday=6 for weekly schedules. Every-N-days is anchored to the selected start date. As-needed entries are never shown as automatically due.</p>
-<details><summary><strong>Create a schedule</strong></summary>
+<details><summary class="reg733-add-trigger"><strong>Add schedule</strong></summary>
 {% if items %}
 <form method="post" action="/regimen/schedules" class="reg635-form">
 <label class="field">Item <select name="item_id" data-reg731-item>{% for item in items if item.active %}<option value="{{ item.id }}" data-reg731-kind="{{ item.kind }}" data-reg731-strength="{{ tablet_strengths.get(item.id, '') }}">{{ item.name }}</option>{% endfor %}</select></label>
@@ -323,7 +342,8 @@
 <h3>{{ schedule.item.name }}{% if not schedule.active %} (Stopped){% endif %}</h3>
 <p>{{ schedule.amount }} · {{ schedule.cadence }}{% if schedule.cadence == 'weekly' %} ({{ schedule.weekdays }}){% endif %}{% if schedule.cadence == 'interval' %} (every {{ schedule.interval_days }} days){% endif %}{% if schedule.at_time %} · {{ schedule.at_time }}{% endif %}</p>
 <p class="note">{{ schedule.start_on }}{% if schedule.end_on %} – {{ schedule.end_on }}{% endif %}{% if schedule.meal %} · {{ schedule.meal }}{% endif %}</p>
-<details><summary>Edit schedule</summary>
+<div class="reg635-actions ux673-action-row reg733-action-row" data-reg733-schedule-actions>
+<details class="reg733-edit-panel"><summary class="reg733-edit-trigger" data-reg733-edit>Edit schedule</summary>
 <form method="post" action="/regimen/schedules/{{ schedule.id }}/edit" class="reg635-form">
 <label class="field">Cadence <select name="cadence">{% for cadence in ['daily','weekly','interval','prn'] %}<option value="{{ cadence }}" {% if schedule.cadence == cadence %}selected{% endif %}>{{ cadence }}</option>{% endfor %}</select></label>
 <label class="field">Weekdays (0–6) <input name="weekdays" value="{{ schedule.weekdays }}"></label>
@@ -364,7 +384,8 @@
 <button>Save schedule</button>
 </form>
 </details>
-{% if schedule.active %}<form method="post" action="/regimen/schedules/{{ schedule.id }}/stop" onsubmit="return confirm('Stop future occurrences? History is retained.')"><button>Stop schedule</button></form>{% endif %}
+{% if schedule.active %}<form method="post" action="/regimen/schedules/{{ schedule.id }}/stop" onsubmit="return confirm('Stop future occurrences? History is retained.')"><button type="submit">Stop schedule</button></form>{% endif %}
+</div>
 </article>
 {% else %}<p>No schedules have been created.</p>{% endfor %}
 </div>
