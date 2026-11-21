@@ -122,7 +122,7 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             assert location.startswith(f"/workouts/quick?machine={chosen_id}")
             assert "err=" not in location
             page.wait_for_url(re.compile(
-                re.escape(base) + r"/workouts/quick\\?machine=" +
+                re.escape(base) + r"/workouts/quick\?machine=" +
                 re.escape(chosen_id) + r"(?:&.*)?$"
             ))
             page.wait_for_load_state("networkidle")
