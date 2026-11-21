@@ -1,0 +1,24 @@
+{
+  "action": "qualify",
+  "base": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
+  "exit_code": 249,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-21T23:46:43+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_743_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_743_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/743-security-deps-controller-ux",
+  "release": 743,
+  "request_id": "r743-a52a5d15304b",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T23:45:48+00:00",
+  "status": "failed",
+  "target": "a52a5d15304b287ae238835e24047735565c13f9",
+  "test_counts": [
+    "50 passed, 1 warning"
+  ]
+}
