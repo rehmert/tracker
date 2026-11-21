@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r743-9d8340b8ee33",
+  "request_id": "r743-a52a5d15304b",
   "action": "qualify",
   "release": 743,
-  "target": "9d8340b8ee33504e0cce794f1e7623e936f5cc05",
+  "target": "a52a5d15304b287ae238835e24047735565c13f9",
   "base": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
   "ref": "release/743-security-deps-controller-ux",
   "previous_request_id": null
