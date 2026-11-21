@@ -1,25 +1,26 @@
 {
   "action": "qualify",
   "base": "2421fde33dfae626022529f046c9b21035ad6d62",
-  "exit_code": 1,
-  "failed_tests": [
-    "tests/test_release735_prod_catchup.py"
-  ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T20:08:07+00:00",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T20:10:57+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_735_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_735_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
     "RELEASE_735_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_735_EXIT_STATUS=1"
+    "RELEASE_735_EXIT_STATUS=0"
   ],
   "previous_request_id": null,
   "ref": "release/735-prod-catchup-727-to-735",
   "release": 735,
-  "request_id": "r735-7ef6aa871695",
+  "request_id": "r735-51a4a70ed092",
   "schema": 1,
-  "started_at_utc": "2026-11-21T20:08:01+00:00",
-  "status": "failed",
-  "target": "7ef6aa87169537a7ad5ee041e5d32a67844600f2",
-  "test_counts": []
+  "started_at_utc": "2026-11-21T20:09:52+00:00",
+  "status": "passed",
+  "target": "51a4a70ed09287dd60a108dfea3721cd53090740",
+  "test_counts": [
+    "97 passed, 1 warning"
+  ]
 }
