@@ -149,7 +149,10 @@ def test_mobile_shortcuts_and_assets():
     assert 'href="#food-add"' in TEMPLATE
     assert 'href="#food-search"' in TEMPLATE
 
-    assert 'tracker-food424.css?v=424' in TEMPLATE
+    assert 'tracker-food-core738.css?v=738' in TEMPLATE
+    assert (ROOT / "app/static/css/tracker-food424.css").read_text().strip() in (
+        ROOT / "app/static/css/tracker-food-core738.css"
+    ).read_text()
     assert 'tracker-food424.js?v=424' in TEMPLATE
 
     script = (
