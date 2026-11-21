@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r723-764efd20f0fe.json",
+  "receipt_path": "receipts/r723-install764efd20.json",
   "release": 723,
-  "request_id": "r723-764efd20f0fe",
+  "request_id": "r723-install764efd20",
   "schema": 1,
   "status": "passed",
   "target": "764efd20f0fe6ac643d7940eb8178387a530f842"
