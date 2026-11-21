@@ -441,7 +441,9 @@
         </details>
       </form>
       <a class="ux675-inline-action" href="/workouts">All Workouts</a>
-      <a class="ux675-inline-action" href="/workouts/sessions/{{ active.id }}#workout719-delete-{{ active.id }}">Delete Accidental Workout</a>
+      {% with delete_workout=active %}
+        {% include "_workout_delete719.html" %}
+      {% endwith %}
     </section>
   {% endif %}
 </section>
