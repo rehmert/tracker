@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from math import isfinite
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,7 +20,8 @@ router = APIRouter()
 
 
 @router.get("/")
-def home(request: Request, db: Session = Depends(get_scoped_db390)):
+def home(request: Request, workout_page: int | None = Query(default=None, ge=1, le=100000),
+         db: Session = Depends(get_scoped_db390)):
     protocols = list(db.scalars(select(Protocol).order_by(Protocol.name)))
     inventory_by_compound = defaultdict(float)
     vials = list(db.scalars(select(Vial).order_by(Vial.id.desc())))
@@ -184,5 +185,8 @@ def home(request: Request, db: Session = Depends(get_scoped_db390)):
         today_summary=today_summary, dashboard_upcoming=dashboard_upcoming,
         recent_administrations=recent_administrations,
         now_date=today_date,
-        workout_summary=workout_dashboard661(db, today_date),
+        workout_summary=workout_dashboard661(
+            db, today_date, page=workout_page or 1,
+            expanded=workout_page is not None,
+        ),
     )
