@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Lab results{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 <link rel="stylesheet" href="/static/css/tracker-labs-overview.css?v=726">
 <script src="/static/js/tracker-labs-overview.js?v=20261108-497" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
@@ -45,7 +46,7 @@
   </div>
   <p id="labs-reports-empty" class="note" hidden>No reports match that search.</p>
   <div class="scroll"><table class="ux673-card-table" id="labs-reports-table">
-    <thead><tr><th scope="col">Drawn</th><th scope="col">Lab</th><th scope="col" class="n">Results</th><th scope="col">File</th></tr></thead>
+    <thead><tr><th scope="col">Drawn</th><th scope="col">Lab</th><th scope="col" class="n">Results</th><th scope="col">File</th><th scope="col">Manage</th></tr></thead>
     <tbody>
     {% for r in reports %}
     <tr data-labs-report-row data-lab-report-date="{{ r.drawn_on.isoformat() }}" data-lab-report-name="{{ r.lab_name }}" data-lab-report-results="{{ r.results|length }}">
@@ -53,8 +54,9 @@
       <td data-label="Lab">{{ r.lab_name or '—' }}</td>
       <td data-label="Results" class="n">{{ r.results|length }}</td>
       <td data-label="File">{{ 'yes' if r.stored_name else '—' }}</td>
+      <td data-label="Manage" data-ux673-action><div class="tracker-macd741-actions"><a class="tracker-macd741-action" href="/labs/{{ r.id }}#lab-details741">Edit report</a><a class="tracker-macd741-action" href="/labs/{{ r.id }}#lab-results741">Results</a><a class="tracker-macd741-action" href="/labs/{{ r.id }}#lab-delete741">Delete</a></div></td>
     </tr>
-    {% else %}<tr><td colspan="4" class="empty">No lab reports yet.</td></tr>{% endfor %}
+    {% else %}<tr><td colspan="5" class="empty">No lab reports yet.</td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>
