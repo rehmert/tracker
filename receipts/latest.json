@@ -1,28 +1,25 @@
 {
-  "action": "prod_deploy",
-  "base": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-21T22:23:54+00:00",
-  "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=78de7168566f15dcd450ee24d7f2e8fe0cdae756",
-    "PROMOTED_COMMIT=78de7168566f15dcd450ee24d7f2e8fe0cdae756",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=78de7168566f15dcd450ee24d7f2e8fe0cdae756",
-    "REMOTE_DEPLOY_EXIT_STATUS=0",
-    "PROD_INSTALLED_COMMIT=78de7168566f15dcd450ee24d7f2e8fe0cdae756",
-    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  "action": "qualify",
+  "base": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release741_integrated_macd_mobile.py"
   ],
-  "previous_request_id": "r740-preflight78de7168",
-  "ref": "release/740-equipment-macd-mobile",
-  "release": 740,
-  "request_id": "r740-deploy78de7168",
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-21T22:46:38+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_741_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_741_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_741_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/741-integrated-macd-mobile",
+  "release": 741,
+  "request_id": "r741-9acb01d7dbaf",
   "schema": 1,
-  "started_at_utc": "2026-11-21T22:23:28+00:00",
-  "status": "passed",
-  "target": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
+  "started_at_utc": "2026-11-21T22:46:32+00:00",
+  "status": "failed",
+  "target": "9acb01d7dbaf8c2c9e4bb622ae5f482c8b97b1cf",
   "test_counts": []
 }
