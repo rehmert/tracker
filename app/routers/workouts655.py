@@ -4,9 +4,10 @@ All requests inherit Tracker auth/CSRF policy and use get_scoped_db390.
 Only exact known equipment IDs in the authorized database are accepted.
 """
 from datetime import datetime
+import json
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -19,7 +20,13 @@ from ..workout_models655 import (
 )
 from .workouts654 import active654
 from ..workout_program667 import snapshots667
-from ..workout_models667 import WorkoutSetType667
+from ..workout_models667 import (
+    WorkoutSetType667, WorkoutRoutineConfig667, WorkoutRoutineTarget667,
+)
+from ..workout_models668 import (
+    WorkoutRoutineSchedule668, WorkoutRoutineGroup668, WorkoutRoutineGroupMember668,
+)
+from ..models import ChangeAudit
 
 router = APIRouter()
 MAX_ROUTINE_ITEMS655 = 30
@@ -51,7 +58,11 @@ def routines_index655(request: Request, db: Session = Depends(get_scoped_db390))
             WorkoutRoutine655.created_at.desc(), WorkoutRoutine655.id.desc()
         )
     ))
-    return render(request, "workout_routines655.html", routines=routines)
+    used = dict(db.execute(
+        select(WorkoutSessionRoutine655.routine_id, func.count())
+        .group_by(WorkoutSessionRoutine655.routine_id)
+    ).all())
+    return render(request, "workout_routines655.html", routines=routines, used=used)
 
 
 @router.post("/workouts/routines")
@@ -65,6 +76,107 @@ def create_routine655(
     db.add(routine)
     db.commit()
     return services.flash_redirect(_routine_url(routine.id), msg="Routine created. Add equipment in workout order.")
+
+
+def _routine_sessions739(db: Session, routine_id: int) -> int:
+    return db.scalar(select(func.count()).select_from(WorkoutSessionRoutine655).where(
+        WorkoutSessionRoutine655.routine_id == routine_id
+    )) or 0
+
+
+@router.post("/workouts/routines/{routine_id}/rename")
+def rename_routine739(
+    routine_id: int, name: str = Form(""), db: Session = Depends(get_scoped_db390),
+):
+    """Change the name without rebuilding program or workout associations."""
+    routine = _routine(db, routine_id)
+    name = name.strip()
+    if not 1 <= len(name) <= 120:
+        return services.flash_redirect(_routine_url(routine_id), err="Routine name must contain 1–120 characters.")
+    if routine.name != name:
+        db.add(ChangeAudit(
+            entity_type="workout_routine", entity_id=routine.id, action="edit",
+            before_json=json.dumps({"name": routine.name}),
+            after_json=json.dumps({"name": name}),
+        ))
+        routine.name = name
+        db.commit()
+    return services.flash_redirect(_routine_url(routine_id), msg="Routine renamed.")
+
+
+@router.post("/workouts/routines/{routine_id}/delete")
+def delete_routine739(
+    routine_id: int, confirm_delete: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Delete a draft routine only; never unlink actual completed/active workouts.
+
+    Retain historic session links and frozen workout snapshots by refusing
+    deletion whenever a session references this routine. Otherwise remove
+    scheduled plans, goals, grouping and equipment rows in FK-safe order.
+    """
+    routine = _routine(db, routine_id)
+    target = _routine_url(routine_id)
+    if confirm_delete != "delete":
+        return services.flash_redirect(target, err="Confirm routine deletion.")
+    if _routine_sessions739(db, routine_id):
+        return services.flash_redirect(target, err="Routine has workout history. Keep it to preserve past sessions.")
+
+    routine_items = select(WorkoutRoutineItem655.id).where(
+        WorkoutRoutineItem655.routine_id == routine_id
+    )
+    groups = select(WorkoutRoutineGroup668.id).where(
+        WorkoutRoutineGroup668.routine_id == routine_id
+    )
+    # Fail closed if corrupt legacy group-item associations cross routines.
+    mismatched_group = db.scalar(
+        select(WorkoutRoutineGroupMember668.id)
+        .join(WorkoutRoutineGroup668,
+              WorkoutRoutineGroupMember668.group_id == WorkoutRoutineGroup668.id)
+        .join(WorkoutRoutineItem655,
+              WorkoutRoutineGroupMember668.routine_item_id == WorkoutRoutineItem655.id)
+        .where(or_(
+            (WorkoutRoutineGroup668.routine_id == routine_id)
+            & (WorkoutRoutineItem655.routine_id != routine_id),
+            (WorkoutRoutineGroup668.routine_id != routine_id)
+            & (WorkoutRoutineItem655.routine_id == routine_id),
+        )).limit(1)
+    )
+    if mismatched_group is not None:
+        return services.flash_redirect(target, err="Routine has conflicting group links; deletion blocked.")
+    item_count = db.scalar(select(func.count()).select_from(WorkoutRoutineItem655).where(
+        WorkoutRoutineItem655.routine_id == routine_id
+    )) or 0
+    try:
+        db.execute(delete(WorkoutRoutineGroupMember668).where(
+            WorkoutRoutineGroupMember668.group_id.in_(groups)
+        ))
+        db.execute(delete(WorkoutRoutineGroup668).where(
+            WorkoutRoutineGroup668.routine_id == routine_id
+        ))
+        db.execute(delete(WorkoutRoutineTarget667).where(
+            WorkoutRoutineTarget667.routine_item_id.in_(routine_items)
+        ))
+        db.execute(delete(WorkoutRoutineItem655).where(
+            WorkoutRoutineItem655.routine_id == routine_id
+        ))
+        db.execute(delete(WorkoutRoutineSchedule668).where(
+            WorkoutRoutineSchedule668.routine_id == routine_id
+        ))
+        db.execute(delete(WorkoutRoutineConfig667).where(
+            WorkoutRoutineConfig667.routine_id == routine_id
+        ))
+        db.add(ChangeAudit(
+            entity_type="workout_routine", entity_id=routine_id, action="delete",
+            before_json=json.dumps({"name": routine.name, "exercises_deleted": item_count}),
+            after_json="{}",
+        ))
+        db.delete(routine)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return services.flash_redirect(target, err="Routine has other linked records; deletion blocked.")
+    return services.flash_redirect("/workouts/routines", msg="Unused routine permanently deleted; audit retained.")
 
 
 @router.post("/workouts/routines/{routine_id}/items/{item_id}/substitute")
@@ -223,6 +335,7 @@ def routine_detail655(
         routine=routine, items=items, names=names,
         available=[item for item in equipment if item.id not in selected],
         active=active, can_resume=can_resume, maximum=MAX_ROUTINE_ITEMS655,
+        linked_sessions=_routine_sessions739(db, routine_id),
     )
 
 
