@@ -75,21 +75,21 @@ def test_645_additive_migration_retains_historical_percent(tmp_path):
         engine.dispose()
 
 
-def test_645_less_than_one_default_and_exact_requires_real_number():
+def test_645_untested_default_and_exact_requires_real_number():
     with TestClient(app) as client:
         with SessionLocal() as db:
             coa = Coa(lab_name="Less than one", stored_name="metadata-lt1-645")
             db.add(coa)
             db.commit()
             cid = coa.id
-        # A typical metadata-only edit without endotoxin fields defaults to <1.
+        # Metadata-only COA edits must never fabricate a <1 laboratory result.
         response = client.post(f"/coas/{cid}/edit", data={
             "lab_name": "Less than one"
         }, follow_redirects=False)
         assert response.status_code == 303
         with SessionLocal() as db:
             row = db.get(Coa, cid)
-            assert row.endotoxin_result_kind == "lt1"
+            assert row.endotoxin_result_kind == "untested"
             assert row.endotoxin_eu_per_vial is None
         for bad in ("", "nan", "inf", "-0.1", "abc"):
             response = client.post(f"/coas/{cid}/edit", data={
@@ -101,7 +101,7 @@ def test_645_less_than_one_default_and_exact_requires_real_number():
             assert "err=" in response.headers["location"]
             with SessionLocal() as db:
                 row = db.get(Coa, cid)
-                assert row.endotoxin_result_kind == "lt1"
+                assert row.endotoxin_result_kind == "untested"
                 assert row.endotoxin_eu_per_vial is None
         for invalid in ({"endotoxin_result_kind": "invalid"},
                         {"endotoxin_result_kind": "lt1", "endotoxin_eu_per_vial": "0.4"}):
@@ -111,7 +111,7 @@ def test_645_less_than_one_default_and_exact_requires_real_number():
             assert "err=" in response.headers["location"]
             with SessionLocal() as db:
                 row = db.get(Coa, cid)
-                assert row.endotoxin_result_kind == "lt1"
+                assert row.endotoxin_result_kind == "untested"
                 assert row.endotoxin_eu_per_vial is None
         # A reported number is accepted only with the exact-number option.
         response = client.post(f"/coas/{cid}/edit", data={
