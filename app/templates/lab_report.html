@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Lab report {{ rep.drawn_on|dt }}{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 <h1>Lab report <small class="sub">{{ rep.drawn_on|dt }}{% if rep.lab_name %} · {{ rep.lab_name }}{% endif %}</small></h1>
+<nav class="tracker-macd741-actions" aria-label="Lab report management"><a class="tracker-macd741-action" href="#lab-details741">Edit report</a><a class="tracker-macd741-action" href="#lab-results741">Manage analytes</a><a class="tracker-macd741-action" href="#lab-delete741">Delete report</a></nav>
 <p class="row">
   <a class="btn" href="/labs/new?copy_from={{ rep.id }}">
     Start new report using these analytes
@@ -23,7 +25,7 @@
 
 
 <section>
-  <details class="lab-edit-panel">
+  <details class="lab-edit-panel" id="lab-details741">
     <summary><strong>Edit Report Details</strong></summary>
     <form method="post" action="/labs/{{ rep.id }}/edit"
           class="grid lab-edit-form">
@@ -55,7 +57,7 @@
   </details>
 </section>
 
-<section>
+<section id="lab-results741">
   <h2>Add analyte</h2>
   <form method="post" action="/labs/{{ rep.id }}/results" class="grid">
     <label class="field"><span>Analyte</span><input name="analyte" list="analyte-names" maxlength="120" required></label>
@@ -155,7 +157,7 @@
   {% else %}<tr><td colspan="7" class="empty">No results in this report.</td></tr>{% endfor %}
   </tbody>
 </table></div>
-<section><form method="post" action="/labs/{{ rep.id }}/delete" onsubmit="return confirm('Delete this report, its results and its file?')"><button class="link danger">Delete report</button></form></section>
+<section id="lab-delete741"><form method="post" action="/labs/{{ rep.id }}/delete" onsubmit="return confirm('Delete this report, its results and its file?')"><button class="link danger">Delete report</button></form></section>
 
 <style>
 .lab-edit-panel {
