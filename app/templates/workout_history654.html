@@ -13,10 +13,10 @@
     {% if workout.completed_at %}
       <a href="/workouts/sessions/{{ workout.id }}/correct">Edit Completed Workout</a>
     {% endif %}
+    {% with delete_workout=workout %}
+      {% include "_workout_delete719.html" %}
+    {% endwith %}
   </nav>
-  {% with delete_workout=workout %}
-    {% include "_workout_delete719.html" %}
-  {% endwith %}
   <p>Started {{ workout.started_at|dt }}</p>
   <p>{{ 'Completed ' ~ (workout.completed_at|dt) if workout.completed_at else 'In progress' }}</p>
   <section>
