@@ -11,7 +11,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..inventory_lock import reserve_inventory_write
-from ..models import ChangeAudit, RegimenItem, RegimenSchedule, RegimenEntry, RegimenProductFacts639
+from ..models import (
+    ChangeAudit, RegimenItem, RegimenSchedule, RegimenEntry,
+    RegimenProductFacts639, RegimenTabletSchedule731, RegimenTabletEntry731,
+)
+from .. import regimen_tablets731 as tablets731
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from .. import services
@@ -154,7 +158,68 @@ def _store_facts(db, item_id, values):
                before=before, after=after)
 
 
-def _schedule_values(form):
+def _tablet_mode(form):
+    mode = str(form.get("tablet_mode", "manual")).strip()
+    if mode not in ("manual", "tablet"):
+        raise ValueError("Choose manual amount or tablet tracking.")
+    return mode
+
+
+def _schedule_tablet(form, item):
+    if _tablet_mode(form) != "tablet":
+        return None
+    if item.kind != "medication":
+        raise ValueError("Tablet tracking is available for medications only.")
+    return tablets731.schedule_values(
+        form.get("tablet_strength_mg"),
+        form.get("prescribed_dose_mg"),
+        form.get("tablets_planned"),
+    )
+
+
+def _store_tablet_plan(db, schedule_id, values):
+    existing = db.get(RegimenTabletSchedule731, schedule_id)
+    before = {key: str(getattr(existing, key)) for key in (
+        "tablet_strength_mg", "prescribed_dose_mg", "tablets_planned",
+    )} if existing else None
+    if values is None:
+        if existing:
+            db.delete(existing)
+            _audit(db, "regimen_tablet_schedule", schedule_id, "delete", before=before)
+        return
+    if existing is None:
+        existing = RegimenTabletSchedule731(schedule_id=schedule_id)
+        db.add(existing)
+    for name, value in values.items():
+        setattr(existing, name, value)
+    after = {key: str(value) for key, value in values.items()}
+    if before != after:
+        _audit(db, "regimen_tablet_schedule", schedule_id,
+               "create" if before is None else "edit", before=before, after=after)
+
+
+def _store_tablet_entry(db, entry_id, values):
+    existing = db.get(RegimenTabletEntry731, entry_id)
+    fields = ("tablet_strength_mg", "prescribed_dose_mg",
+              "tablets_taken", "administered_dose_mg")
+    before = {key: str(getattr(existing, key)) for key in fields} if existing else None
+    if values is None:
+        if existing:
+            db.delete(existing)
+            _audit(db, "regimen_tablet_entry", entry_id, "delete", before=before)
+        return
+    if existing is None:
+        existing = RegimenTabletEntry731(entry_id=entry_id)
+        db.add(existing)
+    for name, value in values.items():
+        setattr(existing, name, value)
+    after = {key: str(value) for key, value in values.items()}
+    if before != after:
+        _audit(db, "regimen_tablet_entry", entry_id,
+               "create" if before is None else "edit", before=before, after=after)
+
+
+def _schedule_values(form, *, tablet_plan=None):
     cadence = _choice(form, "cadence", CADENCES)
     start = _day(form.get("start_on"), date.today())
     end = _day(form.get("end_on")) if form.get("end_on") else None
@@ -177,7 +242,8 @@ def _schedule_values(form):
         cadence=cadence, weekdays=weekdays, interval_days=interval_days,
         start_on=start, end_on=end,
         at_time=_time(form.get("at_time")),
-        amount=_text(form, "amount", 80, True),
+        amount=(tablets731.amount(tablet_plan["tablets_planned"], tablet_plan["prescribed_dose_mg"])
+                if tablet_plan is not None else _text(form, "amount", 80, True)),
         meal=_choice(form, "meal", MEALS),
     )
 
@@ -239,6 +305,15 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
         for item_id, facts in product_facts_display.items()
     }
     schedules = list(db.scalars(select(RegimenSchedule).order_by(RegimenSchedule.id.desc())))
+    tablet_plans = {
+        p.schedule_id: p for p in db.scalars(select(RegimenTabletSchedule731))
+    }
+    tablet_entries = {
+        p.entry_id: p for p in db.scalars(select(RegimenTabletEntry731))
+    }
+    tablet_strengths = {
+        item.id: tablets731.catalog_tablet_strength(item.strength) for item in items
+    }
     start = datetime.combine(selected, datetime.min.time())
     end = start + timedelta(days=1)
     entries = list(db.scalars(select(RegimenEntry).where(
@@ -257,6 +332,8 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
         day=selected, prev_day=selected - timedelta(days=1),
         next_day=selected + timedelta(days=1), today=date.today(),
         kinds=KINDS, meals=MEALS,
+        tablet_plans=tablet_plans, tablet_entries=tablet_entries,
+        tablet_strengths=tablet_strengths, tablet_fmt=tablets731.format_number,
     )
 
 
@@ -322,18 +399,20 @@ async def create_schedule(request: Request, db: Session = Depends(get_scoped_db3
     form = await request.form()
     try:
         item_id = int(str(form.get("item_id", "")))
-        values = _schedule_values(form)
+        item = _get(db, "item", item_id)
+        tablet_plan = _schedule_tablet(form, item)
+        values = _schedule_values(form, tablet_plan=tablet_plan)
     except (ValueError, TypeError) as exc:
         return _redirect(err=str(exc))
     if not reserve_inventory_write(db):
         return _redirect(err="Database is busy.")
-    item = _get(db, "item", item_id)
     if not item.active:
         db.rollback()
         return _redirect(err="Cannot schedule an archived item.")
     schedule = RegimenSchedule(item_id=item_id, **values)
     db.add(schedule)
     db.flush()
+    _store_tablet_plan(db, schedule.id, tablet_plan)
     _audit(db, "regimen_schedule", schedule.id, "create", after=dict(
         item_id=item_id, cadence=values["cadence"], amount=values["amount"]
     ))
@@ -345,17 +424,19 @@ async def create_schedule(request: Request, db: Session = Depends(get_scoped_db3
 async def edit_schedule(schedule_id: int, request: Request, db: Session = Depends(get_scoped_db390)):
     form = await request.form()
     try:
-        values = _schedule_values(form)
+        schedule = _get(db, "schedule", schedule_id)
+        tablet_plan = _schedule_tablet(form, schedule.item)
+        values = _schedule_values(form, tablet_plan=tablet_plan)
     except ValueError as exc:
         return _redirect(err=str(exc))
     if not reserve_inventory_write(db):
         return _redirect(err="Database is busy.")
-    schedule = _get(db, "schedule", schedule_id)
     before = {key: getattr(schedule, key) for key in values}
     before["active"] = schedule.active
     for key, value in values.items():
         setattr(schedule, key, value)
     schedule.active = str(form.get("active", "")) == "yes"
+    _store_tablet_plan(db, schedule.id, tablet_plan)
     after = {key: getattr(schedule, key) for key in values}
     after["active"] = schedule.active
     def encode(vals):
