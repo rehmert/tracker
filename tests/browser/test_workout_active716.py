@@ -109,6 +109,8 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             checkpoint716(scheme, "PANEL")
             choose = panel.locator('form[action="/workouts/quick/machines"]')
             choose.locator('select[name="equipment_id"]').select_option(label=second + " · QA716 Gym")
+            chosen_id = choose.locator('select[name="equipment_id"]').input_value()
+            assert chosen_id.isdecimal()
             checkpoint716(scheme, "SELECTED")
             with page.expect_response(
                 lambda r: r.request.method == "POST"
@@ -116,9 +118,16 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             ) as pending:
                 choose.get_by_role("button", name="Add & Open").click()
             assert pending.value.status == 303
+            location = pending.value.headers.get("location", "")
+            assert location.startswith(f"/workouts/quick?machine={chosen_id}")
+            assert "err=" not in location
+            page.wait_for_url(re.compile(
+                re.escape(base) + r"/workouts/quick\\?machine=" +
+                re.escape(chosen_id) + r"(?:&.*)?$"
+            ))
             page.wait_for_load_state("networkidle")
             checkpoint716(scheme, "POSTED")
-            assert page.locator(".workout659-machine-heading h2").inner_text() == second
+            expect(page.locator(".workout659-machine-heading h2")).to_have_text(second)
             checkpoint716(scheme, "HEADING")
             expect(page.locator(".workout659-progress")).to_contain_text("0 of 2 exercises logged")
             checkpoint716(scheme, "PROGRESS")
