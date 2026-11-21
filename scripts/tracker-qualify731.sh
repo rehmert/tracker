@@ -39,6 +39,9 @@ while IFS= read -r path; do
     app/templates/regimen635.html|\
     docs/release-731-tablet-dose-tracking.md|\
     scripts/tracker-install731.sh|\
+    scripts/tracker-release.sh|\
+    scripts/tracker_schema_review731.py|\
+    tests/test_release731_schema_review.py|\
     scripts/tracker-qualify731.sh|\
     scripts/tracker-release-scoped731.sh|\
     tests/browser/test_release731_tablet_tracking.py|\
@@ -80,12 +83,16 @@ mkdir -m 700 "$RUN/data"
 cd "$QA"
 export TRACKER_DATA_DIR="$RUN/data" PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1
 bash -n scripts/tracker-qualify731.sh
+bash -n scripts/tracker-release-scoped731.sh
 bash -n scripts/tracker-install731.sh
 bash -n scripts/tracker-release.sh
 bash -n scripts/tracker-browser-qualify.sh
 bash -n scripts/tracker-release-scoped731.sh
 "$PY" -B scripts/tracker-impact-preflight604.py \
   --base "$BASE" --target "$TARGET" --root "$QA"
+"$PY" -B scripts/tracker_schema_review731.py \
+  --root "$QA" --base "$BASE" --target "$TARGET"
+echo "RELEASE_731_STANDALONE_SCHEMA_REVIEW=PASSED"
 echo "RELEASE_731_IMPACT_PREFLIGHT=PASSED"
 bash scripts/tracker-release-scoped731.sh "$PY"
 echo "RELEASE_731_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY"
