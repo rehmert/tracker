@@ -78,7 +78,7 @@ def review(root: Path, base: str, target: str) -> None:
     # immutable first installation commit, not the later application changes.
     reviewer = root / "scripts/tracker_schema_review731.py"
     if (not reviewer.is_file() or reviewer.is_symlink() or
-            reviewer.read_text() != git(
+            reviewer.read_text().strip() != git(
                 root, "show", f"{SCHEMA_INTRO}:scripts/tracker_schema_review731.py"
             )):
         raise ValueError("Original Release 731 schema reviewer was modified")
