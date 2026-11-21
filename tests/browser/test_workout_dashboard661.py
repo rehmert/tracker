@@ -80,12 +80,30 @@ def test_661_phone_card_and_dashboard_personalization(width, height):
                 "href", "/workouts/analytics"
             )
             recent_panel = card.locator(".tracker-workout-recent661")
+            summary = recent_panel.locator("summary")
+            expect(summary).to_have_text("Recent Workouts")
             assert not recent_panel.evaluate("(node) => node.open")
             expect(card.get_by_role("link", name="2026-11-16 09:00 EST")).to_be_hidden()
-            recent_panel.locator("summary").click()
+            # Visible chevron next to the heading must point the other way
+            # after the native disclosure is opened. No JS required.
+            assert "▾" in summary.evaluate(
+                "(node) => getComputedStyle(node, '::after').content"
+            )
+            collapsed_angle = summary.evaluate(
+                "(node) => getComputedStyle(node, '::after').transform"
+            )
+            summary.click()
+            assert recent_panel.evaluate("(node) => node.open")
+            expanded_angle = summary.evaluate(
+                "(node) => getComputedStyle(node, '::after').transform"
+            )
+            assert collapsed_angle != expanded_angle
             expect(card.get_by_role("link", name="2026-11-16 09:00 EST")).to_have_attribute(
                 "href", "/workouts/sessions/75"
             )
+            summary.click()
+            assert not recent_panel.evaluate("(node) => node.open")
+            expect(card.get_by_role("link", name="2026-11-16 09:00 EST")).to_be_hidden()
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (
                 f"Dashboard workout panel horizontally overflows {width}px"
             )
