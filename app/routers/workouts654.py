@@ -5,6 +5,8 @@ and signed CSRF-token handling. Retired QR mappings remain stored unchanged.
 """
 from collections import Counter
 from datetime import datetime
+from hashlib import sha256
+import json
 import math
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -19,9 +21,38 @@ from ..workout_models654 import KINDS654, WorkoutEquipment654, WorkoutSession654
 from ..workout_models655 import (
     WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655,
 )
-from ..workout_models667 import WorkoutSetType667
+from ..workout_models667 import WorkoutSetType667, WorkoutSessionTarget667
+from ..workout_models668 import WorkoutEquipmentLoad668
+from ..models import ChangeAudit
 
 router = APIRouter()
+
+
+def _equipment_version740(machine: WorkoutEquipment654) -> str:
+    """Optimistic concurrency for identifying fields, excluding setup notes."""
+    payload = [
+        machine.id, machine.name, machine.gym, machine.kind,
+        machine.manufacturer or "", machine.model or "",
+    ]
+    return sha256(json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def _equipment_links740(db: Session) -> dict[int, dict[str, int]]:
+    """Compute logged/routine/target references in three grouped queries."""
+    links: dict[int, dict[str, int]] = {}
+    for key, model in (
+        ("sets", WorkoutSet654),
+        ("routines", WorkoutRoutineItem655),
+        ("targets", WorkoutSessionTarget667),
+    ):
+        counts = db.execute(
+            select(model.equipment_id, func.count())
+            .group_by(model.equipment_id)
+        )
+        for equipment_id, count in counts:
+            links.setdefault(equipment_id, {"sets": 0, "routines": 0, "targets": 0})[key] = count
+    return links
+
 
 
 def active654(db: Session):
@@ -127,6 +158,8 @@ def workouts654(request: Request, db: Session = Depends(get_scoped_db390)):
         next_machine=next_machine, counts_this_session=counts_this_session,
         routine_logged_count=len(logged_ids.intersection(routine_equipment_ids)),
         routine_total=len(routine_equipment_ids),
+        equipment_versions740={item.id: _equipment_version740(item) for item in equipment},
+        equipment_links740=_equipment_links740(db),
     )
 
 
@@ -158,6 +191,93 @@ def create_equipment654(
         db.rollback()
         return services.flash_redirect("/workouts", err="Equipment could not be saved.")
     return services.flash_redirect("/workouts", msg="Equipment saved.")
+
+
+@router.post("/workouts/equipment/{equipment_id}/edit")
+def edit_equipment740(
+    equipment_id: int, version: str = Form(""),
+    name: str = Form(""), gym: str = Form(""),
+    manufacturer: str = Form(""), model: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Edit identifying fields while preserving historical sets, type and QR."""
+    machine = db.get(WorkoutEquipment654, equipment_id)
+    if machine is None:
+        raise HTTPException(404, "Equipment not found")
+    target = f"/workouts?machine={equipment_id}"
+    name, gym = name.strip(), gym.strip()
+    manufacturer, model = manufacturer.strip(), model.strip()
+    if not (1 <= len(name) <= 140 and 1 <= len(gym) <= 140):
+        return services.flash_redirect(target, err="Machine name and gym must be 1–140 characters.")
+    if len(manufacturer) > 100 or len(model) > 140:
+        return services.flash_redirect(target, err="Manufacturer or model exceeds allowed length.")
+    if version != _equipment_version740(machine):
+        return services.flash_redirect(target, err="Equipment changed. Reload before saving.")
+    before = {
+        "name": machine.name, "gym": machine.gym,
+        "manufacturer": machine.manufacturer or "", "model": machine.model or "",
+    }
+    after = {"name": name, "gym": gym, "manufacturer": manufacturer, "model": model}
+    if before == after:
+        return services.flash_redirect(target, msg="Equipment unchanged.")
+    machine.name, machine.gym = name, gym
+    machine.manufacturer, machine.model = manufacturer, model
+    db.add(ChangeAudit(
+        entity_type="workout_equipment", entity_id=equipment_id,
+        action="edit", before_json=json.dumps(before, ensure_ascii=False),
+        after_json=json.dumps(after, ensure_ascii=False),
+    ))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return services.flash_redirect(target, err="Equipment could not be updated.")
+    return services.flash_redirect(target, msg="Equipment updated; workout history retained.")
+
+
+@router.post("/workouts/equipment/{equipment_id}/delete")
+def delete_equipment740(
+    equipment_id: int, version: str = Form(""),
+    confirm_delete: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Delete only equipment with zero sets, routine links or session targets."""
+    machine = db.get(WorkoutEquipment654, equipment_id)
+    if machine is None:
+        raise HTTPException(404, "Equipment not found")
+    target = f"/workouts?machine={equipment_id}"
+    if confirm_delete != "delete":
+        return services.flash_redirect(target, err="Confirm equipment deletion.")
+    if version != _equipment_version740(machine):
+        return services.flash_redirect(target, err="Equipment changed. Reload before deleting.")
+    refs = _equipment_links740(db).get(equipment_id, {})
+    if any(refs.values()):
+        return services.flash_redirect(
+            target, err="Equipment is used by sets, routines or workout targets; deletion blocked."
+        )
+    before = {
+        "name": machine.name, "gym": machine.gym, "kind": machine.kind,
+        "manufacturer": machine.manufacturer or "", "model": machine.model or "",
+        "had_qr_mapping": bool(machine.qr_value),
+        "seat_setting": machine.seat_setting or "",
+        "setup_notes": machine.setup_notes or "",
+    }
+    # Load interpretation is dependent equipment metadata, never a recorded set.
+    load_info = db.get(WorkoutEquipmentLoad668, equipment_id)
+    if load_info is not None:
+        db.delete(load_info)
+    db.add(ChangeAudit(
+        entity_type="workout_equipment", entity_id=equipment_id,
+        action="delete", before_json=json.dumps(before, ensure_ascii=False),
+        after_json="{}",
+    ))
+    db.delete(machine)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return services.flash_redirect(target, err="Equipment has linked records; deletion blocked.")
+    return services.flash_redirect("/workouts", msg="Unused equipment deleted; audit preserved.")
 
 
 @router.post("/workouts/equipment/{equipment_id}/settings")
