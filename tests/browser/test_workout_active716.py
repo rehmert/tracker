@@ -39,6 +39,8 @@ def checkpoint716(scheme: str, step: str) -> None:
         "MACHINE_ONE", "CATALOG", "ROUTINE_CREATED", "ROUTINE_READY",
         "STARTED", "LINKS", "PANEL", "SELECTED", "POSTED",
         "HEADING", "PROGRESS", "WIDTH", "EXISTING", "NEW", "FINISHED",
+        "SERVER_OK", "SERVER_FAIL", "PAGE_GYM", "PAGE_OTHER",
+        "HEADING_SAME", "HEADING_FIRST", "HEADING_OTHER", "HEADING_MISSING",
     }
     assert scheme in ("http", "https") and step in allowed
     with (DATA / "workout716-stages.txt").open("a", encoding="ascii") as stream:
@@ -127,7 +129,20 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             ))
             page.wait_for_load_state("networkidle")
             checkpoint716(scheme, "POSTED")
-            expect(page.locator(".workout659-machine-heading h2")).to_have_text(second)
+            # Distinguish server render failure from a stale browser view
+            # without recording user names, HTML, URLs or raw response content.
+            server_get = page.request.get(base + location)
+            checkpoint716(scheme, "SERVER_OK" if server_get.status == 200 else "SERVER_FAIL")
+            title = page.locator("h1").first.inner_text() if page.locator("h1").count() else ""
+            checkpoint716(scheme, "PAGE_GYM" if title.strip() == "Rapid Gym Mode" else "PAGE_OTHER")
+            heading = page.locator(".workout659-machine-heading h2")
+            if heading.count() == 0:
+                checkpoint716(scheme, "HEADING_MISSING")
+            else:
+                value = heading.inner_text().strip()
+                checkpoint716(scheme, "HEADING_SAME" if value == second else
+                              "HEADING_FIRST" if value == first else "HEADING_OTHER")
+            expect(heading).to_have_text(second)
             checkpoint716(scheme, "HEADING")
             expect(page.locator(".workout659-progress")).to_contain_text("0 of 2 exercises logged")
             checkpoint716(scheme, "PROGRESS")
