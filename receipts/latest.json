@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-21T22:15:48+00:00",
+  "finished_at_utc": "2026-11-21T22:18:14+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_740_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_740_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_740_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_740_EXIT_STATUS=0"
+    "EXIT_STATUS=0",
+    "RELEASE_740_DEV_INSTALL=SUCCESS"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r740-78de7168566f",
   "ref": "release/740-equipment-macd-mobile",
   "release": 740,
-  "request_id": "r740-78de7168566f",
+  "request_id": "r740-install78de7168",
   "schema": 1,
-  "started_at_utc": "2026-11-21T22:14:42+00:00",
+  "started_at_utc": "2026-11-21T22:16:42+00:00",
   "status": "passed",
   "target": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
   "test_counts": [
