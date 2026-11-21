@@ -6,7 +6,7 @@
     "tests/test_release741_integrated_macd_mobile.py"
   ],
   "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-21T22:49:16+00:00",
+  "finished_at_utc": "2026-11-21T22:51:06+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_741_IMPACT_PREFLIGHT=PASSED",
@@ -16,10 +16,10 @@
   "previous_request_id": null,
   "ref": "release/741-integrated-macd-mobile",
   "release": 741,
-  "request_id": "r741-6e7e3ce74fab",
+  "request_id": "r741-99b23c9e7966",
   "schema": 1,
-  "started_at_utc": "2026-11-21T22:49:12+00:00",
+  "started_at_utc": "2026-11-21T22:51:01+00:00",
   "status": "failed",
-  "target": "6e7e3ce74fab2e0217c70f90accce9c50b82597f",
+  "target": "99b23c9e79662c25b83c22440f7fa352a4473558",
   "test_counts": []
 }
