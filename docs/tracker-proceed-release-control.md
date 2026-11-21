@@ -53,6 +53,15 @@ A crash produces an unknown receipt and requires inspection. A receipt
 publishing failure is retried independently without re-running that stage.
 Failed/blocked/pending receipts never automatically advance the pipeline.
 
+If an attempt is explicitly `blocked` with category `StageChainBlocked`, the
+controller verifies that it was rejected *before* executing any release
+command. An operator may submit a **new unique request ID** for the same
+action/release/target/base/ref and the same immutable previous successful
+receipt. The controller then verifies that previous receipt independently
+and accepts only the matching chain-blocked intervening receipt. It
+continues to reject intervening failed, unknown or mismatched stages;
+no live production action is repeated or bypassed.
+
 ## One-time installation
 
 The pinned installer from ops/tracker-release-control sets up a root-owned
