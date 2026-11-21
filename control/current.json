@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r721-pf4983aa242665",
-  "action": "prod_preflight",
-  "release": 721,
-  "target": "4983aa242665937f7b851292246b90310b6d50d2",
-  "base": "ab70236618df66b8a959c765abf38dbcd59b29d7",
-  "ref": "release/721-dashboard-recent-chevron",
-  "previous_request_id": "r721-4d8c0afe3b21"
+  "request_id": "r722-40088e446b66",
+  "action": "qualify",
+  "release": 722,
+  "target": "40088e446b66285aaa07caf40566e4de80864a98",
+  "base": "4983aa242665937f7b851292246b90310b6d50d2",
+  "ref": "release/722-gym-first-set",
+  "previous_request_id": null
 }
