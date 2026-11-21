@@ -250,6 +250,29 @@
             {% endif %}
           </nav>
         {% endif %}
+      {% endif %}
+    </section>
+
+    <section class="workout659-panel workout659-rest-panel" aria-label="Rest timer">
+      <div class="workout659-rest-header">
+        <h2>Rest Timer</h2>
+        <label>Duration
+          <select id="workout659-rest-duration">
+            {% for seconds in (30,45,60,75,90,120,150,180,240,300,360,420,480,600) %}
+              <option value="{{ seconds }}" {% if seconds == 90 %}selected{% endif %}>{{ seconds }} sec</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <output id="workout659-rest-display" role="timer" aria-live="off">01:30</output>
+      <p id="workout659-rest-status" class="workout659-muted" role="status">Start manually or save a set to start resting.</p>
+      <div class="workout659-rest-buttons">
+        <button type="button" id="workout659-rest-start">Start / Restart</button>
+        <button type="button" id="workout659-rest-reset">Reset</button>
+      </div>
+    </section>
+
+    {% if machine %}
         <details class="workout659-panel">
           <summary>Load Setup</summary>
           <p class="workout659-muted">Choose stack, plates, dumbbells, or added bodyweight. These settings explain load only; recorded values never change.</p>
@@ -298,8 +321,7 @@
           <p id="workout668-draft-status" role="status" aria-live="polite"></p>
           </div>
         </details>
-      {% endif %}
-    </section>
+    {% endif %}
 
     {% include "_workout_quick_tools722.html" %}
 
@@ -326,24 +348,7 @@
       </section>
     {% endif %}
 
-    <section class="workout659-panel workout659-rest-panel" aria-label="Rest timer">
-      <div class="workout659-rest-header">
-        <h2>Rest Timer</h2>
-        <label>Duration
-          <select id="workout659-rest-duration">
-            {% for seconds in (30,45,60,75,90,120,150,180,240,300,360,420,480,600) %}
-              <option value="{{ seconds }}" {% if seconds == 90 %}selected{% endif %}>{{ seconds }} sec</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
-      <output id="workout659-rest-display" role="timer" aria-live="off">01:30</output>
-      <p id="workout659-rest-status" class="workout659-muted" role="status">Start manually or save a set to start resting.</p>
-      <div class="workout659-rest-buttons">
-        <button type="button" id="workout659-rest-start">Start / Restart</button>
-        <button type="button" id="workout659-rest-reset">Reset</button>
-      </div>
-    </section>
+
 
     {% if machine %}
       <section class="workout659-panel workout659-logged">

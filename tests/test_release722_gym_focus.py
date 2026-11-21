@@ -19,10 +19,10 @@ def test_722_first_set_and_repeat_before_secondary_tools():
         'id="workout659-log-form"',
         'workout659-repeat-button',
         'workout662-nav',
+        'Rest Timer',
         '<summary>Load Setup</summary>',
         'Offline &amp; Draft Tools',
         'Planned Training Groups',
-        'Rest Timer',
     )
     positions = [html.index(marker) for marker in markers]
     assert positions == sorted(positions)

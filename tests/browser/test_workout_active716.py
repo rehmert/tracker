@@ -111,6 +111,27 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             # The duplicate bottom navigation must never reappear.
             expect(page.locator("nav.workout662-nav")).to_have_count(0)
             expect(page.locator("nav.workout659-move")).to_have_count(0)
+            # Release 725: rest controls are directly below set entry, ahead of
+            # setup and edit panels; only one timer is present.
+            rest = page.locator(".workout659-rest-panel")
+            expect(rest).to_have_count(1)
+            assert page.locator("#workout659-rest-display").count() == 1
+            assert page.locator("#workout659-rest-duration").count() == 1
+            assert page.locator("#workout659-rest-start").count() == 1
+            assert rest.evaluate(
+                "(el) => Boolean(document.querySelector('#workout659-log-form')"
+                ".compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)"
+            )
+            assert rest.evaluate(
+                "(el) => Boolean(el.compareDocumentPosition("
+                "document.querySelector('form[action$=\"/load\"]'))"
+                " & Node.DOCUMENT_POSITION_FOLLOWING)"
+            )
+            assert rest.evaluate(
+                "(el) => Boolean(el.compareDocumentPosition("
+                "document.querySelector('#workout716-add-machine'))"
+                " & Node.DOCUMENT_POSITION_FOLLOWING)"
+            )
             # Release 722: verify primary set logging is ahead of optional tools.
             log_form = page.locator("#workout659-log-form")
             expect(log_form).to_be_visible()

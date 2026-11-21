@@ -25,7 +25,7 @@ def test_724_no_duplicate_routine_machine_navigation_or_modified_write_paths():
     assert html.count('/workouts/quick?machine={{ next_machine.id }}') == 1
     assert html.index('id="workout659-save"') < html.index(
         'class="workout662-nav"') < html.index(
-        '<summary>Load Setup</summary>') < html.index('Rest Timer')
+        'Rest Timer') < html.index('<summary>Load Setup</summary>')
     for path in ('/workouts/quick/sets', '/workouts/quick/repeat',
                  '/workouts/quick/finish'):
         assert html.count(f'action="{path}"') == 1
