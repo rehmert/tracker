@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r727-install3718936aedfc",
-  "action": "dev_install",
-  "release": 727,
-  "target": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
-  "base": "2f9f15f11f807e4574143c49640ed62071e57df5",
-  "ref": "release/727-labs-report-cards",
-  "previous_request_id": "r727-3718936aedfc"
+  "request_id": "r729-d2597c5bfab3",
+  "action": "qualify",
+  "release": 729,
+  "target": "d2597c5bfab3c76e1701a42af00ab5ce41553818",
+  "base": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
+  "ref": "release/729-manual-labs-mobile",
+  "previous_request_id": null
 }
