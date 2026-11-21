@@ -469,6 +469,9 @@ async def delete_medication(item_id: int, request: Request,
             "source_id": facts.source_id,
         })
         db.delete(facts)
+        # Facts has a foreign key to the item but no ORM relationship.
+        # Flush its removal before deleting the parent medication.
+        db.flush()
     _audit(db, "regimen_item", item.id, "delete", before={
         "kind": item.kind,
         "name": item.name,
