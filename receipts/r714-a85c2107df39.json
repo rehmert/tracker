@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T00:03:24+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r714-3d8a5c4170be",
+  "ref": "release/714-workout-routine-row-alignment",
+  "release": 714,
+  "request_id": "r714-a85c2107df39",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T00:03:22+00:00",
+  "status": "passed",
+  "target": "247f413d46f9f1b635144c7f141a57027fd26449",
+  "test_counts": []
+}
