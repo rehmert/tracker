@@ -68,7 +68,7 @@
         </div>
         {% else %}
         <label class="field">Actual amount <input name="amount" value="{{ schedule.amount }}" maxlength="80"></label>
-        {% endif %>
+        {% endif %}
         <label class="field">Meal (optional) <select name="meal">{% for meal in meals %}<option value="{{ meal }}" {% if meal == schedule.meal %}selected{% endif %}>{{ meal|capitalize if meal else 'None' }}</option>{% endfor %}</select></label>
         <label class="field">Notes <input name="notes" maxlength="2000"></label>
         <button class="primary">Record</button>
