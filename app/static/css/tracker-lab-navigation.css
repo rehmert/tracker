@@ -43,3 +43,37 @@
     display: none !important;
   }
 }
+
+
+/* Release 729: reuse existing mobile card rows for the original manual
+   analyte fields; rows dynamically appended by HTMX use the same partial. */
+@media screen and (max-width: 760px) {
+  #main-content table.tracker-lab-result-cards729 td input {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    margin: 0;
+    font-size: 16px;
+  }
+  #main-content table.tracker-lab-result-cards729 td[data-ux673-action] {
+    align-items: flex-end;
+  }
+  #main-content table.tracker-lab-result-cards729 td[data-ux673-action] button {
+    min-height: 44px;
+    min-width: 88px;
+  }
+  #main-content .tracker-lab-entry-jumps a,
+  #main-content .tracker-lab-review-navigation button {
+    box-sizing: border-box;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #main-content .tracker-lab-source-picker-form > button {
+    min-height: 44px;
+  }
+}
