@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -515,6 +515,12 @@ run_isolated_browser_module \
     1 "$ROOT/strict-coa-lifecycle627.log"
 echo "STRICT_CSRF_627_COA_LIFECYCLE=PASSED"
 
+# Release 715: real new/edit/vial COA Untested default with signed HTTP+HTTPS.
+run_isolated_browser_module \
+    tests/browser/test_coa_untested715.py \
+    1 "$ROOT/strict-coa-untested715.log"
+echo "STRICT_715_COA_UNTESTED=PASSED"
+
 echo "=== STRICT CSRF REMAINING PROTOCOL SIGNED LIFECYCLES ==="
 run_isolated_browser_module \
     tests/browser/test_csrf_protocol_remaining627.py \
@@ -632,6 +638,16 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == u100-withdraw712 ]]; then
       1 "$ROOT/targeted-u100-withdraw712.log"
   echo "TARGETED_712_U100_WITHDRAW=PASSED"
   echo "TARGETED_712_SCOPE=VIAL_AND_BLEND_U100_NOT_FULL_RELEASE"
+  exit 0
+fi
+
+# Release 715: one scoped strict HTTP/HTTPS COA result-status UI witness.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == coa-untested715 ]]; then
+  run_isolated_browser_module \
+      tests/browser/test_coa_untested715.py \
+      1 "$ROOT/targeted-coa-untested715.log"
+  echo "TARGETED_715_COA_UNTESTED=PASSED"
+  echo "TARGETED_715_SCOPE=COA_CREATE_EDIT_VIAL_NOT_FULL_RELEASE"
   exit 0
 fi
 
