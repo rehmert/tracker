@@ -427,7 +427,10 @@ def test_741_confirmation_scripts_do_not_embed_untrusted_record_names():
         html = (ROOT / "app/templates" / path).read_text()
         for line in html.splitlines():
             if "return confirm(" in line:
-                assert "{{" not in line and "}}" not in line, (path, line)
+                # Form action URLs legitimately contain Jinja record IDs.
+                # Check only the JavaScript confirmation argument.
+                expression = line.split("return confirm(", 1)[1].split(");", 1)[0]
+                assert "{{" not in expression and "}}" not in expression, (path, expression)
 
 
 def test_741_notes_delete_audit_preserves_no_body_text(env):
