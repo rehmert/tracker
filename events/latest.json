@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r742-8b44bc133d7a.json",
+  "receipt_path": "receipts/r742-install8b44bc13.json",
   "release": 742,
-  "request_id": "r742-8b44bc133d7a",
+  "request_id": "r742-install8b44bc13",
   "schema": 1,
   "status": "passed",
   "target": "8b44bc133d7a0b1582ee11b2acf87809616fab10"
