@@ -265,7 +265,7 @@ def correction_page668(
             "id": equipment_id,
             "name": names[equipment_id],
             "count": count,
-            "set_ids": ",".join(str(row.id) for row in recorded
+            "set_ids": ",".join(str(row.id) for row in sorted(recorded, key=lambda r: r.id)
                               if row.equipment_id == equipment_id),
         }
         for equipment_id, count in machine_counts.items()
