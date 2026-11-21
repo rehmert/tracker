@@ -362,6 +362,11 @@ PY
    QA_CADENCE_REASON="operator-approved focused DEV qualification for Release 630"
   fi
  fi
+ if [[ "$INSTANCE" == PROD && "$REVIEWED_CATCHUP_735" == 1 ]]; then
+   echo "=== RELEASE 735 PROD 727 CATCHUP INTEGRATION QUALIFICATION ==="
+   timeout 600 bash "$QA/scripts/tracker-release-scoped735.sh" "$PY"
+   echo "RELEASE_735_PROD_SCOPED=PASSED"
+ fi
  if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
     g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped721.sh |
       grep -qx 'scripts/tracker-release-scoped721.sh'; then
