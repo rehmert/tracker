@@ -103,6 +103,13 @@ elif [[ "$RELEASE" == 691 ]]; then
   # Each COA document gets two additive identifier columns. Enforce reviewed
   # exact-source schema checks and verified SQLite + uploads backup on PROD.
   DEPLOY_EXTRA=(--reviewed-coa-691 --db-migration)
+elif [[ "$RELEASE" == 735 ]]; then
+  # One-time 727 -> 735 catch-up includes the reviewed 731 additive schema.
+  # The signed worker independently repeats exact-schema proof and performs
+  # a verified database + attachment backup before installation.
+  [[ "$BASE" == 3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2 ]] ||
+    fail "Release 735 catch-up requires exact PROD 727 base"
+  DEPLOY_EXTRA=(--reviewed-catchup-735 --db-migration)
 elif [[ "$RELEASE" == 710 ]]; then
   # One prepared physical blend in the standard dose form; four additive
   # fields and a supply index require exact-source review and verified backup.
