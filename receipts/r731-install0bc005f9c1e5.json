@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "13ed014d24ba5658a69ccb15b6d8e1a247c7575c",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T18:47:18+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_731_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r731-0bc005f9c1e5",
+  "ref": "release/731-tablet-dose-tracking",
+  "release": 731,
+  "request_id": "r731-install0bc005f9c1e5",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T18:46:22+00:00",
+  "status": "passed",
+  "target": "0bc005f9c1e5b1353a67755aeeb2940140a7c74f",
+  "test_counts": [
+    "87 passed, 4 warnings"
+  ]
+}
