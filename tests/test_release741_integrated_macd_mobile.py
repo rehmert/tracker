@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 from app.db import Base, get_db
 from app.models import (
     ChangeAudit, Compound, InventoryAdjustment, Page, Purchase,
-    Supply, SupplyCategory, SupplyUsage,
+    Supply, SupplyCategory, SupplyProduct, SupplyUsage,
 )
 from app.routers import supplies, pages
 
@@ -342,6 +342,40 @@ def test_741_builtin_category_and_custom_category_with_stock_protected(env):
     assert "err=" in reject_delete.headers["location"]
     with Session() as db:
         assert db.get(SupplyCategory, cid).unit == "count"
+
+
+
+def test_741_custom_category_used_by_reusable_purchase_template_is_protected(env):
+    client, Session = env
+    with Session() as db:
+        c = SupplyCategory(key="template_pack", label="Template Packs", unit="packs")
+        db.add(c)
+        db.flush()
+        cid = c.id
+        db.add(SupplyProduct(
+            name="Future reusable pack", kind="template_pack",
+            package_type="box", units_per_pack=12,
+        ))
+        db.commit()
+    v = category_version(client, cid)
+    change = post(client, f"/supplies/categories/{cid}/edit", dict(
+        version=v, label="New Name", unit="count",
+    ))
+    assert "err=" in change.headers["location"]
+    deletion = post(client, f"/supplies/categories/{cid}/delete", dict(
+        version=v, confirm_delete="delete",
+    ))
+    assert "err=" in deletion.headers["location"]
+    with Session() as db:
+        assert db.get(SupplyCategory, cid).unit == "packs"
+
+
+def test_741_confirmation_scripts_do_not_embed_untrusted_record_names():
+    for path in ("supplies.html", "pages.html", "protocols.html"):
+        html = (ROOT / "app/templates" / path).read_text()
+        for line in html.splitlines():
+            if "return confirm(" in line:
+                assert "{{" not in line and "}}" not in line, (path, line)
 
 
 def test_741_notes_delete_audit_preserves_no_body_text(env):
