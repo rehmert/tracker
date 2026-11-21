@@ -7,21 +7,22 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlsplit
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import services
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
-from ..workout_models654 import WorkoutEquipment654, WorkoutSet654
+from ..workout_models654 import KINDS654, WorkoutEquipment654, WorkoutSet654
 from ..workout_models655 import WorkoutRoutine655, WorkoutRoutineItem655, WorkoutSessionRoutine655
 from ..workout_models667 import WorkoutRoutineConfig667, WorkoutRoutineTarget667, WorkoutSessionTarget667, WorkoutSetType667
 from ..workout_program667 import progress667
 from ..workout_progression674 import progression_for674
 from ..workout_models668 import WorkoutRoutineGroup668, WorkoutRoutineGroupMember668, WorkoutEquipmentLoad668
 from .workouts654 import active654, add_set654, start654, finish654
-from .workouts655 import repeat_last_set655, start_routine655
+from .workouts655 import MAX_ROUTINE_ITEMS655, repeat_last_set655, start_routine655
 
 router = APIRouter()
 
@@ -184,6 +185,8 @@ def quick_workout659(
         request, "workout_quick659.html",
         active=active, machine=chosen, equipment=equipment, routines=routines,
         routine=routine, routine_total=len(routine_ids),
+        available_to_add716=[item for item in equipment if not routine or item.id not in ranks],
+        equipment_kinds716=KINDS654,
         grouped668=grouped668,
         load_config668=db.get(WorkoutEquipmentLoad668, chosen.id) if chosen else None,
         plan_item_id=plan_item_id,
@@ -242,3 +245,125 @@ def quick_repeat659(
 def quick_finish659(db: Session = Depends(get_scoped_db390)):
     response = finish654(db=db)
     return redirect_quick659(response)
+
+def _active_for_machine716(db: Session, session_id: int):
+    """A stale phone form must never modify the next workout's routine."""
+    active = active654(db)
+    if active is None or active.id != session_id:
+        return None
+    return active
+
+
+def _add_to_active_routine716(db: Session, session_id: int, equipment_id: int) -> bool:
+    """Append to the active saved routine; a free workout has no planned list.
+
+    The routine is deliberately modified for later sessions too. Existing
+    frozen session goals and recorded sets are never overwritten.
+    """
+    link = db.get(WorkoutSessionRoutine655, session_id)
+    if link is None:
+        return False
+    items = list(db.scalars(
+        select(WorkoutRoutineItem655)
+        .where(WorkoutRoutineItem655.routine_id == link.routine_id)
+        .order_by(WorkoutRoutineItem655.position, WorkoutRoutineItem655.id)
+    ))
+    if any(item.equipment_id == equipment_id for item in items):
+        raise ValueError("This machine is already in your saved routine.")
+    if len(items) >= MAX_ROUTINE_ITEMS655:
+        raise ValueError("The saved routine already has 30 exercises.")
+    db.add(WorkoutRoutineItem655(
+        routine_id=link.routine_id, equipment_id=equipment_id,
+        position=max((item.position for item in items), default=-1) + 1,
+    ))
+    return True
+
+
+@router.post("/workouts/quick/machines")
+def quick_add_existing_machine716(
+    session_id: int = Form(...), equipment_id: int = Form(...),
+    db: Session = Depends(get_scoped_db390),
+):
+    if _active_for_machine716(db, session_id) is None:
+        return services.flash_redirect(
+            "/workouts/quick", err="Workout changed. Reopen Add Machine."
+        )
+    if db.get(WorkoutEquipment654, equipment_id) is None:
+        raise HTTPException(404, "Equipment not found")
+    try:
+        saved = _add_to_active_routine716(db, session_id, equipment_id)
+        if saved:
+            db.commit()
+    except ValueError as exc:
+        db.rollback()
+        return services.flash_redirect("/workouts/quick", err=str(exc))
+    except IntegrityError:
+        db.rollback()
+        return services.flash_redirect(
+            "/workouts/quick", err="Unable to add this machine to the routine."
+        )
+    return services.flash_redirect(
+        f"/workouts/quick?machine={equipment_id}",
+        msg=("Machine added to this workout and saved routine." if saved else
+             "Machine selected. Log a set to include it in this free workout."),
+    )
+
+
+@router.post("/workouts/quick/machines/new")
+def quick_create_machine716(
+    session_id: int = Form(...), name: str = Form(""),
+    kind: str = Form("selectorized"),
+    gym: str = Form("Merritt Athletic Club - Eldersburg"),
+    manufacturer: str = Form(""), seat_setting: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    if _active_for_machine716(db, session_id) is None:
+        return services.flash_redirect(
+            "/workouts/quick", err="Workout changed. Reopen Add Machine."
+        )
+    name, gym = name.strip(), gym.strip()
+    manufacturer, seat_setting = manufacturer.strip(), seat_setting.strip()
+    if not name or len(name) > 140 or not gym or len(gym) > 140:
+        return services.flash_redirect(
+            "/workouts/quick", err="Enter a machine name and gym (up to 140 characters)."
+        )
+    if kind not in KINDS654 or len(manufacturer) > 100 or len(seat_setting) > 80:
+        return services.flash_redirect(
+            "/workouts/quick", err="Invalid equipment type or machine details."
+        )
+    # Prevent accidental doubles from a phone submission. A machine is
+    # cataloged once, then reused in every workout.
+    existing = list(db.scalars(select(WorkoutEquipment654)))
+    if any(m.name.casefold() == name.casefold() and
+           m.gym.casefold() == gym.casefold() for m in existing):
+        return services.flash_redirect(
+            "/workouts/quick", err="Machine already exists. Select it above."
+        )
+    link = db.get(WorkoutSessionRoutine655, session_id)
+    if link is not None:
+        count = db.scalar(select(func.count(WorkoutRoutineItem655.id)).where(
+            WorkoutRoutineItem655.routine_id == link.routine_id
+        ))
+        if count >= MAX_ROUTINE_ITEMS655:
+            return services.flash_redirect(
+                "/workouts/quick", err="The saved routine already has 30 exercises."
+            )
+    machine = WorkoutEquipment654(
+        name=name, kind=kind, gym=gym, manufacturer=manufacturer,
+        seat_setting=seat_setting,
+    )
+    db.add(machine)
+    try:
+        db.flush()
+        saved = _add_to_active_routine716(db, session_id, machine.id)
+        db.commit()
+    except (ValueError, IntegrityError):
+        db.rollback()
+        return services.flash_redirect(
+            "/workouts/quick", err="Could not add that machine. Try again."
+        )
+    return services.flash_redirect(
+        f"/workouts/quick?machine={machine.id}",
+        msg=("New machine created and added to your saved routine." if saved else
+             "New machine created. Log a set to include it in this workout."),
+    )
