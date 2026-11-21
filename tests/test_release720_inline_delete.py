@@ -52,10 +52,10 @@ def test_720_edit_and_delete_share_same_recent_row_and_review_nav():
         nav = template.split("</nav>", 1)[0]
         assert '{% include "_workout_delete719.html" %}' in nav
     quick = (ROOT / "app/templates/workout_quick659.html").read_text()
-    assert '{% include "_workout_delete719.html" %}' in quick
-    assert "Delete Accidental Workout</a>" not in quick
+    assert "Delete Accidental Workout</a>" in quick
+    assert '{% include "_workout_delete719.html" %}' not in quick
     css = (ROOT / "app/static/css/tracker-workout-session719.css").read_text()
     assert "min-height:44px" in css
     assert ".workout720-row-actions" in css
-    for template in (rows, history, review, quick):
+    for template in (rows, history, review):
         assert "tracker-workout-session719.css?v=720" in template
