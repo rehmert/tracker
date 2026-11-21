@@ -16,7 +16,7 @@ def test_721_recent_workouts_chevron_contract():
     assert "tracker-workout-dashboard661.css?v=721" in dashboard
     assert (
         ".tracker-workout-recent661 > summary::after" in css
-        and 'content:"▾"' in css
+        and r'content:"\25BE"' in css
     )
     assert ".tracker-workout-recent661[open] > summary::after" in css
     assert "transform:rotate(180deg)" in css
