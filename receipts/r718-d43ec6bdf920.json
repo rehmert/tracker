@@ -1,0 +1,29 @@
+{
+  "action": "dev_install",
+  "base": "0893bde49014616bc878b0b142ad5bfe1bbf8f16",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T01:31:33+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_718_SCOPED_BACKEND=PASSED",
+    "TARGETED_718_MACHINE_CORRECTION=PASSED",
+    "RELEASE_718_SCOPED_BROWSER=PASSED",
+    "EXIT_STATUS=0",
+    "RELEASE_718_DEV_INSTALL=SUCCESS"
+  ],
+  "previous_request_id": "r718-18a1bf7a6171",
+  "ref": "release/718-completed-machine-correction",
+  "release": 718,
+  "request_id": "r718-d43ec6bdf920",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T01:30:17+00:00",
+  "status": "passed",
+  "target": "18a1bf7a6171ef1eeef80e4588851cd500031cb4",
+  "test_counts": [
+    "33 passed, 1 warning",
+    "7 passed",
+    "2 passed"
+  ]
+}
