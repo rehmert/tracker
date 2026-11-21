@@ -346,6 +346,13 @@ PY
   fi
  fi
  if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
+    g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped715.sh |
+      grep -qx 'scripts/tracker-release-scoped715.sh'; then
+  echo "=== RELEASE 715 PROD SCOPED COA UNTESTED DEFAULT QUALIFICATION ==="
+  timeout 360 bash "$QA/scripts/tracker-release-scoped715.sh" "$PY"
+  echo "RELEASE_715_PROD_SCOPED=PASSED"
+ fi
+ if [[ "$INSTANCE" == PROD && "$REF" == main ]] &&
     g diff --name-only "$BASE" "$TARGET" -- scripts/tracker-release-scoped714.sh |
       grep -qx 'scripts/tracker-release-scoped714.sh'; then
   echo "=== RELEASE 714 PROD SCOPED ROUTINE CARD ALIGNMENT QUALIFICATION ==="
