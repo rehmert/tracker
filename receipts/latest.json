@@ -3,10 +3,10 @@
   "base": "18a1bf7a6171ef1eeef80e4588851cd500031cb4",
   "exit_code": 1,
   "failed_tests": [
-    "tests/test_workout_dashboard661.py"
+    "tests/test_overview_density690.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T01:44:20+00:00",
+  "finished_at_utc": "2026-11-21T01:45:31+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_719_IMPACT_PREFLIGHT=PASSED",
@@ -16,12 +16,12 @@
   "previous_request_id": null,
   "ref": "release/719-workout-delete-dashboard-pagination",
   "release": 719,
-  "request_id": "r719-d03d6fb19729",
+  "request_id": "r719-3ecddb515628",
   "schema": 1,
-  "started_at_utc": "2026-11-21T01:44:12+00:00",
+  "started_at_utc": "2026-11-21T01:45:12+00:00",
   "status": "failed",
-  "target": "d03d6fb19729bb8b0e237ce22587bf16bec52621",
+  "target": "3ecddb5156287b953c9f4345ddef6af7474dd6b3",
   "test_counts": [
-    "7 passed, 1 warning"
+    "21 passed, 1 warning"
   ]
 }
