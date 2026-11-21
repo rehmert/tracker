@@ -36,7 +36,6 @@ while IFS= read -r path; do
     app/templates/workouts654.html|\
     app/templates/workout_history654.html|\
     app/templates/workout_review663.html|\
-    app/templates/workout_quick659.html|\
     app/static/css/tracker-workout-session719.css|\
     docs/release-720-inline-workout-delete.md|\
     scripts/tracker-qualify720.sh|\
