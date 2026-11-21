@@ -207,7 +207,10 @@ def test_659_reuse_existing_protection_and_no_schema():
     assert 'active654(db)' in source
     assert 'session_id == active.id' in source
     assert 'from ..workout_models654' in source
-    assert 'db.commit()' not in source
+    # Release 716 intentionally adds catalog/routine writes to Gym Mode,
+    # while set recording must still delegate to the existing validated writer.
+    assert 'db.commit()' in source
+    assert 'WorkoutSet654(' not in source
     assert 'Base.metadata' not in source
     assert 'httpx' not in source
     assert 'app.include_router(workouts659.router)' in (
