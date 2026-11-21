@@ -234,3 +234,180 @@ def test_717_removal_preserves_prior_audited_corrections_in_snapshot(completed71
     page = client.get(f"/workouts/sessions/{sid}/correct")
     assert "Earlier corrections (1)" in page.text
     assert "Earlier correction" in page.text
+
+
+def test_718_one_set_reassign_changes_review_without_touching_lift_values(completed717):
+    client, ids = completed717
+    sid, row_id = ids["sid"], ids["rows"][0]
+    url = f"/workouts/sessions/{sid}/sets/{row_id}/machine"
+    page = client.get(f"/workouts/sessions/{sid}/correct")
+    assert page.status_code == 200
+    assert f'action="{url}"' in page.text
+    assert 'Save Correct Machine' in page.text
+    change = client.post(url, data=dict(
+        equipment_id=ids["second"], expected_equipment_id=ids["first"],
+        reason="Wrong machine selected",
+    ), follow_redirects=False)
+    assert change.status_code == 303 and "msg=" in change.headers["location"]
+    with SessionLocal() as db:
+        row = db.get(WorkoutSet654, row_id)
+        assert row is not None and row.equipment_id == ids["second"]
+        assert row.weight_lb == 100 and row.reps == 10
+        assert row.performed_at == datetime(2026, 11, 19, 10, 1)
+        assert db.get(WorkoutSession654, sid).completed_at == datetime(2026, 11, 19, 11)
+        changes = list(db.scalars(select(ChangeAudit).where(
+            ChangeAudit.entity_type == "workout_set",
+            ChangeAudit.entity_id == row_id,
+            ChangeAudit.action == "machine_reassign",
+        )))
+        assert len(changes) == 1
+        previous = json.loads(changes[0].before_json)
+        new = json.loads(changes[0].after_json)
+        assert previous["equipment_id"] == ids["first"]
+        assert new["equipment_id"] == ids["second"]
+        assert previous["reason"] == "Wrong machine selected"
+        # Machine corrections are not fabricated numerical corrections.
+        assert db.scalars(select(WorkoutSetCorrection668).where(
+            WorkoutSetCorrection668.set_id == row_id,
+        )).first() is None
+    review = client.get(f"/workouts/sessions/{sid}/review")
+    assert review.status_code == 200
+    assert "4" in review.text
+    editor = client.get(f"/workouts/sessions/{sid}/correct")
+    assert "machine corrected" in editor.text
+    assert "Wrong machine selected" in editor.text
+
+
+def test_718_move_every_set_on_wrong_machine_in_one_atomic_change(completed717):
+    client, ids = completed717
+    sid = ids["sid"]
+    expected = ",".join(str(v) for v in ids["rows"][:3])
+    editor = client.get(f"/workouts/sessions/{sid}/correct")
+    assert 'Move All 3 Sets' in editor.text
+    assert f'value="{expected}"' in editor.text
+    move = client.post(
+        f"/workouts/sessions/{sid}/machines/{ids['first']}/move-sets",
+        data=dict(
+            target_equipment_id=ids["second"],
+            expected_set_ids=expected,
+            confirm_move="yes",
+            reason="Recorded under wrong machine",
+        ), follow_redirects=False,
+    )
+    assert move.status_code == 303 and "msg=" in move.headers["location"]
+    with SessionLocal() as db:
+        rows = list(db.scalars(select(WorkoutSet654).where(
+            WorkoutSet654.session_id == sid,
+        ).order_by(WorkoutSet654.id)))
+        assert len(rows) == 4
+        assert all(row.equipment_id == ids["second"] for row in rows)
+        assert [row.reps for row in rows] == [10, 10, 10, 8]
+        assert [row.weight_lb for row in rows] == [100, 100, 100, 50]
+        audits = list(db.scalars(select(ChangeAudit).where(
+            ChangeAudit.entity_type == "workout_set",
+            ChangeAudit.action == "machine_reassign",
+            ChangeAudit.entity_id.in_(ids["rows"][:3]),
+        )))
+        assert len(audits) == 3
+        assert db.get(WorkoutSession654, sid).completed_at is not None
+    review = client.get(f"/workouts/sessions/{sid}/review")
+    assert review.status_code == 200
+    assert "Recorded volume" in review.text
+    assert "<strong>1</strong><span>Machines used</span>" in review.text
+    assert "<strong>4</strong><span>Sets recorded</span>" in review.text
+
+
+@pytest.mark.parametrize("fields", [
+    {"target_equipment_id": "99999999", "confirm_move": "yes",
+     "reason": "Wrong machine"},
+    {"target_equipment_id": "{same}", "confirm_move": "yes",
+     "reason": "Wrong machine"},
+    {"target_equipment_id": "{target}", "reason": "Wrong machine"},
+    {"target_equipment_id": "{target}", "confirm_move": "yes", "reason": "x"},
+    {"target_equipment_id": "{target}", "confirm_move": "yes",
+     "reason": "Wrong machine", "expected_set_ids": "1,2,3"},
+])
+def test_718_bulk_move_validation_fails_closed(completed717, fields):
+    client, ids = completed717
+    payload = dict(
+        expected_set_ids=",".join(str(v) for v in ids["rows"][:3]),
+        target_equipment_id=str(ids["second"]),
+        confirm_move="yes", reason="Wrong machine",
+    )
+    payload.update({
+        k: str(ids["first"]) if v == "{same}" else
+           str(ids["second"]) if v == "{target}" else v
+        for k, v in fields.items()
+    })
+    attempt = client.post(
+        f"/workouts/sessions/{ids['sid']}/machines/{ids['first']}/move-sets",
+        data=payload, follow_redirects=False,
+    )
+    assert attempt.status_code == 303 and "err=" in attempt.headers["location"]
+    with SessionLocal() as db:
+        assert all(db.get(WorkoutSet654, row_id).equipment_id == ids["first"]
+                   for row_id in ids["rows"][:3])
+        assert not list(db.scalars(select(ChangeAudit).where(
+            ChangeAudit.entity_type == "workout_set",
+            ChangeAudit.action == "machine_reassign",
+            ChangeAudit.entity_id.in_(ids["rows"][:3]),
+        )))
+
+
+def test_718_single_set_stale_and_invalid_ownership(completed717):
+    client, ids = completed717
+    row_id = ids["rows"][0]
+    endpoint = f"/workouts/sessions/{ids['sid']}/sets/{row_id}/machine"
+    for payload in (
+        dict(equipment_id=ids["first"], expected_equipment_id=ids["first"],
+             reason="Wrong machine"),
+        dict(equipment_id=99999999, expected_equipment_id=ids["first"],
+             reason="Wrong machine"),
+        dict(equipment_id=ids["second"], expected_equipment_id=ids["second"],
+             reason="Wrong machine"),
+        dict(equipment_id=ids["second"], expected_equipment_id=ids["first"],
+             reason="x"),
+    ):
+        res = client.post(endpoint, data=payload, follow_redirects=False)
+        assert res.status_code == 303 and "err=" in res.headers["location"]
+    assert client.post(
+        f"/workouts/sessions/{ids['sid'] + 1000}/sets/{row_id}/machine",
+        data=dict(equipment_id=ids["second"], expected_equipment_id=ids["first"],
+                  reason="Wrong machine"),
+        follow_redirects=False,
+    ).status_code == 404
+    with SessionLocal() as db:
+        assert db.get(WorkoutSet654, row_id).equipment_id == ids["first"]
+
+
+def test_718_machine_correction_rejected_during_active_session(completed717):
+    client, ids = completed717
+    with SessionLocal() as db:
+        session = db.get(WorkoutSession654, ids["sid"])
+        finished_at = session.completed_at
+        session.completed_at = None
+        db.commit()
+    try:
+        single = client.post(
+            f"/workouts/sessions/{ids['sid']}/sets/{ids['rows'][0]}/machine",
+            data=dict(equipment_id=ids["second"],
+                      expected_equipment_id=ids["first"],
+                      reason="Wrong machine"),
+            follow_redirects=False,
+        )
+        bulk = client.post(
+            f"/workouts/sessions/{ids['sid']}/machines/{ids['first']}/move-sets",
+            data=dict(target_equipment_id=ids["second"],
+                      expected_set_ids=",".join(str(v) for v in ids["rows"][:3]),
+                      confirm_move="yes", reason="Wrong machine"),
+            follow_redirects=False,
+        )
+        assert single.status_code == bulk.status_code == 303
+        assert "err=" in single.headers["location"]
+        assert "err=" in bulk.headers["location"]
+        with SessionLocal() as db:
+            assert db.get(WorkoutSet654, ids["rows"][0]).equipment_id == ids["first"]
+    finally:
+        with SessionLocal() as db:
+            db.get(WorkoutSession654, ids["sid"]).completed_at = finished_at
+            db.commit()
