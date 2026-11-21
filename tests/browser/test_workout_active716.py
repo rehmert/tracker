@@ -41,7 +41,7 @@ def checkpoint716(scheme: str, step: str) -> None:
         "HEADING", "PROGRESS", "WIDTH", "EXISTING", "NEW", "FINISHED",
         "SERVER_OK", "SERVER_FAIL", "PAGE_GYM", "PAGE_OTHER",
         "HEADING_SAME", "HEADING_FIRST", "HEADING_OTHER", "HEADING_MISSING",
-        "ID_MATCH", "ID_OTHER", "HEADING_ROW", "HEADING_PRESS",
+        "ID_MATCH", "ID_OTHER", "HEADING_ROW", "HEADING_NOT_ROW",
         "HEADING_QA", "HEADING_NOT_QA", "LABEL_SECOND", "LABEL_OTHER",
     }
     assert scheme in ("http", "https") and step in allowed
@@ -152,7 +152,7 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
                 value = heading.inner_text().strip()
                 checkpoint716(scheme, "HEADING_SAME" if value == second else
                               "HEADING_FIRST" if value == first else "HEADING_OTHER")
-                checkpoint716(scheme, "HEADING_ROW" if value.endswith("-Row") else "HEADING_PRESS")
+                checkpoint716(scheme, "HEADING_ROW" if value.endswith("-Row") else "HEADING_NOT_ROW")
                 checkpoint716(scheme, "HEADING_QA" if value.startswith("QA716-") else "HEADING_NOT_QA")
             expect(heading).to_have_text(second)
             checkpoint716(scheme, "HEADING")
