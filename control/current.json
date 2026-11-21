@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r739-preflighta0bd6f",
-  "action": "prod_preflight",
+  "request_id": "r739-deploya0bd6f6f",
+  "action": "prod_deploy",
   "release": 739,
   "target": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f",
   "base": "de867eee93004534fa822e7250deda75d0976558",
   "ref": "release/739-workout-food-macd-mobile",
-  "previous_request_id": "r739-installa0bd6f6f1d"
+  "previous_request_id": "r739-preflighta0bd6f"
 }
