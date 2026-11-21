@@ -123,9 +123,9 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             assert not errors, errors
             # Clear the active session so HTTP and HTTPS witnesses are isolated.
-            page.locator('form[action="/workouts/quick/finish"]').get_by_role(
-                "button", name="Finish Workout", exact=True
-            ).click()
+            finish_form = page.locator('form[action="/workouts/quick/finish"]')
+            finish_form.locator("summary").click()
+            finish_form.get_by_role("button", name="Finish Workout", exact=True).click()
             page.wait_for_load_state("networkidle")
         finally:
             context.close()
