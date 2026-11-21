@@ -87,7 +87,7 @@ def test_latest_result_range_statuses_and_report_links(lab_overview_client):
         'id="labs-reports-table"',
         'id="labs-reports-sort"',
         'tracker-labs-overview.js?v=20261108-497',
-        'tracker-labs-overview.css?v=20261109-527',
+        'tracker-labs-overview.css?v=726',
         'data-lab-status="below"',
         'data-lab-status="above"',
         'data-lab-status="within"',

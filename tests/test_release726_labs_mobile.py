@@ -48,6 +48,8 @@ def test_726_filters_keep_read_only_ids_and_phone_touch_css():
                        "labs-trend-sort", "labs-trend-clear"):
         assert html.count('id="' + identifier + '"') == 1, identifier
     css = CSS.read_text(encoding="utf-8")
+    assert 'tracker-labs-overview.css?v=726' in html
+    assert 'tracker-labs-overview.css?v=20261109-527' not in html
     assert ".labs-reports-controls .field select" in css
     assert ".labs726-actions > .labs726-more" in css
     assert "min-height:48px" in css
