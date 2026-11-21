@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r741-ace2df61aa3a",
+  "request_id": "r741-849fe375b08c",
   "action": "qualify",
   "release": 741,
-  "target": "ace2df61aa3ac019c508ac31dc18433b06701426",
+  "target": "849fe375b08c35a8cfcdfd1fbd175d79d2ef180f",
   "base": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
   "ref": "release/741-integrated-macd-mobile",
   "previous_request_id": null
