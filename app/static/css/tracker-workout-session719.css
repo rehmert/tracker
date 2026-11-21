@@ -1,0 +1,33 @@
+/* Release 719: clear intentional controls for permanent workout deletion. */
+.workout719-delete {
+  margin:.6rem 0;
+  padding:.55rem .65rem;
+  border:1px solid var(--border,#8999a7);
+  border-radius:.7rem;
+  min-width:0;
+}
+.workout719-delete > summary {
+  cursor:pointer; font-weight:700; min-height:44px;
+  display:flex; align-items:center;
+}
+.workout719-delete form {
+  display:flex; flex-direction:column; gap:.7rem;
+  min-width:0; max-width:540px; padding:.35rem 0;
+}
+.workout719-delete form label {
+  display:flex; flex-direction:column; gap:.25rem; min-width:0;
+}
+.workout719-delete form input[type="text"] {
+  min-height:44px; width:100%; min-width:0;
+}
+.workout719-delete .workout719-delete-confirm {
+  flex-direction:row; gap:.6rem; align-items:center; min-height:44px;
+  font-weight:600;
+}
+.workout719-delete .workout719-delete-confirm input {
+  width:22px; height:22px; flex:none;
+}
+.workout719-delete button { min-height:48px; width:100%; }
+.workout717-history-row .workout719-delete {
+  flex-basis:100%;
+}
