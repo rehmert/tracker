@@ -306,6 +306,11 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
         for item_id, facts in product_facts_display.items()
     }
     schedules = list(db.scalars(select(RegimenSchedule).order_by(RegimenSchedule.id.desc())))
+    schedule_entry_counts = dict(db.execute(
+        select(RegimenEntry.schedule_id, func.count(RegimenEntry.id))
+        .where(RegimenEntry.schedule_id.is_not(None))
+        .group_by(RegimenEntry.schedule_id)
+    ).all())
     schedule_counts = Counter(schedule.item_id for schedule in schedules)
     entry_counts = dict(db.execute(
         select(RegimenEntry.item_id, func.count(RegimenEntry.id))
@@ -341,6 +346,7 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
         tablet_plans=tablet_plans, tablet_entries=tablet_entries,
         tablet_strengths=tablet_strengths, tablet_fmt=tablets731.format_number,
         schedule_counts=schedule_counts, entry_counts=entry_counts,
+        schedule_entry_counts=schedule_entry_counts,
     )
 
 
@@ -420,6 +426,28 @@ async def delete_medication(item_id: int, request: Request,
         db.rollback()
         return _redirect(err="This delete action is for medications only.")
 
+    return _delete_regimen_item(db, item)
+
+
+@router.post("/regimen/items/{item_id}/delete-supplement")
+async def delete_supplement(item_id: int, request: Request,
+                            db: Session = Depends(get_scoped_db390)):
+    """Confirm permanent supplement removal; preserve existing medication route guard."""
+    form = await request.form()
+    if str(form.get("confirm_delete", "")) != "delete":
+        return _redirect(err="Confirm supplement deletion.")
+    if not reserve_inventory_write(db):
+        return _redirect(err="Database is busy.")
+    item = _get(db, "item", item_id)
+    if item.kind != "supplement":
+        db.rollback()
+        return _redirect(err="This delete action is for supplements only.")
+    return _delete_regimen_item(db, item)
+
+
+def _delete_regimen_item(db: Session, item: RegimenItem):
+    """Atomic dependent-record deletion with per-record audit snapshots."""
+    item_id = item.id
     schedules = list(db.scalars(
         select(RegimenSchedule).where(RegimenSchedule.item_id == item_id)
         .order_by(RegimenSchedule.id)
@@ -440,7 +468,7 @@ async def delete_medication(item_id: int, request: Request,
     )
     if mismatched is not None:
         db.rollback()
-        return _redirect(err="Medication has conflicting schedule links; deletion blocked.")
+        return _redirect(err="Item has conflicting schedule links; deletion blocked.")
 
     for entry in entries:
         _audit(db, "regimen_entry", entry.id, "delete",
@@ -482,7 +510,7 @@ async def delete_medication(item_id: int, request: Request,
     })
     db.delete(item)
     db.commit()
-    return _redirect(msg="Medication and associated regimen records permanently deleted.")
+    return _redirect(msg=f"{item.kind.capitalize()} and associated regimen records permanently deleted.")
 
 
 @router.post("/regimen/schedules")
@@ -551,6 +579,31 @@ def stop_schedule(schedule_id: int, db: Session = Depends(get_scoped_db390)):
                {"active": True}, {"active": False})
     db.commit()
     return _redirect(msg="Schedule stopped; historical entries retained.")
+
+
+@router.post("/regimen/schedules/{schedule_id}/delete")
+async def delete_schedule(schedule_id: int, request: Request,
+                          db: Session = Depends(get_scoped_db390)):
+    """Delete accidental empty schedules; retain any schedule with actual intake."""
+    form = await request.form()
+    if str(form.get("confirm_delete", "")) != "delete":
+        return _redirect(err="Confirm schedule deletion.")
+    if not reserve_inventory_write(db):
+        return _redirect(err="Database is busy.")
+    schedule = _get(db, "schedule", schedule_id)
+    if db.scalar(select(RegimenEntry.id).where(
+        RegimenEntry.schedule_id == schedule.id
+    ).limit(1)) is not None:
+        db.rollback()
+        return _redirect(err="Schedule has recorded intake; stop it to preserve history.")
+    _audit(db, "regimen_schedule", schedule.id, "delete", before={
+        "item_id": schedule.item_id, "cadence": schedule.cadence,
+        "amount": schedule.amount, "active": schedule.active,
+    })
+    _store_tablet_plan(db, schedule.id, None)
+    db.delete(schedule)
+    db.commit()
+    return _redirect(msg="Schedule deleted; audit preserved.")
 
 
 def _entry_values(form, db, *, existing=None):
