@@ -53,22 +53,27 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
             errors = []
             page.on("pageerror", lambda e: errors.append(str(e)))
             page.goto(base + "/", wait_until="networkidle")
+            mark719(scheme, "HOME_LOADED")
             recent = page.locator("#tracker-workout-recent661")
             expect(recent).to_be_visible()
             assert not recent.evaluate("(el) => el.open")
             recent.locator("summary").click()
             assert recent.evaluate("(el) => el.open")
+            mark719(scheme, "HOME_EXPANDED")
 
             page.goto(base + "/workouts/quick", wait_until="networkidle")
             page.get_by_role("button", name="Start Free Workout").click()
             page.wait_for_load_state("networkidle")
             sid = page.locator("#workout659-root").get_attribute("data-session-id")
             assert sid and sid.isdecimal()
+            mark719(scheme, "STARTED")
             expect(page.get_by_role("link", name="Delete Accidental Workout")).to_be_visible()
+            mark719(scheme, "DELETE_LINK")
             page.get_by_role("link", name="Delete Accidental Workout").click()
             page.wait_for_load_state("networkidle")
             delete = page.locator(f"#workout719-delete-{sid}")
             expect(delete).to_be_visible()
+            mark719(scheme, "ACTIVE_FORM")
             delete.locator("summary").click()
             form = delete.locator("form")
             expect(form.locator('input[name="reason"]')).to_have_value("Started by mistake")
@@ -78,9 +83,11 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
                     urlsplit(r.url).path == f"/workouts/sessions/{sid}/delete") as posted:
                 form.get_by_role("button", name="Delete Entire Workout").click()
             assert posted.value.status == 303
+            mark719(scheme, "ACTIVE_POST")
             page.wait_for_load_state("networkidle")
             assert urlsplit(page.url).path == "/workouts"
             assert page.locator(f"#workout719-delete-{sid}").count() == 0
+            mark719(scheme, "ACTIVE_RETURN")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
             # A finished workout with a recorded set is also deletable.
@@ -93,11 +100,13 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
                     urlsplit(r.url).path == "/workouts/equipment") as posted_machine:
                 creation.get_by_role("button", name="Add Equipment").click()
             assert posted_machine.value.status == 303
+            mark719(scheme, "MACHINE")
             page.goto(base + "/workouts/quick", wait_until="networkidle")
             page.get_by_role("button", name="Start Free Workout").click()
             page.wait_for_load_state("networkidle")
             other = page.locator("#workout659-root").get_attribute("data-session-id")
             assert other and other.isdecimal()
+            mark719(scheme, "RESTARTED")
             machine_option = page.locator("#workout659-machine-select option").filter(
                 has_text=name
             )
@@ -113,19 +122,23 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
                     urlsplit(r.url).path == "/workouts/quick/sets") as logged:
                 sets.get_by_role("button", name="Save Set").click()
             assert logged.value.status == 303
+            mark719(scheme, "LOGGED")
             page.wait_for_load_state("networkidle")
             page.locator('form[action="/workouts/quick/finish"]').locator(
                 'button[formaction="/workouts/finish-review"]').click()
             page.wait_for_load_state("networkidle")
             assert urlsplit(page.url).path == f"/workouts/sessions/{other}/review"
+            mark719(scheme, "FINISHED")
             deletion = page.locator(f"#workout719-delete-{other}")
             deletion.locator("summary").click()
             deletion.locator('input[name="confirm_delete"]').check()
+            mark719(scheme, "FINISHED_FORM")
             with page.expect_response(lambda r:
                     r.request.method == "POST" and
                     urlsplit(r.url).path == f"/workouts/sessions/{other}/delete") as done:
                 deletion.get_by_role("button", name="Delete Entire Workout").click()
             assert done.value.status == 303
+            mark719(scheme, "FINISHED_POST")
             page.wait_for_load_state("networkidle")
             assert urlsplit(page.url).path == "/workouts"
             page.goto(base + "/", wait_until="networkidle")
@@ -137,6 +150,7 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
             ).count() == 0
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             assert not errors, errors
+            mark719(scheme, "END")
         finally:
             context.close()
             browser.close()
