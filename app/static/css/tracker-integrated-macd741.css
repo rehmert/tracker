@@ -1,0 +1,120 @@
+/* Release 741: unified MACD actions across Supplies, COAs, Vials,
+   Labs, Protocols, Calendar and Notes. Preserve the existing global cascade. */
+.tracker-macd741-actions {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.5rem;
+  min-width:0;
+  max-width:100%;
+  margin:.35rem 0;
+}
+.tracker-macd741-actions > form {
+  margin:0;
+  min-width:0;
+}
+.tracker-macd741-actions > .tracker-macd741-disclosure {
+  min-width:0;
+}
+.tracker-macd741-actions .tracker-macd741-action,
+a.tracker-macd741-action {
+  box-sizing:border-box;
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  min-height:44px;
+  min-width:44px;
+  max-width:100%;
+  padding:.5rem .75rem;
+  border:1px solid var(--border,#8998ac);
+  border-radius:.6rem;
+  background:var(--surface,transparent);
+  color:inherit;
+  font:inherit;
+  font-size:.94rem;
+  font-weight:600;
+  line-height:1.3;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  cursor:pointer;
+}
+.tracker-macd741-disclosure > summary.tracker-macd741-action {
+  display:list-item;
+  list-style-position:inside;
+  line-height:1.45;
+  cursor:pointer;
+}
+.tracker-macd741-disclosure[open] {
+  flex:1 1 100%;
+  padding:.5rem 0;
+}
+.tracker-macd741-edit {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));
+  gap:.65rem;
+  margin:.6rem 0 .4rem;
+  max-width:100%;
+}
+.tracker-macd741-edit label {
+  display:flex;
+  flex-direction:column;
+  gap:.25rem;
+  min-width:0;
+}
+.tracker-macd741-edit :is(input,select,textarea) {
+  box-sizing:border-box;
+  max-width:100%;
+  width:100%;
+  min-width:0;
+  min-height:44px;
+}
+.tracker-macd741-edit :is(.note,button) {
+  grid-column:1 / -1;
+}
+.tracker-macd741-actions .tracker-macd741-action:disabled {
+  opacity:.55;
+  cursor:not-allowed;
+}
+.tracker-macd741-actions :is(a,summary,button,input,textarea,select):focus-visible,
+.tracker-macd741-category :is(summary,button,input,select):focus-visible {
+  outline:3px solid var(--focus-color,#2765b2);
+  outline-offset:2px;
+}
+.tracker-macd741-guard {
+  font-size:.87rem;
+  color:var(--muted,inherit);
+  overflow-wrap:anywhere;
+  flex:1 1 100%;
+}
+.tracker-macd741-category {
+  display:flex;
+  flex-wrap:wrap;
+  gap:.6rem;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid var(--border,#8998ac);
+  padding:.7rem 0;
+  max-width:100%;
+}
+.tracker-macd741-page { min-width:0; }
+.ux673-card-table .tracker-macd741-actions {
+  justify-content:flex-start;
+}
+.ux673-card-table td[data-label="Manage"] {
+  min-width:0;
+}
+#tracker-stock-section .tracker-macd741-actions {
+  min-width:0;
+}
+@media (max-width:600px) {
+  .tracker-macd741-actions {align-items:stretch;gap:.4rem}
+  .tracker-macd741-actions > form,
+  .tracker-macd741-actions > .tracker-macd741-disclosure:not([open]) {
+    flex:1 1 auto;
+  }
+  .tracker-macd741-actions .tracker-macd741-action,
+  a.tracker-macd741-action {min-height:48px;}
+  .tracker-macd741-actions > form > button {width:100%}
+  .tracker-macd741-edit {grid-template-columns:minmax(0,1fr)}
+  .tracker-macd741-category > div {min-width:0}
+}
