@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r720-dc4e3b1d72fa",
-  "action": "qualify",
+  "request_id": "r720-63e72a50b91f",
+  "action": "dev_install",
   "release": 720,
   "target": "dc4e3b1d72fa3fd96751424e1b91af42bb0409d7",
   "base": "9fd92b3ac3057af99f8b9e468e27e64bcb2b9e68",
   "ref": "release/720-inline-workout-delete",
-  "previous_request_id": null
+  "previous_request_id": "r720-dc4e3b1d72fa"
 }
