@@ -6,7 +6,7 @@
     "tests/test_release717_completed_edit.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T01:26:35+00:00",
+  "finished_at_utc": "2026-11-21T01:27:37+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_718_IMPACT_PREFLIGHT=PASSED",
@@ -16,12 +16,12 @@
   "previous_request_id": null,
   "ref": "release/718-completed-machine-correction",
   "release": 718,
-  "request_id": "r718-5f904836f0ab",
+  "request_id": "r718-85202595f989",
   "schema": 1,
-  "started_at_utc": "2026-11-21T01:26:28+00:00",
+  "started_at_utc": "2026-11-21T01:27:30+00:00",
   "status": "failed",
-  "target": "5f904836f0ab3b07de4279b9909aa4d1768d343a",
+  "target": "85202595f989624d7c7f74661cd33172e8b34eb7",
   "test_counts": [
-    "9 passed, 1 warning"
+    "11 passed, 1 warning"
   ]
 }
