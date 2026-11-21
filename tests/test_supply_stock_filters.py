@@ -16,7 +16,7 @@ def test_filter_assets_and_markup():
 
     for token in (
         "tracker-stock-filters.js",
-        "tracker-stock-filters.css",
+        "tracker-supplies-bundle742.css?v=742",
         "data-stock-filter-toolbar",
         "data-stock-search",
         "data-stock-status-filter",
@@ -72,6 +72,7 @@ def test_accessibility_and_layout():
 
     assert 'aria-live="polite"' in html
     assert "type=\"search\"" in html
+    assert css.rstrip() in read("app/static/css/tracker-supplies-bundle742.css")
     assert ":focus-visible" in css
     assert "@media print" in css
     assert "max-width: 760px" in css
