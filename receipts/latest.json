@@ -1,26 +1,18 @@
 {
-  "action": "dev_install",
-  "base": "dc4e3b1d72fa3fd96751424e1b91af42bb0409d7",
-  "exit_code": 0,
+  "action": "prod_preflight",
+  "base": "ab70236618df66b8a959c765abf38dbcd59b29d7",
+  "exit_code": 1,
   "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-21T02:23:06+00:00",
-  "markers": [
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_721_SCOPED_BACKEND=PASSED",
-    "RELEASE_721_SCOPED_BROWSER=PASSED",
-    "EXIT_STATUS=0",
-    "RELEASE_721_DEV_INSTALL=SUCCESS"
-  ],
-  "previous_request_id": "r721-4983aa242665",
+  "failure_category": "StageChainBlocked",
+  "finished_at_utc": "2026-11-21T02:28:12+00:00",
+  "markers": [],
+  "previous_request_id": "r721-4d8c0afe3b21",
   "ref": "release/721-dashboard-recent-chevron",
   "release": 721,
-  "request_id": "r721-4d8c0afe3b21",
+  "request_id": "r721-pf4983aa242665",
   "schema": 1,
-  "started_at_utc": "2026-11-21T02:22:11+00:00",
-  "status": "passed",
+  "started_at_utc": "2026-11-21T02:28:12+00:00",
+  "status": "blocked",
   "target": "4983aa242665937f7b851292246b90310b6d50d2",
-  "test_counts": [
-    "27 passed, 1 warning"
-  ]
+  "test_counts": []
 }
