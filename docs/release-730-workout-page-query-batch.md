@@ -1,41 +1,54 @@
-# Release 730 — Bounded Workout page SQL reads
+# Release 730 — Medication catalog prefill correction + bounded Workout reads
 
-**Pending application base:** verified DEV Release 729, `d2597c5bfab3c76e1701a42af00ab5ce41553818`.
+**Qualified DEV base:** Release 729 at `d2597c5bfab3c76e1701a42af00ab5ce41553818`.
 
-## Measured mechanism and change
+## Medication selection bug
 
-The Workout equipment page previously executed a `SELECT` for the most
-recent WorkoutSet for **each** machine. The route therefore performed
-O(number of machines) SQL reads. Its active-session count dictionary
-also rescanned all recorded sets for each machine.
+Tracker searched RxNorm first, accepting up to eight name-only concepts.
+If those filled the result limit, openFDA labels with structured ingredient,
+strength and dosage form were never exposed. Selecting a name-only result
+therefore often filled only Name, despite an apparently successful lookup.
 
-This release ranks WorkoutSet rows using one SQL `row_number()` window
-partitioned by equipment, ordered by `performed_at DESC, id DESC`, and
-selects only rank-one rows. That preserves the earlier tie-break and
-includes sets from active workouts just as before. Machines without
-a set remain keyed to `None`, as the existing Jinja template expects.
-The active-set count uses a Counter for linear-time accumulation.
+**Fix:** Search both bounded medication providers, prefer results with
+actual ingredient / strength / form fields, and show up to eight merged
+matches. Keep RxNorm name-only matches as fallback if detailed labels
+are unavailable. Never infer dosage or strength from a name. In Add and
+Edit forms, selection populates the four original submitted fields,
+clears stale fields from a prior drug selection, and clearly tells the
+user when the selected result has no structured details. Original
+manual entries and editable fields remain available.
 
-## Scope and validation
+Version the shipped catalog JS asset to invalidate stale browser cache.
+No medication intake, schedule or dose is automatically populated.
 
-- Only `app/routers/workouts654.py` is changed in application code.
-- No schema, migration, dependencies, endpoints, auth or write changes.
-- New disposable SQLite tests measure SELECT counts at 1, 5 and 40
-  machines, confirm latest-set tie-breaking, empty machines, active
-  workout counts and no changes to the read-only route's write behavior.
-- Existing Workout route and dashboard regressions are included.
-- Exact changed-path allowlist, syntax checks, impact preflight,
-  detached worktree, disposable data and private-network QA.
-- Full regression suite is intentionally not requested.
+## Previously prepared Workout page optimization
 
-## Release ordering
+The Workout equipment page executed one recent-set SELECT per machine and
+rescanned all current workout sets per machine. Replace this with a single
+`row_number()` window query preserving performed_at-desc/id-desc and
+unfinished-session inclusion, plus a linear Counter for active-set counts.
+Keep machines with no past sets mapped to None for the existing UI.
 
-**Hold isolated qualification and DEV install until separately approved
-Release 729 PROD promotion is verified.** Keeping DEV installed at 729
-allows the existing signed native PROD promotion to validate the exact
-installed DEV SHA; installing 730 prematurely would break that guarantee.
+## Change-scoped DEV verification
 
-730 qualification and DEV installation may proceed after PROD 729
-verification. PROD 730 requires its own explicit authorization.
-Once this performance scope is accepted, proceed with dependency
-reproducibility and strict CSRF in that requested order.
+- Exact-SHA source allowlist; pinned base, detached isolated worktree,
+  disposable SQLite, PrivateNetwork and impact preflight.
+- Medication provider mock tests: 8 RxNorm names cannot hide an openFDA
+  full match; unavailable FDA keeps name-only manual fallback.
+- Chromium: both native Add and Edit medication forms; search and select
+  without submission; submitted POST carries name, ingredient, strength,
+  and form; switching to name-only clears stale previous-drug fields.
+- Existing regimen catalog, supplement label and regimen POST tests.
+- Workout SQL count tests for 1, 5, 40 machines, tie-breaking, current
+  workout, and existing Workout route/dashboard regression.
+- No full suite; no schema, dependency, auth or write endpoint changes.
+
+## Deployment
+
+This release supersedes the earlier hold on installing 730 ahead of
+PROD 729 because the medication bug was explicitly prioritized.
+Once exact qualification passes, DEV may install Release 730 using the
+normal automated guarded stage. **PROD remains at 727** until separately
+authorized; production promotion of 730 then includes Release 729's
+mobile Labs entry changes and both changes in 730. Do not attempt to
+promote 729 separately once DEV has advanced to 730.
