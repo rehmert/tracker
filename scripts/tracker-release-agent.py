@@ -134,9 +134,16 @@ def validate_chain(command: dict, latest: dict | None) -> None:
         return
     if not latest or latest.get('status') != 'passed':
         raise GateError('Previous stage has not passed')
-    for key in ('release', 'target', 'base', 'ref'):
+    # A catch-up PROD promotion may begin from an older *installed PROD*
+    # commit than the DEV release's qualification/install base. Verify the
+    # same exact release, target, branch and prior stage here; the pinned
+    # promotion preflight separately verifies PROD's actual installed base,
+    # GitHub main, ancestry, signed DEV evidence and active services.
+    for key in ('release', 'target', 'ref'):
         if latest.get(key) != command[key]:
             raise GateError('Prior receipt does not match current release')
+    if stage != 'prod_preflight' and latest.get('base') != command['base']:
+        raise GateError('Prior receipt base does not match current release')
     if latest.get('request_id') != command['previous_request_id']:
         raise GateError('Prior receipt ID mismatch')
     if latest.get('action') != ACTION_PREVIOUS[stage]:
