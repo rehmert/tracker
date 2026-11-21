@@ -1,0 +1,22 @@
+{
+  "action": "qualify",
+  "base": "78de7168566f15dcd450ee24d7f2e8fe0cdae756",
+  "exit_code": 66,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-21T22:58:16+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_741_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_741_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/741-integrated-macd-mobile",
+  "release": 741,
+  "request_id": "r741-41e5a507017b",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T22:58:12+00:00",
+  "status": "failed",
+  "target": "41e5a507017be01ad527fbf30a9101ab6e647dcd",
+  "test_counts": []
+}
