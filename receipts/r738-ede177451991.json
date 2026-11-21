@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release738_integrated_macd_mobile.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T21:09:59+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_738_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_738_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_738_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/738-integrated-macd-mobile-ux",
+  "release": 738,
+  "request_id": "r738-ede177451991",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T21:09:52+00:00",
+  "status": "failed",
+  "target": "ede1774519910e72d5b6fd919c63bc3995085a27",
+  "test_counts": [
+    "4 passed, 2 warnings"
+  ]
+}
