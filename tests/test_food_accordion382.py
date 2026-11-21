@@ -79,7 +79,10 @@ def test_search_and_navigation_autoexpand():
 
 def test_accordion_assets_registered():
     source = TEMPLATE.read_text()
-    assert "tracker-food382.css?v=382" in source
+    assert "tracker-food-core738.css?v=738" in source
+    assert STYLES.read_text().strip() in (
+        Path("app/static/css/tracker-food-core738.css").read_text()
+    )
     assert "tracker-food382.js?v=602" in source
     assert STYLES.exists()
     assert SCRIPT.exists()
