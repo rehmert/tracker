@@ -17,7 +17,6 @@ QUICK_BODY = QUICK.split("{% block content %}", 1)[1].rsplit("{% endblock %}", 1
 CSS_PROGRAM = (ROOT / "app/static/css/tracker-workout-program667.css").read_text(encoding="utf-8")
 JS_PROGRAM = (ROOT / "app/static/js/tracker-workout-program667.js").read_text(encoding="utf-8")
 CSS659 = (ROOT / "app/static/css/tracker-workouts659.css").read_text(encoding="utf-8")
-CSS662 = (ROOT / "app/static/css/tracker-workouts662.css").read_text(encoding="utf-8")
 CSS666 = (ROOT / "app/static/css/tracker-workout-targets666.css").read_text(encoding="utf-8")
 CSS667 = (ROOT / "app/static/css/tracker-workout-gym667.css").read_text(encoding="utf-8")
 JS659 = (ROOT / "app/static/js/tracker-workouts659.js").read_text(encoding="utf-8")
@@ -87,7 +86,7 @@ def gym_fixture667():
         machine_sets=[], last=history, previous_machine=None, next_machine=None,
     )
     return page667(
-        body, CSS659 + CSS662 + CSS666 + CSS667, JS659 + "\n" + JS667,
+        body, CSS659 + CSS666 + CSS667, JS659 + "\n" + JS667,
     )
 
 

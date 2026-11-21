@@ -62,7 +62,8 @@ def test_662_routine_machine_search_and_fast_set_entry_no_new_writes():
         page = client.get(f"/workouts/quick?machine={first}")
         assert page.status_code == 200
         html = page.text
-        assert 'href="/static/css/tracker-workouts662.css?v=662"' in html
+        assert 'href="/static/css/tracker-workouts659.css?v=723"' in html
+        assert 'href="/static/css/tracker-workouts662.css' not in html
         assert 'src="/static/js/tracker-workouts662.js?v=662"' in html
         assert 'id="workout662-directory"' in html
         assert 'id="workout662-search"' in html
@@ -140,5 +141,5 @@ def test_662_template_and_assets_no_mutation_contract():
     assert "picker.requestSubmit()" in script
     assert 'search.addEventListener("input", refresh)' in script
     assert ".workout662-directory-list a[data-search662]" in script
-    css = (ROOT / "app/static/css/tracker-workouts662.css").read_text()
+    css = (ROOT / "app/static/css/tracker-workouts659.css").read_text()
     assert 'a[hidden]' in css

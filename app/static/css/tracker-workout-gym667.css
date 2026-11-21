@@ -17,3 +17,47 @@
  .workout667-set-kind{padding:.5rem;gap:.25rem .7rem;}
  .workout667-set-kind label{flex:1 1 auto;min-width:0;}
 }
+
+/* Release 723: consolidated former 673 gym offline/draft UX rules. */
+/* Release 673 gym floor: active set first, advanced tools accessible on demand. */
+.ux673-gym-links {
+  display:flex; flex-wrap:wrap; gap:.5rem .8rem;
+  align-items:center; margin:.2rem 0 .6rem;
+}
+.ux673-gym-links > a { min-height:44px; display:inline-flex; align-items:center; }
+.ux673-gym-links details { position:relative; min-width:0; }
+.ux673-gym-links summary {
+  display:inline-flex; align-items:center; min-height:44px;
+  padding:.45rem .7rem; border:1px solid var(--rule,#cbd5e1);
+  border-radius:.65rem; cursor:pointer; font-weight:650;
+}
+.ux673-gym-links details > div {
+  display:flex; flex-wrap:wrap; gap:.6rem;
+  padding:.6rem .1rem;
+}
+.ux673-gym-links details > div a { display:inline-flex; align-items:center; min-height:44px; }
+.ux673-gym-offline {
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.75rem; margin:.9rem 0; padding:0;
+}
+.ux673-gym-offline > summary {
+  min-height:48px; padding:.7rem .85rem;
+  cursor:pointer; font-weight:700;
+  display:flex; align-items:center;
+}
+.ux673-gym-offline-content {
+  padding:.45rem .85rem .85rem;
+  display:flex; flex-wrap:wrap; gap:.5rem;
+}
+.ux673-gym-offline-content h3,
+.ux673-gym-offline-content > p { flex-basis:100%; margin:.25rem 0; }
+.ux673-gym-offline-content button { flex:1 1 180px; min-height:48px; }
+@media(max-width:760px) {
+  .workout659-panel { margin:.6rem 0; }
+  .workout659-number-grid { margin:.55rem 0; }
+  .workout659-main-button { min-height:60px!important; }
+  .ux673-gym-links { gap:.25rem .6rem; }
+  .ux673-gym-links details { flex-basis:100%; }
+  .ux673-gym-links details > div a { flex:1 1 125px; }
+  .ux673-gym-offline-content button { flex-basis:100%; }
+}

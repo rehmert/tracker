@@ -49,7 +49,7 @@ def test_673_mobile_cards_dock_and_advanced_sections_fit(width):
             for file in ("tracker-mobile-shell507.css",
                          "tracker-mobile-ux673.css",
                          "tracker-food-ux673.css",
-                         "tracker-workout-ux673.css"):
+                         "tracker-workout-gym667.css"):
                 page.add_style_tag(path=str(STYLES / file))
             assert page.locator(".tracker-mobile-dock > *").count() == 5
             assert page.locator("table.ux673-card-table tbody tr").evaluate(

@@ -9,7 +9,6 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT659 = (ROOT / "app/static/js/tracker-workouts659.js").read_text()
 SCRIPT662 = (ROOT / "app/static/js/tracker-workouts662.js").read_text()
 CSS659 = (ROOT / "app/static/css/tracker-workouts659.css").read_text()
-CSS662 = (ROOT / "app/static/css/tracker-workouts662.css").read_text()
 URL = "https://tracker.test/workouts/quick"
 
 
@@ -21,7 +20,7 @@ def fixture662(machine=1, logged=False):
     return f"""<!doctype html><html><head>
       <meta name="viewport" content="width=device-width,initial-scale=1">
       <style>*{{box-sizing:border-box}}body{{margin:0;padding:12px}}
-        {CSS659}{CSS662}</style>
+        {CSS659}</style>
       </head><body>
       <section class="workout659" id="workout659-root"
           data-session-id="88" data-last-set-id="{last}"

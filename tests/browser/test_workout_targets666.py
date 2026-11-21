@@ -12,7 +12,6 @@ ROOT = Path(__file__).resolve().parents[2]
 QUICK = (ROOT / "app/templates/workout_quick659.html").read_text(encoding="utf-8")
 BODY = QUICK.split("{% block content %}", 1)[1].rsplit("{% endblock %}", 1)[0]
 CSS659 = (ROOT / "app/static/css/tracker-workouts659.css").read_text(encoding="utf-8")
-CSS662 = (ROOT / "app/static/css/tracker-workouts662.css").read_text(encoding="utf-8")
 CSS666 = (ROOT / "app/static/css/tracker-workout-targets666.css").read_text(encoding="utf-8")
 JS666 = (ROOT / "app/static/js/tracker-workout-targets666.js").read_text(encoding="utf-8")
 URL = "https://tracker.test/workouts/quick?machine=50"
@@ -44,7 +43,7 @@ def fixture666(machine_id=50, routine_id=99):
         '<meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         '<style>*{box-sizing:border-box}body{margin:0;padding:12px}'
-        + CSS659 + CSS662 + CSS666 + '</style></head><body>'
+        + CSS659 + CSS666 + '</style></head><body>'
         + html + '<script>' + JS666 + '</script></body></html>'
     )
 
