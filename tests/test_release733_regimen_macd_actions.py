@@ -94,7 +94,7 @@ def test_733_regimen_jinja_and_edit_actions_are_both_visible_and_semantic(env):
     assert 'action="/regimen/items/2/delete"' not in content
     assert "data-reg733-item-actions" in content
     assert "data-reg733-schedule-actions" in content
-    assert 'class="reg733-edit-trigger"' in content
+    assert 'class="reg733-edit-trigger reg734-macd-action"' in content
     assert content.count('data-reg733-edit') >= 3
     assert "Add schedule" in content
     assert "Add supplement or medication" in content
