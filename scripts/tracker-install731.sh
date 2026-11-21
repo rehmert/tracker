@@ -36,5 +36,6 @@ ACTUAL_BLOB="$(git hash-object "$RUNNER")"
   fail "Runner Git blob mismatch"
 bash -n "$RUNNER"
 echo "RELEASE_731_PINNED_TARGET=$TARGET"
-bash "$RUNNER" --instance DEV --base "$BASE" --target "$TARGET" --ref "$REF"
+bash "$RUNNER" --instance DEV --base "$BASE" --target "$TARGET" --ref "$REF" \
+  --db-migration --reviewed-tablet-731
 echo "RELEASE_731_DEV_INSTALL=SUCCESS"
