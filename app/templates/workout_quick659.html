@@ -195,7 +195,7 @@
       </details>
       {% if machine %}
         <div class="workout659-machine-heading">
-          <h2>{{ machine.name }}</h2>
+          <h2 data-no-title-case>{{ machine.name }}</h2>
           <p class="workout659-muted">{{ machine.gym }}{% if machine.seat_setting %} · Seat {{ machine.seat_setting }}{% endif %}</p>
           {% if machine.setup_notes %}
             <p class="workout659-notes">{{ machine.setup_notes }}</p>
@@ -418,7 +418,7 @@
         {% endif %}
       </nav>
       <section class="workout659-panel workout659-logged">
-        <h2>This session on {{ machine.name }} ({{ machine_sets|length }} shown)</h2>
+        <h2 data-no-title-case>This session on {{ machine.name }} ({{ machine_sets|length }} shown)</h2>
         {% for entry in machine_sets %}
           <p><strong>{{ '%.1f'|format(entry.weight_lb) }} lb × {{ entry.reps }}</strong>
             {% if entry.effort is not none %} · effort {{ entry.effort }}/10{% endif %}
