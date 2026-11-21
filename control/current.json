@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r736-61df746a6425",
-  "action": "qualify",
+  "request_id": "r736-install61df746a6425",
+  "action": "dev_install",
   "release": 736,
   "target": "61df746a64259e84a6fdef23d7d8df17ef3b6e0c",
   "base": "51a4a70ed09287dd60a108dfea3721cd53090740",
   "ref": "release/736-regimen-add-chevron",
-  "previous_request_id": null
+  "previous_request_id": "r736-61df746a6425"
 }
