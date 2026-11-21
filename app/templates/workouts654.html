@@ -233,14 +233,16 @@
       <div class="workout717-history-row">
         <span><a href="/workouts/sessions/{{ session.id }}/review">{{ session.started_at|dt }}</a>
         · {{ 'Completed' if session.completed_at else 'In progress' }}</span>
-        {% if session.completed_at %}
-          <a class="ux675-inline-action" href="/workouts/sessions/{{ session.id }}/correct">Edit Workout</a>
-        {% endif %}
-        {% if not active or active.id != session.id %}
-          {% with delete_workout=session %}
-            {% include "_workout_delete719.html" %}
-          {% endwith %}
-        {% endif %}
+        <span class="workout720-row-actions">
+          {% if session.completed_at %}
+            <a class="ux675-inline-action" href="/workouts/sessions/{{ session.id }}/correct">Edit Workout</a>
+          {% endif %}
+          {% if not active or active.id != session.id %}
+            {% with delete_workout=session %}
+              {% include "_workout_delete719.html" %}
+            {% endwith %}
+          {% endif %}
+        </span>
       </div>
     {% else %}
       <p>No workouts yet.</p>
