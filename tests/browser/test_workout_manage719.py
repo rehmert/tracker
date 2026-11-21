@@ -80,20 +80,20 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
             assert sid and sid.isdecimal()
             mark719(scheme, "STARTED")
             delete = page.locator(f"form#workout719-delete-{sid}")
-            expect(delete.get_by_role("button", name="Delete", exact=True)).to_be_visible()
+            expect(delete.locator("button.workout720-delete-button")).to_be_visible()
             mark719(scheme, "DELETE_LINK")
             mark719(scheme, "ACTIVE_FORM")
             expect(delete.locator('input[name="reason"]')).to_have_value("Started by mistake")
             # Cancel is a genuine no-op; the session remains active.
             page.once("dialog", lambda dialog: dialog.dismiss())
-            delete.get_by_role("button", name="Delete", exact=True).click()
+            delete.locator("button.workout720-delete-button").click()
             expect(delete).to_be_visible()
             assert urlsplit(page.url).path == "/workouts/quick"
             page.once("dialog", lambda dialog: dialog.accept())
             with page.expect_response(lambda r:
                     r.request.method == "POST" and
                     urlsplit(r.url).path == f"/workouts/sessions/{sid}/delete") as posted:
-                delete.get_by_role("button", name="Delete", exact=True).click()
+                delete.locator("button.workout720-delete-button").click()
             assert posted.value.status == 303
             mark719(scheme, "ACTIVE_POST")
             page.wait_for_load_state("networkidle")
@@ -139,17 +139,17 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
             actions = history.locator(".workout720-row-actions")
             expect(actions.get_by_role("link", name="Edit Workout")).to_be_visible()
             deletion = actions.locator(f"form#workout719-delete-{other}")
-            expect(deletion.get_by_role("button", name="Delete", exact=True)).to_be_visible()
+            expect(deletion.locator("button.workout720-delete-button")).to_be_visible()
             assert history.locator("details.workout719-delete").count() == 0
             mark719(scheme, "FINISHED_FORM")
             page.once("dialog", lambda dialog: dialog.dismiss())
-            deletion.get_by_role("button", name="Delete", exact=True).click()
+            deletion.locator("button.workout720-delete-button").click()
             expect(actions.get_by_role("link", name="Edit Workout")).to_be_visible()
             page.once("dialog", lambda dialog: dialog.accept())
             with page.expect_response(lambda r:
                     r.request.method == "POST" and
                     urlsplit(r.url).path == f"/workouts/sessions/{other}/delete") as done:
-                deletion.get_by_role("button", name="Delete", exact=True).click()
+                deletion.locator("button.workout720-delete-button").click()
             assert done.value.status == 303
             mark719(scheme, "FINISHED_POST")
             page.wait_for_load_state("networkidle")
