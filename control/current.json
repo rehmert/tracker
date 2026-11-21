@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r726-pf2f9f15f11f80",
-  "action": "prod_preflight",
-  "release": 726,
-  "target": "2f9f15f11f807e4574143c49640ed62071e57df5",
-  "base": "4983aa242665937f7b851292246b90310b6d50d2",
-  "ref": "release/726-labs-mobile-actions",
-  "previous_request_id": "r726-install2f9f15f11f80"
+  "request_id": "r727-3718936aedfc",
+  "action": "qualify",
+  "release": 727,
+  "target": "3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2",
+  "base": "2f9f15f11f807e4574143c49640ed62071e57df5",
+  "ref": "release/727-labs-report-cards",
+  "previous_request_id": null
 }
