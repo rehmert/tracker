@@ -47,22 +47,10 @@
   outline:2px solid var(--teal);outline-offset:3px;
 }
 .reg733-action-row>form>button{box-sizing:border-box;min-height:44px}
-/* Release 736: flex summaries suppress the browser's native details marker.
-   Draw a consistent visible chevron for both Add disclosures in every theme. */
-summary.reg733-add-trigger{
-  display:inline-flex;align-items:center;gap:.65rem;
-  min-height:44px;padding:.55rem .85rem;cursor:pointer;list-style:none;
-}
-summary.reg733-add-trigger::-webkit-details-marker{display:none}
-summary.reg733-add-trigger::marker{content:""}
-summary.reg733-add-trigger::after{
-  content:"";display:block;flex:0 0 .55rem;width:.55rem;height:.55rem;
-  border-right:2px solid currentColor;border-bottom:2px solid currentColor;
-  transform:translateY(-2px) rotate(45deg);
-  transition:transform .15s ease;
-}
-details[open]>summary.reg733-add-trigger::after{
-  transform:translateY(2px) rotate(225deg);
+/* Release 737: all three disclosures use the native left-side marker.
+   A flex summary suppresses the Chromium disclosure triangle. */
+summary.reg737-native-disclosure{
+  display:list-item;min-height:44px;padding:.65rem 0;cursor:pointer;
 }
 @media(max-width:760px){.reg733-action-row>details[open]{flex-basis:100%;width:100%}}
 .reg635-history{overflow:auto}
@@ -138,7 +126,7 @@ details[open]>summary.reg733-add-trigger::after{
 
 <section class="card">
   <details id="reg635-quick-log">
-    <summary><strong>Log a supplement or medication independently</strong></summary>
+    <summary class="reg737-native-disclosure"><strong>Log a supplement or medication independently</strong></summary>
     {% if items %}
     <form method="post" action="/regimen/entries" class="reg635-form">
       <label class="field">Item <select name="item_id" required data-reg731-item>{% for item in items if item.active %}<option value="{{ item.id }}" data-reg731-kind="{{ item.kind }}" data-reg731-strength="{{ tablet_strengths.get(item.id, '') }}">{{ item.name }} ({{ item.kind }})</option>{% endfor %}</select></label>
@@ -181,7 +169,7 @@ details[open]>summary.reg733-add-trigger::after{
 
 <section class="card" id="reg635-catalog">
 <h2>Catalog</h2>
-<details><summary class="reg733-add-trigger"><strong>Add supplement or medication</strong></summary>
+<details><summary class="reg737-native-disclosure"><strong>Add supplement or medication</strong></summary>
   <form method="post" action="/regimen/items" class="reg635-form" data-reg636-catalog>
     <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}">{{ kind|capitalize }}</option>{% endfor %}</select></label>
     <label class="field">Name <input name="name" maxlength="160" required></label>
@@ -324,7 +312,7 @@ details[open]>summary.reg733-add-trigger::after{
 <section class="card" id="reg635-schedules">
 <h2>Schedules &amp; protocols</h2>
 <p class="note">Regimen schedules are independent from injectable PK protocols. Monday=0 through Sunday=6 for weekly schedules. Every-N-days is anchored to the selected start date. As-needed entries are never shown as automatically due.</p>
-<details><summary class="reg733-add-trigger"><strong>Add schedule</strong></summary>
+<details><summary class="reg737-native-disclosure"><strong>Add schedule</strong></summary>
 {% if items %}
 <form method="post" action="/regimen/schedules" class="reg635-form">
 <label class="field">Item <select name="item_id" data-reg731-item>{% for item in items if item.active %}<option value="{{ item.id }}" data-reg731-kind="{{ item.kind }}" data-reg731-strength="{{ tablet_strengths.get(item.id, '') }}">{{ item.name }}</option>{% endfor %}</select></label>
