@@ -41,6 +41,8 @@ def checkpoint716(scheme: str, step: str) -> None:
         "HEADING", "PROGRESS", "WIDTH", "EXISTING", "NEW", "FINISHED",
         "SERVER_OK", "SERVER_FAIL", "PAGE_GYM", "PAGE_OTHER",
         "HEADING_SAME", "HEADING_FIRST", "HEADING_OTHER", "HEADING_MISSING",
+        "ID_MATCH", "ID_OTHER", "HEADING_ROW", "HEADING_PRESS",
+        "HEADING_QA", "HEADING_NOT_QA", "LABEL_SECOND", "LABEL_OTHER",
     }
     assert scheme in ("http", "https") and step in allowed
     with (DATA / "workout716-stages.txt").open("a", encoding="ascii") as stream:
@@ -135,6 +137,14 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
             checkpoint716(scheme, "SERVER_OK" if server_get.status == 200 else "SERVER_FAIL")
             title = page.locator("h1").first.inner_text() if page.locator("h1").count() else ""
             checkpoint716(scheme, "PAGE_GYM" if title.strip() == "Rapid Gym Mode" else "PAGE_OTHER")
+            actual_selected = page.locator("#workout659-machine-select")
+            checkpoint716(scheme, "ID_MATCH" if actual_selected.count() and
+                          actual_selected.input_value() == chosen_id else "ID_OTHER")
+            selected_option = page.locator(
+                f'#workout659-machine-select option[value="{chosen_id}"]'
+            )
+            label = selected_option.inner_text() if selected_option.count() else ""
+            checkpoint716(scheme, "LABEL_SECOND" if second in label else "LABEL_OTHER")
             heading = page.locator(".workout659-machine-heading h2")
             if heading.count() == 0:
                 checkpoint716(scheme, "HEADING_MISSING")
@@ -142,6 +152,8 @@ def test_716_active_routine_machine_add_and_new_machine_on_phone(scheme):
                 value = heading.inner_text().strip()
                 checkpoint716(scheme, "HEADING_SAME" if value == second else
                               "HEADING_FIRST" if value == first else "HEADING_OTHER")
+                checkpoint716(scheme, "HEADING_ROW" if value.endswith("-Row") else "HEADING_PRESS")
+                checkpoint716(scheme, "HEADING_QA" if value.startswith("QA716-") else "HEADING_NOT_QA")
             expect(heading).to_have_text(second)
             checkpoint716(scheme, "HEADING")
             expect(page.locator(".workout659-progress")).to_contain_text("0 of 2 exercises logged")
