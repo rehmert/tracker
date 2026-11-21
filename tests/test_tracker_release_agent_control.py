@@ -71,6 +71,61 @@ def test_711_each_stage_requires_exact_previous_pass(action, prior):
         agent.validate_chain(request, {**receipt(prior, previous_id), 'target': BASE})
 
 
+def test_721_catchup_prod_base_can_differ_only_at_preflight():
+    """DEV 720 -> 721 while PROD 715 -> 721 is a valid signed catch-up."""
+    dev_base = BASE
+    installed_prod_base = 'ab70236618df66b8a959c765abf38dbcd59b29d7'
+    prior_id = 'r711-abcdef012345'
+    dev_receipt = receipt('dev_install', prior_id)
+    assert dev_receipt['base'] == dev_base
+
+    preflight = cmd('prod_preflight', prior_id, 'r711-111111111111')
+    preflight['base'] = installed_prod_base
+    request = agent.validate_command(preflight)
+    agent.validate_chain(request, dev_receipt)
+
+    # The next PROD stage must keep the actual PROD base from preflight.
+    deploy = cmd('prod_deploy', preflight['request_id'], 'r711-222222222222')
+    deploy['base'] = installed_prod_base
+    agent.validate_chain(
+        agent.validate_command(deploy),
+        {**preflight, 'status': 'passed', 'request_id': preflight['request_id']},
+    )
+    deploy['base'] = dev_base
+    with pytest.raises(agent.GateError):
+        agent.validate_chain(
+            agent.validate_command(deploy),
+            {**preflight, 'status': 'passed'},
+        )
+
+
+@pytest.mark.parametrize('field,value', [
+    ('target', BASE), ('ref', 'release/711-other-slug'),
+    ('release', 710), ('request_id', 'r711-555555555555'),
+])
+def test_721_catchup_still_requires_matching_dev_receipt(field, value):
+    previous_id = 'r711-abcdef012345'
+    request = cmd('prod_preflight', previous_id, 'r711-111111111111')
+    request['base'] = 'ab70236618df66b8a959c765abf38dbcd59b29d7'
+    prior = receipt('dev_install', previous_id)
+    prior[field] = value
+    with pytest.raises(agent.GateError):
+        agent.validate_chain(agent.validate_command(request), prior)
+
+
+def test_721_catchup_rejects_unpassed_or_wrong_previous_stage():
+    previous_id = 'r711-abcdef012345'
+    request = cmd('prod_preflight', previous_id, 'r711-111111111111')
+    request['base'] = 'ab70236618df66b8a959c765abf38dbcd59b29d7'
+    for old in (
+        receipt('dev_install', previous_id, status='failed'),
+        receipt('qualify', previous_id),
+        receipt('dev_install', 'r711-555555555555'),
+    ):
+        with pytest.raises(agent.GateError):
+            agent.validate_chain(agent.validate_command(request), old)
+
+
 def test_711_qualification_success_requires_both_completion_markers():
     data = '''RELEASE_711_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY
 RELEASE_711_EXIT_STATUS=0
