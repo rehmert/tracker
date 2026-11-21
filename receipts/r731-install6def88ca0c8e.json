@@ -1,0 +1,20 @@
+{
+  "action": "dev_install",
+  "base": "13ed014d24ba5658a69ccb15b6d8e1a247c7575c",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-21T18:39:55+00:00",
+  "markers": [
+    "EXIT_STATUS=1"
+  ],
+  "previous_request_id": "r731-6def88ca0c8e",
+  "ref": "release/731-tablet-dose-tracking",
+  "release": 731,
+  "request_id": "r731-install6def88ca0c8e",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T18:39:52+00:00",
+  "status": "failed",
+  "target": "6def88ca0c8e57833ebb000fd59074996029fc22",
+  "test_counts": []
+}
