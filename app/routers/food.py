@@ -8,6 +8,7 @@ from ..off_lookup494 import OFFFailure494, fetch_json494
 from fastapi import Depends, APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from ..db import engine
 from ..templating import render
 
@@ -536,18 +537,35 @@ def saved_food_usage669(db, product_id):
     """), {"id": product_id}).scalar_one()
 
 
+def saved_food_links739(db, product_id):
+    """Protect historical meals and reusable meal templates from deletion."""
+    return {
+        "meals": saved_food_usage669(db, product_id),
+        "templates": db.execute(text("""
+            SELECT COUNT(*) FROM tracker_food_meal_template_items
+             WHERE product_id=:id
+        """), {"id": product_id}).scalar_one(),
+        "favorites": db.execute(text("""
+            SELECT COUNT(*) FROM tracker_food_favorites
+             WHERE product_id=:id
+        """), {"id": product_id}).scalar_one(),
+    }
+
+
 @router.get("/food/saved/{product_id}/edit")
 def edit_saved_food_page669(
     product_id: int, request: Request, day: str = "",
     saved: bool = False, db_engine=Depends(get_food_read_engine406),
 ):
     chosen = food_edit_day669(day or date.today().isoformat())
-    init_food_schema(db_engine)
+    from .food_bundle376 import init_schema
+    init_schema(db_engine)
     with db_engine.connect() as db:
         row = saved_food_row669(db, product_id)
         if row is None:
             raise HTTPException(404, "Saved food not found")
         usage = saved_food_usage669(db, product_id)
+        links = saved_food_links739(db, product_id)
     try:
         values = json.loads(row["nutrients"])
         if not isinstance(values, dict):
@@ -558,6 +576,55 @@ def edit_saved_food_page669(
         request, "food_saved_edit669.html", product=dict(row),
         values=values, nutrients=NUTRIENTS, day=chosen, saved=saved,
         usage=usage, version=food_product_version669(row),
+        template_usage=links["templates"], favorite_usage=links["favorites"],
+    )
+
+
+@router.post("/food/saved/{product_id}/delete")
+async def delete_saved_food739(
+    product_id: int, request: Request,
+    db_engine=Depends(get_food_read_engine406),
+):
+    """Delete a no-history saved food, respecting meal/template FK dependencies.
+
+    Favorites for this product are removed atomically; no actual meal entry,
+    shared meal template or another product is touched.
+    """
+    form = await request.form()
+    day = food_edit_day669(form.get("day"))
+    version = str(form.get("version", "")).strip()
+    if str(form.get("confirm_delete", "")) != "delete":
+        raise HTTPException(422, "Confirm deletion of this saved food.")
+    if not re.fullmatch(r"[0-9a-f]{64}", version):
+        raise HTTPException(422, "Stale or invalid saved-food version")
+    from .food_bundle376 import init_schema
+    init_schema(db_engine)
+    try:
+        with db_engine.begin() as db:
+            row = saved_food_row669(db, product_id)
+            if row is None:
+                raise HTTPException(404, "Saved food not found")
+            if food_product_version669(row) != version:
+                raise HTTPException(409, "Saved food changed. Reload before deleting.")
+            links = saved_food_links739(db, product_id)
+            if links["meals"] or links["templates"]:
+                raise HTTPException(
+                    409,
+                    "Saved food is used in meals or templates. Remove those references first; "
+                    "historical meals must not be erased by deleting a saved food.",
+                )
+            db.execute(text("""
+                DELETE FROM tracker_food_favorites WHERE product_id=:id
+            """), {"id": product_id})
+            db.execute(text("""
+                DELETE FROM tracker_food_products WHERE id=:id
+            """), {"id": product_id})
+    except IntegrityError as exc:
+        raise HTTPException(
+            409, "Saved food is linked to another record; deletion blocked."
+        ) from exc
+    return RedirectResponse(
+        f"/food?day={day}#food-search", status_code=303
     )
 
 
