@@ -58,6 +58,17 @@ install -o root -g root -m 700 "$STAGE/tracker-release-agent.py" /usr/local/sbin
 install -o root -g root -m 700 "$STAGE/tracker-release-notifier.py" /usr/local/sbin/tracker-release-notifier.py
 install -o root -g root -m 700 "$STAGE/tracker-release-pr-bridge.py" /usr/local/sbin/tracker-release-pr-bridge.py
 
+# Release 728: verify deployed files are exactly the reviewed Git blobs.
+# A partial or unexpected copy must never count as a successful host upgrade.
+for name in tracker-release-agent.py tracker-release-notifier.py tracker-release-pr-bridge.py; do
+  [[ -f "/usr/local/sbin/$name" && ! -L "/usr/local/sbin/$name" &&
+     "$(stat -c '%u:%a' "/usr/local/sbin/$name")" == "0:700" ]] ||
+    fail "Installed agent file permissions mismatch: $name"
+  [[ "$(git hash-object "/usr/local/sbin/$name")" == "$(git rev-parse "$TARGET:scripts/$name")" ]] ||
+    fail "Installed agent Git blob mismatch: $name"
+done
+echo 'TRACKER_RELEASE_AGENT_INSTALLED_OBJECTS=VERIFIED'
+
 # ntfy uses a secret, unguessable topic. Only the sanitized result of a
 # release stage is sent to this external notification provider. Topic and
 # configuration remain root-only on DEV and never enter GitHub.

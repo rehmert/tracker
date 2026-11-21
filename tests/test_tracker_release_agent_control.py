@@ -224,3 +224,68 @@ def test_711_publishes_receipt_without_touching_installed_checkout():
             assert agent.json_read(agent.show(agent.RECEIPT_REF, f'receipts/{record["request_id"]}.json')) == record
         assert _git(repo, 'rev-parse', 'HEAD') == original
         assert not _git(repo, 'status', '--porcelain')
+
+
+def test_728_recorded_726_prod_stage_chain_and_blocked_retry():
+    """Replay real public-safe 726 receipt fields, with PROD lagging DEV."""
+    dev_id = "r726-install2f9f15f11f80"
+    target = "2f9f15f11f807e4574143c49640ed62071e57df5"
+    dev_base = "7cd9cd9ef76032bd6dc66131f4ccdb20fe10cb4c"
+    prod_base = "4983aa242665937f7b851292246b90310b6d50d2"
+    prior = {
+        "schema": 1, "request_id": dev_id, "action": "dev_install",
+        "release": 726, "target": target, "base": dev_base,
+        "ref": "release/726-labs-mobile-actions",
+        "previous_request_id": "r726-2f9f15f11f80",
+        "status": "passed", "exit_code": 0,
+    }
+    preflight = {
+        "schema": 1, "request_id": "r726-retry2f9f15f11f80",
+        "action": "prod_preflight", "release": 726,
+        "target": target, "base": prod_base,
+        "ref": "release/726-labs-mobile-actions",
+        "previous_request_id": dev_id,
+    }
+    blocked = {
+        **preflight, "request_id": "r726-pf2f9f15f11f80",
+        "status": "blocked", "failure_category": "StageChainBlocked",
+        "exit_code": 1,
+    }
+    req = agent.validate_command(preflight)
+    agent.validate_chain(req, prior, prior)
+    agent.validate_chain(req, prior, blocked)
+    for invalid in (
+        {**prior, "status": "failed"},
+        {**prior, "action": "qualify"},
+        {**prior, "target": dev_base},
+        {**prior, "request_id": "r726-other123456789"},
+    ):
+        with pytest.raises(agent.GateError):
+            agent.validate_chain(req, invalid, blocked)
+    for invalid in (
+        {**blocked, "status": "unknown"},
+        {**blocked, "base": dev_base},
+        {**blocked, "failure_category": "PromotionOrDeploymentGate"},
+    ):
+        with pytest.raises(agent.GateError):
+            agent.validate_chain(req, prior, invalid)
+    # A passed preflight pins the actual PROD base for the final stage.
+    passed = {**preflight, "status": "passed", "exit_code": 0}
+    deployment = {
+        **preflight, "request_id": "r726-deploy2f9f15f1",
+        "action": "prod_deploy", "previous_request_id": preflight["request_id"],
+    }
+    agent.validate_chain(agent.validate_command(deployment), passed, passed)
+    with pytest.raises(agent.GateError):
+        agent.validate_chain(
+            agent.validate_command({**deployment, "base": dev_base}),
+            passed, passed,
+        )
+
+
+def test_728_installer_verifies_all_three_deployed_git_objects():
+    source = (SOURCE.parent / "tracker-release-agent-install.sh").read_text()
+    assert "TRACKER_RELEASE_AGENT_INSTALLED_OBJECTS=VERIFIED" in source
+    assert 'git hash-object "/usr/local/sbin/$name"' in source
+    assert 'git rev-parse "$TARGET:scripts/$name"' in source
+    assert 'systemctl is-active --quiet tracker-release-agent.service' in source
