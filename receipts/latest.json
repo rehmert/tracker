@@ -1,18 +1,26 @@
 {
   "action": "qualify",
   "base": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
-  "exit_code": 2,
-  "failed_tests": [],
-  "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-21T23:27:23+00:00",
-  "markers": [],
+  "exit_code": 42,
+  "failed_tests": [
+    "tests/test_release743_security_deps_chain_css.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T23:30:15+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_743_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_743_INSTALLED_DEV=UNMODIFIED"
+  ],
   "previous_request_id": null,
   "ref": "release/743-security-deps-controller-ux",
   "release": 743,
-  "request_id": "r743-65d5ab644c01",
+  "request_id": "r743-800b0e628bc7",
   "schema": 1,
-  "started_at_utc": "2026-11-21T23:27:22+00:00",
+  "started_at_utc": "2026-11-21T23:30:01+00:00",
   "status": "failed",
-  "target": "65d5ab644c01cd06ca4e744699841ccbf1f429f8",
-  "test_counts": []
+  "target": "800b0e628bc7992312b9fd9770bc5b3ba59ecb8f",
+  "test_counts": [
+    "24 passed, 1 warning"
+  ]
 }
