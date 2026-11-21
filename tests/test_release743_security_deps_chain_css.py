@@ -330,12 +330,14 @@ def test_743_consolidated_css_computed_accessibility_contract(width, scheme):
                 assert targets.evaluate_all(
                     "els => els.every(e => e.getBoundingClientRect().height >= 44)"
                 ), (width, scheme, selector)
+            # :focus-visible is a keyboard modality contract; clicking a
+            # different control first switches Chromium to pointer modality.
+            page.keyboard.press("Tab")
+            assert primary.evaluate(
+                "e => document.activeElement === e && getComputedStyle(e).outlineStyle === 'solid'"
+            )
             page.locator(".ux675-more > summary").click()
             assert page.locator(".ux675-more").evaluate("e => e.open")
-            primary.focus()
-            assert primary.evaluate(
-                "e => getComputedStyle(e).outlineStyle === 'solid'"
-            )
             assert page.evaluate(
                 "document.documentElement.scrollWidth <= innerWidth + 1"
             ), (width, scheme)
