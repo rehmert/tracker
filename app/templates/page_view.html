@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ p.title }}{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 
 <div class="notes-page-heading">
   <h1 data-no-title-case data-preserve-numbers>{{ p.title }}</h1>
@@ -9,6 +10,7 @@
     Edit page
   </a>
 </div>
+<nav class="tracker-macd741-actions" aria-label="Note management"><a class="tracker-macd741-action" href="/pages/{{ p.id }}/edit">Edit note</a><a class="tracker-macd741-action" href="/pages/{{ p.id }}/history">Version history</a><a class="tracker-macd741-action" href="#notes-delete741">Delete note</a></nav>
 
 <p class="meta">
   {% for t in p.tag_list %}<a class="tag" href="/pages?tag={{ t|urlencode }}">{{ t }}</a> {% endfor %}
@@ -58,6 +60,6 @@
 {% endif %}
 
 <section>
-  <form method="post" action="/pages/{{ p.id }}/delete" onsubmit="return confirm('Delete this page and its sources?')"><button class="link danger">Delete page</button></form>
+  <form id="notes-delete741" method="post" action="/pages/{{ p.id }}/delete" onsubmit="return confirm('Delete this page and its sources?')"><button class="link danger">Delete page</button></form>
 </section>
 {% endblock %}
