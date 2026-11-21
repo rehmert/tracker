@@ -147,7 +147,7 @@ class Coa(Base):
     purity_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
     endotoxin_pct: Mapped[float | None] = mapped_column(Float, nullable=True)  # legacy percent; never reinterpret as EU/vial
     endotoxin_eu_per_vial: Mapped[float | None] = mapped_column(Float, nullable=True)
-    endotoxin_result_kind: Mapped[str | None] = mapped_column(String(12), nullable=True)  # lt1, exact; NULL means legacy/unknown
+    endotoxin_result_kind: Mapped[str | None] = mapped_column(String(12), nullable=True)  # untested, lt1, exact; NULL remains legacy/unknown (no migration)
     job_id: Mapped[str] = mapped_column(String(120), default="")
     verify_code: Mapped[str] = mapped_column(String(120), default="")
     reported_content_value: Mapped[float | None] = mapped_column(Float, nullable=True)
