@@ -10,8 +10,14 @@ for script in scripts/tracker-qualify741.sh scripts/tracker-install741.sh \
   scripts/tracker-release-scoped741.sh scripts/tracker-release.sh; do
   bash -n "$script"
 done
-"$PY" -m py_compile app/routers/supplies.py app/routers/pages.py \
-  app/routers/calendar.py tests/test_release741_integrated_macd_mobile.py
+"$PY" -m py_compile app/routers/supplies.py
+echo "RELEASE_741_COMPILE_SUPPLIES=PASSED"
+"$PY" -m py_compile app/routers/pages.py
+echo "RELEASE_741_COMPILE_PAGES=PASSED"
+"$PY" -m py_compile app/routers/calendar.py
+echo "RELEASE_741_COMPILE_CALENDAR=PASSED"
+"$PY" -m py_compile tests/test_release741_integrated_macd_mobile.py
+echo "RELEASE_741_COMPILE_TESTS=PASSED"
 echo "RELEASE_741_COMPILE=PASSED"
 "$PY" -c 'from pathlib import Path; from jinja2 import Environment; e=Environment(); [e.parse(Path(p).read_text(encoding="utf-8")) for p in ("app/templates/supplies.html","app/templates/coas.html","app/templates/coa_edit.html","app/templates/vials.html","app/templates/vial_detail.html","app/templates/blend_detail.html","app/templates/labs.html","app/templates/lab_report.html","app/templates/protocols.html","app/templates/calendar.html","app/templates/pages.html","app/templates/page_view.html")]'
 echo "RELEASE_741_JINJA=PASSED"
