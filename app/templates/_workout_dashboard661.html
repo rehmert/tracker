@@ -47,25 +47,43 @@
     </div>
   </div>
 
-  <div class="tracker-workout-recent661">
-    <h3>Recent Completed Workouts</h3>
-    {% if workout_summary.recent %}
-      <ul>
-        {% for row in workout_summary.recent %}
-          <li>
-            <a href="/workouts/sessions/{{ row.session_id }}">{{ row.started_at|dt }}</a>
-            <span>{{ row.sets }} set{{ '' if row.sets == 1 else 's' }} · {{ row.machines }} machine{{ '' if row.machines == 1 else 's' }}</span>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="note">No completed workouts with recorded sets yet.</p>
-      <p><a class="tracker-workout-empty-action678" href="/workouts/backfill"><strong>Log a Previous Workout</strong></a></p>
-    {% endif %}
-  </div>
+  <details class="tracker-workout-recent661" id="tracker-workout-recent661"
+           {% if workout_summary.recent_expanded %}open{% endif %}>
+    <summary>Recent Workouts</summary>
+    <div class="tracker-workout-recent-content719">
+      {% if workout_summary.recent %}
+        <p class="note">Showing {{ workout_summary.recent_first }}–{{ workout_summary.recent_last }}
+          of {{ workout_summary.recent_total }} workouts · 10 per page</p>
+        <ul>
+          {% for row in workout_summary.recent %}
+            <li>
+              <a href="/workouts/sessions/{{ row.session_id }}">{{ row.started_at|dt }}</a>
+              <span>{{ row.sets }} set{{ '' if row.sets == 1 else 's' }}
+                · {{ row.machines }} machine{{ '' if row.machines == 1 else 's' }}
+                · {{ 'Completed' if row.completed_at else 'In progress' }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if workout_summary.recent_pages > 1 %}
+          <nav class="workout719-pager" aria-label="Workout history pages">
+            {% if workout_summary.recent_page > 1 %}
+              <a href="/?workout_page={{ workout_summary.recent_page - 1 }}#tracker-workout-recent661">Previous 10</a>
+            {% endif %}
+            <span>Page {{ workout_summary.recent_page }} of {{ workout_summary.recent_pages }}</span>
+            {% if workout_summary.recent_page < workout_summary.recent_pages %}
+              <a href="/?workout_page={{ workout_summary.recent_page + 1 }}#tracker-workout-recent661">Next 10</a>
+            {% endif %}
+          </nav>
+        {% endif %}
+      {% else %}
+        <p class="note">No workouts recorded yet.</p>
+        <p><a class="tracker-workout-empty-action678" href="/workouts/backfill"><strong>Log a Previous Workout</strong></a></p>
+      {% endif %}
+    </div>
+  </details>
   <p class="note tracker-workout-footnote661">
     A training day is a calendar date with at least one completed workout containing a recorded set.
     Multiple sessions on one day count as multiple sessions but one training day.
-    Unfinished and empty workouts are excluded. No training targets or recommendations are inferred.
+    Frequency counts exclude unfinished and empty workouts, but Recent Workouts lists them so they can be reviewed or deleted.
   </p>
 </section>
