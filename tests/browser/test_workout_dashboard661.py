@@ -66,7 +66,7 @@ def test_661_phone_card_and_dashboard_personalization(width, height):
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.route("**/dashboard-661", lambda route: route.fulfill(
-            status=200, content_type="text/html", body=mock_document661()
+            status=200, content_type="text/html; charset=utf-8", body=mock_document661()
         ))
         try:
             page.goto(URL)
