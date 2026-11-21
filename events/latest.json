@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r730-13ed014d24ba.json",
+  "receipt_path": "receipts/r730-install13ed014d24ba.json",
   "release": 730,
-  "request_id": "r730-13ed014d24ba",
+  "request_id": "r730-install13ed014d24ba",
   "schema": 1,
   "status": "passed",
   "target": "13ed014d24ba5658a69ccb15b6d8e1a247c7575c"
