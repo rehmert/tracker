@@ -1,0 +1,11 @@
+{
+  "action": "dev_install",
+  "event_type": "tracker-release-receipt",
+  "receipt_branch": "tracker-release-receipts",
+  "receipt_path": "receipts/r739-installa0bd6f6f1d.json",
+  "release": 739,
+  "request_id": "r739-installa0bd6f6f1d",
+  "schema": 1,
+  "status": "passed",
+  "target": "a0bd6f6f1d0056e16acb6b134ed4bc21fe6ce48f"
+}
