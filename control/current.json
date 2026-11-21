@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r738-de867eee9300",
-  "action": "qualify",
+  "request_id": "r738-installde867eee9300",
+  "action": "dev_install",
   "release": 738,
   "target": "de867eee93004534fa822e7250deda75d0976558",
   "base": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
   "ref": "release/738-integrated-macd-mobile-ux",
-  "previous_request_id": null
+  "previous_request_id": "r738-de867eee9300"
 }
