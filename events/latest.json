@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r738-de867eee9300.json",
+  "receipt_path": "receipts/r738-installde867eee9300.json",
   "release": 738,
-  "request_id": "r738-de867eee9300",
+  "request_id": "r738-installde867eee9300",
   "schema": 1,
   "status": "passed",
   "target": "de867eee93004534fa822e7250deda75d0976558"
