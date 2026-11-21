@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from ..scoped_db390 import get_scoped_db390
 from ..models import Purchase, Supply, SupplyUsage, Compound, SupplyCategory, InventoryAdjustment, ChangeAudit
-from ..supply_categories import ensure_categories, validate_supply
+from ..supply_categories import DEFAULTS, ensure_categories, validate_supply
 from .. import services, idempotency
 from ..inventory_lock import reserve_inventory_write
 from ..templating import render
@@ -30,6 +30,19 @@ def _supply_version741(s: Supply) -> str:
                              sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def _category_version741(c: SupplyCategory) -> str:
+    return sha256(json.dumps([c.id, c.key, c.label, c.unit],
+                             separators=(",", ":")).encode()).hexdigest()
+
+
+def _custom_category741(c: SupplyCategory) -> bool:
+    return c.key not in {key for key, _, _ in DEFAULTS}
+
+
+def _category_supply_counts741(db: Session) -> dict[str, int]:
+    return dict(db.execute(select(Supply.kind, func.count()).group_by(Supply.kind)))
+
+
 def _supply_references741(db: Session) -> dict[int, dict[str, int]]:
     refs: dict[int, dict[str, int]] = {}
     for key, model in (("usage", SupplyUsage), ("adjustments", InventoryAdjustment)):
@@ -42,7 +55,7 @@ def _supply_references741(db: Session) -> dict[int, dict[str, int]]:
 def index(request: Request, db: Session = Depends(get_scoped_db390)):
     categories = ensure_categories(db)
     supplies = list(db.scalars(select(Supply).order_by(Supply.id.desc())))
-    return render(request, "supplies.html", categories=categories, category_map={c.key: c for c in categories}, supplies=supplies, submission_tokens={s.id: idempotency.new_token() for s in supplies}, purchases=list(db.scalars(select(Purchase).order_by(Purchase.id.desc()))), compounds=list(db.scalars(select(Compound).order_by(Compound.name))), supply_versions741={s.id: _supply_version741(s) for s in supplies}, supply_references741=_supply_references741(db))
+    return render(request, "supplies.html", categories=categories, category_map={c.key: c for c in categories}, supplies=supplies, submission_tokens={s.id: idempotency.new_token() for s in supplies}, purchases=list(db.scalars(select(Purchase).order_by(Purchase.id.desc()))), compounds=list(db.scalars(select(Compound).order_by(Compound.name))), supply_versions741={s.id: _supply_version741(s) for s in supplies}, supply_references741=_supply_references741(db), category_versions741={c.id: _category_version741(c) for c in categories}, category_supply_counts741=_category_supply_counts741(db), custom_category741=_custom_category741)
 
 @router.post("/supplies")
 def add(purchase_id: int = Form(...), name: str = Form(...), kind: str = Form(...), quantity: float = Form(...), unit_price: str = Form("0"), pack_count: str = Form(""),
@@ -215,6 +228,81 @@ def log_pill(sid: int, quantity: int = Form(...), taken_at: str = Form(''), note
         idempotency.record(db, submission_token, 'pill_use', digest)
     db.commit()
     return services.flash_redirect('/supplies', msg=f'Recorded {quantity} pill(s) used.')
+
+@router.post("/supplies/categories/{cid}/edit")
+def edit_category741(
+    cid: int, version: str = Form(""), label: str = Form(""), unit: str = Form("count"),
+    db: Session = Depends(get_scoped_db390),
+):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/supplies#tracker-categories", err="Inventory is busy.")
+    cat = db.get(SupplyCategory, cid)
+    if cat is None:
+        db.rollback()
+        raise HTTPException(404, "Category not found")
+    label = label.strip()
+    if not _custom_category741(cat):
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Built-in category definitions cannot be edited.")
+    if version != _category_version741(cat):
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Category changed; reload before editing.")
+    if not label or len(label) > 100 or unit not in ("count", "mL", "g", "mg", "L", "boxes", "packs"):
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Enter a valid category name and unit.")
+    if unit != cat.unit and db.scalar(select(func.count()).select_from(Supply).where(Supply.kind == cat.key)):
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Cannot change the unit of a category with stock; create another category instead.")
+    before = {"key": cat.key, "label": cat.label, "unit": cat.unit}
+    after = {"key": cat.key, "label": label, "unit": unit}
+    if before == after:
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", msg="Category unchanged.")
+    duplicate = db.scalar(select(SupplyCategory.id).where(
+        SupplyCategory.label == label, SupplyCategory.id != cid
+    ))
+    if duplicate is not None:
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Category name already exists.")
+    cat.label, cat.unit = label, unit
+    db.add(ChangeAudit(entity_type="supply_category", entity_id=cid, action="edit",
+                       before_json=json.dumps(before), after_json=json.dumps(after)))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Category could not be saved.")
+    return services.flash_redirect("/supplies#tracker-categories", msg="Category saved.")
+
+
+@router.post("/supplies/categories/{cid}/delete")
+def delete_category741(
+    cid: int, version: str = Form(""), confirm_delete: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    if not reserve_inventory_write(db):
+        return services.flash_redirect("/supplies#tracker-categories", err="Inventory is busy.")
+    cat = db.get(SupplyCategory, cid)
+    if cat is None:
+        db.rollback()
+        raise HTTPException(404, "Category not found")
+    if not _custom_category741(cat) or version != _category_version741(cat) or confirm_delete != "delete":
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Category is built-in, changed, or deletion was not confirmed.")
+    if db.scalar(select(func.count()).select_from(Supply).where(Supply.kind == cat.key)):
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Category contains supplies and cannot be deleted.")
+    db.add(ChangeAudit(entity_type="supply_category", entity_id=cid, action="delete",
+                       before_json=json.dumps({"key": cat.key, "label": cat.label, "unit": cat.unit}),
+                       after_json="{}"))
+    db.delete(cat)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return services.flash_redirect("/supplies#tracker-categories", err="Category has dependent records.")
+    return services.flash_redirect("/supplies#tracker-categories", msg="Unused custom category deleted.")
+
 
 @router.post("/supplies/categories")
 def create_category(label: str = Form(...), unit: str = Form("count"), db: Session = Depends(get_scoped_db390)):
