@@ -3,11 +3,12 @@
 HTML forms inherit Tracker's established session authentication, origin guard
 and signed CSRF-token handling. Retired QR mappings remain stored unchanged.
 """
+from collections import Counter
 from datetime import datetime
 import math
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -81,23 +82,38 @@ def workouts654(request: Request, db: Session = Depends(get_scoped_db390)):
     ))
     # Routine navigation uses only the current scoped workout's logged sets.
     logged_ids = {entry.equipment_id for entry in rows}
-    counts_this_session = {
-        item.id: sum(entry.equipment_id == item.id for entry in rows)
-        for item in equipment
-    }
+    # Count active sets once, rather than rescanning them for each machine.
+    set_counts = Counter(entry.equipment_id for entry in rows)
+    counts_this_session = {item.id: set_counts[item.id] for item in equipment}
     next_machine = {
         machine_id: routine_equipment_ids[index + 1]
         for index, machine_id in enumerate(routine_equipment_ids[:-1])
     }
-    latest = {
-        item.id: db.scalar(
-            select(WorkoutSet654)
-            .where(WorkoutSet654.equipment_id == item.id)
-            .order_by(WorkoutSet654.performed_at.desc(), WorkoutSet654.id.desc())
-            .limit(1)
+    # One query for the most recent recorded set of each machine.
+    # Preserve the prior performed_at DESC / id DESC tie-break.
+    ranked = (
+        select(
+            WorkoutSet654.id.label("set_id"),
+            func.row_number().over(
+                partition_by=WorkoutSet654.equipment_id,
+                order_by=(
+                    WorkoutSet654.performed_at.desc(),
+                    WorkoutSet654.id.desc(),
+                ),
+            ).label("set_rank"),
         )
-        for item in equipment
+        .subquery()
+    )
+    latest_by_equipment = {
+        entry.equipment_id: entry
+        for entry in db.scalars(
+            select(WorkoutSet654)
+            .join(ranked, WorkoutSet654.id == ranked.c.set_id)
+            .where(ranked.c.set_rank == 1)
+        )
     }
+    # Jinja uses latest[id] even for machines with no prior sets.
+    latest = {item.id: latest_by_equipment.get(item.id) for item in equipment}
     return render(
         request, "workouts654.html", equipment=equipment, active=active,
         rows=rows, recent=recent, latest=latest, kinds=KINDS654,
