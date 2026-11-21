@@ -308,38 +308,38 @@ def test_743_consolidated_css_computed_accessibility_contract(width, scheme):
             )
             page.set_content(markup)
             page.add_style_tag(content=merged + "\n" + downstream)
-            assert page.locator(".tracker-ui-action").count() == 2
+            assert page.locator(".tracker-ui-action").count() == 2, "CSS743_COUNT"
             primary = page.locator(".tracker-ui-action--primary")
             assert primary.evaluate(
                 "e => getComputedStyle(e).display === 'inline-flex'"
-            )
+            ), "CSS743_PRIMARY_DISPLAY"
             assert primary.evaluate(
                 "e => e.getBoundingClientRect().height >= 44"
-            )
+            ), "CSS743_PRIMARY_HEIGHT"
             nav = page.locator(".ux675-gym-top")
             assert nav.evaluate(
                 "e => getComputedStyle(e).display === 'flex'"
-            )
+            ), "CSS743_GYM_NAV_DISPLAY"
             for selector in (
                 ".ux675-gym-top > a",
                 ".ux675-more > summary",
                 ".ux675-inline-action",
             ):
                 targets = page.locator(selector)
-                assert targets.count() >= 1
+                assert targets.count() >= 1, "CSS743_TARGET_COUNT"
                 assert targets.evaluate_all(
                     "els => els.every(e => e.getBoundingClientRect().height >= 44)"
-                ), (width, scheme, selector)
+                ), "CSS743_TARGET_HEIGHT"
             # :focus-visible is a keyboard modality contract; clicking a
             # different control first switches Chromium to pointer modality.
             page.keyboard.press("Tab")
             assert primary.evaluate(
                 "e => document.activeElement === e && getComputedStyle(e).outlineStyle === 'solid'"
-            )
+            ), "CSS743_KEYBOARD_FOCUS"
             page.locator(".ux675-more > summary").click()
-            assert page.locator(".ux675-more").evaluate("e => e.open")
+            assert page.locator(".ux675-more").evaluate("e => e.open"), "CSS743_MENU_OPEN"
             assert page.evaluate(
                 "document.documentElement.scrollWidth <= innerWidth + 1"
-            ), (width, scheme)
+            ), "CSS743_OVERFLOW"
         finally:
             browser_instance.close()
