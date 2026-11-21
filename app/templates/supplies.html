@@ -141,7 +141,7 @@
 <button type="submit" class="tracker-macd741-action">Save supply changes</button>
 </form></details>
 {% if not historic %}
-<form method="post" action="/supplies/{{ s.id }}/delete" onsubmit="return confirm('Delete unused supply {{ s.name }}?');">
+<form method="post" action="/supplies/{{ s.id }}/delete" onsubmit="return confirm('Delete this unused supply line? Purchase totals will change, but its audit will be retained.');">
 <input type="hidden" name="version" value="{{ supply_versions741[s.id] }}">
 <button class="tracker-macd741-action" type="submit" name="confirm_delete" value="delete">Delete supply</button></form>
 {% else %}
@@ -172,7 +172,7 @@
 {% if category_supply_counts741.get(cat.key,0) %}<input type="hidden" name="unit" value="{{ cat.unit }}">{% endif %}
 <button class="tracker-macd741-action" type="submit">Save category</button></form></details>
 {% if not category_supply_counts741.get(cat.key,0) %}
-<form method="post" action="/supplies/categories/{{ cat.id }}/delete" onsubmit="return confirm('Delete unused category {{ cat.label }}?');">
+<form method="post" action="/supplies/categories/{{ cat.id }}/delete" onsubmit="return confirm('Delete this unused custom category?');">
 <input type="hidden" name="version" value="{{ category_versions741[cat.id] }}">
 <button type="submit" class="tracker-macd741-action" name="confirm_delete" value="delete">Delete category</button></form>
 {% else %}<button type="button" class="tracker-macd741-action" disabled>Delete category</button>{% endif %}
