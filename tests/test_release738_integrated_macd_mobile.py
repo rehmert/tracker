@@ -264,7 +264,7 @@ def test_738_mobile_regimen_actions_remain_visible_and_history_stacks(env, width
             expect(add).to_be_visible()
             assert add.evaluate("el => el.getBoundingClientRect().height >= 44")
             edit = page.locator("[data-reg738-intake-actions] summary")
-            delete = page.locator("[data-reg738-intake-actions] button")
+            delete = page.locator("[data-reg738-intake-actions] > form > button")
             expect(edit).to_have_text("Edit intake")
             expect(delete).to_have_text("Delete intake")
             assert edit.evaluate("el => el.getBoundingClientRect().height >= 44")
