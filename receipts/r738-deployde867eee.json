@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T21:30:03+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=de867eee93004534fa822e7250deda75d0976558",
+    "PROMOTED_COMMIT=de867eee93004534fa822e7250deda75d0976558",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=de867eee93004534fa822e7250deda75d0976558",
+    "REMOTE_DEPLOY_EXIT_STATUS=0",
+    "PROD_INSTALLED_COMMIT=de867eee93004534fa822e7250deda75d0976558",
+    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  ],
+  "previous_request_id": "r738-preflightde867ee",
+  "ref": "release/738-integrated-macd-mobile-ux",
+  "release": 738,
+  "request_id": "r738-deployde867eee",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T21:29:39+00:00",
+  "status": "passed",
+  "target": "de867eee93004534fa822e7250deda75d0976558",
+  "test_counts": []
+}
