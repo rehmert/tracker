@@ -79,16 +79,20 @@ def test_719_delete_accidental_and_completed_sessions_from_phone(scheme):
             sid = page.locator("#workout659-root").get_attribute("data-session-id")
             assert sid and sid.isdecimal()
             mark719(scheme, "STARTED")
+            link = page.get_by_role("link", name="Delete Accidental Workout")
+            expect(link).to_be_visible()
+            mark719(scheme, "DELETE_LINK")
+            link.click()
+            page.wait_for_load_state("networkidle")
             delete = page.locator(f"form#workout719-delete-{sid}")
             expect(delete.locator("button.workout720-delete-button")).to_be_visible()
-            mark719(scheme, "DELETE_LINK")
             mark719(scheme, "ACTIVE_FORM")
             expect(delete.locator('input[name="reason"]')).to_have_value("Started by mistake")
             # Cancel is a genuine no-op; the session remains active.
             page.once("dialog", lambda dialog: dialog.dismiss())
             delete.locator("button.workout720-delete-button").click()
             expect(delete).to_be_visible()
-            assert urlsplit(page.url).path == "/workouts/quick"
+            assert urlsplit(page.url).path == f"/workouts/sessions/{sid}"
             page.once("dialog", lambda dialog: dialog.accept())
             with page.expect_response(lambda r:
                     r.request.method == "POST" and
