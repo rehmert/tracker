@@ -7,7 +7,7 @@
     "tests/browser/test_workout_active716.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T00:50:19+00:00",
+  "finished_at_utc": "2026-11-21T00:53:26+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_716_IMPACT_PREFLIGHT=PASSED",
@@ -21,6 +21,9 @@
     "TARGETED_716_HTTP_PANEL=PASSED",
     "TARGETED_716_HTTP_SELECTED=PASSED",
     "TARGETED_716_HTTP_POSTED=PASSED",
+    "TARGETED_716_HTTP_SERVER_OK=PASSED",
+    "TARGETED_716_HTTP_PAGE_GYM=PASSED",
+    "TARGETED_716_HTTP_HEADING_OTHER=PASSED",
     "TARGETED_716_HTTPS_MACHINE_ONE=PASSED",
     "TARGETED_716_HTTPS_CATALOG=PASSED",
     "TARGETED_716_HTTPS_ROUTINE_CREATED=PASSED",
@@ -31,11 +34,11 @@
   "previous_request_id": null,
   "ref": "release/716-active-workout-machine-add",
   "release": 716,
-  "request_id": "r716-c36ef47a990e",
+  "request_id": "r716-ecd9810bdc96",
   "schema": 1,
-  "started_at_utc": "2026-11-21T00:48:54+00:00",
+  "started_at_utc": "2026-11-21T00:52:01+00:00",
   "status": "failed",
-  "target": "c36ef47a990e80888a26d03a24f906c035cf801e",
+  "target": "ecd9810bdc961961660f635fdc9368c8ccac7339",
   "test_counts": [
     "27 passed, 1 warning",
     "7 passed"
