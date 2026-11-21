@@ -6,7 +6,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import markup, services
 from ..scoped_db390 import get_scoped_db390
@@ -45,7 +45,7 @@ def _matches(p: Page, q: str) -> bool:
 @router.get("/pages")
 def pages_list(request: Request, q: str = "", tag: str = "", compound_id: int | None = None,
                view: str = "all", db: Session = Depends(get_scoped_db390)):
-    all_pages = list(db.scalars(select(Page).order_by(Page.updated_at.desc(), Page.id.desc())))
+    all_pages = list(db.scalars(select(Page).options(selectinload(Page.sources), selectinload(Page.compounds)).order_by(Page.updated_at.desc(), Page.id.desc())))
     pages = all_pages
     if q.strip():
         needle = q.strip().lower()

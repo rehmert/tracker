@@ -1,0 +1,222 @@
+/* Release 742 cascade-preserving bundle: Calendar. Historic source files remain unchanged. */
+/* Original source: tracker-calendar-views374.css */
+.tracker-calendar-views{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.tracker-calendar-views button{min-height:44px;border-radius:9px;padding:.4rem .7rem}.tracker-calendar-views button[aria-pressed=true]{background:var(--accent,#244e79);color:#fff}.calendar-grid[data-compact-view] .calendar-head{display:none!important}.calendar-grid[data-compact-view]{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:.4rem!important}.calendar-grid[data-compact-view] .calendar-day{min-height:0!important;width:100%!important;box-sizing:border-box!important;display:block!important}.calendar-grid .calendar-day[data-view-hidden=true]{display:none!important}@media(max-width:760px){.tracker-calendar-views{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.25rem}.tracker-calendar-views button{font-size:.85rem;padding:.3rem .1rem;min-width:0}.calendar-grid[data-compact-view] .calendar-day{padding:.55rem}.calendar-grid[data-compact-view] .calendar-activity{margin:.35rem 0}}
+/* Original source: tracker-calendar-workbench.css */
+/* Calendar productivity; read-only controls and print visibility. */
+.calendar-workbench { border:1px solid var(--rule,#d0d7df); background:var(--surface,#fff);
+  border-radius:14px; padding:.85rem 1rem; margin:.65rem 0 1rem; }
+.calendar-summary { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.55rem; }
+.calendar-summary>div { background:var(--wash,#f6f7f9); border-radius:10px; padding:.65rem .7rem; }
+.calendar-summary strong { display:block; font-size:1.35rem; font-variant-numeric:tabular-nums; }
+.calendar-summary span { display:block; font-size:.76rem; color:var(--muted,#667); }
+.calendar-controls { display:flex; flex-wrap:wrap; align-items:end; gap:.65rem; margin-top:.8rem; }
+.calendar-controls .field { min-width:10rem; flex:1 1 12rem; }
+.calendar-controls .field:first-child { flex:2 1 14rem; }
+.calendar-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
+.calendar-actions .button,.calendar-actions button { min-height:2.5rem; }
+#calendar-filter-summary { font-size:.86rem; margin:.55rem 0; }
+.calendar-day.is-today { background:color-mix(in srgb,var(--teal,#207b9d) 8%,var(--surface,#fff)); box-shadow:inset 0 0 0 2px var(--teal,#207b9d); }
+.calendar-today-mark { display:block; font-size:.7rem; font-weight:600; color:var(--teal,#207b9d); }
+.calendar-activity { margin:.3rem 0 .45rem; }
+.calendar-activity[hidden] { display:none!important; }
+.calendar-day.calendar-filtered-empty .calendar-activity { display:none; }
+#calendar-print-caption { font-size:.78rem; }
+@media(max-width:850px) { .calendar-summary { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:500px) { .calendar-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .calendar-controls .field { flex-basis:100%; } }
+@media print {
+  .calendar-workbench,.calendar-actions,.calendar-day form,.calendar-activity a.tag,
+  .calendar-day .calendar-today-mark,nav.rail,.workspace-toolbar,.sidebar-backdrop {
+    display:none!important;
+  }
+  .calendar-grid { break-inside:auto; }
+  .calendar-day { min-height:0; break-inside:avoid; }
+  .calendar-day.outside { opacity:.5; }
+  .calendar-activity[hidden] { display:none!important; }
+  main { width:100%!important; max-width:100%!important; margin:0!important; padding:0!important; }
+}
+
+/* Read-only chronological agenda for the selected calendar month. */
+.calendar-review { margin:0 0 1rem; padding:.8rem 1rem; border:1px solid var(--rule,#ddd);
+  background:var(--surface,#fff); border-radius:14px; }
+.calendar-review>summary { cursor:pointer; font-weight:700; }
+.calendar-review>summary:focus-visible { outline:2px solid var(--teal,#287b9b); outline-offset:3px; }
+.calendar-review .note { font-size:.84rem; }
+#calendar-agenda-summary { font-size:.86rem; margin:.65rem 0; }
+.calendar-review-table { width:100%; min-width:760px; }
+.calendar-review-table th,.calendar-review-table td { padding:.5rem .65rem; vertical-align:middle; }
+.calendar-review-table td small { display:block; color:var(--muted,#667); font-size:.74rem; }
+.calendar-review-table td strong { display:block; font-weight:600; }
+.calendar-review-table .calendar-review-actions { white-space:nowrap; }
+.calendar-review-table .calendar-review-actions .tag { display:inline-block; margin:.15rem .2rem .15rem 0; }
+.calendar-review-row[hidden] { display:none!important; }
+.calendar-review-status { display:inline-block; border-radius:8px; padding:.2rem .45rem;
+  background:var(--wash,#f6f7f9); font-size:.77rem; font-weight:600; white-space:nowrap; }
+.calendar-review-status.unrecorded { border-left:3px solid var(--amber,#e09a3b); }
+.calendar-review-status.due { border-left:3px solid var(--teal,#287b9b); }
+.calendar-review-status.upcoming { border-left:3px solid var(--rule,#aaa); }
+@media print { #calendar-review-agenda { display:none!important; } }
+/* Original source: tracker-calendar-dose-mobile369.css */
+/* Calendar-first recording: mobile tap targets and clear vial choice.
+   Styling only; existing recording and review safeguards remain. */
+
+.calendar-dose-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin: .75rem 0 1rem;
+  padding: .8rem;
+  border: 1px solid var(--border, #b9c2cf);
+  border-radius: 12px;
+}
+
+.calendar-dose-shortcut a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: .3rem .8rem;
+  border-radius: 8px;
+  border: 1px solid currentColor;
+  font-weight: 600;
+  text-align: center;
+}
+
+#calendar-vial-picker {
+  scroll-margin-top: 1.5rem;
+}
+
+@media (max-width: 680px) {
+  .calendar-review-actions a.tag[href^="/doses?"],
+  .calendar-activity a.tag[href^="/doses?"] {
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    padding: .4rem .85rem;
+    box-sizing: border-box;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .calendar-dose-shortcut {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-dose-shortcut a {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  form[hx-post="/doses"] select[name="vial_id"],
+  form[hx-post="/doses"] input[name="amount"],
+  form[hx-post="/doses"] input[name="taken_at"] {
+    width: 100%;
+    min-height: 50px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  form[hx-post="/doses"] button.primary[type="submit"] {
+    width: 100%;
+    min-height: 54px;
+    font-size: 1.05rem;
+  }
+
+  #dose-calendar-vial-notice {
+    margin: .6rem 0;
+  }
+}
+/* Original source: tracker-calendar-day-context.css */
+/* Visible day summaries: informational, never approval states. */
+.calendar-day .tracker-day-event-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+  margin: .3rem 0 .4rem;
+  font-size: .72rem;
+}
+
+.calendar-day .tracker-day-event-summary[hidden] {
+  display: none !important;
+}
+
+.calendar-day .tracker-day-event-summary span {
+  padding: .15rem .35rem;
+  border-radius: .35rem;
+  background: var(--wash, #edf2f6);
+  color: var(--text, #28323b);
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar-day .tracker-day-event-summary
+.tracker-day-recorded {
+  border: 1px solid var(--teal, #247c83);
+}
+
+#calendar-grid .calendar-day.tracker-calendar-return-day,
+#calendar-grid .calendar-day:target {
+  outline: 3px solid var(--accent, #2563eb);
+  outline-offset: -3px;
+  scroll-margin-top: 5rem;
+}
+
+@media print {
+  #calendar-grid .calendar-day.tracker-calendar-return-day,
+  #calendar-grid .calendar-day:target {
+    outline: 0;
+  }
+}
+/* Original source: tracker-calendar-day-navigation.css */
+#calendar-matching-day-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem .8rem;
+  padding: .65rem .85rem;
+  margin: .65rem 0;
+  border: 1px solid var(--rule, #dce5ec);
+  background: var(--surface, #fff);
+  border-radius: .7rem;
+}
+
+#calendar-matching-day-navigation button {
+  width: auto;
+  margin: 0;
+}
+
+#calendar-matching-day-navigation button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+#calendar-matching-day-status {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-size: .86rem;
+}
+
+#calendar-matching-day-navigation button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+#calendar-grid .calendar-day:focus {
+  scroll-margin-top: 5rem;
+}
+
+@media (max-width: 600px) {
+  #calendar-matching-day-status {
+    order: -1;
+    flex-basis: 100%;
+  }
+}
+
+@media print {
+  #calendar-matching-day-navigation {
+    display: none !important;
+  }
+}
