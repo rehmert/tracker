@@ -88,3 +88,34 @@
     grid-template-columns:minmax(0,1fr);
   }
 }
+
+/* Release 719: native disclosure hides all recent rows until clicked. */
+#tracker-workout-dashboard661 details.tracker-workout-recent661 {
+  border:1px solid var(--border,#8999a7);
+  border-radius:.7rem; margin:.8rem 0;
+  padding:.25rem .8rem;
+}
+#tracker-workout-dashboard661 .tracker-workout-recent661 > summary {
+  cursor:pointer; display:flex; align-items:center;
+  min-height:48px; font-size:1.05rem; font-weight:750;
+}
+#tracker-workout-dashboard661 .tracker-workout-recent661 .tracker-workout-recent-content719 {
+  padding:.25rem 0 .5rem;
+}
+#tracker-workout-dashboard661 .workout719-pager {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:.65rem; padding:.85rem 0 .35rem;
+}
+#tracker-workout-dashboard661 .workout719-pager a {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height:44px; padding:.5rem .8rem;
+  border:1px solid var(--border,#8999a7); border-radius:.55rem;
+  text-decoration:none; font-weight:650;
+}
+#tracker-workout-dashboard661 .workout719-pager > span {
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:420px) {
+  #tracker-workout-dashboard661 .workout719-pager a { flex:1 1 auto; }
+  #tracker-workout-dashboard661 .workout719-pager span { order:-1; width:100%; text-align:center; }
+}
