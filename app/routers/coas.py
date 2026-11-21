@@ -58,14 +58,18 @@ def _parse_endotoxin645(kind: str, value: str) -> tuple[str, float | None]:
     """Store detection-limit reports separately from real numeric measurements."""
     # Direct legacy unit tests may call FastAPI handlers without passing
     # the newly added Form parameter, leaving its Form default object.
-    kind = kind.strip() if isinstance(kind, str) else "lt1"
+    kind = kind.strip() if isinstance(kind, str) else "untested"
     value = value.strip() if isinstance(value, str) else ""
+    if kind == "untested":
+        if value:
+            raise ValueError("Remove the numeric endotoxin entry when Untested is selected.")
+        return "untested", None
     if kind == "lt1":
         if value:
             raise ValueError("Remove the numeric endotoxin entry when '<1 EU/vial' is selected.")
         return "lt1", None
     if kind != "exact":
-        raise ValueError("Select either <1 EU/vial or an exact endotoxin value.")
+        raise ValueError("Select Untested, <1 EU/vial, or an exact endotoxin value.")
     if not value:
         raise ValueError("Enter the endotoxin result in EU/vial when Exact value is selected.")
     try:
@@ -84,7 +88,7 @@ async def upload_coa(vid: int, file: UploadFile | None = File(None), lab_name: s
                      notes: str = Form(""), endotoxin_eu_per_vial: str = Form(""),
                      job_id: str = Form(""), verify_code: str = Form(""),
                      db: Session = Depends(get_scoped_db390),
-                     endotoxin_result_kind: str = Form("lt1")):
+                     endotoxin_result_kind: str = Form("untested")):
     v = db.get(Vial, vid)
     if v is None:
         raise HTTPException(404, "Vial not found")
@@ -732,7 +736,7 @@ async def coa_create(vial_id: int = Form(...), file: UploadFile | None = File(No
                      reported_content: str = Form(""), reported_unit: str = Form("mg"),
                      job_id: str = Form(""), verify_code: str = Form(""),
                      notes: str = Form(""), db: Session = Depends(get_scoped_db390),
-                     endotoxin_result_kind: str = Form("lt1")):
+                     endotoxin_result_kind: str = Form("untested")):
     # Use the same validation, legacy schema compatibility, and upload logic
     # as the existing vial COA creation endpoint.
     response = await upload_coa(vial_id, file, lab_name, tested_on, purity_pct,
@@ -753,7 +757,7 @@ async def coa_edit(cid: int, file: UploadFile | None = File(None),
                    reported_content: str = Form(""), reported_unit: str = Form("mg"),
                    job_id: str = Form(""), verify_code: str = Form(""),
                    notes: str = Form(""), db: Session = Depends(get_scoped_db390),
-                   endotoxin_result_kind: str = Form("lt1")):
+                   endotoxin_result_kind: str = Form("untested")):
     coa = db.get(Coa, cid)
     if coa is None:
         raise HTTPException(404, "COA not found")
