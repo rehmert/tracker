@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r733-install28003549a8d0",
-  "action": "dev_install",
-  "release": 733,
-  "target": "28003549a8d0d69ac7ea23d8addd699a71a5a226",
-  "base": "1906a69408e7dd00cb9044f77cd208566aed25df",
-  "ref": "release/733-regimen-macd-actions",
-  "previous_request_id": "r733-28003549a8d0"
+  "request_id": "r734-2421fde33dfa",
+  "action": "qualify",
+  "release": 734,
+  "target": "2421fde33dfae626022529f046c9b21035ad6d62",
+  "base": "28003549a8d0d69ac7ea23d8addd699a71a5a226",
+  "ref": "release/734-regimen-action-button-parity",
+  "previous_request_id": null
 }
