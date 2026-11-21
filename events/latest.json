@@ -1,10 +1,10 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r735-pf51a4a70ed092.json",
+  "receipt_path": "receipts/r735-deploy51a4a70ed092.json",
   "release": 735,
-  "request_id": "r735-pf51a4a70ed092",
+  "request_id": "r735-deploy51a4a70ed092",
   "schema": 1,
   "status": "passed",
   "target": "51a4a70ed09287dd60a108dfea3721cd53090740"
