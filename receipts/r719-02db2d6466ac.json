@@ -1,0 +1,30 @@
+{
+  "action": "qualify",
+  "base": "18a1bf7a6171ef1eeef80e4588851cd500031cb4",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/browser/test_workout_manage719.py",
+    "tests/browser/test_workout_manage719.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T01:49:08+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_719_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_719_SCOPED_BACKEND=PASSED",
+    "RELEASE_719_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_719_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/719-workout-delete-dashboard-pagination",
+  "release": 719,
+  "request_id": "r719-02db2d6466ac",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T01:47:16+00:00",
+  "status": "failed",
+  "target": "02db2d6466ac4d880a6fbd4b0c58170077057b2e",
+  "test_counts": [
+    "50 passed, 1 warning",
+    "7 passed"
+  ]
+}
