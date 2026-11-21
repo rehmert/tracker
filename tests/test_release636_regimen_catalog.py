@@ -130,7 +130,7 @@ def test_no_new_workflow_and_original_forms_are_intact():
     assert html.count('data-reg636-results role="listbox"') == 2
     assert html.count('data-reg636-status') == 2
     assert html.count('data-reg637-search') == 2
-    assert 'tracker-regimen-catalog636.js?v=639' in html
+    assert 'tracker-regimen-catalog636.js?v=730' in html
     assert "new URLSearchParams({kind: kind.value, q})" in script
     assert "method: 'GET'" in script
     assert "option.type = 'button'" in script
