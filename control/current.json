@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r714-c7e3592af106",
-  "action": "prod_deploy",
-  "release": 714,
-  "target": "247f413d46f9f1b635144c7f141a57027fd26449",
-  "base": "b7253f331ba3d4381328332b3a228148d6fa6d1f",
-  "ref": "release/714-workout-routine-row-alignment",
-  "previous_request_id": "r714-a85c2107df39"
+  "request_id": "r715-9f28e6b4d1a0",
+  "action": "qualify",
+  "release": 715,
+  "target": "355d479e5fc864142543f56303db8de410ab0822",
+  "base": "247f413d46f9f1b635144c7f141a57027fd26449",
+  "ref": "release/715-coa-endotoxin-untested-default",
+  "previous_request_id": null
 }
