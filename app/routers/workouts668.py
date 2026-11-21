@@ -254,9 +254,135 @@ def correction_page668(
             .order_by(ChangeAudit.id.desc())
         )
     ]
+    equipment_options718 = list(db.scalars(
+        select(WorkoutEquipment654).order_by(
+            WorkoutEquipment654.name, WorkoutEquipment654.gym,
+            WorkoutEquipment654.id,
+        )
+    ))
+    groups718 = [
+        {
+            "id": equipment_id,
+            "name": names[equipment_id],
+            "count": count,
+            "set_ids": ",".join(str(row.id) for row in recorded
+                              if row.equipment_id == equipment_id),
+        }
+        for equipment_id, count in machine_counts.items()
+    ]
+    moves718 = [
+        (event, json.loads(event.before_json), json.loads(event.after_json))
+        for event in db.scalars(
+            select(ChangeAudit).where(
+                ChangeAudit.entity_type == "workout_set",
+                ChangeAudit.action == "machine_reassign",
+                func.json_extract(ChangeAudit.before_json, "$.session_id") == session_id,
+            ).order_by(ChangeAudit.id.desc())
+        )
+    ]
     return render(request, "workout_corrections668.html", session=session,
                   recorded=recorded, names=names, kinds=kinds, changes=changes,
-                  positions717=positions, removals717=removals)
+                  positions717=positions, removals717=removals,
+                  equipment_options718=equipment_options718,
+                  groups718=groups718, moves718=moves718)
+
+
+def _audit_machine_reassignment718(
+    db: Session, session_id: int, entry: WorkoutSet654,
+    destination: WorkoutEquipment654, reason: str,
+) -> None:
+    """Keep exact before/after machine identities in the private audit."""
+    previous = db.get(WorkoutEquipment654, entry.equipment_id)
+    audit_record717(
+        db, "workout_set", entry.id, "machine_reassign",
+        before=dict(
+            session_id=session_id, equipment_id=entry.equipment_id,
+            equipment_name=previous.name if previous else "Unknown equipment",
+            performed_at=entry.performed_at.isoformat(), reason=reason,
+        ),
+        after=dict(
+            session_id=session_id, equipment_id=destination.id,
+            equipment_name=destination.name,
+        ),
+    )
+    entry.equipment_id = destination.id
+
+
+@router.post("/workouts/sessions/{session_id}/sets/{set_id}/machine")
+def correct_set_machine718(
+    session_id: int, set_id: int,
+    equipment_id: int = Form(...),
+    expected_equipment_id: int = Form(...),
+    reason: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Move one historical set to a correct cataloged machine."""
+    session = db.get(WorkoutSession654, session_id)
+    entry = db.get(WorkoutSet654, set_id)
+    if session is None or entry is None or entry.session_id != session_id:
+        raise HTTPException(status_code=404, detail="Workout set not found")
+    url = f"/workouts/sessions/{session_id}/correct"
+    if session.completed_at is None:
+        return services.flash_redirect(url, err="Finish the workout before editing its machine.")
+    if entry.equipment_id != expected_equipment_id:
+        return services.flash_redirect(url, err="Machine changed since this page loaded. Reload and retry.")
+    reason = reason.strip()
+    if not 3 <= len(reason) <= 500:
+        return services.flash_redirect(url, err="Enter a reason of 3–500 characters.")
+    destination = db.get(WorkoutEquipment654, equipment_id)
+    if destination is None:
+        return services.flash_redirect(url, err="Choose a valid machine.")
+    if destination.id == entry.equipment_id:
+        return services.flash_redirect(url, err="Choose a different machine.")
+    _audit_machine_reassignment718(db, session_id, entry, destination, reason)
+    db.commit()
+    return services.flash_redirect(
+        url, msg="Set moved to the correct machine; workout totals updated."
+    )
+
+
+@router.post("/workouts/sessions/{session_id}/machines/{equipment_id}/move-sets")
+def correct_all_machine_sets718(
+    session_id: int, equipment_id: int,
+    target_equipment_id: int = Form(...),
+    expected_set_ids: str = Form(""),
+    confirm_move: str = Form(""),
+    reason: str = Form(""),
+    db: Session = Depends(get_scoped_db390),
+):
+    """Reassign exactly the viewed machine's sets, never arbitrary session rows."""
+    session = db.get(WorkoutSession654, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    url = f"/workouts/sessions/{session_id}/correct"
+    if session.completed_at is None:
+        return services.flash_redirect(url, err="Finish the workout before editing its machines.")
+    if confirm_move != "yes":
+        return services.flash_redirect(url, err="Confirm moving the recorded sets first.")
+    reason = reason.strip()
+    if not 3 <= len(reason) <= 500:
+        return services.flash_redirect(url, err="Enter a reason of 3–500 characters.")
+    source = db.get(WorkoutEquipment654, equipment_id)
+    destination = db.get(WorkoutEquipment654, target_equipment_id)
+    if source is None or destination is None or source.id == destination.id:
+        return services.flash_redirect(url, err="Choose two different valid machines.")
+    recorded = list(db.scalars(
+        select(WorkoutSet654).where(
+            WorkoutSet654.session_id == session_id,
+            WorkoutSet654.equipment_id == equipment_id,
+        ).order_by(WorkoutSet654.id)
+    ))
+    actual_ids = ",".join(str(row.id) for row in recorded)
+    if not recorded or expected_set_ids != actual_ids:
+        return services.flash_redirect(
+            url, err="Recorded sets changed since this page loaded. Reload and retry."
+        )
+    for row in recorded:
+        _audit_machine_reassignment718(db, session_id, row, destination, reason)
+    db.commit()
+    return services.flash_redirect(
+        url, msg=f"Moved {len(recorded)} recorded set(s) to {destination.name}; totals updated."
+    )
 
 
 @router.post("/workouts/sessions/{session_id}/sets/{set_id}/correct")
