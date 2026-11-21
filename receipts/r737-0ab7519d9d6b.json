@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "61df746a64259e84a6fdef23d7d8df17ef3b6e0c",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T20:46:55+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_737_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_737_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_737_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_737_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/737-native-regimen-disclosures",
+  "release": 737,
+  "request_id": "r737-0ab7519d9d6b",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T20:46:12+00:00",
+  "status": "passed",
+  "target": "0ab7519d9d6b18cce03cc1db59fd9fbbaa1a151b",
+  "test_counts": [
+    "35 passed, 1 warning"
+  ]
+}
