@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 <link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 <link rel="stylesheet" href="/static/css/tracker-workout-completed717.css?v=718">
+<link rel="stylesheet" href="/static/css/tracker-workout-session719.css?v=719">
 {% endblock %}
 {% block content %}
 <section class="workout654">
@@ -41,6 +42,9 @@
           <button type="submit">Finish Workout</button>
         </details>
       </form>
+      {% with delete_workout=active %}
+        {% include "_workout_delete719.html" %}
+      {% endwith %}
     </div>
   {% else %}
     <form method="post" action="/workouts/start">
@@ -232,6 +236,9 @@
         {% if session.completed_at %}
           <a class="ux675-inline-action" href="/workouts/sessions/{{ session.id }}/correct">Edit Workout</a>
         {% endif %}
+        {% with delete_workout=session %}
+          {% include "_workout_delete719.html" %}
+        {% endwith %}
       </div>
     {% else %}
       <p>No workouts yet.</p>
