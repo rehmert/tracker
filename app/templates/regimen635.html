@@ -206,6 +206,7 @@
       {% if facts.imported_at %} Imported {{ facts.imported_at }} UTC.{% endif %}</p>
     </details>
   {% endif %}
+  <div class="reg635-actions" data-reg732-item-actions>
   <details><summary>Edit item</summary>
     <form method="post" action="/regimen/items/{{ item.id }}/edit" class="reg635-form" data-reg636-catalog>
       <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}" {% if kind == item.kind %}selected{% endif %}>{{ kind|capitalize }}</option>{% endfor %}</select></label>
@@ -254,6 +255,13 @@
   {% if item.active %}
   <form method="post" action="/regimen/items/{{ item.id }}/archive" onsubmit="return confirm('Archive this item? Its history will remain.')" class="reg635-actions"><button type="submit">Archive</button></form>
   {% endif %}
+  {% if item.kind == 'medication' %}
+  <form method="post" action="/regimen/items/{{ item.id }}/delete" class="reg635-actions" data-reg732-delete
+        onsubmit="return confirm('Permanently delete this medication, {{ schedule_counts.get(item.id, 0) }} schedule(s), and {{ entry_counts.get(item.id, 0) }} intake record(s)? This cannot be undone. The audit trail remains.')">
+    <button type="submit" name="confirm_delete" value="delete">Delete medication</button>
+  </form>
+  {% endif %}
+  </div>
 </article>
 {% else %}<p>No supplements or medications have been entered.</p>{% endfor %}
 </div>
