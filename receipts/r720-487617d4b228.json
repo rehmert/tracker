@@ -1,0 +1,37 @@
+{
+  "action": "qualify",
+  "base": "9fd92b3ac3057af99f8b9e468e27e64bcb2b9e68",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/browser/test_workout_manage719.py",
+    "tests/browser/test_workout_manage719.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-21T02:05:06+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_720_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_720_SCOPED_BACKEND=PASSED",
+    "TARGETED_719_HTTP_HOME_LOADED=PASSED",
+    "TARGETED_719_HTTP_HOME_EXPANDED=PASSED",
+    "TARGETED_719_HTTP_MACHINE=PASSED",
+    "TARGETED_719_HTTP_STARTED=PASSED",
+    "TARGETED_719_HTTPS_HOME_LOADED=PASSED",
+    "TARGETED_719_HTTPS_HOME_EXPANDED=PASSED",
+    "TARGETED_719_HTTPS_MACHINE=PASSED",
+    "RELEASE_720_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_720_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/720-inline-workout-delete",
+  "release": 720,
+  "request_id": "r720-487617d4b228",
+  "schema": 1,
+  "started_at_utc": "2026-11-21T02:04:01+00:00",
+  "status": "failed",
+  "target": "487617d4b2286b2eb6a34d3a68db80295e4fcc6e",
+  "test_counts": [
+    "26 passed, 1 warning",
+    "7 passed"
+  ]
+}
