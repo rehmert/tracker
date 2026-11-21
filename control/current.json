@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r723-764efd20f0fe",
-  "action": "qualify",
+  "request_id": "r723-install764efd20",
+  "action": "dev_install",
   "release": 723,
   "target": "764efd20f0fe6ac643d7940eb8178387a530f842",
   "base": "40088e446b66285aaa07caf40566e4de80864a98",
   "ref": "release/723-workout-css-consolidation",
-  "previous_request_id": null
+  "previous_request_id": "r723-764efd20f0fe"
 }
