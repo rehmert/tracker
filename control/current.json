@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r719-84eb20cbf38a",
-  "action": "dev_install",
-  "release": 719,
-  "target": "9fd92b3ac3057af99f8b9e468e27e64bcb2b9e68",
-  "base": "18a1bf7a6171ef1eeef80e4588851cd500031cb4",
-  "ref": "release/719-workout-delete-dashboard-pagination",
-  "previous_request_id": "r719-9fd92b3ac305"
+  "request_id": "r720-487617d4b228",
+  "action": "qualify",
+  "release": 720,
+  "target": "487617d4b2286b2eb6a34d3a68db80295e4fcc6e",
+  "base": "9fd92b3ac3057af99f8b9e468e27e64bcb2b9e68",
+  "ref": "release/720-inline-workout-delete",
+  "previous_request_id": null
 }
