@@ -86,9 +86,9 @@
 <div class="tracker-macd741-actions">
 <a href="/protocols/{{ r.p.id }}" class="tracker-macd741-action">Edit schedule</a>
 <form method="post" action="/protocols/{{ r.p.id }}/duplicate"><button type="submit" class="tracker-macd741-action">Duplicate</button></form>
-<form method="post" action="/protocols/{{ r.p.id }}/active" onsubmit="return confirm('{{ 'Stop projected schedule' if r.p.is_active else 'Activate protocol schedule' }} for {{ r.p.name }}? Recorded doses will not change.');">
+<form method="post" action="/protocols/{{ r.p.id }}/active" onsubmit="return confirm('Change this protocol activation state? Existing dose logs will not change.');">
 <button type="submit" class="tracker-macd741-action">{{ 'Stop schedule' if r.p.is_active else 'Activate' }}</button></form>
-<form method="post" action="/protocols/{{ r.p.id }}/delete" onsubmit="return confirm('Delete protocol {{ r.p.name }}? Existing dose logs will not be deleted.');">
+<form method="post" action="/protocols/{{ r.p.id }}/delete" onsubmit="return confirm('Delete this protocol? Existing dose logs will not be deleted.');">
 <button type="submit" class="tracker-macd741-action">Delete protocol</button></form>
 </div></td></tr>
   {% else %}<tr><td colspan="7" class="empty">No protocols yet. Create one below to start planning.</td></tr>{% endfor %}
