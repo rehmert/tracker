@@ -1,27 +1,26 @@
 {
   "action": "qualify",
   "base": "0bc005f9c1e5b1353a67755aeeb2940140a7c74f",
-  "exit_code": 1,
-  "failed_tests": [
-    "tests/test_release732_medication_delete.py"
-  ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T19:25:47+00:00",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T19:27:52+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_732_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_732_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
     "RELEASE_732_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_732_EXIT_STATUS=1"
+    "RELEASE_732_EXIT_STATUS=0"
   ],
   "previous_request_id": null,
   "ref": "release/732-medication-delete",
   "release": 732,
-  "request_id": "r732-8bd19ac91f3f",
+  "request_id": "r732-1906a69408e7",
   "schema": 1,
-  "started_at_utc": "2026-11-21T19:25:42+00:00",
-  "status": "failed",
-  "target": "8bd19ac91f3fec57b92494b10a260dfb1f0dab13",
+  "started_at_utc": "2026-11-21T19:27:29+00:00",
+  "status": "passed",
+  "target": "1906a69408e7dd00cb9044f77cd208566aed25df",
   "test_counts": [
-    "1 passed, 1 warning"
+    "68 passed, 4 warnings"
   ]
 }
