@@ -35,6 +35,24 @@ tests, schedule/create/edit/intake/correction/skip validation and auditing,
 and Chromium form controls at phone widths. Additive shared model gets
 focused schema / regimen compatibility tests, not a full app suite.
 
+## Additive schema promotion gate
+
+The existing guarded deployer requires **both** a reviewed schema flag and
+verified migration backup when `app/models.py` changes. The first DEV
+installation correctly failed closed with `StageCommandError`: its installer
+omitted `--db-migration` / `--reviewed-tablet-731`. No rerun of that failed
+request is allowed. The corrected candidate adds a **release-specific**
+AST-based schema review, restricted to the two additive tablet tables and
+an unchanged existing ORM schema, and a dedicated reviewed flag in the
+versioned runner. The installer now passes both flags so the standard
+backup, isolated restore verification, schema review and post-install
+runtime qualification all execute before success. The schema gate is
+checked independently during new qualification.
+
+A fresh exact SHA, separate qualification receipt and separate guarded DEV
+installation request are required. PROD promotion must use the same native
+signed schema/backup gates and is not authorized by this change.
+
 DEV installation only after exact qualification passed. No PROD
 preflight, authorization or deployment without user's explicit instruction.
 PROD remains at Release 727 unless separately promoted, and promoting
