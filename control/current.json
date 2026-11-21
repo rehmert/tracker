@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r715-9f28e6b4d1a0",
-  "action": "qualify",
+  "request_id": "r715-bc72e09f146a",
+  "action": "dev_install",
   "release": 715,
   "target": "355d479e5fc864142543f56303db8de410ab0822",
   "base": "247f413d46f9f1b635144c7f141a57027fd26449",
   "ref": "release/715-coa-endotoxin-untested-default",
-  "previous_request_id": null
+  "previous_request_id": "r715-9f28e6b4d1a0"
 }
