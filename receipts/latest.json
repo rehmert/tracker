@@ -1,27 +1,28 @@
 {
   "action": "qualify",
   "base": "dc4e3b1d72fa3fd96751424e1b91af42bb0409d7",
-  "exit_code": 1,
-  "failed_tests": [
-    "tests/browser/test_workout_dashboard661.py"
-  ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-21T02:16:50+00:00",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-21T02:19:02+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_721_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_721_SCOPED_BACKEND=PASSED",
+    "RELEASE_721_SCOPED_BROWSER=PASSED",
+    "RELEASE_721_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
     "RELEASE_721_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_721_EXIT_STATUS=1"
+    "RELEASE_721_EXIT_STATUS=0"
   ],
   "previous_request_id": null,
   "ref": "release/721-dashboard-recent-chevron",
   "release": 721,
-  "request_id": "r721-e5884e0cd44f",
+  "request_id": "r721-beb15ab8b1c3",
   "schema": 1,
-  "started_at_utc": "2026-11-21T02:16:22+00:00",
-  "status": "failed",
-  "target": "e5884e0cd44f99f0af7cb21505a9c51d708969ee",
+  "started_at_utc": "2026-11-21T02:18:32+00:00",
+  "status": "passed",
+  "target": "beb15ab8b1c34bc4f41baea64ff85f03d4d6f9d3",
   "test_counts": [
-    "25 passed, 1 warning"
+    "27 passed, 1 warning"
   ]
 }
