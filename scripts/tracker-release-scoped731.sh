@@ -11,9 +11,12 @@ for s in scripts/tracker-release.sh scripts/tracker-qualify731.sh \
   bash -n "$s"
 done
 "$PY" -m py_compile app/models.py app/regimen_tablets731.py \
-  app/routers/regimen635.py tests/test_release731_tablet_tracking.py \
+  app/routers/regimen635.py scripts/tracker_schema_review731.py \
+  tests/test_release731_tablet_tracking.py \
+  tests/test_release731_schema_review.py \
   tests/browser/test_release731_tablet_tracking.py
 "$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release731_schema_review.py \
   tests/test_release731_tablet_tracking.py \
   tests/browser/test_release731_tablet_tracking.py \
   tests/test_release635_regimen.py \
