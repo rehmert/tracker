@@ -1,0 +1,1059 @@
+.food-date,.food-row,.food-scan{display:flex;gap:.6rem;align-items:end;flex-wrap:wrap}.food-date input,.food-row input{min-width:0}.food-scan>*{flex:1;min-width:130px}.food-camera-label{display:grid;place-items:center;text-align:center;border:1px solid var(--border,#aaa);border-radius:9px;padding:.6rem;font-weight:650;min-height:48px;box-sizing:border-box;cursor:pointer}.food-camera-label input{width:100%;font-size:.75rem}.food-dashboard,.food-log-row{border:1px solid var(--border,#ccc);border-radius:12px;padding:.7rem;margin:.7rem 0}.food-macro-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem}.food-macro-grid>div{display:grid;text-align:center;background:var(--panel,#f2f5f7);border-radius:9px;padding:.65rem .2rem}.food-macro-grid strong{font-size:1.3rem}.food-macro-grid span{font-size:.75rem}.food-nutrients,.food-nutrient-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem}.food-nutrients>div{display:grid;border-bottom:1px solid var(--border,#ddd);padding:.5rem}.food-nutrients small{opacity:.8}.food-nutrient-inputs label{display:block;min-width:0;font-size:.85rem}.food-nutrient-inputs input{width:100%;min-width:0;box-sizing:border-box}.food-log-row{display:flex;justify-content:space-between;align-items:center;gap:.7rem}.food-log-row small{display:block}.food-save{width:100%;min-height:54px;margin-top:.8rem}#food-camera{display:block;width:100%;max-height:300px;object-fit:cover;border-radius:9px}#food-camera[hidden]{display:none}@media(max-width:760px){.food-macro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.food-scan{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.food-scan>*:first-child{grid-column:1/-1}.food-nutrient-inputs input,#food-entry-form input,#food-entry-form select{min-height:48px;font-size:16px;max-width:100%}.food-row>label{flex:1;min-width:0}.food-row>button{min-height:48px}.food-dashboard summary,#food-entry-form summary{min-height:44px;padding:.65rem 0}.food-log-row button{min-height:44px}}
+/* Release 375: compact touch-friendly quick logging. */
+.food375-section {
+  border: 1px solid var(--border, #ccc);
+  border-radius: 12px;
+  padding: .75rem;
+  margin: .8rem 0;
+}
+.food375-list {
+  display: grid;
+  gap: .55rem;
+}
+.food375-item {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 10px;
+  padding: .65rem;
+  min-width: 0;
+}
+.food375-name { margin-bottom: .45rem; }
+.food375-name small { display: block; opacity: .75; }
+.food375-quick-form {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(120px, 1.4fr) auto;
+  gap: .5rem;
+  align-items: end;
+}
+.food375-quick-form label { min-width: 0; font-size: .8rem; }
+.food375-quick-form input,
+.food375-quick-form select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+.food375-quick-form button { min-height: 44px; }
+.food375-record { flex-wrap: wrap; }
+.food375-actions {
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+}
+.food375-actions button { min-height: 44px; }
+@media (max-width: 460px) {
+  .food375-quick-form {
+    grid-template-columns: minmax(75px, 1fr) minmax(95px, 1.3fr);
+  }
+  .food375-quick-form button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .food375-record { display: block; }
+  .food375-actions { margin-top: .5rem; }
+  .food375-actions form { flex: 1; }
+  .food375-actions button { width: 100%; }
+}
+/* Release 376: compact Android-first navigation and nutrition. */
+.food376-nav {
+  display: flex;
+  gap: .45rem;
+  overflow-x: auto;
+  padding: .35rem 0 .65rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.food376-nav a {
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid var(--border, #aaa);
+  border-radius: 999px;
+  padding: .55rem .8rem;
+  font-size: .88rem;
+  font-weight: 600;
+}
+.food376-panel {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: .75rem;
+  margin: .8rem 0;
+}
+.food376-panel h2 {
+  margin-top: .15rem;
+}
+.food376-search,
+.food376-template-form {
+  display: flex;
+  align-items: end;
+  gap: .55rem;
+  flex-wrap: wrap;
+}
+.food376-search label,
+.food376-template-form label {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.food376-search input,
+.food376-template-form input,
+.food376-template-form select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font-size: 16px;
+  min-height: 46px;
+}
+.food376-search button,
+.food376-template-form button {
+  min-height: 46px;
+}
+.food376-templates {
+  display: grid;
+  gap: .5rem;
+  margin-top: .7rem;
+}
+.food376-templates article {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .65rem;
+  padding: .55rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 9px;
+}
+.food376-templates small {
+  display: block;
+  opacity: .75;
+}
+.food376-templates button {
+  min-height: 44px;
+}
+.food376-week {
+  display: grid;
+  gap: .4rem;
+}
+.food376-day {
+  border-bottom: 1px solid var(--border, #ddd);
+  padding: .4rem 0;
+}
+.food376-day-head {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+.food376-day-head span {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.food376-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--border, #ddd);
+  margin: .35rem 0;
+}
+.food376-track div {
+  height: 100%;
+  background: var(--accent, #4285c5);
+  border-radius: 10px;
+}
+.food376-day small {
+  opacity: .8;
+}
+@media(max-width: 600px) {
+  .food376-panel {
+    padding: .6rem;
+  }
+  .food376-search button {
+    flex: 1 1 100%;
+  }
+  .food376-templates article {
+    flex-wrap: wrap;
+  }
+  .food376-templates form {
+    flex: 1 1 100%;
+  }
+  .food376-templates button {
+    width: 100%;
+  }
+  .food376-nav {
+    position: relative;
+  }
+}
+/* Release 377: day navigation and compact editing. */
+
+.food377-days {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  margin: .65rem 0;
+}
+
+.food377-days a {
+  display: grid;
+  place-items: center;
+  padding: .7rem .35rem;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 10px;
+  text-align: center;
+  text-decoration: none;
+  min-height: 44px;
+  box-sizing: border-box;
+  font-weight: 600;
+}
+
+.food377-edit {
+  width: 100%;
+  margin: .55rem 0;
+  padding: .5rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 9px;
+}
+
+.food377-edit summary,
+.food377-template-edit summary {
+  cursor: pointer;
+  min-height: 38px;
+}
+
+.food377-edit-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  align-items: end;
+  margin-top: .55rem;
+}
+
+.food377-edit-form label,
+.food377-template-edit label {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+}
+
+.food377-edit-form input,
+.food377-edit-form select,
+.food377-template-edit input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.food377-edit-form button {
+  grid-column: 1 / -1;
+  min-height: 48px;
+}
+
+.food377-template-edit {
+  flex-basis: 100%;
+  width: 100%;
+  border-top: 1px solid var(--border, #ddd);
+  padding-top: .4rem;
+}
+
+.food377-template-edit form {
+  display: flex;
+  gap: .45rem;
+  align-items: end;
+  margin-top: .45rem;
+  flex-wrap: wrap;
+}
+
+.food377-template-edit label {
+  flex: 1;
+}
+
+.food377-template-edit button {
+  min-height: 44px;
+}
+
+@media (max-width: 600px) {
+  .food377-edit-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .food377-edit-form label:first-of-type {
+    grid-column: 1 / -1;
+  }
+
+  .food377-days a {
+    font-size: .85rem;
+  }
+
+  .food377-template-edit form {
+    display: grid;
+  }
+
+  .food377-template-edit button {
+    width: 100%;
+  }
+}
+/* Release 378: compact meal totals and per-entry nutrient correction. */
+.food378-panel,
+.food378-correction {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: .7rem;
+  margin: .65rem 0;
+}
+
+.food378-meals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+
+.food378-meal {
+  background: var(--panel, #f2f5f7);
+  padding: .7rem;
+  border-radius: 9px;
+}
+
+.food378-meal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: .4rem;
+}
+
+.food378-meal small {
+  opacity: .8;
+}
+
+.food378-macros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.food378-macros span {
+  font-size: .85rem;
+}
+
+.food378-export {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: .8rem;
+  margin-top: .7rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  border: 1px solid var(--border, #aaa);
+  font-weight: 650;
+}
+
+.food378-correction {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.food378-correction form > label {
+  display: block;
+  margin: .5rem 0;
+}
+
+.food378-correction form > label input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 46px;
+  font-size: 16px;
+}
+
+.food378-correction summary {
+  cursor: pointer;
+  min-height: 40px;
+  padding: .4rem 0;
+}
+
+.food378-correction form > button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: .65rem;
+}
+
+@media (max-width: 560px) {
+  .food378-meals {
+    grid-template-columns: 1fr;
+  }
+  .food378-meal {
+    padding: .55rem;
+  }
+  .food378-correction {
+    padding: .55rem;
+  }
+}
+/* Release 379: mobile-first nutrient coverage review. */
+
+.food379-panel {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: .75rem;
+  margin: .8rem 0;
+}
+
+.food379-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+  margin: .8rem 0;
+}
+
+.food379-item {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 10px;
+  padding: .7rem;
+  min-width: 0;
+}
+
+.food379-title {
+  display: flex;
+  gap: .4rem;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.food379-title small {
+  white-space: nowrap;
+}
+
+.food379-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: .45rem 0 .2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.food379-item small {
+  display: block;
+  opacity: .8;
+}
+
+.food379-coverage {
+  margin-top: .45rem;
+}
+
+.food379-target {
+  margin-top: .55rem;
+  font-weight: 600;
+  font-size: .88rem;
+}
+
+@media(max-width: 540px) {
+  .food379-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .food379-panel {
+    padding: .55rem;
+  }
+
+  .food379-item {
+    padding: .6rem;
+  }
+}
+/* Release 380: mobile-first external food-name lookup. */
+
+.food380-panel {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 12px;
+  padding: .75rem;
+  margin: .8rem 0;
+}
+
+.food380-search {
+  display: grid;
+  gap: .5rem;
+}
+
+.food380-search label {
+  display: grid;
+  gap: .3rem;
+  min-width: 0;
+}
+
+.food380-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 50px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+.food380-search button {
+  min-height: 50px;
+}
+
+.food380-results {
+  display: grid;
+  gap: .5rem;
+  margin-top: .6rem;
+}
+
+.food380-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .6rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 10px;
+  padding: .7rem;
+}
+
+.food380-result-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.food380-result-info strong,
+.food380-result-info small {
+  display: block;
+}
+
+.food380-result-info small {
+  opacity: .8;
+  margin-top: .25rem;
+}
+
+.food380-result button {
+  min-height: 46px;
+}
+
+@media(max-width: 520px) {
+  .food380-panel {
+    padding: .55rem;
+  }
+
+  .food380-result {
+    grid-template-columns: 1fr;
+    padding: .6rem;
+  }
+
+  .food380-result button {
+    width: 100%;
+    min-height: 48px;
+  }
+}
+/* Release 381: compact nutrition previews for Android food search. */
+
+.food381-filter {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  cursor: pointer;
+  font-size: .9rem;
+  min-height: 44px;
+}
+
+.food381-filter input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex: 0 0 auto;
+}
+
+.food381-macro-preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .3rem;
+  margin-top: .5rem;
+}
+
+.food381-macro-preview span {
+  background: var(--panel, #f2f5f7);
+  border-radius: 6px;
+  padding: .35rem .2rem;
+  text-align: center;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.food381-basis {
+  display: block;
+  margin-top: .3rem;
+  opacity: .7;
+  font-size: .75rem;
+}
+
+@media (max-width: 520px) {
+  .food381-macro-preview {
+    gap: .2rem;
+  }
+
+  .food381-macro-preview span {
+    font-size: .75rem;
+    padding: .4rem .1rem;
+  }
+}
+/* Release 382: native touch-friendly Food Journal accordions. */
+
+.food382-accordion {
+  display: block;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 12px;
+  padding: 0;
+  margin: .55rem 0;
+  overflow: clip;
+  scroll-margin-top: 12px;
+}
+
+.food382-accordion > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .7rem;
+  min-height: 55px;
+  box-sizing: border-box;
+  padding: .8rem .9rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  list-style: none;
+  user-select: none;
+}
+
+.food382-accordion > summary::-webkit-details-marker {
+  display: none;
+}
+
+.food382-accordion > summary:focus-visible {
+  outline: 2px solid var(--accent, #4285c5);
+  outline-offset: -3px;
+}
+
+.food382-accordion[open] > summary {
+  border-bottom: 1px solid var(--border, #ddd);
+}
+
+.food382-chevron {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .15s ease;
+  margin-right: .25rem;
+}
+
+.food382-accordion[open] .food382-chevron {
+  transform: rotate(225deg);
+}
+
+.food382-content {
+  padding: .7rem .85rem .85rem;
+  min-width: 0;
+}
+
+.food382-content > h2:first-child {
+  display: none;
+}
+
+.food382-accordion .food382-content > .note:first-of-type {
+  margin-top: .25rem;
+}
+
+/* Preserve the original section CSS while removing
+   padding from closed accordion containers. */
+.food382-accordion.food375-section,
+.food382-accordion.food376-panel,
+.food382-accordion.food378-panel,
+.food382-accordion.food379-panel,
+.food382-accordion.food380-panel {
+  padding: 0;
+}
+
+/* Compact horizontal shortcuts; they open the selected section. */
+.food376-nav {
+  gap: .35rem;
+  margin: .4rem 0;
+  padding-bottom: .35rem;
+}
+
+.food376-nav a {
+  padding: .52rem .7rem;
+  font-size: .82rem;
+}
+
+/* The daily macro dashboard stays on screen. */
+.food-dashboard {
+  margin-bottom: .6rem;
+}
+
+/* Existing nested details (macros, entry editing, template
+   management) continue functioning independently. */
+.food382-accordion details:not(.food382-accordion) {
+  scroll-margin-top: 12px;
+}
+
+@media (max-width: 600px) {
+  .food382-accordion {
+    margin: .4rem 0;
+    border-radius: 10px;
+  }
+
+  .food382-accordion > summary {
+    min-height: 56px;
+    padding: .75rem;
+  }
+
+  .food382-content {
+    padding: .5rem .6rem .7rem;
+  }
+
+  .food382-accordion input,
+  .food382-accordion select,
+  .food382-accordion textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food382-chevron {
+    transition: none;
+  }
+}
+/* Release 384: compact, responsive macro previews. */
+
+.food384-preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .25rem;
+  margin: .4rem 0 .55rem;
+}
+
+.food384-preview span {
+  min-width: 0;
+  padding: .3rem .2rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 7px;
+  text-align: center;
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.food384-record-preview {
+  width: 100%;
+  margin: .3rem 0;
+}
+
+.food384-record-preview span {
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .food384-preview {
+    gap: .18rem;
+  }
+
+  .food384-preview span {
+    font-size: .73rem;
+    padding: .32rem .1rem;
+  }
+}
+/* Release 423: target/remaining overview optimized for narrow phones. */
+
+.food423-macros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+  margin: .75rem 0;
+}
+
+.food423-macro {
+  min-width: 0;
+  padding: .65rem;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 10px;
+}
+
+.food423-heading {
+  font-weight: 700;
+  font-size: .9rem;
+  display: flex;
+  justify-content: space-between;
+  gap: .4rem;
+}
+
+.food423-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .2rem;
+  margin: .35rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.food423-values div {
+  min-width: 0;
+  font-size: .85rem;
+  overflow-wrap: anywhere;
+}
+
+.food423-values small {
+  display: block;
+  opacity: .8;
+  font-size: .72rem;
+}
+
+.food423-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--border, #ddd);
+}
+
+.food423-fill {
+  height: 100%;
+  background: var(--accent, #3878aa);
+  max-width: 100%;
+}
+
+.food423-note {
+  font-size: .76rem;
+  margin: .4rem 0 0;
+  line-height: 1.3;
+}
+
+@media (max-width: 520px) {
+  .food423-macros {
+    grid-template-columns: 1fr;
+    gap: .4rem;
+  }
+
+  .food423-macro {
+    padding: .55rem;
+  }
+
+  .food423-heading {
+    font-size: .88rem;
+  }
+
+  .food423-values div {
+    font-size: .84rem;
+  }
+}
+/* Release 424: compact mobile food logging and target editing. */
+
+.food424-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .4rem;
+  margin: .65rem 0 1rem;
+}
+
+.food424-actions a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: .45rem;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 9px;
+  text-decoration: none;
+  text-align: center;
+  font-size: .88rem;
+  font-weight: 650;
+}
+
+.food424-actions a:focus-visible,
+.food424-targets summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.food424-unlogged {
+  margin: .6rem 0;
+  font-size: .88rem;
+}
+
+.food424-targets {
+  margin: .75rem 0 1rem;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 10px;
+}
+
+.food424-targets > summary {
+  cursor: pointer;
+  padding: .75rem;
+  font-weight: 700;
+}
+
+.food424-target-body {
+  padding: 0 .8rem .8rem;
+}
+
+.food424-target-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .5rem;
+  margin: .65rem 0;
+}
+
+.food424-target-grid label,
+.food424-micro-grid label {
+  display: grid;
+  min-width: 0;
+  gap: .25rem;
+}
+
+.food424-target-grid input,
+.food424-micro-grid input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.food424-micro-targets {
+  margin: .7rem 0;
+}
+
+.food424-micro-targets summary {
+  cursor: pointer;
+  padding: .5rem 0;
+}
+
+.food424-micro-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .6rem;
+  padding: .6rem 0;
+}
+
+.food424-targets button[type=submit] {
+  min-height: 44px;
+}
+
+@media (max-width: 680px) {
+  .food424-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .food424-target-grid,
+  .food424-micro-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 360px) {
+  .food424-micro-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Release 425: daily hydration dashboard and mobile quick logging. */
+
+.food425-water-card {
+  grid-column: 1 / -1;
+}
+
+.food425-water-log {
+  margin: .8rem 0 1rem;
+  padding: .75rem;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 10px;
+  scroll-margin-top: 1rem;
+}
+
+.food425-water-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.food425-water-head h3 {
+  margin: 0;
+}
+
+.food425-water-head small {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.food425-water-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .4rem;
+  margin: .7rem 0;
+}
+
+.food425-water-presets button {
+  min-height: 48px;
+  min-width: 0;
+  padding: .4rem;
+  font-weight: 700;
+}
+
+.food425-water-custom,
+.food425-water-history {
+  margin-top: .5rem;
+}
+
+.food425-water-custom summary,
+.food425-water-history summary {
+  cursor: pointer;
+  padding: .4rem 0;
+}
+
+.food425-water-custom-form {
+  display: flex;
+  align-items: end;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin: .5rem 0;
+}
+
+.food425-water-custom-form label {
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
+.food425-water-custom-form input {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.food425-water-custom-form button {
+  min-height: 44px;
+}
+
+.food425-water-history ul {
+  list-style: none;
+  padding: 0;
+  margin: .5rem 0;
+}
+
+.food425-water-history li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .6rem;
+  padding: .35rem 0;
+  border-bottom: 1px solid var(--border, #ddd);
+}
+
+.food425-water-history li span {
+  font-variant-numeric: tabular-nums;
+}
+
+.food425-water-history li button {
+  min-height: 40px;
+}
+
+@media (max-width: 520px) {
+  .food425-water-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .food425-water-log {
+    padding: .6rem;
+  }
+}
