@@ -7,7 +7,12 @@
 <section class="workout654">
   <p><a href="/workouts">← Back to Workouts</a></p>
   <h1>Workout History</h1>
-  <p><a href="/workouts/sessions/{{ workout.id }}/review">View Session Summary</a></p>
+  <nav class="workout717-history-actions">
+    <a href="/workouts/sessions/{{ workout.id }}/review">View Session Summary</a>
+    {% if workout.completed_at %}
+      <a href="/workouts/sessions/{{ workout.id }}/correct">Edit Completed Workout</a>
+    {% endif %}
+  </nav>
   <p>Started {{ workout.started_at|dt }}</p>
   <p>{{ 'Completed ' ~ (workout.completed_at|dt) if workout.completed_at else 'In progress' }}</p>
   <section>
