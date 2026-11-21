@@ -10,18 +10,22 @@ for script in scripts/tracker-qualify741.sh scripts/tracker-install741.sh \
   scripts/tracker-release-scoped741.sh scripts/tracker-release.sh; do
   bash -n "$script"
 done
-"$PY" -m py_compile app/routers/supplies.py
+"$PY" -m py_compile app/routers/supplies.py || exit 21
 echo "RELEASE_741_COMPILE_SUPPLIES=PASSED"
-"$PY" -m py_compile app/routers/pages.py
+"$PY" -m py_compile app/routers/pages.py || exit 22
 echo "RELEASE_741_COMPILE_PAGES=PASSED"
-"$PY" -m py_compile app/routers/calendar.py
+"$PY" -m py_compile app/routers/calendar.py || exit 23
 echo "RELEASE_741_COMPILE_CALENDAR=PASSED"
-"$PY" -m py_compile tests/test_release741_integrated_macd_mobile.py
+"$PY" -m py_compile tests/test_release741_integrated_macd_mobile.py || exit 24
 echo "RELEASE_741_COMPILE_TESTS=PASSED"
 echo "RELEASE_741_COMPILE=PASSED"
-"$PY" -c 'from pathlib import Path; from jinja2 import Environment; e=Environment(); [e.parse(Path(p).read_text(encoding="utf-8")) for p in ("app/templates/supplies.html","app/templates/coas.html","app/templates/coa_edit.html","app/templates/vials.html","app/templates/vial_detail.html","app/templates/blend_detail.html","app/templates/labs.html","app/templates/lab_report.html","app/templates/protocols.html","app/templates/calendar.html","app/templates/pages.html","app/templates/page_view.html")]'
+"$PY" -c 'from pathlib import Path; from jinja2 import Environment; e=Environment(); [e.parse(Path(p).read_text(encoding="utf-8")) for p in ("app/templates/supplies.html","app/templates/coas.html","app/templates/coa_edit.html","app/templates/vials.html","app/templates/vial_detail.html","app/templates/blend_detail.html","app/templates/labs.html","app/templates/lab_report.html","app/templates/protocols.html","app/templates/calendar.html","app/templates/pages.html","app/templates/page_view.html")]' || exit 31
 echo "RELEASE_741_JINJA=PASSED"
-"$PY" -m pytest -q --tb=short --maxfail=1 tests/test_release741_integrated_macd_mobile.py
+# Isolate the first database/API fixture test to produce a distinct stage exit.
+"$PY" -m pytest -q --tb=short --maxfail=1 \
+  tests/test_release741_integrated_macd_mobile.py::test_741_supply_edit_preserves_ledger_and_records_private_audit || exit 41
+echo "RELEASE_741_FIRST_DB_TEST=PASSED"
+"$PY" -m pytest -q --tb=short --maxfail=1 tests/test_release741_integrated_macd_mobile.py || exit 42
 echo "RELEASE_741_NEW_TESTS=PASSED"
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_supply_stock_health.py \
@@ -35,6 +39,6 @@ echo "RELEASE_741_NEW_TESTS=PASSED"
   tests/test_protocol_schedule_preview.py \
   tests/test_calendar_review_agenda.py \
   tests/test_calendar_workbench.py \
-  tests/test_record_explorer_template_regression.py
+  tests/test_record_explorer_template_regression.py || exit 43
 echo "RELEASE_741_INTEGRATED_MACD_MOBILE_TESTS=PASSED"
 echo "RELEASE_741_SCOPED_QUALIFICATION=PASSED_NOT_FULL_SUITE"
