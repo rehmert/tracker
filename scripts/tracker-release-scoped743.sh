@@ -86,6 +86,44 @@ PY
   tests/test_release743_security_deps_chain_css.py \
   tests/test_release742_consolidated_ux_performance.py || exit 42
 echo "RELEASE_743_INTEGRATED_NEW_TESTS=PASSED"
+# Frozen Release 627 source assertions can reject later routes. Locate any
+# exact failing assertion line without exporting traceback or private data.
+"$PY" - <<'PY'
+from pathlib import Path
+import os
+import re
+import subprocess
+import sys
+from xml.etree import ElementTree
+
+root = Path(os.environ["TRACKER_DATA_DIR"])
+xml = root / "csrf627-diagnostic743.xml"
+log = root / "csrf627-diagnostic743.log"
+cmd = [
+    sys.executable, "-m", "pytest", "-q", "--tb=short", "--maxfail=1",
+    "--junitxml=" + str(xml), "tests/test_release627_csrf_reconciliation.py",
+]
+with log.open("x", encoding="utf-8") as output:
+    result = subprocess.run(cmd, stdout=output, stderr=subprocess.STDOUT,
+                            check=False)
+if result.returncode:
+    try:
+        failed = ElementTree.parse(xml).getroot().find(".//testcase[failure]")
+        if failed is not None:
+            element = failed.find("failure")
+            name = str(failed.attrib.get("name", ""))
+            raw = (element.text or "") + " " + str(element.attrib.get("message", ""))
+            loc = re.findall(r"test_release627_csrf_reconciliation[.]py:(\d+)", raw)
+            if loc:
+                line = int(loc[-1])
+                print("RELEASE_743_CSRF627_FAILURE_LINE=" + str(line), flush=True)
+                sys.exit(100 + line if line < 150 else 250)
+            print("RELEASE_743_CSRF627_FAILED_CASE=" + name, flush=True)
+    except (OSError, ElementTree.ParseError):
+        pass
+    sys.exit(90)
+print("RELEASE_743_CSRF627_LEGACY_CONTRACT=PASSED", flush=True)
+PY
 "$PY" -m pytest -q --tb=short --maxfail=1 \
   tests/test_ui_foundation679.py \
   tests/test_shortcut_buttons676.py \
