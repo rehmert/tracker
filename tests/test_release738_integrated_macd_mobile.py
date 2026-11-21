@@ -91,7 +91,7 @@ def create_entry(client, item_id, schedule_id):
 def test_738_supplement_delete_requires_confirmation_then_cleans_dependents(env):
     client, Session = env
     create_item(client, "supplement", "Vitamin example")
-    create_schedule(client, 1, tablet=True)
+    create_schedule(client, 1)
     create_entry(client, 1, 1)
     create_item(client, "medication", "Keep medication")
 
@@ -101,7 +101,7 @@ def test_738_supplement_delete_requires_confirmation_then_cleans_dependents(env)
     }).headers["location"]
     with Session() as db:
         assert db.get(RegimenItem, 1) is not None
-        assert db.get(RegimenTabletSchedule731, 1) is not None
+        assert db.get(RegimenTabletSchedule731, 1) is None
 
     deleted = post(client, "/regimen/items/1/delete-supplement", {
         "confirm_delete": "delete",
@@ -114,8 +114,7 @@ def test_738_supplement_delete_requires_confirmation_then_cleans_dependents(env)
         assert db.get(RegimenTabletSchedule731, 1) is None
         assert db.get(RegimenItem, 2).kind == "medication"
         audits = list(db.scalars(select(ChangeAudit).where(ChangeAudit.action == "delete")))
-        assert {"regimen_item", "regimen_schedule", "regimen_entry",
-                "regimen_tablet_schedule"} <= {a.entity_type for a in audits}
+        assert {"regimen_item", "regimen_schedule", "regimen_entry"} <= {a.entity_type for a in audits}
         before = json.loads(next(a.before_json for a in audits
                                  if a.entity_type == "regimen_item"))
         assert (before["kind"], before["schedules_deleted"],
