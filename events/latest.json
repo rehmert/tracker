@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r747-a0a42cd345f1.json",
+  "receipt_path": "receipts/r747-installa0a42cd3.json",
   "release": 747,
-  "request_id": "r747-a0a42cd345f1",
+  "request_id": "r747-installa0a42cd3",
   "schema": 1,
   "status": "passed",
   "target": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08"
