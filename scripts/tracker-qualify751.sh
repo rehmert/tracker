@@ -67,6 +67,32 @@ export TRACKER_DATA_DIR="$RUN/data" PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1
 echo "RELEASE_751_IMPACT_PREFLIGHT=PASSED"
 bash scripts/tracker-release-scoped751.sh "$PY"
 echo "RELEASE_751_ISOLATED_STRICT_BROWSER=STARTED"
-timeout 900 bash scripts/tracker-browser-qualify.sh "$QA" "$PY"
+# Full output stays inside the private QA worker. Surface only a bounded
+# list of synthetic failing test identifiers in GitHub stage receipts.
+set +e
+timeout 900 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" 2>&1 \
+  | tee "$RUN/browser751-private.log"
+result=("${PIPESTATUS[@]}")
+set -e
+if (( result[0] != 0 || result[1] != 0 )); then
+  "$PY" - "$RUN/browser751-private.log" <<'PY'
+from pathlib import Path
+import re, sys
+text = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace")
+seen = set()
+for line in text.splitlines():
+    match = re.match(
+        r"^(?:FAILED|ERROR) tests/browser/test_strict_csrf521[.]py::(test_[A-Za-z0-9_]+)",
+        line.strip(),
+    )
+    if match and match.group(1) not in seen:
+        seen.add(match.group(1))
+        print("FAILED tests/strict751_" + match.group(1) + ".py")
+    if len(seen) >= 8:
+        break
+print("RELEASE_751_BROWSER_DIAGNOSTICS=SANITIZED")
+PY
+  exit 1
+fi
 echo "RELEASE_751_DISPOSABLE_HTTP_HTTPS_STRICT_BROWSER=PASSED"
-echo "RELEASE_751_QUALIFICATION=PASSED_SCOPED_PLUS_BROWSER_NO_DEPLOY"
+echo "RELEASE_751_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY"
