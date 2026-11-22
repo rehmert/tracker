@@ -289,3 +289,49 @@ def test_728_installer_verifies_all_three_deployed_git_objects():
     assert 'git hash-object "/usr/local/sbin/$name"' in source
     assert 'git rev-parse "$TARGET:scripts/$name"' in source
     assert 'systemctl is-active --quiet tracker-release-agent.service' in source
+
+
+def test_748_failed_dev_install_requalifies_only_with_clean_baseline():
+    """Regression: 748 failed install -> corrected pinned SHA, not a blind retry."""
+    old = cmd('dev_install', 'r711-prior000001', 'r711-install0001')
+    new = cmd('qualify', None, 'r711-qualify0002')
+    new['target'] = 'c' * 40
+    failure = {**old, 'status': 'failed', 'exit_code': 1,
+               'failure_category': 'StageCommandError'}
+    with patch.object(agent, 'clean_main') as check:
+        agent.validate_control_transition(old, new, failure)
+        check.assert_called_once_with(BASE)
+    with patch.object(agent, 'clean_main', side_effect=agent.GateError('DEV dirty')):
+        with pytest.raises(agent.GateError, match='DEV dirty'):
+            agent.validate_control_transition(old, new, failure)
+
+
+@pytest.mark.parametrize('change', [
+    {'target': TARGET}, {'base': TARGET}, {'release': 712},
+    {'ref': 'release/711-other'}, {'action': 'prod_preflight'},
+    {'previous_request_id': 'r711-prior000001'},
+])
+def test_748_failed_install_recovery_rejects_changed_contract(change):
+    old = cmd('dev_install', 'r711-prior000001', 'r711-install0001')
+    new = cmd('qualify', None, 'r711-qualify0002')
+    new.update({'target': 'c' * 40, **change})
+    failure = {**old, 'status': 'failed', 'exit_code': 1}
+    with patch.object(agent, 'clean_main') as check:
+        with pytest.raises(agent.GateError):
+            agent.validate_control_transition(old, new, failure)
+        check.assert_not_called()
+
+
+@pytest.mark.parametrize('status, exit_code', [
+    ('unknown', None), ('blocked', 1), ('passed', 0),
+    ('failed', 0), ('failed', None),
+])
+def test_748_nonfinal_or_unverified_install_cannot_be_replaced(status, exit_code):
+    old = cmd('dev_install', 'r711-prior000001', 'r711-install0001')
+    new = cmd('qualify', None, 'r711-qualify0002')
+    new['target'] = 'c' * 40
+    receipt = {**old, 'status': status, 'exit_code': exit_code}
+    with patch.object(agent, 'clean_main') as check:
+        with pytest.raises(agent.GateError):
+            agent.validate_control_transition(old, new, receipt)
+        check.assert_not_called()

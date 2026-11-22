@@ -357,6 +357,122 @@ def execute(command: dict) -> dict:
     return receipt
 
 
+def validate_control_transition(previous: dict, current: dict, prior_receipt: dict | None) -> None:
+    """Fail closed when a GitHub writer rewinds or overwrites a live request."""
+    previous = validate_command(previous)
+    current = validate_command(current)
+    if previous == current:
+        return
+    if previous['request_id'] == current['request_id']:
+        raise GateError('Request ID reused with changed content')
+    if prior_receipt is None:
+        raise GateError('Outstanding command has no final immutable receipt')
+    if any(prior_receipt.get(key) != previous[key] for key in (
+            'schema', 'request_id', 'action', 'release', 'target',
+            'base', 'ref', 'previous_request_id')):
+        raise GateError('Prior immutable receipt does not match queued command')
+    status = prior_receipt.get('status')
+    if status == 'passed':
+        if prior_receipt.get('exit_code') != 0:
+            raise GateError('Passed command receipt has nonzero exit')
+        old_index = list(ACTION_PREVIOUS).index(previous['action'])
+        if current['action'] == 'qualify':
+            if previous['action'] not in ('dev_install', 'prod_deploy'):
+                raise GateError('Cannot abandon unfinished release')
+            if (current['release'] != previous['release'] + 1
+                    or current['base'] != previous['target']):
+                raise GateError('Next release must descend from completed target')
+            return
+        if (old_index + 1 >= len(ACTION_PREVIOUS)
+                or current['action'] != list(ACTION_PREVIOUS)[old_index + 1]
+                or current['release'] != previous['release']
+                or current['target'] != previous['target']
+                or current['ref'] != previous['ref']
+                or current['previous_request_id'] != previous['request_id']):
+            raise GateError('Command rewound or skipped approved stage')
+        expected_base = previous['base'] if current['action'] != 'prod_preflight' else None
+        if expected_base and current['base'] != expected_base:
+            raise GateError('Command changed previously approved stage base')
+        return
+    # A DEV install can fail after partial deployment. Only a definitive
+    # immutable failure with a nonzero exit permits replacing it with a NEW
+    # qualification of the same release and base. Verify the installed DEV
+    # checkout and running service before allowing the control history forward.
+    # Do not allow this recovery for unknown, blocked or PROD stages.
+    if status == 'failed' and previous['action'] == 'dev_install':
+        if (type(prior_receipt.get('exit_code')) is int
+                and prior_receipt['exit_code'] != 0
+                and current['action'] == 'qualify'
+                and current['release'] == previous['release']
+                and current['base'] == previous['base']
+                and current['ref'] == previous['ref']
+                and current['target'] != previous['target']):
+            clean_main(previous['base'])
+            return
+        raise GateError('Failed DEV install requires a new pinned qualification and intact DEV')
+
+    if status == 'failed' and previous['action'] == 'qualify':
+        if (current['action'] == 'qualify'
+                and current['release'] == previous['release']
+                and current['base'] == previous['base']
+                and current['ref'] == previous['ref']
+                and current['target'] != previous['target']):
+            return
+        raise GateError('Failed qualification needs a new pinned target')
+    if (status == 'blocked'
+            and prior_receipt.get('failure_category') == 'StageChainBlocked'
+            and all(current[key] == previous[key] for key in (
+                'action', 'release', 'target', 'base', 'ref',
+                'previous_request_id'))):
+        return
+    raise GateError('Unknown or potentially executed command cannot be replaced')
+
+
+def validate_control_ref_history(state: Path, latest_ref: str) -> None:
+    """Check EVERY command-branch commit since the last accepted ref.
+
+    The installed DEV release agent is the enforcement point. The GitHub
+    branch itself remains mutable, but an unreviewed rewind cannot be
+    silently interpreted as an approved instruction by this controller.
+    """
+    history_path = state / 'control-history745.json'
+    if not SHA.fullmatch(latest_ref):
+        raise GateError('Invalid GitHub control ref')
+    if not history_path.exists():
+        initial = json_read(show(latest_ref, COMMAND_PATH))
+        if initial is None:
+            raise GateError('Missing control command at initial anchor')
+        validate_command(initial)
+        atomic_json(history_path, {'ref': latest_ref})
+        return
+    prior = json_read(history_path.read_bytes())
+    previous_ref = prior.get('ref') if prior else None
+    if not isinstance(previous_ref, str) or not SHA.fullmatch(previous_ref):
+        raise GateError('Corrupt or missing controller history anchor')
+    if previous_ref == latest_ref:
+        return
+    git('merge-base', '--is-ancestor', previous_ref, latest_ref)
+    steps = git('rev-list', '--reverse', f'{previous_ref}..{latest_ref}').decode().splitlines()
+    if not steps or len(steps) > 128:
+        raise GateError('Unexpected control-branch history span')
+    old_ref = previous_ref
+    for new_ref in steps:
+        old_command = json_read(show(old_ref, COMMAND_PATH))
+        new_command = json_read(show(new_ref, COMMAND_PATH))
+        if old_command is None or new_command is None:
+            raise GateError('Command missing in controller branch history')
+        old_command = validate_command(old_command)
+        new_command = validate_command(new_command)
+        if old_command != new_command:
+            previous_receipt = json_read(show(
+                RECEIPT_REF, f'receipts/{old_command["request_id"]}.json'))
+            validate_control_transition(old_command, new_command, previous_receipt)
+        old_ref = new_ref
+    if old_ref != latest_ref:
+        raise GateError('Unverified command history endpoint')
+    atomic_json(history_path, {'ref': latest_ref})
+
+
 def main() -> int:
     if os.geteuid() != 0 or os.uname().nodename.split('.')[0] != 'tracker-dev':
         raise GateError('Release agent may only run as root on tracker-dev')
@@ -381,6 +497,10 @@ def main() -> int:
         req = cmd['request_id']
         seen = STATE / f'{req}.started'
         fetch(RECEIPT_BRANCH)
+        # Release 745: reject stale safety-hold rewinds and pending overwrites
+        # across ALL intermediate GitHub command commits before any stage.
+        control_ref = git('rev-parse', REQUEST_REF).decode().strip()
+        validate_control_ref_history(STATE, control_ref)
         latest = json_read(show(RECEIPT_REF, LATEST_PATH))
         # Look up the exact immutable preceding stage rather than assuming
         # that every more recent receipt is the same prior success.
