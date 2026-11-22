@@ -144,6 +144,15 @@ def test_751_real_pytest_junit_properties_and_collection_errors(tmp_path):
     }
 
 
+def test_751_expanded_supplies_case_keeps_original_baseline_identity():
+    # Real case content must become stronger without losing its exact
+    # baseline nodeid in the full-suite parity comparison.
+    src = (ROOT / "tests/test_core_user_db394.py").read_text()
+    assert '"supplies": 9' in src
+    assert '"supplies-5"' in src
+    assert 'dependencies.count("get_scoped_db390") >= count' in src
+
+
 def test_751_sanitized_parity_diagnostics_identify_failures_without_params(capsys):
     base = {
         "tests/test_core_user_db394.py::test_every_core_dependency_is_scoped[supplies-5]": "failed",

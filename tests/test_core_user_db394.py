@@ -59,6 +59,11 @@ def dependency_names(tree):
 @pytest.mark.parametrize(
     "name,count",
     list(CORE.items()),
+    # Stable baseline identities for exact-SHA differential qualification.
+    # The supplies case now requires 9 scoped routes, not 5; retaining its
+    # original test ID prevents silently dropping the historical test case.
+    ids=("compounds-5", "protocols-12", "vials-18",
+         "purchases-11", "supplies-5", "calendar-5"),
 )
 def test_every_core_dependency_is_scoped(name, count):
     tree, source = parse_module(name)

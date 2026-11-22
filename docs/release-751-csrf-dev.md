@@ -154,3 +154,12 @@ source-level function names and hashes of parameter IDs in the private
 DEV log. No raw parameter values, application data, full JUnit XML, or
 tracebacks are published to GitHub. The existing complete regression and
 Chromium gates remain mandatory after this targeted parity passes.
+
+## Preserve existing case IDs for stronger Supplies expectations
+
+The original Release 394 parameter case was `supplies-5` and its frozen
+count assertion was outdated after Supplies MACD expanded to nine scoped
+endpoints. The existing test now enforces **at least nine** scoped routes
+but preserves the original `supplies-5` JUnit case identity, so the baseline
+comparison cannot mistake its intentional improvement for a missing test.
+This does not remove or relax any security check.
