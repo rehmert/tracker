@@ -1,22 +1,26 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "base": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-  "exit_code": 1,
+  "exit_code": 0,
   "failed_tests": [],
-  "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-22T03:38:25+00:00",
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T03:41:12+00:00",
   "markers": [
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED"
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_750_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_750_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_750_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_750_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r750-44709978971a",
+  "previous_request_id": null,
   "ref": "release/750-offline-browser-multiuser-acceptance",
   "release": 750,
-  "request_id": "r750-install44709978",
+  "request_id": "r750-2ff72f494493",
   "schema": 1,
-  "started_at_utc": "2026-11-22T03:37:28+00:00",
-  "status": "failed",
-  "target": "44709978971a1fc08e695ad79e7437e012339856",
+  "started_at_utc": "2026-11-22T03:40:11+00:00",
+  "status": "passed",
+  "target": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
   "test_counts": [
-    "51 passed, 1 warning"
+    "52 passed, 1 warning"
   ]
 }
