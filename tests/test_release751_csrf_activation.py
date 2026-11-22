@@ -64,6 +64,7 @@ def test_751_full_browser_and_backend_qualification_precedes_dev_toggle():
     assert 'RELEASE_751_BACKEND_BASELINE_PARITY=PASSED' in (
         ROOT / "scripts/tracker-backend-parity751.py"
     ).read_text()
+    runner = (ROOT / "scripts/tracker-release.sh").read_text()
     assert 'timeout 1200 "$PY" -m pytest' in runner
     assert 'FULL BACKEND BASELINE PARITY GATE PASSED' in runner
     assert q.index("RELEASE_751_FULL_BACKEND_PREFLIGHT=PASSED") < q.index(
@@ -74,7 +75,6 @@ def test_751_full_browser_and_backend_qualification_precedes_dev_toggle():
         assert required in scoped
         assert required in q
     assert "--full-suite" in ins
-    runner = (ROOT / "scripts/tracker-release.sh").read_text()
     assert 'timeout 1800 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"' in runner
     assert 'timeout 1200 "$PY" -m pytest' in runner
     assert 'tracker-csrf-dev751.sh" enable "$TARGET"' in ins
