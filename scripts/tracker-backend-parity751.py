@@ -46,10 +46,17 @@ def read_report(path: Path) -> dict:
         raise ParityError('Empty JUnit report; release blocked')
     result = {}
     for case in cases:
-        identity = (case.get('classname'), case.get('name'))
-        if not all(identity) or identity in result:
-            raise ParityError('Missing or duplicate JUnit test identity')
-        result[identity] = ('error' if case.find('error') is not None else
+        # JUnit classname/name are not guaranteed unique. A pinned pytest
+        # plugin records the exact collection nodeid for BOTH source trees.
+        evidence = [prop.get('value') for prop in
+                    case.findall('./properties/property')
+                    if prop.get('name') == 'tracker_pytest_nodeid_751']
+        if len(evidence) != 1:
+            raise ParityError('Missing or duplicate pytest nodeid property')
+        nodeid = evidence[0]
+        if not nodeid or not nodeid.startswith('tests/') or nodeid in result:
+            raise ParityError('Missing or duplicate pytest nodeid')
+        result[nodeid] = ('error' if case.find('error') is not None else
                             'failed' if case.find('failure') is not None else
                             'skipped' if case.find('skipped') is not None else
                             'passed')
@@ -70,10 +77,15 @@ def compare_reports(base: dict, candidate: dict) -> dict:
         import re
         abnormal = missing | new_skips | new_failures
         filenames = set()
-        for classname, _ in abnormal:
-            last = (classname or '').rsplit('.', 1)[-1]
-            if re.fullmatch(r'test_[A-Za-z0-9_]+', last):
-                filenames.add(f'tests/{last}.py')
+        for nodeid in abnormal:
+            # Only publish safe relative source filenames, never full nodeids,
+            # assertion payloads, JUnit, logs or private test data.
+            match = re.match(
+                r'^(tests/(?:[A-Za-z0-9_]+/)*test_[A-Za-z0-9_]+[.]py)(?:::|$)',
+                nodeid,
+            )
+            if match:
+                filenames.add(match.group(1))
         for filename in sorted(filenames)[:12]:
             print('FAILED ' + filename, file=sys.stderr)
         raise ParityError(
@@ -86,11 +98,15 @@ def compare_reports(base: dict, candidate: dict) -> dict:
             'inherited_failures': inherited}
 
 
-def run_suite(python: str, source: Path, data: Path, output: Path) -> None:
+def run_suite(python: str, source: Path, data: Path, output: Path,
+              plugin_dir: Path) -> None:
     data.mkdir(mode=0o700)
     env = dict(os.environ, TRACKER_DATA_DIR=str(data),
-               PYTHONPATH=str(source), PYTHONDONTWRITEBYTECODE='1')
-    argv = [python, '-B', '-m', 'pytest', '-q', '--tb=short',
+               # Source first; shared pinned plugin loaded from candidate.
+               PYTHONPATH=os.pathsep.join((str(source), str(plugin_dir))),
+               PYTHONDONTWRITEBYTECODE='1')
+    argv = [python, '-B', '-m', 'pytest', '-p', 'tracker_pytest_nodeid751',
+            '-q', '--tb=short',
             '--disable-warnings', '-n', '16', '--dist=loadfile',
             '--durations=20', 'tests']
     argv += [f'--ignore={path}' for path in IGNORES]
@@ -136,8 +152,13 @@ def main() -> int:
                         'worktree', 'add', '--detach', str(baseline), args.base],
                        check=True, stdout=subprocess.DEVNULL)
         try:
-            run_suite(args.python, baseline, root / 'base-data', root / 'baseline')
-            run_suite(args.python, candidate, root / 'candidate-data', root / 'candidate')
+            plugin_dir = candidate / 'scripts'
+            if not (plugin_dir / 'tracker_pytest_nodeid751.py').is_file():
+                raise ParityError('Pinned parity identity plugin missing')
+            run_suite(args.python, baseline, root / 'base-data',
+                      root / 'baseline', plugin_dir)
+            run_suite(args.python, candidate, root / 'candidate-data',
+                      root / 'candidate', plugin_dir)
             result = compare_reports(read_report(root / 'baseline.xml'),
                                      read_report(root / 'candidate.xml'))
             print('RELEASE_751_BACKEND_BASELINE_CASES=' + str(result['baseline_cases']))

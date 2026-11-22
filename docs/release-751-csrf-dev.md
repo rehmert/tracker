@@ -118,3 +118,13 @@ Existing release behaviors use their original bounded 600s browser timeout;
 **not** a claim that the inherited full suite is all green. The strict CSRF
 negative/positive HTTP/HTTPS gate remains mandatory, PROD is unmodified,
 and no other release's full-suite policy changes.
+
+## Full backend JUnit identity correction
+
+Pytest JUnit display classname/name pairs are not guaranteed collection IDs.
+Both isolated baseline and candidate runs now load the same exact-commit
+pytest plugin to record full collection nodeids in each JUnit testcase.
+The parity gate rejects missing or duplicate nodeids, lost test coverage,
+new failures/errors/skips, incomplete runs or timeouts. No security tests,
+normal application logic or rollout gates are weakened. Raw evidence stays
+private within disposable DEV QA directories.

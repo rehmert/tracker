@@ -13,44 +13,67 @@ spec.loader.exec_module(parity)
 
 
 def test_751_inherited_failure_is_not_a_new_regression():
-    base = {("case", "a"): "failed", ("case", "b"): "passed",
-            ("case", "c"): "skipped"}
-    candidate = dict(base, **{}) | {("case", "new"): "passed"}
+    base = {"tests/test_a.py::test_one": "failed",
+            "tests/test_b.py::test_two": "passed",
+            "tests/test_c.py::test_three": "skipped"}
+    candidate = base | {"tests/test_new.py::test_four": "passed"}
     report = parity.compare_reports(base, candidate)
     assert report == {"baseline_cases": 3, "candidate_cases": 4,
                       "inherited_failures": 1}
 
 
 @pytest.mark.parametrize("candidate", [
-    {("case", "a"): "failed", ("case", "b"): "failed"},
-    {("case", "a"): "error", ("case", "b"): "passed"},
-    {("case", "a"): "failed", ("case", "b"): "skipped"},
-    {("case", "a"): "passed"},
+    {"tests/test_a.py::test_a": "failed", "tests/test_b.py::test_b": "failed"},
+    {"tests/test_a.py::test_a": "error", "tests/test_b.py::test_b": "passed"},
+    {"tests/test_a.py::test_a": "failed", "tests/test_b.py::test_b": "skipped"},
+    {"tests/test_a.py::test_a": "passed"},
 ])
 def test_751_any_new_failure_skip_error_or_missing_test_blocks(candidate):
-    base = {("case", "a"): "failed", ("case", "b"): "passed"}
+    base = {"tests/test_a.py::test_a": "failed",
+            "tests/test_b.py::test_b": "passed"}
     with pytest.raises(parity.ParityError):
         parity.compare_reports(base, candidate)
 
 
-def test_751_empty_duplicate_or_malformed_evidence_is_rejected(tmp_path):
+def _case(nodeid, classname="legacy", name="same", failure=False):
+    evidence = ('<properties><property name="tracker_pytest_nodeid_751" '
+                f'value="{nodeid}"/></properties>')
+    return (f'<testcase classname="{classname}" name="{name}">'
+            f'{evidence}{"<failure/>" if failure else ""}</testcase>')
+
+
+def test_751_empty_missing_duplicate_or_malformed_nodeids_are_rejected(tmp_path):
     p = tmp_path / "suite.xml"
     p.write_text("<testsuite></testsuite>")
     with pytest.raises(parity.ParityError):
         parity.read_report(p)
-    p.write_text(
-        '<testsuite><testcase classname="s" name="a"/>'
-        '<testcase classname="s" name="a"/></testsuite>'
-    )
-    with pytest.raises(parity.ParityError):
+    p.write_text('<testsuite><testcase classname="s" name="a"/></testsuite>')
+    with pytest.raises(parity.ParityError, match="nodeid property"):
         parity.read_report(p)
-    p.write_text(
-        '<testsuite><testcase classname="s" name="a"/>'
-        '<testcase classname="s" name="b"><failure/></testcase>'
-        '</testsuite>'
-    )
-    assert parity.read_report(p) == {("s", "a"): "passed",
-                                    ("s", "b"): "failed"}
+    p.write_text('<testsuite>' + _case('tests/test_a.py::test_a')
+                 + _case('tests/test_a.py::test_a', name='different')
+                 + '</testsuite>')
+    with pytest.raises(parity.ParityError, match="duplicate pytest nodeid"):
+        parity.read_report(p)
+    p.write_text('<testsuite>' + _case('../bad/path::test_a') + '</testsuite>')
+    with pytest.raises(parity.ParityError, match="nodeid"):
+        parity.read_report(p)
+    p.write_text('<testsuite><testcase></testsuite>')
+    with pytest.raises(ET.ParseError):
+        parity.read_report(p)
+
+
+def test_751_distinct_nodeids_do_not_collide_on_junit_display_names(tmp_path):
+    # JUnit display metadata may collide; actual pytest nodeids may not.
+    p = tmp_path / 'suite.xml'
+    p.write_text('<testsuite>'
+                 + _case('tests/test_a.py::test_a')
+                 + _case('tests/test_b.py::test_b', failure=True)
+                 + '</testsuite>')
+    assert parity.read_report(p) == {
+        'tests/test_a.py::test_a': 'passed',
+        'tests/test_b.py::test_b': 'failed',
+    }
 
 
 def test_751_baseline_gate_is_disposable_and_narrow():
@@ -64,6 +87,11 @@ def test_751_baseline_gate_is_disposable_and_narrow():
     assert "source, env=env" in source
     assert "new_skips" in source and "new_failures" in source and "missing" in source
     assert "result.returncode not in (0, 1)" in source
+    assert "tracker_pytest_nodeid751" in source
+    assert "plugin_dir = candidate / 'scripts'" in source
+    assert "nodeid in result" in source
+    assert "tracker_pytest_nodeid_751" in (
+        ROOT / "scripts/tracker_pytest_nodeid751.py").read_text()
     assert "timeout=1200" in source
     assert "RELEASE_751_BACKEND_BASELINE_PARITY=PASSED" in source
     assert "--ignore=tests/browser" in runner
