@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Release 744: combined static CSRF readiness, dependency/Chromium evidence, stage-chain validation and CSS parity; never install.
+# Release 744: concurrent Work-task coordination contract and guarded scoped regressions; never install.
 set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 PY="$APP/.venv/bin/python"
 BASE=7585b65f003179fe86d0f98958fe0e63071b8e81
-REF=release/744-security-deps-controller-ux
+REF=release/744-release-coordination
 fail() { echo "RELEASE_744_BLOCKED=$*" >&2; exit 1; }
 [[ $# == 1 && "$1" =~ ^[0-9a-f]{40}$ ]] ||
   fail "Expected exact candidate SHA"
@@ -23,7 +23,7 @@ export GIT_CONFIG_VALUE_0="$APP"
    -z "$(git status --porcelain)" ]] ||
   fail "Clean installed Release 743 required"
 systemctl is-active --quiet tracker || fail "Installed DEV service inactive"
-exec 9>/run/lock/tracker744-security-deps-controller-ux.lock
+exec 9>/run/lock/tracker744-release-coordination.lock
 flock -n 9 || fail "Another Release 744 QA active"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] ||
   fail "Fetched Release 744 branch SHA mismatch"
@@ -41,7 +41,7 @@ while IFS= read -r path; do
     *) fail "Unexpected Release 744 source path: $path" ;;
   esac
 done < <(git diff --name-only "$BASE" "$TARGET")
-RUN="$(mktemp -d /tmp/tracker744-security-deps-controller-ux.XXXXXXXX)"
+RUN="$(mktemp -d /tmp/tracker744-release-coordination.XXXXXXXX)"
 QA="$RUN/source"
 cleanup() {
   local code=$?

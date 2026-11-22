@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Release 744 guarded source-only security, dependency, release-chain and UX DEV install; exact qualified SHA only.
+# Release 744 guarded source-only release coordination DEV install; exact qualified SHA only.
 set -Eeuo pipefail
 umask 077
 APP=/opt/tracker
 BASE=7585b65f003179fe86d0f98958fe0e63071b8e81
-REF=release/744-security-deps-controller-ux
+REF=release/744-release-coordination
 fail() { echo "RELEASE_744_INSTALL_BLOCKED=$*" >&2; exit 1; }
 [[ $# == 1 && "$1" =~ ^[0-9a-f]{40}$ ]] ||
   fail "Supply qualified exact commit SHA"
