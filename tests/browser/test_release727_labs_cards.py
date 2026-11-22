@@ -56,9 +56,14 @@ def test_727_labs_phone_cards_and_desktop_table(scheme,density):
                     table = page.locator("#labs-reports-table")
                     rows = table.locator("tbody tr[data-labs-report-row]")
                     expect(rows).to_have_count(2)
-                    assert rows.first.locator("td").count()==4
-                    assert rows.first.get_by_role("link").get_attribute("href") == "/labs/41"
-                    assert rows.nth(1).get_by_role("link").get_attribute("href") == "/labs/42"
+                    assert rows.first.locator("td").count()==5
+                    assert rows.first.locator('td[data-label="Drawn"] a').get_attribute("href") == "/labs/41"
+                    assert rows.nth(1).locator('td[data-label="Drawn"] a').get_attribute("href") == "/labs/42"
+                    actions = rows.first.locator('td[data-label="Manage"] .tracker-macd741-action')
+                    assert actions.count() == 3
+                    assert [actions.nth(i).get_attribute("href") for i in range(3)] == [
+                        "/labs/41#lab-details741", "/labs/41#lab-results741", "/labs/41#lab-delete741"
+                    ]
                     mobile=width<=760
                     display=rows.first.evaluate("(el)=>getComputedStyle(el).display")
                     assert display == ("grid" if mobile else "table-row"), (
@@ -66,9 +71,10 @@ def test_727_labs_phone_cards_and_desktop_table(scheme,density):
                     )
                     assert table.locator("thead").is_hidden() == mobile
                     if mobile:
-                        assert rows.first.locator("td[data-label]").count()==4
-                        assert rows.first.locator("td[data-ux673-action] a").evaluate(
-                            "(el)=>el.getBoundingClientRect().height>=44")
+                        assert rows.first.locator("td[data-label]").count()==5
+                        assert all(links.evaluate_all(
+                            "(els)=>els.map(el=>el.getBoundingClientRect().height>=44)"))
+                            for links in [rows.first.locator("td[data-ux673-action] a")]
                     assert page.evaluate(
                         "document.documentElement.scrollWidth <= innerWidth"
                     ), (width,scheme,density)
