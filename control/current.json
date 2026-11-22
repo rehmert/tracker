@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r748-965f0050e7e6",
+  "request_id": "r748-d193c2d9afb0",
   "action": "qualify",
   "release": 748,
-  "target": "965f0050e7e66a4a01d652818588106b072452ee",
+  "target": "d193c2d9afb09f263bc1d7305d955ff0cf51dc69",
   "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
   "ref": "release/748-mobile-macd-dependency",
   "previous_request_id": null
