@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "7585b65f003179fe86d0f98958fe0e63071b8e81",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T00:12:55+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+    "PROMOTED_COMMIT=0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+    "REMOTE_DEPLOY_EXIT_STATUS=0",
+    "PROD_INSTALLED_COMMIT=0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  ],
+  "previous_request_id": "r744-preflight0e992553",
+  "ref": "release/744-release-coordination",
+  "release": 744,
+  "request_id": "r744-deploy0e992553",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T00:12:28+00:00",
+  "status": "passed",
+  "target": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+  "test_counts": []
+}
