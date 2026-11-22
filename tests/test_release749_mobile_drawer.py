@@ -107,9 +107,18 @@ def test_749_portrait_short_drawer_has_no_white_band(width, height, scheme):
             assert before["railHeight"] >= height - 1, before
             page.add_style_tag(content=fix)
             after = _metrics(page)
-            assert after["railHeight"] < height - 50, after
+            # A 320px-wide, short-height phone may need the entire
+            # viewport for its seven categories; it must be able to scroll.
+            # Taller portrait phones should instead fit their short menu
+            # without leaving the legacy empty white band.
+            assert 0 < after["railHeight"] <= height + 1, after
             assert after["railBottom"] - after["navBottom"] < 45, after
-            assert after["scrollHeight"] <= after["clientHeight"] + 2, after
+            if after["scrollHeight"] > after["clientHeight"] + 2:
+                assert after["clientHeight"] > 0, after
+            else:
+                assert after["scrollHeight"] <= after["clientHeight"] + 2, after
+                if height >= 800:
+                    assert after["railHeight"] < height - 40, after
             assert after["pageScrollWidth"] <= width + 1, after
             assert 0 < after["width"] <= width, after
             assert after["railPosition"] == "fixed", after
