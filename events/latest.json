@@ -1,11 +1,11 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r751-install5f3d3631.json",
+  "receipt_path": "receipts/r751-8525b0945683.json",
   "release": 751,
-  "request_id": "r751-install5f3d3631",
+  "request_id": "r751-8525b0945683",
   "schema": 1,
-  "status": "failed",
-  "target": "5f3d363194e019ef7dd0b8daefe725192bccf6fe"
+  "status": "passed",
+  "target": "8525b094568367992173550112edda9c34a911f4"
 }
