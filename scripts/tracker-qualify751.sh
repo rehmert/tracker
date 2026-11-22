@@ -31,6 +31,7 @@ while IFS= read -r path; do
  case "$path" in
  scripts/tracker-qualify751.sh|scripts/tracker-install751.sh|\
  scripts/tracker-release-scoped751.sh|scripts/tracker-csrf-dev751.sh|\
+ scripts/tracker-browser-qualify.sh|\
  tests/test_release751_csrf_activation.py|\
  tests/browser/test_release727_labs_cards.py|\
  tests/test_release627_csrf_remaining_negative_matrix.py|docs/release-751-csrf-dev.md) ;;
@@ -66,6 +67,34 @@ export TRACKER_DATA_DIR="$RUN/data" PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1
 "$PY" -B scripts/tracker-impact-preflight604.py --base "$BASE" --target "$TARGET" --root "$QA"
 echo "RELEASE_751_IMPACT_PREFLIGHT=PASSED"
 bash scripts/tracker-release-scoped751.sh "$PY"
+# Diagnose only the previously failing strict dose-history test before
+# rerunning hundreds of passing standard/strict browser cases. All data and
+# raw output remain in the disposable private QA root.
+echo "RELEASE_751_TARGETED_DOSE602=STARTED"
+set +e
+timeout 300 bash scripts/tracker-browser-qualify.sh "$QA" "$PY" \
+  --targeted-strict dose602 2>&1 | tee "$RUN/dose602-private.log"
+focused=("${PIPESTATUS[@]}")
+set -e
+if (( focused[0] != 0 || focused[1] != 0 )); then
+  "$PY" - "$RUN/dose602-private.log" <<'PY'
+from pathlib import Path
+import re, sys
+body=Path(sys.argv[1]).read_text(encoding="utf-8",errors="replace")
+points=set()
+for line in body.splitlines():
+    for match in re.finditer(r"tests/browser/test_strict_csrf521[.]py:(\d+)",line):
+        line_num=int(match.group(1))
+        if 2345 <= line_num < 2486:
+            points.add(line_num)
+for line_num in sorted(points)[:8]:
+    print("FAILED tests/strict751_dose602_line"+str(line_num)+".py")
+if not points:
+    print("FAILED tests/strict751_dose602_unclassified.py")
+PY
+  exit 1
+fi
+echo "RELEASE_751_TARGETED_DOSE602=PASSED"
 echo "RELEASE_751_ISOLATED_STRICT_BROWSER=STARTED"
 # Full output stays inside the private QA worker. Surface only a bounded
 # list of synthetic failing test identifiers in GitHub stage receipts.

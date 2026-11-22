@@ -52,6 +52,12 @@ def test_751_full_browser_and_backend_qualification_precedes_dev_toggle():
     assert "PrivateNetwork=yes required" in q
     assert "tracker-browser-qualify.sh" in q
     assert "RELEASE_751_INSTALLED_DEV=UNMODIFIED" in q
+    assert "--targeted-strict dose602" in q
+    assert "RELEASE_751_TARGETED_DOSE602=PASSED" in q
+    assert "RELEASE_751_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY" in q
+    b = (ROOT / "scripts/tracker-browser-qualify.sh").read_text()
+    assert 'TARGETED_MODULE" == dose602' in b
+    assert "TARGETED_DOSE602_HTTP_HTTPS=PASSED" in b
     assert "tracker-release-scoped751.sh" in q
     assert "--full-suite" in ins
     assert 'tracker-csrf-dev751.sh" enable "$TARGET"' in ins

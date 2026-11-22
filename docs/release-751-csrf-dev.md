@@ -34,3 +34,13 @@ the current fail-closed Release 627+705 reconciler and exercises both
 missing-token and forged-token denials for all currently unresolved routes,
 including more recently added endpoints. No positive route is falsely
 classified as certified; existing independent runtime route matrix remains.
+
+## Targeted failure localization
+
+Before full isolated browser qualification, the worker executes only the
+previously failing Release 602 strict-CSRF browser module test in disposable
+HTTP and HTTPS. Failure records include bounded synthetic
+`tests/strict751_dose602_lineNNNN.py` identifiers from short pytest
+traceback locations; original logs remain in the private QA directory and
+are deleted during cleanup. A targeted success cannot qualify the release:
+the full normal and strict Chromium matrix still follows and must pass.

@@ -6,7 +6,8 @@ PY="$1"
 ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd -P)"
 [[ "$PWD" == "$ROOT" && "$TRACKER_DATA_DIR" == /tmp/* ]] || exit 2
 for file in scripts/tracker-qualify751.sh scripts/tracker-install751.sh \
- scripts/tracker-release-scoped751.sh scripts/tracker-csrf-dev751.sh; do
+ scripts/tracker-release-scoped751.sh scripts/tracker-csrf-dev751.sh \
+ scripts/tracker-browser-qualify.sh; do
  bash -n "$file"
 done
 "$PY" -B -m py_compile tests/test_release751_csrf_activation.py

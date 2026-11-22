@@ -13,7 +13,7 @@ if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   TARGETED_MODULE="$4"
   [[ "$TARGETED_MODULE" == csrf-batch589 || "$TARGETED_MODULE" =~ ^tests/browser/test_(csrf_preparations583|form_overlap586|csrf_bulk587|csrf_multipart588)[.]py$ ]] || \
   [[ "$TARGETED_MODULE" == csrf-batch627 || "$TARGETED_MODULE" == csrf-positive627 || "$TARGETED_MODULE" == csrf-new627 ]] || \
-  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 || "$TARGETED_MODULE" == workout-active716 || "$TARGETED_MODULE" == workout-completed717 || "$TARGETED_MODULE" == workout-machine718 || "$TARGETED_MODULE" == workout-manage719 ]] || {
+  [[ "$TARGETED_MODULE" == note-title575 || "$TARGETED_MODULE" == dose602 || "$TARGETED_MODULE" == quick603 || "$TARGETED_MODULE" == workflows580 || "$TARGETED_MODULE" == blend-vial710 || "$TARGETED_MODULE" == blend-correction711 || "$TARGETED_MODULE" == u100-withdraw712 || "$TARGETED_MODULE" == global-time24-713 || "$TARGETED_MODULE" == coa-untested715 || "$TARGETED_MODULE" == workout-active716 || "$TARGETED_MODULE" == workout-completed717 || "$TARGETED_MODULE" == workout-machine718 || "$TARGETED_MODULE" == workout-manage719 ]] || {
     echo "ERROR: Targeted module must be one of the audited CSRF batch or 583/586/587/588 fixtures" >&2
     exit 2
   }
@@ -453,6 +453,21 @@ PY
 # Release 705: narrow HTTP + HTTPS strict-Vials / Quick Entry browser
 # preflight. Two real Chromium cases; no writes to installed DEV/PROD and
 # NOT a substitute for the full standard + strict suites.
+# Release 751: one focused strict HTTP/HTTPS dose-history test first.
+# This is diagnostic ONLY, never a replacement for full qualification.
+if [[ "$MODE" == targeted && "$TARGETED_MODULE" == dose602 ]]; then
+  echo "TARGETED_DOSE602_SCOPE=HTTP_HTTPS_ONLY_NOT_FULL_QA"
+  env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
+    PYTHONPATH="$SOURCE" TRACKER_DATA_DIR="$DATA" \
+    TRACKER_TEST_URL="$URL" TRACKER_TEST_HTTPS_URL="$HTTPS_URL" \
+    TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
+    TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
+    "$PY" -B -m pytest -q --tb=short --maxfail=1 \
+    "tests/browser/test_strict_csrf521.py::test_602_mobile_dose_guidance_and_history_are_read_only"
+  echo "TARGETED_DOSE602_HTTP_HTTPS=PASSED"
+  exit 0
+fi
+
 if [[ "$MODE" == targeted && "$TARGETED_MODULE" == quick603 ]]; then
   echo "TARGETED_QUICK603_SCOPE=HTTP_HTTPS_STRICT_ONLY_NOT_FULL_QA"
   env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
