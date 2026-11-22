@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r745-installd6b34a77",
-  "action": "dev_install",
+  "request_id": "r745-b7435e55659f",
+  "action": "qualify",
   "release": 745,
-  "target": "d6b34a77b6f7d3f3299cba9d567201deb5495ae8",
+  "target": "b7435e55659fbb09819101ebd621aca2c72059c9",
   "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
   "ref": "release/745-macd-mobile-controller",
-  "previous_request_id": "r745-d6b34a77b6f7"
+  "previous_request_id": null
 }
