@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T03:26:34+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r749-installe80edbfa",
+  "ref": "release/749-portrait-sidebar-fit",
+  "release": 749,
+  "request_id": "r749-pfe80edbfa5ef",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T03:26:32+00:00",
+  "status": "passed",
+  "target": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
+  "test_counts": []
+}
