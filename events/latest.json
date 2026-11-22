@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r744-0e9925532127.json",
+  "receipt_path": "receipts/r744-install0e992553.json",
   "release": 744,
-  "request_id": "r744-0e9925532127",
+  "request_id": "r744-install0e992553",
   "schema": 1,
   "status": "passed",
   "target": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11"
