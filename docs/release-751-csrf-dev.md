@@ -128,3 +128,16 @@ The parity gate rejects missing or duplicate nodeids, lost test coverage,
 new failures/errors/skips, incomplete runs or timeouts. No security tests,
 normal application logic or rollout gates are weakened. Raw evidence stays
 private within disposable DEV QA directories.
+
+## Collection-error JUnit evidence fix and fast proof
+
+Real pytest collection errors generate JUnit testcase entries before pytest
+has created an Item, and therefore cannot have the custom item nodeid
+property. The parser now recognizes only the precisely identified
+`classname=""`, `message="collection failure"` records, retaining them
+as explicit error outcomes under stable module names. Ordinary testcases
+must still provide a unique pytest nodeid; missing, malformed or duplicated
+identity fails closed. No collected errors are silently ignored. The scoped
+gate now executes real xdist/JUnit subprocess smoke cases for successful
+parametrized items and genuine collection errors **before** the full parity
+runs, and the long stages print explicit start/end markers.

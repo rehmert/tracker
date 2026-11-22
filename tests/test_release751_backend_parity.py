@@ -1,6 +1,9 @@
 """Release 751: full backend legacy-baseline parity remains fail-closed."""
 import importlib.util
+import os
 from pathlib import Path
+import subprocess
+import sys
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -61,6 +64,18 @@ def test_751_empty_missing_duplicate_or_malformed_nodeids_are_rejected(tmp_path)
     p.write_text('<testsuite><testcase></testsuite>')
     with pytest.raises(ET.ParseError):
         parity.read_report(p)
+    # Collection error records deliberately lack item user-properties.
+    p.write_text('<testsuite><testcase classname="" name="tests.test_broken">'
+                 '<error message="collection failure">import error</error>'
+                 '</testcase></testsuite>')
+    assert parity.read_report(p) == {
+        '__collection__:tests.test_broken': 'error'
+    }
+    # Missing properties on an ordinary test remain a hard error.
+    p.write_text('<testsuite><testcase classname="module" name="test_case">'
+                 '<error message="setup failure"/></testcase></testsuite>')
+    with pytest.raises(parity.ParityError, match="nodeid property"):
+        parity.read_report(p)
 
 
 def test_751_distinct_nodeids_do_not_collide_on_junit_display_names(tmp_path):
@@ -73,6 +88,59 @@ def test_751_distinct_nodeids_do_not_collide_on_junit_display_names(tmp_path):
     assert parity.read_report(p) == {
         'tests/test_a.py::test_a': 'passed',
         'tests/test_b.py::test_b': 'failed',
+    }
+
+
+def test_751_real_pytest_junit_properties_and_collection_errors(tmp_path):
+    # Real subprocess evidence catches schema assumptions before the six-minute
+    # full backend parity run. Run with xdist just like production qualification.
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    (tests / "test_report_smoke.py").write_text(
+        "import pytest\n"
+        "@pytest.mark.parametrize('number',[1,2])\n"
+        "def test_ok(number):\n"
+        "    assert number > 0\n"
+    )
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.pathsep.join(
+        (str(ROOT / "scripts"), env.get("PYTHONPATH", ""))
+    )
+
+    def run_case(filename, output):
+        completed = subprocess.run(
+            [sys.executable, "-B", "-m", "pytest", "-p",
+             "tracker_pytest_nodeid751", "-n", "2", "--dist=loadfile",
+             "-q", "--junitxml=" + str(output), filename],
+            cwd=tmp_path, env=env, capture_output=True,
+            text=True, timeout=60, check=False,
+        )
+        assert output.is_file(), (
+            completed.returncode, completed.stdout[-700:],
+            completed.stderr[-700:]
+        )
+        return completed
+
+    passing = tmp_path / "passing.xml"
+    completed = run_case("tests/test_report_smoke.py", passing)
+    assert completed.returncode == 0, (
+        completed.stdout[-700:], completed.stderr[-700:]
+    )
+    assert parity.read_report(passing) == {
+        "tests/test_report_smoke.py::test_ok[1]": "passed",
+        "tests/test_report_smoke.py::test_ok[2]": "passed",
+    }
+
+    (tests / "test_broken_import.py").write_text(
+        "raise RuntimeError('synthetic collection failure')\n"
+    )
+    broken = tmp_path / "broken.xml"
+    completed = run_case("tests/test_broken_import.py", broken)
+    assert completed.returncode in (1, 2), (
+        completed.stdout[-700:], completed.stderr[-700:]
+    )
+    assert parity.read_report(broken) == {
+        "__collection__:tests.test_broken_import": "error",
     }
 
 
@@ -90,6 +158,9 @@ def test_751_baseline_gate_is_disposable_and_narrow():
     assert "tracker_pytest_nodeid751" in source
     assert "plugin_dir = candidate / 'scripts'" in source
     assert "nodeid in result" in source
+    assert "'__collection__:' + name" in source
+    assert "collection failure" in source
+    assert "RELEASE_751_BACKEND_RUN=" in source
     assert "tracker_pytest_nodeid_751" in (
         ROOT / "scripts/tracker_pytest_nodeid751.py").read_text()
     assert "timeout=1200" in source

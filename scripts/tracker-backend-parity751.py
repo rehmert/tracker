@@ -51,10 +51,25 @@ def read_report(path: Path) -> dict:
         evidence = [prop.get('value') for prop in
                     case.findall('./properties/property')
                     if prop.get('name') == 'tracker_pytest_nodeid_751']
-        if len(evidence) != 1:
+        if len(evidence) == 1:
+            nodeid = evidence[0]
+            if not nodeid or not nodeid.startswith('tests/'):
+                raise ParityError('Malformed pytest nodeid')
+        elif (not evidence and case.get('classname') == ''
+              and case.find('error') is not None
+              and case.find('error').get('message') == 'collection failure'):
+            # Pytest JUnit creates synthetic testcase entries for collection
+            # errors before an Item exists. There can be no user_properties.
+            # Keep these as explicit failures, with stable module identities,
+            # rather than silently discarding or treating them as ordinary tests.
+            import re
+            name = case.get('name') or ''
+            if not re.fullmatch(r'[A-Za-z0-9_]+(?:[.][A-Za-z0-9_]+)*', name):
+                raise ParityError('Malformed collection-error identity')
+            nodeid = '__collection__:' + name
+        else:
             raise ParityError('Missing or duplicate pytest nodeid property')
-        nodeid = evidence[0]
-        if not nodeid or not nodeid.startswith('tests/') or nodeid in result:
+        if nodeid in result:
             raise ParityError('Missing or duplicate pytest nodeid')
         result[nodeid] = ('error' if case.find('error') is not None else
                             'failed' if case.find('failure') is not None else
@@ -111,6 +126,8 @@ def run_suite(python: str, source: Path, data: Path, output: Path,
             '--durations=20', 'tests']
     argv += [f'--ignore={path}' for path in IGNORES]
     argv += [f'--junitxml={output}.xml']
+    print('RELEASE_751_BACKEND_RUN=' + output.name.upper() + '_STARTED',
+          flush=True)
     with (output.with_suffix('.log')).open('wb') as log:
         os.chmod(log.name, 0o600)
         try:
@@ -124,6 +141,8 @@ def run_suite(python: str, source: Path, data: Path, output: Path,
         raise ParityError(f'Backend suite incomplete: exit {result.returncode}')
     if not (output.with_suffix('.xml')).is_file():
         raise ParityError('Missing backend JUnit evidence')
+    print('RELEASE_751_BACKEND_RUN=' + output.name.upper() + '_FINISHED'
+          + '_EXIT_' + str(result.returncode), flush=True)
 
 
 def main() -> int:
