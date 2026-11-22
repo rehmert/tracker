@@ -38,7 +38,7 @@ def get_token(client, path):
 def test_747_notes_complete_signed_create_edit_delete_and_history(strict_app747, scheme):
     with TestClient(app, base_url=f"{scheme}://testserver") as client:
         token = get_token(client, "/pages/new")
-        values = {"title": "747 synthetic note", "body": "first private text", "tags": "qa"}
+        values = {"title": "747 synthetic note " + scheme, "body": "first private text", "tags": "qa"}
         missing = client.post("/pages", data=values, follow_redirects=False)
         assert missing.status_code == 403
         created = client.post("/pages", data={**values, "csrf_token": token},
@@ -74,7 +74,7 @@ def test_747_notes_complete_signed_create_edit_delete_and_history(strict_app747,
 def test_747_workout_equipment_signed_add_and_forged_denial(strict_app747, scheme):
     with TestClient(app, base_url=f"{scheme}://testserver") as client:
         token = get_token(client, "/workouts")
-        name = "747 synthetic Nautilus"
+        name = "747 synthetic Nautilus " + scheme
         data = {"name": name, "kind": "selectorized",
                 "gym": "Disposable QA gym", "manufacturer": "QA"}
         assert client.post("/workouts/equipment", data=data,
@@ -94,7 +94,7 @@ def test_747_workout_equipment_signed_add_and_forged_denial(strict_app747, schem
 def test_747_regimen_signed_add_and_unsigned_delete_denied(strict_app747, scheme):
     with TestClient(app, base_url=f"{scheme}://testserver") as client:
         token = get_token(client, "/regimen")
-        values = {"kind": "supplement", "name": "747 synthetic supplement",
+        values = {"kind": "supplement", "name": "747 synthetic supplement " + scheme,
                   "strength": "10 mg", "form": "Capsule"}
         assert client.post("/regimen/items", data=values,
                            follow_redirects=False).status_code == 403

@@ -4,7 +4,8 @@ import json
 
 from scripts.tracker_security_readiness743 import build as csrf_audit
 from scripts.tracker_host_evidence746 import compare as host_compare
-from tests.test_release746_hardening import evidence
+from scripts import tracker_dependency_baseline569 as baseline
+from scripts import tracker_host_evidence746 as host
 from app.multiuser_audit474 import audit474
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -19,7 +20,18 @@ def test_747_csrf_unqualified_routes_are_not_silently_declared_complete():
 
 
 def test_747_even_identical_browser_and_os_hashes_are_not_rollback(tmp_path):
-    record=evidence(tmp_path)
+    library=tmp_path/"test-lib747.so"
+    library.write_bytes(b"synthetic pinned library")
+    pins=baseline.read_manifest(baseline.BASELINE)
+    record={
+      "schema":1,"python":pins["python"],
+      "playwright":pins["packages"]["playwright"],
+      "os_id":"ubuntu","os_version":"24.04",
+      "libc_name":"glibc","libc_version":"2.39",
+      "chromium_sha256":"a"*64,"chromium_bytes":200,
+      "libraries":host.libraries_snapshot([library]),
+      "scope":"explicit library list only; no rollback or transitive completeness",
+    }
     comparison=host_compare(record, record)
     assert comparison["host_evidence_matches"]
     assert comparison["library_count"]==1
