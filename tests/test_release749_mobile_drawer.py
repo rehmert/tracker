@@ -122,7 +122,12 @@ def test_749_portrait_short_drawer_has_no_white_band(width, height, scheme):
             assert after["pageScrollWidth"] <= width + 1, after
             assert 0 < after["width"] <= width, after
             assert after["railPosition"] == "fixed", after
-            assert after["railBottomCSS"] == "auto", after
+            # CSS specifies bottom:auto, but Chromium returns its resolved
+            # pixel offset from getComputedStyle() for fixed positioning.
+            # The visible improvement is measured from element rectangles.
+            assert before["railBottom"] - before["navBottom"] > (
+                after["railBottom"] - after["navBottom"] + 50
+            ), (before, after)
             toggle = page.locator(".nav-section-toggle").first
             toggle.focus()
             assert toggle.evaluate("(el) => document.activeElement === el")
