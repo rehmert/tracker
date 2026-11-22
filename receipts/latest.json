@@ -6,7 +6,7 @@
     "tests/test_release627_csrf_remaining_negative_matrix.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-22T15:15:44+00:00",
+  "finished_at_utc": "2026-11-22T15:18:34+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
@@ -16,11 +16,11 @@
   "previous_request_id": null,
   "ref": "release/751-strict-csrf-dev-rollout",
   "release": 751,
-  "request_id": "r751-71bad52e9fa3",
+  "request_id": "r751-9fb5aa62017a",
   "schema": 1,
-  "started_at_utc": "2026-11-22T15:15:32+00:00",
+  "started_at_utc": "2026-11-22T15:18:22+00:00",
   "status": "failed",
-  "target": "71bad52e9fa399d3f604b40f3dc494160126cdc3",
+  "target": "9fb5aa62017a9249ad54c37bc54a5aa134239590",
   "test_counts": [
     "29 passed, 1 warning"
   ]
