@@ -39,6 +39,7 @@ while IFS= read -r path; do
     tests/test_shortcuts_toolbar687.py|\
     tests/test_dashboard_polish688.py|\
     tests/test_workout_footnote_spacing689.py|\
+    tests/test_workout_footnote_spacing689.py|\
     tests/test_css_consolidation699.py|\
     tests/test_css_consolidation700.py|\
     scripts/tracker_host_evidence746.py|\

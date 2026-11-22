@@ -30,6 +30,7 @@ def workout_fragment():
         "sessions7": 0, "days7": 0, "sessions28": 0,
         "days28": 0, "sets28": 0, "reps28": 0,
         "recent": [], "in_progress": False,
+        "recent_expanded": True,  # Release 719 disclosure must open to measure its content.
     })
 
 
@@ -84,17 +85,19 @@ def test_689_empty_workout_action_to_explanation_gap(density, width):
                 const wrapper = action.closest('p');
                 const note = section.querySelector('.tracker-workout-footnote661');
                 const a = action.getBoundingClientRect();
+                const d = section.querySelector("details.tracker-workout-recent661").getBoundingClientRect();
                 const n = note.getBoundingClientRect();
                 const w = getComputedStyle(wrapper);
                 const f = getComputedStyle(note);
                 return {
-                    gap: n.top - a.bottom,
+                    gap: n.top - d.bottom,
                     actionHeight: a.height,
                     wrapperMarginBottom: parseFloat(w.marginBottom),
                     footnoteMarginTop: parseFloat(f.marginTop),
                     horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
                 };
             }""")
+            # Release 719 put the action inside a bordered disclosure; compare its outer edge.
             assert 0 <= measures["gap"] <= 12, (density, width, measures)
             assert measures["wrapperMarginBottom"] == 0, (density, width, measures)
             assert measures["footnoteMarginTop"] <= 6, (density, width, measures)
