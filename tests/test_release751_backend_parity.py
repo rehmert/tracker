@@ -15,6 +15,54 @@ parity = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(parity)
 
 
+def test_751_known_baseline_627_collection_error_requires_recovered_tests(capsys):
+    key = parity.LEGACY_627_COLLECTION_ERROR
+    prefix = parity.LEGACY_627_SOURCE
+    base = {
+        key: 'error',
+        'tests/test_unrelated.py::test_kept': 'passed',
+    }
+    candidate = {'tests/test_unrelated.py::test_kept': 'passed'}
+    candidate.update({
+        prefix + test: 'passed'
+        for test in parity.LEGACY_627_REQUIRED_TESTS
+    })
+    result = parity.compare_reports(base, candidate)
+    assert result['inherited_failures'] == 0
+    assert result['baseline_cases'] == 2
+    assert result['candidate_cases'] == 5
+    assert 'RESOLVED_LEGACY_627_COLLECTION_ERROR=VERIFIED' in capsys.readouterr().out
+
+    # Any missing recovered case blocks; no blanket suppression.
+    for test in parity.LEGACY_627_REQUIRED_TESTS:
+        incomplete = dict(candidate)
+        incomplete.pop(prefix + test)
+        with pytest.raises(parity.ParityError, match='missing=1'):
+            parity.compare_reports(base, incomplete)
+
+    # A failed or skipped replacement must never qualify.
+    for outcome in ('failed', 'skipped', 'error'):
+        broken = dict(candidate)
+        broken[prefix + parity.LEGACY_627_REQUIRED_TESTS[0]] = outcome
+        with pytest.raises(parity.ParityError):
+            parity.compare_reports(base, broken)
+
+    # All other baseline test identities, including other collection errors,
+    # must remain present with their original outcomes.
+    for extra in ('__collection__:tests.other_module',
+                  'tests/test_unrelated.py::test_lost'):
+        with pytest.raises(parity.ParityError, match='missing=1'):
+            parity.compare_reports(base | {extra: 'error'}, candidate)
+
+    # Only a genuine baseline collection error can be resolved.
+    with pytest.raises(parity.ParityError, match='missing=1'):
+        parity.compare_reports(base | {key: 'passed'}, candidate)
+    # A baseline module with already-collected tests cannot claim recovery.
+    with pytest.raises(parity.ParityError, match='missing=1'):
+        parity.compare_reports(base | {prefix + 'test_preexisting': 'passed'},
+                               candidate | {prefix + 'test_preexisting': 'passed'})
+
+
 def test_751_inherited_failure_is_not_a_new_regression():
     base = {"tests/test_a.py::test_one": "failed",
             "tests/test_b.py::test_two": "passed",

@@ -163,3 +163,17 @@ endpoints. The existing test now enforces **at least nine** scoped routes
 but preserves the original `supplies-5` JUnit case identity, so the baseline
 comparison cannot mistake its intentional improvement for a missing test.
 This does not remove or relax any security check.
+
+## Verified Release 750 legacy collection-error resolution
+
+The installed Release 750 baseline's Release 627 negative-matrix module
+raises an import-time AssertionError: it freezes the unsafe-route count at
+`144 + 17 = 161`, although the installed app exposes 223 routes. Baseline
+therefore yields a *collection-error JUnit record*, not any runnable cases
+from this module. The Release 751 candidate updates this test module to the
+current, conservative source-inventory reconciliation. Differential parity
+now recognizes **only** the exact Release 627 baseline collection-error ID,
+only when no baseline cases were collected from that module and **all four**
+candidate test families collect and pass. Other missing tests, other
+collection errors, candidate failures/skips, incomplete reports and runner
+errors still fail closed. No production change and no automatic stage queued.

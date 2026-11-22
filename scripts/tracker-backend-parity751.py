@@ -101,9 +101,51 @@ def _safe_case_identifier(nodeid: str) -> str | None:
     return f'{path}::{function}[param_sha256_{digest}]'
 
 
+# The immutable Release 750 baseline has an import-time assertion in the
+# Release 627 module: it expects exactly 161 unsafe routes, while the installed
+# application now registers 223. No test items in that module are collected
+# on baseline. Release 751 reconciles the current inventory and collects the
+# corresponding tests. Only this exact *resolved collection error* can be
+# excluded from the "missing test" set; missing actual tests always block.
+LEGACY_627_COLLECTION_ERROR = (
+    '__collection__:tests.test_release627_csrf_remaining_negative_matrix'
+)
+LEGACY_627_SOURCE = 'tests/test_release627_csrf_remaining_negative_matrix.py::'
+LEGACY_627_REQUIRED_TESTS = (
+    'test_635_regimen_unsafe_routes_are_explicit_and_not_source_qualified',
+    'test_627_untokened_write_fails_closed',
+    'test_627_invalid_signed_header_fails_closed',
+    'test_627_session_routes_are_explicitly_excluded_from_global_matrix',
+)
+
+
+def _resolved_627_collection_error(base: dict, candidate: dict) -> bool:
+    if base.get(LEGACY_627_COLLECTION_ERROR) != 'error':
+        return False
+    if LEGACY_627_COLLECTION_ERROR in candidate:
+        return False
+    if any(nodeid.startswith(LEGACY_627_SOURCE) for nodeid in base):
+        # Baseline must have collected zero cases from this module.
+        return False
+    for test in LEGACY_627_REQUIRED_TESTS:
+        prefix = LEGACY_627_SOURCE + test
+        matching = [
+            value for key, value in candidate.items()
+            if key == prefix or key.startswith(prefix + '[')
+        ]
+        if not matching or any(value != 'passed' for value in matching):
+            return False
+    return True
+
+
 def compare_reports(base: dict, candidate: dict) -> dict:
     base_ids, candidate_ids = set(base), set(candidate)
     missing = base_ids - candidate_ids
+    if (LEGACY_627_COLLECTION_ERROR in missing
+            and _resolved_627_collection_error(base, candidate)):
+        missing.remove(LEGACY_627_COLLECTION_ERROR)
+        print('RELEASE_751_RESOLVED_LEGACY_627_COLLECTION_ERROR=VERIFIED',
+              flush=True)
     new_skips = {key for key, outcome in candidate.items()
                  if outcome == 'skipped' and base.get(key) != 'skipped'}
     new_failures = {key for key, outcome in candidate.items()
@@ -126,6 +168,13 @@ def compare_reports(base: dict, candidate: dict) -> dict:
                 filenames.add(match.group(1))
         for filename in sorted(filenames)[:12]:
             print('FAILED ' + filename, file=sys.stderr)
+        for collection_id in sorted(missing):
+            if collection_id.startswith('__collection__:'):
+                import re
+                value = collection_id.split(':', 1)[1]
+                if re.fullmatch(r'tests(?:[.][A-Za-z0-9_]+)+', value):
+                    print('RELEASE_751_UNRESOLVED_COLLECTION_ERROR=' + value,
+                          file=sys.stderr)
         for reason, keys in (('MISSING', missing),
                              ('NEW_FAILURE', new_failures),
                              ('NEW_SKIP', new_skips)):
