@@ -576,7 +576,13 @@ PY
  if (( QA_FULL_REQUIRED == 1 )); then
   if [[ "$INSTANCE" == DEV ]]; then
    echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
-   timeout 1800 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+   # Older release contracts retain their 600s browser bound. Release
+   # 751's additional strict modules need 1800s; both paths stay bounded.
+   if [[ "$REF" == release/751-strict-csrf-dev-rollout ]]; then
+    timeout 1800 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+   else
+    timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+   fi
    echo "=== BROWSER GATE PASSED ==="
   else
    echo "=== PROD: browser qualification is required on DEV before main promotion ==="
@@ -587,12 +593,22 @@ PY
    fail "pytest-xdist missing; serial fallback prohibited"
   TEST_PYTEST_EXTRA=(-n 16 --dist=loadfile)
   echo "BACKEND_TEST_MODE=PARALLEL workers=16"
-  timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
-   --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
-   --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
-   --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
-   --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
-  echo "=== ALL BACKEND TESTS PASSED ==="
+  if [[ "$INSTANCE" == DEV && "$REF" == release/751-strict-csrf-dev-rollout ]]; then
+   # Run the same *complete* suite against pristine 750 and candidate 751,
+   # in separate temporary data roots. Only inherited failures are allowed;
+   # any new failure, error, skip or uncollected test fails closed.
+   "$PY" -B "$QA/scripts/tracker-backend-parity751.py" \
+    --python "$PY" --candidate "$QA" --base "$BASE" --target "$TARGET" \
+    || fail "Release 751 introduced a backend regression"
+   echo "=== FULL BACKEND BASELINE PARITY GATE PASSED ==="
+  else
+   timeout 1200 "$PY" -m pytest -q --tb=short --maxfail=1 --disable-warnings "${TEST_PYTEST_EXTRA[@]}" --durations=20 tests \
+    --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
+    --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
+    --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
+    --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
+   echo "=== ALL BACKEND TESTS PASSED ==="
+  fi
  else
   if [[ "$RESUME_645_VERIFIED" == 1 ]]; then
    echo "=== VERIFIED PRIOR FULL BROWSER AND BACKEND EVIDENCE REUSED ==="

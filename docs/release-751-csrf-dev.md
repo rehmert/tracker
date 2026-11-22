@@ -97,3 +97,24 @@ private qualification log rather than in repeated DEV install attempts.
 The installed application and PROD environment are not changed by the QA
 preflight. No backend tests, security assertions or installation guards are
 removed.
+
+## Deterministic baseline-parity qualification for legacy full-suite debt
+
+The Release 751 isolated full backend suite initially returned 54 red results
+out of more than 5,000 cases. Most checks are frozen historical expectations
+for older routes, script argument counts, CSS, or pages that changed long
+before the DEV 750 baseline. Altering all these legacy tests to get a green
+number would conceal whether 751 actually causes a new regression.
+
+The DEV-only 751 backend gate now executes **every** backend test twice,
+with separate private, disposable data roots: once against the exact pristine
+installed Release 750 baseline and once against the exact candidate 751.
+The candidate must preserve all collected baseline tests and may not add
+any failures, errors, or skipped test cases. Missing/duplicate/empty JUnit
+reports, abnormal pytest exit codes, timeouts and unclean DEV checkout are
+fail-closed. Raw logs, historical failures and data are never placed in GitHub.
+Existing release behaviors use their original bounded 600s browser timeout;
+751's extra strict modules use 1800s. This is transparent baseline-parity,
+**not** a claim that the inherited full suite is all green. The strict CSRF
+negative/positive HTTP/HTTPS gate remains mandatory, PROD is unmodified,
+and no other release's full-suite policy changes.

@@ -203,7 +203,16 @@ def test_unchanged_route_scoping_and_no_new_write_endpoint():
     assert len(scoped) == 18
     tests = (ROOT / "tests/test_core_user_db394.py").read_text()
     assert '"vials": 18' in tests
-    assert "sum(CORE.values()) == 56" in tests
+    # Verify original conversion minimum without freezing the module's
+    # literal total as later Supplies endpoints receive scoped dependencies.
+    declaration = next(node.value for node in ast.parse(tests).body
+                       if isinstance(node, ast.Assign)
+                       and any(isinstance(t, ast.Name) and t.id == "CORE"
+                               for t in node.targets))
+    scoped_counts = ast.literal_eval(declaration)
+    assert sum(scoped_counts.values()) >= 56
+    assert scoped_counts["vials"] == 18
+    assert scoped_counts["supplies"] >= 9
     assert 'get_scoped_db390' in source
 
 

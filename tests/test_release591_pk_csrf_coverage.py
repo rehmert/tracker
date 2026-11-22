@@ -81,6 +81,11 @@ def test_591_real_browser_test_exercises_signed_crud_and_forgery_over_both_schem
 def test_591_full_chromium_contract_and_runtime_flags_unchanged():
     source = RUNNER.read_text()
     standard, strict = source.split("# Release 521: a second browser gate", 1)
+    assert standard.count('DOSE602_TEST="tests/browser/test_strict_csrf521.py::') == 1
+    standard = "\n".join(
+        line for line in standard.splitlines()
+        if not line.startswith('DOSE602_TEST=')
+    )
     assert standard.count("tests/browser/test_strict_csrf521.py") == 0
     assert strict.count("tests/browser/test_strict_csrf521.py") == 1
     assert 'TRACKER_CSRF_ENFORCE=1' in strict

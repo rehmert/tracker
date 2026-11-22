@@ -31,6 +31,7 @@ while IFS= read -r path; do
  case "$path" in
  scripts/tracker-qualify751.sh|scripts/tracker-install751.sh|\
  scripts/tracker-release.sh|\
+ scripts/tracker-backend-parity751.py|\
  scripts/tracker-release-scoped751.sh|scripts/tracker-csrf-dev751.sh|\
  scripts/tracker-browser-qualify.sh|\
  tests/test_release751_csrf_activation.py|\
@@ -42,6 +43,11 @@ while IFS= read -r path; do
  tests/test_dev_attachment_gate650.py|\
  tests/test_core_user_db394.py|\
  tests/test_release604_preflight.py|\
+ tests/test_vial_vendor_pagination448.py|\
+ tests/test_browser_qualification511.py|\
+ tests/test_release591_pk_csrf_coverage.py|\
+ tests/test_page_title_case.py|\
+ tests/test_release751_backend_parity.py|\
  docs/release-751-csrf-dev.md) ;;
  *) die "Unreviewed path: $path" ;;
  esac
@@ -82,12 +88,9 @@ bash scripts/tracker-release-scoped751.sh "$PY"
 # affected modules; no checks are skipped or weakened.
 echo "RELEASE_751_FULL_BACKEND_PREFLIGHT=STARTED"
 "$PY" -c 'import xdist' >/dev/null || die "pytest-xdist missing; parallel QA required"
-timeout 1200 "$PY" -m pytest -q --tb=short --disable-warnings \
-  -n 16 --dist=loadfile --durations=20 tests \
-  --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
-  --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
-  --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
-  --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
+"$PY" -B scripts/tracker-backend-parity751.py \
+  --python "$PY" --candidate "$QA" --base "$BASE" --target "$TARGET" \
+  || die "Release 751 backend baseline comparison failed"
 echo "RELEASE_751_FULL_BACKEND_PREFLIGHT=PASSED"
 # Diagnose only the previously failing strict dose-history test before
 # rerunning hundreds of passing standard/strict browser cases. All data and

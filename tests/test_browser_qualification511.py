@@ -58,6 +58,14 @@ def test_511_every_browser_module_in_disposable_qualification():
     source = QUALIFIER.read_text(encoding="utf-8")
     assert source.count(STRICT_PASS_MARKER) == 1
     standard, strict = source.split(STRICT_PASS_MARKER, 1)
+    # Release 751 declares a targeted-only strict dose-test identifier
+    # before the full-mode gates. Declaration is not execution in standard
+    # mode, so exclude only this exact assignment when counting invocations.
+    assert standard.count('DOSE602_TEST="tests/browser/test_strict_csrf521.py::') == 1
+    standard = "\n".join(
+        line for line in standard.splitlines()
+        if not line.startswith('DOSE602_TEST=')
+    )
     # Release 589 intentionally replays the 587/588 modules in one
     # *targeted-only* batch. Count only the guarded full-mode source
     # when asserting each required browser module is scheduled once.

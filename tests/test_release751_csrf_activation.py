@@ -60,7 +60,12 @@ def test_751_full_browser_and_backend_qualification_precedes_dev_toggle():
     assert "TARGETED_DOSE602_HTTP_HTTPS=PASSED" in b
     assert "tracker-release-scoped751.sh" in q
     assert "RELEASE_751_FULL_BACKEND_PREFLIGHT=PASSED" in q
-    assert 'timeout 1200 "$PY" -m pytest' in q
+    assert 'tracker-backend-parity751.py' in q
+    assert 'RELEASE_751_BACKEND_BASELINE_PARITY=PASSED' in (
+        ROOT / "scripts/tracker-backend-parity751.py"
+    ).read_text()
+    assert 'timeout 1200 "$PY" -m pytest' in runner
+    assert 'FULL BACKEND BASELINE PARITY GATE PASSED' in runner
     assert q.index("RELEASE_751_FULL_BACKEND_PREFLIGHT=PASSED") < q.index(
         "RELEASE_751_TARGETED_DOSE602=STARTED"
     )

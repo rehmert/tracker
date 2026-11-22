@@ -20,6 +20,11 @@ done
  tests/test_dev_attachment_gate650.py \
  tests/test_core_user_db394.py \
  tests/test_release604_preflight.py \
+ tests/test_vial_vendor_pagination448.py \
+ tests/test_browser_qualification511.py \
+ tests/test_release591_pk_csrf_coverage.py \
+ tests/test_page_title_case.py \
+ tests/test_release751_backend_parity.py \
  tests/test_session_csrf3853.py \
  tests/test_release748_macd_mobile.py
 echo "RELEASE_751_SCOPED_STRICT_CSRF=PASSED"
