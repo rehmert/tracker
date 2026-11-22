@@ -1,26 +1,20 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "base": "b7435e55659fbb09819101ebd621aca2c72059c9",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-22T01:12:17+00:00",
+  "finished_at_utc": "2026-11-22T01:13:13+00:00",
   "markers": [
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "RELEASE_746_DEV_INSTALL=SUCCESS"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r746-c61a2a85f10d",
+  "previous_request_id": "r746-installc61a2a85",
   "ref": "release/746-final-hardening-macd-css",
   "release": 746,
-  "request_id": "r746-installc61a2a85",
+  "request_id": "r746-pfc61a2a85f10d",
   "schema": 1,
-  "started_at_utc": "2026-11-22T01:09:12+00:00",
+  "started_at_utc": "2026-11-22T01:13:11+00:00",
   "status": "passed",
   "target": "c61a2a85f10d7b585f9edc1d62d756605e046c32",
-  "test_counts": [
-    "52 passed, 1 warning",
-    "57 passed, 2 skipped",
-    "129 passed, 2 warnings"
-  ]
+  "test_counts": []
 }
