@@ -35,7 +35,13 @@ echo "RELEASE_748_HISTORICAL_OWNER_SCOPED_MACD=PASSED"
 echo "RELEASE_748_RESPONSIVE_MULTIUSER_DEPENDENCY=PASSED"
 "$PY" -B scripts/tracker_dependency_baseline569.py --instance DEV || exit 45
 echo "RELEASE_748_INSTALLED_DEV_PYTHON=BASELINE_VERIFIED"
+# The generic deployer mkdir -p test-data may use 0755; do not weaken
+# the evidence writer's privacy check. Create a dedicated 0700 child.
+EVIDENCE_DIR="$(mktemp -d "$TRACKER_DATA_DIR/tracker748-elf.XXXXXXXX")"
+[[ -d "$EVIDENCE_DIR" && "$(stat -c %a "$EVIDENCE_DIR")" == 700 ]] || exit 46
 "$PY" -B scripts/tracker_browser_elf748.py --capture \
-  --output "$TRACKER_DATA_DIR/chromium-elf748.json" || exit 46
+  --output "$EVIDENCE_DIR/chromium-elf748.json" || exit 46
+rm -f -- "$EVIDENCE_DIR/chromium-elf748.json"
+rmdir -- "$EVIDENCE_DIR"
 echo "RELEASE_748_INSTALLED_DEV_CHROMIUM_ELF=HASHED_NO_ROLLBACK_CLAIM"
 echo "RELEASE_748_SCOPED_QUALIFICATION=PASSED_NOT_FULL_SUITE"
