@@ -1,0 +1,20 @@
+{
+  "action": "qualify",
+  "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+  "exit_code": 2,
+  "failed_tests": [],
+  "failure_category": "ShellSyntax",
+  "finished_at_utc": "2026-11-22T00:24:43+00:00",
+  "markers": [
+    "RELEASE_745_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/745-macd-mobile-controller",
+  "release": 745,
+  "request_id": "r745-6dfdac47a524",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T00:24:42+00:00",
+  "status": "failed",
+  "target": "6dfdac47a524daf15938d177f989e3f5f812e9c7",
+  "test_counts": []
+}
