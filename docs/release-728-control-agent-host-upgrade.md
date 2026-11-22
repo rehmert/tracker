@@ -31,3 +31,24 @@ separate explicit approval.
 Next priorities: mobile UX, measured performance, dependencies,
 then strict CSRF qualification. No full regression suite is required
 for this tooling-only change.
+
+## 751 permanent receipt marker preservation
+
+The installed agent's receipt publisher previously took the first 45
+allowlisted log markers. Repeated targeted browser diagnostics could consume
+all 45 slots, making the local verification UI report that a genuinely
+successful qualification was missing its final marker. The execution-success
+gate remained correct; the published summary was incomplete.
+
+The agent now shares one mandatory stage-marker mapping between its success
+validator and its bounded, allowlisted receipt producer. On a passed stage,
+those mandatory markers appear first; nonessential markers fill the remaining
+slots to the existing maximum of 45. Missing mandatory markers fail closed,
+failed stages are not reclassified, and raw logs/secret values never enter
+GitHub. Offline regression exercises 80 preliminary targeted markers across
+all four release stages and validates the existing DEV-only agent installer.
+
+This change affects future receipts only; immutable historical receipts are
+never edited or republished. Install the reviewed ops branch on tracker-dev
+only after any active release agent invocation completes, via the existing
+pinned `tracker-release-agent-install.sh` workflow.

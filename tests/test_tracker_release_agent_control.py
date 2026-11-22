@@ -193,6 +193,76 @@ E     999-12-3456
     assert agent.failure_kind(message) == 'AssetImpactPreflight'
 
 
+@pytest.mark.parametrize('action,expected', [
+    ('qualify', ('RELEASE_711_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY',
+                 'RELEASE_711_EXIT_STATUS=0')),
+    ('dev_install', ('RELEASE_711_DEV_INSTALL=SUCCESS',)),
+    ('prod_preflight', ('PREFLIGHT=PASSED',)),
+    ('prod_deploy', ('DEV_CONTROLLED_RELEASE=SUCCESS',
+                     'PROD_INSTALLED_COMMIT=' + TARGET)),
+])
+def test_751_bounded_receipts_preserve_terminal_stage_markers_after_80_diagnostics(
+    action, expected,
+):
+    # Reproduce Release 751's exact failure: 45 early TARGETED_* markers
+    # used all receipt slots despite validated terminal success.
+    noisy = '\n'.join(
+        f'TARGETED_716_QA_{n}=PASSED' for n in range(80)
+    )
+    payload = noisy + '\n' + '\n'.join(expected) + '\n'
+    request = cmd(action=action)
+    safe = agent.safe_diagnostics(payload, command=request, status='passed')
+    assert tuple(safe['markers'][:len(expected)]) == expected
+    assert len(safe['markers']) == 45
+    assert len(set(safe['markers'])) == 45
+    assert safe['failed_tests'] == []
+    assert agent.safe_diagnostics(payload)['markers'] == [
+        f'TARGETED_716_QA_{n}=PASSED' for n in range(45)
+    ]
+
+
+def test_751_receipt_marker_limit_preserves_privacy_and_is_not_retroactive():
+    prefix = '\n'.join(f'TARGETED_716_QA_{n}=PASSED' for n in range(90))
+    payload = (prefix + '\nRELEASE_SECRET_KEY=patient-medical-data\n'
+               'RELEASE_711_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY\n'
+               'RELEASE_711_EXIT_STATUS=0\n')
+    safe = agent.safe_diagnostics(payload, command=cmd(), status='passed')
+    assert len(safe['markers']) == 45
+    assert safe['markers'][:2] == [
+        'RELEASE_711_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY',
+        'RELEASE_711_EXIT_STATUS=0',
+    ]
+    assert 'patient-medical-data' not in json.dumps(safe)
+    assert 'RELEASE_SECRET_KEY' not in json.dumps(safe)
+    # No completed stage may be reclassified merely because its receipt
+    # includes a terminal-looking marker on a failed subprocess.
+    fail = agent.safe_diagnostics(
+        payload, command=cmd(), status='failed',
+    )
+    assert fail['markers'][0] == 'TARGETED_716_QA_0=PASSED'
+
+
+def test_751_publisher_refuses_misaligned_claimed_success_marker():
+    request = cmd('qualify')
+    payload = 'RELEASE_711_EXIT_STATUS=0\n'
+    with pytest.raises(agent.GateError, match='sanitized receipt'):
+        agent.safe_diagnostics(payload, command=request, status='passed')
+
+
+def test_751_agent_installer_still_requires_offline_focused_qa():
+    installer = (SOURCE.parent / 'tracker-release-agent-install.sh').read_text()
+    for required in (
+        'test_tracker_release_agent_control.py',
+        'test_tracker_release_notifier.py',
+        'test_tracker_release_pr_bridge.py',
+        'TRACKER_PUSH_OFFLINE_QA=PASSED',
+        'Release agent is running',
+        'tracker-release-agent.timer',
+    ):
+        assert required in installer
+
+
+
 def _git(path, *args):
     return subprocess.check_output(['git', '-C', str(path), *args], text=True).strip()
 
