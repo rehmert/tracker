@@ -144,6 +144,25 @@ def test_751_real_pytest_junit_properties_and_collection_errors(tmp_path):
     }
 
 
+def test_751_sanitized_parity_diagnostics_identify_failures_without_params(capsys):
+    base = {
+        "tests/test_core_user_db394.py::test_every_core_dependency_is_scoped[supplies-5]": "failed",
+        "tests/test_workouts655.py::test_655_ui_and_isolation_contract": "passed",
+    }
+    candidate = {
+        "tests/test_core_user_db394.py::test_every_core_dependency_is_scoped[supplies-9]": "passed",
+        "tests/test_workouts655.py::test_655_ui_and_isolation_contract": "failed",
+    }
+    with pytest.raises(parity.ParityError):
+        parity.compare_reports(base, candidate)
+    error = capsys.readouterr().err
+    assert "RELEASE_751_PARITY_MISSING_CASE=tests/test_core_user_db394.py::" in error
+    assert "RELEASE_751_PARITY_NEW_FAILURE_CASE=tests/test_workouts655.py::" in error
+    assert "supplies-5" not in error and "supplies-9" not in error
+    assert "param_sha256_" in error
+    assert "FAILED tests/test_core_user_db394.py" in error
+
+
 def test_751_baseline_gate_is_disposable_and_narrow():
     source = SOURCE.read_text()
     runner = (ROOT / "scripts/tracker-release.sh").read_text()
@@ -156,6 +175,11 @@ def test_751_baseline_gate_is_disposable_and_narrow():
     assert "new_skips" in source and "new_failures" in source and "missing" in source
     assert "result.returncode not in (0, 1)" in source
     assert "tracker_pytest_nodeid751" in source
+    assert "FOCUSED_BACKEND_TESTS" in source
+    assert "root / 'baseline-focus'" in source
+    assert "root / 'candidate-focus'" in source
+    assert "RELEASE_751_BACKEND_FOCUSED_PARITY=PASSED" in source
+    assert "_safe_case_identifier" in source
     assert "plugin_dir = candidate / 'scripts'" in source
     assert "nodeid in result" in source
     assert "'__collection__:' + name" in source

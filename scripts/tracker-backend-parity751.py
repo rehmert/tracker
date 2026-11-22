@@ -8,6 +8,7 @@ Legacy failures are retained in private local reports, never declared passed.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -16,6 +17,11 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 APP = Path('/opt/tracker')
+FOCUSED_BACKEND_TESTS = (
+    'tests/test_core_user_db394.py',
+    'tests/test_shortcut_buttons_browser676.py',
+    'tests/test_workouts655.py',
+)
 IGNORES = (
     'tests/browser',
     'tests/test_bulk_vial_browser.py',
@@ -78,6 +84,23 @@ def read_report(path: Path) -> dict:
     return result
 
 
+def _safe_case_identifier(nodeid: str) -> str | None:
+    """Only display source test function + SHA of parameter ID, not test data."""
+    import re
+    match = re.fullmatch(
+        r'(tests/(?:[A-Za-z0-9_]+/)*test_[A-Za-z0-9_]+[.]py)'
+        r'::(test_[A-Za-z0-9_]+)(?:\[([^\]\r\n]*)\])?',
+        nodeid,
+    )
+    if not match:
+        return None
+    path, function, parameter = match.groups()
+    if parameter is None:
+        return f'{path}::{function}'
+    digest = hashlib.sha256(parameter.encode()).hexdigest()[:10]
+    return f'{path}::{function}[param_sha256_{digest}]'
+
+
 def compare_reports(base: dict, candidate: dict) -> dict:
     base_ids, candidate_ids = set(base), set(candidate)
     missing = base_ids - candidate_ids
@@ -103,6 +126,14 @@ def compare_reports(base: dict, candidate: dict) -> dict:
                 filenames.add(match.group(1))
         for filename in sorted(filenames)[:12]:
             print('FAILED ' + filename, file=sys.stderr)
+        for reason, keys in (('MISSING', missing),
+                             ('NEW_FAILURE', new_failures),
+                             ('NEW_SKIP', new_skips)):
+            for nodeid in sorted(keys)[:8]:
+                safe_id = _safe_case_identifier(nodeid)
+                if safe_id is not None:
+                    print('RELEASE_751_PARITY_' + reason + '_CASE=' + safe_id,
+                          file=sys.stderr)
         raise ParityError(
             'Backend baseline parity failed: '
             f'missing={len(missing)} new_skips={len(new_skips)} '
@@ -114,7 +145,7 @@ def compare_reports(base: dict, candidate: dict) -> dict:
 
 
 def run_suite(python: str, source: Path, data: Path, output: Path,
-              plugin_dir: Path) -> None:
+              plugin_dir: Path, selectors: tuple[str, ...] | None = None) -> None:
     data.mkdir(mode=0o700)
     env = dict(os.environ, TRACKER_DATA_DIR=str(data),
                # Source first; shared pinned plugin loaded from candidate.
@@ -123,7 +154,7 @@ def run_suite(python: str, source: Path, data: Path, output: Path,
     argv = [python, '-B', '-m', 'pytest', '-p', 'tracker_pytest_nodeid751',
             '-q', '--tb=short',
             '--disable-warnings', '-n', '16', '--dist=loadfile',
-            '--durations=20', 'tests']
+            '--durations=20', *(selectors or ('tests',))]
     argv += [f'--ignore={path}' for path in IGNORES]
     argv += [f'--junitxml={output}.xml']
     print('RELEASE_751_BACKEND_RUN=' + output.name.upper() + '_STARTED',
@@ -174,6 +205,19 @@ def main() -> int:
             plugin_dir = candidate / 'scripts'
             if not (plugin_dir / 'tracker_pytest_nodeid751.py').is_file():
                 raise ParityError('Pinned parity identity plugin missing')
+            # First compare the previously problematic source modules in
+            # disposable processes. A mismatch stops in seconds/minutes,
+            # before repeating both 5,000-case backend suites.
+            print('RELEASE_751_BACKEND_FOCUSED_PARITY=STARTED', flush=True)
+            run_suite(args.python, baseline, root / 'base-focus-data',
+                      root / 'baseline-focus', plugin_dir,
+                      FOCUSED_BACKEND_TESTS)
+            run_suite(args.python, candidate, root / 'candidate-focus-data',
+                      root / 'candidate-focus', plugin_dir,
+                      FOCUSED_BACKEND_TESTS)
+            focused = compare_reports(read_report(root / 'baseline-focus.xml'),
+                                      read_report(root / 'candidate-focus.xml'))
+            print('RELEASE_751_BACKEND_FOCUSED_PARITY=PASSED', flush=True)
             run_suite(args.python, baseline, root / 'base-data',
                       root / 'baseline', plugin_dir)
             run_suite(args.python, candidate, root / 'candidate-data',

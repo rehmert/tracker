@@ -141,3 +141,16 @@ identity fails closed. No collected errors are silently ignored. The scoped
 gate now executes real xdist/JUnit subprocess smoke cases for successful
 parametrized items and genuine collection errors **before** the full parity
 runs, and the long stages print explicit start/end markers.
+
+## Diagnose backend regressions before repeating full parity
+
+The 51281b1e qualification exposed 2 missing test identities and 2 new
+candidate failures across the original scoped-DB, computed shortcut browser,
+and workout routine test modules. The new fail-closed parity gate first runs
+these *same* modules against pinned pristine 750 and 751 in isolated data
+directories with the normal xdist/JUnit identity plugin. Any difference
+blocks before the full ~5,000-test baseline/candidate repeats, with bounded
+source-level function names and hashes of parameter IDs in the private
+DEV log. No raw parameter values, application data, full JUnit XML, or
+tracebacks are published to GitHub. The existing complete regression and
+Chromium gates remain mandatory after this targeted parity passes.
