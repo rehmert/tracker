@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r751-install8525b094",
-  "action": "dev_install",
+  "request_id": "r751-4436bcf146a8",
+  "action": "qualify",
   "release": 751,
-  "target": "8525b094568367992173550112edda9c34a911f4",
+  "target": "4436bcf146a8fdc58f1c75261c2698d75a1ae9fc",
   "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
   "ref": "release/751-strict-csrf-dev-rollout",
-  "previous_request_id": "r751-8525b0945683"
+  "previous_request_id": null
 }
