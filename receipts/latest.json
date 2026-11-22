@@ -3,10 +3,11 @@
   "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
   "exit_code": 1,
   "failed_tests": [
-    "tests/test_release627_csrf_remaining_negative_matrix.py"
+    "tests/browser/test_strict_csrf521.py",
+    "tests/strict751_dose602_line2474.py"
   ],
-  "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-22T15:48:38+00:00",
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-22T15:52:22+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
@@ -16,10 +17,13 @@
   "previous_request_id": null,
   "ref": "release/751-strict-csrf-dev-rollout",
   "release": 751,
-  "request_id": "r751-b07856ad08bb",
+  "request_id": "r751-091332e51751",
   "schema": 1,
-  "started_at_utc": "2026-11-22T15:48:32+00:00",
+  "started_at_utc": "2026-11-22T15:51:12+00:00",
   "status": "failed",
-  "target": "b07856ad08bb0dbccf259826539e8197272de246",
-  "test_counts": []
+  "target": "091332e51751e641b4ab1466c45a3ca6d5fda475",
+  "test_counts": [
+    "263 passed, 1 warning",
+    "7 passed"
+  ]
 }
