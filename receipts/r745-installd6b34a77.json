@@ -1,0 +1,18 @@
+{
+  "action": "dev_install",
+  "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-22T00:35:42+00:00",
+  "markers": [],
+  "previous_request_id": "r745-d6b34a77b6f7",
+  "ref": "release/745-macd-mobile-controller",
+  "release": 745,
+  "request_id": "r745-installd6b34a77",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T00:35:41+00:00",
+  "status": "failed",
+  "target": "d6b34a77b6f7d3f3299cba9d567201deb5495ae8",
+  "test_counts": []
+}
