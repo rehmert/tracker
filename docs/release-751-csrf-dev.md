@@ -79,3 +79,21 @@ preflight and migration blocks, including PROD's strict hash-gated path.
 The corrected test is added to Release 751's change-scoped security gate,
 so it runs before the costly browser and full backend installation suites.
 No runtime attachment policy, PROD setting, or medical data is modified.
+
+## Complete backend preflight before repeat DEV install
+
+The previous full install ran 2285 passing backend tests and exposed two
+outdated tests before source installation: the original Supplies baseline
+has grown from 5 to 9 scoped database dependencies, and Quick Entry has
+seven (not five) daily cards. The source-only tests now retain minimum
+scoped coverage, forbid unscoped database dependencies, and verify the exact
+seven daily-action destinations without freezing future expansions.
+
+Both modules are included in the scoped security gate. In addition, the
+isolated exact-SHA qualification now runs the **same complete 16-worker
+backend suite** as the guarded DEV installer *before* costly browser tests,
+without maxfail, so all remaining backend regressions are surfaced in one
+private qualification log rather than in repeated DEV install attempts.
+The installed application and PROD environment are not changed by the QA
+preflight. No backend tests, security assertions or installation guards are
+removed.

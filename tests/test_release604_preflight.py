@@ -213,7 +213,22 @@ def test_604_quick_shortcuts_still_have_exact_original_destinations():
     assert fast.count('<details class="tracker-quick-fast-more604">') == 1
     assert 'More Actions</summary>' in fast
     assert fast.count('<a href=') == 15
-    assert html.count('data-quick-daily') == 5
+    # All seven current daily cards must retain their exact destinations.
+    # Additional future actions should not break the historical navigation gate.
+    grid = html.split('id="tracker-quick-actions"', 1)[1].split("</div>", 1)[0]
+    cards = [
+        row.split("</a>", 1)[0]
+        for row in grid.split('<a class="tracker-quick-entry-card"')[1:]
+    ]
+    daily = [row for row in cards if 'data-quick-daily' in row]
+    expected_daily = (
+        "/food#food-quick-log", "/food#food-water", "/doses",
+        "/vitals", "/workouts/quick", "/regimen#reg635-today",
+        "/supplies",
+    )
+    assert len(daily) >= len(expected_daily)
+    for destination in expected_daily:
+        assert sum(f'href="{destination}"' in card for card in daily) == 1, destination
     assert "tracker-quick-entry.js?v=603" in html
     assert "tracker-navigation604.css?v=604b" in html
     assert "<form" not in html

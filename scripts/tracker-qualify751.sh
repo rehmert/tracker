@@ -39,7 +39,10 @@ while IFS= read -r path; do
  tests/browser/test_blend_unified_dose710.py|\
  tests/test_release627_csrf_remaining_negative_matrix.py|\
  tests/test_release574_csrf_dynamic_shapes.py|\
- tests/test_dev_attachment_gate650.py|docs/release-751-csrf-dev.md) ;;
+ tests/test_dev_attachment_gate650.py|\
+ tests/test_core_user_db394.py|\
+ tests/test_release604_preflight.py|\
+ docs/release-751-csrf-dev.md) ;;
  *) die "Unreviewed path: $path" ;;
  esac
 done < <(git diff --name-only "$BASE" "$TARGET")
@@ -72,6 +75,20 @@ export TRACKER_DATA_DIR="$RUN/data" PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1
 "$PY" -B scripts/tracker-impact-preflight604.py --base "$BASE" --target "$TARGET" --root "$QA"
 echo "RELEASE_751_IMPACT_PREFLIGHT=PASSED"
 bash scripts/tracker-release-scoped751.sh "$PY"
+# Security-sensitive Release 751 requires the complete backend regression.
+# Do it BEFORE the long isolated Chromium gates to catch every stale
+# historical contract in one qualification, not after a failed DEV install.
+# Continue past individual assertion failures so a single run reports all
+# affected modules; no checks are skipped or weakened.
+echo "RELEASE_751_FULL_BACKEND_PREFLIGHT=STARTED"
+"$PY" -c 'import xdist' >/dev/null || die "pytest-xdist missing; parallel QA required"
+timeout 1200 "$PY" -m pytest -q --tb=short --disable-warnings \
+  -n 16 --dist=loadfile --durations=20 tests \
+  --ignore=tests/browser --ignore=tests/test_bulk_vial_browser.py \
+  --ignore=tests/test_bulk_vial_guided_browser.py --ignore=tests/test_bulk_delete_browser.py \
+  --ignore=tests/test_purchase_vial_browser.py --ignore=tests/test_stage33_browser_sorting.py \
+  --ignore=tests/test_health_timeline_dates_browser.py --ignore=tests/test_vitals_csv_browser.py
+echo "RELEASE_751_FULL_BACKEND_PREFLIGHT=PASSED"
 # Diagnose only the previously failing strict dose-history test before
 # rerunning hundreds of passing standard/strict browser cases. All data and
 # raw output remain in the disposable private QA root.

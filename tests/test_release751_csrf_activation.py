@@ -59,6 +59,15 @@ def test_751_full_browser_and_backend_qualification_precedes_dev_toggle():
     assert 'TARGETED_MODULE" == dose602' in b
     assert "TARGETED_DOSE602_HTTP_HTTPS=PASSED" in b
     assert "tracker-release-scoped751.sh" in q
+    assert "RELEASE_751_FULL_BACKEND_PREFLIGHT=PASSED" in q
+    assert 'timeout 1200 "$PY" -m pytest' in q
+    assert q.index("RELEASE_751_FULL_BACKEND_PREFLIGHT=PASSED") < q.index(
+        "RELEASE_751_TARGETED_DOSE602=STARTED"
+    )
+    for required in ("tests/test_core_user_db394.py",
+                     "tests/test_release604_preflight.py"):
+        assert required in scoped
+        assert required in q
     assert "--full-suite" in ins
     runner = (ROOT / "scripts/tracker-release.sh").read_text()
     assert 'timeout 1800 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"' in runner

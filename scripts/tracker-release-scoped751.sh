@@ -18,6 +18,8 @@ done
  tests/test_release521_strict_auth_compatibility.py \
  tests/test_release627_csrf_remaining_negative_matrix.py \
  tests/test_dev_attachment_gate650.py \
+ tests/test_core_user_db394.py \
+ tests/test_release604_preflight.py \
  tests/test_session_csrf3853.py \
  tests/test_release748_macd_mobile.py
 echo "RELEASE_751_SCOPED_STRICT_CSRF=PASSED"
