@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r749-deploye80edbfa",
-  "action": "prod_deploy",
-  "release": 749,
-  "target": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
-  "ref": "release/749-portrait-sidebar-fit",
-  "previous_request_id": "r749-pfe80edbfa5ef"
+  "request_id": "r750-44709978971a",
+  "action": "qualify",
+  "release": 750,
+  "target": "44709978971a1fc08e695ad79e7437e012339856",
+  "base": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
+  "ref": "release/750-offline-browser-multiuser-acceptance",
+  "previous_request_id": null
 }
