@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r748-d193c2d9afb0",
-  "action": "qualify",
+  "request_id": "r748-installd193c2d9",
+  "action": "dev_install",
   "release": 748,
   "target": "d193c2d9afb09f263bc1d7305d955ff0cf51dc69",
   "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
   "ref": "release/748-mobile-macd-dependency",
-  "previous_request_id": null
+  "previous_request_id": "r748-d193c2d9afb0"
 }
