@@ -44,3 +44,14 @@ HTTP and HTTPS. Failure records include bounded synthetic
 traceback locations; original logs remain in the private QA directory and
 are deleted during cleanup. A targeted success cannot qualify the release:
 the full normal and strict Chromium matrix still follows and must pass.
+
+## DEV install timeout root cause and focused repair
+
+The passed isolated strict qualification ran longer than the old 600-second
+inner browser timeout in `scripts/tracker-release.sh` when repeated by the
+DEV `--full-suite` installer. The original `r751-install4bd20f98` receipt
+failed with GNU timeout exit 124 / SIGTERM 143 in a still-running strict
+Chromium module, before any source installation or systemd strict flag.
+The browser limit is raised to 1800 seconds (bounded), preserving the full
+security/backend suite, exact-SHA guards, DEV-only activation, and fail-closed
+stage behavior. Do not rerun the failed live request; qualify a new SHA.

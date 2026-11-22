@@ -30,6 +30,7 @@ git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
  case "$path" in
  scripts/tracker-qualify751.sh|scripts/tracker-install751.sh|\
+ scripts/tracker-release.sh|\
  scripts/tracker-release-scoped751.sh|scripts/tracker-csrf-dev751.sh|\
  scripts/tracker-browser-qualify.sh|\
  tests/test_release751_csrf_activation.py|\

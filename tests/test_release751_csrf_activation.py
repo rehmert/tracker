@@ -60,6 +60,9 @@ def test_751_full_browser_and_backend_qualification_precedes_dev_toggle():
     assert "TARGETED_DOSE602_HTTP_HTTPS=PASSED" in b
     assert "tracker-release-scoped751.sh" in q
     assert "--full-suite" in ins
+    runner = (ROOT / "scripts/tracker-release.sh").read_text()
+    assert 'timeout 1800 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"' in runner
+    assert 'timeout 1200 "$PY" -m pytest' in runner
     assert 'tracker-csrf-dev751.sh" enable "$TARGET"' in ins
     assert ins.index("--full-suite") < ins.index('tracker-csrf-dev751.sh" enable')
     for path in ("tests/test_csrf_all_registered_negative705.py",

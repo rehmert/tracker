@@ -576,7 +576,7 @@ PY
  if (( QA_FULL_REQUIRED == 1 )); then
   if [[ "$INSTANCE" == DEV ]]; then
    echo "=== ISOLATED BROWSER QUALIFICATION (FIRST) ==="
-   timeout 600 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
+   timeout 1800 bash "$QA/scripts/tracker-browser-qualify.sh" "$QA" "$PY"
    echo "=== BROWSER GATE PASSED ==="
   else
    echo "=== PROD: browser qualification is required on DEV before main promotion ==="
