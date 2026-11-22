@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-22T00:41:11+00:00",
+  "finished_at_utc": "2026-11-22T00:42:28+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=b7435e55659fbb09819101ebd621aca2c72059c9",
+    "PROMOTED_COMMIT=b7435e55659fbb09819101ebd621aca2c72059c9",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=b7435e55659fbb09819101ebd621aca2c72059c9",
+    "REMOTE_DEPLOY_EXIT_STATUS=0",
+    "PROD_INSTALLED_COMMIT=b7435e55659fbb09819101ebd621aca2c72059c9",
+    "DEV_CONTROLLED_RELEASE=SUCCESS"
   ],
-  "previous_request_id": "r745-installb7435e55",
+  "previous_request_id": "r745-pfb7435e55659f",
   "ref": "release/745-macd-mobile-controller",
   "release": 745,
-  "request_id": "r745-pfb7435e55659f",
+  "request_id": "r745-deployb7435e55",
   "schema": 1,
-  "started_at_utc": "2026-11-22T00:41:09+00:00",
+  "started_at_utc": "2026-11-22T00:42:01+00:00",
   "status": "passed",
   "target": "b7435e55659fbb09819101ebd621aca2c72059c9",
   "test_counts": []
