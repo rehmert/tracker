@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
+  "exit_code": 42,
+  "failed_tests": [
+    "tests/test_release748_macd_mobile.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-22T02:14:28+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_748_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_748_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/748-mobile-macd-dependency",
+  "release": 748,
+  "request_id": "r748-965f0050e7e6",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T02:14:22+00:00",
+  "status": "failed",
+  "target": "965f0050e7e66a4a01d652818588106b072452ee",
+  "test_counts": [
+    "17 passed, 1 warning"
+  ]
+}

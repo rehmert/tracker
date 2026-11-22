@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "c61a2a85f10d7b585f9edc1d62d756605e046c32",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-22T02:05:53+00:00",
-  "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
-    "PROMOTED_COMMIT=a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
-    "REMOTE_DEPLOY_EXIT_STATUS=0",
-    "PROD_INSTALLED_COMMIT=a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
-    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  "action": "qualify",
+  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
+  "exit_code": 42,
+  "failed_tests": [
+    "tests/test_release748_macd_mobile.py"
   ],
-  "previous_request_id": "r747-pfa0a42cd345f",
-  "ref": "release/747-final-acceptance",
-  "release": 747,
-  "request_id": "r747-deploya0a42cd34",
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-22T02:14:28+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_748_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_748_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/748-mobile-macd-dependency",
+  "release": 748,
+  "request_id": "r748-965f0050e7e6",
   "schema": 1,
-  "started_at_utc": "2026-11-22T02:05:32+00:00",
-  "status": "passed",
-  "target": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
-  "test_counts": []
+  "started_at_utc": "2026-11-22T02:14:22+00:00",
+  "status": "failed",
+  "target": "965f0050e7e66a4a01d652818588106b072452ee",
+  "test_counts": [
+    "17 passed, 1 warning"
+  ]
 }
