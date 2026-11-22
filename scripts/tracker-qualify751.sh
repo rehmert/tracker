@@ -34,6 +34,7 @@ while IFS= read -r path; do
  scripts/tracker-browser-qualify.sh|\
  tests/test_release751_csrf_activation.py|\
  tests/browser/test_release727_labs_cards.py|\
+ tests/browser/test_strict_csrf521.py|\
  tests/test_release627_csrf_remaining_negative_matrix.py|docs/release-751-csrf-dev.md) ;;
  *) die "Unreviewed path: $path" ;;
  esac

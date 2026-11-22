@@ -2471,7 +2471,9 @@ def test_602_mobile_dose_guidance_and_history_are_read_only(tab, scheme):
     form = page.locator("#tracker-qa-602-progress form")
     form.locator('select[name="vial_id"]').select_option("1")
     form.locator('input[name="amount"]').fill("0.25")
-    form.locator('input[name="taken_at"]').fill("2026-11-13T10:30")
+    form.locator(".tracker-time24-date").fill("2026-11-13")
+    form.locator(".tracker-time24-input713").fill("10:30")
+    expect(form.locator('input[name="taken_at"]')).to_have_value("2026-11-13T10:30")
     expect(status).to_contain_text("3 of 3")
     expect(page.locator(
         '#tracker-qa-602-progress [data-dose-step602="review"]'
