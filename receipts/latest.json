@@ -1,28 +1,27 @@
 {
-  "action": "prod_deploy",
-  "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-22T00:42:28+00:00",
-  "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=b7435e55659fbb09819101ebd621aca2c72059c9",
-    "PROMOTED_COMMIT=b7435e55659fbb09819101ebd621aca2c72059c9",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=b7435e55659fbb09819101ebd621aca2c72059c9",
-    "REMOTE_DEPLOY_EXIT_STATUS=0",
-    "PROD_INSTALLED_COMMIT=b7435e55659fbb09819101ebd621aca2c72059c9",
-    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  "action": "qualify",
+  "base": "b7435e55659fbb09819101ebd621aca2c72059c9",
+  "exit_code": 43,
+  "failed_tests": [
+    "tests/test_workout_footnote_spacing689.py"
   ],
-  "previous_request_id": "r745-pfb7435e55659f",
-  "ref": "release/745-macd-mobile-controller",
-  "release": 745,
-  "request_id": "r745-deployb7435e55",
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-22T01:03:56+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_746_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_746_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/746-final-hardening-macd-css",
+  "release": 746,
+  "request_id": "r746-df520521a61f",
   "schema": 1,
-  "started_at_utc": "2026-11-22T00:42:01+00:00",
-  "status": "passed",
-  "target": "b7435e55659fbb09819101ebd621aca2c72059c9",
-  "test_counts": []
+  "started_at_utc": "2026-11-22T01:02:32+00:00",
+  "status": "failed",
+  "target": "df520521a61f95d142198263353b29c328a4bbdd",
+  "test_counts": [
+    "52 passed, 1 warning",
+    "31 passed"
+  ]
 }

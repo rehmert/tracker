@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "b7435e55659fbb09819101ebd621aca2c72059c9",
+  "exit_code": 43,
+  "failed_tests": [
+    "tests/test_workout_footnote_spacing689.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-22T01:03:56+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_746_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_746_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/746-final-hardening-macd-css",
+  "release": 746,
+  "request_id": "r746-df520521a61f",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T01:02:32+00:00",
+  "status": "failed",
+  "target": "df520521a61f95d142198263353b29c328a4bbdd",
+  "test_counts": [
+    "52 passed, 1 warning",
+    "31 passed"
+  ]
+}
