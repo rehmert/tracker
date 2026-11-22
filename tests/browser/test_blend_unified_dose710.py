@@ -161,10 +161,11 @@ def test_710_normal_vial_picker_accepts_real_blend_dose_and_rejects_forgery(sche
             ) == (1,)
             history = page.goto(base + "/doses", wait_until="networkidle")
             assert history is not None and history.status == 200
-            assert page.locator('tr[data-timeline-source="blend"]').count() > 0
-            assert "Quadriceps left" in page.locator(
-                'tr[data-timeline-source="blend"]'
-            ).all_inner_texts()[0]
+            row = page.locator(
+                f'tr[data-timeline-source="blend"][data-physical-source="blend:{bid}"]'
+            )
+            assert row.count() == 1
+            assert row.get_attribute("data-dose-site") == "Quadriceps left"
             print("BLEND_710_SIGNED_NORMAL_VIAL_FORM=PASSED_" + scheme, flush=True)
         finally:
             context.close()
