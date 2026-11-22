@@ -98,6 +98,8 @@ def test_745_source_installer_only_updates_pinned_agent_binary():
     assert "mv -f" in source
     assert "systemctl is-active --quiet tracker" in source
     assert "tracker-release-agent.service" in source
+    assert "systemctl show -p Type --value" in source
+    assert "systemctl is-active --quiet tracker-release-agent.service" not in source
     assert "git rev-parse" in source
 
 

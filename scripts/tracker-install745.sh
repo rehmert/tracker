@@ -21,8 +21,9 @@ export GIT_CONFIG_VALUE_0="$APP"
    -z "$(git status --porcelain)" ]] ||
   fail "Unexpected DEV source or dirty tree"
 systemctl is-active --quiet tracker || fail "Tracker service inactive"
-systemctl is-active --quiet tracker-release-agent.service ||
-  fail "Release controller supervisor not active"
+[[ "$(systemctl show -p Type --value tracker-release-agent.service)" == oneshot ]] ||
+  fail "Unexpected release-agent service unit type"
+echo "TARGETED_745_AGENT_UNIT=PASSED"
 git fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] ||
   fail "Release SHA changed"
@@ -56,9 +57,11 @@ git show "$TARGET:scripts/tracker-release-agent745.py" > "$AGENT"
   fail "Pinned agent Git object mismatch"
 "$APP/.venv/bin/python" -B -m py_compile "$AGENT" ||
   fail "Pinned agent Python compilation failed"
+echo "TARGETED_745_AGENT_SOURCE=PASSED"
 echo "RELEASE_745_HOST_AGENT_PREFLIGHT=PASSED"
 
 echo "RELEASE_745_PINNED_TARGET=$TARGET"
+echo "TARGETED_745_DEPLOY_START=PASSED"
 bash "$RUNNER" --instance DEV --base "$BASE" --target "$TARGET" --ref "$REF"
 [[ "$(git -C "$APP" rev-parse HEAD)" == "$TARGET" &&
      -z "$(git -C "$APP" status --porcelain)" ]] ||
