@@ -1,11 +1,11 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r748-installd193c2d9.json",
+  "receipt_path": "receipts/r748-bd59b6e84ded.json",
   "release": 748,
-  "request_id": "r748-installd193c2d9",
+  "request_id": "r748-bd59b6e84ded",
   "schema": 1,
-  "status": "failed",
-  "target": "d193c2d9afb09f263bc1d7305d955ff0cf51dc69"
+  "status": "passed",
+  "target": "bd59b6e84ded0e55f91c5d88908ef2a1372ea429"
 }
