@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
+  "action": "qualify",
+  "base": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-22T03:27:53+00:00",
+  "finished_at_utc": "2026-11-22T03:36:34+00:00",
   "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-    "PROMOTED_COMMIT=e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-    "REMOTE_DEPLOY_EXIT_STATUS=0",
-    "PROD_INSTALLED_COMMIT=e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-    "DEV_CONTROLLED_RELEASE=SUCCESS"
+    "RELEASE_750_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_750_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_750_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_750_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r749-pfe80edbfa5ef",
-  "ref": "release/749-portrait-sidebar-fit",
-  "release": 749,
-  "request_id": "r749-deploye80edbfa",
+  "previous_request_id": null,
+  "ref": "release/750-offline-browser-multiuser-acceptance",
+  "release": 750,
+  "request_id": "r750-44709978971a",
   "schema": 1,
-  "started_at_utc": "2026-11-22T03:27:29+00:00",
+  "started_at_utc": "2026-11-22T03:35:32+00:00",
   "status": "passed",
-  "target": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-  "test_counts": []
+  "target": "44709978971a1fc08e695ad79e7437e012339856",
+  "test_counts": [
+    "51 passed, 1 warning"
+  ]
 }
