@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r746-installc61a2a85",
-  "action": "dev_install",
+  "request_id": "r746-pfc61a2a85f10d",
+  "action": "prod_preflight",
   "release": 746,
   "target": "c61a2a85f10d7b585f9edc1d62d756605e046c32",
   "base": "b7435e55659fbb09819101ebd621aca2c72059c9",
   "ref": "release/746-final-hardening-macd-css",
-  "previous_request_id": "r746-c61a2a85f10d"
+  "previous_request_id": "r746-installc61a2a85"
 }
