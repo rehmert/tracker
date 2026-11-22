@@ -16,5 +16,13 @@ for f in scripts/tracker-qualify750.sh scripts/tracker-install750.sh \
  tests/test_release748_host_evidence.py \
  tests/test_release705_dependency_replay.py || exit 42
 echo "RELEASE_750_MULTIUSER_PILOT_ACCOUNT_ACCEPTANCE=PASSED"
-"$PY" -B scripts/tracker_browser_restore750.py --disposable-replay || exit 43
+# The generic deployer may create its outer test-data directory with mode
+# 0755; this sensitive evidence worker requires a *dedicated* mode-0700 child.
+# This is a disposable test asset only, never /opt/tracker/data.
+PRIVATE_REPLAY="$(mktemp -d "$TRACKER_DATA_DIR/browser750.XXXXXXXX")"
+[[ -d "$PRIVATE_REPLAY" && ! -L "$PRIVATE_REPLAY" &&
+   "$(stat -c %a "$PRIVATE_REPLAY")" == 700 ]] || exit 43
+TRACKER_DATA_DIR="$PRIVATE_REPLAY" \
+ "$PY" -B scripts/tracker_browser_restore750.py --disposable-replay || exit 43
+rmdir -- "$PRIVATE_REPLAY"
 echo "RELEASE_750_SCOPED_ACCEPTANCE=PASSED_NOT_FULL_SUITE"

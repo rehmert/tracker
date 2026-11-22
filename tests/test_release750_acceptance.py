@@ -47,3 +47,13 @@ def test_750_main_app_multiuser_cutover_is_still_disabled():
     blockers = {x["id"] for x in report["blocking_items"]}
     assert {"ADMIN_ONLY_SCOPE", "ADMIN_ONLY_ENGINE",
             "FOOD_GLOBAL_ENGINE", "ROUTE_PARITY_NOT_PROVEN"} <= blockers
+
+
+def test_750_disposable_browser_replay_has_private_child_even_in_deployer():
+    from pathlib import Path
+    source = (Path(__file__).resolve().parents[1] /
+              "scripts/tracker-release-scoped750.sh").read_text()
+    assert 'mktemp -d "$TRACKER_DATA_DIR/browser750.XXXXXXXX"' in source
+    assert 'stat -c %a "$PRIVATE_REPLAY"' in source
+    assert 'TRACKER_DATA_DIR="$PRIVATE_REPLAY"' in source
+    assert 'rmdir -- "$PRIVATE_REPLAY"' in source
