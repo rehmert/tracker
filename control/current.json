@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r745-deployb7435e55",
-  "action": "prod_deploy",
-  "release": 745,
-  "target": "b7435e55659fbb09819101ebd621aca2c72059c9",
-  "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
-  "ref": "release/745-macd-mobile-controller",
-  "previous_request_id": "r745-pfb7435e55659f"
+  "request_id": "r746-df520521a61f",
+  "action": "qualify",
+  "release": 746,
+  "target": "df520521a61f95d142198263353b29c328a4bbdd",
+  "base": "b7435e55659fbb09819101ebd621aca2c72059c9",
+  "ref": "release/746-final-hardening-macd-css",
+  "previous_request_id": null
 }
