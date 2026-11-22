@@ -82,11 +82,32 @@ def test_650_only_exact_dev_instance_is_eligible(tmp_path):
 
 def test_650_runner_keeps_prod_and_migrations_strict():
     runner = (ROOT / "scripts/tracker-release.sh").read_text()
-    assert 'if [[ "$INSTANCE" == DEV && "$DB_MIGRATION" == 0 ]]; then' in runner
-    assert 'tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR"' in runner
-    assert 'tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes' in runner
-    assert 'LIVE_ATTACHMENT_PREFLIGHT=DEV_ONLY_MISSING_POLICY' in runner
-    assert 'LIVE_ATTACHMENT_PREFLIGHT=PASSED' in runner
+    # Current policy (after Release 655) permits missing DEV uploads for
+    # both ordinary releases and migrations, but retains a verified backup
+    # of all present uploads on DEV and strict integrity checks on PROD.
+    # Scope the assertions to the actual preflight and migration blocks,
+    # not a long-obsolete exact conditional string from Release 650.
+    preflight = runner.split(
+        'echo "=== LIVE ATTACHMENT INTEGRITY BEFORE QUALIFICATION ==="', 1
+    )[1].split(' cd "$QA"', 1)[0]
+    assert 'if [[ "$INSTANCE" == DEV ]]; then' in preflight
+    assert 'tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR"' in preflight
+    assert 'LIVE_ATTACHMENT_PREFLIGHT=DEV_ONLY_MISSING_POLICY' in preflight
+    assert 'else' in preflight
+    assert 'tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes' in preflight
+    assert 'LIVE_ATTACHMENT_PREFLIGHT=PASSED' in preflight
+
+    before_migration = runner.split(
+        'echo "=== LIVE ATTACHMENT INTEGRITY BEFORE MIGRATION BACKUP ==="', 1
+    )[1].split('echo "=== Verified database backup required for data migration ==="', 1)[0]
+    assert 'if [[ "$DB_MIGRATION" == 1 ]]; then' in runner
+    assert 'if [[ "$INSTANCE" == DEV ]]; then' in before_migration
+    assert 'tracker-dev-attachment-gate650.py" --data "$LIVE_DATA_DIR"' in before_migration
+    assert 'LIVE_ATTACHMENT_PREBACKUP=DEV_MISSING_REFERENCES_NONBLOCKING' in before_migration
+    assert 'tracker-attachment-integrity645.py" --data "$LIVE_DATA_DIR" --hashes' in before_migration
+    assert 'LIVE_ATTACHMENT_PREBACKUP=PASSED' in before_migration
+    assert 'tracker-workout-dev-backup655.py" --data "$DATA_DIR" --dest "$SAVE/archives"' in runner
+    assert 'DEV_BACKUP=VERIFIED_SQLITE_AND_ALL_PRESENT_UPLOADS' in runner
 
 
 def test_650_preflight_uses_only_dev_gate_not_prod_uploads():

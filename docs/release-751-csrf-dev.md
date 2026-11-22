@@ -67,3 +67,15 @@ unsafe route's manual compatibility review. New routes are not
 inferred CSRF-qualified simply by inclusion. Signed/forged-token strict
 browser and backend tests remain unchanged. The failure occurred before
 DEV source installation, so the previous failed live stage must not be retried.
+
+## Full backend Release 650 DEV attachment policy assertion refresh
+
+The full DEV regression discovered a historical test expecting DEV's
+missing-file advisory path only when `DB_MIGRATION=0`. The release runner
+has since explicitly retained the DEV missing-upload policy for migrations,
+while protecting migration backup via integrity checks and a verified SQLite
+and present-upload archive. The historical test now inspects both actual
+preflight and migration blocks, including PROD's strict hash-gated path.
+The corrected test is added to Release 751's change-scoped security gate,
+so it runs before the costly browser and full backend installation suites.
+No runtime attachment policy, PROD setting, or medical data is modified.
