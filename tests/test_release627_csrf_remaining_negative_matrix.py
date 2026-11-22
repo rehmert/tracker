@@ -84,13 +84,23 @@ def _regimen_route_manifest():
     }
 
 
+# Later Regimen MACD releases added three explicit guarded deletes to the
+# original nine. They must remain in the current unsafe-route negative gate.
+NEW_REGIMEN_DELETE_ROUTES = frozenset({
+    ("POST", "/regimen/items/{item_id}/delete"),
+    ("POST", "/regimen/items/{item_id}/delete-supplement"),
+    ("POST", "/regimen/schedules/{schedule_id}/delete"),
+})
+
+
 def test_635_regimen_unsafe_routes_are_explicit_and_not_source_qualified():
-    assert _regimen_route_manifest() == NEW_REGIMEN_ROUTES
+    expected = NEW_REGIMEN_ROUTES | NEW_REGIMEN_DELETE_ROUTES
+    assert _regimen_route_manifest() == expected
     report = build()
     unqualified = {(r["method"], r["path"]) for r in report["remaining_routes"]}
-    assert NEW_REGIMEN_ROUTES <= unqualified
+    assert expected <= unqualified
     newly_mapped = {(r["method"], r["path"]) for r in report["new_627_positive_routes"]}
-    assert not NEW_REGIMEN_ROUTES & newly_mapped
+    assert not expected & newly_mapped
 
 
 def gap_rows():
