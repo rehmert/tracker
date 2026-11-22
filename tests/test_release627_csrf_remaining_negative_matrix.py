@@ -87,10 +87,10 @@ def _regimen_route_manifest():
 def test_635_regimen_unsafe_routes_are_explicit_and_not_source_qualified():
     assert _regimen_route_manifest() == NEW_REGIMEN_ROUTES
     report = build()
-    unqualified = {(r["method"], r["path"]) for r in report["unqualified_routes"]}
+    unqualified = {(r["method"], r["path"]) for r in report["remaining_routes"]}
     assert NEW_REGIMEN_ROUTES <= unqualified
-    qualified = {(r["method"], r["path"]) for r in report["candidate_routes"]}
-    assert not NEW_REGIMEN_ROUTES & qualified
+    newly_mapped = {(r["method"], r["path"]) for r in report["new_627_positive_routes"]}
+    assert not NEW_REGIMEN_ROUTES & newly_mapped
 
 
 def gap_rows():
