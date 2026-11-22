@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r744-deploy0e992553",
-  "action": "prod_deploy",
-  "release": 744,
-  "target": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
-  "base": "7585b65f003179fe86d0f98958fe0e63071b8e81",
-  "ref": "release/744-release-coordination",
-  "previous_request_id": "r744-preflight0e992553"
+  "request_id": "r745-6dfdac47a524",
+  "action": "qualify",
+  "release": 745,
+  "target": "6dfdac47a524daf15938d177f989e3f5f812e9c7",
+  "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+  "ref": "release/745-macd-mobile-controller",
+  "previous_request_id": null
 }
