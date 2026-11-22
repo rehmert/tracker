@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "b7435e55659fbb09819101ebd621aca2c72059c9",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T01:14:31+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=c61a2a85f10d7b585f9edc1d62d756605e046c32",
+    "PROMOTED_COMMIT=c61a2a85f10d7b585f9edc1d62d756605e046c32",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=c61a2a85f10d7b585f9edc1d62d756605e046c32",
+    "REMOTE_DEPLOY_EXIT_STATUS=0",
+    "PROD_INSTALLED_COMMIT=c61a2a85f10d7b585f9edc1d62d756605e046c32",
+    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  ],
+  "previous_request_id": "r746-pfc61a2a85f10d",
+  "ref": "release/746-final-hardening-macd-css",
+  "release": 746,
+  "request_id": "r746-deployc61a2a85",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T01:14:07+00:00",
+  "status": "passed",
+  "target": "c61a2a85f10d7b585f9edc1d62d756605e046c32",
+  "test_counts": []
+}
