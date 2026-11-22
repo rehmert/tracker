@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r750-install44709978",
-  "action": "dev_install",
+  "request_id": "r750-2ff72f494493",
+  "action": "qualify",
   "release": 750,
-  "target": "44709978971a1fc08e695ad79e7437e012339856",
+  "target": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
   "base": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
   "ref": "release/750-offline-browser-multiuser-acceptance",
-  "previous_request_id": "r750-44709978971a"
+  "previous_request_id": null
 }
