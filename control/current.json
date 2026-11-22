@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r744-0e9925532127",
-  "action": "qualify",
+  "request_id": "r744-install0e992553",
+  "action": "dev_install",
   "release": 744,
   "target": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
   "base": "7585b65f003179fe86d0f98958fe0e63071b8e81",
   "ref": "release/744-release-coordination",
-  "previous_request_id": null
+  "previous_request_id": "r744-0e9925532127"
 }
