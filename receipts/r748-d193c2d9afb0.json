@@ -1,0 +1,28 @@
+{
+  "action": "qualify",
+  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T02:19:40+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_748_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_748_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_748_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_748_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/748-mobile-macd-dependency",
+  "release": 748,
+  "request_id": "r748-d193c2d9afb0",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T02:16:12+00:00",
+  "status": "passed",
+  "target": "d193c2d9afb09f263bc1d7305d955ff0cf51dc69",
+  "test_counts": [
+    "32 passed, 1 warning",
+    "144 passed, 3 warnings",
+    "84 passed"
+  ]
+}
