@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r750-install2ff72f49",
-  "action": "dev_install",
-  "release": 750,
-  "target": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
-  "base": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-  "ref": "release/750-offline-browser-multiuser-acceptance",
-  "previous_request_id": "r750-2ff72f494493"
+  "request_id": "r751-48acb7ab29bd",
+  "action": "qualify",
+  "release": 751,
+  "target": "48acb7ab29bdf55364495b4a1f4adef5de3ba00d",
+  "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
+  "ref": "release/751-strict-csrf-dev-rollout",
+  "previous_request_id": null
 }
