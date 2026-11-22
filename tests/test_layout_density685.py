@@ -11,7 +11,7 @@ STYLE = (ROOT / "app/static/css/tracker-layout-density685.css").read_text()
 
 def test_685_density_sheet_loaded_last_with_cache_busting():
     base = (ROOT / "app/templates/base.html").read_text()
-    marker = '/static/css/tracker-layout-density685.css?v=685'
+    marker = '/static/css/tracker-global-density-bundle746.css?v=746'
     assert base.count(marker) == 1
     assert base.index(marker) > base.index('tracker-workout-nav-density681.css?v=681')
     assert 'data-density="compact"' in STYLE

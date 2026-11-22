@@ -52,13 +52,9 @@ def test_699_mobile_action_contract_preserved_by_685_and_686():
 
 
 def test_699_loaded_css_order_and_noncompact_modes_unchanged():
-    assert BASE.count('tracker-layout-density685.css?v=685') == 1
-    assert BASE.count('tracker-compact-aggressive686.css?v=686') == 1
-    assert BASE.index('tracker-layout-density685.css?v=685') < BASE.index(
-        'tracker-compact-aggressive686.css?v=686'
-    )
-    assert '/static/css/tracker-layout-density685.css?v=685-css699' in BASE
-    assert '/static/css/tracker-compact-aggressive686.css?v=686-css699' in BASE
+    assert BASE.count('tracker-global-density-bundle746.css?v=746') == 1
+    assert 'tracker-layout-density685.css?v=685-css699' not in BASE
+    assert 'tracker-compact-aggressive686.css?v=686-css699' not in BASE
     assert 'data-density="balanced"' in CSS685
     assert 'data-density="comfortable"' not in CSS686
 

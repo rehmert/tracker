@@ -36,10 +36,7 @@ def workout_fragment():
 def test_689_style_link_is_versioned_and_scoped():
     base = src("app/templates/base.html")
     css = src("app/static/css/tracker-workout-footnote689.css")
-    assert base.count("/static/css/tracker-workout-footnote689.css?v=689") == 1
-    assert base.index("tracker-workout-footnote689.css?v=689") > base.index(
-        "tracker-dashboard-polish688.css?v=688"
-    )
+    assert base.count("/static/css/tracker-global-density-bundle746.css?v=746") == 1
     assert "#tracker-workout-dashboard661 .tracker-workout-recent661 > p:last-child" in css
     assert "#tracker-workout-dashboard661 > .tracker-workout-footnote661" in css
     assert "display: none" not in css

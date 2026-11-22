@@ -53,17 +53,11 @@ def test_700_compact_daily_alignment_must_override_687_specificity():
 
 
 def test_700_asset_cache_refresh_and_original_component_order():
-    assert BASE.count("/static/css/tracker-shortcuts-toolbar687.css?v=687-css700") == 1
-    assert BASE.count("/static/css/tracker-dashboard-polish688.css?v=688") == 1
-    assert BASE.index("tracker-compact-aggressive686.css?v=686") < BASE.index(
-        "tracker-shortcuts-toolbar687.css?v=687-css700"
-    )
-    assert BASE.index("tracker-shortcuts-toolbar687.css?v=687-css700") < BASE.index(
-        "tracker-dashboard-polish688.css?v=688"
-    )
-    assert BASE.index("tracker-dashboard-polish688.css?v=688") < BASE.index(
-        "tracker-workout-footnote689.css?v=689"
-    )
+    assert BASE.count("/static/css/tracker-global-density-bundle746.css?v=746") == 1
+    for retired in ("tracker-shortcuts-toolbar687.css?v=687-css700",
+                    "tracker-dashboard-polish688.css?v=688",
+                    "tracker-workout-footnote689.css?v=689"):
+        assert retired not in BASE
 
 
 def test_700_preview_is_pinned_scoped_private_and_runs_both_visual_gates():

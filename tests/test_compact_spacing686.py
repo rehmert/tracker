@@ -41,9 +41,7 @@ DOC = """<!doctype html><html data-density="compact"><head><style>
 
 
 def test_686_is_last_and_is_compact_only():
-    assert BASE.count("/static/css/tracker-compact-aggressive686.css?v=686") == 1
-    assert BASE.index("tracker-layout-density685.css?v=685") < BASE.index(
-        "tracker-compact-aggressive686.css?v=686")
+    assert BASE.count("/static/css/tracker-global-density-bundle746.css?v=746") == 1
     assert ':root[data-density="compact"]' in CSS686
     assert 'data-density="balanced"' not in CSS686
     assert 'data-density="comfortable"' not in CSS686

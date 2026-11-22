@@ -1,0 +1,809 @@
+/* Release 685: coherent compact/balanced spacing.
+   Applied LAST after the historic density and page-shell sheets.
+   No content hiding, font reduction, minimum tap-target reduction, or JS. */
+:root[data-density="compact"] #main-content {
+  --tracker685-gap: .35rem;
+  --tracker685-inner: .3rem;
+  --tracker685-pad-y: .48rem;
+  --tracker685-pad-x: .65rem;
+  --tracker685-heading: .2rem;
+}
+:root[data-density="balanced"] #main-content {
+  --tracker685-gap: .6rem;
+  --tracker685-inner: .45rem;
+  --tracker685-pad-y: .65rem;
+  --tracker685-pad-x: .8rem;
+  --tracker685-heading: .32rem;
+}
+/* Chrome should not consume a separate blank band before the page heading. */
+:root[data-density="compact"] #main-content > .workspace-toolbar {
+  margin: 0 0 .3rem;
+  padding: .15rem 0 .25rem;
+  row-gap: .3rem;
+}
+:root[data-density="balanced"] #main-content > .workspace-toolbar {
+  margin-bottom: .48rem;
+  padding-bottom: .4rem;
+}
+:root[data-density="compact"] #main-content > .ux-breadcrumbs:not([hidden]),
+:root[data-density="compact"] #tracker-page-jump-slot:not(:empty) {
+  margin-top: 0;
+  margin-bottom: .22rem;
+}
+/* The eyebrow, heading, subtitle and actions already imply grouping. */
+:root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) {
+  gap: .4rem .65rem;
+  padding-top: 0;
+  padding-bottom: .28rem;
+  margin-top: 0;
+  margin-bottom: .35rem;
+}
+:root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) .eyebrow {
+  margin: 0 0 .1rem;
+}
+:root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) h1 {
+  margin: 0 0 .12rem;
+  line-height: 1.16;
+}
+:root[data-density="compact"] #main-content .dashboard-hero :is(.hero-subtitle,.note),
+:root[data-density="compact"] #main-content .page-header :is(.description,.note) {
+  margin: 0;
+}
+:root[data-density="compact"] #main-content .hero-actions {
+  gap: .35rem;
+}
+/* One shared margin between adjacent sections instead of stacked gaps. */
+:root[data-density="compact"] #main-content > :is(section,.dashboard-panel,.metric-section) {
+  margin-top: .35rem;
+  margin-bottom: .35rem;
+}
+/* Compact cards share the later all-card padding rule below.  Balanced
+   retains this separate rule and is never controlled by Release 686. */
+:root[data-density="balanced"] #main-content :is(.dashboard-panel,.tracker-ui-card,.ux673-card) {
+  padding: var(--tracker685-pad-y) var(--tracker685-pad-x);
+}
+:root[data-density="compact"] #main-content :is(.insight-grid,.inventory-kpis,.metric-section,.dashboard-metrics,.tracker-status-grid,.today-cards,.protocol-card-list) {
+  gap: var(--tracker685-gap);
+  margin-top: .25rem;
+  margin-bottom: .4rem;
+}
+:root[data-density="compact"] #main-content :is(.dashboard-panel,.insight-card,.inventory-card,.today-card,.protocol-card,.export-card,.tracker-status-card,.tracker-ui-card,.ux673-card) {
+  padding: var(--tracker685-pad-y) var(--tracker685-pad-x);
+}
+:root[data-density="compact"] #main-content :is(.section-intro,.panel-heading) {
+  gap: .3rem .5rem;
+  margin-top: 0;
+  margin-bottom: var(--tracker685-heading);
+}
+:root[data-density="compact"] #main-content :is(.section-intro,.panel-heading) > :is(h2,h3) {
+  margin: 0;
+}
+:root[data-density="compact"] #main-content :is(h2,h3) + :is(p,.note,.muted) {
+  margin-top: .12rem;
+}
+:root[data-density="compact"] #main-content :is(.note,.section-intro,.meta,.ux-callout) {
+  margin-bottom: .3rem;
+}
+:root[data-density="compact"] #main-content :is(.grid,.inline,.cards,.ux673-action-row,.tracker-ui-actions) {
+  gap: var(--tracker685-inner);
+}
+:root[data-density="compact"] #main-content .ux673-action-row {
+  margin-top: .28rem;
+  margin-bottom: .38rem;
+}
+:root[data-density="compact"] #main-content .dashboard-metrics > div,
+:root[data-density="compact"] #main-content .stats > div {
+  padding: .45rem .6rem;
+}
+:root[data-density="compact"] #main-content .dashboard-metrics dd {
+  margin-top: .12rem;
+}
+:root[data-density="balanced"] #main-content .section-intro {
+  margin-bottom: .45rem;
+}
+/* Mobile remains compact without shrinking inputs, primary logging actions or
+   leaving the fixed dock uncovered. */
+@media (max-width: 760px) {
+  :root[data-density="compact"] #main-content > .workspace-toolbar {
+    margin-bottom: .24rem;
+    padding-bottom: .22rem;
+  }
+  :root[data-density="compact"] #main-content .dashboard-hero {
+    gap: .35rem;
+    padding-bottom: .2rem;
+  }
+  :root[data-density="compact"] #main-content :is(.dashboard-panel,.tracker-ui-card,.ux673-card) {
+    padding: .45rem .58rem;
+  }
+  :root[data-density="compact"] #main-content .tracker-status-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  :root[data-density="compact"] #main-content :is(.tracker-ui-action,.ux673-action-row > a,.ux673-action-row > button) {
+    min-height: 44px;
+  }
+}
+@media (max-width: 359px) {
+  :root[data-density="compact"] #main-content .tracker-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  :root[data-density="compact"] #main-content > .workspace-toolbar,
+  :root[data-density="balanced"] #main-content > .workspace-toolbar {
+    margin: revert;
+    padding: revert;
+  }
+}
+/* Release 686 — deliberately dense Compact, preserving 44px action targets.
+   Later than 685. Comfortable and Balanced are not altered. No hidden data. */
+:root[data-density="compact"] #main-content {
+  --density-section-gap: .22rem;
+  --density-grid-gap: .25rem;
+  --density-form-gap: .2rem;
+  --density-heading-gap: .12rem;
+  --tracker685-gap: .22rem;
+  --tracker685-inner: .2rem;
+  --tracker685-pad-y: .3rem;
+  --tracker685-pad-x: .48rem;
+  --tracker685-heading: .12rem;
+  padding-top: .18rem;
+}
+/* Page chrome, heading, and supporting text: no extra blank band. */
+:root[data-density="compact"] #main-content > .workspace-toolbar {
+  margin: 0 0 .16rem;
+  padding: .06rem 0 .14rem;
+  gap: .2rem .32rem;
+}
+:root[data-density="compact"] #main-content > .ux-breadcrumbs:not([hidden]),
+:root[data-density="compact"] #tracker-page-jump-slot:not(:empty) {
+  margin: .05rem 0 .14rem;
+}
+:root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) {
+  gap: .2rem .45rem;
+  margin: 0 0 .2rem;
+  padding: 0 0 .12rem;
+}
+:root[data-density="compact"] #main-content .dashboard-hero :is(.eyebrow,h1,.hero-subtitle),
+:root[data-density="compact"] #main-content .page-header :is(.eyebrow,h1,.description) {
+  margin-top: 0;
+  margin-bottom: .08rem;
+}
+:root[data-density="compact"] #main-content > h1 {
+  margin: 0 0 .15rem;
+  line-height: 1.14;
+}
+/* Minimize repeated sectional space; keep a visual separation at 3–4px. */
+:root[data-density="compact"] #main-content > :is(section,.dashboard-panel,.metric-section) {
+  margin-top: .2rem;
+  margin-bottom: .2rem;
+}
+:root[data-density="compact"] #main-content :is(
+  .dashboard-panel,.tracker-ui-card,.ux673-card,
+  .today-card,.protocol-card,.inventory-card,.inventory-kpi,
+  .insight-card,.export-card,.labcard,.tracker-status-card
+) {
+  padding: .3rem .48rem;
+}
+:root[data-density="compact"] #main-content :is(
+  .dashboard-metrics,.insight-grid,.inventory-kpis,.metric-section,
+  .tracker-status-grid,.today-cards,.protocol-card-list,.cards,
+  .labgrid,.tracker-attention-list
+) {
+  gap: .22rem;
+  margin-top: .14rem;
+  margin-bottom: .23rem;
+}
+:root[data-density="compact"] #main-content :is(.dashboard-metrics,.stats) > div {
+  padding: .3rem .45rem;
+}
+:root[data-density="compact"] #main-content .dashboard-metrics dd {
+  margin-top: .08rem;
+}
+:root[data-density="compact"] #main-content :is(.section-intro,.panel-heading,.tracker-attention-header,.tracker-status-heading) {
+  gap: .18rem .34rem;
+  margin: 0 0 .14rem;
+}
+:root[data-density="compact"] #main-content :is(.section-intro,.panel-heading) > :is(h2,h3) {
+  margin: 0;
+}
+:root[data-density="compact"] #main-content :is(h2,h3) {
+  margin-top: .22rem;
+  margin-bottom: .12rem;
+}
+:root[data-density="compact"] #main-content :is(h2,h3) + :is(p,.note,.muted) {
+  margin-top: .06rem;
+}
+:root[data-density="compact"] #main-content :is(
+  .note,.meta,.section-intro,.ux-callout,.tracker-attention-note
+) {
+  margin-top: .1rem;
+  margin-bottom: .18rem;
+}
+/* Tighten wrappers (rather than shrinking the controls themselves). */
+:root[data-density="compact"] #main-content :is(
+  .grid,.inline,.cards,.ux673-action-row,.tracker-ui-actions,
+  .recon-inline,.recon-components,.recon-picker-row,.recon-layout,
+  .tracker-daily509,.tracker-daily-vitals,.tracker-daily-footer,
+  .dashboard-search,.ux-shortcuts
+) {
+  gap: .2rem .32rem;
+}
+:root[data-density="compact"] #main-content :is(
+  .grid,.inline,.ux673-action-row,.dashboard-search,.ux-shortcuts,
+  .tracker-page-jump
+) {
+  margin-top: .16rem;
+  margin-bottom: .2rem;
+}
+:root[data-density="compact"] #main-content .tracker-page-jump {
+  padding: .25rem .4rem;
+}
+:root[data-density="compact"] #main-content .field {
+  gap: .08rem;
+}
+:root[data-density="compact"] #main-content fieldset.field {
+  padding: .25rem .4rem;
+}
+/* Page-specific visible whitespace: reconstitution, workout and Daily. */
+:root[data-density="compact"] #main-content .recon-vial-picker {
+  padding: .38rem .5rem;
+  margin: .25rem 0;
+}
+:root[data-density="compact"] #main-content .recon .card {
+  padding: .45rem .55rem;
+}
+:root[data-density="compact"] #main-content .recon h2 {
+  margin: .24rem 0 .18rem;
+}
+:root[data-density="compact"] #main-content .recon-switch {
+  margin: .28rem 0;
+}
+:root[data-density="compact"] #main-content .recon-notice {
+  margin: .25rem 0;
+  padding: .4rem .5rem;
+}
+:root[data-density="compact"] #main-content .recon-metrics {
+  margin: .32rem 0;
+  gap: .28rem;
+}
+:root[data-density="compact"] #main-content .recon-metric {
+  padding: .45rem .5rem;
+}
+:root[data-density="compact"] #main-content .recon .recon-field {
+  margin: .25rem 0;
+}
+:root[data-density="compact"] #main-content .tracker-daily-section {
+  padding: .32rem .48rem;
+}
+:root[data-density="compact"] #main-content .tracker-daily-list li {
+  padding-top: .18rem;
+  padding-bottom: .18rem;
+}
+/* Tables: trim container spacing, never truncate table values. */
+:root[data-density="compact"] #main-content :is(th,td) {
+  padding-top: .18rem;
+  padding-bottom: .18rem;
+}
+:root[data-density="compact"] #main-content .chartbox {
+  padding: .3rem;
+}
+/* Minimum 44px touch target is retained on phone and small tablets. */
+@media (max-width: 760px) {
+  :root[data-density="compact"] #main-content {
+    padding-top: .2rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .dashboard-panel,.tracker-ui-card,.ux673-card,
+    .today-card,.protocol-card,.inventory-card,
+    .insight-card,.tracker-status-card
+  ) {
+    padding: .3rem .45rem;
+  }
+  /* Release 685 already protects tracker-ui-action / ux673-action-row
+     targets at <=760px. Keep the additional Daily targets here only. */
+  :root[data-density="compact"] #main-content :is(
+    .tracker-daily-actions a,.tracker-daily-mode button,
+    .tracker-daily-list li a
+  ) {
+    min-height: 44px;
+  }
+}
+/* Mobile dock clearance and page readability remain controlled by existing CSS. */
+
+/* Desktop Compact is a high-density workspace, not merely a phone preset.
+   These rules apply at desktop widths as well as in the narrower default
+   Compact rules above. Preserve 40px desktop toolbar/form targets. */
+@media (min-width: 761px) {
+  :root[data-density="compact"] #main-content {
+    padding-top: .1rem;
+  }
+  :root[data-density="compact"] #main-content > .workspace-toolbar {
+    margin-bottom: .08rem;
+    padding: 0 0 .1rem;
+    gap: .12rem .25rem;
+  }
+  :root[data-density="compact"] #main-content :is(.workspace-search,.workspace-recent > summary,.workspace-settings > button,.ux-add-button) {
+    min-height: 40px;
+    padding-block: .25rem;
+  }
+  :root[data-density="compact"] #main-content :is(.dashboard-hero,.page-header) {
+    margin-bottom: .12rem;
+    padding-bottom: 0;
+    gap: .12rem .35rem;
+  }
+  :root[data-density="compact"] #main-content > :is(section,.dashboard-panel,.metric-section) {
+    margin-block: .12rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .dashboard-panel,.tracker-ui-card,.ux673-card,
+    .today-card,.protocol-card,.inventory-card,.inventory-kpi,
+    .insight-card,.export-card,.labcard,.tracker-status-card
+  ) {
+    padding: .22rem .42rem;
+  }
+  :root[data-density="compact"] #main-content :is(.dashboard-metrics,.stats) > div {
+    padding: .22rem .4rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .dashboard-metrics,.insight-grid,.inventory-kpis,.metric-section,
+    .tracker-status-grid,.today-cards,.protocol-card-list,.cards,
+    .labgrid,.tracker-attention-list
+  ) {
+    gap: .16rem;
+    margin-block: .1rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .section-intro,.panel-heading,.tracker-attention-header,.tracker-status-heading
+  ) {
+    margin-bottom: .08rem;
+    gap: .12rem .28rem;
+  }
+  :root[data-density="compact"] #main-content :is(
+    .grid,.inline,.cards,.ux673-action-row,.tracker-ui-actions,
+    .recon-inline,.recon-components,.recon-picker-row,.recon-layout,
+    .dashboard-search,.ux-shortcuts
+  ) {
+    gap: .14rem .26rem;
+  }
+  :root[data-density="compact"] #main-content :is(.grid,.inline,.ux673-action-row,.dashboard-search,.ux-shortcuts,.tracker-page-jump) {
+    margin-block: .1rem;
+  }
+  :root[data-density="compact"] #main-content :is(.note,.meta,.ux-callout,.tracker-attention-note) {
+    margin-block: .08rem;
+  }
+  :root[data-density="compact"] #main-content :is(th,td) {
+    padding-block: .12rem;
+  }
+  :root[data-density="compact"] #main-content .recon-vial-picker {
+    padding: .3rem .45rem;
+    margin-block: .12rem;
+  }
+  :root[data-density="compact"] #main-content .recon .card {
+    padding: .3rem .45rem;
+  }
+  :root[data-density="compact"] #main-content .recon .recon-field {
+    margin-block: .12rem;
+  }
+  :root[data-density="compact"] #main-content .tracker-page-jump {
+    padding: .16rem .35rem;
+  }
+}
+/* Release 687: Daily Shortcuts and top-bar refinement.
+   Compact affects all viewport widths; controls retain readable sizing. */
+
+/* Never show the discontinued Recent Pages button. The DOM stays in place
+   temporarily because page-finder keyboard shortcuts share its JS init. */
+#main-content > .workspace-toolbar > #tracker-recent-pages[hidden] {
+  display: none !important;
+}
+
+/* Accounts is a real button-styled navigation action, not plain underlined text. */
+#main-content > .workspace-toolbar .tracker-account-action687 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: .4rem .75rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: .6rem;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#main-content > .workspace-toolbar .tracker-account-action687:hover {
+  background: var(--wash, #f1f5f9);
+  border-color: var(--teal, #1265ad);
+}
+#main-content > .workspace-toolbar .tracker-account-action687:focus-visible {
+  outline: 3px solid var(--teal, #1265ad);
+  outline-offset: 2px;
+}
+
+/* Preferences belongs with primary top-bar controls and must not be forced
+   underneath by the large minimum widths of the two search widgets. */
+@media (min-width: 761px) {
+  #main-content > .workspace-toolbar {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: .3rem;
+  }
+  #main-content > .workspace-toolbar > :is(form, .ux-add-menu, .workspace-settings) {
+    flex: 0 0 auto;
+  }
+  /* Search widgets use the same desktop sizing and shrink together. */
+  #main-content > .workspace-toolbar > :is(.workspace-search,.workspace-nav-find) {
+    flex: 1 1 9rem;
+    width: auto;
+    min-width: 7rem;
+  }
+  #main-content > .workspace-toolbar > .workspace-settings {
+    margin-left: auto;
+  }
+  #main-content > .workspace-toolbar > .workspace-settings > button {
+    min-height: 40px;
+    white-space: nowrap;
+  }
+}
+/* At tablet and narrow desktop widths, keep Accounts/Preferences in the first
+   row; secondary search controls may occupy a subsequent row if needed. */
+@media (min-width: 761px) and (max-width: 1199px) {
+  #main-content > .workspace-toolbar {
+    flex-wrap: wrap;
+  }
+  #main-content > .workspace-toolbar > .tracker-account-action687 { order: -4; }
+  #main-content > .workspace-toolbar > form { order: -3; }
+  #main-content > .workspace-toolbar > .ux-add-menu { order: -2; }
+  #main-content > .workspace-toolbar > .workspace-settings { order: -1; margin-left: auto; }
+  #main-content > .workspace-toolbar > :is(.workspace-search,.workspace-nav-find) {
+    flex: 1 1 12rem;
+    min-width: 9rem;
+  }
+}
+@media (max-width: 760px) {
+  #main-content > .workspace-toolbar {
+    gap: .25rem;
+  }
+  #main-content > .workspace-toolbar > .tracker-account-action687 {
+    order: -4;
+    min-height: 44px;
+  }
+  #main-content > .workspace-toolbar > form { order: -3; }
+  #main-content > .workspace-toolbar > .ux-add-menu { order: -2; }
+  #main-content > .workspace-toolbar > .workspace-settings {
+    order: -1;
+    margin-left: auto;
+  }
+  #main-content > .workspace-toolbar > .workspace-settings > button {
+    min-height: 44px;
+  }
+}
+
+/* The Daily Shortcuts-specific legacy stylesheet is loaded inside Dashboard
+   content, AFTER the head; selectors are intentionally anchored/specific. */
+:root[data-density="compact"] #main-content > .tracker-daily-flow559,
+:root[data-density="compact"] #main-content section.tracker-daily-flow559 {
+  margin: .12rem 0 .2rem;
+  padding: .3rem .4rem;
+  border-radius: .5rem;
+}
+:root[data-density="compact"] #main-content .tracker-daily-flow559-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .12rem .5rem;
+  margin: 0 0 .2rem;
+}
+:root[data-density="compact"] #main-content .tracker-daily-flow559-head h2 {
+  margin: 0;
+  line-height: 1.2;
+}
+:root[data-density="compact"] #main-content .tracker-daily-flow559-head p {
+  margin: 0;
+  line-height: 1.25;
+}
+:root[data-density="compact"] #main-content nav.tracker-daily-flow559-links {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 125px), 1fr));
+  gap: .2rem;
+  margin: 0;
+}
+:root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a {
+  padding: .22rem .38rem;
+  gap: 0;
+  min-height: 40px;
+  align-items: flex-start;
+  justify-content: center;
+  border-radius: .4rem;
+  line-height: 1.2;
+}
+:root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a :is(strong, span) {
+  line-height: 1.2;
+}
+@media (max-width: 760px) {
+  :root[data-density="compact"] #main-content nav.tracker-daily-flow559-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  :root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a {
+    min-height: 44px;
+  }
+}
+@media (max-width: 359px) {
+  :root[data-density="compact"] #main-content .tracker-daily-flow559-head {
+    display: block;
+  }
+}
+/* Release 688: targeted dashboard chrome and density polish.
+   No content hiding or typography shrink; preserve keyboard and touch controls. */
+
+/* One coherent 44px control system for every top-bar action. */
+#main-content > .workspace-toolbar :is(
+  .tracker-account-action687, form > button, #ux-add-toggle,
+  #command-open, #workspace-settings-toggle
+),
+#main-content > .workspace-toolbar #page-finder-container .nav-find #nav-filter {
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0 .7rem;
+  box-shadow: none;
+}
+#main-content > .workspace-toolbar #command-open {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-width: 0;
+  text-align: left;
+}
+#main-content > .workspace-toolbar #command-open span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#main-content > .workspace-toolbar #command-open kbd {
+  flex: 0 0 auto;
+}
+#main-content > .workspace-toolbar #page-finder-container,
+#main-content > .workspace-toolbar #page-finder-container .nav-find {
+  min-width: 0;
+}
+#main-content > .workspace-toolbar #page-finder-container .nav-find #nav-filter {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  font-weight: 500;
+}
+#main-content > .workspace-toolbar #page-finder-container .nav-find #nav-filter::placeholder {
+  color: var(--muted, #65717f);
+  opacity: 1;
+}
+#main-content > .workspace-toolbar #workspace-settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#main-content > .workspace-toolbar :is(
+  .tracker-account-action687, form > button, #ux-add-toggle,
+  #command-open, #workspace-settings-toggle
+):hover {
+  background: var(--wash, #f1f5f9);
+}
+#main-content > .workspace-toolbar :is(
+  .tracker-account-action687, form > button, #ux-add-toggle,
+  #command-open, #workspace-settings-toggle
+):focus-visible,
+#main-content > .workspace-toolbar #page-finder-container .nav-find #nav-filter:focus-visible {
+  outline: 2px solid var(--teal, #1265ad);
+  outline-offset: 2px;
+}
+/* Avoid a large blank band between the toolbar and the section picker. */
+#main-content > .workspace-toolbar {
+  align-items: center;
+  column-gap: .35rem;
+  row-gap: .3rem;
+  padding-bottom: .18rem;
+  margin-bottom: .2rem;
+}
+
+/* Compact single-row section jump, without an oversized bordered panel.
+   Both the picker and deep-link copy button keep their original behavior. */
+#main-content > #tracker-page-jump-slot:not(:empty) {
+  margin: .1rem 0 .25rem;
+}
+#main-content > #tracker-page-jump-slot .tracker-page-jump:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem .55rem;
+  padding: .08rem 0 .18rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#main-content > #tracker-page-jump-slot .tracker-page-jump label {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .25rem .5rem;
+  min-width: 0;
+  margin: 0;
+  font-size: .82rem;
+  font-weight: 600;
+}
+#main-content > #tracker-page-jump-slot .tracker-page-jump select,
+#main-content > #tracker-page-jump-slot .tracker-copy-section-link {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 .6rem;
+  margin: 0;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  font: inherit;
+  font-size: .86rem;
+  line-height: 1.2;
+}
+#main-content > #tracker-page-jump-slot .tracker-page-jump select {
+  width: clamp(11rem, 25vw, 19rem);
+  max-width: 100%;
+}
+#main-content > #tracker-page-jump-slot .tracker-copy-section-link {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+#main-content > #tracker-page-jump-slot .tracker-section-link-status {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  #main-content > #tracker-page-jump-slot .tracker-page-jump label {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+  #main-content > #tracker-page-jump-slot .tracker-page-jump select {
+    flex: 1 1 10rem;
+    width: auto;
+  }
+  #main-content > #tracker-page-jump-slot .tracker-copy-section-link {
+    min-height: 44px;
+  }
+}
+/* Replace standalone Dashboard customization with an in-menu disclosure. */
+#main-content #workspace-settings-panel .workspace-dashboard-customize688 {
+  margin: .15rem 0 .6rem;
+  padding: .2rem 0 .65rem;
+  border-bottom: 1px solid var(--rule, #cbd5e1);
+}
+#main-content #workspace-settings-panel #dashboard-customize {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: .48rem .6rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: 9px;
+  background: var(--surface, #fff);
+  color: var(--ink, #192c31);
+  text-align: left;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+#main-content #workspace-settings-panel #dashboard-customize[aria-expanded="true"] {
+  background: var(--wash, #f1f5f9);
+}
+#main-content #workspace-settings-panel #dashboard-customize-panel {
+  position: static;
+  width: 100%;
+  max-width: 100%;
+  padding: .4rem 0 .1rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+#main-content #workspace-settings-panel #dashboard-customize-panel p {
+  margin: .25rem 0 .4rem;
+}
+#main-content #workspace-settings-panel .customize-row {
+  gap: .3rem;
+  padding: .2rem 0;
+}
+#main-content #workspace-settings-panel .customize-row button {
+  min-height: 34px;
+}
+/* Center labels in every density; no explanatory second line. */
+#main-content nav.tracker-daily-flow559-links > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  text-align: center;
+  line-height: 1.2;
+  padding: .55rem .4rem;
+}
+#main-content nav.tracker-daily-flow559-links > a strong {
+  display: block;
+  width: 100%;
+  line-height: 1.2;
+  text-align: center;
+}
+:root[data-density="compact"] #main-content nav.tracker-daily-flow559-links > a {
+  min-height: 44px;
+  padding: .18rem .38rem;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Workout metrics: six useful cards on one desktop row, without dead space. */
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: .35rem;
+  margin: .42rem 0 .5rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .08rem;
+  min-height: 0;
+  padding: .38rem .52rem;
+  border-radius: .55rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 strong {
+  line-height: 1.1;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-summary661 span {
+  line-height: 1.22;
+}
+:root[data-density="compact"] #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+  padding: .24rem .4rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-recent661 h3 {
+  margin: .28rem 0 .18rem;
+}
+#main-content #tracker-workout-dashboard661 .tracker-workout-footnote661 {
+  margin-top: .4rem;
+}
+@media (min-width: 761px) and (max-width: 1150px) {
+  #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+    padding: .45rem .5rem;
+  }
+  :root[data-density="compact"] #main-content #tracker-workout-dashboard661 .tracker-workout-summary661 > div {
+    padding: .35rem .44rem;
+  }
+}
+/* Release 689: remove the compounded empty-state paragraph spacing
+   between Log a Previous Workout and the explanation below it. */
+#main-content #tracker-workout-dashboard661 .tracker-workout-recent661 > p:last-child {
+  margin-bottom: 0;
+}
+#main-content #tracker-workout-dashboard661 > .tracker-workout-footnote661 {
+  margin: .35rem 0 0;
+}
