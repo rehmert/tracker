@@ -21,6 +21,8 @@ export GIT_CONFIG_VALUE_0="$APP"
    -z "$(git status --porcelain)" ]] ||
   fail "Unexpected DEV source or dirty tree"
 systemctl is-active --quiet tracker || fail "Tracker service inactive"
+systemctl is-active --quiet tracker-release-agent.service ||
+  fail "Release controller supervisor not active"
 git fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] ||
   fail "Release SHA changed"
@@ -44,12 +46,12 @@ INSTALLED_AGENT=/usr/local/sbin/tracker-release-agent.py
 [[ -f "$INSTALLED_AGENT" && ! -L "$INSTALLED_AGENT" &&
    "$(stat -c '%u:%a' "$INSTALLED_AGENT")" == "0:700" ]] ||
   fail "Installed host agent has unsafe identity or permissions"
-[[ "$(git hash-object "$INSTALLED_AGENT")" ==
+[[ "$(git hash-object "$INSTALLED_AGENT")" == \
    "$(git rev-parse "$TRUSTED_AGENT:scripts/tracker-release-agent.py")" ]] ||
   fail "Host agent is not the reviewed Release 744 baseline"
 AGENT="$STAGE/tracker-release-agent745.py"
 git show "$TARGET:scripts/tracker-release-agent745.py" > "$AGENT"
-[[ "$(git hash-object "$AGENT")" ==
+[[ "$(git hash-object "$AGENT")" == \
    "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
   fail "Pinned agent Git object mismatch"
 "$APP/.venv/bin/python" -B -m py_compile "$AGENT" ||
@@ -71,13 +73,13 @@ STAGED_AGENT=/usr/local/sbin/.tracker-release-agent745.new
 [[ ! -e "$STAGED_AGENT" && ! -L "$STAGED_AGENT" ]] ||
   fail "Agent stage file already exists"
 install -m 0700 -o root -g root "$AGENT" "$STAGED_AGENT"
-[[ "$(git hash-object "$STAGED_AGENT")" ==
+[[ "$(git hash-object "$STAGED_AGENT")" == \
    "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
   fail "Stage agent object mismatch"
 mv -f "$STAGED_AGENT" "$INSTALLED_AGENT"
 [[ -f "$INSTALLED_AGENT" && ! -L "$INSTALLED_AGENT" &&
    "$(stat -c '%u:%a' "$INSTALLED_AGENT")" == "0:700" &&
-   "$(git hash-object "$INSTALLED_AGENT")" ==
+   "$(git hash-object "$INSTALLED_AGENT")" == \
    "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
   fail "Host agent installation integrity mismatch"
 echo "RELEASE_745_HOST_AGENT_INSTALLED=VERIFIED"
