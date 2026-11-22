@@ -32,6 +32,7 @@ while IFS= read -r path; do
  scripts/tracker-qualify751.sh|scripts/tracker-install751.sh|\
  scripts/tracker-release-scoped751.sh|scripts/tracker-csrf-dev751.sh|\
  tests/test_release751_csrf_activation.py|\
+ tests/browser/test_release727_labs_cards.py|\
  tests/test_release627_csrf_remaining_negative_matrix.py|docs/release-751-csrf-dev.md) ;;
  *) die "Unreviewed path: $path" ;;
  esac

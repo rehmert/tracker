@@ -72,9 +72,11 @@ def test_727_labs_phone_cards_and_desktop_table(scheme,density):
                     assert table.locator("thead").is_hidden() == mobile
                     if mobile:
                         assert rows.first.locator("td[data-label]").count()==5
-                        assert all(links.evaluate_all(
-                            "(els)=>els.map(el=>el.getBoundingClientRect().height>=44)"))
-                            for links in [rows.first.locator("td[data-ux673-action] a")]
+                        links = rows.first.locator("td[data-ux673-action] a")
+                        assert links.count() == 4
+                        assert links.evaluate_all(
+                            "(els) => els.every(el => el.getBoundingClientRect().height >= 44)"
+                        )
                     assert page.evaluate(
                         "document.documentElement.scrollWidth <= innerWidth"
                     ), (width,scheme,density)
