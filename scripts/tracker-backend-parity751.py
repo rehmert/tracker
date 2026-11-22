@@ -65,6 +65,17 @@ def compare_reports(base: dict, candidate: dict) -> dict:
                     if outcome in ('failed', 'error')
                     and base.get(key) != outcome}
     if missing or new_skips or new_failures:
+        # Publish only bounded, filename-only diagnostics. Test names,
+        # JUnit XML, patient fixtures and raw tracebacks stay private.
+        import re
+        abnormal = missing | new_skips | new_failures
+        filenames = set()
+        for classname, _ in abnormal:
+            last = (classname or '').rsplit('.', 1)[-1]
+            if re.fullmatch(r'test_[A-Za-z0-9_]+', last):
+                filenames.add(f'tests/{last}.py')
+        for filename in sorted(filenames)[:12]:
+            print('FAILED ' + filename, file=sys.stderr)
         raise ParityError(
             'Backend baseline parity failed: '
             f'missing={len(missing)} new_skips={len(new_skips)} '
