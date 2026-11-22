@@ -1,0 +1,25 @@
+{
+  "action": "qualify",
+  "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-22T20:13:53+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_751_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/751-strict-csrf-dev-rollout",
+  "release": 751,
+  "request_id": "r751-466283c72ee7",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T20:07:22+00:00",
+  "status": "failed",
+  "target": "466283c72ee74c0a18dc009eb805ad0af76c756c",
+  "test_counts": [
+    "340 passed, 1 warning"
+  ]
+}
