@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r745-1b38b0d8ea79",
+  "request_id": "r745-d6b34a77b6f7",
   "action": "qualify",
   "release": 745,
-  "target": "1b38b0d8ea79a6ca9a75dc8c9771e63f97728a12",
+  "target": "d6b34a77b6f7d3f3299cba9d567201deb5495ae8",
   "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
   "ref": "release/745-macd-mobile-controller",
   "previous_request_id": null
