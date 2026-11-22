@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "bd59b6e84ded0e55f91c5d88908ef2a1372ea429",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T03:22:22+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_749_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_749_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_749_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_749_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/749-portrait-sidebar-fit",
+  "release": 749,
+  "request_id": "r749-e80edbfa5ef5",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T03:22:01+00:00",
+  "status": "passed",
+  "target": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
+  "test_counts": [
+    "26 passed"
+  ]
+}
