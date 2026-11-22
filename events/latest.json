@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r746-installc61a2a85.json",
+  "receipt_path": "receipts/r746-pfc61a2a85f10d.json",
   "release": 746,
-  "request_id": "r746-installc61a2a85",
+  "request_id": "r746-pfc61a2a85f10d",
   "schema": 1,
   "status": "passed",
   "target": "c61a2a85f10d7b585f9edc1d62d756605e046c32"
