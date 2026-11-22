@@ -1,12 +1,13 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
-  "exit_code": 1,
+  "exit_code": 0,
   "failed_tests": [],
-  "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-22T16:31:03+00:00",
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T18:24:20+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
     "TARGETED_716_HTTP_MACHINE_ONE=PASSED",
     "TARGETED_716_HTTP_CATALOG=PASSED",
     "TARGETED_716_HTTP_ROUTINE_CREATED=PASSED",
@@ -49,25 +50,24 @@
     "TARGETED_716_HTTPS_PROGRESS=PASSED",
     "TARGETED_716_HTTPS_WIDTH=PASSED",
     "TARGETED_716_HTTPS_EXISTING=PASSED",
-    "TARGETED_716_HTTPS_NEW=PASSED",
-    "TARGETED_716_HTTPS_FINISHED=PASSED"
+    "TARGETED_716_HTTPS_NEW=PASSED"
   ],
-  "previous_request_id": "r751-4bd20f98c919",
+  "previous_request_id": null,
   "ref": "release/751-strict-csrf-dev-rollout",
   "release": 751,
-  "request_id": "r751-install4bd20f98",
+  "request_id": "r751-5f3d363194e0",
   "schema": 1,
-  "started_at_utc": "2026-11-22T16:20:32+00:00",
-  "status": "failed",
-  "target": "4bd20f98c919a9fa5faee7493ef4e2035db7d6d6",
+  "started_at_utc": "2026-11-22T18:12:01+00:00",
+  "status": "passed",
+  "target": "5f3d363194e019ef7dd0b8daefe725192bccf6fe",
   "test_counts": [
     "263 passed, 1 warning",
+    "7 passed",
+    "2 passed",
     "7 passed",
     "219 passed, 2 skipped",
     "2 passed",
     "119 passed",
-    "30 passed",
-    "6 passed",
-    "2 passed"
+    "30 passed"
   ]
 }
