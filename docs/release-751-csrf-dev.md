@@ -194,3 +194,22 @@ all test identities for the existing no-new-regression comparison.
 No test is deleted, ignored or treated as optional. This changes only DEV
 qualification sequencing, not PROD, application code, or security behavior.
 Release requests remain manual pending successful DEV closeout.
+
+## Release 751 manual DEV installation evidence-receipt contract fix
+
+The manual exact-SHA full qualification and the repeat guarded install
+qualification passed. The install then rolled back solely because the
+Release 577 DEV receipt validator required the historical literal
+`=== ALL BACKEND TESTS PASSED ===` while Release 751 explicitly validates
+a complete, no-new-regression baseline parity gate instead. The receipt
+validator now selects an exact Release 751 full qualification contract,
+requiring normal and strict isolated browser success, 16-worker execution,
+all Chromium 676 cases isolated and merged, the resolved 627 collection
+error, and the full backend parity success markers. For other releases it
+continues to require the original all-green backend marker. All missing
+markers, mismatched target SHAs, duplicate exit statuses, absent successful
+rollback/backup outcome, unsafe receipt permissions, and existing receipt
+paths remain fail-closed. A new regression test exercises the actual
+release-specific evidence validator in the cheap scoped gate before DEV
+installation. Prior manual 9a20f35c success is historical evidence only;
+the new SHA must qualify independently before install. No auto request queued.

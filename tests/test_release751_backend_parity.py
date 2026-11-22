@@ -15,6 +15,55 @@ parity = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(parity)
 
 
+def test_751_dev_receipt_accepts_parity_evidence_and_rejects_missing_gates():
+    # Exercise the REAL post-install evidence validator, which previously
+    # rejected Release 751 because it required an obsolete all-green marker.
+    source = ROOT / "scripts/tracker_dev_log577.py"
+    spec = importlib.util.spec_from_file_location("tracker_dev_receipt577", source)
+    receipt = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(receipt)
+    target = "a" * 40
+    markers = list(receipt.REQUIRED_PARITY_751)
+    payload = "\n".join([
+        "Started: 2026-11-22T20:00:00+00:00; instance: DEV",
+        "CANDIDATE_COMMIT=" + target,
+        "QA_FULL_REQUIRED=1",
+        *markers,
+        "DATABASE_BACKUP=SKIPPED_NO_MIGRATION",
+        " TRACKER RELEASE DEPLOYMENT SUCCESS",
+        "EXIT_STATUS=0",
+        "Finished: 2026-11-22T21:00:00+00:00",
+    ]) + "\n"
+    result = receipt.validated_evidence(payload, target, release=751)
+    assert result.endswith("DEV_QUALIFIED_COMMIT=" + target + "\n")
+    assert "=== ALL BACKEND TESTS PASSED ===" not in payload
+    # Each expected release-specific marker is independently mandatory.
+    for marker in markers:
+        with pytest.raises(ValueError, match="Missing DEV qualification evidence"):
+            receipt.validated_evidence(
+                payload.replace(marker + "\n", ""), target, release=751
+            )
+    # Older releases cannot substitute parity for their all-green contract.
+    with pytest.raises(ValueError, match="Missing DEV qualification evidence"):
+        receipt.validated_evidence(payload, target, release=750)
+    # The same release cannot validate an unrelated exact commit.
+    with pytest.raises(ValueError, match="Missing DEV qualification evidence"):
+        receipt.validated_evidence(payload, "b" * 40, release=751)
+    with pytest.raises(ValueError, match="successful final exit status"):
+        receipt.validated_evidence(
+            payload.replace("EXIT_STATUS=0", "EXIT_STATUS=1"),
+            target, release=751
+        )
+    # Old full-suite receipts remain valid for older releases.
+    old = payload
+    for marker in markers[2:]:
+        old = old.replace(marker + "\n", "")
+    old += "=== ALL BACKEND TESTS PASSED ===\n"
+    assert receipt.validated_evidence(old, target, release=750).endswith(
+        "DEV_QUALIFIED_COMMIT=" + target + "\n"
+    )
+
+
 def test_751_chromium_676_parity_merge_retains_all_five_cases():
     required = {nodeid: 'passed' for nodeid in parity.CHROMIUM_676_NODEIDS}
     parallel = {'tests/test_a.py::test_one': 'passed'}
@@ -283,6 +332,10 @@ def test_751_baseline_gate_is_disposable_and_narrow():
     assert "'__collection__:' + name" in source
     assert "collection failure" in source
     assert "RELEASE_751_BACKEND_RUN=" in source
+    writer = (ROOT / "scripts/tracker_dev_log577.py").read_text()
+    assert "REQUIRED_PARITY_751" in writer
+    assert "release=release" in writer
+    assert "scripts/tracker_dev_log577.py" in qualify
     assert "tracker_pytest_nodeid_751" in (
         ROOT / "scripts/tracker_pytest_nodeid751.py").read_text()
     assert "timeout=1200" in source

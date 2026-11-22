@@ -18,10 +18,23 @@ REQUIRED = (
     "ISOLATED_STRICT_CSRF_BROWSER=PASSED",
     "=== ALL BACKEND TESTS PASSED ===",
 )
+# Release 751's full DEV backend contract is exact-SHA differential parity
+# against pristine 750 rather than an absolute-green legacy suite. Preserve
+# every browser gate and require complete parity evidence; do not reinterpret
+# ordinary releases' historical all-green marker.
+REQUIRED_PARITY_751 = (
+    "ISOLATED_BROWSER=PASSED",
+    "ISOLATED_STRICT_CSRF_BROWSER=PASSED",
+    "BACKEND_TEST_MODE=PARALLEL workers=16",
+    "RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=PASSED",
+    "RELEASE_751_RESOLVED_LEGACY_627_COLLECTION_ERROR=VERIFIED",
+    "RELEASE_751_BACKEND_BASELINE_PARITY=PASSED",
+    "=== FULL BACKEND BASELINE PARITY GATE PASSED ===",
+)
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 
-def validated_evidence(content: str, target: str) -> str:
+def validated_evidence(content: str, target: str, release: int | None = None) -> str:
     if not SHA.fullmatch(target):
         raise ValueError("Invalid target SHA")
     lines = content.splitlines()
@@ -35,7 +48,7 @@ def validated_evidence(content: str, target: str) -> str:
                 "RELEASE_SCOPED_PREFLIGHT=PASSED" in lines):
             raise ValueError("Scoped release qualification evidence missing")
     else:
-        required = REQUIRED
+        required = REQUIRED_PARITY_751 if release == 751 else REQUIRED
     # Historical receipts contain the restore marker. New code-only releases
     # use an explicit skip marker; exactly one outcome must be present.
     restored = lines.count("=== ISOLATED RESTORE VERIFICATION PASSED ===")
@@ -82,7 +95,9 @@ def preserve(source: Path, dest_dir: Path, release: int, target: str) -> Path:
     info = source.lstat()
     if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o077:
         raise ValueError("Guarded log must be root-owned, private, regular")
-    evidence = validated_evidence(source.read_text(encoding="utf-8"), target)
+    evidence = validated_evidence(
+        source.read_text(encoding="utf-8"), target, release=release
+    )
     secure_dir(dest_dir, create=True)
     dest = dest_dir / f"release-{release}-dev.log"
     if dest.exists() or dest.is_symlink():
