@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "bd59b6e84ded0e55f91c5d88908ef2a1372ea429",
+  "exit_code": 42,
+  "failed_tests": [
+    "tests/test_release749_mobile_drawer.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-22T03:20:16+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_749_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_749_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/749-portrait-sidebar-fit",
+  "release": 749,
+  "request_id": "r749-a045f932e72c",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T03:20:12+00:00",
+  "status": "failed",
+  "target": "a045f932e72c4a81bae91eb5399e0902a04f14f0",
+  "test_counts": [
+    "1 passed"
+  ]
+}
