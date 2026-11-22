@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r743-install7585b65f",
-  "action": "dev_install",
-  "release": 743,
-  "target": "7585b65f003179fe86d0f98958fe0e63071b8e81",
-  "base": "8b44bc133d7a0b1582ee11b2acf87809616fab10",
-  "ref": "release/743-security-deps-controller-ux",
-  "previous_request_id": "r743-7585b65f0031"
+  "request_id": "r744-bf10663130fa",
+  "action": "qualify",
+  "release": 744,
+  "target": "bf10663130fa8d6b9c2f9660e6524c197967eb73",
+  "base": "7585b65f003179fe86d0f98958fe0e63071b8e81",
+  "ref": "release/744-release-coordination",
+  "previous_request_id": null
 }
