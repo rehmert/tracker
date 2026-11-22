@@ -3,14 +3,10 @@
   "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
   "exit_code": 1,
   "failed_tests": [
-    "tests/browser/test_strict_csrf521.py",
-    "tests/browser/test_strict_csrf521.py",
-    "tests/browser/test_strict_csrf521.py",
-    "tests/browser/test_strict_csrf521.py",
-    "tests/strict751_test_602_mobile_dose_guidance_and_history_are_read_only.py"
+    "tests/test_release627_csrf_remaining_negative_matrix.py"
   ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-22T15:42:41+00:00",
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-22T15:48:38+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
@@ -20,17 +16,10 @@
   "previous_request_id": null,
   "ref": "release/751-strict-csrf-dev-rollout",
   "release": 751,
-  "request_id": "r751-b70120ef8b06",
+  "request_id": "r751-b07856ad08bb",
   "schema": 1,
-  "started_at_utc": "2026-11-22T15:36:32+00:00",
+  "started_at_utc": "2026-11-22T15:48:32+00:00",
   "status": "failed",
-  "target": "b70120ef8b06af1c935829d83b5195e5cfda3a0c",
-  "test_counts": [
-    "263 passed, 1 warning",
-    "7 passed",
-    "219 passed, 2 skipped",
-    "2 passed",
-    "117 passed",
-    "117 passed"
-  ]
+  "target": "b07856ad08bb0dbccf259826539e8197272de246",
+  "test_counts": []
 }

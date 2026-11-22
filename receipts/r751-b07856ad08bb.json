@@ -1,0 +1,25 @@
+{
+  "action": "qualify",
+  "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release627_csrf_remaining_negative_matrix.py"
+  ],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-22T15:48:38+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_751_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/751-strict-csrf-dev-rollout",
+  "release": 751,
+  "request_id": "r751-b07856ad08bb",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T15:48:32+00:00",
+  "status": "failed",
+  "target": "b07856ad08bb0dbccf259826539e8197272de246",
+  "test_counts": []
+}
