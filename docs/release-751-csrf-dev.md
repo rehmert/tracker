@@ -55,3 +55,15 @@ Chromium module, before any source installation or systemd strict flag.
 The browser limit is raised to 1800 seconds (bounded), preserving the full
 security/backend suite, exact-SHA guards, DEV-only activation, and fail-closed
 stage behavior. Do not rerun the failed live request; qualify a new SHA.
+
+## Full backend historical CSRF inventory count correction
+
+The guarded Release 751 DEV full regression identified a historical Release
+574 test pinned to exactly 161 registered unsafe routes; the current
+application registers 223. A structural test now requires at least the
+223-route current baseline, verifies report counts against the live FastAPI
+route enumeration and per-method totals, and continues requiring every
+unsafe route's manual compatibility review. New routes are not
+inferred CSRF-qualified simply by inclusion. Signed/forged-token strict
+browser and backend tests remain unchanged. The failure occurred before
+DEV source installation, so the previous failed live stage must not be retried.

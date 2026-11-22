@@ -37,7 +37,8 @@ while IFS= read -r path; do
  tests/browser/test_release727_labs_cards.py|\
  tests/browser/test_strict_csrf521.py|\
  tests/browser/test_blend_unified_dose710.py|\
- tests/test_release627_csrf_remaining_negative_matrix.py|docs/release-751-csrf-dev.md) ;;
+ tests/test_release627_csrf_remaining_negative_matrix.py|\
+ tests/test_release574_csrf_dynamic_shapes.py|docs/release-751-csrf-dev.md) ;;
  *) die "Unreviewed path: $path" ;;
  esac
 done < <(git diff --name-only "$BASE" "$TARGET")

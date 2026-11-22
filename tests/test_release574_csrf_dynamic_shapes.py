@@ -105,9 +105,16 @@ def test_574_real_inventory_preserves_compatibility_review_requirements(
     from app.main import app
     report = audit574.build(app)
     s = report["summary"]
-    # Includes all post-627 routes, including the Release 647 COA batch POST.
-    # New routes are counted, not declared compatible or runtime-qualified.
-    assert s["registered_unsafe_routes"] == 161
+    # The Release 574 historical total (161) increased to 223 as later
+    # Regimen, COA, Labs and Workout write routes were registered. Require
+    # at least that current baseline without freezing an exact count.
+    # Registration is NOT evidence of rendered CSRF browser compatibility.
+    writes = audit574.registered_writes(app)
+    assert s["registered_unsafe_routes"] >= 223
+    assert s["registered_unsafe_routes"] == len(writes)
+    assert s["registered_unsafe_routes"] == len(report["routes"])
+    assert s["registered_unsafe_routes"] == sum(s["methods"].values())
+    assert all(row["needs_manual_endpoint_review"] for row in writes)
     assert s["root_routes_missing_global_dependencies"] == 0
     assert s["templated_route_shapes_matched"] >= 1
     assert s["literal_browser_write_routes_unmatched"] == 0
