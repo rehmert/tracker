@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r747-deploya0a42cd34",
-  "action": "prod_deploy",
-  "release": 747,
-  "target": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
-  "base": "c61a2a85f10d7b585f9edc1d62d756605e046c32",
-  "ref": "release/747-final-acceptance",
-  "previous_request_id": "r747-pfa0a42cd345f"
+  "request_id": "r748-965f0050e7e6",
+  "action": "qualify",
+  "release": 748,
+  "target": "965f0050e7e66a4a01d652818588106b072452ee",
+  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
+  "ref": "release/748-mobile-macd-dependency",
+  "previous_request_id": null
 }
