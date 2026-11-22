@@ -231,6 +231,7 @@ def test_water_routes_remain_authorized():
     for path in (
         "/food/water",
         "/food/water/{entry_id}/delete",
+        "/food/water/{entry_id}/edit",
     ):
         assert path in routes
 

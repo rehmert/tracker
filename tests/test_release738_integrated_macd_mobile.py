@@ -234,7 +234,11 @@ def test_738_workout_action_css_merge_retains_order_and_semantic_forms():
     for path in ("workouts654.html", "workout_quick659.html"):
         src = (TPL / path).read_text()
         Environment().parse(src)
-        assert src.count("tracker-action-flow738.css?v=738") == 1
+        if path == "workout_quick659.html":
+            assert src.count("tracker-workout-gym-bundle745.css?v=745") == 1
+            assert "tracker-action-flow738.css?v=738" not in src
+        else:
+            assert src.count("tracker-action-flow738.css?v=738") == 1
         assert "tracker-action-nav675.css?v=675" not in src
         assert "tracker-integrated-flow696.css?v=696" not in src
         assert "Finish &amp; Review" in src

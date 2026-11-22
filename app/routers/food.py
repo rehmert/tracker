@@ -255,6 +255,42 @@ async def add_water425(
     )
 
 
+@router.post("/food/water/{entry_id}/edit")
+async def edit_water745(
+    entry_id: int,
+    request: Request,
+    db_engine=Depends(get_food_read_engine406),
+):
+    """Correct a dated water record without altering other days or entries."""
+    from .food_quick375 import selected_day
+
+    form = await request.form()
+    original_day = selected_day(form.get("original_day"))
+    new_day = selected_day(form.get("day"))
+    try:
+        ounces = parse_ounces(form.get("ounces"))
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    if entry_id <= 0:
+        raise HTTPException(404, "Water entry not found")
+
+    init_water_schema(db_engine)
+    with db_engine.begin() as db:
+        result = db.execute(text("""
+            UPDATE tracker_water_entries
+            SET logged_on=:new_day, ounces=:ounces
+            WHERE id=:id AND logged_on=:original_day
+        """), {"new_day": new_day, "ounces": ounces,
+               "id": entry_id, "original_day": original_day})
+        if result.rowcount != 1:
+            raise HTTPException(404, "Water entry no longer exists on that day")
+    return RedirectResponse(
+        "/food?day=" + new_day + "#food-water",
+        status_code=303,
+    )
+
+
 @router.post("/food/water/{entry_id}/delete")
 async def delete_water425(
     entry_id: int,

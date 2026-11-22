@@ -1,0 +1,397 @@
+/* Release 659: gym-floor single-machine, touch-first controls. */
+.workout659 { max-width: 860px; margin: 0 auto 3rem; padding: 0 .5rem; }
+.workout659-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.workout659-header h1 { margin: .35rem 0; }
+.workout659-muted { opacity: .85; margin: .4rem 0; }
+.workout659-state { padding: .45rem .75rem; border-radius: 999px; border: 1px solid currentColor; font-weight: 700; }
+.workout659-panel { border: 1px solid var(--border, #8998a7); border-radius: .9rem; margin: 1rem 0; padding: 1.15rem; }
+.workout659-panel h2 { margin: .2rem 0 .65rem; }
+.workout659-progress { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: space-between; border: 1px solid var(--border, #8998a7); border-radius: .65rem; padding: .7rem 1rem; }
+.workout659-machine-picker label { display: block; font-weight: 700; margin-bottom: .4rem; }
+.workout659-picker-row { display: flex; gap: .5rem; align-items: stretch; }
+.workout659-picker-row select { flex: 1; min-width: 0; }
+.workout659-picker-row button { min-width: 70px; }
+.workout659 select, .workout659 input, .workout659 button { min-height: 48px; }
+.workout659-machine-heading { margin-top: 1.2rem; }
+.workout659-machine-heading h2 { font-size: clamp(1.3rem, 4vw, 2rem); margin-bottom: .15rem; }
+.workout659-notes { white-space: pre-wrap; }
+.workout659-prior { display: flex; flex-direction: column; gap: .35rem; padding: .75rem; border-radius: .6rem; background: var(--surface-muted, rgba(127, 127, 127, .1)); margin: .8rem 0; }
+.workout659-prior strong { font-size: 1.2rem; }
+.workout659-number-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; margin: 1rem 0; }
+.workout659-number-control > label { display: block; font-weight: 700; margin-bottom: .3rem; }
+.workout659-stepper { display: flex; align-items: stretch; gap: .2rem; }
+.workout659-stepper button { flex: 0 0 54px; font-size: 1.05rem; padding: 0 .25rem; }
+.workout659-stepper input { min-width: 0; width: 100%; text-align: center; font-size: 1.15rem; }
+.workout659-effort { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: .7rem 0; }
+.workout659-effort input { max-width: 100px; }
+.workout659-main-button { width: 100%; min-height: 58px !important; font-weight: 750; font-size: 1.12rem; }
+.workout659-repeat { margin-top: .7rem; }
+.workout659-repeat-button { font-size: 1rem; }
+.workout659-rest-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.workout659-rest-header label { display: flex; align-items: center; gap: .5rem; }
+.workout659-rest-header select { min-width: 96px; }
+#workout659-rest-display { display: block; text-align: center; font-size: clamp(3rem, 12vw, 5rem); font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; margin: .8rem 0; }
+.workout659-rest-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.workout659-logged p { border-bottom: 1px solid var(--border, #8998a7); padding-bottom: .45rem; }
+.workout659-end { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.workout659-routine-list { display: grid; gap: .7rem; }
+.workout659-routine-list button { width: 100%; text-align: left; padding: .65rem; }
+@media(max-width: 650px) {
+  .workout659 { padding: 0 .15rem; }
+  .workout659-panel { padding: .8rem; }
+  .workout659-number-grid { grid-template-columns: 1fr; gap: .4rem; }
+  .workout659-stepper button { flex-basis: 68px; }
+  .workout659-stepper input { font-size: 1.4rem; }
+  .workout659-rest-header { flex-wrap: wrap; }
+  .workout659-end > form, .workout659-end > form > button { width: 100%; }
+}
+
+/* Release 723: consolidated former 662 machine finder, stepping and navigation rules. */
+/* Release 662: phone-first machine finder, fine controls and navigation. */
+.workout662-directory { margin: .8rem 0 1.1rem; border: 1px solid var(--border,#8998a7); border-radius: .7rem; padding: .65rem .85rem; }
+.workout662-directory summary { cursor: pointer; padding: .35rem 0; font-weight: 700; min-height: 40px; }
+.workout662-directory > label { display:block; margin: .7rem 0 .3rem; font-weight: 650; }
+.workout662-directory > input { box-sizing: border-box; display:block; width:100%; min-width:0; min-height:48px; }
+.workout662-directory > p { margin:.5rem 0; }
+.workout662-directory-list { display:grid; gap:.35rem; max-height:300px; overflow-y:auto; overscroll-behavior:contain; }
+.workout662-directory-list a { display:flex; flex-direction:column; padding:.65rem .75rem; min-height:48px; border:1px solid var(--border,#8998a7); border-radius:.45rem; text-decoration:none; overflow-wrap:anywhere; }
+.workout662-directory-list a[hidden] { display:none !important; }
+.workout662-directory-list a[aria-current="page"] { border-width:2px; }
+.workout662-directory-list a span { font-size:.85rem; opacity:.85; }
+.workout662-adjustments { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.4rem; margin:.5rem 0 .85rem; }
+.workout662-adjustments button { padding:.35rem; min-width:0; font-size:.9rem; }
+.workout662-restore { display:block; width:100%; min-height:44px; margin-top:.4rem; }
+.workout662-nav { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.9rem; }
+.workout662-nav a { display:flex; align-items:center; justify-content:center; flex:1 1 170px; min-height:56px; padding:.65rem; border:1px solid var(--border,#8998a7); border-radius:.65rem; font-weight:700; text-decoration:none; text-align:center; overflow-wrap:anywhere; }
+.workout662-nav .workout662-next { border-width:2px; }
+@media(max-width:600px) {
+  .workout662-adjustments { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .workout662-nav a { flex-basis:100%; }
+}
+/* Release 666: compact, mobile-safe guide next to Rapid Gym logging. */
+.workout666-targets{margin:1rem 0;padding:.85rem;border:1px solid var(--border,#8996a2);border-radius:.7rem;min-width:0;}
+.workout666-targets-head{display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;justify-content:space-between;}
+.workout666-targets-head h3{font-size:1.05rem;margin:.2rem 0;}
+.workout666-targets-head a{display:inline-flex;align-items:center;min-height:44px;}
+.workout666-targets-status{font-size:.88rem;margin:.35rem 0 .65rem;}
+.workout666-target-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:.5rem 0;}
+.workout666-target-values[hidden]{display:none;}
+.workout666-target-values>div{border:1px solid var(--border,#8996a2);border-radius:.45rem;padding:.6rem;min-width:0;}
+.workout666-target-values dt{font-size:.79rem;line-height:1.2;}
+.workout666-target-values dd{font-weight:700;font-size:1.1rem;font-variant-numeric:tabular-nums;margin:.3rem 0 0;overflow-wrap:anywhere;}
+.workout666-targets-note{font-size:.8rem;line-height:1.5;margin:.6rem 0 .2rem;}
+@media(max-width:400px){
+ .workout666-targets{padding:.65rem;}
+ .workout666-target-values{gap:.3rem;}
+ .workout666-target-values>div{padding:.4rem .3rem;}
+ .workout666-target-values dd{font-size:1rem;}
+}
+/* Release 667: mobile-first, explicit frozen-goal guidance in Rapid Gym. */
+.workout667-active-goal{margin:1rem 0;padding:.9rem;border:1px solid var(--border,#8996a2);border-radius:.7rem;min-width:0;}
+.workout667-goal-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.workout667-goal-header h3{font-size:1.05rem;margin:.2rem 0;}
+.workout667-goal-header a{min-height:44px;display:flex;align-items:center;}
+.workout667-active-goal p{margin:.5rem 0;overflow-wrap:anywhere;}
+.workout667-goal-progress strong{font-variant-numeric:tabular-nums;}
+.workout667-goal-note{padding:.5rem;border-left:3px solid var(--border,#8996a2);font-size:.88rem;}
+.workout667-goal-hint{font-size:.83rem;line-height:1.45;opacity:.9;}
+#workout667-use-goal{min-height:48px;max-width:100%;width:100%;font-weight:700;}
+.workout667-set-kind{display:flex;flex-wrap:wrap;gap:.5rem 1rem;border:1px solid var(--border,#8996a2);padding:.7rem;margin:.6rem 0;border-radius:.5rem;}
+.workout667-set-kind legend{font-weight:700;}
+.workout667-set-kind label{display:inline-flex;align-items:center;gap:.4rem;min-height:44px;cursor:pointer;}
+.workout667-set-kind input{width:20px;height:20px;accent-color:currentColor;}
+@media(max-width:430px){
+ .workout667-active-goal{padding:.7rem;}
+ .workout667-set-kind{padding:.5rem;gap:.25rem .7rem;}
+ .workout667-set-kind label{flex:1 1 auto;min-width:0;}
+}
+
+/* Release 723: consolidated former 673 gym offline/draft UX rules. */
+/* Release 673 gym floor: active set first, advanced tools accessible on demand. */
+.ux673-gym-offline {
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.75rem; margin:.9rem 0; padding:0;
+}
+.ux673-gym-offline > summary {
+  min-height:48px; padding:.7rem .85rem;
+  cursor:pointer; font-weight:700;
+  display:flex; align-items:center;
+}
+.ux673-gym-offline-content {
+  padding:.45rem .85rem .85rem;
+  display:flex; flex-wrap:wrap; gap:.5rem;
+}
+.ux673-gym-offline-content h3,
+.ux673-gym-offline-content > p { flex-basis:100%; margin:.25rem 0; }
+.ux673-gym-offline-content button { flex:1 1 180px; min-height:48px; }
+@media(max-width:760px) {
+  .workout659-panel { margin:.6rem 0; }
+  .workout659-number-grid { margin:.55rem 0; }
+  .workout659-main-button { min-height:60px!important; }
+  .ux673-gym-offline-content button { flex-basis:100%; }
+}
+/* Release 675: compact, consistent touch navigation on link-heavy pages.
+   Navigation stays native GET anchors; write actions stay native forms. */
+:is(.ux675-actions, .ux675-compact) {
+  display:flex; flex-wrap:wrap; align-items:stretch;
+  gap:.45rem; margin:.65rem 0 .9rem;
+  min-width:0;
+}
+.ux675-actions > :is(a,.ux675-more),
+.ux675-inline-action {
+  box-sizing:border-box; display:inline-flex;
+  justify-content:center;align-items:center;
+  min-width:0; min-height:44px;
+  padding:.54rem .77rem;
+  border:1px solid var(--rule, var(--border, #9caab7));
+  border-radius:.65rem;
+  background:var(--surface,#fff);
+  color:var(--ink,inherit);
+  font-weight:650; line-height:1.25;
+  text-decoration:none;text-align:center;
+  overflow-wrap:anywhere;
+}
+.ux675-actions > a.ux675-primary {
+  color:#fff; background:var(--teal,#1265ad);
+  border-color:var(--teal,#1265ad);
+}
+.ux675-actions .ux675-more {
+  display:block;padding:0;position:relative; flex:0 1 auto;
+}
+.ux675-actions .ux675-more > summary {
+  box-sizing:border-box;list-style:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  min-height:44px;padding:.54rem .77rem;gap:.4rem;
+  border-radius:inherit;font-weight:650;
+}
+.ux675-actions .ux675-more > summary::-webkit-details-marker{display:none;}
+.ux675-actions .ux675-more > summary::after{content:"⌄";opacity:.75;}
+.ux675-actions .ux675-more[open] > summary::after{content:"⌃";}
+.ux675-actions .ux675-more > div {
+  display:flex;flex-wrap:wrap;gap:.4rem;
+  padding:.5rem;border-top:1px solid var(--rule,var(--border,#9caab7));
+  min-width:12rem;max-width:min(90vw,34rem);
+  background:var(--surface,#fff);border-radius:0 0 .65rem .65rem;
+}
+.ux675-actions .ux675-more > div > a {
+  display:inline-flex;justify-content:center;align-items:center;
+  box-sizing:border-box;min-height:44px;max-width:100%;
+  padding:.5rem .7rem;border:1px solid var(--rule,var(--border,#9caab7));
+  border-radius:.55rem;color:var(--ink,inherit);
+  font-weight:600;text-decoration:none;overflow-wrap:anywhere;
+}
+.ux675-actions .ux675-more[open] { flex-basis:100%; }
+.ux675-actions .ux675-more[open] > div {max-width:100%;}
+.ux675-actions.ux675-compact {margin:.3rem 0;gap:.35rem;}
+.ux675-actions.ux675-compact > :is(a,.ux675-more){min-height:44px;padding:.35rem .65rem;font-size:.91rem;}
+.ux675-actions > a:focus-visible,
+.ux675-actions .ux675-more summary:focus-visible,
+.ux675-actions .ux675-more a:focus-visible,
+.ux675-inline-action:focus-visible {
+  outline:3px solid var(--teal,#1265ad);
+  outline-offset:2px;
+}
+.ux675-actions > :is(a,.ux675-more):hover,
+.ux675-inline-action:hover {filter:brightness(.96);}
+.tracker-quick-fast-paths > .tracker-quick-fast-primary604 a {
+  white-space:normal;min-height:48px;line-height:1.25;
+}
+@media(max-width:760px){
+  .ux675-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.38rem;}
+  .ux675-actions > :is(a,.ux675-more){width:100%;min-height:48px;}
+  .ux675-actions .ux675-more[open] {grid-column:1 / -1;}
+  .ux675-actions .ux675-more > div {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));min-width:0;width:100%;max-width:100%;box-sizing:border-box;}
+  .ux675-actions .ux675-more > div > a {width:100%;min-width:0;white-space:normal;}
+  .ux675-inline-action {min-height:44px;}
+  .workout659-progress > .ux675-actions {flex-basis:100%;width:100%;}
+  .tracker-quick-fast-paths > .tracker-quick-fast-primary604 {grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:350px) {
+  .ux675-actions {grid-template-columns:minmax(0,1fr);}
+  .ux675-actions .ux675-more > div {grid-template-columns:minmax(0,1fr);}
+}
+@media print {.ux675-actions .ux675-more:not([open]){display:none;}}
+/* Release 696: scoped everyday and inventory workflow refinement.
+   One release covers the previously planned 696–697 and 701–702 work.
+   This stylesheet never hides canonical forms, data rows or actions. */
+.tracker-flow696-actions {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.45rem;
+  margin:.6rem 0 .8rem;
+  min-width:0;
+}
+.tracker-flow696-actions > a,
+.tracker-flow696-actions > details > summary,
+.tracker-flow696-more > summary {
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:.45rem .72rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.65rem;
+  color:var(--ink,#192c31);
+  background:var(--surface,#fff);
+  text-decoration:none;
+  font-weight:650;
+  cursor:pointer;
+}
+.tracker-flow696-actions > a.tracker-flow696-primary {
+  background:var(--teal,#1265ad);
+  color:var(--teal-ink,#fff);
+  border-color:var(--teal,#1265ad);
+}
+.tracker-flow696-more {
+  min-width:0;
+  flex:0 1 auto;
+}
+.tracker-flow696-more > summary { list-style-position:inside; }
+.tracker-flow696-more[open] { flex-basis:100%; }
+.tracker-flow696-more > div {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.4rem;
+  margin:.4rem 0 .15rem;
+}
+.tracker-flow696-more > div > a {
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
+  padding:.45rem .65rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.55rem;
+  color:inherit;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+}
+.tracker-flow696-actions :is(a,summary):focus-visible,
+.tracker-flow696-finish :is(button,summary):focus-visible,
+.tracker-flow696-guide > summary:focus-visible {
+  outline:3px solid var(--tracker-brand-blue,#1686df);
+  outline-offset:2px;
+}
+.tracker-flow696-guide {
+  margin:.45rem 0 .7rem;
+  padding:.15rem .7rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.65rem;
+  background:var(--surface,#fff);
+  max-width:85ch;
+}
+.tracker-flow696-guide > summary {
+  display:list-item;
+  cursor:pointer;
+  min-height:44px;
+  padding:.7rem .15rem;
+  font-weight:650;
+}
+.tracker-flow696-guide > :not(summary) { margin:.35rem 0 .65rem; }
+.tracker-flow696-finish {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.45rem;
+  min-width:0;
+}
+.tracker-flow696-finish > button.primary { min-height:48px; }
+.tracker-flow696-finish > details > summary {
+  min-height:44px;
+  padding:.5rem .6rem;
+  border:1px solid var(--rule,#cbd5e1);
+  border-radius:.6rem;
+  cursor:pointer;
+  font-weight:650;
+}
+.tracker-flow696-finish > details[open] { flex-basis:100%; }
+.tracker-flow696-finish > details button { min-height:44px; margin:.25rem 0; }
+.tracker-flow696-coa-tools {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:end;
+  gap:.55rem;
+  margin:.6rem 0 .85rem;
+}
+.tracker-flow696-coa-tools > label { min-width:min(100%,15rem); flex:1 1 16rem; }
+.tracker-flow696-coa-tools input {
+  width:100%;
+  box-sizing:border-box;
+  min-height:44px;
+  font-size:16px;
+}
+.tracker-flow696-coa-tools button { min-height:44px; }
+.tracker-flow696-coa-tools p { flex:1 1 100%; margin:0; }
+#tracker-flow696-coa-table tbody tr[hidden],
+.tracker-flow696-coa-tools [hidden] { display:none !important; }
+#tracker-flow696-coa-table { width:100%; }
+@media(max-width:760px) {
+  .tracker-flow696-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .tracker-flow696-actions > a,
+  .tracker-flow696-actions > details > summary { width:100%; text-align:center; }
+  .tracker-flow696-actions > details[open] { grid-column:1/-1; }
+  .tracker-flow696-more > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .tracker-flow696-finish > button.primary { flex:1 1 100%; }
+  .tracker-flow696-coa-tools > label { flex:1 1 100%; }
+}
+@media(max-width:350px) {
+  .tracker-flow696-actions, .tracker-flow696-more > div { grid-template-columns:1fr; }
+}
+/* The legacy Vials jump bar scrolls sideways on phones. A nested disclosure
+   needs visible overflow, so let this one bar wrap rather than clip its links. */
+@media(max-width:760px) {
+  .tracker-vial-jumps603 {
+    overflow:visible;
+    flex-wrap:wrap;
+    overscroll-behavior:auto;
+    padding:0;
+  }
+  .tracker-vial-jumps603 > .tracker-flow696-more {
+    grid-column:1/-1;
+  }
+  .tracker-vial-jumps603 > .tracker-flow696-more > summary {
+    width:100%;
+  }
+}
+
+.tracker-vial-jumps603 > a.tracker-flow696-primary {
+  background:var(--teal,#1265ad);
+  color:var(--teal-ink,#fff);
+  border-color:var(--teal,#1265ad);
+}
+.tracker-vial-jumps603 > a { min-height:44px; }
+/* Release 716: gym-floor machine insertion and active workout edit links. */
+.workout716-edit-actions {
+  display: flex; gap: .55rem; flex-wrap: wrap; margin: .65rem 0;
+}
+.workout716-edit-actions a {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: .45rem .75rem;
+}
+.workout716-add { padding: 0; }
+.workout716-add > summary {
+  display: flex; align-items: center; cursor: pointer;
+  min-height: 54px; padding: .75rem 1rem; font-weight: 750;
+  list-style-position: inside;
+}
+.workout716-add-body { padding: 0 .95rem 1rem; }
+.workout716-add-body form label {
+  display: block; font-weight: 650; margin: .55rem 0 .3rem;
+}
+.workout716-add-body form input,
+.workout716-add-body form select { width: 100%; max-width: 100%; min-width: 0; }
+.workout716-add-body .workout659-picker-row button {
+  flex: 0 0 auto; min-width: 120px;
+}
+.workout716-new { margin-top: .8rem; border-top: 1px solid var(--border, #8998a7); }
+.workout716-new > summary { cursor: pointer; font-weight: 650; min-height: 48px; padding: .7rem 0; }
+.workout716-new form { display: grid; gap: .45rem; }
+.workout716-new form button { margin-top: .5rem; }
+@media (max-width: 650px) {
+  .workout716-edit-actions a { flex: 1 1 145px; }
+  .workout716-add-body .workout659-picker-row { flex-wrap: wrap; }
+  .workout716-add-body .workout659-picker-row select,
+  .workout716-add-body .workout659-picker-row button { flex: 1 1 100%; }
+}
