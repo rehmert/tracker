@@ -38,3 +38,11 @@
 @media(max-width:350px) {
  .ux673-food-primary { grid-template-columns:minmax(0,1fr); }
 }
+/* Release 745: water correction remains keyboard and phone accessible. */
+#food-water .food745-water-edit{min-width:0;flex:1 1 11rem}
+#food-water .food745-water-edit>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;padding:.35rem .65rem;border:1px solid var(--border,#8998a7);border-radius:.5rem}
+#food-water .food745-water-edit>form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.55rem;margin:.5rem 0;padding:.65rem;border:1px solid var(--border,#8998a7);border-radius:.5rem}
+#food-water .food745-water-edit label{display:grid;gap:.25rem;min-width:0}
+#food-water .food745-water-edit :is(input,button){min-width:0;max-width:100%;min-height:44px;box-sizing:border-box}
+#food-water .food745-water-edit :is(summary,input,button):focus-visible{outline:3px solid var(--teal,#087da6);outline-offset:2px}
+@media(max-width:430px){#food-water .food745-water-edit{flex-basis:100%}}

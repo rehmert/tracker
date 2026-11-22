@@ -222,7 +222,7 @@ def test_738_food_style_merge_preserves_rule_bytes_and_single_link():
         assert f'tracker-food{n}.css?v={n}' not in src
     assert src.index("tracker-food-core738.css?v=738") < src.index(
         "tracker-mobile-daily602.css?v=602"
-    ) < src.index("tracker-food-ux673.css?v=673")
+    ) < src.index("tracker-food-ux673.css?v=745")
 
 
 def test_738_workout_action_css_merge_retains_order_and_semantic_forms():
