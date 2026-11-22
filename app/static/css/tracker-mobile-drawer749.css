@@ -1,0 +1,21 @@
+/* Release 749: remove unused white space beneath short mobile navigation.
+   A long drawer remains internally scrollable up to the dynamic viewport.
+   Desktop navigation and the mobile dock remain unchanged. */
+@media screen and (max-width: 760px) {
+  #app-sidebar.rail {
+    bottom: auto;
+    height: auto;
+    max-height: 100dvh;
+    overflow-y: hidden;
+    box-sizing: border-box;
+  }
+
+  /* The prior 55vh limit wastes the lower part of portrait screens. */
+  #app-sidebar.rail .nav-scroll {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+}
