@@ -1,0 +1,39 @@
+{
+  "action": "qualify",
+  "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_vial_vendor_pagination448.py",
+    "tests/test_workout_activity_cards_browser678.py",
+    "tests/test_workout_activity_cards_browser678.py",
+    "tests/test_workout_activity_cards_browser678.py",
+    "tests/test_attachment_scope396.py",
+    "tests/test_workout_activity_cards_browser678.py",
+    "tests/test_workout_activity_cards_browser678.py",
+    "tests/test_workout_activity_cards_browser678.py",
+    "tests/test_release_workflow.py",
+    "tests/test_workout_activity_cards_browser678.py",
+    "tests/test_workout_activity_cards_browser678.py",
+    "tests/test_workout_activity_cards_browser678.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-22T19:52:49+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_751_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/751-strict-csrf-dev-rollout",
+  "release": 751,
+  "request_id": "r751-25bcd6c46e9b",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T19:49:22+00:00",
+  "status": "failed",
+  "target": "25bcd6c46e9be5db07aed80c819b4093af2e0ebf",
+  "test_counts": [
+    "302 passed, 1 warning",
+    "4956 passed, 21 warnings"
+  ]
+}
