@@ -1,11 +1,11 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r745-d6b34a77b6f7.json",
+  "receipt_path": "receipts/r745-installd6b34a77.json",
   "release": 745,
-  "request_id": "r745-d6b34a77b6f7",
+  "request_id": "r745-installd6b34a77",
   "schema": 1,
-  "status": "passed",
+  "status": "failed",
   "target": "d6b34a77b6f7d3f3299cba9d567201deb5495ae8"
 }
