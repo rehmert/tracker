@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r748-installbd59b6e8",
-  "action": "dev_install",
-  "release": 748,
-  "target": "bd59b6e84ded0e55f91c5d88908ef2a1372ea429",
-  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
-  "ref": "release/748-mobile-macd-dependency",
-  "previous_request_id": "r748-bd59b6e84ded"
+  "request_id": "r749-72e1f2c176a8",
+  "action": "qualify",
+  "release": 749,
+  "target": "72e1f2c176a8feb4477ab73eebb7dcaff1e47396",
+  "base": "bd59b6e84ded0e55f91c5d88908ef2a1372ea429",
+  "ref": "release/749-portrait-sidebar-fit",
+  "previous_request_id": null
 }
