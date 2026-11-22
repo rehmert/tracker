@@ -6,10 +6,11 @@
     "tests/browser/test_strict_csrf521.py",
     "tests/browser/test_strict_csrf521.py",
     "tests/browser/test_strict_csrf521.py",
-    "tests/browser/test_strict_csrf521.py"
+    "tests/browser/test_strict_csrf521.py",
+    "tests/strict751_test_602_mobile_dose_guidance_and_history_are_read_only.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-22T15:31:23+00:00",
+  "finished_at_utc": "2026-11-22T15:42:41+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
@@ -19,11 +20,11 @@
   "previous_request_id": null,
   "ref": "release/751-strict-csrf-dev-rollout",
   "release": 751,
-  "request_id": "r751-a17cebf7720f",
+  "request_id": "r751-b70120ef8b06",
   "schema": 1,
-  "started_at_utc": "2026-11-22T15:25:12+00:00",
+  "started_at_utc": "2026-11-22T15:36:32+00:00",
   "status": "failed",
-  "target": "a17cebf7720f241c525f619a6e46e6a2d0d98893",
+  "target": "b70120ef8b06af1c935829d83b5195e5cfda3a0c",
   "test_counts": [
     "263 passed, 1 warning",
     "7 passed",
