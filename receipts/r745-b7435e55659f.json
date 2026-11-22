@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "0e9925532127eab2c939fb4ed5c045c6bf0dbe11",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T00:38:09+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_745_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_745_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_745_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_745_EXIT_STATUS=0"
+  ],
+  "previous_request_id": null,
+  "ref": "release/745-macd-mobile-controller",
+  "release": 745,
+  "request_id": "r745-b7435e55659f",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T00:37:22+00:00",
+  "status": "passed",
+  "target": "b7435e55659fbb09819101ebd621aca2c72059c9",
+  "test_counts": [
+    "28 passed, 1 warning",
+    "76 passed, 2 warnings"
+  ]
+}
