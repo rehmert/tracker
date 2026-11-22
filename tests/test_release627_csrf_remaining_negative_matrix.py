@@ -14,7 +14,7 @@ from app import config
 from app.main import app
 from app.csrf_reporting import REPORT_HEADER
 from app.csrf_runtime import COOKIE_NAME, HEADER_NAME
-from scripts.tracker_csrf_gap_plan590 import build
+from scripts.tracker_csrf_reconcile627 import build, CURRENT_UNQUALIFIED_ADDITIONS
 
 ROOT = Path(__file__).resolve().parents[1]
 # Session-owned routes validate independent signed double-submit tokens.
@@ -94,22 +94,33 @@ def test_635_regimen_unsafe_routes_are_explicit_and_not_source_qualified():
 
 
 def gap_rows():
+    # Old Release 627 used 144 + 17, a frozen inventory predating the
+    # 652 catalog and 654+ Workout/COA/Food routes. Use the CURRENT
+    # conservative reconciliation, not its obsolete static count.
     report = build()
-    assert report["status"] == "BLOCKED_SOURCE_ONLY_NOT_GLOBAL_CLEARANCE"
-    assert report["total_unsafe_routes"] == 144 + len(NEW_UNQUALIFIED_ROUTES)
-    assert report["remaining_without_source_witness"] == 61 + len(NEW_UNQUALIFIED_ROUTES)
-    rows = [(row["method"], row["path"]) for row in report["unqualified_routes"]]
-    assert len(rows) == 61 + len(NEW_UNQUALIFIED_ROUTES)
+    assert report["status"] == "BLOCKED_PENDING_FULL_DEV_AND_MANUAL_REVIEW"
+    assert report["source_only"] is True
+    assert report["current_unsafe_routes"] >= 202
+    assert report["pre_627_unqualified_routes"] == 61
+    rows = [(row["method"], row["path"])
+            for row in report["remaining_routes"]]
+    assert len(rows) == report["remaining_without_positive_source_witness"]
+    assert len(rows) >= 92
     assert len(set(rows)) == len(rows)
-    assert set(rows) & SESSION_OWNED == SESSION_OWNED
+    assert SESSION_OWNED <= set(rows)
+    assert CURRENT_UNQUALIFIED_ADDITIONS <= set(rows)
     assert NEW_UNQUALIFIED_ROUTES <= set(rows)
-    # No baseline unqualified routes may disappear without an explicit
-    # source-witness reconciliation, even if the total remains unchanged.
+    positives = {(row["method"], row["path"])
+                 for row in report["new_627_positive_routes"]}
+    assert not positives & set(rows)
+    # Session-owned routes have their own mandatory signed scheme.
+    # Ordinary unqualified routes still receive both runtime negative
+    # tests below for every current conservative source declaration.
     return sorted(set(rows) - SESSION_OWNED)
 
 
 UNQUALIFIED_GLOBAL_ROUTES = gap_rows()
-assert len(UNQUALIFIED_GLOBAL_ROUTES) == 55 + len(NEW_UNQUALIFIED_ROUTES)
+assert len(UNQUALIFIED_GLOBAL_ROUTES) >= 86
 
 
 @pytest.fixture(scope="module")

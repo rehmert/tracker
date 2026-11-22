@@ -31,7 +31,8 @@ while IFS= read -r path; do
  case "$path" in
  scripts/tracker-qualify751.sh|scripts/tracker-install751.sh|\
  scripts/tracker-release-scoped751.sh|scripts/tracker-csrf-dev751.sh|\
- tests/test_release751_csrf_activation.py|docs/release-751-csrf-dev.md) ;;
+ tests/test_release751_csrf_activation.py|\
+ tests/test_release627_csrf_remaining_negative_matrix.py|docs/release-751-csrf-dev.md) ;;
  *) die "Unreviewed path: $path" ;;
  esac
 done < <(git diff --name-only "$BASE" "$TARGET")

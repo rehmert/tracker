@@ -25,3 +25,12 @@ Manual DEV browser checks remain meaningful for uncommon long/streamed
 forms or third-party clients. Do not assume source-only negative assertions
 prove every positive path. Strict PROD activation requires separate
 explicit approval and its own signed preflight.
+
+## Qualification correction
+
+Release 751 discovered the legacy 627 negative matrix was still collected
+from the 144+17 frozen historical source inventory. The test now consumes
+the current fail-closed Release 627+705 reconciler and exercises both
+missing-token and forged-token denials for all currently unresolved routes,
+including more recently added endpoints. No positive route is falsely
+classified as certified; existing independent runtime route matrix remains.
