@@ -1,11 +1,11 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r750-install2ff72f49.json",
-  "release": 750,
-  "request_id": "r750-install2ff72f49",
+  "receipt_path": "receipts/r751-48acb7ab29bd.json",
+  "release": 751,
+  "request_id": "r751-48acb7ab29bd",
   "schema": 1,
-  "status": "passed",
-  "target": "2ff72f49449306ea5b11dc9c861d0cac5973131e"
+  "status": "failed",
+  "target": "48acb7ab29bdf55364495b4a1f4adef5de3ba00d"
 }
