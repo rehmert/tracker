@@ -1,0 +1,41 @@
+{
+  "action": "qualify",
+  "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py",
+    "tests/browser/test_release727_labs_cards.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-22T15:21:51+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_751_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/751-strict-csrf-dev-rollout",
+  "release": 751,
+  "request_id": "r751-5d61d3a1eb9f",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T15:20:20+00:00",
+  "status": "failed",
+  "target": "5d61d3a1eb9f699ff1ea704fee052e001e88f1b8",
+  "test_counts": [
+    "263 passed, 1 warning",
+    "7 passed",
+    "213 passed, 2 skipped",
+    "213 passed, 2 skipped"
+  ]
+}
