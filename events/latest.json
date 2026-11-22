@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r749-installe80edbfa.json",
+  "receipt_path": "receipts/r749-pfe80edbfa5ef.json",
   "release": 749,
-  "request_id": "r749-installe80edbfa",
+  "request_id": "r749-pfe80edbfa5ef",
   "schema": 1,
   "status": "passed",
   "target": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7"
