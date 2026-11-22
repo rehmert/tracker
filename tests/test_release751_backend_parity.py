@@ -15,6 +15,42 @@ parity = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(parity)
 
 
+def test_751_chromium_676_parity_merge_retains_all_five_cases():
+    required = {nodeid: 'passed' for nodeid in parity.CHROMIUM_676_NODEIDS}
+    parallel = {'tests/test_a.py::test_one': 'passed'}
+    joined = parity.merge_isolated_chromium676(parallel, required)
+    assert joined == parallel | required
+    assert len(required) == 5
+
+    # Browser failures, skips, missing cases, duplicates and leaked
+    # collection errors are never silently ignored or declared passed.
+    for outcome in ('failed', 'error', 'skipped'):
+        broken = dict(required)
+        broken[next(iter(required))] = outcome
+        with pytest.raises(parity.ParityError):
+            parity.merge_isolated_chromium676(parallel, broken)
+    for nodeid in required:
+        with pytest.raises(parity.ParityError, match='coverage mismatch'):
+            parity.merge_isolated_chromium676(parallel,
+                                              {k: v for k, v in required.items()
+                                               if k != nodeid})
+    with pytest.raises(parity.ParityError, match='coverage mismatch'):
+        parity.merge_isolated_chromium676(parallel,
+                                          required | {'tests/test_a.py::test_extra': 'passed'})
+    with pytest.raises(parity.ParityError, match='duplicate or leaked'):
+        parity.merge_isolated_chromium676(
+            parallel | {next(iter(required)): 'passed'}, required)
+    with pytest.raises(parity.ParityError, match='duplicate or leaked'):
+        parity.merge_isolated_chromium676(
+            parallel | {'__collection__:tests.test_shortcut_buttons_browser676': 'error'},
+            required)
+    # Outcome differences still fail full parity after merging.
+    with pytest.raises(parity.ParityError, match='new_failures=1'):
+        parity.compare_reports(
+            parallel | required,
+            parallel | {**required, next(iter(required)): 'failed'})
+
+
 def test_751_known_baseline_627_collection_error_requires_recovered_tests(capsys):
     key = parity.LEGACY_627_COLLECTION_ERROR
     prefix = parity.LEGACY_627_SOURCE
@@ -233,6 +269,11 @@ def test_751_baseline_gate_is_disposable_and_narrow():
     assert "result.returncode not in (0, 1)" in source
     assert "tracker_pytest_nodeid751" in source
     assert "FOCUSED_BACKEND_TESTS" in source
+    assert "CHROMIUM_676_NODEIDS" in source
+    assert "merge_isolated_chromium676" in source
+    assert "extra_ignores=(CHROMIUM_676_MODULE,)" in source
+    assert "(CHROMIUM_676_MODULE,), parallel=False" in source
+    assert "RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=PASSED" in source
     assert "root / 'baseline-focus'" in source
     assert "root / 'candidate-focus'" in source
     assert "RELEASE_751_BACKEND_FOCUSED_PARITY=PASSED" in source

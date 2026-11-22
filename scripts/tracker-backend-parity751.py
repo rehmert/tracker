@@ -19,8 +19,18 @@ import xml.etree.ElementTree as ET
 APP = Path('/opt/tracker')
 FOCUSED_BACKEND_TESTS = (
     'tests/test_core_user_db394.py',
-    'tests/test_shortcut_buttons_browser676.py',
     'tests/test_workouts655.py',
+)
+# Chromium's computed-style suite operates actual browser subprocesses.
+# Running it amid 16 full-backend workers can destabilize the browser;
+# execute all five cases separately for both source trees, then merge
+# the strict JUnit evidence before comparing every baseline nodeid.
+CHROMIUM_676_MODULE = 'tests/test_shortcut_buttons_browser676.py'
+CHROMIUM_676_NODEIDS = frozenset(
+    CHROMIUM_676_MODULE
+    + '::test_676_mobile_links_look_like_daily_shortcut_tiles['
+    + str(width) + ']'
+    for width in (320, 375, 390, 430, 768)
 )
 IGNORES = (
     'tests/browser',
@@ -193,18 +203,37 @@ def compare_reports(base: dict, candidate: dict) -> dict:
             'inherited_failures': inherited}
 
 
+def merge_isolated_chromium676(parallel: dict, isolated: dict) -> dict:
+    """Every chromium test is mandatory, exactly once, and passes in isolation."""
+    if set(isolated) != CHROMIUM_676_NODEIDS:
+        raise ParityError(
+            'Chromium 676 JUnit coverage mismatch; expected exactly five cases'
+        )
+    if any(outcome != 'passed' for outcome in isolated.values()):
+        raise ParityError('Chromium 676 isolated run failed or skipped')
+    if (set(parallel) & set(isolated)
+            or any(key.startswith(CHROMIUM_676_MODULE + '::')
+                   for key in parallel)
+            or '__collection__:tests.test_shortcut_buttons_browser676' in parallel):
+        raise ParityError('Chromium 676 duplicate or leaked parallel test case')
+    return parallel | isolated
+
+
 def run_suite(python: str, source: Path, data: Path, output: Path,
-              plugin_dir: Path, selectors: tuple[str, ...] | None = None) -> None:
+              plugin_dir: Path, selectors: tuple[str, ...] | None = None,
+              *, parallel: bool = True,
+              extra_ignores: tuple[str, ...] = ()) -> None:
     data.mkdir(mode=0o700)
     env = dict(os.environ, TRACKER_DATA_DIR=str(data),
                # Source first; shared pinned plugin loaded from candidate.
                PYTHONPATH=os.pathsep.join((str(source), str(plugin_dir))),
                PYTHONDONTWRITEBYTECODE='1')
     argv = [python, '-B', '-m', 'pytest', '-p', 'tracker_pytest_nodeid751',
-            '-q', '--tb=short',
-            '--disable-warnings', '-n', '16', '--dist=loadfile',
-            '--durations=20', *(selectors or ('tests',))]
-    argv += [f'--ignore={path}' for path in IGNORES]
+            '-q', '--tb=short', '--disable-warnings']
+    if parallel:
+        argv.extend(('-n', '16', '--dist=loadfile'))
+    argv.extend(('--durations=20', *(selectors or ('tests',))))
+    argv += [f'--ignore={path}' for path in (*IGNORES, *extra_ignores)]
     argv += [f'--junitxml={output}.xml']
     print('RELEASE_751_BACKEND_RUN=' + output.name.upper() + '_STARTED',
           flush=True)
@@ -267,12 +296,32 @@ def main() -> int:
             focused = compare_reports(read_report(root / 'baseline-focus.xml'),
                                       read_report(root / 'candidate-focus.xml'))
             print('RELEASE_751_BACKEND_FOCUSED_PARITY=PASSED', flush=True)
+            # The main suite still covers all backend modules except this
+            # one browser-driven file, whose five cases run serially below.
+            # Both runs are merged fail-closed into a single parity report.
             run_suite(args.python, baseline, root / 'base-data',
-                      root / 'baseline', plugin_dir)
+                      root / 'baseline', plugin_dir,
+                      extra_ignores=(CHROMIUM_676_MODULE,))
             run_suite(args.python, candidate, root / 'candidate-data',
-                      root / 'candidate', plugin_dir)
-            result = compare_reports(read_report(root / 'baseline.xml'),
-                                     read_report(root / 'candidate.xml'))
+                      root / 'candidate', plugin_dir,
+                      extra_ignores=(CHROMIUM_676_MODULE,))
+            print('RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=STARTED',
+                  flush=True)
+            run_suite(args.python, baseline, root / 'base-browser676-data',
+                      root / 'baseline-browser676', plugin_dir,
+                      (CHROMIUM_676_MODULE,), parallel=False)
+            run_suite(args.python, candidate, root / 'candidate-browser676-data',
+                      root / 'candidate-browser676', plugin_dir,
+                      (CHROMIUM_676_MODULE,), parallel=False)
+            baseline_report = merge_isolated_chromium676(
+                read_report(root / 'baseline.xml'),
+                read_report(root / 'baseline-browser676.xml'))
+            candidate_report = merge_isolated_chromium676(
+                read_report(root / 'candidate.xml'),
+                read_report(root / 'candidate-browser676.xml'))
+            print('RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=PASSED',
+                  flush=True)
+            result = compare_reports(baseline_report, candidate_report)
             print('RELEASE_751_BACKEND_BASELINE_CASES=' + str(result['baseline_cases']))
             print('RELEASE_751_BACKEND_CANDIDATE_CASES=' + str(result['candidate_cases']))
             print('RELEASE_751_BACKEND_INHERITED_FAILURES=' + str(result['inherited_failures']))

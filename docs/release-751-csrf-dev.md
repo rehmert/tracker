@@ -177,3 +177,20 @@ only when no baseline cases were collected from that module and **all four**
 candidate test families collect and pass. Other missing tests, other
 collection errors, candidate failures/skips, incomplete reports and runner
 errors still fail closed. No production change and no automatic stage queued.
+
+## Release 676 Chromium backend parity isolation
+
+The 320px computed shortcut style test passed five manual tests (serial and
+`-n 16` in both versions) but produced a single candidate failure only
+amid the complete 16-worker backend run. Its module and three CSS inputs
+have identical Git blobs on pristine DEV 750 and candidate 751, so a 751
+code regression is not established. Preserve the full parity gate, but run
+the five Chromium-dependent test cases serially and separately for **both**
+exact versions, outside the heavily concurrent backend tests. The bulk
+backend run explicitly excludes only this module; the parity checker
+requires exactly the five expected node IDs, all passing, for each isolated
+JUnit report and refuses duplicate/leaked/missing records before merging
+all test identities for the existing no-new-regression comparison.
+No test is deleted, ignored or treated as optional. This changes only DEV
+qualification sequencing, not PROD, application code, or security behavior.
+Release requests remain manual pending successful DEV closeout.
