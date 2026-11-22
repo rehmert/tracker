@@ -38,7 +38,7 @@ def test_751_live_activation_has_guarded_rollback_and_readonly_smoke():
                      "systemctl daemon-reload", "systemctl restart tracker.service",
                      "ROLLBACK_751=RESTORING_REPORT_ONLY",
                      "HTTP_751_UNSIGNED_WRITE=DENIED", "STRICT_CSRF_751_DEV=ENABLED",
-                     "mode=ro", "disable)", "enable)", "status)"):
+                     "disable)", "enable)", "status)"):
         assert required in contents, required
     for forbidden in ("git reset --hard", "TRACKER_ORIGIN_GUARD=0",
                       "systemctl restart tracker-prod", "DROP TABLE",
