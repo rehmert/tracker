@@ -8,6 +8,7 @@ umask 077
 # guarded qualification retains its full set of browser gates unchanged.
 MODE=full
 TARGETED_MODULE=""
+DOSE602_TEST="tests/browser/test_strict_csrf521.py::test_602_mobile_dose_guidance_and_history_are_read_only"
 if [[ $# == 4 && "${3:-}" == --targeted-strict ]]; then
   MODE=targeted
   TARGETED_MODULE="$4"
@@ -463,7 +464,7 @@ if [[ "$MODE" == targeted && "$TARGETED_MODULE" == dose602 ]]; then
     TRACKER_TEST_ISOLATED=1 TRACKER_TEST_STRICT_CSRF=1 \
     TRACKER_BROWSER_QA_DATA_DIR="$DATA" PYTHONDONTWRITEBYTECODE=1 \
     "$PY" -B -m pytest -q --tb=short --maxfail=1 \
-    "tests/browser/test_strict_csrf521.py::test_602_mobile_dose_guidance_and_history_are_read_only"
+    "$DOSE602_TEST"
   echo "TARGETED_DOSE602_HTTP_HTTPS=PASSED"
   exit 0
 fi
