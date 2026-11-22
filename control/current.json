@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r747-installa0a42cd3",
-  "action": "dev_install",
+  "request_id": "r747-pfa0a42cd345f",
+  "action": "prod_preflight",
   "release": 747,
   "target": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
   "base": "c61a2a85f10d7b585f9edc1d62d756605e046c32",
   "ref": "release/747-final-acceptance",
-  "previous_request_id": "r747-a0a42cd345f1"
+  "previous_request_id": "r747-installa0a42cd3"
 }
