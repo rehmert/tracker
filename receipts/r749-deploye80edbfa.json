@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-22T03:27:53+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
+    "PROMOTED_COMMIT=e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
+    "REMOTE_DEPLOY_EXIT_STATUS=0",
+    "PROD_INSTALLED_COMMIT=e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
+    "DEV_CONTROLLED_RELEASE=SUCCESS"
+  ],
+  "previous_request_id": "r749-pfe80edbfa5ef",
+  "ref": "release/749-portrait-sidebar-fit",
+  "release": 749,
+  "request_id": "r749-deploye80edbfa",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T03:27:29+00:00",
+  "status": "passed",
+  "target": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
+  "test_counts": []
+}
