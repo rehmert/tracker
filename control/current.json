@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r749-installe80edbfa",
-  "action": "dev_install",
+  "request_id": "r749-pfe80edbfa5ef",
+  "action": "prod_preflight",
   "release": 749,
   "target": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-  "base": "bd59b6e84ded0e55f91c5d88908ef2a1372ea429",
+  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
   "ref": "release/749-portrait-sidebar-fit",
-  "previous_request_id": "r749-e80edbfa5ef5"
+  "previous_request_id": "r749-installe80edbfa"
 }
