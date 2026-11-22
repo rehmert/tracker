@@ -22,9 +22,11 @@ def test_675_changed_templates_parse_and_load_shared_mobile_styles():
     for name in PAGES:
         src = page(name)
         Environment().parse(src)
-        asset = ('tracker-action-flow738.css?v=738'
-                 if name in ('workouts654.html', 'workout_quick659.html')
-                 else 'tracker-action-nav675.css?v=675')
+        asset = ('tracker-workout-gym-bundle745.css?v=745'
+                 if name == 'workout_quick659.html' else
+                 'tracker-action-flow738.css?v=738'
+                 if name == 'workouts654.html' else
+                 'tracker-action-nav675.css?v=675')
         assert asset in src, name
         assert src.count(asset) == 1
     composite = (ROOT / 'app/static/css/tracker-action-flow738.css').read_text()

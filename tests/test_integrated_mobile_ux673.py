@@ -40,7 +40,7 @@ def test_673_food_focus_preserves_every_existing_capability():
                    "#food-targets", "/food/duplicates"):
         assert f'href="{target}"' in html
     assert html.count('data-food382-section="') == 9
-    assert 'tracker-food-ux673.css?v=673' in html
+    assert 'tracker-food-ux673.css?v=745' in html
     assert '/food/entry' in html
     assert '/food/quick/' in html
     Environment().parse(html)
@@ -58,7 +58,7 @@ def test_673_gym_keeps_recording_and_offline_sync_but_defers_advanced_tools():
     for name in ("draft-save", "draft-restore", "queue-set",
                  "sync-now", "queue-discard", "draft-clear"):
         assert f'id="workout668-{name}"' in html
-    assert 'tracker-workout-gym667.css?v=724' in html
+    assert 'tracker-workout-gym-bundle745.css?v=745' in html
     assert 'tracker-workout-ux673.css' not in html
     Environment().parse(html)
 

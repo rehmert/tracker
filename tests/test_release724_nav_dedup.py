@@ -30,8 +30,9 @@ def test_724_no_duplicate_routine_machine_navigation_or_modified_write_paths():
                  '/workouts/quick/finish'):
         assert html.count(f'action="{path}"') == 1
     assert html.count('{% include "_workout_quick_tools722.html" %}') == 2
-    assert 'tracker-workouts659.css?v=724' in html
-    assert 'tracker-workout-gym667.css?v=724' in html
+    assert html.count('tracker-workout-gym-bundle745.css?v=745') == 1
+    assert 'tracker-workouts659.css?v=724' not in html
+    assert 'tracker-workout-gym667.css?v=724' not in html
 
 
 def test_724_only_orphaned_styles_removed_from_prior_css():

@@ -35,9 +35,11 @@ def test_696_all_nine_pages_load_one_scoped_style_and_compile():
     env = Environment()
     for file in PAGES.values():
         html = read(file)
-        asset = ("tracker-action-flow738.css?v=738"
-                 if file in ("workouts654.html", "workout_quick659.html")
-                 else "tracker-integrated-flow696.css?v=696")
+        asset = ("tracker-workout-gym-bundle745.css?v=745"
+                 if file == "workout_quick659.html" else
+                 "tracker-action-flow738.css?v=738"
+                 if file == "workouts654.html" else
+                 "tracker-integrated-flow696.css?v=696")
         assert html.count(asset) == 1, file
         env.parse(html)
     css = CSS.read_text(encoding="utf-8")
@@ -166,9 +168,11 @@ def test_696_every_existing_page_returns_200_without_writes():
         for path in PAGES:
             response = client.get(path)
             assert response.status_code == 200, (path, response.status_code)
-            asset = ("tracker-action-flow738.css?v=738"
-                     if path in ("/workouts", "/workouts/quick")
-                     else "tracker-integrated-flow696.css?v=696")
+            asset = ("tracker-workout-gym-bundle745.css?v=745"
+                     if path == "/workouts/quick" else
+                     "tracker-action-flow738.css?v=738"
+                     if path == "/workouts" else
+                     "tracker-integrated-flow696.css?v=696")
             assert asset in response.text, path
     # All new behavior is GET navigation or client-only filtering;
     # POST endpoints were not changed and are never called here.

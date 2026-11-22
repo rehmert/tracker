@@ -45,6 +45,11 @@ while IFS= read -r path; do
     tests/test_release745_macd_css.py|\
     tests/test_release738_integrated_macd_mobile.py|\
     tests/test_food_water425.py|\
+    tests/test_integrated_mobile_ux673.py|\
+    tests/test_release724_nav_dedup.py|\
+    tests/test_workouts662.py|\
+    tests/test_integrated_flow696.py|\
+    tests/test_action_navigation675.py|\
     docs/release-745-consolidated.md|\
     docs/tracker-macd-capability-matrix745.md) ;;
     *) fail "Unexpected Release 745 source path: $path" ;;

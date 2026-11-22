@@ -20,6 +20,11 @@ echo "RELEASE_745_CONTROLLER_MACD_CSS=PASSED"
 "$PY" -B -m pytest -q --tb=short --maxfail=1 \
   tests/test_food_water425.py \
   tests/test_release738_integrated_macd_mobile.py \
+  tests/test_integrated_mobile_ux673.py \
+  tests/test_release724_nav_dedup.py \
+  tests/test_workouts662.py \
+  tests/test_integrated_flow696.py \
+  tests/test_action_navigation675.py \
   tests/test_release744_release_coordination.py || exit 43
 echo "RELEASE_745_HISTORICAL_MACD_CONTROLLER=PASSED"
 "$PY" -B -m pytest -q --tb=short --maxfail=1 \
