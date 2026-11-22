@@ -1,24 +1,25 @@
 {
-  "action": "dev_install",
-  "base": "e80edbfa5ef5c7d41a953be36c60c4828b4a86d7",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-22T03:43:30+00:00",
+  "action": "qualify",
+  "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release627_csrf_remaining_negative_matrix.py"
+  ],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-22T15:11:07+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "RELEASE_750_DEV_INSTALL=SUCCESS"
+    "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_751_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_751_EXIT_STATUS=1"
   ],
-  "previous_request_id": "r750-2ff72f494493",
-  "ref": "release/750-offline-browser-multiuser-acceptance",
-  "release": 750,
-  "request_id": "r750-install2ff72f49",
+  "previous_request_id": null,
+  "ref": "release/751-strict-csrf-dev-rollout",
+  "release": 751,
+  "request_id": "r751-48acb7ab29bd",
   "schema": 1,
-  "started_at_utc": "2026-11-22T03:42:02+00:00",
-  "status": "passed",
-  "target": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
-  "test_counts": [
-    "52 passed, 1 warning"
-  ]
+  "started_at_utc": "2026-11-22T15:11:01+00:00",
+  "status": "failed",
+  "target": "48acb7ab29bdf55364495b4a1f4adef5de3ba00d",
+  "test_counts": []
 }
