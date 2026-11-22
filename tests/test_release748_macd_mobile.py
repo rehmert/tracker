@@ -60,14 +60,19 @@ def test_748_labs_signed_report_result_edit_delete_and_date_move(isolated748,sch
     with TestClient(app,base_url=f"{scheme}://testserver") as client:
         assert client.get("/labs/new").status_code==200
         label="748 synthetic lab "+scheme
-        new={"drawn_on":"2026-11-10","lab_name":label}
+        new={"drawn_on":"2026-11-10","lab_name":label,
+             "analyte":"748 baseline analyte","value":"12","unit":"mg/dL",
+             "ref_low":"","ref_high":""}
         assert client.post("/labs",data=new,follow_redirects=False).status_code==403
         created=signed(client,"/labs",new)
         assert created.status_code==303
         match=re.search(r"/labs/(\d+)",created.headers["location"])
         assert match,created.headers["location"]
         route=f"/labs/{match.group(1)}"
-        assert label in client.get(route).text
+        initial_html=client.get(route).text
+        assert label in initial_html
+        existing_ids=set(re.findall(r'action="/lab-results/(\d+)/edit"',initial_html))
+        assert len(existing_ids)==1
 
         result={"analyte":"748 QA Analyte","value":"90","unit":"mg/dL"}
         assert client.post(route+"/results",data={**result,"csrf_token":"fake"},
@@ -75,9 +80,10 @@ def test_748_labs_signed_report_result_edit_delete_and_date_move(isolated748,sch
         added=signed(client,route+"/results",result)
         assert added.status_code==303
         html=client.get(route).text
-        found=re.search(r'action="/lab-results/(\d+)/edit"',html)
-        assert found, "Signed positive analyte was not persisted"
-        xid=found.group(1)
+        ids=set(re.findall(r'action="/lab-results/(\d+)/edit"',html))
+        newly_added=ids-existing_ids
+        assert len(newly_added)==1, "Signed positive analyte was not persisted"
+        xid=newly_added.pop()
         replaced=signed(client,f"/lab-results/{xid}/edit",
                         {**result,"value":"95"})
         assert replaced.status_code==303
