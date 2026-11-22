@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "a0a42cd345f15e61e6a44a20e151271b1ccb0e08",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-22T02:24:03+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r748-d193c2d9afb0",
+  "ref": "release/748-mobile-macd-dependency",
+  "release": 748,
+  "request_id": "r748-installd193c2d9",
+  "schema": 1,
+  "started_at_utc": "2026-11-22T02:20:32+00:00",
+  "status": "failed",
+  "target": "d193c2d9afb09f263bc1d7305d955ff0cf51dc69",
+  "test_counts": [
+    "32 passed, 1 warning",
+    "144 passed, 3 warnings",
+    "84 passed"
+  ]
+}
