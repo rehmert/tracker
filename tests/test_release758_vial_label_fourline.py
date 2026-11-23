@@ -205,9 +205,9 @@ def test_758_scoped_real_orm_preview_and_coa_export_are_consistent(monkeypatch):
     Base.metadata.create_all(engine)
     try:
         with Session(engine) as db:
-            compound=Compound(name="Synthetic Peptide",category="peptide",
+            compound=Compound(name="Test Peptide",category="peptide",
                               primary_unit="mg")
-            purchase=Purchase(vendor="Synthetic Supplier",
+            purchase=Purchase(vendor="Test Vendor",
                               purchased_on=date(2026,11,23))
             coa=Coa(reported_content_value=11.2,
                     reported_content_unit="mg")
@@ -230,7 +230,7 @@ def test_758_scoped_real_orm_preview_and_coa_export_are_consistent(monkeypatch):
                 vial.id,phase="post",fmt="svg",layout="40x20",
                 rotation=0,target_mg="1.4",coa_id=str(coa.id),db=db
             ).body.decode()
-            assert "SYNTHETIC PEPTIDE / SYNTHETIC SUPPLIER" in svg
+            assert "TEST PEPTIDE / TEST VENDOR" in svg
             assert "10mg / 11.2mg" in svg
             # The selected COA is shown for comparison, not adopted as
             # effective content without the vial opt-in setting.
