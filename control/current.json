@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r760-preflight6f7ab",
-  "action": "prod_preflight",
+  "request_id": "r760-deploy6f7abdab",
+  "action": "prod_deploy",
   "release": 760,
   "target": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
   "base": "bb83f1a59de3defd5fe6d0bc83ad09ed4d0cfdac",
   "ref": "release/760-prod-schema-catchup",
-  "previous_request_id": "r760-install6f7abdab"
+  "previous_request_id": "r760-preflight6f7ab"
 }
