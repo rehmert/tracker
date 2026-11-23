@@ -51,7 +51,8 @@ def extract_labs755(db, tables: set[str], start: date, end: date):
         analyte = clean_text(row["analyte"], 120)
         unit = clean_text(row["unit"], 30)
         value = finite_number(row["value"])
-        if analyte and unit and value is not None:
+        # A legitimate unitless ratio is still a numeric lab observation.
+        if analyte and value is not None:
             out.append({
                 "date": str(row["drawn_on"])[:10],
                 "analyte": analyte, "value": value, "unit": unit,

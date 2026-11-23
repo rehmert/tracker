@@ -270,3 +270,21 @@ def test_755_clean_text_avoids_unstructured_free_text():
     assert clean_text("bad\nname") is None
     assert clean_text(" " * 15) is None
     assert clean_text("x" * 200) is None
+
+
+def test_755_unitless_numerical_lab_is_preserved(clinical_db):
+    with sqlite3.connect(clinical_db) as db:
+        db.execute("INSERT INTO lab_results VALUES (9,1,?,?,?,?,?)",
+                   ("Unitless ratio",1.7,"",None,None,"SECRET"))
+    history=extract_all(clinical_db)["labs"]["data"]["history"]
+    ratio=next(x for x in history if x["analyte"]=="Unitless ratio")
+    assert ratio["value"]==1.7
+    assert ratio["unit"] is None
+
+
+def test_755_non_numeric_lab_results_do_not_leak(clinical_db):
+    with sqlite3.connect(clinical_db) as db:
+        db.execute("INSERT INTO lab_results VALUES (11,1,?,?,?,?,?)",
+                   ("Non numeric", "not available","mmol/L",None,None,"SECRET"))
+    history=extract_all(clinical_db)["labs"]["data"]["history"]
+    assert not any(x["analyte"]=="Non numeric" for x in history)
