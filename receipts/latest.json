@@ -1,24 +1,20 @@
 {
-  "action": "dev_install",
-  "base": "35f6aa42aac648f3ed5af527620bd5f4b702b486",
+  "action": "prod_preflight",
+  "base": "04fd141daa17fd2055f9177527296eb9165a59d2",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-23T18:56:47+00:00",
+  "finished_at_utc": "2026-11-23T18:59:24+00:00",
   "markers": [
-    "RELEASE_763_DEV_INSTALL=SUCCESS",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r763-qualify99e10eef",
+  "previous_request_id": "r763-devinstall99e10eef",
   "ref": "release/763-progress-prod-hardening",
   "release": 763,
-  "request_id": "r763-devinstall99e10eef",
+  "request_id": "r763-preflight99e10eef",
   "schema": 1,
-  "started_at_utc": "2026-11-23T18:56:01+00:00",
+  "started_at_utc": "2026-11-23T18:59:22+00:00",
   "status": "passed",
   "target": "99e10eef2125e74b4315f3ee89dc546ae22d7524",
-  "test_counts": [
-    "32 passed, 1 warning"
-  ]
+  "test_counts": []
 }
