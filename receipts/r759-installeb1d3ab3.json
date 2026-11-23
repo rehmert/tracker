@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "6cf718ed0781fdbaa6ff350d782e5cc80758703d",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-23T14:54:14+00:00",
+  "markers": [
+    "RELEASE_759_DEV_INSTALL=SUCCESS",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r759-eb1d3ab3c66a",
+  "ref": "release/759-mass-inventory-display",
+  "release": 759,
+  "request_id": "r759-installeb1d3ab3",
+  "schema": 1,
+  "started_at_utc": "2026-11-23T14:53:42+00:00",
+  "status": "passed",
+  "target": "eb1d3ab3c66aa8d2c8af8cc7ae4ed85bf4d2357d",
+  "test_counts": [
+    "62 passed, 1 warning"
+  ]
+}
