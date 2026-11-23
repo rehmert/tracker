@@ -92,11 +92,12 @@ def test_758_compact_30x15_full_lines_in_svg_and_png(phase,layout):
     for row in range(rows):
         assert inner_ink(pixels,w,h,row*h)==expected
     root=ET.fromstring(svg)
-    for path in root.findall('.//{http://www.w3.org/2000/svg}path'):
+    paths=root.findall('.//{http://www.w3.org/2000/svg}path')
+    assert len(paths)==rows
+    for row,path in enumerate(paths):
         dots={(int(x),int(y)) for x,y in
               re.findall(r"M(\d+) (\d+)h1v2h-1z",path.attrib["d"])}
-        assert dots=={(x,y+(0 if layout=="30x15" else row*h))
-                      for x,y in local for row in ([0] if layout=="30x15" else [0,1])} or dots==set(local) or dots=={(x,y+h) for x,y in local}
+        assert dots=={(x,y+row*h) for x,y in local}
 
 
 def test_758_30x15_handles_requested_40_character_first_line():
