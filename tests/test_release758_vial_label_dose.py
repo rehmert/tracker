@@ -194,7 +194,7 @@ def test_758_individual_preview_and_svg_download_use_identical_target(session,mo
         v.id,phase="post",layout="40x20",rotation=0,
         fmt="svg",download=1,db=session
     )
-    assert b"TARGET:50MG U100:20.833" in result.body
+    assert b"50mg = 20.833 units" in result.body
     assert result.headers["cache-control"]=="private, no-store"
 
 
@@ -213,7 +213,7 @@ def test_758_manual_label_target_overrides_ambiguous_protocols(session,monkeypat
         v.id,phase="post",layout="40x20",fmt="svg",
         target_mg="50",db=session
     )
-    assert b"TARGET:50MG U100:20.833" in manual.body
+    assert b"50mg = 20.833 units" in manual.body
     with pytest.raises(HTTPException) as invalid:
         router.vial_labels423_export(
             v.id,phase="post",target_mg="nan",db=session
@@ -232,11 +232,9 @@ def test_758_bulk_auto_uses_each_vial_concentration(session):
     )
     assert selected==sorted([v.id,w.id])
     lines=[entry for page in pages for entry in page]
-    target_lines=[
-        next(x for x in row if x.startswith("TARGET:"))
-        for row in lines
-    ]
-    assert target_lines==["TARGET:50MG U100:20.833","TARGET:50MG U100:20"]
+    assert all(len(row)==4 for row in lines)
+    target_lines=[row[-1] for row in lines]
+    assert target_lines==["50mg = 20.833 units","50mg = 20 units"]
     with pytest.raises(HTTPException,match="cannot print"):
         router._label_job447(
             session,f"{v.id},{w.id}","10x20x4","auto",90,1
