@@ -317,3 +317,17 @@ def test_758_expiry_and_bud_remain_printed_with_target_and_concentration(session
     assert any(line.startswith("EXP:") for line in selected)
     assert any(line.startswith("BUD:") for line in selected)
     validate_label_fit758(rows,"40x20",0)
+
+
+def test_758_opted_in_effective_strength_is_consistent_between_label_and_units(session):
+    c,v=stock(session)
+    # Simulate a canonical vial view whose approved effective content differs
+    # from the vial's nominal label claim. Avoid creating any private COA.
+    effective=S(dim="mass",conc_per_ml=230000,
+                remaining_base=2300000)
+    dose=dose_line758(effective,50)
+    rows=label_lines(v,"post",dose_line=dose["line"],
+                     concentration_mg_ml=dose["concentration_mg_ml"])
+    assert "VOL:10ML 230MG/ML" in rows
+    assert dose["line"]=="TARGET:50MG U100:21.739"
+    validate_label_fit758(rows,"40x20",0)
