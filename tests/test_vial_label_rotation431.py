@@ -100,9 +100,14 @@ def test_rotated_svg_escapes_user_entered_text():
 def test_selection_page_preserves_rotation(monkeypatch):
     from app.routers import vials
 
-    monkeypatch.setattr(
-        vials, '_get', lambda db, vid: SimpleNamespace(id=42),
-    )
+    fake=SimpleNamespace(id=42,
+                         compound=SimpleNamespace(name="Test Peptide"),
+                         purchase=SimpleNamespace(vendor="Test Vendor"),
+                         production_on=None,
+                         content_value=10,content_unit="mg",
+                         reconstituted_on=None,
+                         volume_ml=None)
+    monkeypatch.setattr(vials, '_get', lambda db, vid: fake)
     monkeypatch.setattr(
         vials, 'render', lambda request, template, **kw: kw,
     )
@@ -124,18 +129,29 @@ def test_export_propagates_rotation_and_download_filename(monkeypatch):
         beyond_use_on=None, expires_on=None, lot='', cap_color='',
     )
     monkeypatch.setattr(vials, '_get', lambda db, vid: fake)
+    # New 2-line labels must not silently truncate data onto legacy
+    # 10x20 strips. The legacy low-level rotated renderer is tested above.
+    with pytest.raises(HTTPException) as too_small:
+        vials.vial_labels423_export(
+            42, layout='10x20x4', phase='pre', fmt='png',
+            rotation=90, download=1, db=object(),
+        )
+    assert too_small.value.status_code == 422
+
     png = vials.vial_labels423_export(
-        42, layout='10x20x4', phase='pre', fmt='png',
-        rotation=90, download=1, db=object(),
+        42, layout='50x30', phase='pre', fmt='png',
+        rotation=0, download=1, db=object(),
     )
-    assert _pixel_rows(png.body)[:2] == (320, 160)
-    assert 'r90.png' in png.headers['content-disposition']
+    assert _pixel_rows(png.body)[:2] == (
+        original.pixels(50), original.pixels(30)
+    )
+    assert '50x30.png' in png.headers['content-disposition']
 
     svg = vials.vial_labels423_export(
-        42, layout='10x20x4', phase='pre', fmt='svg',
-        rotation=90, db=object(),
+        42, layout='50x30', phase='pre', fmt='svg',
+        rotation=0, db=object(),
     )
-    assert svg.body.count(b'rotate(90)') == 4
+    assert b'TEST PEPTIDE / TEST VENDOR / N/A' in svg.body
     assert 'inline' in svg.headers['content-disposition']
 
 
