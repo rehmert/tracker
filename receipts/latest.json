@@ -1,28 +1,27 @@
 {
-  "action": "prod_deploy",
-  "base": "bb83f1a59de3defd5fe6d0bc83ad09ed4d0cfdac",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-23T15:07:18+00:00",
-  "markers": [
-    "DEV_CONTROLLED_RELEASE=SUCCESS",
-    "PROD_INSTALLED_COMMIT=6f7abdabfd584777d6f432fa137be0a8c24b02f4",
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=6f7abdabfd584777d6f432fa137be0a8c24b02f4",
-    "PROMOTED_COMMIT=6f7abdabfd584777d6f432fa137be0a8c24b02f4",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=6f7abdabfd584777d6f432fa137be0a8c24b02f4",
-    "REMOTE_DEPLOY_EXIT_STATUS=0"
+  "action": "qualify",
+  "base": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release603_inventory_purchase_navigation.py"
   ],
-  "previous_request_id": "r760-preflight6f7ab",
-  "ref": "release/760-prod-schema-catchup",
-  "release": 760,
-  "request_id": "r760-deploy6f7abdab",
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-23T15:50:48+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_761_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_761_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_761_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/761-vials-missing-coa-filter",
+  "release": 761,
+  "request_id": "r761-30639360cd20",
   "schema": 1,
-  "started_at_utc": "2026-11-23T15:06:49+00:00",
-  "status": "passed",
-  "target": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
-  "test_counts": []
+  "started_at_utc": "2026-11-23T15:50:42+00:00",
+  "status": "failed",
+  "target": "30639360cd20e9130cdeac1125dbac0f5f7d5acc",
+  "test_counts": [
+    "30 passed, 1 warning"
+  ]
 }
