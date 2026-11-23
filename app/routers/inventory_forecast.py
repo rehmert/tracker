@@ -142,6 +142,9 @@ def build_rows(db, days=28):
             elif volume_plan and missing_concentration:
                 status = "Volume data incomplete"
             elif mixed:
+                # Physical mL remain summable even when mass per withdrawal
+                # differs. Preserve the warning, but show volume-based days.
+                weeks = available / rate
                 status = "Mixed concentrations - review"
             else:
                 weeks = available / rate

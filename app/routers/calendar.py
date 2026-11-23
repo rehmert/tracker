@@ -15,6 +15,8 @@ from ..blend_administration_view import blend_dose_components
 from ..projection_exclusions import exclusions_for, excluded
 from ..templating import render
 from .. import calendar as cal
+from ..services import vial_views
+from ..calendar_vial_math756 import vial_choices756
 
 router = APIRouter()
 
@@ -134,6 +136,15 @@ def _month_events(shown: date, db: Session):
     protocols = list(db.scalars(select(Protocol).where(Protocol.is_active.is_(True))))
     rules = exclusions_for(db, [item.id for protocol in protocols for item in protocol.items])
     missing_start = []
+    # One read-only stock snapshot for all projected dates. No vial is
+    # implicitly selected: the Calendar requires an explicit selection.
+    stocked = list(db.scalars(select(Vial).where(
+        Vial.status.in_(("sealed", "in_use"))
+    ).order_by(Vial.id)))
+    by_compound = {}
+    for vial in stocked:
+        by_compound.setdefault(vial.compound_id, []).append(vial)
+    stock_views = vial_views(db, stocked)
     for protocol in protocols:
         if protocol.start_date is None:
             missing_start.append({'id': protocol.id, 'name': protocol.name})
@@ -144,11 +155,15 @@ def _month_events(shown: date, db: Session):
         for item in protocol.items:
             for when in cal.staged_occurrences(item, protocol.start_date, days_to_project):
                 if first <= when < end and (protocol.end_date is None or when <= protocol.end_date) and not excluded(rules, item.id, when):
+                    options, notice = vial_choices756(
+                        item, when, by_compound.get(item.compound_id, []),
+                        stock_views)
                     planned.setdefault(when, []).append({
                         'protocol_id': protocol.id, 'protocol_item_id': item.id, 'compound_id': item.compound_id, 'amount_value': item.amount_value, 'amount_unit': item.amount_unit,
                         'name': item.compound.name, 'protocol': protocol.name,
                         'dose': f'{item.amount_value:g} {item.amount_unit}',
-                        'dose_time': cal.occurrence_time(item, protocol.start_date, when), 'fasting_hours': item.fasting_hours})
+                        'dose_time': cal.occurrence_time(item, protocol.start_date, when), 'fasting_hours': item.fasting_hours,
+                        'vial_choices': options, 'vial_conversion_notice': notice})
     actual = {}
     logs = db.scalars(select(DoseLog).join(Vial).where(
         DoseLog.kind == 'dose',

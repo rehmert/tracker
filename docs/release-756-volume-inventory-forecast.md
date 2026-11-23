@@ -31,3 +31,26 @@ The dashboard's "Inventory forecast" panel and protocol summary also now
 derive liquid quantities from per-vial concentrations, and mark missing or
 mixed strengths as unknown instead of asserting zero usable stock.
 Existing mass/IU dashboard semantics are unchanged.
+
+
+## Release 756 Calendar extension (same release branch)
+
+A recorded target in mass (mg/mcg/g) is the authoritative planned
+quantity. Calendar review list and day cells now expose an explicit vial
+picker with read-only conversions based on the selected eligible vial's
+**recorded effective** content (including opted-in COA) and liquid volume.
+The calculation shows target mg, vial strength in mg/mL, withdrawal in mL,
+and U-100 syringe markings. Vials with missing concentration, insufficient
+recorded mass, incompatible units, invalid dates/status, or no stock are
+not selectable and generate a clear notice. No concentration is borrowed
+from a different vial. Select is blank until a user explicitly chooses.
+
+The selected vial and original mass-based plan are carried via GET to
+the existing Dose Log. Dose Log performs its existing server-side
+independent amount/concentration validation and saves nothing until the
+user submits the recording. Calendar and preview perform no writes.
+
+For legacy volume protocols, mixed recorded strengths still trigger a
+warning, but valid physical remaining volume can yield a volume-only
+weeks estimate. Different mg/mL strengths must not be treated as
+equivalent amounts of delivered drug. U-100 markings are NOT IU potency.

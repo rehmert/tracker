@@ -1,0 +1,29 @@
+{# Server-computed, read-only conversion for a specific user-selected vial.
+   The existing Dose Log remains authoritative for recording and revalidation. #}
+{% if x.vial_choices %}
+<form method="get" action="/doses" class="calendar-vial-calculator inline"
+      data-calendar-vial-converter>
+  <input type="hidden" name="compound_id" value="{{ x.compound_id }}">
+  <input type="hidden" name="planned_date" value="{{ scheduled_on.isoformat() }}">
+  <input type="hidden" name="planned_time" value="{{ x.dose_time or '' }}">
+  <input type="hidden" name="planned_amount" value="{{ x.amount_value }}">
+  <input type="hidden" name="planned_unit" value="{{ x.amount_unit }}">
+  <label class="field">
+    <span>Calculate withdrawal for {{ x.dose }} — select vial</span>
+    <select name="vial_id" required aria-label="Choose vial for {{ x.name }} {{ scheduled_on }}">
+      <option value="" selected>Select vial</option>
+      {% for c in x.vial_choices %}
+      <option value="{{ c.id }}"
+              data-vial-calculation="{{ c.target_mg }} mg · {{ c.concentration_mg_ml }} mg/mL · {{ c.withdrawal_ml }} mL · {{ c.syringe_units }} U-100 syringe units">
+        {{ c.label }} (#{{ c.id }}) · {{ c.concentration_mg_ml }} mg/mL · {{ c.syringe_units }} U-100 syringe units
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+  <output data-calendar-vial-output aria-live="polite">Select the physical vial to calculate syringe markings.</output>
+  <button type="submit" class="tag">Review selected vial in Dose Log</button>
+</form>
+{% if x.vial_conversion_notice %}<small class="note">{{ x.vial_conversion_notice }}</small>{% endif %}
+{% elif x.vial_conversion_notice and x.amount_unit in ('mg', 'mcg', 'g') %}
+<small class="note">{{ x.vial_conversion_notice }}</small>
+{% endif %}
