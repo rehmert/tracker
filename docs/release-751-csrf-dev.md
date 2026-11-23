@@ -213,3 +213,23 @@ paths remain fail-closed. A new regression test exercises the actual
 release-specific evidence validator in the cheap scoped gate before DEV
 installation. Prior manual 9a20f35c success is historical evidence only;
 the new SHA must qualify independently before install. No auto request queued.
+
+## Release 662 active-workout state isolation in backend parity
+
+The guarded DEV install at 9b6cd1c4 repeated all previous passing gates,
+but its candidate-only full 16-worker run intermittently failed
+`test_662_routine_machine_search_and_fast_set_entry_no_new_writes`.
+That unchanged test assumes an empty active-workout state without arranging
+it; pytest-xdist runs multiple source modules against each worker's persistent
+disposable SQLite database, making its precondition order-dependent.
+
+Rather than suppress the new failure or change real workout behavior, the
+qualification runner now excludes only the 662 module from the 16-worker
+bulk portion and reruns its three original cases in their own temporary
+test process/database against **both** pinned 750 and 751. It requires
+exactly those three stable JUnit nodeids, all passing, and rejects omissions,
+skips, failures, duplicate cases, or leaked collection errors. The full
+baseline vs candidate comparison then includes those three cases, preserving
+strict coverage and fail-closed behavior. A fresh regression test verifies
+the merge's negative cases. PROD and live application code remain untouched;
+no automated release request was queued.

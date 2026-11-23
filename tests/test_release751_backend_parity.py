@@ -64,6 +64,43 @@ def test_751_dev_receipt_accepts_parity_evidence_and_rejects_missing_gates():
     )
 
 
+def test_751_workouts_662_isolated_parity_preserves_all_original_cases():
+    expected = {name: 'passed' for name in parity.WORKOUTS_662_NODEIDS}
+    assert len(expected) == 3
+    other = {'tests/test_a.py::test_normal': 'passed'}
+    merged = parity.merge_isolated_workouts662(other, expected)
+    assert merged == other | expected
+
+    for nodeid in expected:
+        incomplete = {k: v for k, v in expected.items() if k != nodeid}
+        with pytest.raises(parity.ParityError, match='coverage mismatch'):
+            parity.merge_isolated_workouts662(other, incomplete)
+
+    for state in ('failed', 'error', 'skipped'):
+        bad = dict(expected)
+        bad[next(iter(expected))] = state
+        with pytest.raises(parity.ParityError, match='failed or skipped'):
+            parity.merge_isolated_workouts662(other, bad)
+
+    with pytest.raises(parity.ParityError, match='coverage mismatch'):
+        parity.merge_isolated_workouts662(
+            other, expected | {'tests/test_x.py::test_extra': 'passed'})
+    with pytest.raises(parity.ParityError, match='duplicate or leaked'):
+        parity.merge_isolated_workouts662(
+            other | {next(iter(expected)): 'passed'}, expected)
+    with pytest.raises(parity.ParityError, match='duplicate or leaked'):
+        parity.merge_isolated_workouts662(
+            other | {'__collection__:tests.test_workouts662': 'error'}, expected)
+    with pytest.raises(parity.ParityError, match='duplicate or leaked'):
+        parity.merge_isolated_workouts662(
+            other | {'tests/test_workouts662.py::test_extra': 'passed'}, expected)
+    # The comparison remains strict for ordinary test regressions.
+    with pytest.raises(parity.ParityError, match='new_failures=1'):
+        parity.compare_reports(
+            other | expected,
+            other | {**expected, next(iter(expected)): 'failed'})
+
+
 def test_751_chromium_676_parity_merge_retains_all_five_cases():
     required = {nodeid: 'passed' for nodeid in parity.CHROMIUM_676_NODEIDS}
     parallel = {'tests/test_a.py::test_one': 'passed'}
@@ -320,9 +357,13 @@ def test_751_baseline_gate_is_disposable_and_narrow():
     assert "FOCUSED_BACKEND_TESTS" in source
     assert "CHROMIUM_676_NODEIDS" in source
     assert "merge_isolated_chromium676" in source
-    assert "extra_ignores=(CHROMIUM_676_MODULE,)" in source
+    assert "extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,)" in source
     assert "(CHROMIUM_676_MODULE,), parallel=False" in source
     assert "RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=PASSED" in source
+    assert "WORKOUTS_662_NODEIDS" in source
+    assert "merge_isolated_workouts662" in source
+    assert "extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,)" in source
+    assert "RELEASE_751_BACKEND_WORKOUTS_662_ISOLATION=PASSED" in source
     assert "root / 'baseline-focus'" in source
     assert "root / 'candidate-focus'" in source
     assert "RELEASE_751_BACKEND_FOCUSED_PARITY=PASSED" in source

@@ -20,6 +20,7 @@ APP = Path('/opt/tracker')
 FOCUSED_BACKEND_TESTS = (
     'tests/test_core_user_db394.py',
     'tests/test_workouts655.py',
+    'tests/test_workouts662.py',
 )
 # Chromium's computed-style suite operates actual browser subprocesses.
 # Running it amid 16 full-backend workers can destabilize the browser;
@@ -31,6 +32,20 @@ CHROMIUM_676_NODEIDS = frozenset(
     + '::test_676_mobile_links_look_like_daily_shortcut_tiles['
     + str(width) + ']'
     for width in (320, 375, 390, 430, 768)
+)
+# 662 runs through the live TestClient and assumes no active workout exists.
+# The historical test never establishes that precondition. pytest-xdist
+# shares a database among files scheduled on the same worker, so previous
+# workout tests may leave active state. Run the unmodified 662 module in its
+# own disposable DB/process on BOTH versions and keep all results mandatory.
+WORKOUTS_662_MODULE = 'tests/test_workouts662.py'
+WORKOUTS_662_NODEIDS = frozenset(
+    WORKOUTS_662_MODULE + '::' + test
+    for test in (
+        'test_662_routine_machine_search_and_fast_set_entry_no_new_writes',
+        'test_662_untrusted_machine_text_is_escaped_and_existing_routes_unchanged',
+        'test_662_template_and_assets_no_mutation_contract',
+    )
 )
 IGNORES = (
     'tests/browser',
@@ -219,6 +234,22 @@ def merge_isolated_chromium676(parallel: dict, isolated: dict) -> dict:
     return parallel | isolated
 
 
+def merge_isolated_workouts662(parallel: dict, isolated: dict) -> dict:
+    """Retain all three original 662 backend tests with isolated worker state."""
+    if set(isolated) != WORKOUTS_662_NODEIDS:
+        raise ParityError(
+            'Workouts 662 JUnit coverage mismatch; expected exactly three cases'
+        )
+    if any(outcome != 'passed' for outcome in isolated.values()):
+        raise ParityError('Workouts 662 isolated run failed or skipped')
+    if (set(parallel) & set(isolated)
+            or any(key.startswith(WORKOUTS_662_MODULE + '::')
+                   for key in parallel)
+            or '__collection__:tests.test_workouts662' in parallel):
+        raise ParityError('Workouts 662 duplicate or leaked parallel test case')
+    return parallel | isolated
+
+
 def run_suite(python: str, source: Path, data: Path, output: Path,
               plugin_dir: Path, selectors: tuple[str, ...] | None = None,
               *, parallel: bool = True,
@@ -301,10 +332,10 @@ def main() -> int:
             # Both runs are merged fail-closed into a single parity report.
             run_suite(args.python, baseline, root / 'base-data',
                       root / 'baseline', plugin_dir,
-                      extra_ignores=(CHROMIUM_676_MODULE,))
+                      extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,))
             run_suite(args.python, candidate, root / 'candidate-data',
                       root / 'candidate', plugin_dir,
-                      extra_ignores=(CHROMIUM_676_MODULE,))
+                      extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,))
             print('RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=STARTED',
                   flush=True)
             run_suite(args.python, baseline, root / 'base-browser676-data',
@@ -320,6 +351,22 @@ def main() -> int:
                 read_report(root / 'candidate.xml'),
                 read_report(root / 'candidate-browser676.xml'))
             print('RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=PASSED',
+                  flush=True)
+            print('RELEASE_751_BACKEND_WORKOUTS_662_ISOLATION=STARTED',
+                  flush=True)
+            run_suite(args.python, baseline, root / 'base-workouts662-data',
+                      root / 'baseline-workouts662', plugin_dir,
+                      (WORKOUTS_662_MODULE,), parallel=False)
+            run_suite(args.python, candidate, root / 'candidate-workouts662-data',
+                      root / 'candidate-workouts662', plugin_dir,
+                      (WORKOUTS_662_MODULE,), parallel=False)
+            baseline_report = merge_isolated_workouts662(
+                baseline_report,
+                read_report(root / 'baseline-workouts662.xml'))
+            candidate_report = merge_isolated_workouts662(
+                candidate_report,
+                read_report(root / 'candidate-workouts662.xml'))
+            print('RELEASE_751_BACKEND_WORKOUTS_662_ISOLATION=PASSED',
                   flush=True)
             result = compare_reports(baseline_report, candidate_report)
             print('RELEASE_751_BACKEND_BASELINE_CASES=' + str(result['baseline_cases']))
