@@ -300,3 +300,35 @@ def test_755_unauthorized_new_clinical_fields_fail_publication_gate(clinical_db)
     output["interventions"]["data"]["history"][0]["private_extra"]="NOT_ALLOWED"
     with pytest.raises(ValueError,match="INTERVENTION_EXPORT_FIELD_BLOCKED"):
         sync.validate_datasets(output)
+
+
+def test_755_synthetic_full_cli_validates_before_publication(
+        clinical_db, tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("TRACKER_INSTANCE","DEV")
+    config=tmp_path/"config.json"
+    settings={
+        "schema_version":1,
+        "repository":sync.REPOSITORY,
+        "days":365,
+        "lab_allowlist":[],
+        "medication_allowlist":[],
+        "token_file":str(tmp_path/"NO_TOKEN_FILE_NEEDED"),
+        "prod_approved":False,
+        "export_all_labs":True,
+        "export_all_regimens":True,
+        "export_all_compounds":True,
+    }
+    config.write_text(json.dumps(settings))
+    config.chmod(0o600)
+    result=sync.run([
+        "--config",str(config),
+        "--db",str(clinical_db),
+        "--output",str(tmp_path/"local-only"),
+        "--source","synthetic",
+    ])
+    output=capsys.readouterr().out
+    assert result==0
+    assert "PROGRESS_754_STATUS=LOCAL_VALIDATED" in output
+    assert "PROGRESS_754_SCHEMA=VALIDATED" in output
+    assert "PROGRESS_754_DATA_SOURCE=DEV-SYNTHETIC" in output
+    assert not (tmp_path/"NO_TOKEN_FILE_NEEDED").exists()
