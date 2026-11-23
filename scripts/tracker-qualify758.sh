@@ -49,8 +49,6 @@ while IFS= read -r path; do
   scripts/tracker-install758.sh|\
   tests/test_release758_vial_label_30x15.py|\
   tests/test_release758_vial_label_40x20.py|\
-  tests/test_release758_reconcile_agent.py|\
-  scripts/tracker-release-reconcile758.py|\
   tests/test_release758_vial_label_dose.py|\
   tests/test_release758_vial_label_fourline.py|\
   tests/test_release758_vial_production_date.py|\
@@ -97,8 +95,6 @@ files = (
     "app/vial_label_sheets447.py",
     "app/routers/vials.py",
     "tests/test_release758_vial_label_40x20.py",
-    "scripts/tracker-release-reconcile758.py",
-    "tests/test_release758_reconcile_agent.py",
 )
 for filename in files:
     ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
