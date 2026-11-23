@@ -247,3 +247,9 @@ def test_756_volume_calculation_is_not_same_as_international_units():
     assert normalized(2,"IU")==pytest.approx(2)
     assert normalized(3,"units") is None  # U-100 marks: withdrawal-only
     assert normalized(5,"bad") is None
+
+
+def test_756_pk_workspace_handles_unknown_volume_without_template_error():
+    body=(ROOT/"app/templates/pk_workspace.html").read_text()
+    Environment().parse(body)
+    assert "item.available is none" in body

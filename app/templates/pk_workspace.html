@@ -127,7 +127,7 @@ hypothetical and not measured drug concentrations.</p>
         <td>{{ item.protocol }}</td>
         <td>{{ item.compound }}</td>
         <td>{{ item.status }}</td>
-        <td>{{ item.available|round(3) }} {{ item.unit }}</td>
+        <td>{% if item.available is none %}—{% else %}{{ item.available|round(3) }} {{ item.unit }}{% endif %}</td>
       </tr>
       {% else %}
       <tr><td colspan="4">No active inventory forecast rows.</td></tr>
