@@ -1,0 +1,20 @@
+{
+  "action": "dev_install",
+  "base": "90b297fc07c950d5a44a0bf8fe7d4beabfd8b30f",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-23T13:35:55+00:00",
+  "markers": [
+    "EXIT_STATUS=1"
+  ],
+  "previous_request_id": "r758-75a5ad18d49f",
+  "ref": "release/758-vial-label-dose-markings",
+  "release": 758,
+  "request_id": "r758-install75a5ad18",
+  "schema": 1,
+  "started_at_utc": "2026-11-23T13:35:52+00:00",
+  "status": "failed",
+  "target": "75a5ad18d49f7f19a6e0dc24f6c3abc0fa8d7a69",
+  "test_counts": []
+}
