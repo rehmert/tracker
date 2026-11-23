@@ -81,7 +81,9 @@ export GIT_CONFIG_VALUE_1="$QA"
 mkdir -m 700 "$RUN/data"
 cd "$QA"
 export TRACKER_DATA_DIR="$RUN/data" PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1
-bash -n scripts/tracker-qualify758.sh scripts/tracker-install758.sh scripts/tracker-release-scoped758.sh
+for script in scripts/tracker-qualify758.sh scripts/tracker-install758.sh scripts/tracker-release-scoped758.sh; do
+ bash -n "$script"
+done
 "$PY" -B - <<'PYCODE'
 import ast
 from pathlib import Path
