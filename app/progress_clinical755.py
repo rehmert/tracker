@@ -205,7 +205,7 @@ def extract_compounds755(db, tables: set[str], start: date, end: date):
             if name:
                 ingredients.setdefault(x["blend_id"], []).append(name)
         raw = checked(db.execute("""
-            SELECT blend_id, taken_at, entered_value, entered_unit, volume_ml
+            SELECT blend_id, taken_at, entered_value, entered_unit
             FROM blend_doses
             WHERE kind='dose' AND substr(taken_at,1,10) BETWEEN ? AND ?
             ORDER BY taken_at, id
@@ -221,7 +221,6 @@ def extract_compounds755(db, tables: set[str], start: date, end: date):
                 "compounds": names,
                 "recorded_amount": finite_number(x["entered_value"]),
                 "recorded_unit": clean_text(x["entered_unit"], 8),
-                "withdrawn_volume_ml": finite_number(x["volume_ml"]),
                 "certainty": "recorded_blend_administration",
             })
     if {"protocols", "protocol_items", "compounds"}.issubset(tables):

@@ -65,8 +65,7 @@ INTERVENTION_FIELDS_755 = {
     ),
     "recorded_blend_dose": (
         frozenset({"date", "type", "category", "compounds",
-                   "recorded_amount", "recorded_unit",
-                   "withdrawn_volume_ml", "certainty"}),
+                   "recorded_amount", "recorded_unit", "certainty"}),
     ),
     "active_protocol_plan": (
         frozenset({"date", "type", "category", "name", "planned_amount",

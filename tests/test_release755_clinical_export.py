@@ -179,6 +179,7 @@ def test_755_compound_vial_blend_and_active_protocol_events(clinical_db):
     assert len(blend)==1 and set(blend[0]["compounds"])=={
         "Synthetic peptide","Synthetic hormone"}
     assert blend[0]["recorded_unit"]=="units"
+    assert "withdrawn_volume_ml" not in blend[0]
     assert len(plans)==1
     assert plans[0]["certainty"]=="active_what_if_plan_not_confirmed_administration"
     assert not any("waste" in str(x) for x in events)
