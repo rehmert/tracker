@@ -99,6 +99,58 @@ def validate_datasets(datasets):
     return True
 
 
+
+def validate_schema(document, rule, *, path="root"):
+    """Validate the deliberately small, published JSON-Schema v1 subset.
+
+    Schema is pinned in source and only permits type/const/enum/required/
+    properties/additionalProperties/items/minimum/maximum/date-time formats.
+    No external dependency or network-based $ref resolution.
+    """
+    if "const" in rule and document != rule["const"]:
+        raise ValueError("SCHEMA_INVALID")
+    if "enum" in rule and document not in rule["enum"]:
+        raise ValueError("SCHEMA_INVALID")
+    allowed = rule.get("type")
+    if isinstance(allowed, str):
+        allowed = [allowed]
+    fits = {"object": lambda x: isinstance(x, dict),
+            "array": lambda x: isinstance(x, list),
+            "string": lambda x: isinstance(x, str),
+            "integer": lambda x: type(x) is int,
+            "number": lambda x: type(x) in (int, float),
+            "boolean": lambda x: type(x) is bool,
+            "null": lambda x: x is None}
+    if allowed and not any(fits[t](document) for t in allowed):
+        raise ValueError("SCHEMA_INVALID")
+    if isinstance(document, dict):
+        fields = rule.get("properties", {})
+        if not set(rule.get("required", [])).issubset(document):
+            raise ValueError("SCHEMA_INVALID")
+        if rule.get("additionalProperties") is False and set(document) - set(fields):
+            raise ValueError("SCHEMA_INVALID")
+        for key, child in document.items():
+            if key in fields:
+                validate_schema(child, fields[key], path=path+"."+key)
+    elif isinstance(document, list) and "items" in rule:
+        for child in document:
+            validate_schema(child, rule["items"], path=path+"[]")
+    elif isinstance(document, (int, float)) and type(document) is not bool:
+        if "minimum" in rule and document < rule["minimum"]:
+            raise ValueError("SCHEMA_INVALID")
+        if "maximum" in rule and document > rule["maximum"]:
+            raise ValueError("SCHEMA_INVALID")
+    elif isinstance(document, str) and rule.get("format") in ("date", "date-time"):
+        try:
+            if rule["format"] == "date":
+                from datetime import date
+                date.fromisoformat(document)
+            else:
+                datetime.fromisoformat(document.replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError("SCHEMA_INVALID") from None
+
+
 def _api(token, method, path, body=None):
     if not path.startswith("/") or "://" in path:
         raise ValueError("UNSAFE_API_PATH")
@@ -215,8 +267,22 @@ def documents_for(datasets, schema_text):
 
 
 def _status_file(directory, status, successful_at=None):
-    doc = {"status": status, "last_success_utc": successful_at}
     target = directory / "status.json"
+    if successful_at is None and target.is_file() and not target.is_symlink():
+        try:
+            previous = json.loads(target.read_text())
+            successful_at = previous.get("last_success_utc")
+        except (ValueError, OSError):
+            successful_at = None
+    stale = True
+    if successful_at:
+        try:
+            previous_time = datetime.fromisoformat(successful_at.replace("Z", "+00:00"))
+            stale = (datetime.now(timezone.utc) - previous_time).total_seconds() > 48*3600
+        except ValueError:
+            pass
+    doc = {"status": status, "last_success_utc": successful_at,
+           "stale": stale}
     with tempfile.NamedTemporaryFile("w", dir=directory, prefix=".status-",
                                      delete=False, encoding="utf-8") as file:
         temp = Path(file.name)
@@ -265,6 +331,8 @@ def run(argv=None):
         schema = json.loads(schema_text)
         if schema.get("title") != "Tracker progress snapshot v1":
             raise ValueError("SCHEMA_INVALID")
+        for doc in docs.values():
+            validate_schema(doc, schema)
         documents, digest = documents_for(docs, schema_text)
         with tempfile.TemporaryDirectory(prefix=".progress-", dir=output) as scratch:
             folder = Path(scratch)
@@ -283,12 +351,19 @@ def run(argv=None):
             else:
                 result = "LOCAL_VALIDATED"
         last = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
-        _status_file(output, "successful", last)
+        _status_file(output, "successful" if args.sync else "local_validated",
+                     last if args.sync else None)
         print("PROGRESS_754_STATUS=" + result)
         print("PROGRESS_754_SCHEMA=VALIDATED")
         print("PROGRESS_754_DATA_SOURCE=" + label)
         return 0
     except (ValueError, RuntimeError, OSError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        # A failed attempt must not destroy the previous success timestamp.
+        if "output" in locals() and output.is_dir() and not output.is_symlink():
+            try:
+                _status_file(output, "failed")
+            except (OSError, ValueError):
+                pass
         # Do not print raw SQLite errors, URL response bodies or identifying data.
         code = str(exc)
         if not re.fullmatch("[A-Z0-9_]{4,80}", code):

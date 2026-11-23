@@ -296,3 +296,39 @@ def test_754_synthetic_mode_rejects_unmarked_database(fixture_db):
         db.execute("DELETE FROM tracker_progress_synthetic754")
     with pytest.raises(ValueError, match="SYNTHETIC_MARKER_INVALID"):
         datasets(fixture_db)
+
+
+def test_754_published_schema_validation_rejects_bad_dates(fixture_db):
+    docs = datasets(fixture_db)
+    schema = json.loads((ROOT/"app/progress_schema754.json").read_text())
+    for document in docs.values():
+        sync.validate_schema(document, schema)
+    docs["weight"]["generated_at_utc"] = "not-an-iso-time"
+    with pytest.raises(ValueError, match="SCHEMA_INVALID"):
+        sync.validate_schema(docs["weight"], schema)
+    docs["weight"]["generated_at_utc"] = "2026-11-23T12:00:00Z"
+    docs["weight"]["extraneous"] = True
+    with pytest.raises(ValueError, match="SCHEMA_INVALID"):
+        sync.validate_schema(docs["weight"], schema)
+
+
+def test_754_status_preserves_last_success_on_failure(tmp_path):
+    sync._status_file(tmp_path, "successful", "2026-11-23T02:20:00Z")
+    sync._status_file(tmp_path, "failed")
+    value = json.loads((tmp_path/"status.json").read_text())
+    assert value["status"] == "failed"
+    assert value["last_success_utc"] == "2026-11-23T02:20:00Z"
+    assert isinstance(value["stale"], bool)
+
+
+def test_754_transient_network_failures_retry_bounded(monkeypatch):
+    from urllib.error import URLError
+    attempts = []
+    def offline(request, timeout):
+        attempts.append(1)
+        raise URLError("synthetic network failure")
+    monkeypatch.setattr(sync,"urlopen",offline)
+    monkeypatch.setattr(sync.time,"sleep",lambda _: None)
+    with pytest.raises(ValueError, match="GITHUB_NETWORK_UNAVAILABLE"):
+        sync._api("NO_REAL_TOKEN","GET","/repos/rehmert/tracker-progress-data")
+    assert len(attempts) == 3

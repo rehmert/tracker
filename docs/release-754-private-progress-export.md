@@ -80,3 +80,8 @@ source, release artifacts, logs or receipts. Keep strict CSRF unchanged.
 DEV synthetic fixture generation (root-only):
 `TRACKER_INSTANCE=DEV /opt/tracker/.venv/bin/python /opt/tracker/scripts/tracker_progress_fixture754.py /var/lib/tracker-progress-export/fixture.db`
 The exporter checks a separate synthetic-marker table before reading a DEV fixture. A copied live database without that marker is rejected.
+
+Status file: root-only status.json contains successful, local_validated, or
+failed, last_success_utc and stale (48h since last sync). Failed sync retains
+prior success time. Schema validation uses a pinned, narrow local JSON-Schema
+subset and never resolves remote references.
