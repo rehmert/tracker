@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Progress dashboard{% endblock %}
+{% block page_assets %}<link rel="stylesheet" href="/static/css/tracker-progress762.css?v=762">{% endblock %}
+{% block content %}
+<div class="progress762">
+<header class="progress762-head">
+ <div><p class="eyebrow">LONGITUDINAL HEALTH</p><h1>Progress Dashboard</h1>
+ <p class="note">Recorded observations and independent trends—not a body-fat verdict, clinical diagnosis, or composite score.</p></div>
+ <a class="button" href="/vitals">+ Log weight / vitals</a>
+</header>
+<nav class="progress762-jumps" aria-label="Progress sections">
+ <a href="#measure">+ Measurements</a><a href="#composition">+ Body composition</a>
+ <a href="#function">+ Function</a><a href="#marker">+ Event</a><a href="#progress-settings">Preferences</a>
+</nav>
+<form method="get" action="/progress" class="progress762-filter">
+ <label>Time range<select name="days">{% for value, label in ranges.items() %}
+ <option value="{{ value }}" {% if value==days %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+ <label>Event markers<select name="markers"><option value="0" {% if not markers %}selected{% endif %}>Hide</option>
+ <option value="1" {% if markers %}selected{% endif %}>Show</option></select></label>
+ <button type="submit">Apply</button>
+</form>
+<section class="progress762-section" aria-labelledby="progress762-summary-title">
+ <h2 id="progress762-summary-title">At a glance</h2>
+ <div class="progress762-cards">
+  <div><small>Current weight</small><strong>{% if display_weight.latest is not none %}{{ '%.1f'|format(display_weight.latest) }} {{ unit }}{% else %}Not logged{% endif %}</strong></div>
+  <div><small>Weight lost from baseline</small><strong>{% if display_weight.lost is not none %}{{ '%.1f'|format(display_weight.lost) }} {{ unit }}{% else %}—{% endif %}</strong></div>
+  <div><small>Remaining to goal</small><strong>{% if display_weight.remaining is not none %}{{ '%.1f'|format(display_weight.remaining) }} {{ unit }}{% else %}Set goal{% endif %}</strong></div>
+  <div><small>28-day weight trend</small><strong>{% if display_weight.d28 is not none %}{{ '%+.1f'|format(display_weight.d28) }} {{ unit }}{% else %}Insufficient data{% endif %}</strong></div>
+  <div><small>Waist at navel</small><strong>{% if latest_waist is not none %}{{ '%.1f'|format(latest_waist) }} {{ tape_unit }}{% else %}Not measured{% endif %}</strong></div>
+  <div><small>Waist change in range</small><strong>{% if waist_delta is not none %}{{ '%+.1f'|format(waist_delta) }} {{ tape_unit }}{% else %}Need 2 readings{% endif %}</strong></div>
+  <div><small>Matched-set strength</small><strong>{{ strength_status }}</strong></div>
+  <div><small>Completed workouts</small><strong>{{ sessions28 }} / 28 days</strong></div>
+  <div><small>Latest body-fat estimate</small><strong>{% if compositions and compositions[0].body_fat_pct is not none %}{{ '%.1f'|format(compositions[0].body_fat_pct) }}% · {{ compositions[0].method }}{% else %}Optional{% endif %}</strong></div>
+ </div>
+ <details class="progress762-disclosure"><summary>Weight-loss context and coverage</summary>
+  <p>7-day average: {% if display_weight.avg7 is not none %}{{ '%.1f'|format(display_weight.avg7) }} {{ unit }} from {{ weight.n7 }} recorded day(s){% else %}No readings{% endif %}.
+  28-day average: {% if display_weight.avg28 is not none %}{{ '%.1f'|format(display_weight.avg28) }} {{ unit }} from {{ weight.n28 }} recorded day(s){% else %}No readings{% endif %}.</p>
+  <p>7-day average change versus preceding 7 days: {% if display_weight.d7 is not none %}{{ '%+.1f'|format(display_weight.d7) }} {{ unit }}{% else %}Insufficient coverage{% endif %}.
+  28-day average change versus preceding 28 days: {% if display_weight.d28 is not none %}{{ '%+.1f'|format(display_weight.d28) }} {{ unit }}{% else %}Insufficient coverage{% endif %}.</p>
+  {% if weight.pct_lost is not none %}<p>Initial body weight lost: {{ '%.1f'|format(weight.pct_lost) }}%.</p>{% endif %}
+  {% if weight.goal_pct is not none %}<p>Planned weight-loss goal completed: {{ '%.1f'|format(weight.goal_pct) }}%.</p>{% endif %}
+  {% if waist_height is not none %}<p>Waist-to-height ratio: {{ '%.3f'|format(waist_height) }} (navel / entered height).</p>{% endif %}
+  <p>Plateau assessment: {% if weight.plateau is sameas true %}Four weeks of adequately sampled weight observations are broadly stable.{% elif weight.plateau is sameas false %}Four weeks of adequately sampled observations do not indicate a stable trend.{% else %}Not enough consecutive weekly coverage to assess a sustained plateau.{% endif %}</p>
+ </details>
+</section>
+<section class="progress762-section">
+ <h2>Progress Summary</h2>
+ <p class="progress762-interpretation">{{ summary.headline }}</p>
+ <ul>{% for item in summary.evidence %}<li>{{ item }}</li>{% endfor %}</ul>
+ <p class="note">A changing scale, circumference, BIA value or resistance does not, by itself, prove fat loss or muscle growth. Hormones, hydration, glycogen and implant-related BIA error can influence estimates.</p>
+</section>
+<section class="progress762-section">
+ <h2>Weight trend</h2><div class="chartbox">{{ weight_chart|safe }}</div>
+ <p class="note">Dots are recorded measurements. Seven- and 28-day averages require at least 3 and 7 distinct logged days respectively. Missing days are not filled in; long gaps are not interpreted as continuous weight loss.</p>
+</section>
+<section class="progress762-section">
+ <h2>Waist circumference</h2><div class="chartbox">{{ waist_chart|safe }}</div>
+ <p class="note">Measure relaxed, at the navel, at the end of a normal exhalation. Use the same tape placement and time of day. Arm or thigh circumference decreases are not definitive evidence of muscle loss.</p>
+</section>
+<section class="progress762-section" id="measure">
+ <h2>Body measurements</h2>
+ <details {% if edit_kind=='measure' %}open{% endif %} class="progress762-disclosure"><summary>{{ 'Edit' if edit_kind=='measure' else '+ Add' }} body measurements</summary>
+ <form method="post" action="/progress/measure/save" class="progress762-entry">
+  <input type="hidden" name="record_id" value="{{ editing.id if edit_kind=='measure' else '' }}">
+  <label>Date<input required name="measured_on" type="date" value="{{ editing.measured_on.isoformat() if edit_kind=='measure' else now.isoformat() }}"></label>
+  <label>Units<select name="unit" data-progress-unit><option value="in" {% if tape_unit=='in' %}selected{% endif %}>Inches</option><option value="cm" {% if tape_unit=='cm' %}selected{% endif %}>Centimeters</option></select></label>
+  {% for key, field in measure_fields.items() %}
+  <label>{{ field[0] }} <small>({{ tape_unit }})</small>
+  <input name="{{ key }}" type="number" step="any" min="0" inputmode="decimal"
+  value="{{ ('%.2f'|format((editing|attr(key))/2.54 if tape_unit=='in' else editing|attr(key))) if edit_kind=='measure' and editing|attr(key) is not none else '' }}">
+  </label>
+  {% endfor %}
+  <label class="progress762-wide">Technique / notes<input name="notes" maxlength="2000" value="{{ editing.notes if edit_kind=='measure' else '' }}"></label>
+  <div class="progress762-actions"><button type="submit">{{ 'Update' if edit_kind=='measure' else 'Save measurements' }}</button>{% if edit_kind=='measure' %}<a class="button" href="/progress#measure">Cancel edit</a>{% endif %}</div>
+ </form></details>
+ {% if measures %}
+ <div class="progress762-table-scroll"><table><caption>Recent measurements ({{ tape_unit }})</caption>
+ <thead><tr><th>Date</th><th>Navel</th><th>Hips</th><th>Chest</th><th>Actions</th></tr></thead>
+ <tbody>{% for row in measures %}<tr><td>{{ row.measured_on }}</td>
+ <td>{{ '%.1f'|format((row.waist_navel/2.54 if tape_unit=='in' else row.waist_navel)) if row.waist_navel is not none else '—' }}</td>
+ <td>{{ '%.1f'|format((row.hip/2.54 if tape_unit=='in' else row.hip)) if row.hip is not none else '—' }}</td>
+ <td>{{ '%.1f'|format((row.chest/2.54 if tape_unit=='in' else row.chest)) if row.chest is not none else '—' }}</td>
+ <td class="progress762-actions"><a class="button" href="/progress?days={{days}}&edit_kind=measure&edit_id={{row.id}}#measure">Edit</a>
+ <form method="post" action="/progress/measure/{{row.id}}/delete" onsubmit="return confirm('Delete this measurement?')"><button type="submit">Delete</button></form></td></tr>{% endfor %}</tbody></table></div>
+ {% else %}<p class="empty">No tape measurements in this range. Begin with a navel-waist measurement; a BIA device is not required.</p>{% endif %}
+</section>
+<section class="progress762-section" id="composition">
+ <h2>Optional body composition</h2>
+ <p class="note">BIA and DEXA are graphed separately. Values are method-specific estimates, not evidence of proven muscle gain. Enter device, hydration/fasting conditions and other measurement details for consistent comparisons.</p>
+ <div class="progress762-chart-grid">
+  <div><h3>BIA body-fat estimate</h3><div class="chartbox">{{ composition_charts.BIA|safe }}</div></div>
+  <div><h3>DEXA body-fat estimate</h3><div class="chartbox">{{ composition_charts.DEXA|safe }}</div></div>
+ </div>
+ <details {% if edit_kind=='composition' %}open{% endif %} class="progress762-disclosure"><summary>{{ 'Edit' if edit_kind=='composition' else '+ Add' }} body-composition reading</summary>
+ <form method="post" action="/progress/composition/save" class="progress762-entry">
+ <input type="hidden" name="record_id" value="{{ editing.id if edit_kind=='composition' else '' }}">
+ <label>Date<input required name="measured_on" type="date" value="{{ editing.measured_on.isoformat() if edit_kind=='composition' else now.isoformat() }}"></label>
+ <label>Method<select name="method" required>{% for method in ['BIA','DEXA','other'] %}<option value="{{method}}" {% if edit_kind=='composition' and editing.method==method %}selected{% endif %}>{{method}}</option>{% endfor %}</select></label>
+ <label>Mass units<select name="mass_unit"><option value="lb">lb</option><option value="kg">kg</option></select></label>
+ <label>Device / model<input name="device" maxlength="160" value="{{editing.device if edit_kind=='composition' else ''}}"></label>
+ {% for key, field in composition_fields.items() %}
+ <label>{{field[0]}}{% if key.endswith('_kg') %} (lb){% endif %}
+ <input type="number" name="{{key}}" step="any" inputmode="decimal" min="0"
+ value="{{ ('%.2f'|format((editing|attr(key))*2.2046226218)) if edit_kind=='composition' and editing|attr(key) is not none and key.endswith('_kg') else (editing|attr(key) if edit_kind=='composition' and editing|attr(key) is not none else '') }}">
+ </label>{% endfor %}
+ <label class="progress762-wide">Measurement conditions<input name="conditions" maxlength="2000" value="{{editing.conditions if edit_kind=='composition' else ''}}" placeholder="Time, hydration, training, device placement"></label>
+ <label class="progress762-wide">Segmental lean-mass estimates / notes<textarea name="segmental_notes" maxlength="2000" rows="2">{{ editing.segmental_notes if edit_kind=='composition' else '' }}</textarea></label>
+ <div class="progress762-actions"><button type="submit">{{'Update' if edit_kind=='composition' else 'Save estimate'}}</button>{% if edit_kind=='composition' %}<a class="button" href="/progress#composition">Cancel edit</a>{% endif %}</div>
+ </form></details>
+ {% if compositions %}
+ <div class="progress762-table-scroll"><table><caption>Body composition readings</caption><thead><tr><th>Date</th><th>Method</th><th>Body fat</th><th>Device</th><th>Actions</th></tr></thead><tbody>
+ {% for row in compositions %}<tr><td>{{row.measured_on}}</td><td>{{row.method}}</td><td>{{ '%.1f%%'|format(row.body_fat_pct) if row.body_fat_pct is not none else '—' }}</td><td>{{row.device or '—'}}</td><td class="progress762-actions"><a class="button" href="/progress?days={{days}}&edit_kind=composition&edit_id={{row.id}}#composition">Edit</a><form method="post" action="/progress/composition/{{row.id}}/delete" onsubmit="return confirm('Delete this estimate?')"><button type="submit">Delete</button></form></td></tr>{% endfor %}
+ </tbody></table></div>
+ {% else %}<p class="empty">No body-composition readings. The rest of this dashboard works without them.</p>{% endif %}
+</section>
+<section class="progress762-section">
+ <h2>Strength progression</h2>
+ <form method="get" action="/progress" class="progress762-filter">
+ <input type="hidden" name="days" value="{{days}}"><input type="hidden" name="markers" value="{{1 if markers else 0}}">
+ <label>Machine / exercise<select name="machine">{% for e in equipment %}<option value="{{e.id}}" {% if selected_machine==e.id %}selected{% endif %}>{{e.name}} · {{e.gym}}</option>{% endfor %}</select></label>
+ <label>Exactly this many repetitions<input type="number" name="reps" value="{{selected_reps}}" min="1" max="200" required></label>
+ <button type="submit">Compare</button></form>
+ <p class="note">Only completed workouts, working sets, identical equipment IDs and exact repetition counts are compared. Machine settings are not interchangeable. Training volume is not a proxy for muscle growth.</p>
+ <div class="chartbox">{{ strength_chart|safe }}</div>
+ <p>{{strength_count}} comparable session date(s) · <a href="/workouts/analytics">Full machine analytics</a> · <a href="/workouts/quick">Log workout</a></p>
+ <div class="progress762-chart-grid"><div><h3>Workout consistency</h3><div class="chartbox">{{frequency_chart|safe}}</div></div>
+ <div><h3>Recorded training</h3><p><strong>{{sessions7}}</strong> completed sessions in 7 days</p><p><strong>{{sessions28}}</strong> in 28 days</p><p>{{working_count}} working sets in selected range</p></div></div>
+</section>
+<section class="progress762-section" id="function">
+ <h2>Function &amp; joint health</h2>
+ <details {% if edit_kind=='function' %}open{% endif %} class="progress762-disclosure"><summary>{{'Edit' if edit_kind=='function' else '+ Add'}} functional observation</summary>
+ <form method="post" action="/progress/function/save" class="progress762-entry">
+ <input type="hidden" name="record_id" value="{{editing.id if edit_kind=='function' else ''}}">
+ <label>Date<input required name="measured_on" type="date" value="{{editing.measured_on.isoformat() if edit_kind=='function' else now.isoformat()}}"></label>
+ <label>Knee pain (0–10)<input type="number" name="knee_pain" min="0" max="10" value="{{editing.knee_pain if edit_kind=='function' and editing.knee_pain is not none else ''}}"></label>
+ <label>Shoulder pain (0–10)<input type="number" name="shoulder_pain" min="0" max="10" value="{{editing.shoulder_pain if edit_kind=='function' and editing.shoulder_pain is not none else ''}}"></label>
+ <label>Walking minutes<input type="number" name="walking_minutes" step="any" min="0" value="{{editing.walking_minutes if edit_kind=='function' and editing.walking_minutes is not none else ''}}"></label>
+ <label>Walking distance<input type="number" name="walking_distance_km" step="any" min="0" value="{{('%.2f'|format(editing.walking_distance_km / 1.609344)) if edit_kind=='function' and editing.walking_distance_km is not none else ''}}"></label>
+ <label>Distance unit<select name="distance_unit"><option value="mi">Miles</option><option value="km">km</option></select></label>
+ <label>Sit-to-stand repetitions<input type="number" name="sit_to_stand_reps" min="0" value="{{editing.sit_to_stand_reps if edit_kind=='function' and editing.sit_to_stand_reps is not none else ''}}"></label>
+ <label>Recovery (1–5)<input type="number" name="recovery" min="1" max="5" value="{{editing.recovery if edit_kind=='function' and editing.recovery is not none else ''}}"></label>
+ <label class="progress762-wide">Mobility, tolerance / limitations<textarea name="notes" maxlength="2000" rows="2">{{editing.notes if edit_kind=='function' else ''}}</textarea></label>
+ <div class="progress762-actions"><button type="submit">{{'Update' if edit_kind=='function' else 'Save observation'}}</button>{% if edit_kind=='function' %}<a class="button" href="/progress#function">Cancel edit</a>{% endif %}</div></form></details>
+ {% if functional %}<div class="progress762-table-scroll"><table><caption>Recent functional observations</caption><thead><tr><th>Date</th><th>Knee</th><th>Shoulder</th><th>Walking</th><th>Actions</th></tr></thead><tbody>
+ {% for row in functional %}<tr><td>{{row.measured_on}}</td><td>{{row.knee_pain if row.knee_pain is not none else '—'}}</td><td>{{row.shoulder_pain if row.shoulder_pain is not none else '—'}}</td><td>{{row.walking_minutes if row.walking_minutes is not none else '—'}} min</td><td class="progress762-actions"><a class="button" href="/progress?days={{days}}&edit_kind=function&edit_id={{row.id}}#function">Edit</a><form method="post" action="/progress/function/{{row.id}}/delete" onsubmit="return confirm('Delete this observation?')"><button type="submit">Delete</button></form></td></tr>{% endfor %}</tbody></table></div>
+ {% else %}<p class="empty">No functional observations. Optional: track joint pain, walking, recovery or a repeatable sit-to-stand test.</p>{% endif %}
+</section>
+<section class="progress762-section">
+ <h2>Protein &amp; nutrition</h2>
+ <div class="chartbox">{{protein_chart|safe}}</div>
+ <p>{% if protein_avg is not none %}Mean protein on {{complete_food_days}} fully reported food day(s): <strong>{{'%.1f'|format(protein_avg)}} g/day</strong>
+ {% if protein_per_kg is not none %}({{'%.2f'|format(protein_per_kg)}} g/kg at latest recorded weight){% endif %}.{% else %}No complete reported protein days in this range.{% endif %}
+ {% if protein_target is not none %}Personal target: {{'%.0f'|format(protein_target)}} g/day.{% else %}<a href="/food">Set a protein target in Food Journal</a>.{% endif %}</p>
+ <p class="note">{{food_days}} logged food day(s); {{complete_food_days}} with reported protein in every logged item; {{complete_kcal_days}} with reported energy in every logged item. Missing nutrients are not treated as zero. <a href="/food">View calories, carbohydrates and fat in the Food Journal</a>.</p>
+</section>
+<section class="progress762-section">
+ <h2>Blood pressure, pulse &amp; labs</h2>
+ <div class="progress762-chart-grid"><div><h3>Blood pressure</h3><div class="chartbox">{{bp_chart|safe}}</div></div>
+ <div><h3>Recorded pulse</h3><div class="chartbox">{{heart_chart|safe}}</div></div></div>
+ <form action="/progress" method="get" class="progress762-filter">
+ <input type="hidden" name="days" value="{{days}}"><input type="hidden" name="markers" value="{{1 if markers else 0}}">
+ <label>Laboratory analyte<select name="analyte"><option value="">Select available lab</option>{% for value, name in analyte_choices %}<option value="{{value}}" {% if chosen_analyte==value %}selected{% endif %}>{{name}}</option>{% endfor %}</select></label><button type="submit">View lab</button></form>
+ <div class="chartbox">{{lab_chart|safe if lab_chart else '<p class="empty">No comparable lab results in this range.</p>'|safe}}</div>
+ {% if lab_note %}<p class="note">{{lab_note}}</p>{% endif %}
+ <p><a href="/vitals">Vitals</a> · <a href="/labs">Lab Results</a> · <a href="/health-insights">Health Insights</a></p>
+</section>
+<section class="progress762-section" id="marker">
+ <h2>Context / intervention timeline</h2>
+ <p class="note">Record meaningful exercise, nutrition and treatment changes. Markers show timing, not causation; dose logs and medication schedules remain in Tracker's existing history.</p>
+ <details {% if edit_kind=='marker' %}open{% endif %} class="progress762-disclosure"><summary>{{'Edit' if edit_kind=='marker' else '+ Add'}} timeline event / photo date</summary>
+ <form method="post" action="/progress/marker/save" class="progress762-entry">
+ <input type="hidden" name="record_id" value="{{editing.id if edit_kind=='marker' else ''}}">
+ <label>Date<input type="date" name="measured_on" required value="{{editing.measured_on.isoformat() if edit_kind=='marker' else now.isoformat()}}"></label>
+ <label>Category<select name="category">{% for item in ['intervention','workout','nutrition','photo','other'] %}<option value="{{item}}" {% if edit_kind=='marker' and editing.category==item %}selected{% endif %}>{{item|capitalize}}</option>{% endfor %}</select></label>
+ <label class="progress762-wide">Event label<input name="label" required maxlength="160" value="{{editing.label if edit_kind=='marker' else ''}}" placeholder="Started regular gym workouts"></label>
+ <label class="progress762-wide">Notes<textarea name="notes" maxlength="2000" rows="2">{{editing.notes if edit_kind=='marker' else ''}}</textarea></label>
+ <div class="progress762-actions"><button type="submit">{{'Update' if edit_kind=='marker' else 'Save event'}}</button>{% if edit_kind=='marker' %}<a class="button" href="/progress#marker">Cancel edit</a>{% endif %}</div>
+ </form></details>
+ {% if intervention %}<ul class="progress762-records">{% for item in intervention %}<li><div><strong>{{item.measured_on}} · {{item.label}}</strong><small>{{item.category}}{% if item.notes %} · {{item.notes}}{% endif %}</small></div>
+ <span class="progress762-actions"><a class="button" href="/progress?days={{days}}&edit_kind=marker&edit_id={{item.id}}#marker">Edit</a>
+ <form method="post" action="/progress/marker/{{item.id}}/delete" onsubmit="return confirm('Delete this event?')"><button>Delete</button></form></span></li>{% endfor %}</ul>
+ {% else %}<p class="empty">No manual context markers in this period.</p>{% endif %}
+ <p><a href="/health-timeline">View dose, lab and medication timeline</a>. Progress-photo dates can be recorded here without uploading photographs to GitHub.</p>
+</section>
+<section class="progress762-section" id="progress-settings">
+ <h2>Preferences &amp; measurement checklist</h2>
+ {% if checklist %}
+ <ul class="progress762-checklist">{% for row in checklist %}<li><span>{{row.label}} · Every {{row.every}} day(s)</span><strong>{{'Due' if row.due else 'Up to date'}}</strong><small>{% if row.last %}Last: {{row.last}}{% else %}Never recorded{% endif %}</small></li>{% endfor %}</ul>
+ {% else %}<p class="note">All checklist frequencies are disabled; strength still logs automatically from workouts.</p>{% endif %}
+ <details class="progress762-disclosure"><summary>Edit goals, height &amp; reminder frequency</summary>
+ <form method="post" action="/progress/settings" class="progress762-entry">
+ <label>Height<input type="number" name="height" step="any" inputmode="decimal" value="{{'%.2f'|format(settings.height_cm/2.54) if settings and settings.height_cm else ''}}"></label>
+ <label>Height unit<select name="height_unit"><option value="in">Inches</option><option value="cm">Centimeters</option></select></label>
+ <label>Starting weight<input type="number" name="starting_weight" step="any" inputmode="decimal" value="{{'%.1f'|format(settings.starting_weight_kg*2.2046226218) if settings and settings.starting_weight_kg else ''}}"></label>
+ <label>Goal weight<input type="number" name="goal_weight" step="any" inputmode="decimal" value="{{'%.1f'|format(settings.goal_weight_kg*2.2046226218) if settings and settings.goal_weight_kg else ''}}"></label>
+ <label>Weight unit<select name="weight_unit"><option value="lb">lb</option><option value="kg">kg</option></select></label>
+ <label>Tape unit<select name="measurement_unit"><option value="in" {% if tape_unit=='in' %}selected{% endif %}>Inches</option><option value="cm" {% if tape_unit=='cm' %}selected{% endif %}>Centimeters</option></select></label>
+ {% for key, value in frequencies.items() %}
+ <label>{{key|capitalize}} frequency (days; 0=off)<input name="freq_{{key}}" type="number" min="0" max="365" value="{{value}}"></label>
+ {% endfor %}
+ <div class="progress762-actions"><button type="submit">Save preferences</button></div></form>
+ </details>
+ <p class="note">Recommended defaults: weight daily; waist weekly; other tape measurements and optional BIA every 2–4 weeks; photos monthly; optional DEXA every 4–6 months. Labs follow your actual testing schedule. Set any checklist entry to zero to disable it. Checklist status does not send push notifications.</p>
+</section>
+</div>
+{% endblock %}

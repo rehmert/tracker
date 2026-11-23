@@ -1,0 +1,41 @@
+/* Release 762. Mobile-first, isolated Progress Dashboard styles. */
+.progress762{max-width:1120px;margin:0 auto;padding-bottom:3rem}
+.progress762-head{display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap}
+.progress762-head h1{margin:.15rem 0}
+.progress762-jumps{display:flex;gap:.5rem;overflow-x:auto;white-space:nowrap;padding:.65rem 0;scrollbar-width:thin}
+.progress762-jumps a{display:inline-flex;align-items:center;min-height:42px;border:1px solid var(--border, #cbd5e1);padding:.5rem .7rem;border-radius:.65rem;text-decoration:none}
+.progress762-filter{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.6rem;padding:.6rem 0}
+.progress762-filter label,.progress762-entry label{display:flex;flex-direction:column;gap:.2rem;font-weight:600;font-size:.9rem}
+.progress762-filter select,.progress762-filter input,.progress762-entry input,.progress762-entry select,.progress762-entry textarea{box-sizing:border-box;width:100%;min-height:42px;padding:.55rem;border:1px solid #9ca3af;border-radius:.5rem;color:inherit;background:var(--card-bg,var(--surface,#fff));font:inherit}
+.progress762-filter button,.progress762-entry button,.progress762-actions button,.progress762-actions .button{min-height:42px;cursor:pointer}
+.progress762-section{margin:1rem 0;padding:1rem;border:1px solid var(--border,#dbe2e9);border-radius:.8rem;min-width:0}
+.progress762-section h2{margin:.05rem 0 .7rem}
+.progress762-section h3{font-size:1rem;margin:.5rem 0}
+.progress762-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.6rem}
+.progress762-cards>div{border:1px solid var(--border,#dbe2e9);border-radius:.6rem;padding:.7rem;display:flex;flex-direction:column;gap:.25rem;min-height:65px}
+.progress762-cards small,.progress762-records small{display:block;opacity:.8;line-height:1.35}
+.progress762-cards strong{font-size:1.08rem;overflow-wrap:break-word}
+.progress762-interpretation{font-weight:650;font-size:1.06rem}
+.progress762-disclosure{border:1px solid var(--border,#dbe2e9);border-radius:.6rem;margin:.7rem 0;padding:.7rem}
+.progress762-disclosure>summary{cursor:pointer;min-height:42px;display:flex;align-items:center;font-weight:650}
+.progress762-disclosure>summary::marker{content:""}
+.progress762-disclosure>summary::before{content:"▸";margin-right:.5rem}
+.progress762-disclosure[open]>summary::before{content:"▾"}
+.progress762-entry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;padding:.65rem 0}
+.progress762-wide,.progress762-actions{grid-column:1/-1}
+.progress762-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}
+.progress762-table-scroll{width:100%;overflow-x:auto}
+.progress762-table-scroll table{width:100%;min-width:500px}
+.progress762-table-scroll td,.progress762-table-scroll th{padding:.6rem .4rem;white-space:nowrap}
+.progress762-table-scroll td.progress762-actions{display:flex}
+.progress762-table-scroll .button{display:inline-flex;align-items:center;min-height:42px}
+.progress762-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
+.progress762 .chartbox{max-width:100%;overflow-x:auto}
+.progress762 .chart{max-width:100%;height:auto}
+.progress762-records{list-style:none;padding:0;margin:0}
+.progress762-records li{display:flex;justify-content:space-between;gap:.6rem;align-items:flex-start;border-top:1px solid var(--border,#dbe2e9);padding:.6rem 0}
+.progress762-checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:.6rem;padding:0;list-style:none}
+.progress762-checklist li{border:1px solid var(--border,#dbe2e9);border-radius:.5rem;padding:.6rem;display:flex;flex-direction:column;gap:.2rem}
+.progress762-checklist small{opacity:.8}
+@media(max-width:700px){.progress762{padding:.25rem}.progress762-section{padding:.75rem;margin:.6rem 0}.progress762-entry{grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}.progress762-chart-grid{grid-template-columns:1fr}.progress762-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.progress762-filter label{flex:1 1 130px}.progress762-filter button{width:100%}.progress762-table-scroll td.progress762-actions{min-width:135px}}
+@media(max-width:380px){.progress762-entry{grid-template-columns:1fr}.progress762-cards{grid-template-columns:1fr 1fr}.progress762-cards strong{font-size:.95rem}}

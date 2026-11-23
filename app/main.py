@@ -53,6 +53,8 @@ from .routers import inventory_timeline
 from .routers import regimen635
 from .routers import regimen_catalog636
 from .routers import coa_test_type_catalog652
+from . import progress_models762  # noqa: F401 - additive progress tables
+from .routers import progress762
 from . import workout_models654  # noqa: F401 - register workout tables
 from .routers import workouts654
 from . import workout_models655  # noqa: F401 - register routine tables
@@ -329,6 +331,7 @@ app.include_router(workouts664.router)
 app.include_router(workouts665.router)
 app.include_router(workouts667.router)
 app.include_router(workouts668.router)
+app.include_router(progress762.router)
 app.include_router(data_quality674.router)
 app.include_router(recovery674.router)
 
