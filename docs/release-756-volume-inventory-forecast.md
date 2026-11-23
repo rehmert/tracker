@@ -26,3 +26,8 @@ Interval frequency: one administration every N days, weekly dose = 7/N.
 Qualification is restricted to synthetic in-memory ORM and relevant
 forecast regression tests. Requires DEV qualification and separate PROD
 promotion authorization.
+
+The dashboard's "Inventory forecast" panel and protocol summary also now
+derive liquid quantities from per-vial concentrations, and mark missing or
+mixed strengths as unknown instead of asserting zero usable stock.
+Existing mass/IU dashboard semantics are unchanged.

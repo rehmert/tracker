@@ -67,14 +67,26 @@ def build_dashboard_forecasts752(protocols, inventory_dims, today: date):
             ))
         for item in protocol.items:
             dim, weekly = weekly_base752(item)
-            stock = None if dim is None else max(
-                0.0, float(inventory_dims.get(item.compound_id, {}).get(dim, 0.0))
-            )
+            by_dimension = inventory_dims.get(item.compound_id, {})
+            volume_quality = (by_dimension.get("_volume_quality")
+                              if dim == "volume" else None)
+            if (dim == "volume" and not volume_quality and
+                    "volume" not in by_dimension and
+                    any(name in by_dimension for name in ("mass", "iu"))):
+                volume_quality = "missing"
+            stock = (None if dim is None or volume_quality else
+                     max(0.0, float(by_dimension.get(dim, 0.0))))
             status = stage752(protocol, item, today)
             if dim is None:
                 status = "Invalid unit"
             elif weekly is None:
                 status = "Invalid schedule"
+            if status == "Active" and volume_quality:
+                status = {
+                    "missing": "Concentration unavailable",
+                    "partial": "Volume data incomplete",
+                    "mixed": "Mixed concentrations - review",
+                }.get(volume_quality, "Concentration unavailable")
             if status == "Active":
                 combined[(item.compound_id, dim)] += weekly
             rows.append(dict(

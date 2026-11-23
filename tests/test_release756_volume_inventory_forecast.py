@@ -253,3 +253,42 @@ def test_756_pk_workspace_handles_unknown_volume_without_template_error():
     body=(ROOT/"app/templates/pk_workspace.html").read_text()
     Environment().parse(body)
     assert "item.available is none" in body
+
+
+def test_756_dashboard_volume_forecast_uses_known_liquid_stock(db):
+    from app.dashboard_forecast752 import build_dashboard_forecasts752
+    c = plan(db)
+    vial(db,c,content=2400,liquid_ml=10)
+    protocols=list(db.scalars(select(Protocol)).all())
+    rows,low,watch=build_dashboard_forecasts752(
+        protocols,{c.id:{"mass":2400000,"volume":10}},TODAY)
+    r=rows[0]
+    assert r["unit"]=="mL"
+    assert r["remaining"]==pytest.approx(10)
+    assert r["days_left"]==pytest.approx(10/(0.2/3))
+    assert r["status"]=="On hand"
+    assert not low and len(watch)==1
+
+
+@pytest.mark.parametrize("quality,status", [
+    ("missing","Concentration unavailable"),
+    ("partial","Volume data incomplete"),
+    ("mixed","Mixed concentrations - review"),
+])
+def test_756_dashboard_volume_unknown_not_zero_stock(db,quality,status):
+    from app.dashboard_forecast752 import build_dashboard_forecasts752
+    c=plan(db)
+    protocols=list(db.scalars(select(Protocol)).all())
+    rows,low,watch=build_dashboard_forecasts752(
+        protocols,{c.id:{"mass":2400000,"_volume_quality":quality}},TODAY)
+    assert rows[0]["remaining"] is None
+    assert rows[0]["days_left"] is None
+    assert rows[0]["status"]==status
+    assert low==[] and watch==[]
+
+
+def test_756_dashboard_route_builds_concentrations_from_vial_views():
+    code=(ROOT/"app/routers/dashboard.py").read_text()
+    assert 'inventory_dims[vial.compound_id]["volume"]' in code
+    assert '"_volume_quality"' in code
+    assert "doses_remaining = (remaining / item.amount_value" in code

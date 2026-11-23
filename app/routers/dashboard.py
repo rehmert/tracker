@@ -35,12 +35,41 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
     for vial, data in active:
         inventory_by_compound[vial.compound_id] += data.remaining_base
 
-    # Each compound has its own unit dimension. Never mix mass, IU and volume.
+    # Base mass/IU and liquid volume must be calculated separately.
+    # Derive physical volume per vial from the same canonical inventory view
+    # used by the Inventory Forecast, without mixing different strengths.
     inventory_dims = defaultdict(lambda: defaultdict(float))
+    strengths_by_compound = defaultdict(list)
+    volume_without_concentration = set()
+    today = datetime.now().date()
     for vial, data in active:
-        if vial.expires_on and vial.expires_on < datetime.now().date():
-            continue  # expired stock is excluded from usable supply forecasts
+        if (vial.closed_on or
+                (vial.expires_on and vial.expires_on < today) or
+                (vial.beyond_use_on and vial.beyond_use_on < today)):
+            continue
         inventory_dims[vial.compound_id][data.dim] += max(0.0, data.remaining_base)
+        conc = data.conc_per_ml
+        if (conc is None or not isfinite(conc) or conc <= 0
+                or not isfinite(data.remaining_base)):
+            volume_without_concentration.add(vial.compound_id)
+            continue
+        inventory_dims[vial.compound_id]["volume"] += max(0.0, data.remaining_base) / conc
+        strengths_by_compound[vial.compound_id].append((data.dim, conc))
+
+    for cid in set(strengths_by_compound) | volume_without_concentration:
+        strengths = strengths_by_compound[cid]
+        if cid in volume_without_concentration:
+            quality = "partial" if strengths else "missing"
+        elif any(
+            dim != strengths[0][0] or
+            abs(conc - strengths[0][1]) > max(conc, strengths[0][1]) * 1e-6
+            for dim, conc in strengths[1:]
+        ):
+            quality = "mixed"
+        else:
+            quality = None
+        if quality:
+            inventory_dims[cid]["_volume_quality"] = quality
 
     protocol_summaries = []
     now = datetime.now()
@@ -55,10 +84,14 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
             weekly = None
             try:
                 u = parse_unit(item.amount_unit)
-                inventory_base = inventory_dims[item.compound_id].get(u.dim, 0.0)
-                remaining = inventory_base / u.factor
+                by_dimension = inventory_dims[item.compound_id]
+                inventory_base = by_dimension.get(u.dim, 0.0)
+                volume_unknown = (u.dim == "volume" and
+                                  bool(by_dimension.get("_volume_quality")))
+                remaining = None if volume_unknown else inventory_base / u.factor
                 if item.amount_value > 0 and isfinite(item.amount_value):
-                    doses_remaining = remaining / item.amount_value
+                    doses_remaining = (remaining / item.amount_value
+                                       if remaining is not None else None)
                     if item.freq_count > 0 and isfinite(item.freq_count):
                         if item.freq_period == "interval":
                             weekly = item.amount_value * 7 / item.freq_count
