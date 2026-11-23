@@ -128,3 +128,44 @@ def test_752_permanent_csrf_helper_is_auth_aware_and_bounded():
     result = subprocess.run(["bash", "-n", str(ROOT / "scripts/tracker-csrf-dev751.sh")],
                             capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+
+
+def test_752_real_dashboard_renders_unstocked_active_protocol():
+    """A disposable real app/database must show demand without any vials."""
+    from uuid import uuid4
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.db import SessionLocal
+    from app.models import Compound, Protocol, ProtocolItem
+
+    unique = uuid4().hex[:10]
+    protocol_name = "Forecast Plan " + unique
+    compound_name = "Forecast Compound " + unique
+    with TestClient(app) as client:
+        with SessionLocal() as db:
+            compound = Compound(name=compound_name, category="peptide")
+            db.add(compound)
+            db.flush()
+            plan = Protocol(
+                name=protocol_name, is_active=True,
+                start_date=date.today() - timedelta(days=2),
+            )
+            db.add(plan)
+            db.flush()
+            db.add(ProtocolItem(
+                protocol_id=plan.id, compound_id=compound.id,
+                amount_value=1.0, amount_unit="mg",
+                freq_count=1.0, freq_period="day",
+                start_week=1,
+            ))
+            db.commit()
+            plan_id = plan.id
+
+        response = client.get("/", follow_redirects=False)
+        assert response.status_code == 200
+        markup = response.text
+        assert "Inventory forecast" in markup
+        assert protocol_name in markup
+        assert compound_name in markup
+        assert 'href="/protocols/' + str(plan_id) + '"' in markup
+        assert "No stock" in markup
