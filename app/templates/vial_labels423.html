@@ -23,6 +23,9 @@ dimensions in the printer driver before printing.
   <label class="field">
     <span>Sheet layout</span>
     <select name="layout">
+      <option value="50x30" {% if layout == '50x30' %}selected{% endif %}>
+        50 × 30 mm (one, recommended)
+      </option>
       <option value="40x20" {% if layout == '40x20' %}selected{% endif %}>
         40 × 20 mm (one)
       </option>
@@ -64,7 +67,6 @@ dimensions in the printer driver before printing.
   </datalist>
   {% endif %}
 
-  {% if phase == 'post' %}
   <label class="field">
     <span>Selected COA (reported content per vial)</span>
     <select name="coa_id" aria-label="COA tested content for vial label">
@@ -80,7 +82,6 @@ dimensions in the printer driver before printing.
     </select>
     <small>The COA field is displayed for comparison. Syringe units still use Tracker's effective vial concentration, which may use the label amount or an enabled COA average.</small>
   </label>
-  {% endif %}
 
   <label class="field">
     <span>Print direction</span>
@@ -94,8 +95,8 @@ dimensions in the printer driver before printing.
 
   <div><button class="primary">Preview</button></div>
 </form>
+<p class="note">Both labels show compound / vendor / documented production date (MM/DD/YY), then labeled content / selected COA tested content. Reconstituted labels add recon date, recorded BAC-water amount, effective mg/mL and target mg = calculated U-100 syringe units. Unknown production dates print N/A; purchase and COA test dates are never substituted.</p>
 {% if phase == 'post' %}
-  <p class="note">Reconstituted label format: compound/vendor · labeled and selected COA contents · recon date/BAC-water volume/final concentration · mg target/U-100 syringe markings. Fields not recorded show N/A.</p>
   {% if label_dose_detail %}
   <p class="note" id="label-dose-summary758">
     Label target: <strong>{{ label_dose_detail.target_mg|num_input }} mg</strong>.

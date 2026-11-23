@@ -63,7 +63,7 @@ def label_panels447(vials, phase="auto", copies=1, *,
             if phase == "auto" else phase
         )
         try:
-            compact = (four_line_details or {}).get(vial.id) if applied == "post" else None
+            compact = (four_line_details or {}).get(vial.id)
             if compact is not None:
                 lines = list(compact)
             else:

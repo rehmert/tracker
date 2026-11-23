@@ -77,17 +77,30 @@ def _plain758(value):
     return re.sub(r"\s+"," ",s).strip().upper() or "N/A"
 
 
+def _first_two_lines758(vial,coa):
+    """Pre/post label identity and tested content, never use purchase date."""
+    name=_plain758(getattr(getattr(vial,"compound",None),"name",None))
+    vendor=_plain758(getattr(getattr(vial,"purchase",None),"vendor",None))
+    production=getattr(vial,"production_on",None)
+    production_text=production.strftime("%m/%d/%y") if isinstance(production,date) else "N/A"
+    original=_content758(vial.content_value,vial.content_unit)
+    tested=(_content758(coa.reported_content_value,
+                        coa.reported_content_unit)
+            if coa is not None else "N/A")
+    return [f"{name} / {vendor} / {production_text}",
+            f"{original} / {tested}"]
+
+
+def two_line_label758(vial,*,coa=None):
+    """Exactly two lines for unreconstituted vials."""
+    return _first_two_lines758(vial,coa)
+
+
 def four_line_label758(vial,view,*,coa=None,detail=None):
     """Exactly four lines; blank data is shown as N/A, never fabricated."""
     stamp=getattr(vial,"reconstituted_on",None)
     if not isinstance(stamp,date):
         raise ValueError("Record the reconstitution date before printing a mixed label.")
-    name=_plain758(getattr(getattr(vial,"compound",None),"name",None))
-    vendor=_plain758(getattr(getattr(vial,"purchase",None),"vendor",None))
-    original=_content758(vial.content_value,vial.content_unit)
-    tested=(_content758(coa.reported_content_value,
-                        coa.reported_content_unit)
-            if coa is not None else "N/A")
     # COA content is explicitly DISPLAY-only. The dose/concentration comes
     # from canonical vial_views (label claim OR allowed COA average).
     dim=view.dim if view is not None else None
@@ -114,29 +127,23 @@ def four_line_label758(vial,view,*,coa=None,detail=None):
         dose=f"{target}mg = {units} units"
     else:
         dose="N/A mg = N/A units"
-    return [
-        f"{name} / {vendor}",
-        f"{original} / {tested}",
-        recon,
-        dose,
-    ]
+    return _first_two_lines758(vial,coa) + [recon,dose]
 
 
 def validate_four_line_fit758(lines,layout,rotation):
     """Reject truncation in *both* the SVG and the actual PNG glyph path."""
     from . import vial_labels423 as base
     from . import vial_label_rotation431 as rotated
-    if len(lines)!=4 or not all(isinstance(s,str) and s for s in lines):
-        raise ValueError("Reconstituted labels require four nonempty lines.")
+    if len(lines) not in (2,4) or not all(isinstance(s,str) and s for s in lines):
+        raise ValueError("Vial labels require exactly two or four nonempty lines.")
     w,h,_,_=base._panel_size(layout)
-    # The 40x20 normal PNG uses the dedicated horizontal glyph condensation.
-    # Rotation and other layouts still use legacy 2x horizontal glyphs, which
-    # could silently clip a row despite appearing complete in SVG. Fail
-    # closed until both render paths support an equivalent compact font.
-    if layout != "40x20" or rotation != 0:
+    # The compact bitmap path handles two- and four-line outputs on
+    # 40×20 and 50×30 media only. Other legacy strip layouts/rotations
+    # cannot guarantee complete lines in both SVG and PNG.
+    if layout not in ("40x20","50x30") or rotation != 0:
         raise ValueError(
-            "Four-line reconstituted labels require 40x20 mm with "
-            "normal text direction to avoid clipped dose values."
+            "Two- and four-line labels require 40x20 or 50x30 mm "
+            "with normal text direction to avoid clipped values."
         )
     text_w,text_h=w,h
     chosen=(rotated._selected_rotated(lines,text_w,text_h)
@@ -149,7 +156,7 @@ def validate_four_line_fit758(lines,layout,rotation):
         len(s)>max_glyphs for s in lines
     ):
         raise ValueError(
-            "The chosen label layout cannot print all four complete lines. "
-            "Choose 40x20 mm with normal orientation or shorten the "
-            "compound/vendor text; never print truncated dose values."
+            "The chosen layout cannot print all complete label lines. "
+            "Choose 50x30 mm (normal orientation) or shorten the "
+            "compound/vendor text; values must never be truncated."
         )

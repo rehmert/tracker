@@ -11,6 +11,7 @@ DPI = 203
 # One physical sticker dimensions, columns, rows.
 LAYOUTS = {
     '40x20': (40, 20, 1, 1),
+    '50x30': (50, 30, 1, 1),
     '30x15x2': (30, 15, 1, 2),
     '10x20x4': (10, 20, 4, 1),
 }
@@ -215,6 +216,7 @@ FONT = {
 '/':('00001','00001','00010','00100','01000','10000','10000'),
 '-':('00000','00000','00000','11111','00000','00000','00000'),
 ' ':('00000',)*7,
+'=':('00000','11111','00000','11111','00000','00000','00000'),
 '?':('01110','10001','00001','00010','00100','00000','00100'),
 }
 
@@ -246,7 +248,9 @@ def png_bytes(lines, layout):
             # The new four-line layout needs compact horizontal glyphs
             # without shrinking the vertical 203-DPI bitmap text. Legacy
             # labels remain pixel-identical to their existing renderer.
-            compact = len(lines) == 4 and lines[-1].endswith(' units')
+            compact = ((len(lines) == 4 and lines[-1].endswith(' units'))
+                       or (len(lines) == 2 and ' / ' in lines[0]
+                           and ' / ' in lines[1]))
             scale_x = 1 if compact else scale
 
             for index, line in enumerate(_selected(lines, w, h)):
@@ -258,7 +262,10 @@ def png_bytes(lines, layout):
                     if x + 5 * scale_x > bx + w - 3:
                         break
 
-                    for gy, bits in enumerate(FONT.get(ch, FONT['?'])):
+                    # Do not print '?' for the user's mg/mL/units text:
+                    # lower-case bitmap glyphs use the readable capital
+                    # equivalent where the legacy font has no lower-case.
+                    for gy, bits in enumerate(FONT.get(ch, FONT.get(ch.upper(), FONT['?']))):
                         for gx, bit in enumerate(bits):
                             if bit == '1':
                                 for sy in range(scale):

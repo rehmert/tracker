@@ -100,27 +100,30 @@ def _label_job447(db, ids, layout, phase, rotation, copies):
                         # Missing concentration or insufficient stock: no
                         # guessed syringe markings on this vial's label.
                         continue
+        from ..vial_label_fourline758 import (
+            two_line_label758, four_line_label758, selected_coa758,
+            validate_four_line_fit758,
+        )
         four_line_details = {}
-        if isinstance(db, Session) and phase != "pre":
-            from ..vial_label_fourline758 import (
-                four_line_label758, selected_coa758,
-                validate_four_line_fit758,
-            )
+        if isinstance(db, Session):
             post_vials = [v for v in ordered if
                           phase == "post" or
                           (phase == "auto" and v.reconstituted_on)]
-            if post_vials:
-                views = services.vial_views(db, post_vials)
-                for v in post_vials:
-                    four_line_details[v.id] = four_line_label758(
-                        v, views[v.id], coa=selected_coa758(v),
-                        detail=dose_details.get(v.id))
+            post_views = services.vial_views(db, post_vials) if post_vials else {}
+            for v in ordered:
+                selected = selected_coa758(v)
+                post = phase == "post" or (phase == "auto" and v.reconstituted_on)
+                four_line_details[v.id] = (
+                    four_line_label758(v, post_views[v.id],
+                                       coa=selected, detail=dose_details.get(v.id))
+                    if post else two_line_label758(v, coa=selected)
+                )
         panels = label_panels447(
             ordered, phase, copies, dose_details=dose_details,
             four_line_details=four_line_details
         )
-        for lines in panels:
-            if len(lines) == 4 and lines[-1].endswith(" units"):
+        if isinstance(db, Session):
+            for lines in panels:
                 validate_four_line_fit758(lines, layout, rotation)
         pages = paginate447(panels, layout)
     except ValueError as exc:
@@ -132,9 +135,9 @@ def _label_job447(db, ids, layout, phase, rotation, copies):
 def vial_label_sheets447_page(
     request: Request,
     ids: str = "",
-    layout: str = "10x20x4",
+    layout: str = "50x30",
     phase: str = "auto",
-    rotation: int = 90,
+    rotation: int = 0,
     copies: int = 1,
     db: Session = Depends(get_scoped_db390),
 ):
@@ -173,9 +176,9 @@ def vial_label_sheets447_page(
 @router.get("/vials/labels/sheets/download")
 def vial_label_sheets447_download(
     ids: str = "",
-    layout: str = "10x20x4",
+    layout: str = "50x30",
     phase: str = "auto",
-    rotation: int = 90,
+    rotation: int = 0,
     copies: int = 1,
     fmt: str = "png",
     sheet: int = 0,
@@ -819,7 +822,7 @@ def _label_dose758(db, v, phase, target_mg):
 def vial_labels423(
     vid: int,
     request: Request,
-    layout: str = "40x20",
+    layout: str = "50x30",
     phase: str = "pre",
     rotation: int = 0,
     target_mg: str = "",
@@ -843,19 +846,22 @@ def vial_labels423(
         candidates, target, detail, notice = _label_dose758(
             db, v, phase, target_mg
         )
+        from ..vial_label_fourline758 import (
+            two_line_label758, four_line_label758, selected_coa758,
+            validate_four_line_fit758,
+        )
+        chosen_coa = selected_coa758(v, coa_id)
         if phase == "post" and v.reconstituted_on:
-            from ..vial_label_fourline758 import (
-                four_line_label758, selected_coa758,
-                validate_four_line_fit758,
-            )
-            chosen_coa = selected_coa758(v, coa_id)
             vd = services.vial_views(db, [v])[v.id]
-            lines = four_line_label758(v, vd, coa=chosen_coa,
-                                       detail=detail)
+            lines = four_line_label758(v, vd, coa=chosen_coa, detail=detail)
+        elif phase == "pre":
+            lines = two_line_label758(v, coa=chosen_coa)
+        else:
+            lines = None
+        if lines is not None:
             try:
                 validate_four_line_fit758(lines, layout, rotation)
             except ValueError as exc:
-                # Preserve settings so the user can fix layout/long text.
                 fit_warning = str(exc)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -878,7 +884,7 @@ def vial_labels423(
 @router.get("/vials/{vid}/labels/export")
 def vial_labels423_export(
     vid: int,
-    layout: str = "40x20",
+    layout: str = "50x30",
     phase: str = "pre",
     rotation: int = 0,
     fmt: str = "png",
@@ -909,17 +915,17 @@ def vial_labels423_export(
         )
         if target is not None and detail is None:
             raise ValueError(notice)
+        from ..vial_label_fourline758 import (
+            two_line_label758, four_line_label758, selected_coa758,
+            validate_four_line_fit758,
+        )
+        selected = selected_coa758(v, coa_id)
         if phase == "post":
-            from ..vial_label_fourline758 import (
-                four_line_label758, selected_coa758,
-                validate_four_line_fit758,
-            )
-            selected = selected_coa758(v, coa_id)
             vd = services.vial_views(db, [v])[v.id]
             lines = four_line_label758(v, vd, coa=selected, detail=detail)
-            validate_four_line_fit758(lines, layout, rotation)
         else:
-            lines = label_lines(v, phase)
+            lines = two_line_label758(v, coa=selected)
+        validate_four_line_fit758(lines, layout, rotation)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 
