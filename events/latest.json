@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r763-devinstall99e10eef.json",
+  "receipt_path": "receipts/r763-preflight99e10eef.json",
   "release": 763,
-  "request_id": "r763-devinstall99e10eef",
+  "request_id": "r763-preflight99e10eef",
   "schema": 1,
   "status": "passed",
   "target": "99e10eef2125e74b4315f3ee89dc546ae22d7524"
