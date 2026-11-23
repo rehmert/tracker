@@ -137,11 +137,11 @@ def validate_four_line_fit758(lines,layout,rotation):
     if len(lines) not in (2,4) or not all(isinstance(s,str) and s for s in lines):
         raise ValueError("Vial labels require exactly two or four nonempty lines.")
     w,h,_,_=base._panel_size(layout)
-    if layout in ("30x15","30x15x2") and rotation == 0:
+    if layout in ("30x15","30x15x2","40x20") and rotation == 0:
         from .vial_label_compact758 import geometry758
         geometry758(lines, w, h, base.FONT)
         return
-    if layout not in ("40x20","50x30") or rotation != 0:
+    if layout != "50x30" or rotation != 0:
         raise ValueError(
             "Exact two- and four-line labels support 30x15 mm, "
             "40x20 mm or 50x30 mm with normal orientation."

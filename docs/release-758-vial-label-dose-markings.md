@@ -47,16 +47,18 @@ Unreconstituted labels do not invent a mixing date or dilution value.
 
 ## Print-format and safety details
 
-The default for 3 mL vials is a physical 30×15 mm sticker (203 DPI).
-A 30×15 mm single-sticker layout and the established 30×15×2
-two-stickers-along-feed media are supported. The exact two-/four-line
-formats use the same horizontally-condensed 5×7 bitmap glyph geometry
-in both PNG and SVG, two vertical pixels per dot, corresponding roughly
-to a 6.5-point-class label font. Four lines fit within 15 mm height.
-Neither export changes physical media dimensions or silently truncates
-text; long vendor/compound strings that exceed the readable minimum
-advance generate a fit warning. 40×20 and 50×30 remain optional.
-Only normal (0°) label orientation is qualified for compact text.
+The default for all vial-label routes is one physical 40×20 mm sticker (203
+DPI). This avoids consuming a paired 30×15×2 strip when only one label is
+needed. The single-vial preview/export and selected-vials sheet/exports all
+default to 40×20, with exactly one label per physical strip. 30×15 single,
+30×15×2 paired and 50×30 single remain selectable alternatives.
+The exact two-/four-line formats share horizontally condensed 5×7 bitmap
+glyph geometry in PNG and SVG, two vertical pixels per dot, corresponding
+roughly to a 6.5-point-class label font. The 40×20 output uses its extra
+vertical space for row separation; 30×15 rendering remains unchanged.
+Neither export silently truncates complete values. Overlong compound/vendor
+names trigger a fit warning. Normal (0°) orientation is qualified for
+compact text; legacy labels retain their existing renderer.
 
 Unlike the previous implementation, the fit check uses the actual
 30×15 pixel geometry used by both exported formats. Bulk sheet PNG and

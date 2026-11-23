@@ -14,6 +14,7 @@ export PYTHONPATH="$ROOT" PYTHONDONTWRITEBYTECODE=1
   tests/test_release758_vial_label_fourline.py \
   tests/test_release758_vial_production_date.py \
   tests/test_release758_vial_label_30x15.py \
+  tests/test_release758_vial_label_40x20.py \
   tests/test_bulk_vial_stage5.py \
   tests/test_bulk_vials.py \
   tests/test_mixed_purchases.py \

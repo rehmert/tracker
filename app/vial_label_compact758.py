@@ -1,4 +1,4 @@
-"""Release 758 compact 30×15-mm text, identical glyph geometry in PNG and SVG.
+"""Release 758 compact 30×15 and 40×20-mm text, matching PNG/SVG glyphs.
 
 A 203-DPI 5×7 font at two vertical pixels per dot has an effective cap
 height around 5 pt (roughly a 6.5-pt nominal label-font setting). For
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import html
 
-COMPACT_LAYOUTS758 = frozenset(("30x15", "30x15x2"))
+COMPACT_LAYOUTS758 = frozenset(("30x15", "30x15x2", "40x20"))
 
 
 def is_compact758(lines, layout):
@@ -33,8 +33,12 @@ def geometry758(lines, width, height, font):
     if len(lines) not in (2, 4) or any(not s for s in lines):
         raise ValueError("Expected exactly two or four nonempty vial label lines")
     if width < 230 or height < 110:
-        raise ValueError("Compact vial text requires a physical 30x15 mm sticker")
-    line_step = 21 if len(lines) == 4 else 30
+        raise ValueError("Compact vial text requires at least a 30x15 mm sticker")
+    # Preserve the fully tested 30x15 geometry. Use the additional height
+    # on a physical 40x20 single sticker for wider row separation.
+    line_step = (29 if len(lines) == 4 else 40) if width >= 300 else (
+        21 if len(lines) == 4 else 30
+    )
     letter_height = 14   # 5x7 bitmap dots, 2 physical pixels per dot
     used_height = (len(lines) - 1) * line_step + letter_height
     first_y = (height - used_height) // 2
@@ -47,8 +51,9 @@ def geometry758(lines, width, height, font):
         advance = min(6.0, (width - 8 - 5) / max(len(line) - 1, 1))
         if advance < 5.0:
             raise ValueError(
-                "Label text is too long for 30x15 mm at the readable "
-                "compact font size; abbreviate the compound or vendor."
+                "Label text is too long to print in full at the readable "
+                "compact font size; cannot print without shortening "
+                "the compound or vendor."
             )
         y0 = first_y + row * line_step
         for j, ch in enumerate(line):
