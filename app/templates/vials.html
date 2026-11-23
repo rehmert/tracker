@@ -47,6 +47,12 @@
       {% endfor %}
     </select>
   </label>
+  <label class="field"><span>COA</span>
+    <select name="coa" onchange="this.form.submit()" aria-label="COA filter">
+      <option value="">All COA statuses</option>
+      <option value="missing" {% if coa == 'missing' %}selected{% endif %}>Missing COA</option>
+    </select>
+  </label>
 </form>
 <style>
 #vial-saved-views {
@@ -119,7 +125,7 @@
         </button>
       </div>
       <p class="note">
-        Views save status and compound filters in this browser only.
+        Views save status, compound and COA filters in this browser only.
         They do not change inventory.
       </p>
     </details>
@@ -128,10 +134,16 @@
      class="note" role="status" aria-live="polite"></p>
 </div>
 <p class="filters">
-  {% for key, text in [('active', 'In stock'), ('sealed', 'Sealed'), ('in_use', 'In use'), ('finished', 'Finished'), ('discarded', 'Discarded'), ('all', 'All')] %}
-  <a href="/vials?status={{ key }}{% if compound_id %}&amp;compound_id={{ compound_id }}{% endif %}" {% if status == key %}aria-current="true"{% endif %}>{{ text }}</a>
+  {% for key, text in [('active', 'In stock'), ('sealed', 'Sealed'), ('in_use', 'In use'), ('finished', 'Finished'), ('discarded', 'Discarded'), ('non_discarded', 'Not discarded'), ('all', 'All')] %}
+  <a href="/vials?status={{ key }}{% if compound_id %}&amp;compound_id={{ compound_id }}{% endif %}{% if coa == 'missing' %}&amp;coa=missing{% endif %}" {% if status == key %}aria-current="true"{% endif %}>{{ text }}</a>
   {% endfor %}
 </p>
+{% if coa == 'missing' %}
+<p class="note" role="status">
+  <strong>Missing COA:</strong> showing {{ vials|length }} matching vial{{ '' if vials|length == 1 else 's' }}.
+  <a href="/vials?status={{ status }}{% if compound_id %}&amp;compound_id={{ compound_id }}{% endif %}">Clear COA filter</a>
+</p>
+{% endif %}
 
 <!-- TRACKER_BULK_EDITOR_V2 -->
 <style>
@@ -714,7 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <td class="n">{{ d.remaining_base|amt(d.dim) }} <small>of {{ d.content_base|amt(d.dim) }}</small></td>
     <td class="n">{{ d.landed_cents|money }}</td>
     <td>{{ d|unit_cost }}</td>
-    <td>{{ 'yes' if v.coa else 'none' }}</td>
+    <td>{{ 'yes' if v.all_coas else 'none' }}</td>
     <td>{{ v.status|replace('_', ' ') }}</td>
     <td>{{ v.purchase.vendor if v.purchase and v.purchase.vendor else '—' }}</td>
   </tr>
@@ -1013,7 +1025,7 @@ document.addEventListener("DOMContentLoaded", () => {
         src="/static/js/tracker-inventory-review-tools.js?v=34.46">
 </script>
 
-<script src="/static/vial_saved_views.js" defer></script>
+<script src="/static/vial_saved_views.js?v=761" defer></script>
 <script src="/static/js/tracker-vials-sort.js?v=1" defer></script>
 <script src="/static/js/tracker-vial-pages448.js?v=448" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-vial-pages448.css?v=448">

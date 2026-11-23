@@ -8,10 +8,15 @@
   const filter = document.getElementById('vial-filter-form');
   if (!root || !picker || !save || !remove || !filter) return;
   const KEY = 'tracker.vials.savedViews.v1';
-  const allowed = new Set(['active', 'sealed', 'in_use', 'finished', 'discarded', 'all']);
+  const allowed = new Set(['active', 'sealed', 'in_use', 'finished', 'discarded', 'non_discarded', 'all']);
   const status = new URLSearchParams(location.search).get('status') || 'active';
   const compound = filter.querySelector('[name="compound_id"]');
-  const current = () => ({status: allowed.has(status) ? status : 'active', compound_id: compound?.value || ''});
+  const coa = filter.querySelector('[name="coa"]');
+  const current = () => ({
+    status: allowed.has(status) ? status : 'active',
+    compound_id: compound?.value || '',
+    coa: coa?.value === 'missing' ? 'missing' : ''
+  });
   const read = () => {
     try {
       const value = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -34,6 +39,7 @@
     const params = new URLSearchParams();
     params.set('status', allowed.has(view.status) ? view.status : 'active');
     if (view.compound_id && /^\d+$/.test(String(view.compound_id))) params.set('compound_id', view.compound_id);
+    if (view.coa === 'missing') params.set('coa', 'missing');
     location.assign('/vials?' + params.toString());
   });
   save.addEventListener('click', () => {

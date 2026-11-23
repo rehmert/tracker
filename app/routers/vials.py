@@ -29,20 +29,25 @@ def _get(db: Session, vid: int) -> Vial:
 
 
 @router.get("/vials")
-def vials_page(request: Request, status: str = "active", compound_id: str | None = None, db: Session = Depends(get_scoped_db390)):
+def vials_page(request: Request, status: str = "active", compound_id: str | None = None,
+               coa: str = "", db: Session = Depends(get_scoped_db390)):
     # Convert compound_id to integer, treating empty strings as None
     compound_id = int(compound_id) if compound_id and compound_id.isdigit() else None
 
+    coa = "missing" if coa == "missing" else ""
     vials = list(
         db.scalars(
-            vial_listing(status,compound_id).options(
-                selectinload(Vial.purchase)
+            vial_listing(status, compound_id, coa).options(
+                selectinload(Vial.purchase),
+                selectinload(Vial.coa),
+                selectinload(Vial.linked_coas),
             )
         )
     )
 
     return render(request, "vials.html", vials=vials, views=services.vial_views(db, vials),
-                  status=status, statuses=VIAL_STATUSES, compound_id=compound_id, compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
+                  status=status, coa=coa, statuses=VIAL_STATUSES, compound_id=compound_id,
+                  compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
 
 
 
