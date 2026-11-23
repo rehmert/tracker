@@ -11,6 +11,7 @@ cd "$ROOT"
 export PYTHONPATH="$ROOT" PYTHONDONTWRITEBYTECODE=1
 "$PY" -B -m pytest -q --tb=short --disable-warnings \
   tests/test_release758_vial_label_dose.py \
+  tests/test_release758_vial_label_fourline.py \
   tests/test_release423.py \
   tests/test_vial_label_sheets447.py \
   tests/test_vial_label_rotation431.py \

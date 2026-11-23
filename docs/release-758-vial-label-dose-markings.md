@@ -56,3 +56,32 @@ and the exact concentration basis used for the U-100 calculation into
 one printable line. The label fit validator requires the complete
 target, volume/concentration, mixing/BUD/expiration dates (if provided),
 and vial identifier rather than silently truncating a safety field.
+
+
+## User-selected four-line post-mix label format
+
+The user-facing reconstituted label is now exactly:
+
+1. Compound / purchase vendor
+2. Labeled vial content / explicitly selected COA reported content
+3. Recon date / BAC-water volume / final effective mg/mL
+4. Target mg = approximate U-100 syringe units
+
+COA reported content is a *per-vial amount*, not mg/mL before
+reconstitution. The chosen report is shown for comparison; final
+mg/mL and U-100 marks still use Tracker's canonical dose-log
+effective content (label value, or the COA-average if opted in).
+An explicit single-vial COA picker uses only linked reports.
+Multiple reports without a designated primary are not selected
+arbitrarily. Missing fields are printed N/A. The recorded
+reconstitution liquid volume is used as the BAC-water amount for
+lyophilized vials; no BAC-water supplier or diluent identity is
+inferred. IU-based vials retain IU/mL and never pretend IU means mg.
+
+The 40x20 normal label uses a compact horizontal glyph variant for
+all four lines in PNG without changing 203-DPI geometry or legacy
+unreconstituted labels. All other rotations/layouts are rejected
+for post-mix four-line output to prevent clipped fields until they
+support the same typography. Long names/vendors are not truncated:
+the UI shows a print-fit warning, and downloads fail closed.
+No inventory, schedule, dose or COA data is modified.

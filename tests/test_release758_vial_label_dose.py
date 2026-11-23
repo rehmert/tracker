@@ -235,7 +235,7 @@ def test_758_bulk_auto_uses_each_vial_concentration(session):
     assert all(len(row)==4 for row in lines)
     target_lines=[row[-1] for row in lines]
     assert target_lines==["50mg = 20.833 units","50mg = 20 units"]
-    with pytest.raises(HTTPException,match="cannot print"):
+    with pytest.raises(HTTPException,match="40x20"):
         router._label_job447(
             session,f"{v.id},{w.id}","10x20x4","auto",90,1
         )
@@ -287,7 +287,7 @@ def test_758_small_layout_page_shows_switch_layout_instead_of_422(
         v.id,request=object(),phase="post",layout="10x20x4",
         rotation=90,db=session
     )
-    assert "cannot print" in result["label_fit_warning"]
+    assert "40x20" in result["label_fit_warning"]
     assert result["label_dose_detail"]["line"].startswith("TARGET:50MG")
     html=(ROOT/"app/templates/vial_labels423.html").read_text()
     assert "label-print-fit758" in html

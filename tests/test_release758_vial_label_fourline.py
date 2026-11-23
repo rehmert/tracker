@@ -28,7 +28,8 @@ def fake(*,content=10,unit="mg",water=2,vendor="Blackfin Supply",
            coa=report,all_coas=[report],
            content_value=content,content_unit=unit,
            volume_ml=water,reconstituted_on=stamp,
-           form="lyophilized")
+           form="lyophilized",label="SIMULATED",
+           lot="",cap_color="",expires_on=None,beyond_use_on=None)
     return vial, report
 
 
@@ -87,7 +88,7 @@ def test_758_no_target_or_concentration_prints_na_not_invented_units():
     v,report=fake()
     bad=S(dim="mass",conc_per_ml=None,remaining_base=10000)
     lines=four_line_label758(v,bad,coa=report,detail=None)
-    assert lines[2].endswith("/ N/Amg/mL")
+    assert lines[2].endswith("/ N/A mg/mL")
     assert lines[3]=="N/A mg = N/A units"
 
 
@@ -107,7 +108,7 @@ def test_758_missing_vendor_water_and_coa_never_guessed():
                              coa=None,detail=None)
     assert " / N/A" in lines[0]
     assert "COA N/A" in lines[1]
-    assert "BACN/AmL" in lines[2]
+    assert "BAC N/A" in lines[2]
 
 
 def test_758_final_concentration_assigned_from_canonical_vial_not_test_result():

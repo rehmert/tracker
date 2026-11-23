@@ -93,7 +93,7 @@ def four_line_label758(vial,view,*,coa=None,detail=None):
     dim=view.dim if view is not None else None
     conc=view.conc_per_ml if view is not None else None
     if (conc is None or not isfinite(conc) or conc<=0 or dim not in ("mass","iu")):
-        final="N/A"+("IU/mL" if dim=="iu" else "mg/mL")
+        final="N/A "+("IU/mL" if dim=="iu" else "mg/mL")
     else:
         value=conc/1000 if dim=="mass" else conc
         final=_number758(value,3)+("mg/mL" if dim=="mass" else "IU/mL")
@@ -104,7 +104,10 @@ def four_line_label758(vial,view,*,coa=None,detail=None):
     # volume. Solution-form vials have nominal volume but no BAC assertion.
     water_type=("BAC" if getattr(vial,"form","lyophilized")=="lyophilized"
                 else "VOL")
-    recon=f"{stamp:%m/%d/%y} / {water_type}{_number758(water,3)}mL / {final}"
+    water_number=_number758(water,3)
+    water_text=(f"{water_type}{water_number}mL"
+                if water_number!="N/A" else f"{water_type} N/A")
+    recon=f"{stamp:%m/%d/%y} / {water_text} / {final}"
     if detail is not None and dim=="mass":
         target=_number758(detail["target_mg"],4)
         units=_number758(detail["syringe_units"],3)
