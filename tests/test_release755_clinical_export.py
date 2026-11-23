@@ -260,7 +260,7 @@ def test_755_schema_v2_manifest_publication_rules(clinical_db):
 
 def test_755_invalid_control_character_lab_label_is_not_exported(clinical_db):
     with sqlite3.connect(clinical_db) as db:
-        db.execute("INSERT INTO lab_results VALUES (8,1,?,?,?,?,?)",
+        db.execute("INSERT INTO lab_results VALUES (8,1,?,?,?,?,?,?)",
                    ("Unsafe\nlabel",44,"u",None,None,"SECRET"))
     names={x["analyte"] for x in extract_all(clinical_db)["labs"]["data"]["history"]}
     assert "Unsafe\nlabel" not in names
@@ -275,7 +275,7 @@ def test_755_clean_text_avoids_unstructured_free_text():
 
 def test_755_unitless_numerical_lab_is_preserved(clinical_db):
     with sqlite3.connect(clinical_db) as db:
-        db.execute("INSERT INTO lab_results VALUES (9,1,?,?,?,?,?)",
+        db.execute("INSERT INTO lab_results VALUES (9,1,?,?,?,?,?,?)",
                    ("Unitless ratio",1.7,"",None,None,"SECRET"))
     history=extract_all(clinical_db)["labs"]["data"]["history"]
     ratio=next(x for x in history if x["analyte"]=="Unitless ratio")
@@ -285,7 +285,7 @@ def test_755_unitless_numerical_lab_is_preserved(clinical_db):
 
 def test_755_non_numeric_lab_results_do_not_leak(clinical_db):
     with sqlite3.connect(clinical_db) as db:
-        db.execute("INSERT INTO lab_results VALUES (11,1,?,?,?,?,?)",
+        db.execute("INSERT INTO lab_results VALUES (11,1,?,?,?,?,?,?)",
                    ("Non numeric", "not available","mmol/L",None,None,"SECRET"))
     history=extract_all(clinical_db)["labs"]["data"]["history"]
     assert not any(x["analyte"]=="Non numeric" for x in history)
