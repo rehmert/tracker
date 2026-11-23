@@ -119,13 +119,14 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
               volume_ml: str = Form(""), concentration: str = Form(""),
               unit_price: str = Form("0"), price_basis: str = Form("per_vial"),
               price_amount: str = Form(""), label: str = Form(""), lot: str = Form(""),
-              expires_on: str = Form(""), notes: str = Form(""),
+              expires_on: str = Form(""), production_on: str = Form(""), notes: str = Form(""),
               kit_size: int = Form(1), kit_count: int = Form(1), cap_color: str = Form(""),
               submission_token: str = Form(""), db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/purchases/{pid}", err="Inventory is busy. Please retry.")
     submission_token = submission_token if isinstance(submission_token, str) else ""
-    payload = dict(pid=pid, compound_id=compound_id, form=form, quantity=quantity, content_value=content_value, content_unit=content_unit, volume_ml=volume_ml, concentration=concentration, unit_price=unit_price, price_basis=price_basis, price_amount=price_amount, label=label, lot=lot, expires_on=expires_on, notes=notes, kit_size=kit_size, kit_count=kit_count, cap_color=cap_color)
+    production_on = production_on if isinstance(production_on, str) else ""  # direct-call legacy tests use FastAPI Form defaults
+    payload = dict(pid=pid, compound_id=compound_id, form=form, quantity=quantity, content_value=content_value, content_unit=content_unit, volume_ml=volume_ml, concentration=concentration, unit_price=unit_price, price_basis=price_basis, price_amount=price_amount, label=label, lot=lot, expires_on=expires_on, production_on=production_on, notes=notes, kit_size=kit_size, kit_count=kit_count, cap_color=cap_color)
     state, digest = idempotency.check(db, submission_token, "purchase_vials_create", payload) if submission_token else ("new", "")
     if state != "new":
         db.rollback()
@@ -206,6 +207,7 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
                 base, remainder = divmod(entered_cents, kit_size)
                 vial_prices.extend([base + (1 if i < remainder else 0) for i in range(kit_size)])
         expiry = services.parse_date(expires_on)
+        manufactured = services.parse_date(production_on)
     except ValueError as exc:
         return services.flash_redirect(back, err=str(exc))
 
@@ -217,7 +219,7 @@ def add_vials(pid: int, compound_id: int = Form(...), form: str = Form("lyophili
         kit_ref = f"purchase-{pid}-batch-{batch_ref}-kit-{i // kit_size + 1}" if batch_ref else ""
         vial = Vial(cap_color=cap_color.strip(), kit_ref=kit_ref, compound_id=compound_id, purchase_id=pid, label=label.strip(),
                     lot=lot.strip(), form=form, content_value=content,
-                    content_unit=unit.name, volume_ml=vol, expires_on=expiry,
+                    content_unit=unit.name, volume_ml=vol, expires_on=expiry, production_on=manufactured,
                     unit_price_cents=vial_prices[i], notes=notes.strip())
         db.add(vial)
         created_vials.append(vial)

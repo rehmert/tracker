@@ -59,6 +59,7 @@ def migrate(engine):
             for name, sql in {
                 "cap_color": "VARCHAR(60) NOT NULL DEFAULT ''",
                 "kit_ref": "VARCHAR(120) NOT NULL DEFAULT ''",
+                "production_on": "DATE",  # Release 758: nullable documented manufacture date
                 "received_on": "DATE",
                 "first_punctured_on": "DATE",
                 "first_dosed_on": "DATE",

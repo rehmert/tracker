@@ -221,6 +221,7 @@ BULK_FIELDS = {
     "cap_color": "text",
     "storage_notes": "text",
     "notes": "text",
+    "production_on": "date",
     "received_on": "date",
     "expires_on": "date",
     "beyond_use_on": "date",
@@ -951,7 +952,7 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
                 content_value: float = Form(...), content_unit: str = Form(...),
                 volume_ml: str = Form(""), reconstituted_on: str = Form(""),
                 expires_on: str = Form(""), unit_price: str = Form("0"),
-                received_on: str = Form(""), first_punctured_on: str = Form(""),
+                production_on: str = Form(""), received_on: str = Form(""), first_punctured_on: str = Form(""),
                 first_dosed_on: str = Form(""), beyond_use_on: str = Form(""),
                 closed_on: str = Form(""), storage_notes: str = Form(""),
                 use_coa_content: str = Form(""), notes: str = Form(""), cap_color: str = Form(""),
@@ -959,7 +960,7 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
-    tracked = ("status", "received_on", "first_punctured_on", "first_dosed_on", "beyond_use_on", "closed_on", "storage_notes")
+    tracked = ("status", "production_on", "received_on", "first_punctured_on", "first_dosed_on", "beyond_use_on", "closed_on", "storage_notes")
     previous = {key: str(getattr(v, key) or "") for key in tracked}
     back = f"/vials/{vid}"
     try:
@@ -991,7 +992,7 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
         v.content_value, v.content_unit, v.volume_ml = content_value, unit.name, vol
         v.reconstituted_on = services.parse_date(reconstituted_on)
         v.expires_on = services.parse_date(expires_on)
-        for field, raw in (("received_on", received_on), ("first_punctured_on", first_punctured_on),
+        for field, raw in (("production_on", production_on), ("received_on", received_on), ("first_punctured_on", first_punctured_on),
                            ("first_dosed_on", first_dosed_on), ("beyond_use_on", beyond_use_on),
                            ("closed_on", closed_on)):
             setattr(v, field, services.parse_date(raw))

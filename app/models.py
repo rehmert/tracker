@@ -62,6 +62,7 @@ class Vial(Base):
     content_unit: Mapped[str] = mapped_column(String(8))          # mcg | mg | g | IU
     volume_ml: Mapped[float | None] = mapped_column(Float, nullable=True)  # liquid / recon volume
     reconstituted_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    production_on: Mapped[date | None] = mapped_column(Date, nullable=True)  # actual documented manufacture date, never inferred
     received_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     first_punctured_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     first_dosed_on: Mapped[date | None] = mapped_column(Date, nullable=True)

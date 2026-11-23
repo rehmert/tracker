@@ -119,6 +119,7 @@
     <label class="field"><span>Unit</span><select name="content_unit">{% for u in CONTENT_UNITS %}<option {% if u == v.content_unit %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></label>
     <label class="field"><span>Liquid volume (mL)</span><input type="number" name="volume_ml" step="any" min="0" value="{{ v.volume_ml if v.volume_ml else '' }}"></label>
     <label class="field"><span>Reconstituted on</span><input type="date" name="reconstituted_on" value="{{ v.reconstituted_on or '' }}"></label>
+    <label class="field"><span>Production date (documented, optional)</span><input type="date" name="production_on" value="{{ v.production_on or '' }}"><small>Manufacturer's actual production date; not purchase date or COA test date. Printed as N/A until recorded.</small></label>
     <fieldset class="wide lifecycle-fields"><legend>Vial lifecycle (optional)</legend>
       <p class="note">Enter observed dates only. Beyond-use dates are not calculated automatically.</p>
       <div class="grid">
