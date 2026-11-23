@@ -1,28 +1,26 @@
 {
   "action": "qualify",
   "base": "90b297fc07c950d5a44a0bf8fe7d4beabfd8b30f",
-  "exit_code": 1,
-  "failed_tests": [
-    "tests/test_release758_vial_production_date.py",
-    "tests/test_vial_label_rotation431.py"
-  ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-23T13:29:38+00:00",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-23T13:34:57+00:00",
   "markers": [
+    "RELEASE_758_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_758_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_758_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_758_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_758_EXIT_STATUS=1"
+    "RELEASE_758_INSTALLED_DEV=UNMODIFIED"
   ],
   "previous_request_id": null,
   "ref": "release/758-vial-label-dose-markings",
   "release": 758,
-  "request_id": "r758-b8d2baf0f43b",
+  "request_id": "r758-75a5ad18d49f",
   "schema": 1,
-  "started_at_utc": "2026-11-23T13:29:22+00:00",
-  "status": "failed",
-  "target": "b8d2baf0f43bf84fa507feabd04a23288617f405",
+  "started_at_utc": "2026-11-23T13:34:41+00:00",
+  "status": "passed",
+  "target": "75a5ad18d49f7f19a6e0dc24f6c3abc0fa8d7a69",
   "test_counts": [
-    "248 passed, 1 warning"
+    "250 passed, 1 warning"
   ]
 }
