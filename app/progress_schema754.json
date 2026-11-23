@@ -8,7 +8,9 @@
     "generated_at_utc",
     "reporting_period",
     "classification",
-    "data"
+    "data",
+    "completeness",
+    "provenance"
   ],
   "properties": {
     "schema_version": {
@@ -47,6 +49,52 @@
     },
     "data": {
       "type": "object"
+    },
+    "completeness": {
+      "type": "object",
+      "required": [
+        "observed_records",
+        "reporting_days",
+        "measurement_available"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "observed_records": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "reporting_days": {
+          "type": "integer",
+          "minimum": 7,
+          "maximum": 730
+        },
+        "measurement_available": {
+          "type": "boolean"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "history",
+        "summaries",
+        "body_composition"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "history": {
+          "const": "directly_recorded_where_present"
+        },
+        "summaries": {
+          "const": "calculated_from_records"
+        },
+        "body_composition": {
+          "const": "not_estimated"
+        }
+      }
     }
   },
   "additionalProperties": false

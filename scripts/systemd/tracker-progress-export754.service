@@ -1,0 +1,24 @@
+[Unit]
+Description=Tracker private progress export (opt-in, PROD only)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/tracker-progress-export.json
+ConditionPathExists=/etc/tracker-progress-token
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+WorkingDirectory=/opt/tracker
+Environment=PYTHONPATH=/opt/tracker
+Environment=TRACKER_INSTANCE=PROD
+ExecStart=/opt/tracker/.venv/bin/python -B /opt/tracker/scripts/tracker_progress_sync754.py --config /etc/tracker-progress-export.json --db /opt/tracker/data/tracker.db --output /var/lib/tracker-progress-export --source live --sync
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/tracker-progress-export
+ReadOnlyPaths=/opt/tracker/data
+StandardOutput=journal
+StandardError=journal

@@ -67,13 +67,20 @@ def validate_datasets(datasets):
     if set(datasets) != set(CATEGORIES):
         raise ValueError("DATASETS_INVALID")
     mandatory = {"schema_version", "source_instance", "generated_at_utc",
-                 "reporting_period", "classification", "data"}
+                 "reporting_period", "classification", "data",
+                 "completeness", "provenance"}
     for category, obj in datasets.items():
         if set(obj) != mandatory or obj["schema_version"] != "1":
             raise ValueError("SCHEMA_INVALID")
         if (not isinstance(obj["reporting_period"], dict) or
                 set(obj["reporting_period"]) != {"from", "to"} or
-                not isinstance(obj["data"], dict)):
+                not isinstance(obj["data"], dict)
+                or not isinstance(obj["completeness"], dict)
+                or set(obj["completeness"]) != {
+                    "observed_records", "reporting_days", "measurement_available"}
+                or not isinstance(obj["provenance"], dict)
+                or set(obj["provenance"]) != {
+                    "history", "summaries", "body_composition"}):
             raise ValueError("SCHEMA_INVALID")
         def inspect(value):
             if isinstance(value, dict):

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "repository": "rehmert/tracker-progress-data",
+  "days": 365,
+  "lab_allowlist": [],
+  "medication_allowlist": [],
+  "token_file": "/etc/tracker-progress-token",
+  "prod_approved": false
+}

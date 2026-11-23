@@ -69,9 +69,12 @@ def extract(db_path: Path, *, instance: str, days: int = 365,
     on = today or date.today()
     start = on - timedelta(days=days - 1)
     period = {"from": start.isoformat(), "to": on.isoformat()}
-    safe_path = Path(db_path).resolve(strict=True)
-    if not safe_path.is_file() or safe_path.is_symlink():
-        raise ValueError("Database file unavailable")
+    original = Path(db_path).absolute()
+    if original.is_symlink():
+        raise ValueError("DATABASE_SYMLINK_DISALLOWED")
+    safe_path = original.resolve(strict=True)
+    if not safe_path.is_file():
+        raise ValueError("DATABASE_UNAVAILABLE")
     db = sqlite3.connect("file:" + quote(str(safe_path)) + "?mode=ro", uri=True, timeout=5)
     db.row_factory = sqlite3.Row
     try:
@@ -300,11 +303,26 @@ def extract(db_path: Path, *, instance: str, days: int = 365,
     now = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
     output = {}
     for name in CATEGORIES:
+        values = categories[name]
+        count = (len(values["history"]) if name in ("weight", "vitals", "labs", "interventions")
+                 else len(values["sessions"]) if name == "workouts"
+                 else values["logged_days"] if name == "nutrition" else None)
         output[name] = {
             "schema_version": SCHEMA_VERSION, "source_instance": instance,
             "generated_at_utc": now, "reporting_period": period,
             "classification": "observed_and_descriptive_calculations",
-            "data": categories[name],
+            "completeness": {
+                "observed_records": count, "reporting_days": days,
+                "measurement_available": (
+                    False if name == "body-measurements" else
+                    bool(count) if count is not None else True),
+            },
+            "provenance": {
+                "history": "directly_recorded_where_present",
+                "summaries": "calculated_from_records",
+                "body_composition": "not_estimated",
+            },
+            "data": values,
         }
     return output
 

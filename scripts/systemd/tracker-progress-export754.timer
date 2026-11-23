@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly Tracker private progress export (opt-in)
+
+[Timer]
+OnCalendar=*-*-* 03:10:00
+RandomizedDelaySec=10min
+Persistent=true
+Unit=tracker-progress-export754.service
+
+[Install]
+WantedBy=timers.target
