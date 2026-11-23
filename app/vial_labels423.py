@@ -12,6 +12,7 @@ DPI = 203
 LAYOUTS = {
     '40x20': (40, 20, 1, 1),
     '50x30': (50, 30, 1, 1),
+    '30x15': (30, 15, 1, 1),  # single sticker for 3 mL vials
     '30x15x2': (30, 15, 1, 2),
     '10x20x4': (10, 20, 4, 1),
 }
@@ -135,6 +136,8 @@ def _selected(lines, width, height):
 
 def svg_bytes(lines, layout):
     w, h, cols, rows = _panel_size(layout)
+    from .vial_label_compact758 import is_compact758, svg_panel758
+    compact = is_compact758(lines, layout)
     width, height = w * cols, h * rows
 
     parts = [
@@ -153,6 +156,10 @@ def svg_bytes(lines, layout):
                 f'width="{w-2}" height="{h-2}" '
                 'fill="none" stroke="#555" stroke-width="1"/>'
             )
+
+            if compact:
+                parts.append(svg_panel758(lines, x, y, w, h, FONT))
+                continue
 
             small = w < 120
             fontsize = 8 if small else 13
@@ -232,6 +239,9 @@ FONT = {
 
 def png_bytes(lines, layout):
     w, h, cols, rows = _panel_size(layout)
+    from .vial_label_compact758 import is_compact758, geometry758
+    compact = is_compact758(lines, layout)
+    compact_dots = geometry758(lines, w, h, FONT) if compact else None
     width, height = w * cols, h * rows
 
     canvas = bytearray([255]) * (width * height)
@@ -251,6 +261,12 @@ def png_bytes(lines, layout):
             for y in range(by, by + h):
                 point(bx, y)
                 point(bx + w - 1, y)
+
+            if compact:
+                for dx, dy in compact_dots:
+                    point(bx + dx, by + dy)
+                    point(bx + dx, by + dy + 1)
+                continue
 
             scale = 1 if w < 120 else 2
             step = 11 if scale == 1 else 17

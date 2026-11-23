@@ -134,6 +134,10 @@ def svg_sheet447(panels, layout, rotation=0):
         )
         if index >= len(panels):
             continue
+        from .vial_label_compact758 import is_compact758, svg_panel758
+        if rotation == 0 and is_compact758(panels[index], layout):
+            parts.append(svg_panel758(panels[index], x, y, w, h, original.FONT))
+            continue
         lines = (
             original._selected(panels[index], w, h)
             if rotation == 0

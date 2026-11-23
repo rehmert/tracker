@@ -135,7 +135,7 @@ def _label_job447(db, ids, layout, phase, rotation, copies):
 def vial_label_sheets447_page(
     request: Request,
     ids: str = "",
-    layout: str = "50x30",
+    layout: str = "30x15",
     phase: str = "auto",
     rotation: int = 0,
     copies: int = 1,
@@ -176,7 +176,7 @@ def vial_label_sheets447_page(
 @router.get("/vials/labels/sheets/download")
 def vial_label_sheets447_download(
     ids: str = "",
-    layout: str = "50x30",
+    layout: str = "30x15",
     phase: str = "auto",
     rotation: int = 0,
     copies: int = 1,
@@ -822,7 +822,7 @@ def _label_dose758(db, v, phase, target_mg):
 def vial_labels423(
     vid: int,
     request: Request,
-    layout: str = "50x30",
+    layout: str = "30x15",
     phase: str = "pre",
     rotation: int = 0,
     target_mg: str = "",
@@ -884,7 +884,7 @@ def vial_labels423(
 @router.get("/vials/{vid}/labels/export")
 def vial_labels423_export(
     vid: int,
-    layout: str = "50x30",
+    layout: str = "30x15",
     phase: str = "pre",
     rotation: int = 0,
     fmt: str = "png",

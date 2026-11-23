@@ -23,8 +23,11 @@ dimensions in the printer driver before printing.
   <label class="field">
     <span>Sheet layout</span>
     <select name="layout">
+      <option value="30x15" {% if layout == '30x15' %}selected{% endif %}>
+        30 × 15 mm — single sticker (recommended)
+      </option>
       <option value="50x30" {% if layout == '50x30' %}selected{% endif %}>
-        50 × 30 mm (one, recommended)
+        50 × 30 mm (one)
       </option>
       <option value="40x20" {% if layout == '40x20' %}selected{% endif %}>
         40 × 20 mm (one)
