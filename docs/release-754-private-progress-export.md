@@ -76,3 +76,7 @@ returns nonzero and prints a sanitized error code only.
 Only change-scoped synthetic tests; source and systemd templates require
 review before enabling on PROD. No live data or credentials in GitHub
 source, release artifacts, logs or receipts. Keep strict CSRF unchanged.
+
+DEV synthetic fixture generation (root-only):
+`TRACKER_INSTANCE=DEV /opt/tracker/.venv/bin/python /opt/tracker/scripts/tracker_progress_fixture754.py /var/lib/tracker-progress-export/fixture.db`
+The exporter checks a separate synthetic-marker table before reading a DEV fixture. A copied live database without that marker is rejected.

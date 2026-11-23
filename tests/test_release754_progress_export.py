@@ -24,6 +24,10 @@ def fixture_db(tmp_path):
     path = tmp_path / "synthetic.db"
     with sqlite3.connect(path) as db:
         db.executescript("""
+          CREATE TABLE tracker_progress_synthetic754 (
+            marker TEXT NOT NULL);
+          INSERT INTO tracker_progress_synthetic754 VALUES (
+            'TRACKER_SYNTHETIC_DATA_754');
           CREATE TABLE vital_readings (
             measured_at TEXT, weight_kg REAL, systolic INTEGER,
             diastolic INTEGER, pulse_bpm INTEGER,
@@ -285,3 +289,10 @@ def test_754_manifest_and_schema_are_predictable(fixture_db):
     manifest=json.loads(files["manifest.json"])
     assert manifest["content_sha256"]==digest
     assert len(manifest["files"])==len(CATEGORIES)
+
+
+def test_754_synthetic_mode_rejects_unmarked_database(fixture_db):
+    with sqlite3.connect(fixture_db) as db:
+        db.execute("DELETE FROM tracker_progress_synthetic754")
+    with pytest.raises(ValueError, match="SYNTHETIC_MARKER_INVALID"):
+        datasets(fixture_db)

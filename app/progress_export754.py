@@ -82,6 +82,14 @@ def extract(db_path: Path, *, instance: str, days: int = 365,
         db.execute("BEGIN")
         # The read transaction's first query pins a consistent SQLite snapshot.
         table_names = _tables(db)
+        if instance == "DEV-SYNTHETIC":
+            if "tracker_progress_synthetic754" not in table_names:
+                raise ValueError("SYNTHETIC_MARKER_MISSING")
+            marker = db.execute(
+                "SELECT marker FROM tracker_progress_synthetic754 LIMIT 2"
+            ).fetchall()
+            if len(marker) != 1 or marker[0][0] != "TRACKER_SYNTHETIC_DATA_754":
+                raise ValueError("SYNTHETIC_MARKER_INVALID")
         vitals = _select(db, "vital_readings", """
             SELECT measured_at, weight_kg, systolic, diastolic, pulse_bpm
             FROM vital_readings WHERE substr(measured_at,1,10) BETWEEN ? AND ?
