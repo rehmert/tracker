@@ -12,9 +12,9 @@ is remaining_base divided by conc_per_ml. Concentration is never guessed.
 Concentrations absent for all matching vials: remaining stock is unknown
 (dash), not falsely zero; show "Concentration unavailable". If only some
 vials lack concentration, show known physical volume but no weeks estimate.
-Different recorded concentrations: display physical volume and flag
-"Mixed concentrations - review", with no asserted weeks coverage.
-Only equal-strength eligible vials get a coverage estimate.
+Different recorded concentrations: display physical remaining volume and
+volume-based weeks of supply, flagged "Mixed concentrations - review".
+Different strengths are never treated as equivalent milligram dosing capacity.
 
 Expired, beyond-use, closed, finished and discarded vials remain excluded.
 No database changes or dosing guidance.
@@ -28,8 +28,9 @@ forecast regression tests. Requires DEV qualification and separate PROD
 promotion authorization.
 
 The dashboard's "Inventory forecast" panel and protocol summary also now
-derive liquid quantities from per-vial concentrations, and mark missing or
-mixed strengths as unknown instead of asserting zero usable stock.
+derive liquid quantities from per-vial concentrations. Missing concentration
+flags unknown stock; mixed strengths show physical volume with a warning
+rather than claiming equivalent milligram dosing capacity.
 Existing mass/IU dashboard semantics are unchanged.
 
 

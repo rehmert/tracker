@@ -15,7 +15,7 @@
       {% for c in x.vial_choices %}
       <option value="{{ c.id }}"
               data-vial-calculation="{{ c.target_mg }} mg · {{ c.concentration_mg_ml }} mg/mL · {{ c.withdrawal_ml }} mL · {{ c.syringe_units }} U-100 syringe units">
-        {{ c.label }} (#{{ c.id }}) · {{ c.concentration_mg_ml }} mg/mL · {{ c.syringe_units }} U-100 syringe units
+        {{ c.label if c.label != ('#' ~ c.id) else 'Vial' }} #{{ c.id }} · {{ c.concentration_mg_ml }} mg/mL · {{ c.syringe_units }} U-100 syringe units
       </option>
       {% endfor %}
     </select>
