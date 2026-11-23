@@ -72,7 +72,41 @@ def _label_job447(db, ids, layout, phase, rotation, copies):
         raise HTTPException(404, "One or more selected vials no longer exist")
     ordered = [lookup[ident] for ident in selected_ids]
     try:
-        panels = label_panels447(ordered, phase, copies)
+        # Only real ORM sessions resolve a unique CURRENT active mg target.
+        # The non-persisting label helper never rewrites stock or protocols.
+        dose_details = {}
+        if isinstance(db, Session) and phase != "pre":
+            from ..vial_label_dose758 import (
+                active_targets758, dose_line758,
+            )
+            post_vials = [
+                v for v in ordered
+                if phase == "post" or (phase == "auto" and v.reconstituted_on)
+            ]
+            if post_vials:
+                targets = active_targets758(
+                    db, {v.compound_id for v in post_vials}
+                )
+                views758 = services.vial_views(db, post_vials)
+                for v in post_vials:
+                    choices = targets.get(v.compound_id, [])
+                    if len(choices) != 1:
+                        continue
+                    try:
+                        dose_details[v.id] = dose_line758(
+                            views758[v.id], choices[0]
+                        )
+                    except ValueError:
+                        # Missing concentration or insufficient stock: no
+                        # guessed syringe markings on this vial's label.
+                        continue
+        panels = label_panels447(
+            ordered, phase, copies, dose_details=dose_details
+        )
+        if dose_details:
+            from ..vial_label_dose758 import validate_label_fit758
+            for lines in panels:
+                validate_label_fit758(lines, layout, rotation)
         pages = paginate447(panels, layout)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -741,6 +775,30 @@ def vial_detail(vid: int, request: Request, db: Session = Depends(get_scoped_db3
                   compounds=list(db.scalars(select(Compound).order_by(Compound.name))))
 
 
+def _label_dose758(db, v, phase, target_mg):
+    """Single selected target and calculation for preview and export."""
+    if phase != "post":
+        return [], None, None, ""
+    from ..vial_label_dose758 import (
+        active_targets758, resolve_target758, dose_line758,
+    )
+    candidates = active_targets758(db, {v.compound_id}).get(v.compound_id, [])
+    selected, origin = resolve_target758(candidates, target_mg)
+    if selected is None:
+        return candidates, None, None, (
+            "Multiple active mg targets exist. Enter the intended mg target "
+            "for this label; none is assumed." if candidates else
+            "No current active mg target is available. Enter the intended "
+            "mg dose to show syringe markings on the reconstituted label."
+        )
+    try:
+        vd = services.vial_views(db, [v])[v.id]
+        details = dose_line758(vd, selected)
+    except ValueError as exc:
+        return candidates, selected, None, str(exc)
+    return candidates, selected, details, origin
+
+
 @router.get("/vials/{vid}/labels")
 def vial_labels423(
     vid: int,
@@ -748,6 +806,7 @@ def vial_labels423(
     layout: str = "40x20",
     phase: str = "pre",
     rotation: int = 0,
+    target_mg: str = "",
     db: Session = Depends(get_scoped_db390),
 ):
     from ..vial_labels423 import LAYOUTS
@@ -761,6 +820,20 @@ def vial_labels423(
         raise HTTPException(422, "Unsupported label selection")
 
     v = _get(db, vid)
+    try:
+        candidates, target, detail, notice = _label_dose758(
+            db, v, phase, target_mg
+        )
+        if detail is not None and v.reconstituted_on:
+            from ..vial_labels423 import label_lines
+            from ..vial_label_dose758 import validate_label_fit758
+            lines = label_lines(
+                v, "post", dose_line=detail["line"],
+                concentration_mg_ml=detail["concentration_mg_ml"],
+            )
+            validate_label_fit758(lines, layout, rotation)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     return render(
         request,
         "vial_labels423.html",
@@ -768,6 +841,10 @@ def vial_labels423(
         layout=layout,
         phase=phase,
         rotation=rotation,
+        label_target_candidates=candidates,
+        label_target_mg=target,
+        label_dose_detail=detail,
+        label_target_notice=notice,
     )
 
 
@@ -779,6 +856,7 @@ def vial_labels423_export(
     rotation: int = 0,
     fmt: str = "png",
     download: int = 0,
+    target_mg: str = "",
     db: Session = Depends(get_scoped_db390),
 ):
     from ..vial_labels423 import (
@@ -798,7 +876,20 @@ def vial_labels423_export(
     v = _get(db, vid)
 
     try:
-        lines = label_lines(v, phase)
+        _, target, detail, notice = _label_dose758(
+            db, v, phase, target_mg
+        )
+        if target is not None and detail is None:
+            raise ValueError(notice)
+        lines = label_lines(
+            v, phase,
+            dose_line=detail["line"] if detail else None,
+            concentration_mg_ml=(
+                detail["concentration_mg_ml"] if detail else None
+            ),
+        )
+        from ..vial_label_dose758 import validate_label_fit758
+        validate_label_fit758(lines, layout, rotation)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 

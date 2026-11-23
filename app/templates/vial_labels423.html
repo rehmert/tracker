@@ -47,6 +47,23 @@ dimensions in the printer driver before printing.
     </select>
   </label>
 
+  {% if phase == 'post' %}
+  <label class="field">
+    <span>Target dose (mg)</span>
+    <input name="target_mg" type="number" min="0.000001" step="any"
+           inputmode="decimal"
+           value="{{ label_target_mg if label_target_mg is not none else '' }}"
+           placeholder="Enter or choose an active mg target"
+           list="active-targets758">
+    <small>For this label only; does not change your protocol.</small>
+  </label>
+  <datalist id="active-targets758">
+    {% for mg in label_target_candidates %}
+    <option value="{{ mg }}"></option>
+    {% endfor %}
+  </datalist>
+  {% endif %}
+
   <label class="field">
     <span>Print direction</span>
     <select name="rotation">
@@ -59,6 +76,22 @@ dimensions in the printer driver before printing.
 
   <div><button class="primary">Preview</button></div>
 </form>
+{% if phase == 'post' %}
+  {% if label_dose_detail %}
+  <p class="note" id="label-dose-summary758">
+    Label target: <strong>{{ label_dose_detail.target_mg|num_input }} mg</strong>.
+    Effective concentration: {{ label_dose_detail.concentration_mg_ml|num_input }} mg/mL.
+    Calculated withdrawal: {{ label_dose_detail.withdrawal_ml|num_input }} mL,
+    approximately <strong>{{ label_dose_detail.syringe_units|num_input }} U-100 syringe units</strong>.
+    These are volume markings, not IU. Confirm the vial's concentration and
+    syringe graduations before administration. Previewing does not record a dose.
+  </p>
+  {% else %}
+  <p class="note" role="status" id="label-dose-notice758">
+    {{ label_target_notice }} The label will not invent target mg or syringe units.
+  </p>
+  {% endif %}
+{% endif %
 
 <aside class="card" aria-label="NIIMBOT print setup">
   <h2>Printer setup</h2>
@@ -91,15 +124,15 @@ the 20 mm edge. The SVG preview and PNG export use the same direction.
   <div class="scroll single-label-preview-scroll605" style="padding:1rem;background:#fff;max-width:100%">
     <img class="single-label-preview-image605"
       alt="Vial label preview"
-      src="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}">
+      src="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;target_mg={{ label_target_mg if label_target_mg is not none else '' }}">
   </div>
 
   <p>
-    <a href="/vials/{{ v.id }}/labels/export?fmt=png&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;download=1">
+    <a href="/vials/{{ v.id }}/labels/export?fmt=png&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;target_mg={{ label_target_mg if label_target_mg is not none else '' }}&amp;download=1">
       Download 203 DPI PNG
     </a>
     ·
-    <a href="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;download=1">
+    <a href="/vials/{{ v.id }}/labels/export?fmt=svg&amp;layout={{ layout }}&amp;phase={{ phase }}&amp;rotation={{ rotation }}&amp;target_mg={{ label_target_mg if label_target_mg is not none else '' }}&amp;download=1">
       Download SVG
     </a>
   </p>

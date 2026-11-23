@@ -30,7 +30,7 @@ def _number(value):
     return f'{value:g}'
 
 
-def label_lines(vial, phase):
+def label_lines(vial, phase, *, dose_line=None, concentration_mg_ml=None):
     if phase not in ('pre', 'post'):
         raise ValueError('Invalid label phase')
 
@@ -58,10 +58,15 @@ def label_lines(vial, phase):
         ]
 
         if vial.volume_ml and vial.volume_ml > 0:
-            lines += [
-                f'{_number(vial.content_value / vial.volume_ml)} '
-                f'{_plain(vial.content_unit)}/ML'
-            ]
+            if concentration_mg_ml is not None:
+                # Use the same effective concentration as Dose Log/Calendar,
+                # including an opted-in content-assay override.
+                lines.append(f'{_number(concentration_mg_ml)} MG/ML')
+            else:
+                lines += [
+                    f'{_number(vial.content_value / vial.volume_ml)} '
+                    f'{_plain(vial.content_unit)}/ML'
+                ]
 
         lines += [
             (
@@ -70,6 +75,13 @@ def label_lines(vial, phase):
                 else 'BUD NOT RECORDED'
             )
         ]
+        if dose_line is not None:
+            if (not isinstance(dose_line, str)
+                    or not dose_line.startswith('TARGET:')
+                    or len(dose_line) > 34
+                    or not re.fullmatch(r'[A-Z0-9. :/\-]+', dose_line)):
+                raise ValueError('Invalid target and U-100 label text')
+            lines.append(dose_line)
 
     if vial.lot:
         lines.append('LOT: ' + _plain(vial.lot))
@@ -102,7 +114,13 @@ def _selected(lines, width, height):
         (height - 10) // (11 if width < 120 else 17),
     )
 
-    priority = ('MIX:', 'BUD:', 'VIAL #', 'EXP:')
+    # Reserve a printable row for target/markings ahead of optional metadata.
+    # The legacy layout stays identical when no target has been selected.
+    priority = (
+        ('VIAL #', 'MIX:', 'BUD:', 'TARGET:')
+        if any(s.startswith('TARGET:') for s in lines)
+        else ('MIX:', 'BUD:', 'VIAL #', 'EXP:')
+    )
 
     ordered = (
         lines[:2]
