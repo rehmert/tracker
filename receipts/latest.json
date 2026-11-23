@@ -3,23 +3,16 @@
   "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
   "exit_code": 1,
   "failed_tests": [],
-  "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-22T21:08:31+00:00",
-  "markers": [
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_751_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_751_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_751_EXIT_STATUS=1"
-  ],
+  "failure_category": "GateError",
+  "finished_at_utc": "2026-11-23T12:45:53+00:00",
+  "markers": [],
   "previous_request_id": null,
   "ref": "release/751-strict-csrf-dev-rollout",
   "release": 751,
-  "request_id": "r751-0624c60e6ef7",
+  "request_id": "r751-f495d0f9686a",
   "schema": 1,
-  "started_at_utc": "2026-11-22T21:01:32+00:00",
+  "started_at_utc": "2026-11-23T12:45:52+00:00",
   "status": "failed",
-  "target": "0624c60e6ef7945e291ee6eec03ae4f72f51c403",
-  "test_counts": [
-    "344 passed, 1 warning"
-  ]
+  "target": "f495d0f9686a24403f874f932e34a5039a186dce",
+  "test_counts": []
 }
