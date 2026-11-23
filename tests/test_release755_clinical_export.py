@@ -288,3 +288,15 @@ def test_755_non_numeric_lab_results_do_not_leak(clinical_db):
                    ("Non numeric", "not available","mmol/L",None,None,"SECRET"))
     history=extract_all(clinical_db)["labs"]["data"]["history"]
     assert not any(x["analyte"]=="Non numeric" for x in history)
+
+
+def test_755_unauthorized_new_clinical_fields_fail_publication_gate(clinical_db):
+    output=extract_all(clinical_db)
+    assert sync.validate_datasets(output)
+    output["labs"]["data"]["history"][0]["physician_phone"]="NOT_ALLOWED"
+    with pytest.raises(ValueError,match="LAB_EXPORT_FIELD_BLOCKED"):
+        sync.validate_datasets(output)
+    del output["labs"]["data"]["history"][0]["physician_phone"]
+    output["interventions"]["data"]["history"][0]["private_extra"]="NOT_ALLOWED"
+    with pytest.raises(ValueError,match="INTERVENTION_EXPORT_FIELD_BLOCKED"):
+        sync.validate_datasets(output)

@@ -38,6 +38,45 @@ CONFIG_KEYS = {"schema_version", "repository", "days", "lab_allowlist",
 OPTIONAL_755 = {"export_all_labs", "export_all_regimens", "export_all_compounds"}
 CLINICAL_FLAGS_755 = ("export_all_labs", "export_all_regimens", "export_all_compounds")
 
+# Schema-v2 export fields are explicit and reviewed. Adding new columns to
+# Tracker must never expand the export implicitly.
+LAB_FIELDS_755 = frozenset({
+    "date", "analyte", "value", "unit", "reference_low", "reference_high",
+})
+INTERVENTION_FIELDS_755 = {
+    "recorded_schedule": (
+        frozenset({"date", "type", "medication", "planned_amount", "cadence",
+                   "end_date", "certainty"}),
+        frozenset({"date", "type", "category", "name", "ingredient", "strength",
+                   "form", "planned_amount", "cadence", "weekdays",
+                   "interval_days", "scheduled_time", "end_date",
+                   "active_item", "active_schedule", "tablet_strength_mg",
+                   "prescribed_dose_mg", "tablets_planned", "certainty"}),
+    ),
+    "regimen_log": (
+        frozenset({"date", "type", "category", "name", "ingredient", "strength",
+                   "form", "outcome", "recorded_amount", "tablet_strength_mg",
+                   "administered_dose_mg", "tablets_taken", "certainty"}),
+    ),
+    "recorded_compound_dose": (
+        frozenset({"date", "type", "category", "name", "recorded_amount",
+                   "recorded_unit", "tracked_base_amount",
+                   "tracked_base_unit", "certainty"}),
+    ),
+    "recorded_blend_dose": (
+        frozenset({"date", "type", "category", "compounds",
+                   "recorded_amount", "recorded_unit",
+                   "withdrawn_volume_ml", "certainty"}),
+    ),
+    "active_protocol_plan": (
+        frozenset({"date", "type", "category", "name", "planned_amount",
+                   "planned_unit", "frequency_count", "frequency_period",
+                   "start_week", "end_week", "dose_days", "dose_time",
+                   "end_date", "certainty"}),
+    ),
+}
+
+
 
 def safe_private_file(path):
     path = Path(path).absolute()
@@ -104,6 +143,15 @@ def validate_datasets(datasets):
             elif value is not None and type(value) not in (bool, int, float, str):
                 raise ValueError("SCHEMA_INVALID")
         inspect(obj)
+        if category == "labs":
+            for lab in obj["data"].get("history", []):
+                if not isinstance(lab, dict) or set(lab) != LAB_FIELDS_755:
+                    raise ValueError("LAB_EXPORT_FIELD_BLOCKED")
+        if category == "interventions":
+            for event in obj["data"].get("history", []):
+                if not isinstance(event, dict) or set(event) not in (
+                        INTERVENTION_FIELDS_755.get(event.get("type"), ())):
+                    raise ValueError("INTERVENTION_EXPORT_FIELD_BLOCKED")
         # JSON numeric serialization strictly disallows infinity and NaN.
         canonical(obj)
     return True
