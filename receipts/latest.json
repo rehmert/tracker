@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "35f6aa42aac648f3ed5af527620bd5f4b702b486",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-23T18:55:11+00:00",
+  "finished_at_utc": "2026-11-23T18:56:47+00:00",
   "markers": [
-    "RELEASE_763_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_763_EXIT_STATUS=0",
+    "RELEASE_763_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_763_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_763_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r763-qualify99e10eef",
   "ref": "release/763-progress-prod-hardening",
   "release": 763,
-  "request_id": "r763-qualify99e10eef",
+  "request_id": "r763-devinstall99e10eef",
   "schema": 1,
-  "started_at_utc": "2026-11-23T18:54:52+00:00",
+  "started_at_utc": "2026-11-23T18:56:01+00:00",
   "status": "passed",
   "target": "99e10eef2125e74b4315f3ee89dc546ae22d7524",
   "test_counts": [
