@@ -109,3 +109,7 @@ replaced only by a fresh SHA for the *same* release/base/ref, not by a jump
 to Release 758. Do not queue this release or alter the control branch until
 the stale chain and actual DEV installed baseline are reconciled with the
 live agent. An unqueued or unqualified Release 758 is not installed on DEV.
+
+## Release 758 guarded schema migration review
+
+The first guarded DEV install failed after qualification. Because Release 758 changes app/models.py and app/migrations.py, the guarded runner requires a verified migration backup and an explicit reviewed schema flag. The new installer supplies --db-migration --reviewed-vial-758, and a strict read-only reviewer validates that both schema source files have exactly one additive production_on declaration apiece relative to Release 757. The runner retains the verified DEV SQLite/upload backup gate and all prior safety checks. A new SHA requires fresh qualification and clean installed Release 757 DEV before another installation. PROD remains unauthorized.

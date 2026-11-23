@@ -29,7 +29,8 @@ git show "$TARGET:scripts/tracker-release.sh" > "$RUNNER"
  fail "Pinned release runner integrity mismatch"
 bash -n "$RUNNER"
 echo "RELEASE_758_PINNED_TARGET=$TARGET"
-bash "$RUNNER" --instance DEV --base "$BASE" --target "$TARGET" --ref "$REF"
+bash "$RUNNER" --instance DEV --base "$BASE" --target "$TARGET" --ref "$REF" \
+  --db-migration --reviewed-vial-758
 [[ "$(git branch --show-current)" == main &&
  "$(git rev-parse HEAD)" == "$TARGET" &&
  -z "$(git status --porcelain)" ]] || fail "Installed DEV commit mismatch"

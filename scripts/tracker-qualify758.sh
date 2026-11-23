@@ -47,6 +47,9 @@ while IFS= read -r path; do
   scripts/tracker-release-scoped758.sh|\
   scripts/tracker-qualify758.sh|\
   scripts/tracker-install758.sh|\
+  scripts/tracker-release.sh|\
+  scripts/tracker_schema_review758.py|\
+  tests/test_release758_schema_review.py|\
   tests/test_release758_vial_label_30x15.py|\
   tests/test_release758_vial_label_40x20.py|\
   tests/test_release758_vial_label_dose.py|\
@@ -81,7 +84,7 @@ export GIT_CONFIG_VALUE_1="$QA"
 mkdir -m 700 "$RUN/data"
 cd "$QA"
 export TRACKER_DATA_DIR="$RUN/data" PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1
-for script in scripts/tracker-qualify758.sh scripts/tracker-install758.sh scripts/tracker-release-scoped758.sh; do
+for script in scripts/tracker-qualify758.sh scripts/tracker-install758.sh scripts/tracker-release-scoped758.sh scripts/tracker-release.sh; do
  bash -n "$script"
 done
 "$PY" -B - <<'PYCODE'
@@ -95,6 +98,8 @@ files = (
     "app/vial_label_sheets447.py",
     "app/routers/vials.py",
     "tests/test_release758_vial_label_40x20.py",
+    "scripts/tracker_schema_review758.py",
+    "tests/test_release758_schema_review.py",
 )
 for filename in files:
     ast.parse(Path(filename).read_text(encoding="utf-8"), filename=filename)
