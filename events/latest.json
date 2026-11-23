@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r761-install04fd141d.json",
+  "receipt_path": "receipts/r761-preflight04fd14.json",
   "release": 761,
-  "request_id": "r761-install04fd141d",
+  "request_id": "r761-preflight04fd14",
   "schema": 1,
   "status": "passed",
   "target": "04fd141daa17fd2055f9177527296eb9165a59d2"
