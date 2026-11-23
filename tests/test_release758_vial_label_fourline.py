@@ -131,13 +131,13 @@ def test_758_reconstituted_date_is_required():
 def test_758_print_fit_and_preview_are_complete_svg_png():
     v,coa=fake(vendor="Small Vendor")
     lines=four(v,coa)
-    validate_four_line_fit758(lines,"40x20",0)
-    svg=svg_bytes(lines,"40x20",0).decode()
-    png=png_bytes(lines,"40x20",0)
+    validate_four_line_fit758(lines,"50x30",0)
+    svg=svg_bytes(lines,"50x30",0).decode()
+    png=png_bytes(lines,"50x30",0)
     assert all(line in svg for line in lines)
     assert png.startswith(b"\x89PNG\r\n\x1a\n")
     assert png!=original.png_bytes(["UNRECONSTITUTED"],"40x20")
-    assert len(original._selected(lines,*original._panel_size("40x20")[:2]))==4
+    assert len(original._selected(lines,*original._panel_size("50x30")[:2]))==4
 
 
 @pytest.mark.parametrize("layout,angle",[
@@ -153,7 +153,7 @@ def test_758_unsupported_print_layout_fails_closed(layout,angle):
 def test_758_name_or_vendor_too_long_is_not_silently_truncated():
     v,coa=fake(vendor="An Extremely Long Supplier Company Legal Name")
     with pytest.raises(ValueError,match="cannot print"):
-        validate_four_line_fit758(four(v,coa),"40x20",0)
+        validate_four_line_fit758(four(v,coa),"50x30",0)
 
 
 def test_758_pre_mix_label_remains_original():

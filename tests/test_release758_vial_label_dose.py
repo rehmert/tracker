@@ -297,9 +297,9 @@ def test_758_small_layout_page_shows_switch_layout_instead_of_422(
 def test_758_bulk_sheet_ui_explains_full_dose_label_layout():
     html=(ROOT/"app/templates/vial_label_sheets447.html").read_text()
     Environment().parse(html)
-    assert "40 × 20 mm" in html
-    assert "U-100 syringe markings" in html
-    assert "will refuse an export that truncates" in html
+    assert "50 × 30 mm" in html
+    assert "syringe units" in html
+    assert "rejected if they truncate" in html
 
 
 def test_758_expiry_and_bud_remain_printed_with_target_and_concentration(session):
