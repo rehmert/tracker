@@ -25,8 +25,7 @@ STAGE="$(mktemp -d /tmp/tracker758-install.XXXXXXXX)"
 trap 'rm -rf -- "$STAGE"' EXIT
 RUNNER="$STAGE/runner.sh"
 git show "$TARGET:scripts/tracker-release.sh" > "$RUNNER"
-[[ "$(git hash-object "$RUNNER")" ==
-   "$(git rev-parse "$TARGET:scripts/tracker-release.sh")" ]] ||
+[[ "$(git hash-object "$RUNNER")" == "$(git rev-parse "$TARGET:scripts/tracker-release.sh")" ]] ||
  fail "Pinned release runner integrity mismatch"
 bash -n "$RUNNER"
 echo "RELEASE_758_PINNED_TARGET=$TARGET"
