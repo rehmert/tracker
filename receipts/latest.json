@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "90b297fc07c950d5a44a0bf8fe7d4beabfd8b30f",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-23T13:59:17+00:00",
+  "finished_at_utc": "2026-11-23T14:00:55+00:00",
   "markers": [
-    "RELEASE_758_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_758_EXIT_STATUS=0",
+    "RELEASE_758_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_758_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_758_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r758-6cf718ed0781",
   "ref": "release/758-vial-label-dose-markings",
   "release": 758,
-  "request_id": "r758-6cf718ed0781",
+  "request_id": "r758-install6cf718ed",
   "schema": 1,
-  "started_at_utc": "2026-11-23T13:59:01+00:00",
+  "started_at_utc": "2026-11-23T14:00:12+00:00",
   "status": "passed",
   "target": "6cf718ed0781fdbaa6ff350d782e5cc80758703d",
   "test_counts": [
