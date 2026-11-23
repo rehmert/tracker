@@ -1,10 +1,10 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r760-preflight6f7ab.json",
+  "receipt_path": "receipts/r760-deploy6f7abdab.json",
   "release": 760,
-  "request_id": "r760-preflight6f7ab",
+  "request_id": "r760-deploy6f7abdab",
   "schema": 1,
   "status": "passed",
   "target": "6f7abdabfd584777d6f432fa137be0a8c24b02f4"
