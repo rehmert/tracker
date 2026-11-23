@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-23T16:05:03+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r761-install04fd141d",
+  "ref": "release/761-vials-missing-coa-filter",
+  "release": 761,
+  "request_id": "r761-preflight04fd14",
+  "schema": 1,
+  "started_at_utc": "2026-11-23T16:05:01+00:00",
+  "status": "passed",
+  "target": "04fd141daa17fd2055f9177527296eb9165a59d2",
+  "test_counts": []
+}
