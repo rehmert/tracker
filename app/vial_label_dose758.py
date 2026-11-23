@@ -99,7 +99,14 @@ def dose_line758(view, target_mg):
     markings = U.ml_to_syringe_units(volume_ml)
     if not isfinite(markings) or not isfinite(volume_ml) or markings <= 0:
         raise ValueError("Unable to calculate a finite positive withdrawal from this vial.")
-    text = f"TARGET:{_short758(target)}MG U100:{_short758(markings)}"
+    target_display = _short758(target, 4)
+    marks_display = _short758(markings, 3)
+    if target_display == "0" or marks_display == "0":
+        raise ValueError(
+            "Target or U-100 syringe markings are too small to print "
+            "accurately on this label."
+        )
+    text = f"TARGET:{target_display}MG U100:{marks_display}"
     if len(text) > 34:
         raise ValueError("Target and syringe-unit values are too long for the printed label.")
     return {

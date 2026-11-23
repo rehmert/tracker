@@ -264,3 +264,17 @@ def test_758_label_template_preserves_preview_and_download_query():
     assert template.count('&amp;rotation={{ rotation }}')==3
     assert "label-dose-summary758" in template
     assert "U-100 syringe units" in template
+
+
+def test_758_tiny_target_never_prints_as_zero(session):
+    c,v=stock(session,mg=2,ml=1)
+    vd=vial_views(session,[v])[v.id]
+    with pytest.raises(ValueError,match="too small"):
+        dose_line758(vd,0.0000001)
+
+
+def test_758_mcg_level_label_target_keeps_mass_precision(session):
+    c,v=stock(session,mg=2,ml=1)
+    vd=vial_views(session,[v])[v.id]
+    result=dose_line758(vd,0.005)
+    assert result["line"]=="TARGET:0.005MG U100:0.25"
