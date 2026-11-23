@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import re
+import sqlite3
 import stat
 import sys
 import tempfile
@@ -357,7 +358,8 @@ def run(argv=None):
         print("PROGRESS_754_SCHEMA=VALIDATED")
         print("PROGRESS_754_DATA_SOURCE=" + label)
         return 0
-    except (ValueError, RuntimeError, OSError, TypeError, KeyError, json.JSONDecodeError) as exc:
+    except (ValueError, RuntimeError, OSError, sqlite3.Error, UnicodeError,
+            TypeError, KeyError, json.JSONDecodeError) as exc:
         # A failed attempt must not destroy the previous success timestamp.
         if "output" in locals() and output.is_dir() and not output.is_symlink():
             try:

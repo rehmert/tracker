@@ -332,3 +332,20 @@ def test_754_transient_network_failures_retry_bounded(monkeypatch):
     with pytest.raises(ValueError, match="GITHUB_NETWORK_UNAVAILABLE"):
         sync._api("NO_REAL_TOKEN","GET","/repos/rehmert/tracker-progress-data")
     assert len(attempts) == 3
+
+
+def test_754_unreadable_sqlite_error_is_sanitized(tmp_path, monkeypatch, capsys):
+    path=tmp_path/"not-database.db"
+    path.write_text("arbitrary data never to print")
+    config=tmp_path/"config.json"
+    values={"schema_version":1,"repository":sync.REPOSITORY,"days":90,
+            "lab_allowlist":[],"medication_allowlist":[],
+            "token_file":str(tmp_path/"absent"),"prod_approved":False}
+    config.write_text(json.dumps(values));config.chmod(0o600)
+    monkeypatch.setenv("TRACKER_INSTANCE","DEV")
+    code=sync.run(["--config",str(config),"--db",str(path),
+                   "--output",str(tmp_path/"out"),"--source","synthetic"])
+    stderr=capsys.readouterr().err
+    assert code==1 and stderr.startswith("PROGRESS_754_ERROR=")
+    assert "arbitrary data" not in stderr
+    assert str(path) not in stderr
