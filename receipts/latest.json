@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-23T15:53:28+00:00",
+  "finished_at_utc": "2026-11-23T15:54:54+00:00",
   "markers": [
-    "RELEASE_761_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_761_EXIT_STATUS=0",
+    "RELEASE_761_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_761_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_761_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r761-04fd141daa17",
   "ref": "release/761-vials-missing-coa-filter",
   "release": 761,
-  "request_id": "r761-04fd141daa17",
+  "request_id": "r761-install04fd141d",
   "schema": 1,
-  "started_at_utc": "2026-11-23T15:53:22+00:00",
+  "started_at_utc": "2026-11-23T15:54:22+00:00",
   "status": "passed",
   "target": "04fd141daa17fd2055f9177527296eb9165a59d2",
   "test_counts": [
