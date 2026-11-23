@@ -126,9 +126,16 @@ def validate_four_line_fit758(lines,layout,rotation):
     if len(lines)!=4 or not all(isinstance(s,str) and s for s in lines):
         raise ValueError("Reconstituted labels require four nonempty lines.")
     w,h,_,_=base._panel_size(layout)
-    text_w,text_h=(h,w) if rotation in (90,270) else (w,h)
-    if rotation not in rotated.ROTATIONS:
-        raise ValueError("Unsupported label rotation.")
+    # The 40x20 normal PNG uses the dedicated horizontal glyph condensation.
+    # Rotation and other layouts still use legacy 2x horizontal glyphs, which
+    # could silently clip a row despite appearing complete in SVG. Fail
+    # closed until both render paths support an equivalent compact font.
+    if layout != "40x20" or rotation != 0:
+        raise ValueError(
+            "Four-line reconstituted labels require 40x20 mm with "
+            "normal text direction to avoid clipped dose values."
+        )
+    text_w,text_h=w,h
     chosen=(rotated._selected_rotated(lines,text_w,text_h)
             if rotation else base._selected(lines,w,h))
     # The 4-line PNG uses horizontally condensed glyphs, 2x vertically,
