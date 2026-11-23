@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tracker progress snapshot v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "source_instance",
+    "generated_at_utc",
+    "reporting_period",
+    "classification",
+    "data"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "source_instance": {
+      "enum": [
+        "DEV-SYNTHETIC",
+        "PROD"
+      ]
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reporting_period": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "additionalProperties": false
+    },
+    "classification": {
+      "const": "observed_and_descriptive_calculations"
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}
