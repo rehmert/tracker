@@ -114,6 +114,12 @@ elif [[ "$RELEASE" == 710 ]]; then
   # One prepared physical blend in the standard dose form; four additive
   # fields and a supply index require exact-source review and verified backup.
   DEPLOY_EXTRA=(--reviewed-blend-710 --db-migration)
+elif [[ "$RELEASE" == 763 ]]; then
+  # PROD's installed Release 761 lacks the five additive progress tables.
+  # Explicit exact-schema review and verified SQLite + upload backup required.
+  [[ "$BASE" == 04fd141daa17fd2055f9177527296eb9165a59d2 ]] ||
+    fail "Release 763 progress schema catch-up requires installed PROD 761"
+  DEPLOY_EXTRA=(--reviewed-progress-762 --db-migration)
 elif [[ "$RELEASE" == 760 ]]; then
   # PROD 755 catch-up includes the exact reviewed nullable Release 758
   # manufacturing-date addition; pin the old PROD commit and require a

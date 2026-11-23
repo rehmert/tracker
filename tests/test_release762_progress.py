@@ -92,7 +92,7 @@ def test_762_empty_dashboard_no_false_zero(progress_client762):
     assert "No tape measurements" in response.text
     assert "Insufficient data" in response.text
     assert "Optional body composition" in response.text
-    assert "No complete reported protein days" in response.text
+    assert "No days with protein values for every logged food item" in response.text
     assert 'href="/progress"' in client.get("/").text
 
 
@@ -228,7 +228,7 @@ def test_762_live_data_reuse_without_mutation(progress_client762):
     assert "ApoB" in response.text
     assert "160" in response.text
     assert "0 fully reported" not in response.text  # incomplete protein day never counts as complete
-    assert "No complete reported protein days" in response.text
+    assert "No days with protein values for every logged food item" in response.text
     with Session(engine) as db:
         assert len(list(db.scalars(select(VitalReading)))) == 2
         assert len(list(db.scalars(select(LabResult)))) == 1
@@ -247,3 +247,57 @@ def test_762_template_and_auth_boundaries_static():
     assert 'ProgressMarker762' in router
     main = (ROOT/"app/main.py").read_text()
     assert "app.include_router(progress762.router)" in main
+
+def test_763_waist_change_requires_two_distinct_dates():
+    from app.progress_calc762 import metric_change_details762
+    from types import SimpleNamespace
+    today = date.today()
+    samples = [SimpleNamespace(measured_on=today, waist_navel=103),
+               SimpleNamespace(measured_on=today, waist_navel=102)]
+    assert metric_change_details762(samples, "waist_navel") is None
+    samples.append(SimpleNamespace(measured_on=today-timedelta(days=7), waist_navel=100))
+    details = metric_change_details762(samples, "waist_navel")
+    assert details == {"delta": 2.0, "first": today-timedelta(days=7),
+                       "last": today, "days": 2}
+
+
+def test_763_bodyfat_summary_skips_newer_partial_records(progress_client762):
+    client, _, _ = progress_client762
+    today = date.today()
+    first = client.post("/progress/composition/save", data={
+        "measured_on": (today-timedelta(days=7)).isoformat(),
+        "method": "BIA", "body_fat_pct": "24.7"
+    }, follow_redirects=True)
+    assert first.status_code == 200
+    second = client.post("/progress/composition/save", data={
+        "measured_on": today.isoformat(), "method": "DEXA",
+        "mass_unit": "lb", "fat_free_mass_kg": "170"
+    }, follow_redirects=True)
+    assert second.status_code == 200
+    page = client.get("/progress").text
+    assert f"24.7% · BIA · {today-timedelta(days=7)}" in page
+    assert "Need 2 dates" in page
+
+
+def test_763_schema_production_review_on_pinned_candidate():
+    # Execute the real, read-only migration guard against the isolated QA
+    # worktree and its exact target; no live user database is opened.
+    import subprocess
+    import sys
+    target = subprocess.check_output(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+    cmd = [sys.executable, str(ROOT/"scripts/tracker_schema_review763.py"),
+           "--root", str(ROOT),
+           "--base", "04fd141daa17fd2055f9177527296eb9165a59d2",
+           "--target", target]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    assert "RELEASE_763_PROGRESS_SCHEMA_REVIEW=PASSED" in result.stdout
+    runner = (ROOT/"scripts/tracker-release.sh").read_text()
+    remote = (ROOT/"scripts/tracker_prod_remote568.sh").read_text()
+    assert "--reviewed-progress-762" in runner
+    assert "RELEASE_763_PROGRESS_SCHEMA_REVIEW=PASSED" in runner
+    assert "DEPLOY_EXTRA=(--reviewed-progress-762 --db-migration)" in remote
+    invalid = subprocess.run(cmd[:5] + [target, "--target", target],
+                             capture_output=True, text=True, check=False)
+    assert invalid.returncode != 0

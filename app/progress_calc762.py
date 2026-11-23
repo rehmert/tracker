@@ -37,12 +37,23 @@ def period_change762(observed, end, days, min_count):
         return None
     return current - previous
 
-def metric_change762(rows, attr):
-    values = [(r.measured_on, getattr(r, attr)) for r in rows if getattr(r, attr) is not None]
-    if len(values) < 2:
+def metric_change_details762(rows, attr):
+    """Compare observations on distinct dates only, last reading per date."""
+    distinct = {}
+    for row in rows:
+        value = getattr(row, attr)
+        if value is not None:
+            distinct[row.measured_on] = float(value)
+    if len(distinct) < 2:
         return None
-    values.sort()
-    return float(values[-1][1]) - float(values[0][1])
+    first, last = min(distinct), max(distinct)
+    return {"delta": distinct[last] - distinct[first],
+            "first": first, "last": last, "days": len(distinct)}
+
+
+def metric_change762(rows, attr):
+    details = metric_change_details762(rows, attr)
+    return details["delta"] if details else None
 
 def weight_report762(observed, today, initial=None, goal=None):
     latest = observed[-1][1] if observed else None

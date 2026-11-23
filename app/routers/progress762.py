@@ -17,7 +17,7 @@ from .. import charts, config, labs, metrics, services
 from ..food_read_engine406 import get_food_read_engine406
 from ..models import LabReport, LabResult, VitalReading
 from ..progress_calc762 import (daily_weights762, moving762, weight_report762,
-                                metric_change762, strength_trend762, interpret762)
+                                metric_change_details762, strength_trend762, interpret762)
 from ..progress_models762 import (MEASURES762, COMPOSITION762, FREQUENCIES762,
     ProgressSettings762, ProgressMeasure762, ProgressComposition762,
     ProgressFunction762, ProgressMarker762)
@@ -218,7 +218,10 @@ def progress762(
     visible_comp = [r for r in comp_all if r.measured_on >= since]
     visible_function = [r for r in function_all if r.measured_on >= since]
     visible_marker = [r for r in marker_all if r.measured_on >= since]
-    waist_delta = metric_change762(visible_tape, "waist_navel")
+    waist_details = metric_change_details762(visible_tape, "waist_navel")
+    waist_delta = waist_details["delta"] if waist_details else None
+    latest_body_fat = next((r for r in reversed(comp_all)
+        if r.body_fat_pct is not None), None)
     latest_waist = next((r.waist_navel for r in reversed(measure_all) if r.waist_navel is not None), None)
     waist_height = latest_waist / settings.height_cm if (
         latest_waist is not None and settings and settings.height_cm) else None
@@ -332,7 +335,9 @@ def progress762(
     return render(request, "progress762.html",
         days=days, ranges=RANGES762, markers=bool(markers), now=today, settings=settings,
         unit=config.WEIGHT_UNIT, tape_unit=tape_unit, display_weight=display_weight,
-        weight=weight, weight_chart=weight_chart, waist_chart=waist_chart, waist_delta=_display762(waist_delta, tape_unit),
+        weight=weight, weight_chart=weight_chart, waist_chart=waist_chart,
+        waist_delta=_display762(waist_delta, tape_unit), waist_details=waist_details,
+        latest_body_fat=latest_body_fat,
         latest_waist=_display762(latest_waist, tape_unit), waist_height=waist_height,
         measure_fields=MEASURES762, composition_fields=COMPOSITION762,
         measures=list(reversed(visible_tape))[:12], compositions=list(reversed(visible_comp))[:12],
