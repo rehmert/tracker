@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r759-installeb1d3ab3",
-  "action": "dev_install",
-  "release": 759,
-  "target": "eb1d3ab3c66aa8d2c8af8cc7ae4ed85bf4d2357d",
-  "base": "6cf718ed0781fdbaa6ff350d782e5cc80758703d",
-  "ref": "release/759-mass-inventory-display",
-  "previous_request_id": "r759-eb1d3ab3c66a"
+  "request_id": "r760-6f7abdabfd58",
+  "action": "qualify",
+  "release": 760,
+  "target": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
+  "base": "eb1d3ab3c66aa8d2c8af8cc7ae4ed85bf4d2357d",
+  "ref": "release/760-prod-schema-catchup",
+  "previous_request_id": null
 }
