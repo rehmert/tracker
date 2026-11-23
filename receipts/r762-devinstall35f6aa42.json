@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "04fd141daa17fd2055f9177527296eb9165a59d2",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-23T18:38:12+00:00",
+  "markers": [
+    "RELEASE_762_DEV_INSTALL=SUCCESS",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r762-qualify35f6aa42",
+  "ref": "release/762-body-composition-progress",
+  "release": 762,
+  "request_id": "r762-devinstall35f6aa42",
+  "schema": 1,
+  "started_at_utc": "2026-11-23T18:37:30+00:00",
+  "status": "passed",
+  "target": "35f6aa42aac648f3ed5af527620bd5f4b702b486",
+  "test_counts": [
+    "27 passed, 1 warning"
+  ]
+}
