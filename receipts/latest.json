@@ -1,18 +1,20 @@
 {
   "action": "qualify",
-  "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
-  "exit_code": 1,
+  "base": "90b297fc07c950d5a44a0bf8fe7d4beabfd8b30f",
+  "exit_code": 2,
   "failed_tests": [],
-  "failure_category": "GateError",
-  "finished_at_utc": "2026-11-23T12:45:53+00:00",
-  "markers": [],
+  "failure_category": "ShellSyntax",
+  "finished_at_utc": "2026-11-23T13:25:54+00:00",
+  "markers": [
+    "RELEASE_758_INSTALLED_DEV=UNMODIFIED"
+  ],
   "previous_request_id": null,
-  "ref": "release/751-strict-csrf-dev-rollout",
-  "release": 751,
-  "request_id": "r751-f495d0f9686a",
+  "ref": "release/758-vial-label-dose-markings",
+  "release": 758,
+  "request_id": "r758-24b74dd98e3c",
   "schema": 1,
-  "started_at_utc": "2026-11-23T12:45:52+00:00",
+  "started_at_utc": "2026-11-23T13:25:53+00:00",
   "status": "failed",
-  "target": "f495d0f9686a24403f874f932e34a5039a186dce",
+  "target": "24b74dd98e3c3e67ccf1ce88ef0ed8c866ccc925",
   "test_counts": []
 }
