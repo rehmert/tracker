@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r758-install7a1faab4",
-  "action": "dev_install",
+  "request_id": "r758-6cf718ed0781",
+  "action": "qualify",
   "release": 758,
-  "target": "7a1faab4bca031cfbdb3454adf16d66fe7cca081",
+  "target": "6cf718ed0781fdbaa6ff350d782e5cc80758703d",
   "base": "90b297fc07c950d5a44a0bf8fe7d4beabfd8b30f",
   "ref": "release/758-vial-label-dose-markings",
-  "previous_request_id": "r758-7a1faab4bca0"
+  "previous_request_id": null
 }
