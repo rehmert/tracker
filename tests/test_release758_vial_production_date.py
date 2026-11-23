@@ -202,3 +202,9 @@ def test_758_unknown_date_placeholder_on_both_types():
                             detail=dose_line758(view,1.4))
     assert pre[0].endswith("/ N/A")
     assert post[0]==pre[0]
+
+
+def test_758_png_font_has_all_required_lowercase_syringe_terms():
+    for char in "mgunits":
+        assert char in label.FONT, "No bitmap glyph for " + char
+    assert "=" in label.FONT
