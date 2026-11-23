@@ -49,7 +49,8 @@ def validate_options447(layout, phase, rotation, copies):
         raise ValueError("Copies must be 1 to 4 per vial")
 
 
-def label_panels447(vials, phase="auto", copies=1, *, dose_details=None):
+def label_panels447(vials, phase="auto", copies=1, *,
+                   dose_details=None, four_line_details=None):
     """Use current database values and fail if a requested phase is unavailable."""
     if phase not in PHASES or type(copies) is not int or not 1 <= copies <= MAX_COPIES:
         raise ValueError("Invalid label configuration")
@@ -62,12 +63,16 @@ def label_panels447(vials, phase="auto", copies=1, *, dose_details=None):
             if phase == "auto" else phase
         )
         try:
-            info = (dose_details or {}).get(vial.id) if applied == "post" else None
-            lines = original.label_lines(
-                vial, applied,
-                dose_line=info["line"] if info else None,
-                concentration_mg_ml=info["concentration_mg_ml"] if info else None,
-            )
+            compact = (four_line_details or {}).get(vial.id) if applied == "post" else None
+            if compact is not None:
+                lines = list(compact)
+            else:
+                info = (dose_details or {}).get(vial.id) if applied == "post" else None
+                lines = original.label_lines(
+                    vial, applied,
+                    dose_line=info["line"] if info else None,
+                    concentration_mg_ml=info["concentration_mg_ml"] if info else None,
+                )
         except ValueError as exc:
             raise ValueError(f"Vial #{vial.id}: {exc}") from exc
         for _ in range(copies):

@@ -100,13 +100,28 @@ def _label_job447(db, ids, layout, phase, rotation, copies):
                         # Missing concentration or insufficient stock: no
                         # guessed syringe markings on this vial's label.
                         continue
+        four_line_details = {}
+        if isinstance(db, Session) and phase != "pre":
+            from ..vial_label_fourline758 import (
+                four_line_label758, selected_coa758,
+                validate_four_line_fit758,
+            )
+            post_vials = [v for v in ordered if
+                          phase == "post" or
+                          (phase == "auto" and v.reconstituted_on)]
+            if post_vials:
+                views = services.vial_views(db, post_vials)
+                for v in post_vials:
+                    four_line_details[v.id] = four_line_label758(
+                        v, views[v.id], coa=selected_coa758(v),
+                        detail=dose_details.get(v.id))
         panels = label_panels447(
-            ordered, phase, copies, dose_details=dose_details
+            ordered, phase, copies, dose_details=dose_details,
+            four_line_details=four_line_details
         )
-        if dose_details:
-            from ..vial_label_dose758 import validate_label_fit758
-            for lines in panels:
-                validate_label_fit758(lines, layout, rotation)
+        for lines in panels:
+            if len(lines) == 4 and lines[-1].endswith(" units"):
+                validate_four_line_fit758(lines, layout, rotation)
         pages = paginate447(panels, layout)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -807,6 +822,7 @@ def vial_labels423(
     phase: str = "pre",
     rotation: int = 0,
     target_mg: str = "",
+    coa_id: str = "",
     db: Session = Depends(get_scoped_db390),
 ):
     from ..vial_labels423 import LAYOUTS
@@ -821,22 +837,24 @@ def vial_labels423(
 
     v = _get(db, vid)
     fit_warning = ""
+    chosen_coa = None
     try:
         candidates, target, detail, notice = _label_dose758(
             db, v, phase, target_mg
         )
-        if detail is not None and v.reconstituted_on:
-            from ..vial_labels423 import label_lines
-            from ..vial_label_dose758 import validate_label_fit758
-            lines = label_lines(
-                v, "post", dose_line=detail["line"],
-                concentration_mg_ml=detail["concentration_mg_ml"],
+        if phase == "post" and v.reconstituted_on:
+            from ..vial_label_fourline758 import (
+                four_line_label758, selected_coa758,
+                validate_four_line_fit758,
             )
+            chosen_coa = selected_coa758(v, coa_id)
+            vd = services.vial_views(db, [v])[v.id]
+            lines = four_line_label758(v, vd, coa=chosen_coa,
+                                       detail=detail)
             try:
-                validate_label_fit758(lines, layout, rotation)
+                validate_four_line_fit758(lines, layout, rotation)
             except ValueError as exc:
-                # Keep the controls available so a user can choose a larger
-                # label; do not render a misleadingly truncated preview.
+                # Preserve settings so the user can fix layout/long text.
                 fit_warning = str(exc)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -852,6 +870,7 @@ def vial_labels423(
         label_dose_detail=detail,
         label_target_notice=notice,
         label_fit_warning=fit_warning,
+        label_coa_id=chosen_coa.id if chosen_coa else None,
     )
 
 
@@ -864,6 +883,7 @@ def vial_labels423_export(
     fmt: str = "png",
     download: int = 0,
     target_mg: str = "",
+    coa_id: str = "",
     db: Session = Depends(get_scoped_db390),
 ):
     from ..vial_labels423 import (
@@ -888,15 +908,17 @@ def vial_labels423_export(
         )
         if target is not None and detail is None:
             raise ValueError(notice)
-        lines = label_lines(
-            v, phase,
-            dose_line=detail["line"] if detail else None,
-            concentration_mg_ml=(
-                detail["concentration_mg_ml"] if detail else None
-            ),
-        )
-        from ..vial_label_dose758 import validate_label_fit758
-        validate_label_fit758(lines, layout, rotation)
+        if phase == "post":
+            from ..vial_label_fourline758 import (
+                four_line_label758, selected_coa758,
+                validate_four_line_fit758,
+            )
+            selected = selected_coa758(v, coa_id)
+            vd = services.vial_views(db, [v])[v.id]
+            lines = four_line_label758(v, vd, coa=selected, detail=detail)
+            validate_four_line_fit758(lines, layout, rotation)
+        else:
+            lines = label_lines(v, phase)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 

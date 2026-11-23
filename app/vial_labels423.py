@@ -243,23 +243,28 @@ def png_bytes(lines, layout):
 
             scale = 1 if w < 120 else 2
             step = 11 if scale == 1 else 17
+            # The new four-line layout needs compact horizontal glyphs
+            # without shrinking the vertical 203-DPI bitmap text. Legacy
+            # labels remain pixel-identical to their existing renderer.
+            compact = len(lines) == 4 and lines[-1].endswith(' units')
+            scale_x = 1 if compact else scale
 
             for index, line in enumerate(_selected(lines, w, h)):
                 x0, y0 = bx + 4, by + 4 + index * step
 
                 for j, ch in enumerate(line):
-                    x = x0 + j * 6 * scale
+                    x = x0 + j * 6 * scale_x
 
-                    if x + 5 * scale > bx + w - 3:
+                    if x + 5 * scale_x > bx + w - 3:
                         break
 
                     for gy, bits in enumerate(FONT.get(ch, FONT['?'])):
                         for gx, bit in enumerate(bits):
                             if bit == '1':
                                 for sy in range(scale):
-                                    for sx in range(scale):
+                                    for sx in range(scale_x):
                                         point(
-                                            x + gx * scale + sx,
+                                            x + gx * scale_x + sx,
                                             y0 + gy * scale + sy,
                                         )
 
