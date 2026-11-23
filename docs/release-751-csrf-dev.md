@@ -233,3 +233,22 @@ baseline vs candidate comparison then includes those three cases, preserving
 strict coverage and fail-closed behavior. A fresh regression test verifies
 the merge's negative cases. PROD and live application code remain untouched;
 no automated release request was queued.
+
+## General backend module isolation replaces unreliable xdist file sharing
+
+The guarded install at 14d563d5 again failed backend parity for the unchanged
+Release 655 routine test, despite passing the focused gate. The underlying
+runner shares one SQLite database among multiple files on each xdist worker,
+while some historical tests assume an empty active-workout state.
+
+The Release 751-only backend parity runner now executes each discovered pytest
+backend module in a fresh process with an independent disposable database.
+It runs 16 simultaneous subprocesses and retains bounded timeouts. Both
+exact source trees run under identical rules. All module JUnit identities
+are validated and combined fail-closed, preserving all baseline test
+identities and rejecting new failures/errors/skips, missing tests, malformed
+JUnit, unexpected collection errors, and insufficient test counts. The known
+baseline 627 collection error is an explicit one-module exception only for
+the old source tree. The extra Chromium 676 and Workout 662 gates remain
+mandatory. A new scoped test proves actual independent module processes.
+No runtime code, PROD, or automated release queue changed.

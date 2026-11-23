@@ -15,6 +15,78 @@ parity = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(parity)
 
 
+def test_751_backend_modules_discovered_without_skipping_test_files(tmp_path):
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    (tests / "test_alpha.py").write_text("def test_a(): pass\n")
+    (tests / "custom_test.py").write_text("def test_b(): pass\n")
+    (tests / "test_empty.py").write_text("# empty helper\n")
+    (tests / "browser").mkdir()
+    (tests / "browser" / "test_excluded.py").write_text("def test_c(): pass\n")
+    found = parity.discover_modules751(tmp_path)
+    assert found == (
+        'tests/custom_test.py',
+        'tests/test_alpha.py',
+        'tests/test_empty.py',
+    )
+    assert parity.discover_modules751(
+        tmp_path, ('tests/test_empty.py',)
+    ) == found[:2]
+
+
+def test_751_backend_module_isolation_runs_complete_real_pytest(tmp_path):
+    root = tmp_path / "source"
+    tests = root / "tests"
+    tests.mkdir(parents=True)
+    for n in ("a", "b", "c"):
+        (tests / f"test_{n}.py").write_text(
+            "from pathlib import Path\n"
+            "import os\n"
+            f"def test_{n}_isolated_database():\n"
+            "    directory = Path(os.environ['TRACKER_DATA_DIR'])\n"
+            "    marker = directory / 'per_module_marker'\n"
+            "    assert not marker.exists()\n"
+            "    marker.write_text('test')\n"
+        )
+    actual = parity.run_isolated_modules751(
+        sys.executable, root, ROOT / 'scripts',
+        tmp_path / 'results',
+        min_cases=3,
+    )
+    assert len(actual) == 3
+    assert all(result == 'passed' for result in actual.values())
+    assert set(actual) == {
+        f'tests/test_{n}.py::test_{n}_isolated_database'
+        for n in ('a', 'b', 'c')
+    }
+
+
+def test_751_backend_module_junit_rejects_bad_outcomes(tmp_path):
+    node = 'tests/test_abc.py::test_a'
+    xml = tmp_path / 'test.xml'
+    xml.write_text('<testsuite>' + _case(node) + '</testsuite>')
+    assert parity._module_case_report751(
+        xml, 'tests/test_abc.py', 0, allow_legacy_collection=False
+    ) == {node: 'passed'}
+    for rc in (1, 2, 3, 4, 6):
+        with pytest.raises(parity.ParityError):
+            parity._module_case_report751(
+                xml, 'tests/test_abc.py', rc, allow_legacy_collection=False
+            )
+    with pytest.raises(parity.ParityError, match='Unexpected module JUnit'):
+        parity._module_case_report751(
+            xml, 'tests/test_other.py', 0, allow_legacy_collection=False
+        )
+    xml.write_text('<testsuite></testsuite>')
+    assert parity._module_case_report751(
+        xml, 'tests/test_empty.py', 5, allow_legacy_collection=False
+    ) == {}
+    with pytest.raises(parity.ParityError):
+        parity._module_case_report751(
+            xml, 'tests/test_abc.py', 0, allow_legacy_collection=False
+        )
+
+
 def test_751_dev_receipt_accepts_parity_evidence_and_rejects_missing_gates():
     # Exercise the REAL post-install evidence validator, which previously
     # rejected Release 751 because it required an obsolete all-green marker.
@@ -364,6 +436,9 @@ def test_751_baseline_gate_is_disposable_and_narrow():
     assert "merge_isolated_workouts662" in source
     assert "extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,)" in source
     assert "RELEASE_751_BACKEND_WORKOUTS_662_ISOLATION=PASSED" in source
+    assert "run_isolated_modules751" in source
+    assert "MODULE_WORKERS_751 = 16" in source
+    assert "RELEASE_751_BACKEND_MODULE_ISOLATION=PASSED" in source
     assert "root / 'baseline-focus'" in source
     assert "root / 'candidate-focus'" in source
     assert "RELEASE_751_BACKEND_FOCUSED_PARITY=PASSED" in source

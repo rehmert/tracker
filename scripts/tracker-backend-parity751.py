@@ -8,6 +8,7 @@ Legacy failures are retained in private local reports, never declared passed.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 import hashlib
 import os
 from pathlib import Path
@@ -285,6 +286,131 @@ def run_suite(python: str, source: Path, data: Path, output: Path,
           + '_EXIT_' + str(result.returncode), flush=True)
 
 
+# Every backend test module gets a fresh pytest process and therefore an
+# independent conftest-created SQLite DB on BOTH immutable source trees.
+# Sixteen jobs run concurrently; no test case is suppressed or retried.
+MODULE_WORKERS_751 = 16
+MODULE_TIMEOUT_SECONDS_751 = 600
+TREE_TIMEOUT_SECONDS_751 = 1200
+
+
+def discover_modules751(source: Path, extra_ignores: tuple[str, ...] = ()) -> tuple[str, ...]:
+    tests = source / 'tests'
+    if not tests.is_dir():
+        raise ParityError('Missing source tests tree')
+    ignores = (*IGNORES, *extra_ignores)
+    modules = {
+        file.relative_to(source).as_posix()
+        for pattern in ('test_*.py', '*_test.py')
+        for file in tests.rglob(pattern)
+        if file.is_file() and not file.is_symlink()
+    }
+    result = tuple(sorted(
+        name for name in modules
+        if not any(name == ignore or name.startswith(ignore.rstrip('/') + '/')
+                   for ignore in ignores)
+    ))
+    if not result:
+        raise ParityError('No backend modules discovered')
+    return result
+
+
+def _module_case_report751(xml: Path, module: str, rc: int,
+                           *, allow_legacy_collection: bool) -> dict:
+    if not xml.is_file():
+        raise ParityError('Missing module JUnit evidence: ' + module)
+    if rc == 5:
+        # Pytest matched an empty helper file; never accept any lost JUnit
+        # cases as an excuse for a no-tests exit.
+        if ET.parse(xml).getroot().findall('.//testcase'):
+            raise ParityError('Nonempty JUnit on no-tests exit: ' + module)
+        return {}
+    if rc not in (0, 1, 2):
+        raise ParityError('Abnormal module pytest exit: ' + module)
+    cases = read_report(xml)
+    collection = '__collection__:' + module[:-3].replace('/', '.')
+    for key in cases:
+        if key != collection and not key.startswith(module + '::'):
+            raise ParityError('Unexpected module JUnit identity: ' + module)
+    failed = any(value in ('failed', 'error') for value in cases.values())
+    if (rc == 0 and failed) or (rc == 1 and not failed):
+        raise ParityError('Module JUnit does not match pytest exit: ' + module)
+    if rc == 2:
+        if not (allow_legacy_collection
+                and module == 'tests/test_release627_csrf_remaining_negative_matrix.py'
+                and cases == {LEGACY_627_COLLECTION_ERROR: 'error'}):
+            raise ParityError('Module collection error blocked: ' + module)
+    return cases
+
+
+def _run_single_module751(python: str, source: Path, plugin_dir: Path,
+                          output_root: Path, module: str,
+                          *, allow_legacy_collection: bool) -> tuple[str, dict]:
+    ident = hashlib.sha256(module.encode('utf-8')).hexdigest()
+    run = output_root / ident
+    run.mkdir(mode=0o700)
+    data = run / 'data'
+    data.mkdir(mode=0o700)
+    xml = run / 'junit.xml'
+    log = run / 'pytest.log'
+    env = dict(os.environ, TRACKER_DATA_DIR=str(data),
+               PYTHONPATH=os.pathsep.join((str(source), str(plugin_dir))),
+               PYTHONDONTWRITEBYTECODE='1')
+    argv = [python, '-B', '-m', 'pytest', '-p', 'tracker_pytest_nodeid751',
+            '-q', '--tb=short', '--disable-warnings',
+            f'--junitxml={xml}', module]
+    with log.open('wb') as stream:
+        os.chmod(log, 0o600)
+        try:
+            process = subprocess.run(
+                argv, cwd=source, env=env, stdin=subprocess.DEVNULL,
+                stdout=stream, stderr=subprocess.STDOUT,
+                timeout=MODULE_TIMEOUT_SECONDS_751, check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ParityError('Backend module timeout: ' + module) from exc
+    result = _module_case_report751(
+        xml, module, process.returncode,
+        allow_legacy_collection=allow_legacy_collection,
+    )
+    return module, result
+
+
+def run_isolated_modules751(python: str, source: Path, plugin_dir: Path,
+                            output_root: Path,
+                            *, allow_legacy_collection: bool = False,
+                            extra_ignores: tuple[str, ...] = (),
+                            min_cases: int = 4500) -> dict:
+    """Exhaustive backend parity with 16 simultaneous fresh-process jobs."""
+    output_root.mkdir(mode=0o700)
+    modules = discover_modules751(source, extra_ignores)
+    print('RELEASE_751_BACKEND_MODULES_DISCOVERED=' + str(len(modules)),
+          flush=True)
+    results = {}
+    pool = ThreadPoolExecutor(max_workers=MODULE_WORKERS_751)
+    try:
+        futures = {
+            pool.submit(_run_single_module751, python, source, plugin_dir,
+                        output_root, module,
+                        allow_legacy_collection=allow_legacy_collection): module
+            for module in modules
+        }
+        try:
+            for future in as_completed(futures, timeout=TREE_TIMEOUT_SECONDS_751):
+                module, report = future.result()
+                for identity, outcome in report.items():
+                    if identity in results:
+                        raise ParityError('Duplicate backend test identity')
+                    results[identity] = outcome
+        except FuturesTimeoutError as exc:
+            raise ParityError('Backend module suite exceeded 1200 seconds') from exc
+    finally:
+        pool.shutdown(wait=True, cancel_futures=True)
+    if len(results) < min_cases:
+        raise ParityError('Backend module coverage unexpectedly low')
+    return results
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--python', required=True)
@@ -327,15 +453,18 @@ def main() -> int:
             focused = compare_reports(read_report(root / 'baseline-focus.xml'),
                                       read_report(root / 'candidate-focus.xml'))
             print('RELEASE_751_BACKEND_FOCUSED_PARITY=PASSED', flush=True)
-            # The main suite still covers all backend modules except this
-            # one browser-driven file, whose five cases run serially below.
-            # Both runs are merged fail-closed into a single parity report.
-            run_suite(args.python, baseline, root / 'base-data',
-                      root / 'baseline', plugin_dir,
-                      extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,))
-            run_suite(args.python, candidate, root / 'candidate-data',
-                      root / 'candidate', plugin_dir,
-                      extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,))
+            # All ordinary modules now execute in independent processes.
+            # The pre-existing 676 and 662 gates still run separately.
+            print('RELEASE_751_BACKEND_MODULE_ISOLATION=STARTED', flush=True)
+            print('RELEASE_751_BACKEND_MODULE_PROCESS_WORKERS=16', flush=True)
+            base_modules = run_isolated_modules751(
+                args.python, baseline, plugin_dir, root / 'baseline',
+                allow_legacy_collection=True,
+                extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,))
+            candidate_modules = run_isolated_modules751(
+                args.python, candidate, plugin_dir, root / 'candidate',
+                extra_ignores=(CHROMIUM_676_MODULE, WORKOUTS_662_MODULE,))
+            print('RELEASE_751_BACKEND_MODULE_ISOLATION=PASSED', flush=True)
             print('RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=STARTED',
                   flush=True)
             run_suite(args.python, baseline, root / 'base-browser676-data',
@@ -345,10 +474,10 @@ def main() -> int:
                       root / 'candidate-browser676', plugin_dir,
                       (CHROMIUM_676_MODULE,), parallel=False)
             baseline_report = merge_isolated_chromium676(
-                read_report(root / 'baseline.xml'),
+                base_modules,
                 read_report(root / 'baseline-browser676.xml'))
             candidate_report = merge_isolated_chromium676(
-                read_report(root / 'candidate.xml'),
+                candidate_modules,
                 read_report(root / 'candidate-browser676.xml'))
             print('RELEASE_751_BACKEND_CHROMIUM_676_ISOLATION=PASSED',
                   flush=True)
