@@ -50,7 +50,7 @@ def test_758_worker_argument_gate_accepts_reviewed_schema_flag():
 
     runner = (ROOT / "scripts/tracker-release.sh").read_text()
     assert '[[ $# -ge 12 && $# -le 23 ]] || fail "Bad worker arguments"' in runner
-    assert 'REVIEWED_VIAL_758="\${23:-0}"' in runner
+    assert 'REVIEWED_VIAL_758="${23:-0}"' in runner
     launch = next(
         line for line in runner.splitlines()
         if line.startswith(' /bin/bash "$RUN/worker.sh" --worker ')
