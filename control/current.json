@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r761-30639360cd20",
+  "request_id": "r761-04fd141daa17",
   "action": "qualify",
   "release": 761,
-  "target": "30639360cd20e9130cdeac1125dbac0f5f7d5acc",
+  "target": "04fd141daa17fd2055f9177527296eb9165a59d2",
   "base": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
   "ref": "release/761-vials-missing-coa-filter",
   "previous_request_id": null
