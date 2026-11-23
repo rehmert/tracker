@@ -39,7 +39,7 @@ def forecast_horizons_csv(db: Session = Depends(get_scoped_db390)):
         [f'Planning flag {d}d' for d in HORIZONS])
     for row in compare_horizons(db):
         writer.writerow([row['protocol'],row['compound'],row['unit'],row['vials'],
-            round(row['available'],4),'YES' if row['duplicates'] else '']+
+            '' if row['available'] is None else round(row['available'],4),'YES' if row['duplicates'] else '']+
             ['' if row['duplicates'] or row['horizons'].get(d) is None or row['horizons'][d]['demand'] is None
                 else round(row['horizons'][d]['demand'],4) for d in HORIZONS]+
             ['' if row['duplicates'] or row['horizons'].get(d) is None

@@ -65,13 +65,21 @@ def build_schedule(db, today=None):
     rows=[]
     for (name,unit),record in sorted(result.items(),key=lambda kv:(kv[0][0].casefold(),kv[0][1])):
         # Source demand is in base mass units; convert back for display.
-        factor = {'mcg':1,'mg':1000,'g':1000000,'IU':1}.get(unit)
-        stock_unit = 'IU' if unit == 'IU' else 'mg'
+        factor = {'mcg':1,'mg':1000,'g':1000000,'IU':1,'mL':1,'uL':0.001}.get(unit)
+        stock_unit = 'IU' if unit == 'IU' else 'mL' if unit in ('mL','uL') else 'mg'
         matches=stock.get((name,stock_unit),[])
-        values=[float(m['available']) for m in matches]
-        consistent=bool(matches) and all(isfinite(v) and v>=0 for v in values) and len({round(v,8) for v in values})==1
-        available=values[0] * (1000 / factor) if consistent and factor and unit != 'IU' else (values[0] if consistent else None)
+        values=[float(m['available']) for m in matches if m['available'] is not None]
+        consistent=bool(matches) and len(values)==len(matches) and all(isfinite(v) and v>=0 for v in values) and len({round(v,8) for v in values})==1
+        available=(values[0] * (1000 / factor) if consistent and factor
+                   and unit in ('mcg','mg','g') else
+                   values[0] / factor if consistent and factor
+                   and unit in ('mL','uL') else
+                   values[0] if consistent else None)
         demands={h:(record['demand'][h]/factor if factor and not record['unestimated'] else None) for h in HORIZONS}
+        if any(m['status'] in ('Mixed concentrations - review',
+                              'Volume data incomplete',
+                              'Concentration unavailable') for m in matches):
+            available = None
         flags={}
         for h in HORIZONS:
             demand=demands[h]

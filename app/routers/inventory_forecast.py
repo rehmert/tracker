@@ -9,97 +9,178 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from ..scoped_db390 import get_scoped_db390
-from ..models import Protocol, ProtocolItem, Compound, Vial, DoseLog, BlendComponent
+from ..models import Protocol, Compound, Vial
+from ..services import vial_views
+from .. import units as U
 from ..templating import render
 
 router = APIRouter()
 
-FACTORS = {"mcg": 1.0, "mg": 1000.0, "g": 1000000.0, "IU": 1.0}
-
+# Quantities use base units: mcg for mass, IU for potency, mL for
+# withdrawals. Volume requirements are comparable only when every
+# included vial has a known recorded concentration.
 def normalized(value, unit):
-    if unit not in FACTORS or value is None:
+    if unit not in U.DOSE_UNITS:
         return None
     try:
-        v = float(value) * FACTORS[unit]
-    except (TypeError, ValueError, OverflowError):
+        amount, _ = U.to_base(float(value), unit)
+        return amount if isfinite(amount) and amount >= 0 else None
+    except (ValueError, TypeError, OverflowError):
         return None
-    return v if isfinite(v) and v >= 0 else None
+
 
 def compatible(a, b):
-    return a == b or (a in ("mcg", "mg", "g") and b in ("mcg", "mg", "g"))
+    try:
+        vial_unit, plan_unit = U.parse_unit(a), U.parse_unit(b)
+    except (ValueError, TypeError):
+        return False
+    return (vial_unit.dim == plan_unit.dim or
+            (plan_unit.dim == "volume" and vial_unit.dim in ("mass", "iu")))
+
 
 def weekly(item):
+    """A protocol interval is one dose every freq_count days."""
     try:
         count = float(item.freq_count)
         dose = normalized(item.amount_value, item.amount_unit)
         if dose is None or not isfinite(count) or count <= 0 or dose <= 0:
             return None
-        periods = {"day": 7.0, "week": 1.0, "month": 7.0 / (365.2425 / 12.0)}
-        if item.freq_period not in periods:
-            return None
-        return dose * count * periods[item.freq_period]
-    except (TypeError, ValueError, OverflowError):
+        if item.freq_period == "interval":
+            result = dose * 7.0 / count
+        else:
+            periods = {"day": 7.0, "week": 1.0,
+                       "month": 7.0 / (365.2425 / 12.0)}
+            if item.freq_period not in periods:
+                return None
+            result = dose * count * periods[item.freq_period]
+        return result if isfinite(result) and result > 0 else None
+    except (TypeError, ValueError, OverflowError, ZeroDivisionError):
         return None
+
+
+def _same_concentration(a, b):
+    dim_a, conc_a = a
+    dim_b, conc_b = b
+    return (dim_a == dim_b and
+            abs(conc_a - conc_b) <= max(conc_a, conc_b) * 1e-6)
+
 
 def build_rows(db, days=28):
     today = date.today()
     protocols = db.scalars(select(Protocol).where(Protocol.is_active.is_(True))).all()
     compounds = {c.id: c for c in db.scalars(select(Compound)).all()}
     vials = db.scalars(select(Vial)).all()
-    doses = db.scalars(select(DoseLog)).all()
-    transfers = db.scalars(select(BlendComponent)).all()
-    used = defaultdict(float)
-    for d in doses:
-        try:
-            amount = float(d.amount_base or 0)
-            if isfinite(amount) and amount > 0: used[d.vial_id] += amount
-        except (TypeError, ValueError, OverflowError):
-            pass
-    for t in transfers:
-        try:
-            amount = float(t.transferred_base or 0)
-            if isfinite(amount) and amount > 0: used[t.source_vial_id] += amount
-        except (TypeError, ValueError, OverflowError):
-            pass
-    rows=[]
+    # Canonical inventory views respect approved COA values, logged
+    # doses/waste and blend transfers. Never subtract usage twice.
+    views = vial_views(db, vials)
+    rows = []
     for p in protocols:
-        if p.start_date and p.start_date > today + timedelta(days=days): continue
-        if p.end_date and p.end_date < today: continue
+        if p.start_date and p.start_date > today + timedelta(days=days):
+            continue
+        if p.end_date and p.end_date < today:
+            continue
         for item in p.items:
-            compound=compounds.get(item.compound_id)
-            available=0.0; count=0; excluded=0
+            compound = compounds.get(item.compound_id)
+            try:
+                plan_unit = U.parse_unit(item.amount_unit)
+            except (TypeError, ValueError):
+                plan_unit = None
+            volume_plan = plan_unit is not None and plan_unit.dim == "volume"
+            available = 0.0
+            count = 0
+            excluded = 0
+            missing_concentration = 0
+            strengths = []
             for vial in vials:
-                if vial.compound_id != item.compound_id: continue
-                if vial.status not in ('sealed','in_use') or vial.closed_on:
-                    excluded += 1; continue
-                if (vial.expires_on and vial.expires_on < today) or (vial.beyond_use_on and vial.beyond_use_on < today):
-                    excluded += 1; continue
-                if not compatible(vial.content_unit, item.amount_unit):
-                    excluded += 1; continue
-                content=normalized(vial.content_value, vial.content_unit)
-                if content is None:
-                    excluded += 1; continue
-                # amount_base and transferred_base are recorded in mcg or IU.
-                available += max(0.0, content-used[vial.id]); count += 1
-            rate=weekly(item)
-            # A single weekly average is deliberately not treated as an exact
-            # schedule. Escalation weeks, exclusions and timing aren't modeled.
+                if vial.compound_id != item.compound_id:
+                    continue
+                if vial.status not in ("sealed", "in_use") or vial.closed_on:
+                    excluded += 1
+                    continue
+                if ((vial.expires_on and vial.expires_on < today) or
+                        (vial.beyond_use_on and vial.beyond_use_on < today)):
+                    excluded += 1
+                    continue
+                view = views.get(vial.id)
+                if (view is None or plan_unit is None or
+                        not compatible(vial.content_unit, item.amount_unit) or
+                        not isfinite(view.remaining_base) or
+                        not isfinite(view.content_base) or
+                        view.content_base <= 0):
+                    excluded += 1
+                    continue
+                if volume_plan:
+                    concentration = view.conc_per_ml
+                    if (concentration is None or not isfinite(concentration)
+                            or concentration <= 0):
+                        missing_concentration += 1
+                        excluded += 1
+                        continue
+                    liquid_remaining = view.remaining_base / concentration
+                    if not isfinite(liquid_remaining) or liquid_remaining < 0:
+                        missing_concentration += 1
+                        excluded += 1
+                        continue
+                    available += liquid_remaining
+                    strengths.append((view.dim, concentration))
+                else:
+                    available += view.remaining_base
+                count += 1
+
+            rate = weekly(item)
+            mixed = (volume_plan and len(strengths) > 1
+                     and any(not _same_concentration(strengths[0], val)
+                             for val in strengths[1:]))
+            unknown_volume = bool(volume_plan and missing_concentration and count == 0)
+            display_available = None if unknown_volume else available
+            demand = rate * days / 7.0 if rate is not None else None
+            weeks = None
             if rate is None:
-                demand=None; weeks=None; status='Not estimable'
+                status = "Not estimable"
+            elif unknown_volume:
+                status = "Concentration unavailable"
+            elif volume_plan and missing_concentration:
+                status = "Volume data incomplete"
+            elif mixed:
+                status = "Mixed concentrations - review"
             else:
-                demand=rate * days/7.0
-                weeks=available/rate if rate else None
-                status=('No matching inventory' if count==0 else
-                        'Below rough demand' if available < demand else
-                        'Roughly covered')
-            unit='IU' if item.amount_unit=='IU' else 'mg'
-            scale=1 if unit=='IU' else 1000
-            rows.append(dict(protocol=p.name, compound=compound.name if compound else f'Compound #{item.compound_id}',
-                unit=unit, vials=count, excluded=excluded, available=available/scale,
-                demand=(demand/scale if demand is not None else None),
+                weeks = available / rate
+                status = ("No matching inventory" if count == 0 else
+                          "Below rough demand" if available < demand else
+                          "Roughly covered")
+
+            if volume_plan:
+                unit, scale = "mL", 1.0
+            elif plan_unit is not None and plan_unit.dim == "iu":
+                unit, scale = "IU", 1.0
+            else:
+                unit, scale = "mg", 1000.0
+
+            caveat = ("Average only; ignores schedule windows, escalation, "
+                      "exclusions and future expiration.")
+            if mixed:
+                caveat += (" Recorded vial concentrations differ; displayed "
+                           "volume is physical liquid only and is not "
+                           "interchangeable dosing capacity.")
+            if missing_concentration:
+                caveat += (" Some matching vials have no usable recorded "
+                           "liquid volume/concentration; total coverage "
+                           "cannot be reliably calculated.")
+            rows.append(dict(
+                protocol=p.name,
+                compound=compound.name if compound else
+                    f"Compound #{item.compound_id}",
+                unit=unit, vials=count, excluded=excluded,
+                available=(display_available / scale
+                           if display_available is not None else None),
+                demand=demand / scale if demand is not None else None,
                 weeks=weeks, status=status, protocol_id=p.id,
-                caveat='Average only; ignores schedule windows, escalation, exclusions, and future expiration.'))
-    return sorted(rows,key=lambda r:(r['status']!='No matching inventory',r['status']!='Below rough demand',r['compound'].lower(),r['protocol'].lower()))
+                caveat=caveat))
+    return sorted(rows, key=lambda r: (
+        r["status"] != "No matching inventory",
+        r["status"] != "Below rough demand",
+        r["compound"].lower(), r["protocol"].lower()))
+
 
 @router.get('/inventory-forecast')
 def inventory_forecast(request:Request, db:Session=Depends(get_scoped_db390)):
@@ -110,7 +191,7 @@ def inventory_forecast_csv(db:Session=Depends(get_scoped_db390)):
     buffer=io.StringIO(); writer=csv.writer(buffer)
     writer.writerow(['Protocol','Compound','Eligible vials','Excluded vials','Remaining (approx)','28-day demand (approx)','Unit','Weeks at average rate','Status','Caveat'])
     for r in build_rows(db):
-        writer.writerow([r['protocol'],r['compound'],r['vials'],r['excluded'],round(r['available'],4),
+        writer.writerow([r['protocol'],r['compound'],r['vials'],r['excluded'],'' if r['available'] is None else round(r['available'],4),
             '' if r['demand'] is None else round(r['demand'],4),r['unit'],
             '' if r['weeks'] is None else round(r['weeks'],2),r['status'],r['caveat']])
     buffer.seek(0)

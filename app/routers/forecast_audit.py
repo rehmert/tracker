@@ -23,10 +23,11 @@ def audit_rows(db, days=28):
     for (compound, unit), items in groups.items():
         # The same stock pool appears once per protocol item in build_rows.
         # Never sum those repeated available quantities.
-        values = [float(r['available']) for r in items]
+        values = [float(r['available']) for r in items if r['available'] is not None]
         vials = [int(r['vials']) for r in items]
         consistent = (
-            all(math.isfinite(v) and v >= 0 for v in values)
+            len(values) == len(items)
+            and all(math.isfinite(v) and v >= 0 for v in values)
             and len({round(v, 8) for v in values}) == 1
             and len(set(vials)) == 1
         )
@@ -37,7 +38,10 @@ def audit_rows(db, days=28):
         available = values[0] if consistent else None
         demand = None if unknown else sum(float(r['demand']) for r in items)
         if not consistent:
-            flag = 'Review stock mismatch'
+            flag = 'Review stock / concentration'
+        elif any(r['status'] in ('Volume data incomplete',
+                                'Mixed concentrations - review') for r in items):
+            flag = 'Review concentration / coverage'
         elif unknown:
             flag = 'Demand not estimable'
         elif not vials[0]:
