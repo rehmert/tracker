@@ -1,11 +1,11 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r758-install7a1faab4.json",
+  "receipt_path": "receipts/r758-6cf718ed0781.json",
   "release": 758,
-  "request_id": "r758-install7a1faab4",
+  "request_id": "r758-6cf718ed0781",
   "schema": 1,
-  "status": "failed",
-  "target": "7a1faab4bca031cfbdb3454adf16d66fe7cca081"
+  "status": "passed",
+  "target": "6cf718ed0781fdbaa6ff350d782e5cc80758703d"
 }
