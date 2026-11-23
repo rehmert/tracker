@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-23T16:05:03+00:00",
+  "finished_at_utc": "2026-11-23T16:06:20+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=04fd141daa17fd2055f9177527296eb9165a59d2",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=04fd141daa17fd2055f9177527296eb9165a59d2",
+    "PROMOTED_COMMIT=04fd141daa17fd2055f9177527296eb9165a59d2",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=04fd141daa17fd2055f9177527296eb9165a59d2",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r761-install04fd141d",
+  "previous_request_id": "r761-preflight04fd14",
   "ref": "release/761-vials-missing-coa-filter",
   "release": 761,
-  "request_id": "r761-preflight04fd14",
+  "request_id": "r761-deploy04fd141d",
   "schema": 1,
-  "started_at_utc": "2026-11-23T16:05:01+00:00",
+  "started_at_utc": "2026-11-23T16:05:54+00:00",
   "status": "passed",
   "target": "04fd141daa17fd2055f9177527296eb9165a59d2",
   "test_counts": []
