@@ -15,6 +15,7 @@ export PYTHONPATH="$ROOT" PYTHONDONTWRITEBYTECODE=1
   tests/test_vial_label_sheets447.py \
   tests/test_vial_label_rotation431.py \
   tests/test_vial_label_direct450.py \
+  tests/test_label_preview_zoom449.py \
   tests/test_release633_pk_label_repro.py \
   tests/test_release605_vendor_label_ux.py
 echo 'RELEASE_758_SCOPED=PASSED'
