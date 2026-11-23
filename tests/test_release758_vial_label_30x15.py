@@ -157,3 +157,54 @@ def test_758_legacy_40x20_renderer_unchanged_for_old_content():
 def test_758_30x15_is_single_label_in_print_media():
     assert original.LAYOUTS["30x15"]==(30,15,1,1)
     assert original.LAYOUTS["30x15x2"]==(30,15,1,2)
+
+
+
+def test_758_30x15_single_vial_http_export_uses_complete_two_four_lines():
+    """Real synthetic ORM path, not just the low-level raster helper."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+    from sqlalchemy.pool import StaticPool
+    from app.db import Base
+    from app.models import Compound, Purchase, Coa, Vial
+    from app.routers import vials as routes
+
+    engine=create_engine("sqlite://",poolclass=StaticPool)
+    Base.metadata.create_all(engine)
+    try:
+        with Session(engine) as db:
+            compound=Compound(name="Test Peptide",category="peptide",primary_unit="mg")
+            purchase=Purchase(vendor="Test Vendor",
+                              purchased_on=date(2026,11,22))
+            report=Coa(reported_content_value=11.2,
+                       reported_content_unit="mg")
+            db.add_all([compound,purchase,report]);db.flush()
+            vial=Vial(compound_id=compound.id,purchase_id=purchase.id,
+                      coa_id=report.id, content_value=10,content_unit="mg",
+                      status="in_use",form="lyophilized",volume_ml=2,
+                      production_on=date(2026,11,5),
+                      reconstituted_on=date(2026,11,23))
+            db.add(vial);db.flush()
+            for phase, expected in (
+                ("pre",b"10mg / 11.2mg"),
+                ("post",b"1.4mg = 28 units"),
+            ):
+                resp=routes.vial_labels423_export(
+                    vial.id,layout="30x15",phase=phase,fmt="svg",
+                    rotation=0,coa_id=str(report.id),
+                    target_mg="1.4" if phase=="post" else "",
+                    db=db
+                )
+                assert resp.status_code==200
+                assert expected in resp.body
+                assert b"TEST PEPTIDE / TEST VENDOR / 11/05/26" in resp.body
+                assert b'class="tracker-compact-label758"' in resp.body
+                assert resp.headers["cache-control"]=="private, no-store"
+            png=routes.vial_labels423_export(
+                vial.id,layout="30x15",phase="post",fmt="png",
+                rotation=0,coa_id=str(report.id),target_mg="1.4",db=db
+            )
+            assert struct.unpack(">II",png.body[16:24])==(
+                original.pixels(30),original.pixels(15))
+    finally:
+        engine.dispose()
