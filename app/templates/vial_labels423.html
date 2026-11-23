@@ -108,6 +108,10 @@ the 20 mm edge. The SVG preview and PNG export use the same direction.
   <p class="flash error">
     Record the reconstitution date on this vial before exporting its mixed label.
   </p>
+{% elif label_fit_warning %}
+  <p class="flash error" role="alert" id="label-print-fit758">
+    {{ label_fit_warning }}
+  </p>
 {% else %}
   <div class="single-label-preview-controls605">
     <label for="label-preview-zoom449">Preview zoom</label>

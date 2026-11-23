@@ -820,6 +820,7 @@ def vial_labels423(
         raise HTTPException(422, "Unsupported label selection")
 
     v = _get(db, vid)
+    fit_warning = ""
     try:
         candidates, target, detail, notice = _label_dose758(
             db, v, phase, target_mg
@@ -831,7 +832,12 @@ def vial_labels423(
                 v, "post", dose_line=detail["line"],
                 concentration_mg_ml=detail["concentration_mg_ml"],
             )
-            validate_label_fit758(lines, layout, rotation)
+            try:
+                validate_label_fit758(lines, layout, rotation)
+            except ValueError as exc:
+                # Keep the controls available so a user can choose a larger
+                # label; do not render a misleadingly truncated preview.
+                fit_warning = str(exc)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     return render(
@@ -845,6 +851,7 @@ def vial_labels423(
         label_target_mg=target,
         label_dose_detail=detail,
         label_target_notice=notice,
+        label_fit_warning=fit_warning,
     )
 
 

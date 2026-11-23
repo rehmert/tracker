@@ -278,3 +278,19 @@ def test_758_mcg_level_label_target_keeps_mass_precision(session):
     vd=vial_views(session,[v])[v.id]
     result=dose_line758(vd,0.005)
     assert result["line"]=="TARGET:0.005MG U100:0.25"
+
+
+def test_758_small_layout_page_shows_switch_layout_instead_of_422(
+        session,monkeypatch):
+    c,v=stock(session)
+    protocol(session,c)
+    monkeypatch.setattr(router,"render",lambda request,template,**kw:kw)
+    result=router.vial_labels423(
+        v.id,request=object(),phase="post",layout="10x20x4",
+        rotation=90,db=session
+    )
+    assert "cannot print" in result["label_fit_warning"]
+    assert result["label_dose_detail"]["line"].startswith("TARGET:50MG")
+    html=(ROOT/"app/templates/vial_labels423.html").read_text()
+    assert "label-print-fit758" in html
+    assert "{% elif label_fit_warning %}" in html
