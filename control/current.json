@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r761-preflight04fd14",
-  "action": "prod_preflight",
+  "request_id": "r761-deploy04fd141d",
+  "action": "prod_deploy",
   "release": 761,
   "target": "04fd141daa17fd2055f9177527296eb9165a59d2",
   "base": "6f7abdabfd584777d6f432fa137be0a8c24b02f4",
   "ref": "release/761-vials-missing-coa-filter",
-  "previous_request_id": "r761-install04fd141d"
+  "previous_request_id": "r761-preflight04fd14"
 }
