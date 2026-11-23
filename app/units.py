@@ -145,10 +145,10 @@ def fmt_amount(base: float | None, dim: str | None, digits: int = 4) -> str:
     if base is None or dim is None:
         return "—"
     if dim == "mass":
-        a = abs(base)
-        if a >= 1_000_000:
-            return f"{_num(base / 1_000_000, digits)} g"
-        if a > 100_000:
+        # Inventory is stored as mcg, but display large quantities in mg.
+        # Keep large stocks in mg (never auto-switch to g), per the 10,000
+        # mcg threshold used consistently across inventory views.
+        if abs(base) > 10_000:
             return f"{_num(base / 1000, digits)} mg"
         return f"{_num(base, digits)} mcg"
     if dim == "iu":

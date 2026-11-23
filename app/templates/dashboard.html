@@ -446,7 +446,7 @@
             <td>{{ item.frequency }}</td>
             <td class="n">
               {% if item.remaining is not none %}
-                {{ item.remaining|round(2) }} {{ item.unit }}
+                {{ item.remaining|amt('mass') if item.unit == 'mcg' else (item.remaining|round(2) ~ ' ' ~ item.unit) }}
               {% else %}
                 —
               {% endif %}
@@ -483,7 +483,7 @@
   <tr>
     <td><a href="/protocols/{{ row.protocol_id }}">{{ row.protocol }}</a></td>
     <td>{{ row.compound }}</td>
-    <td>{{ (row.remaining|round(2) ~ ' ' ~ row.unit) if row.remaining is not none else '—' }}</td>
+    <td>{% if row.remaining is none %}—{% elif row.dimension == 'mass' %}{{ row.remaining|amt('mass') }}{% else %}{{ row.remaining|round(2) }} {{ row.unit }}{% endif %}</td>
     <td>{{ row.days_left|round(1) if row.days_left is not none else '—' }}</td>
     <td>{{ row.depletion if row.depletion is not none else '—' }}</td>
     <td>{% if row.low %}<span class="tag">{{ row.status }}</span>{% else %}{{ row.status }}{% endif %}</td>
