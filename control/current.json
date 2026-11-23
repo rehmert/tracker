@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r763-qualify99e10eef",
-  "action": "qualify",
+  "request_id": "r763-devinstall99e10eef",
+  "action": "dev_install",
   "release": 763,
   "target": "99e10eef2125e74b4315f3ee89dc546ae22d7524",
   "base": "35f6aa42aac648f3ed5af527620bd5f4b702b486",
   "ref": "release/763-progress-prod-hardening",
-  "previous_request_id": null
+  "previous_request_id": "r763-qualify99e10eef"
 }
