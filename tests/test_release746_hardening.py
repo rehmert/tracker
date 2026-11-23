@@ -106,7 +106,7 @@ def test_746_latest_water_and_macd_routes_in_unqualified_security_audit():
  ("pages.html",('Edit note','Delete note')),
  ("labs.html",('Edit report','Add a lab report')),
  ("supplies.html",('tracker-macd741-action','Save')),
- ("coas.html",('tracker-macd741-action','Edit')),
+ ("coas.html",('tracker-coa753-actions','Edit')),
 ])
 def test_746_existing_macd_form_surface_verified_without_fake_actions(template,required):
     text=(ROOT/"app/templates"/template).read_text()

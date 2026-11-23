@@ -1,0 +1,30 @@
+/* Release 753: compact COA shortcuts without tall wrapping row buttons. */
+#tracker-flow696-coa-table .tracker-coa753-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: .55rem;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+#tracker-flow696-coa-table .tracker-coa753-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 .05rem;
+  color: var(--link, var(--accent, #2563eb));
+  text-decoration: underline;
+  text-underline-offset: .14em;
+  font-size: .88rem;
+}
+#tracker-flow696-coa-table .tracker-coa753-actions a:focus-visible {
+  outline: 2px solid var(--focus-color, #2765b2);
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  #tracker-flow696-coa-table .tracker-coa753-actions a {
+    min-height: 44px;
+  }
+}

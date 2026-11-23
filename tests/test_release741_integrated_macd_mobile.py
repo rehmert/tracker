@@ -466,7 +466,15 @@ def test_741_integrated_templates_parse_have_scoped_asset_and_real_actions(templ
     src = (ROOT / "app/templates" / template).read_text()
     Environment().parse(src)
     assert "/static/css/tracker-integrated-macd741.css?v=741" in src
-    assert 'tracker-macd741-action' in src
+    if template == "coas.html":
+        assert 'tracker-coa753-actions' in src
+        assert 'href="/coas/{{ c.id }}#test-documents"' in src
+        assert 'href="/coas/{{ c.id }}#coa-links741"' in src
+    elif template == "vials.html":
+        assert '<a href="/vials/{{ v.id }}">' in src
+        assert 'href="/vials/{{ v.id }}#vial-details741"' not in src
+    else:
+        assert 'tracker-macd741-action' in src
 
 
 @pytest.mark.parametrize("width", [320, 390, 430, 760, 1024])
