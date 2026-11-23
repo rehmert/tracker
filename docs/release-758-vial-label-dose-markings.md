@@ -94,3 +94,18 @@ medical data or raw logs into GitHub. Await explicit owner PROD authorization.
 Both label formats intentionally omit the separate expiry/BUD rows.
 The UI explicitly explains that manufacturing and reconstitution dates
 must not be mistaken for expiration or beyond-use determinations.
+
+## DEV release-agent handoff status (November 23, 2026)
+
+An exact-SHA disposable qualification wrapper and guarded DEV installation
+wrapper are included on this branch; the worker must validate the immutable
+previous-stage receipt before installing. They require installed DEV Release
+757 at 90b297fc07c950d5a44a0bf8fe7d4beabfd8b30f and do not authorize PROD.
+
+At the time of this change, GitHub control/current.json and receipts/latest.json
+still point to the failed Release 751 qualification r751-0624c60e6ef7.
+That agent's transition validator permits a failed qualification to be
+replaced only by a fresh SHA for the *same* release/base/ref, not by a jump
+to Release 758. Do not queue this release or alter the control branch until
+the stale chain and actual DEV installed baseline are reconciled with the
+live agent. An unqueued or unqualified Release 758 is not installed on DEV.
