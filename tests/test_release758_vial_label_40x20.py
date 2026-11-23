@@ -60,7 +60,7 @@ def test_758_default_40x20_has_all_lines_in_png_and_svg(lines):
     path = re.search(r'<path d="([^"]+)"', svg)
     assert path is not None
     assert set((int(x), int(y)) for x, y in
-               re.findall(r"M(\\d+) (\\d+)h1v2h-1z", path.group(1))) == set(dots)
+               re.findall(r"M(\d+) (\d+)h1v2h-1z", path.group(1))) == set(dots)
 
 
 def test_758_all_four_http_route_defaults_are_single_40x20():
