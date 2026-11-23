@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "6cf718ed0781fdbaa6ff350d782e5cc80758703d",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-23T14:52:48+00:00",
+  "markers": [
+    "RELEASE_759_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_759_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_759_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_759_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/759-mass-inventory-display",
+  "release": 759,
+  "request_id": "r759-eb1d3ab3c66a",
+  "schema": 1,
+  "started_at_utc": "2026-11-23T14:52:42+00:00",
+  "status": "passed",
+  "target": "eb1d3ab3c66aa8d2c8af8cc7ae4ed85bf4d2357d",
+  "test_counts": [
+    "62 passed, 1 warning"
+  ]
+}
