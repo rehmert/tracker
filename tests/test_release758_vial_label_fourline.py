@@ -11,7 +11,7 @@ import pytest
 from jinja2 import Environment
 from app import vial_labels423 as original
 from app.vial_label_fourline758 import (
-    selected_coa758, four_line_label758, validate_four_line_fit758
+    selected_coa758, two_line_label758, four_line_label758, validate_four_line_fit758
 )
 from app.vial_label_dose758 import dose_line758
 from app.vial_label_rotation431 import svg_bytes, png_bytes
@@ -20,14 +20,15 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 def fake(*,content=10,unit="mg",water=2,vendor="Blackfin Supply",
-         coa_amount=11.2,coa_unit="mg",stamp=date(2026,11,23)):
+         coa_amount=11.2,coa_unit="mg",stamp=date(2026,11,23),
+         produced=date(2026,11,5)):
     report=S(id=3,reported_content_value=coa_amount,
              reported_content_unit=coa_unit)
     vial=S(id=9,compound=S(name="Tesamorelin"),
            purchase=S(vendor=vendor) if vendor else None,
            coa=report,all_coas=[report],
            content_value=content,content_unit=unit,
-           volume_ml=water,reconstituted_on=stamp,
+           volume_ml=water,reconstituted_on=stamp,production_on=produced,
            form="lyophilized",label="SIMULATED",
            lot="",cap_color="",expires_on=None,beyond_use_on=None)
     return vial, report
@@ -48,7 +49,7 @@ def test_758_exact_four_lines_with_vendor_selected_coa_and_bac():
     v,report=fake()
     lines=four(v,report)
     assert lines==[
-        "TESAMORELIN / BLACKFIN SUPPLY",
+        "TESAMORELIN / BLACKFIN SUPPLY / 11/05/26",
         "10mg / 11.2mg",
         "11/23/26 / 2mL BAC / 6mg/mL",
         "1.4mg = 23.333 units",
@@ -96,7 +97,7 @@ def test_758_mass_is_different_from_iu_conversions():
     v,report=fake(content=20,unit="IU",coa_amount=21,coa_unit="IU")
     view=S(dim="iu",conc_per_ml=10,remaining_base=20)
     lines=four_line_label758(v,view,coa=report,detail=None)
-    assert lines[1]=="20IU / COA 21IU"
+    assert lines[1]=="20IU / 21IU"
     assert lines[2].endswith("/ 10IU/mL")
     assert lines[3]=="N/A mg = N/A units"
     assert "mg/mL" not in lines[2]
@@ -145,7 +146,7 @@ def test_758_print_fit_and_preview_are_complete_svg_png():
 ])
 def test_758_unsupported_print_layout_fails_closed(layout,angle):
     v,coa=fake(vendor="S")
-    with pytest.raises(ValueError,match="40x20 mm"):
+    with pytest.raises(ValueError,match="40x20 or 50x30 mm"):
         validate_four_line_fit758(four(v,coa),layout,angle)
 
 
@@ -158,10 +159,14 @@ def test_758_name_or_vendor_too_long_is_not_silently_truncated():
 def test_758_pre_mix_label_remains_original():
     v,coa=fake()
     v.reconstituted_on=None
-    old=original.label_lines(v,"pre")
-    assert "UNRECONSTITUTED" in old
-    assert not any("BAC" in row for row in old)
-    assert not any("units" in row for row in old)
+    rows=two_line_label758(v,coa=coa)
+    assert rows==[
+        "TESAMORELIN / BLACKFIN SUPPLY / 11/05/26",
+        "10mg / 11.2mg",
+    ]
+    assert not any("BAC" in row for row in rows)
+    assert not any("units" in row for row in rows)
+    validate_four_line_fit758(rows,"50x30",0)
 
 
 def test_758_html_exposes_explicit_coa_and_syncs_preview_and_download():
@@ -230,7 +235,7 @@ def test_758_scoped_real_orm_preview_and_coa_export_are_consistent(monkeypatch):
                 vial.id,phase="post",fmt="svg",layout="40x20",
                 rotation=0,target_mg="1.4",coa_id=str(coa.id),db=db
             ).body.decode()
-            assert "TEST PEPTIDE / TEST VENDOR" in svg
+            assert "TEST PEPTIDE / TEST VENDOR / N/A" in svg
             assert "10mg / 11.2mg" in svg
             # The selected COA is shown for comparison, not adopted as
             # effective content without the vial opt-in setting.

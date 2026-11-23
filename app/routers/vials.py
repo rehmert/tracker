@@ -966,6 +966,7 @@ def update_vial(vid: int, label: str = Form(""), lot: str = Form(""), status: st
     if not reserve_inventory_write(db):
         return services.flash_redirect(f"/vials/{vid}", err="Inventory is busy. Please retry.")
     v = _get(db, vid)
+    production_on = production_on if isinstance(production_on, str) else ""
     tracked = ("status", "production_on", "received_on", "first_punctured_on", "first_dosed_on", "beyond_use_on", "closed_on", "storage_notes")
     previous = {key: str(getattr(v, key) or "") for key in tracked}
     back = f"/vials/{vid}"
