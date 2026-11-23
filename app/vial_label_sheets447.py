@@ -1,6 +1,6 @@
 """Release 447: distinct-vial, multi-sticker NIIMBOT label sheets.
 
-Preserves the three Release 423 physical layouts, 203-DPI grayscale PNG
+Preserves the legacy Release 423 layouts and the added 50x30, 203-DPI grayscale PNG
 format and Release 431 independent per-sticker content rotation. No direct
 Bluetooth I/O, database writes, or invented inventory/expiry values.
 """

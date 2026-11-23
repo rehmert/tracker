@@ -82,3 +82,7 @@ Run targeted regression:
 No full suite unless a shared-core dependency or migration boundary
 requires expansion. Protect the DEV/PROD database backups, never write
 medical data or raw logs into GitHub. Await explicit owner PROD authorization.
+
+Both label formats intentionally omit the separate expiry/BUD rows.
+The UI explicitly explains that manufacturing and reconstitution dates
+must not be mistaken for expiration or beyond-use determinations.

@@ -163,14 +163,10 @@ the 20 mm edge. The SVG preview and PNG export use the same direction.
 {% endif %}
 
 <p class="note">
-{% if phase == 'post' %}
-This four-line reconstituted sticker shows the mixing date, not the expiry
-or beyond-use date (BUD). Check the vial's Tracker record for its recorded
-expiry and BUD; these are not inferred or altered by printing.
-{% else %}
-Only recorded expiry and beyond-use dates are printed. An absent BUD is
-explicitly identified, never calculated or inferred.
-{% endif %}
+The requested two- and four-line stickers do not print expiry or beyond-use
+dates (BUD). Check the vial's Tracker record for its recorded expiry and BUD.
+Production and reconstitution dates are not expiration dates. No date is
+inferred or altered when printing.
 </p>
 
 <p><a href="/vials/{{ v.id }}">← Back to vial</a></p>
