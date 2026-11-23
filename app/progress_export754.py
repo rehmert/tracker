@@ -112,6 +112,14 @@ def extract(db_path: Path, *, instance: str, days: int = 365,
                 bp.append({"date": day, "systolic_mmHg": sys,
                            "diastolic_mmHg": dia, "pulse_bpm": pulse})
         series = [(date.fromisoformat(x["date"]), x["weight_lb"]) for x in weight]
+        # Averages are computed from observed readings, not assumed zero days.
+        # Source history itself is bounded by the configured reporting window.
+        for row in weight:
+            day = date.fromisoformat(row["date"])
+            for interval in (7, 28):
+                points = [value for observed, value in series
+                          if day - timedelta(days=interval-1) <= observed <= day]
+                row[f"average_{interval}d_lb"] = _average(points)
         weekly = {}
         monthly = {}
         for name, n in (("7d", 7), ("28d", 28)):

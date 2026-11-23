@@ -123,6 +123,8 @@ def test_754_weight_and_missing_body_measurements(fixture_db):
     assert weight["summary"]["current_weight_lb"] > 200
     assert weight["summary"]["moving_average_lb"]["7d"] is not None
     assert weight["summary"]["moving_average_lb"]["28d"] is not None
+    assert all("average_7d_lb" in row and "average_28d_lb" in row
+               for row in weight["history"])
     assert weight["summary"]["change_lb"]["28d"] < 0
     assert weight["summary"]["goal_weight_lb"] is None
     assert output["body-measurements"]["data"]["waist_to_height_ratio"] is None
