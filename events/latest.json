@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r762-qualify35f6aa42.json",
+  "receipt_path": "receipts/r762-devinstall35f6aa42.json",
   "release": 762,
-  "request_id": "r762-qualify35f6aa42",
+  "request_id": "r762-devinstall35f6aa42",
   "schema": 1,
   "status": "passed",
   "target": "35f6aa42aac648f3ed5af527620bd5f4b702b486"
