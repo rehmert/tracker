@@ -48,25 +48,26 @@ def label_lines(vial, phase, *, dose_line=None, concentration_mg_ml=None):
     if phase == 'pre':
         lines += ['UNRECONSTITUTED']
     else:
-        lines += [
-            f'MIX: {vial.reconstituted_on.isoformat()}',
-            (
-                f'VOL: {_number(vial.volume_ml)} ML'
-                if vial.volume_ml
-                else 'VOLUME NOT RECORDED'
-            ),
-        ]
-
+        lines.append(f'MIX: {vial.reconstituted_on.isoformat()}')
         if vial.volume_ml and vial.volume_ml > 0:
-            if concentration_mg_ml is not None:
-                # Use the same effective concentration as Dose Log/Calendar,
-                # including an opted-in content-assay override.
-                lines.append(f'{_number(concentration_mg_ml)} MG/ML')
+            if dose_line is not None and concentration_mg_ml is not None:
+                # Preserve BOTH physical volume and effective concentration
+                # on the bounded label, using a single compact printed row.
+                lines.append(
+                    f'VOL:{_number(vial.volume_ml)}ML '
+                    f'{_number(concentration_mg_ml)}MG/ML'
+                )
             else:
-                lines += [
-                    f'{_number(vial.content_value / vial.volume_ml)} '
-                    f'{_plain(vial.content_unit)}/ML'
-                ]
+                lines.append(f'VOL: {_number(vial.volume_ml)} ML')
+                if concentration_mg_ml is not None:
+                    lines.append(f'{_number(concentration_mg_ml)} MG/ML')
+                else:
+                    lines.append(
+                        f'{_number(vial.content_value / vial.volume_ml)} '
+                        f'{_plain(vial.content_unit)}/ML'
+                    )
+        else:
+            lines.append('VOLUME NOT RECORDED')
 
         lines += [
             (
@@ -117,7 +118,7 @@ def _selected(lines, width, height):
     # Reserve a printable row for target/markings ahead of optional metadata.
     # The legacy layout stays identical when no target has been selected.
     priority = (
-        ('VIAL #', 'MIX:', 'BUD:', 'TARGET:')
+        ('VIAL #', 'MIX:', 'BUD:', 'TARGET:', 'EXP:')
         if any(s.startswith('TARGET:') for s in lines)
         else ('MIX:', 'BUD:', 'VIAL #', 'EXP:')
     )

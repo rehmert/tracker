@@ -131,8 +131,22 @@ def validate_label_fit758(lines, layout, rotation):
         selected = rotated._selected_rotated(lines, h, w)
     else:
         selected = base._selected(lines, w, h)
-    if target not in selected:
+    # Any target-marked sticker must retain complete essential identity,
+    # mixing and safety-date fields as well as the volume/concentration.
+    required = [target]
+    required.extend(
+        line for line in lines
+        if line.startswith(("MIX:", "BUD:", "BUD NOT", "VOL:", "EXP:"))
+    )
+    vial = next((line for line in lines if line.startswith("VIAL #")), None)
+    if vial:
+        import re
+        match = re.match(r"VIAL #[0-9]+", vial)
+        if match and not any(row.startswith(match.group()) for row in selected):
+            required.append(vial)
+    if any(line not in selected for line in required):
         raise ValueError(
-            "This sticker layout/rotation cannot print the full target "
-            "and U-100 markings. Choose 40x20 mm (normal orientation)."
+            "This sticker layout/rotation cannot print all required "
+            "target, U-100, concentration and safety-date fields. "
+            "Choose 40x20 mm (normal orientation)."
         )

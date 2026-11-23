@@ -146,10 +146,10 @@ def test_758_printed_target_units_fit_40x20_png_svg(session):
     rows=label_lines(v,"post",dose_line=calculation["line"],
                      concentration_mg_ml=calculation["concentration_mg_ml"])
     assert "TARGET:50MG U100:20.833" in rows
-    assert "240 MG/ML" in rows
+    assert "VOL:10ML 240MG/ML" in rows
     chosen=_selected(rows,*_panel_size("40x20")[:2])
     assert calculation["line"] in chosen
-    assert "240 MG/ML" in chosen
+    assert "VOL:10ML 240MG/ML" in chosen
     assert any(x.startswith("BUD:") for x in chosen)
     validate_label_fit758(rows,"40x20",0)
     image=svg_bytes(rows,"40x20",0).decode()
@@ -163,7 +163,7 @@ def test_758_refuse_small_layout_that_truncates_markings(session):
     calculation=dose_line758(vial_views(session,[v])[v.id],50)
     rows=label_lines(v,"post",dose_line=calculation["line"])
     for layout,rotation in (("10x20x4",0),("10x20x4",90),
-                            ("40x20",90)):
+                            ("30x15x2",0),("40x20",90)):
         with pytest.raises(ValueError,match="cannot print"):
             validate_label_fit758(rows,layout,rotation)
 
@@ -302,3 +302,18 @@ def test_758_bulk_sheet_ui_explains_full_dose_label_layout():
     assert "40 × 20 mm" in html
     assert "U-100 syringe markings" in html
     assert "will refuse an export that truncates" in html
+
+
+def test_758_expiry_and_bud_remain_printed_with_target_and_concentration(session):
+    c,v=stock(session)
+    v.expires_on=date.today()+timedelta(days=60)
+    session.flush()
+    detail=dose_line758(vial_views(session,[v])[v.id],50)
+    rows=label_lines(v,"post",dose_line=detail["line"],
+                     concentration_mg_ml=detail["concentration_mg_ml"])
+    selected=_selected(rows,*_panel_size("40x20")[:2])
+    assert detail["line"] in selected
+    assert "VOL:10ML 240MG/ML" in selected
+    assert any(line.startswith("EXP:") for line in selected)
+    assert any(line.startswith("BUD:") for line in selected)
+    validate_label_fit758(rows,"40x20",0)

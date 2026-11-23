@@ -49,3 +49,10 @@ PNG/SVG, related historic label regression and route tests. Use the existing
 guarded scripts/tracker-release.sh DEV-first. No database migration or full
 suite. Require explicit user authorization before DEV-controlled PROD
 promotion. Do not put actual clinical data into GitHub code or QA receipts.
+
+
+The post-mix dose-marked 40x20 label compacts recorded physical volume
+and the exact concentration basis used for the U-100 calculation into
+one printable line. The label fit validator requires the complete
+target, volume/concentration, mixing/BUD/expiration dates (if provided),
+and vial identifier rather than silently truncating a safety field.
