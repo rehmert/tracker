@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r762-qualify35f6aa42",
-  "action": "qualify",
+  "request_id": "r762-devinstall35f6aa42",
+  "action": "dev_install",
   "release": 762,
   "target": "35f6aa42aac648f3ed5af527620bd5f4b702b486",
   "base": "04fd141daa17fd2055f9177527296eb9165a59d2",
   "ref": "release/762-body-composition-progress",
-  "previous_request_id": null
+  "previous_request_id": "r762-qualify35f6aa42"
 }
