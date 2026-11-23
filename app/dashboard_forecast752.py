@@ -74,7 +74,7 @@ def build_dashboard_forecasts752(protocols, inventory_dims, today: date):
                     "volume" not in by_dimension and
                     any(name in by_dimension for name in ("mass", "iu"))):
                 volume_quality = "missing"
-            stock = (None if dim is None or volume_quality else
+            stock = (None if dim is None or volume_quality in ("missing", "partial") else
                      max(0.0, float(by_dimension.get(dim, 0.0))))
             status = stage752(protocol, item, today)
             if dim is None:
@@ -87,7 +87,7 @@ def build_dashboard_forecasts752(protocols, inventory_dims, today: date):
                     "partial": "Volume data incomplete",
                     "mixed": "Mixed concentrations - review",
                 }.get(volume_quality, "Concentration unavailable")
-            if status == "Active":
+            if status in ("Active", "Mixed concentrations - review"):
                 combined[(item.compound_id, dim)] += weekly
             rows.append(dict(
                 protocol=protocol.name, protocol_id=protocol.id,
@@ -98,7 +98,7 @@ def build_dashboard_forecasts752(protocols, inventory_dims, today: date):
             ))
 
     for row in rows:
-        if row["status"] != "Active":
+        if row["status"] not in ("Active", "Mixed concentrations - review"):
             continue
         rate = combined[(row["compound_id"], row["dimension"])]
         if not isfinite(rate) or rate <= 0:
@@ -107,9 +107,14 @@ def build_dashboard_forecasts752(protocols, inventory_dims, today: date):
         days = 7 * row["remaining"] / rate
         row["days_left"] = days
         row["depletion"] = today + timedelta(days=min(days, 365000))
-        row["low"] = days < 21
-        row["status"] = ("No stock" if row["remaining"] == 0 else
-                         "Low stock" if row["low"] else "On hand")
+        # Mixed concentrations still have a countable physical liquid
+        # volume. Show coverage *by volume only*, not mass equivalence.
+        if row["status"] == "Mixed concentrations - review":
+            row["low"] = False
+        else:
+            row["low"] = days < 21
+            row["status"] = ("No stock" if row["remaining"] == 0 else
+                             "Low stock" if row["low"] else "On hand")
 
     rows.sort(key=lambda row: (
         row["days_left"] is None,

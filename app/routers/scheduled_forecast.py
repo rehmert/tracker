@@ -76,8 +76,9 @@ def build_schedule(db, today=None):
                    and unit in ('mL','uL') else
                    values[0] if consistent else None)
         demands={h:(record['demand'][h]/factor if factor and not record['unestimated'] else None) for h in HORIZONS}
-        if any(m['status'] in ('Mixed concentrations - review',
-                              'Volume data incomplete',
+        mixed = any(m['status'] == 'Mixed concentrations - review'
+                    for m in matches)
+        if any(m['status'] in ('Volume data incomplete',
                               'Concentration unavailable') for m in matches):
             available = None
         flags={}
@@ -85,6 +86,7 @@ def build_schedule(db, today=None):
             demand=demands[h]
             flags[h]=('Review demand' if demand is None else
                       'Review stock' if available is None else
+                      'Mixed strengths - volume only' if mixed else
                       'Potential shortfall' if demand>available else 'Roughly covered')
         rows.append({'compound':name,'unit':unit,'protocols':len(record['protocols']),
                      'items':len(record['items']),'available':available,

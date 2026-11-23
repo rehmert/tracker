@@ -130,14 +130,14 @@ def test_756_one_unknown_concentration_prevents_false_total_weeks(db):
     assert audit_rows(db)[0]["flag"] == "Review concentration / coverage"
 
 
-def test_756_mixed_concentrations_never_claim_interchangeable_weeks(db):
+def test_756_mixed_concentrations_show_volume_weeks_with_warning(db):
     c=plan(db)
     vial(db,c,content=2400,liquid_ml=10)
     vial(db,c,content=2000,liquid_ml=10)
     r=only_row(db)
     assert r["available"] == pytest.approx(20)
     assert r["vials"] == 2
-    assert r["weeks"] is None
+    assert r["weeks"] == pytest.approx(20/(0.2*7/3))
     assert r["status"] == "Mixed concentrations - review"
     assert "interchangeable" in r["caveat"]
     assert audit_rows(db)[0]["flag"] == "Review concentration / coverage"
@@ -218,8 +218,8 @@ def test_756_scheduled_mixed_concentration_flags_review(db):
     vial(db,c,content=2000,liquid_ml=10)
     scheduled,_=build_schedule(db,today=TODAY)
     item=next(x for x in scheduled if x["compound"]=="Synthetic Test C")
-    assert item["available"] is None
-    assert item["flags"][28]=="Review stock"
+    assert item["available"] == pytest.approx(20)
+    assert item["flags"][28]=="Mixed strengths - volume only"
 
 
 def test_756_forecast_template_handles_unknown_stock():
@@ -273,7 +273,6 @@ def test_756_dashboard_volume_forecast_uses_known_liquid_stock(db):
 @pytest.mark.parametrize("quality,status", [
     ("missing","Concentration unavailable"),
     ("partial","Volume data incomplete"),
-    ("mixed","Mixed concentrations - review"),
 ])
 def test_756_dashboard_volume_unknown_not_zero_stock(db,quality,status):
     from app.dashboard_forecast752 import build_dashboard_forecasts752
@@ -292,3 +291,17 @@ def test_756_dashboard_route_builds_concentrations_from_vial_views():
     assert 'inventory_dims[vial.compound_id]["volume"]' in code
     assert '"_volume_quality"' in code
     assert "doses_remaining = (remaining / item.amount_value" in code
+
+
+def test_756_dashboard_mixed_concentrations_show_volume_days_only(db):
+    from app.dashboard_forecast752 import build_dashboard_forecasts752
+    c=plan(db)
+    protocols=list(db.scalars(select(Protocol)).all())
+    rows,low,watch=build_dashboard_forecasts752(
+        protocols,{c.id:{"mass":4400000,"volume":20,
+                         "_volume_quality":"mixed"}},TODAY)
+    assert rows[0]["status"]=="Mixed concentrations - review"
+    assert rows[0]["unit"]=="mL"
+    assert rows[0]["remaining"]==pytest.approx(20)
+    assert rows[0]["days_left"]==pytest.approx(20/(0.2/3))
+    assert not low and len(watch)==1
