@@ -141,12 +141,13 @@ def test_758_print_fit_and_preview_are_complete_svg_png():
 
 
 @pytest.mark.parametrize("layout,angle",[
-    ("10x20x4",90),("10x20x4",0),("30x15x2",0),
+    ("10x20x4",90),("10x20x4",0),
+    ("30x15x2",90),("30x15",180),
     ("40x20",90),("40x20",180)
 ])
 def test_758_unsupported_print_layout_fails_closed(layout,angle):
     v,coa=fake(vendor="S")
-    with pytest.raises(ValueError,match="40x20 or 50x30 mm"):
+    with pytest.raises(ValueError,match="30x15 mm"):
         validate_four_line_fit758(four(v,coa),layout,angle)
 
 
