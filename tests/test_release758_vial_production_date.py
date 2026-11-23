@@ -77,7 +77,7 @@ def test_758_selected_tested_content_must_come_from_linked_coa():
     v,coa,_=synthetic()
     extra=S(id=18,reported_content_value=12.1,reported_content_unit="mg")
     v.all_coas=[coa,extra]
-    assert two_line_label758(v,selected_coa758(v,"18"))[1]=="10mg / 12.1mg"
+    assert two_line_label758(v,coa=selected_coa758(v,"18"))[1]=="10mg / 12.1mg"
     with pytest.raises(ValueError,match="linked"):
         selected_coa758(v,"100")
     assert two_line_label758(v,coa=None)[1]=="10mg / N/A"

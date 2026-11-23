@@ -123,7 +123,9 @@ def test_export_propagates_rotation_and_download_filename(monkeypatch):
     from app.routers import vials
 
     fake = SimpleNamespace(
-        id=42, compound=SimpleNamespace(name='Compound'),
+        id=42, compound=SimpleNamespace(name='Test Peptide'),
+        purchase=SimpleNamespace(vendor='Test Vendor'),
+        production_on=None,
         content_value=10, content_unit='mg', label='test',
         reconstituted_on=None, volume_ml=None,
         beyond_use_on=None, expires_on=None, lot='', cap_color='',
