@@ -114,6 +114,13 @@ elif [[ "$RELEASE" == 710 ]]; then
   # One prepared physical blend in the standard dose form; four additive
   # fields and a supply index require exact-source review and verified backup.
   DEPLOY_EXTRA=(--reviewed-blend-710 --db-migration)
+elif [[ "$RELEASE" == 760 ]]; then
+  # PROD 755 catch-up includes the exact reviewed nullable Release 758
+  # manufacturing-date addition; pin the old PROD commit and require a
+  # verified backup and independent exact-additive source review.
+  [[ "$BASE" == bb83f1a59de3defd5fe6d0bc83ad09ed4d0cfdac ]] ||
+    fail "Release 760 schema catch-up requires exact installed PROD 755 base"
+  DEPLOY_EXTRA=(--reviewed-vial-758 --db-migration)
 fi
 bash "$RUNNER" \
   --instance PROD \
