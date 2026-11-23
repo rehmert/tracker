@@ -188,3 +188,60 @@ def test_758_four_line_preview_explains_that_bud_is_not_printed():
     assert "not the expiry" in page
     assert "beyond-use date" in sheet
     assert "consult the vial details before use" in sheet
+
+
+def test_758_scoped_real_orm_preview_and_coa_export_are_consistent(monkeypatch):
+    from sqlalchemy import create_engine,select,func
+    from sqlalchemy.orm import Session
+    from sqlalchemy.pool import StaticPool
+    from app.db import Base
+    from app.models import Compound, Vial, Purchase, Coa, DoseLog
+    from app.routers import vials as router
+    from fastapi import HTTPException
+    engine=create_engine(
+        "sqlite://",connect_args={"check_same_thread":False},
+        poolclass=StaticPool
+    )
+    Base.metadata.create_all(engine)
+    try:
+        with Session(engine) as db:
+            compound=Compound(name="Synthetic Peptide",category="peptide",
+                              primary_unit="mg")
+            purchase=Purchase(vendor="Synthetic Supplier",
+                              purchased_on=date(2026,11,23))
+            coa=Coa(reported_content_value=11.2,
+                    reported_content_unit="mg")
+            db.add_all([compound,purchase,coa]);db.flush()
+            vial=Vial(compound_id=compound.id,purchase_id=purchase.id,
+                      coa_id=coa.id,content_value=10,content_unit="mg",
+                      volume_ml=2,form="lyophilized",status="in_use",
+                      reconstituted_on=date(2026,11,23))
+            db.add(vial);db.flush()
+            monkeypatch.setattr(router,"render",
+                                lambda request,template,**kw:kw)
+            page=router.vial_labels423(
+                vial.id,request=object(),phase="post",
+                target_mg="1.4",layout="40x20",rotation=0,db=db
+            )
+            assert page["label_coa_id"]==coa.id
+            assert page["label_target_mg"]==1.4
+            assert page["label_fit_warning"]==""
+            svg=router.vial_labels423_export(
+                vial.id,phase="post",fmt="svg",layout="40x20",
+                rotation=0,target_mg="1.4",coa_id=str(coa.id),db=db
+            ).body.decode()
+            assert "SYNTHETIC PEPTIDE / SYNTHETIC SUPPLIER" in svg
+            assert "10mg / 11.2mg" in svg
+            # The selected COA is shown for comparison, not adopted as
+            # effective content without the vial opt-in setting.
+            assert "11/23/26 / 2mL BAC / 5mg/mL" in svg
+            assert "1.4mg = 28 units" in svg
+            with pytest.raises(HTTPException) as wrong:
+                router.vial_labels423_export(
+                    vial.id,phase="post",target_mg="1.4",
+                    coa_id="9999",db=db
+                )
+            assert wrong.value.status_code==422
+            assert db.scalar(select(func.count()).select_from(DoseLog))==0
+    finally:
+        engine.dispose()
