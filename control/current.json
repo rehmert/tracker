@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r751-f495d0f9686a",
+  "request_id": "r758-24b74dd98e3c",
   "action": "qualify",
-  "release": 751,
-  "target": "f495d0f9686a24403f874f932e34a5039a186dce",
-  "base": "2ff72f49449306ea5b11dc9c861d0cac5973131e",
-  "ref": "release/751-strict-csrf-dev-rollout",
+  "release": 758,
+  "target": "24b74dd98e3c3e67ccf1ce88ef0ed8c866ccc925",
+  "base": "90b297fc07c950d5a44a0bf8fe7d4beabfd8b30f",
+  "ref": "release/758-vial-label-dose-markings",
   "previous_request_id": null
 }
