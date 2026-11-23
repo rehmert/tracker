@@ -758,7 +758,7 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -ge 12 && $# -le 22 ]] || fail "Bad worker arguments"
+ [[ $# -ge 12 && $# -le 23 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi

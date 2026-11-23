@@ -42,3 +42,20 @@ def test_schema_review_is_required_by_guarded_installer():
     assert "Schema changes require verified migration backup" in runner
     assert "Schema changes require a reviewed schema flag" in runner
     assert "tracker_schema_review758.py" in qa
+
+
+def test_758_worker_argument_gate_accepts_reviewed_schema_flag():
+    """The 23rd worker argument must be accepted before log redirection."""
+    import re
+
+    runner = (ROOT / "scripts/tracker-release.sh").read_text()
+    assert '[[ $# -ge 12 && $# -le 23 ]] || fail "Bad worker arguments"' in runner
+    assert 'REVIEWED_VIAL_758="\${23:-0}"' in runner
+    launch = next(
+        line for line in runner.splitlines()
+        if line.startswith(' /bin/bash "$RUN/worker.sh" --worker ')
+    )
+    args = re.findall(r'"\$[A-Z][A-Z_0-9]*"', launch)
+    assert len(args) == 23
+    assert args[-1] == '"$REVIEWED_VIAL_758"'
+    assert '--reviewed-vial-758) REVIEWED_VIAL_758=1' in runner
