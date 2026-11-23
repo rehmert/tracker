@@ -351,3 +351,23 @@ def test_754_unreadable_sqlite_error_is_sanitized(tmp_path, monkeypatch, capsys)
     assert code==1 and stderr.startswith("PROGRESS_754_ERROR=")
     assert "arbitrary data" not in stderr
     assert str(path) not in stderr
+
+
+def test_754_status_reports_staleness_on_read(tmp_path):
+    status_spec = importlib.util.spec_from_file_location(
+        "tracker_progress_status754", ROOT/"scripts/tracker_progress_status754.py")
+    status = importlib.util.module_from_spec(status_spec)
+    status_spec.loader.exec_module(status)
+    path=tmp_path/"status.json"
+    path.write_text(json.dumps({
+        "status":"successful",
+        "last_success_utc":"2026-11-19T00:00:00Z",
+        "stale":False,
+    }))
+    path.chmod(0o600)
+    assert status.report(path) == "STALE"
+    path.write_text(json.dumps({
+        "status":"failed",
+        "last_success_utc":"2026-11-19T00:00:00Z",
+    }))
+    assert status.report(path) == "FAILED_STALE"

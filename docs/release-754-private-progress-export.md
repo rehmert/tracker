@@ -85,3 +85,5 @@ Status file: root-only status.json contains successful, local_validated, or
 failed, last_success_utc and stale (48h since last sync). Failed sync retains
 prior success time. Schema validation uses a pinned, narrow local JSON-Schema
 subset and never resolves remote references.
+
+Read status on demand: `/opt/tracker/.venv/bin/python /opt/tracker/scripts/tracker_progress_status754.py /var/lib/tracker-progress-export/status.json`. It derives stale status at read time, without inspecting health records or credentials.
