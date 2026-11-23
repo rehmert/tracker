@@ -15,8 +15,9 @@ import sqlite3
 from urllib.parse import quote
 
 from .metrics import KG_PER_LB
+from .progress_clinical755 import (extract_labs755, extract_regimens755, extract_compounds755)
 
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"
 CATEGORIES = ("overview", "weight", "body-measurements", "workouts",
               "nutrition", "vitals", "labs", "interventions")
 NUTRIENTS = {"energy": "kcal", "proteins": "g",
@@ -60,7 +61,9 @@ def _roll_average(points, on, days):
 
 
 def extract(db_path: Path, *, instance: str, days: int = 365,
-            lab_allowlist=(), medication_allowlist=(), today: date | None = None):
+            lab_allowlist=(), medication_allowlist=(), today: date | None = None,
+            export_all_labs: bool = False, export_all_regimens: bool = False,
+            export_all_compounds: bool = False):
     """Return deterministic allowlisted datasets, generated using one read txn."""
     if instance not in ("DEV-SYNTHETIC", "PROD"):
         raise ValueError("Invalid source label")
@@ -229,11 +232,14 @@ def extract(db_path: Path, *, instance: str, days: int = 365,
                     if totals["proteins"] is not None and targets.get("proteins") is not None
                     else None),
             })
+        if not all(type(flag) is bool for flag in (
+                export_all_labs, export_all_regimens, export_all_compounds)):
+            raise ValueError("CLINICAL_FLAGS_INVALID")
         lab_names = {str(x).strip().casefold() for x in lab_allowlist if str(x).strip()}
         if len(lab_names) > 40:
             raise ValueError("Lab allowlist too large")
         lab_rows = []
-        if lab_names and {"lab_results", "lab_reports"} <= table_names:
+        if not export_all_labs and lab_names and {"lab_results", "lab_reports"} <= table_names:
             found = db.execute("""
                 SELECT r.drawn_on, a.analyte, a.value, a.unit,
                        a.ref_low, a.ref_high
@@ -254,7 +260,7 @@ def extract(db_path: Path, *, instance: str, days: int = 365,
         if len(medications) > 30:
             raise ValueError("Medication allowlist too large")
         intervention_rows = []
-        if medications and {"regimen_items635", "regimen_schedules635"} <= table_names:
+        if not export_all_regimens and medications and {"regimen_items635", "regimen_schedules635"} <= table_names:
             regimens = db.execute("""
                 SELECT i.kind, i.name, s.start_on, s.end_on, s.amount, s.cadence
                 FROM regimen_schedules635 s JOIN regimen_items635 i ON i.id=s.item_id
@@ -270,6 +276,15 @@ def extract(db_path: Path, *, instance: str, days: int = 365,
                     "cadence": x["cadence"], "end_date": _date(x["end_on"]),
                     "certainty": "recorded_plan_not_confirmed_administration",
                 })
+        if export_all_labs:
+            lab_rows = extract_labs755(db, table_names, start, on)
+        if export_all_regimens:
+            intervention_rows = extract_regimens755(db, table_names, start, on)
+        if export_all_compounds:
+            intervention_rows.extend(extract_compounds755(db, table_names, start, on))
+        intervention_rows.sort(key=lambda event: (
+            event.get("date") or "", event["type"],
+            event.get("name") or ",".join(event.get("compounds", []))))
         db.execute("ROLLBACK")
     finally:
         db.close()
@@ -308,8 +323,14 @@ def extract(db_path: Path, *, instance: str, days: int = 365,
         "body-measurements": body,
         "workouts": workouts, "nutrition": nutrition,
         "vitals": {"history": bp, "unit": {"bp": "mmHg", "pulse": "bpm"}},
-        "labs": {"history": lab_rows, "allowlist_applied": True},
-        "interventions": {"history": intervention_rows, "allowlist_applied": True},
+        "labs": {"history": lab_rows, "allowlist_applied": not export_all_labs,
+                 "selection": "all_numeric_results" if export_all_labs else "named_allowlist"},
+        "interventions": {"history": intervention_rows,
+                          "allowlist_applied": not (export_all_regimens or export_all_compounds),
+                          "selection": {
+                              "all_medications_and_supplements": export_all_regimens,
+                              "compound_doses_and_active_protocols": export_all_compounds,
+                          }},
         "overview": {"weight_current_lb": summary["current_weight_lb"],
                      "weight_change_28d_lb": monthly["28d"],
                      "completed_workouts": sum(x["status"]=="completed" for x in workout_rows),

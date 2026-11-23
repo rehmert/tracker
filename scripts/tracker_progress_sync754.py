@@ -34,6 +34,9 @@ FORBIDDEN = {"notes", "note", "password", "token", "email", "vendor",
              "snapshot_json", "content_type", "sha256", "attachment"}
 CONFIG_KEYS = {"schema_version", "repository", "days", "lab_allowlist",
                "medication_allowlist", "token_file", "prod_approved"}
+# Existing PROD settings remain valid. New permissions are strictly opt-in.
+OPTIONAL_755 = {"export_all_labs", "export_all_regimens", "export_all_compounds"}
+CLINICAL_FLAGS_755 = ("export_all_labs", "export_all_regimens", "export_all_compounds")
 
 
 def safe_private_file(path):
@@ -48,14 +51,20 @@ def safe_private_file(path):
 
 def config_from(path):
     config = json.loads(safe_private_file(path).read_text(encoding="utf-8"))
-    if (not isinstance(config, dict) or set(config) != CONFIG_KEYS
+    if (not isinstance(config, dict)
+            or not CONFIG_KEYS.issubset(config)
+            or bool(set(config) - CONFIG_KEYS - OPTIONAL_755)
             or config["schema_version"] != 1
             or config["repository"] != REPOSITORY
             or not isinstance(config["days"], int)
             or not 7 <= config["days"] <= 730
             or type(config["prod_approved"]) is not bool
-            or type(config["token_file"]) is not str):
+            or type(config["token_file"]) is not str
+            or any(type(config.get(flag, False)) is not bool
+                   for flag in CLINICAL_FLAGS_755)):
         raise ValueError("CONFIG_INVALID")
+    for flag in CLINICAL_FLAGS_755:
+        config.setdefault(flag, False)
     for field in ("lab_allowlist", "medication_allowlist"):
         values = config[field]
         if (not isinstance(values, list) or not all(
@@ -71,7 +80,7 @@ def validate_datasets(datasets):
                  "reporting_period", "classification", "data",
                  "completeness", "provenance"}
     for category, obj in datasets.items():
-        if set(obj) != mandatory or obj["schema_version"] != "1":
+        if set(obj) != mandatory or obj["schema_version"] != "2":
             raise ValueError("SCHEMA_INVALID")
         if (not isinstance(obj["reporting_period"], dict) or
                 set(obj["reporting_period"]) != {"from", "to"} or
@@ -243,7 +252,7 @@ def documents_for(datasets, schema_text):
     period = datasets["overview"]["reporting_period"]
     files = {FILENAMES[k]: json.dumps(v, indent=2, sort_keys=True,
               ensure_ascii=True, allow_nan=False) + "\n" for k,v in datasets.items()}
-    files["schema/progress-v1.schema.json"] = schema_text.rstrip() + "\n"
+    files["schema/progress-v2.schema.json"] = schema_text.rstrip() + "\n"
     files["README.md"] = (
         "# Tracker progress data (private)\n\n"
         "Generated outbound by Tracker. Observed progress snapshots and "
@@ -254,6 +263,8 @@ def documents_for(datasets, schema_text):
         "provenance. A null value means not measured, unknown or unavailable; "
         "it never means a recorded zero.\n\n"
         "## Categories and fields\n\n"
+        "Schema v2 expands explicit opt-in clinical history while keeping "
+        "legacy configuration compatible and excluded by default.\n\n"
         "- `overview`: current/28-day weight and summary counts.\n"
         "- `weight`: dated scale readings in lb, rolling 7/28-day "
         "per-reading averages, most recent averages and 7/28-day changes. "
@@ -270,10 +281,14 @@ def documents_for(datasets, schema_text):
         "counts, protein adherence when a recorded target exists. "
         "No logs are null, not zero.\n"
         "- `vitals`: recorded systolic/diastolic in mmHg and pulse in bpm.\n"
-        "- `labs`: allowlisted dated analyte, numeric value, laboratory "
-        "unit and reference limits; no source PDF or notes.\n"
-        "- `interventions`: allowlisted medication schedule changes "
-        "as recorded *plans*, not proof of administration.\n\n"
+        "- `labs`: opt-in complete numerical analyte history with date, "
+        "unit and reference bounds; excludes report documents, notes and "
+        "provider data. Without opt-in, named allowlist only.\n"
+        "- `interventions`: opt-in medications, supplements, regimen logs, "
+        "documented injectable doses and active protocol plans. Recorded "
+        "administrations and planned doses have distinct event types. "
+        "Excludes vials, COAs, suppliers, purchases, prescriptions, "
+        "prescribers, attachments and raw notes.\n\n"
         "All source histories are time bounded, currently up to 730 days. "
         "The only unbounded lookup is the first recorded scale weight. "
         "The export never includes usernames, uploaded files, purchases, "
@@ -283,7 +298,7 @@ def documents_for(datasets, schema_text):
         "overwritten records; changes to data access or retention "
         "require a separate reviewed repo lifecycle plan.\n")
     files["manifest.json"] = json.dumps({
-        "schema_version": "1",
+        "schema_version": "2",
         "source_instance": datasets["overview"]["source_instance"],
         "generated_at_utc": datasets["overview"]["generated_at_utc"],
         "reporting_period": period,
@@ -352,12 +367,15 @@ def run(argv=None):
             raise ValueError("OUTPUT_NOT_PRIVATE")
         docs = extract(Path(args.db), instance=label, days=config["days"],
                        lab_allowlist=config["lab_allowlist"],
-                       medication_allowlist=config["medication_allowlist"])
+                       medication_allowlist=config["medication_allowlist"],
+                       export_all_labs=config["export_all_labs"],
+                       export_all_regimens=config["export_all_regimens"],
+                       export_all_compounds=config["export_all_compounds"])
         validate_datasets(docs)
         schema_text = (Path(__file__).resolve().parents[1] /
-                       "app/progress_schema754.json").read_text()
+                       "app/progress_schema755.json").read_text()
         schema = json.loads(schema_text)
-        if schema.get("title") != "Tracker progress snapshot v1":
+        if schema.get("title") != "Tracker progress snapshot v2":
             raise ValueError("SCHEMA_INVALID")
         for doc in docs.values():
             validate_schema(doc, schema)

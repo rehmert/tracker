@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tracker progress snapshot v2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "source_instance",
+    "generated_at_utc",
+    "reporting_period",
+    "classification",
+    "data",
+    "completeness",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2"
+    },
+    "source_instance": {
+      "enum": [
+        "DEV-SYNTHETIC",
+        "PROD"
+      ]
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reporting_period": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "additionalProperties": false
+    },
+    "classification": {
+      "const": "observed_and_descriptive_calculations"
+    },
+    "data": {
+      "type": "object"
+    },
+    "completeness": {
+      "type": "object",
+      "required": [
+        "observed_records",
+        "reporting_days",
+        "measurement_available"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "observed_records": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "reporting_days": {
+          "type": "integer",
+          "minimum": 7,
+          "maximum": 730
+        },
+        "measurement_available": {
+          "type": "boolean"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "history",
+        "summaries",
+        "body_composition"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "history": {
+          "const": "directly_recorded_where_present"
+        },
+        "summaries": {
+          "const": "calculated_from_records"
+        },
+        "body_composition": {
+          "const": "not_estimated"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

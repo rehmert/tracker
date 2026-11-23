@@ -181,7 +181,7 @@ def test_754_nonfinite_and_unknown_schema_rejected(fixture_db):
     with pytest.raises(ValueError, match="FIELD_NOT_ALLOWLISTED"):
         sync.validate_datasets(data)
     data["vitals"]["data"].pop("bad")
-    data["weight"]["schema_version"] = "2"
+    data["weight"]["schema_version"] = "3"
     with pytest.raises(ValueError, match="SCHEMA_INVALID"):
         sync.validate_datasets(data)
 
@@ -283,11 +283,11 @@ def test_754_prod_export_cannot_start_without_explicit_approval(
 
 def test_754_manifest_and_schema_are_predictable(fixture_db):
     result=datasets(fixture_db)
-    schema=(ROOT/"app/progress_schema754.json").read_text()
+    schema=(ROOT/"app/progress_schema755.json").read_text()
     files,digest=sync.documents_for(result,schema)
     assert len(files)==len(CATEGORIES)+3
     assert set(files)==set(sync.FILENAMES.values())|{
-        "README.md","manifest.json","schema/progress-v1.schema.json"}
+        "README.md","manifest.json","schema/progress-v2.schema.json"}
     manifest=json.loads(files["manifest.json"])
     assert manifest["content_sha256"]==digest
     assert len(manifest["files"])==len(CATEGORIES)
@@ -302,7 +302,7 @@ def test_754_synthetic_mode_rejects_unmarked_database(fixture_db):
 
 def test_754_published_schema_validation_rejects_bad_dates(fixture_db):
     docs = datasets(fixture_db)
-    schema = json.loads((ROOT/"app/progress_schema754.json").read_text())
+    schema = json.loads((ROOT/"app/progress_schema755.json").read_text())
     for document in docs.values():
         sync.validate_schema(document, schema)
     docs["weight"]["generated_at_utc"] = "not-an-iso-time"
