@@ -85,9 +85,9 @@ def four_line_label758(vial,view,*,coa=None,detail=None):
     name=_plain758(getattr(getattr(vial,"compound",None),"name",None))
     vendor=_plain758(getattr(getattr(vial,"purchase",None),"vendor",None))
     original=_content758(vial.content_value,vial.content_unit)
-    tested=("COA "+_content758(coa.reported_content_value,
-                                coa.reported_content_unit)
-            if coa is not None else "COA N/A")
+    tested=(_content758(coa.reported_content_value,
+                        coa.reported_content_unit)
+            if coa is not None else "N/A")
     # COA content is explicitly DISPLAY-only. The dose/concentration comes
     # from canonical vial_views (label claim OR allowed COA average).
     dim=view.dim if view is not None else None
@@ -105,8 +105,8 @@ def four_line_label758(vial,view,*,coa=None,detail=None):
     water_type=("BAC" if getattr(vial,"form","lyophilized")=="lyophilized"
                 else "VOL")
     water_number=_number758(water,3)
-    water_text=(f"{water_type}{water_number}mL"
-                if water_number!="N/A" else f"{water_type} N/A")
+    water_text=(f"{water_number}mL {water_type}"
+                if water_number!="N/A" else f"N/A {water_type}")
     recon=f"{stamp:%m/%d/%y} / {water_text} / {final}"
     if detail is not None and dim=="mass":
         target=_number758(detail["target_mg"],4)

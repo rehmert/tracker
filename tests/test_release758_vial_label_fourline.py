@@ -49,8 +49,8 @@ def test_758_exact_four_lines_with_vendor_selected_coa_and_bac():
     lines=four(v,report)
     assert lines==[
         "TESAMORELIN / BLACKFIN SUPPLY",
-        "10mg / COA 11.2mg",
-        "11/23/26 / BAC2mL / 6mg/mL",
+        "10mg / 11.2mg",
+        "11/23/26 / 2mL BAC / 6mg/mL",
         "1.4mg = 23.333 units",
     ]
 
@@ -58,7 +58,7 @@ def test_758_exact_four_lines_with_vendor_selected_coa_and_bac():
 def test_758_coa_is_display_only_not_final_concentration():
     v,report=fake()
     lines=four(v,report,view=vial_data(mg_ml=5.5))
-    assert lines[1]=="10mg / COA 11.2mg"
+    assert lines[1]=="10mg / 11.2mg"
     assert lines[2].endswith("/ 5.5mg/mL")
     assert lines[3]=="1.4mg = 25.455 units"
 
@@ -69,7 +69,7 @@ def test_758_coa_selection_not_ambiguous_and_no_unlinked_coa():
     v.all_coas=[primary,other]
     assert selected_coa758(v).id==3
     assert selected_coa758(v,"4").id==4
-    assert four(v,selected_coa758(v,"4"))[1]=="10mg / COA 12.5mg"
+    assert four(v,selected_coa758(v,"4"))[1]=="10mg / 12.5mg"
     v.coa=None
     assert selected_coa758(v) is None
     for bad in ("5","xx","0","-1"):
@@ -80,7 +80,7 @@ def test_758_coa_selection_not_ambiguous_and_no_unlinked_coa():
 def test_758_without_selected_coa_shows_na():
     v,report=fake()
     lines=four(v,None)
-    assert lines[1]=="10mg / COA N/A"
+    assert lines[1]=="10mg / N/A"
     assert lines[3]=="1.4mg = 23.333 units"
 
 
@@ -107,8 +107,8 @@ def test_758_missing_vendor_water_and_coa_never_guessed():
     lines=four_line_label758(v,S(dim="mass",conc_per_ml=None,remaining_base=10000),
                              coa=None,detail=None)
     assert " / N/A" in lines[0]
-    assert "COA N/A" in lines[1]
-    assert "BAC N/A" in lines[2]
+    assert " / N/A" in lines[1]
+    assert "N/A BAC" in lines[2]
 
 
 def test_758_final_concentration_assigned_from_canonical_vial_not_test_result():
@@ -116,8 +116,8 @@ def test_758_final_concentration_assigned_from_canonical_vial_not_test_result():
     base=vial_data(mg_ml=5.0)
     detail=dose_line758(base,1.4)
     lines=four_line_label758(v,base,coa=report,detail=detail)
-    assert lines[1]=="10mg / COA 11.2mg"
-    assert lines[2]=="11/23/26 / BAC2mL / 5mg/mL"
+    assert lines[1]=="10mg / 11.2mg"
+    assert lines[2]=="11/23/26 / 2mL BAC / 5mg/mL"
     assert lines[3]=="1.4mg = 28 units"
 
 
