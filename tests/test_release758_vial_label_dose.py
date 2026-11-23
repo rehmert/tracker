@@ -294,3 +294,11 @@ def test_758_small_layout_page_shows_switch_layout_instead_of_422(
     html=(ROOT/"app/templates/vial_labels423.html").read_text()
     assert "label-print-fit758" in html
     assert "{% elif label_fit_warning %}" in html
+
+
+def test_758_bulk_sheet_ui_explains_full_dose_label_layout():
+    html=(ROOT/"app/templates/vial_label_sheets447.html").read_text()
+    Environment().parse(html)
+    assert "40 × 20 mm" in html
+    assert "U-100 syringe markings" in html
+    assert "will refuse an export that truncates" in html

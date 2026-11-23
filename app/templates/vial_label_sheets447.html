@@ -48,6 +48,7 @@ h1{font-size:1.5rem;margin:0 0 .4rem}
 <header class="toolbar">
   <h1>Print Selected Vial Labels</h1>
   <p class="note">Each selected vial receives its own label. Multi-label strips are filled in vial-number order; unused positions on the last strip remain blank. Nothing is changed in inventory.</p>
+  <p class="note">For reconstituted labels that include a planned target mg and calculated U-100 syringe markings, select <strong>40 × 20 mm</strong> with normal text orientation. The compact four-across layout cannot reliably display both values; Tracker will refuse an export that truncates them. Different active target doses require explicit selection on the individual vial label page.</p>
   <p class="stats">{{ selected_count }} distinct vial{{ '' if selected_count == 1 else 's' }} · {{ label_count }} label{{ '' if label_count == 1 else 's' }} · {{ sheets|length }} sheet{{ '' if sheets|length == 1 else 's' }}</p>
   <form method="get" action="/vials/labels/sheets" class="settings" aria-label="Label sheet settings">
     <input type="hidden" name="ids" value="{{ selected_ids }}">
