@@ -180,3 +180,11 @@ def test_758_sheet_function_preserves_four_lines_per_reconstituted_vial():
     result=label_panels447([v],"post",1,four_line_details={v.id:fourlines})
     assert result==[fourlines]
     assert result[0][-1]=="1.4mg = 23.333 units"
+
+
+def test_758_four_line_preview_explains_that_bud_is_not_printed():
+    page=(ROOT/"app/templates/vial_labels423.html").read_text()
+    sheet=(ROOT/"app/templates/vial_label_sheets447.html").read_text()
+    assert "not the expiry" in page
+    assert "beyond-use date" in sheet
+    assert "consult the vial details before use" in sheet

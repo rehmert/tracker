@@ -85,3 +85,8 @@ for post-mix four-line output to prevent clipped fields until they
 support the same typography. Long names/vendors are not truncated:
 the UI shows a print-fit warning, and downloads fail closed.
 No inventory, schedule, dose or COA data is modified.
+
+The user-selected four-line format does not include the historical
+separate expiry/BUD lines. The label previews explicitly warn that the
+mixing date is not an expiration or beyond-use date; those recorded dates
+remain in the vial details and are never calculated or altered.
