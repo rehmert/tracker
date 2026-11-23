@@ -109,3 +109,25 @@ replaced only by a fresh SHA for the *same* release/base/ref, not by a jump
 to Release 758. Do not queue this release or alter the control branch until
 the stale chain and actual DEV installed baseline are reconciled with the
 live agent. An unqueued or unqualified Release 758 is not installed on DEV.
+
+## DEV control recovery after verified Release 757 install
+
+The older Release 751 GitHub request was a **failed pre-execution gate**:
+`r751-f495d0f9686a`. A root `tracker-dev` read-only check established
+clean installed `main` at Release 757 SHA `90b297fc07c950d5a44a0bf8fe7d4beabfd8b30f`.
+The agent still had a failed Release 751 pointer and cannot naturally advance
+from that command to Release 758. The one-time pinned
+`scripts/tracker-release-reconcile758.py` checks the installed 757 source and
+trusted agent integrity, exact local GateError and immutable receipt, prior
+control-history transitions, absence of active or pending agent commands,
+unchanged exact 758 source, and no previously published new receipt. It pauses
+the DEV agent timer, fast-forward pushes a fresh pinned `qualify` instruction
+and a sanitized audit record into the established request branch, saves the
+prior local controller anchor and writes the new verified anchor atomically.
+It does not forge or alter any immutable receipts and never performs or
+queues a PROD operation. Concurrent pointer changes fail closed. Only after
+successful local reconciliation does it start the ordinary DEV agent, which
+must still independently run isolated Release 758 QA and publish its receipt.
+If it stops between GitHub push and state-anchoring, the timer stays stopped
+and a subsequent exact-target invocation can complete the already-authenticated
+reconciliation without issuing another request.
