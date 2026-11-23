@@ -31,10 +31,37 @@ PY
 health(){
  systemctl is-active --quiet tracker.service
  "$APP/.venv/bin/python" - <<'PY'
-from urllib.request import build_opener, ProxyHandler
-op=build_opener(ProxyHandler({}))
-with op.open("http://127.0.0.1:8000/healthz",timeout=8) as r:
- assert r.status==200 and b'"ok":true' in r.read().replace(b" ",b"")
+import json
+import time
+from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, urlsplit
+from urllib.request import build_opener, HTTPRedirectHandler, ProxyHandler
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, url):
+        return None
+
+op = build_opener(ProxyHandler({}), NoRedirect())
+for attempt in range(45):
+    try:
+        with op.open("http://127.0.0.1:8000/healthz", timeout=3) as response:
+            if response.status != 200 or json.load(response) != {"ok": True}:
+                raise SystemExit("Unexpected health response")
+            break
+    except HTTPError as err:
+        redirect = urlsplit(err.headers.get("Location", ""))
+        if (err.code != 303 or redirect.scheme or redirect.netloc
+                or redirect.path != "/login"
+                or parse_qs(redirect.query).get("next") != ["/healthz"]):
+            raise SystemExit("Unexpected health authentication redirect")
+        break
+    except (URLError, OSError, TimeoutError):
+        if attempt == 44:
+            raise SystemExit("Tracker did not become ready after restart")
+        time.sleep(1)
+else:
+    raise SystemExit("Tracker readiness exhausted")
+print("TRACKER_751_HEALTH=READY")
 PY
 }
 deny_probe(){

@@ -50,10 +50,7 @@
     | selectattr('status', 'equalto', 'due')
     | list %}
 
-{% set tracker_attention_low =
-    forecasts
-    | selectattr('low')
-    | list %}
+{% set tracker_attention_low = low_forecasts %}
 
 {% set tracker_attention_coa = no_coa | int %}
 
@@ -75,10 +72,7 @@
       | selectattr('status', 'equalto', 'due')
       | list %}
 
-  {% set low_stock_items =
-      forecasts
-      | selectattr('low')
-      | list %}
+  {% set low_stock_items = low_forecasts %}
 
   {% set missing_coa_count = no_coa | int %}
 
@@ -254,11 +248,7 @@
   {% set upcoming_count =
       dashboard_upcoming | length %}
 
-  {% set low_stock_count =
-      forecasts
-      | selectattr('low')
-      | list
-      | length %}
+  {% set low_stock_count = low_forecasts | length %}
 
   <div class="tracker-status-heading">
     <h2 id="tracker-status-heading">Workspace status</h2>
@@ -416,8 +406,8 @@
     </div>
     <div class="today-card">
       <h3>Inventory watch</h3>
-      {% if forecasts %}
-      <ul>{% for row in forecasts[:5] %}
+      {% if inventory_watch_forecasts %}
+      <ul>{% for row in inventory_watch_forecasts[:5] %}
         <li>{{ row.compound }} — {{ row.days_left|round(1) }} days estimated <span class="tag">{{ 'Low stock' if row.low else 'Forecast' }}</span></li>
       {% endfor %}</ul>
       {% else %}<p class="empty">No active-protocol supply forecasts.</p>{% endif %}
@@ -486,10 +476,19 @@
 
 <section data-dashboard-panel="4" data-dashboard-title="Inventory forecast" class="dashboard-panel">
   <h2 id="inventory-forecast">Inventory forecast</h2>
-  <p class="note">Based on combined weekly usage in active protocols; excludes expired and discarded vials. Assumes unchanged schedules and no future purchases or losses. Low stock means under 21 days of supply.</p>
+  <p class="note">Includes all active protocols, even when inventory is missing or a schedule is not yet in effect. Estimated depletion uses combined current-stage demand for shared compounds, excludes expired/discarded vials, and assumes no changes or purchases. Low stock means fewer than 21 days remaining.</p>
   {% if forecasts %}
-  <div class="scroll"><table><thead><tr><th>Compound</th><th>Usable stock</th><th>Days of supply</th><th>Estimated depletion</th><th>Status</th></tr></thead><tbody>
-  {% for row in forecasts %}<tr><td>{{ row.compound }}</td><td>{{ row.remaining|round(2) }} {{ row.unit }}</td><td>{{ row.days_left|round(1) }}</td><td>{{ row.depletion }}</td><td>{% if row.low %}<span class="tag">Low stock</span>{% else %}On hand{% endif %}</td></tr>{% endfor %}
+  <div class="scroll"><table><thead><tr><th>Protocol</th><th>Compound</th><th>Usable stock</th><th>Days of supply</th><th>Estimated depletion</th><th>Status</th></tr></thead><tbody>
+  {% for row in forecasts %}
+  <tr>
+    <td><a href="/protocols/{{ row.protocol_id }}">{{ row.protocol }}</a></td>
+    <td>{{ row.compound }}</td>
+    <td>{{ (row.remaining|round(2) ~ ' ' ~ row.unit) if row.remaining is not none else '—' }}</td>
+    <td>{{ row.days_left|round(1) if row.days_left is not none else '—' }}</td>
+    <td>{{ row.depletion if row.depletion is not none else '—' }}</td>
+    <td>{% if row.low %}<span class="tag">{{ row.status }}</span>{% else %}{{ row.status }}{% endif %}</td>
+  </tr>
+  {% endfor %}
   </tbody></table></div>
   {% else %}<p class="empty">Mark a saved protocol as active to enable supply forecasting.</p>{% endif %}
 </section>

@@ -12,6 +12,7 @@ from ..today import schedule_summary
 from ..projection_exclusions import exclusions_for
 from ..scoped_db390 import get_scoped_db390
 from ..workout_dashboard661 import workout_dashboard661
+from ..dashboard_forecast752 import build_dashboard_forecasts752
 from ..models import DoseLog, Vial, VitalReading, Protocol
 from ..templating import render
 from ..units import to_base, parse_unit, UnitError
@@ -42,7 +43,6 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
         inventory_dims[vial.compound_id][data.dim] += max(0.0, data.remaining_base)
 
     protocol_summaries = []
-    weekly_use = defaultdict(float)
     now = datetime.now()
     for protocol in protocols:
         # Dashboard cards show active protocols only; saved what-if plans
@@ -69,12 +69,6 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
                             frequency = f"{item.freq_count:g}× per {item.freq_period}"
                         else:
                             frequency = "Unknown frequency"
-                        stage_day = (now.date() - protocol.start_date).days if protocol.start_date else None
-                        stage_active = (stage_day is not None and stage_day >= 7 * (item.start_week - 1)
-                                        and (item.end_week is None or stage_day < 7 * item.end_week)
-                                        and (protocol.end_date is None or now.date() <= protocol.end_date))
-                        if weekly is not None and protocol.is_active and stage_active:
-                            weekly_use[(item.compound_id, u.dim)] += weekly * u.factor
                     else:
                         frequency = "Invalid frequency"
                 else:
@@ -88,20 +82,10 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
         protocol_summaries.append({"id": protocol.id, "name": protocol.name,
                                    "is_active": protocol.is_active, "compounds": items})
 
-    # Multiple active protocols can consume the same compound; combine their usage.
-    forecasts = []
-    for cid, dims in inventory_dims.items():
-        for dim, amount in dims.items():
-            rate = weekly_use.get((cid, dim), 0)
-            if rate <= 0:
-                continue
-            days_left = 7 * amount / rate
-            forecasts.append({"compound": next((v.compound.name for v in vials if v.compound_id == cid), str(cid)),
-                              "remaining": amount, "unit": {"mass": "mcg", "iu": "IU", "volume": "mL"}.get(dim, dim),
-                              "days_left": days_left,
-                              "depletion": (now + timedelta(days=min(days_left, 365000))).date() if days_left >= 0 else None,
-                              "low": days_left < 21})
-    forecasts.sort(key=lambda x: x["days_left"])
+    # Preserve a row for every active protocol item, including no-stock items.
+    forecasts, low_forecasts, inventory_watch_forecasts = (
+        build_dashboard_forecasts752(protocols, inventory_dims, now.date())
+    )
 
     # Summary and charts are based only on recorded readings, not forecasts.
     vital_rows = list(db.scalars(select(VitalReading).where(
@@ -180,6 +164,7 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
         by_month=sorted(by_month.items(), reverse=True)[:6],
         no_coa=sum(1 for v in vials if v.status != "discarded" and not v.all_coas),
         protocol_summaries=protocol_summaries, forecasts=forecasts,
+        low_forecasts=low_forecasts, inventory_watch_forecasts=inventory_watch_forecasts,
         vital_trends=vital_trends, charts_by_range=charts_by_range,
         metric_sparklines=metric_sparklines,
         today_summary=today_summary, dashboard_upcoming=dashboard_upcoming,
