@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r770-installa236ef99",
-  "action": "dev_install",
-  "release": 770,
-  "target": "a236ef996c725a231b6420ebf41dd63bf506e8bc",
-  "base": "9f3e1154f30d5b2711957f51c675006f666d3440",
-  "ref": "release/770-google-tasks-prod-only-guard",
-  "previous_request_id": "r770-a236ef996c72"
+  "request_id": "r771-4432af2202d7",
+  "action": "qualify",
+  "release": 771,
+  "target": "4432af2202d7fdc89d2091529ae522c61cea6159",
+  "base": "a236ef996c725a231b6420ebf41dd63bf506e8bc",
+  "ref": "release/771-google-tasks-prod-schema-catchup",
+  "previous_request_id": null
 }
