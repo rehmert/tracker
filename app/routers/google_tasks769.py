@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import config
+from ..csrf_runtime import FIELD_NAME as CSRF_FIELD_NAME
 from ..google_tasks_client769 import (
     GoogleTasksError769, authorization_url769, configured769, token_exchange769,
 )
@@ -192,7 +193,16 @@ async def save_all_titles774(request: Request, db: Session = Depends(get_scoped_
 
     form = await request.form()
     titles = {}
+    csrf_fields = 0
     for field, value in form.multi_items():
+        # The shared Tracker browser form enhancer injects csrf_token into
+        # all POST forms. Central middleware verifies this token; it is not
+        # a user-editable title, nor an unknown/forged title field.
+        if field == CSRF_FIELD_NAME:
+            csrf_fields += 1
+            if csrf_fields > 1 or not isinstance(value, str):
+                raise HTTPException(400, "Duplicate or invalid CSRF form field")
+            continue
         match = re.fullmatch(r"title_(medication|supplement|protocol)_([1-9][0-9]*)", field)
         if not match or not isinstance(value, str):
             raise HTTPException(400, "Unexpected Google Tasks title field")

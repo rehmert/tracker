@@ -187,3 +187,62 @@ def test_774_ui_has_shared_form_controls_and_separate_include_forms(env):
         context = google.settings769(None, db)
         assert len(context["sources"]) == 3
         assert len([s for s in context["sources"] if s["kind"] == "protocol"]) == 1
+
+
+def test_777_browser_injected_csrf_token_preserves_atomic_batch_save(env):
+    """Every real Tracker POST form includes this framework-injected field."""
+    Factory, client = env
+    data = {**fields(med=" Med Short ", supp="Vitamin D", protocol="HGH"),
+            "csrf_token": "synthetic-signature-not-a-real-token"}
+    response = client.post(BATCH, data=data)
+    assert response.status_code == 303
+    assert "Saved%203" in response.headers["location"]
+    assert overrides(Factory) == {
+        ("medication", 1): "Med Short",
+        ("supplement", 2): "Vitamin D",
+        ("protocol", 1): "HGH",
+        ("protocol", 2): "Preserve hidden",
+    }
+    with Factory() as db:
+        titles = {row.kind: row.title for row in
+                  projected769(db, date(2026,11,24), 1).values()}
+        assert titles["medication"] == "07:30 · Med Short"
+        assert titles["supplement"] == "21:00 · Vitamin D"
+        assert titles["protocol"] == "20:00 · HGH"
+
+
+def test_777_duplicate_csrf_field_rejected_before_any_write(env):
+    Factory, client = env
+    body = ("title_medication_1=Med&title_supplement_2=Vitamin&"
+            "title_protocol_1=HGH&csrf_token=one&csrf_token=two")
+    response = client.post(
+        BATCH, content=body,
+        headers={"content-type": "application/x-www-form-urlencoded"},
+    )
+    assert response.status_code == 400
+    assert overrides(Factory) == {("protocol", 2): "Preserve hidden"}
+
+
+def test_777_csrf_does_not_permit_unexpected_fields_or_bad_title(env):
+    Factory, client = env
+    response = client.post(BATCH, data={
+        **fields(), "csrf_token": "synthetic-token", "unrecognized": "value",
+    })
+    assert response.status_code == 400
+    assert overrides(Factory) == {("protocol", 2): "Preserve hidden"}
+    response = client.post(BATCH, data={
+        **fields(med="bad\\nvalue"), "csrf_token": "synthetic-token",
+    })
+    assert response.status_code == 400
+    assert overrides(Factory) == {("protocol", 2): "Preserve hidden"}
+
+
+def test_777_uses_existing_csrf_field_contract():
+    from app.csrf_runtime import FIELD_NAME
+    script = (
+        Path(__file__).resolve().parents[1] /
+        "app/static/js/tracker-csrf-browser.js"
+    ).read_text(encoding="utf-8")
+    assert FIELD_NAME == "csrf_token"
+    assert "const FIELD = 'csrf_token';" in script
+    assert "form.appendChild(field)" in script

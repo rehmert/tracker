@@ -12,6 +12,9 @@ This is especially important for mobile and repeated data-entry workflows.
 - Preserve any unrelated fields, existing entities, identities and history.
 - Allow blank optional fields to restore defaults if their semantics support it.
 - Guard against stale views and unknown, duplicated or forged record IDs.
+- Recognize framework-injected security form fields (such as `csrf_token`),
+  leaving their verification to the existing security layer; do not confuse
+  them with user-editable fields or allow arbitrary additional parameters.
 - Keep independently destructive or immediate actions (such as Exclude/Delete)
   separate; communicate that they should not be mixed with unsaved edits.
 - Provide targeted automated coverage for multiple edits, no-op saving,
