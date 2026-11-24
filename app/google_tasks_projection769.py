@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from .calendar import occurrence_time, staged_occurrences
+from .google_tasks_models769 import GoogleTasksTitle773
 from .models import Protocol, RegimenItem, RegimenSchedule
 from .projection_exclusions import excluded, exclusions_for
 from .routers.regimen635 import due_on
@@ -67,6 +68,11 @@ def projected769(db, today=None, days=MAX_DAYS):
     ))
     from .models import Compound
     compounds = {c.id: c.name for c in db.scalars(select(Compound))}
+    # One read for all source title overrides; editing never changes identity.
+    task_titles = {
+        (row.kind, row.source_id): row.title
+        for row in db.scalars(select(GoogleTasksTitle773))
+    }
     rules = exclusions_for(
         db, [i.id for p in protocols if p.is_active for i in p.items]
     )
@@ -81,8 +87,12 @@ def projected769(db, today=None, days=MAX_DAYS):
                 continue
             clock = (schedule.at_time or "").strip()
             key = _key(item.kind, schedule.id, day, clock)
-            title = f"{clock + ' · ' if clock else ''}{item.name} — {schedule.amount}"
+            override = task_titles.get((item.kind, schedule.id))
+            display = override or f"{item.name} — {schedule.amount}"
+            title = f"{clock + ' · ' if clock else ''}{display}"
             notes = f"Tracker {item.kind}; scheduled dose. Mark complete only after taking."
+            if override:
+                notes += f" Full Tracker entry: {item.name}; scheduled amount: {schedule.amount}."
             out[key] = Occurrence769(key, item.kind, schedule.id, day, clock, title, notes)
     for protocol in protocols:
         if not protocol.is_active or not protocol.start_date:
@@ -109,10 +119,14 @@ def projected769(db, today=None, days=MAX_DAYS):
                 clock = occurrence_time(item, protocol.start_date, day)
                 key = _key("protocol", item.id, day, clock)
                 compound = compounds.get(item.compound_id, "Compound")
-                title = (f"{clock + ' · ' if clock else ''}{compound} — "
-                         f"{item.amount_value:g} {item.amount_unit}")
+                override = task_titles.get(("protocol", item.id))
+                display = override or f"{compound} — {item.amount_value:g} {item.amount_unit}"
+                title = f"{clock + ' · ' if clock else ''}{display}"
                 notes = (f"Tracker protocol: {protocol.name}. "
                          "Completion requires vial/blend reconciliation in Tracker; "
                          "it does not automatically withdraw inventory.")
+                if override:
+                    notes += (f" Full Tracker item: {compound}; "
+                              f"scheduled amount: {item.amount_value:g} {item.amount_unit}.")
                 out[key] = Occurrence769(key, "protocol", item.id, day, clock, title, notes)
     return dict(sorted(out.items(), key=lambda kv: (kv[1].day, kv[1].at_time, kv[1].title)))

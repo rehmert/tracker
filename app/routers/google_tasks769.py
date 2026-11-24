@@ -14,6 +14,7 @@ from ..google_tasks_client769 import (
 )
 from ..google_tasks_models769 import (
     GoogleTasksConnection769, GoogleTasksExclusion769, GoogleTasksLink769,
+    GoogleTasksTitle773,
 )
 from ..google_tasks_projection769 import KINDS
 from ..google_tasks_sync769 import connection769, sync_once769
@@ -34,6 +35,9 @@ def _notice(message, *, error=False):
 def settings769(request: Request, db: Session = Depends(get_scoped_db390)):
     conn = db.get(GoogleTasksConnection769, 1)
     exclusions = {(x.kind, x.source_id) for x in db.scalars(select(GoogleTasksExclusion769))}
+    title_overrides = {
+        (x.kind, x.source_id): x.title for x in db.scalars(select(GoogleTasksTitle773))
+    }
     schedules = list(db.scalars(select(RegimenSchedule).order_by(RegimenSchedule.id)))
     # Only active protocols are eligible for Google Tasks publishing controls.
     protocols = list(db.scalars(
@@ -47,6 +51,7 @@ def settings769(request: Request, db: Session = Depends(get_scoped_db390)):
                 "name": schedule.item.name, "detail": schedule.amount,
                 "active": schedule.active and schedule.item.active,
                 "excluded": (schedule.item.kind, schedule.id) in exclusions,
+                "custom_title": title_overrides.get((schedule.item.kind, schedule.id), ""),
             })
     for protocol in protocols:
         for item in protocol.items:
@@ -56,6 +61,7 @@ def settings769(request: Request, db: Session = Depends(get_scoped_db390)):
                 "detail": f"{item.amount_value:g} {item.amount_unit}",
                 "active": protocol.is_active,
                 "excluded": ("protocol", item.id) in exclusions,
+                "custom_title": title_overrides.get(("protocol", item.id), ""),
             })
     pending = list(db.scalars(
         select(GoogleTasksLink769).where(
@@ -155,6 +161,44 @@ def toggle_source769(kind: str, source_id: int,
     db.commit()
     return _notice("Schedule " + value + " in future Google Tasks sync.")
 
+
+@router.post(BASE + "/title/{kind}/{source_id}")
+def update_title773(kind: str, source_id: int, title: str = Form(""),
+                    db: Session = Depends(get_scoped_db390)):
+    """Save a per-schedule Google-only name; blank restores default formatting."""
+    if kind not in KINDS or source_id < 1:
+        raise HTTPException(404)
+    if kind == "protocol":
+        from ..models import ProtocolItem
+        item = db.get(ProtocolItem, source_id)
+        if not item or not item.protocol or not item.protocol.is_active:
+            raise HTTPException(404)
+    else:
+        schedule = db.get(RegimenSchedule, source_id)
+        if not schedule or not schedule.item or schedule.item.kind != kind:
+            raise HTTPException(404)
+    if any(ord(ch) < 32 or ord(ch) == 127 for ch in title):
+        raise HTTPException(400, "Google Tasks title must be one line")
+    cleaned = " ".join(title.split())
+    if len(cleaned) > 80:
+        raise HTTPException(400, "Google Tasks title must be 80 characters or less")
+    row = db.scalar(select(GoogleTasksTitle773).where(
+        GoogleTasksTitle773.kind == kind,
+        GoogleTasksTitle773.source_id == source_id,
+    ))
+    if not cleaned:
+        if row is not None:
+            db.delete(row)
+        message = "Default Google Tasks title restored."
+    else:
+        if row is None:
+            db.add(GoogleTasksTitle773(kind=kind, source_id=source_id,
+                                       title=cleaned))
+        else:
+            row.title = cleaned
+        message = "Custom Google Tasks title saved."
+    db.commit()
+    return _notice(message + " Existing open tasks update at next sync.")
 
 @router.post(BASE + "/sync")
 def run_sync769(db: Session = Depends(get_scoped_db390)):

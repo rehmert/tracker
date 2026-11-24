@@ -53,3 +53,19 @@ class GoogleTasksExclusion769(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     kind: Mapped[str] = mapped_column(String(20), nullable=False)
     source_id: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class GoogleTasksTitle773(Base):
+    """Optional Google-only shorthand, keyed to a Tracker schedule/item.
+
+    Deliberately separate from the medical regimen and protocol models. A
+    title update never changes the schedule, dose, date, or Google task ID.
+    """
+    __tablename__ = "google_tasks_titles773"
+    __table_args__ = (
+        UniqueConstraint("kind", "source_id", name="uq_google_tasks_title_source773"),
+    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    source_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    title: Mapped[str] = mapped_column(String(80), nullable=False)

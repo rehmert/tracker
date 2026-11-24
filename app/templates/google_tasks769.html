@@ -42,13 +42,24 @@ onsubmit="return confirm('Disconnect locally? Existing Google tasks will remain.
 {% endif %}
 <h2>Included schedules</h2>
 <p class="note">Exclude any individual medication, supplement or protocol schedule. PRN
-and inactive schedules do not create dated tasks. Only active protocols are listed; inactive and what-if protocols are never published. Changes appear on the next sync.</p>
+and inactive schedules do not create dated tasks. Only active protocols are listed;
+inactive and what-if protocols are never published. You can also set a short
+Google-only title; leave it blank to use Tracker's default name and dose.
+The scheduled time stays in 24-hour format; full details remain in task notes.
+Changes appear on the next sync.</p>
 <div style="display:grid;gap:.6rem">
 {% for s in sources %}
 <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
- <div><strong>{{ s.name }}</strong> · {{ s.detail }}
+ <div style="flex:1 1 15rem;min-width:0"><strong>{{ s.name }}</strong> · {{ s.detail }}
  <div class="note">{{ s.kind|capitalize }} · {{ 'Active' if s.active else 'Inactive' }} ·
- {{ 'Excluded' if s.excluded else 'Included' }}</div></div>
+ {{ 'Excluded' if s.excluded else 'Included' }}</div>
+ <form method="post" action="/integrations/google-tasks/title/{{ s.kind }}/{{ s.id }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:end;margin-top:.5rem">
+  <label for="task-title-{{ s.kind }}-{{ s.id }}" style="flex:1 1 12rem">Google Tasks title
+   <input id="task-title-{{ s.kind }}-{{ s.id }}" name="title" type="text" maxlength="80"
+    autocomplete="off" value="{{ s.custom_title }}" placeholder="Optional short title"
+    style="width:100%;box-sizing:border-box"></label>
+  <button type="submit">Save title</button>
+ </form></div>
  <form method="post" action="/integrations/google-tasks/source/{{ s.kind }}/{{ s.id }}">
  <button type="submit">{{ 'Include' if s.excluded else 'Exclude' }}</button></form>
 </div>
