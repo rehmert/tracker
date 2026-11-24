@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r775-install66a2e2fd",
-  "action": "dev_install",
-  "release": 775,
-  "target": "66a2e2fdfe55361c1a8d4ad6e87d3e9a6e140ad2",
-  "base": "30684374acc094bab456f70938340ebce19b8f57",
-  "ref": "release/775-google-tasks-navigation",
-  "previous_request_id": "r775-66a2e2fdfe55"
+  "request_id": "r776-03e4f6f64456",
+  "action": "qualify",
+  "release": 776,
+  "target": "03e4f6f644566bb270d0027a369083972820a602",
+  "base": "66a2e2fdfe55361c1a8d4ad6e87d3e9a6e140ad2",
+  "ref": "release/776-google-tasks-navigation-focus",
+  "previous_request_id": null
 }
