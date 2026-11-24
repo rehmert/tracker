@@ -191,6 +191,24 @@ def test_768_bootstrap_checks_signed_ops_host_fingerprint():
     assert 'agent-before768.py' in src
 
 
+def test_768_all_privileged_release_shell_scripts_parse():
+    scripts = (
+        "tracker-qualify768.sh",
+        "tracker-install768.sh",
+        "tracker-release-scoped768.sh",
+        "tracker-recovery-bootstrap768.sh",
+        "tracker_prod_remote568.sh",
+    )
+    for filename in scripts:
+        result = subprocess.run(
+            ["bash", "-n", str(SCRIPTS / filename)],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0, (filename, result.stderr)
+        content = (SCRIPTS / filename).read_text()
+        assert "==\n" not in content, filename
+
+
 def test_768_bootstrap_is_valid_bash_before_any_privileged_action():
     bootstrap = SCRIPTS / "tracker-recovery-bootstrap768.sh"
     syntax = subprocess.run(

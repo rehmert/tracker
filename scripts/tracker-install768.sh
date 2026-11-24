@@ -22,8 +22,7 @@ systemctl is-active --quiet tracker.service || fail "DEV service inactive"
 AGENT=/usr/local/sbin/tracker-release-agent.py
 [[ -f "$AGENT" && ! -L "$AGENT" &&
    "$(stat -c '%u:%a' "$AGENT")" == 0:700 &&
-   "$(git hash-object "$AGENT")" ==
-   "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
+   "$(git hash-object "$AGENT")" == "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
   fail "Signed Release 768 host recovery agent not bootstrapped"
 git fetch origin "refs/heads/$REF:refs/remotes/origin/$REF"
 [[ "$(git rev-parse "refs/remotes/origin/$REF")" == "$TARGET" ]] ||
