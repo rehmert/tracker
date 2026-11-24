@@ -1,10 +1,10 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r764-preflight1b7289.json",
+  "receipt_path": "receipts/r764-deploy1b728971.json",
   "release": 764,
-  "request_id": "r764-preflight1b7289",
+  "request_id": "r764-deploy1b728971",
   "schema": 1,
   "status": "passed",
   "target": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366"
