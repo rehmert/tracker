@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T13:13:31+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r768-install62a78b4f",
+  "ref": "release/768-prod-relative-data-path-recovery",
+  "release": 768,
+  "request_id": "r768-preflight62a78b",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T13:13:29+00:00",
+  "status": "passed",
+  "target": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+  "test_counts": []
+}
