@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 PROD_BASE = "47642b465b1cb98f40aab2ce68c6a7526394298d"
-SHA = re.compile(r"[0-9a-f]{40}\\Z")
+SHA = re.compile(r"[0-9a-f]{40}\Z")
 MODEL_PATH = "app/google_tasks_models769.py"
 NEW_TABLE = "google_tasks_titles773"
 OLD_CLASSES = (
@@ -112,7 +112,7 @@ def resolve_data_dir(root: Path, env: Path) -> Path:
         raise ValueError("Private Tracker environment unavailable")
     path = root / "data"
     for line in env.read_text(encoding="utf-8").splitlines():
-        match = re.match(r"^\\s*(?:export\\s+)?TRACKER_DATA_DIR\\s*=(.*)$", line)
+        match = re.match(r"^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$", line)
         if match and match.group(1).strip():
             path = Path(match.group(1).strip().strip("\\\"'"))
     if not path.is_absolute():
