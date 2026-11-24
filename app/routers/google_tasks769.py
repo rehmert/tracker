@@ -35,7 +35,10 @@ def settings769(request: Request, db: Session = Depends(get_scoped_db390)):
     conn = db.get(GoogleTasksConnection769, 1)
     exclusions = {(x.kind, x.source_id) for x in db.scalars(select(GoogleTasksExclusion769))}
     schedules = list(db.scalars(select(RegimenSchedule).order_by(RegimenSchedule.id)))
-    protocols = list(db.scalars(select(Protocol).order_by(Protocol.id)))
+    # Only active protocols are eligible for Google Tasks publishing controls.
+    protocols = list(db.scalars(
+        select(Protocol).where(Protocol.is_active.is_(True)).order_by(Protocol.id)
+    ))
     sources = []
     for schedule in schedules:
         if schedule.item and schedule.item.kind in KINDS:

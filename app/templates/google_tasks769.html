@@ -42,7 +42,7 @@ onsubmit="return confirm('Disconnect locally? Existing Google tasks will remain.
 {% endif %}
 <h2>Included schedules</h2>
 <p class="note">Exclude any individual medication, supplement or protocol schedule. PRN
-and inactive schedules do not create dated tasks. Changes appear on the next sync.</p>
+and inactive schedules do not create dated tasks. Only active protocols are listed; inactive and what-if protocols are never published. Changes appear on the next sync.</p>
 <div style="display:grid;gap:.6rem">
 {% for s in sources %}
 <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
