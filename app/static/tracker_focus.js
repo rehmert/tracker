@@ -5,7 +5,8 @@
   // direct URL; the current page stays in the sidebar even when advanced.
   const ESSENTIAL = new Set([
     '/mobile', '/calendar', '/quick-entry', '/doses', '/vials',
-    '/workouts', '/food', '/vitals', '/labs', '/regimen'
+    '/workouts', '/food', '/vitals', '/labs', '/regimen',
+    '/integrations/google-tasks'
   ]);
   function init() {
     const toggle = document.getElementById('tracker-focus-toggle');
