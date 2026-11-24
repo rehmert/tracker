@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "a236ef996c725a231b6420ebf41dd63bf506e8bc",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T14:01:37+00:00",
+  "markers": [
+    "RELEASE_771_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_771_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_771_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_771_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/771-google-tasks-prod-schema-catchup",
+  "release": 771,
+  "request_id": "r771-ac330a08ffa4",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T14:01:32+00:00",
+  "status": "passed",
+  "target": "ac330a08ffa4ff49ca86e034b9aa81f4e583a8c7",
+  "test_counts": [
+    "67 passed"
+  ]
+}
