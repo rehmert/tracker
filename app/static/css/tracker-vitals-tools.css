@@ -104,7 +104,7 @@
 /* Compact notes navigation and independent pagination. */
 [data-vitals-table] .vitals-notes783 { width:1%; white-space:nowrap; }
 .vitals-notes783 a { text-decoration:underline; }
-[data-vitals-dose-table] tr[hidden], .vitals-pager784[hidden] { display:none !important; }
+[data-vitals-dose-table] tr[hidden], [data-vitals-marker-table] tr[hidden], .vitals-pager784[hidden] { display:none !important; }
 .vitals-pager784 { display:flex; gap:.55rem; align-items:center; justify-content:space-between; margin:.6rem 0; flex-wrap:wrap; }
 .vitals-pager784 button { min-height:44px; }
 .vitals-pager784 span { font-variant-numeric:tabular-nums; }
