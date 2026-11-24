@@ -8,7 +8,7 @@
 
 <link
   rel="stylesheet"
-  href="/static/css/tracker-vitals-tools.css?v=785"
+  href="/static/css/tracker-vitals-tools.css?v=786"
 >
 <script
   src="/static/js/tracker-vitals-tools.js?v=785"
@@ -104,7 +104,7 @@
 <section>
   <h2>Events on these charts</h2>
   <p class="note">Ticks under each chart are logged doses, one lane per compound. Dashed lines with letters are vial, purchase and lab events. Hover or focus a mark for details. Sitting next to a reading on a chart doesn't mean one caused the other.</p>
-  <div class="cols">
+  <div class="cols vitals-event-columns786">
     <div>
       <h3>Logged doses in range</h3>
       {% if dose_counts %}<table data-vitals-dose-table><tbody>{% for name, n in dose_counts.items() %}<tr{% if loop.index > 5 %} hidden{% endif %}><td>{{ name }}</td><td class="n">{{ n }}</td></tr>{% endfor %}</tbody></table>
