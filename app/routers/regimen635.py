@@ -347,6 +347,7 @@ def regimen_page(request: Request, day: str = "", focus: str = "",
         RegimenEntry.logged_at >= start, RegimenEntry.logged_at < end
     ).order_by(RegimenEntry.logged_at.desc(), RegimenEntry.id.desc())))
     due = [s for s in schedules if s.item.active and due_on(s, selected)]
+    due.sort(key=lambda s: (not bool(s.at_time), s.at_time or "", s.item.name.casefold(), s.id))
     recorded = {e.schedule_id for e in entries if e.schedule_id is not None}
     history = list(db.scalars(select(RegimenEntry).order_by(
         RegimenEntry.logged_at.desc(), RegimenEntry.id.desc()
