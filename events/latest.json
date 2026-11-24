@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r785-fcd7ca0dac3c.json",
+  "receipt_path": "receipts/r785-installfcd7ca0d.json",
   "release": 785,
-  "request_id": "r785-fcd7ca0dac3c",
+  "request_id": "r785-installfcd7ca0d",
   "schema": 1,
   "status": "passed",
   "target": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb"
