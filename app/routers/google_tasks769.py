@@ -20,6 +20,8 @@ from ..google_tasks_models769 import (
 )
 from ..google_tasks_projection769 import KINDS
 from ..google_tasks_sync769 import connection769, sync_once769
+from ..google_protocol_review783 import review_rows783, reconcile_choice783
+from ..inventory_lock import require_inventory_write
 from ..models import Protocol, RegimenSchedule
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
@@ -72,12 +74,7 @@ def settings769(request: Request, db: Session = Depends(get_scoped_db390)):
                 "excluded": ("protocol", item.id) in exclusions,
                 "custom_title": title_overrides.get(("protocol", item.id), ""),
             })
-    pending = list(db.scalars(
-        select(GoogleTasksLink769).where(
-            GoogleTasksLink769.kind == "protocol",
-            GoogleTasksLink769.last_status == "completed",
-        ).order_by(GoogleTasksLink769.scheduled_on.desc()).limit(30)
-    ))
+    pending = review_rows783(db)
     return render(
         request, "google_tasks769.html",
         configured=configured769() is not None,
@@ -308,3 +305,35 @@ def disconnect769(db: Session = Depends(get_scoped_db390)):
         conn.oauth_state_at = None
         db.commit()
     return _notice("Google Tasks disconnected locally. Existing Google tasks were not deleted.")
+
+
+@router.post(BASE + "/reconcile")
+async def reconcile_protocols783(request: Request, db: Session = Depends(get_scoped_db390)):
+    """Confirm selected rows as one atomic transaction; no Google API writes."""
+    form = await request.form()
+    if form.get("confirm") != "yes" or len(form.getlist("confirm")) != 1:
+        raise HTTPException(400, "Confirm the selected actual administrations first.")
+    choices = {}
+    times = {}
+    for field, value in form.multi_items():
+        if field in (CSRF_FIELD_NAME, "confirm"):
+            continue
+        target = choices if field.startswith("choice_") else times if field.startswith("when_") else None
+        key = field.split("_", 1)[-1]
+        if target is None or key in target or not isinstance(value, str) or len(key) > 180 or len(value) > 80:
+            raise HTTPException(400, "Invalid reconciliation form.")
+        target[key] = value
+    selected = [(key, choice) for key, choice in choices.items() if choice]
+    if not selected or len(selected) > 100 or set(times) - set(choices):
+        raise HTTPException(400, "Select 1–100 administrations for review.")
+    require_inventory_write(db)
+    try:
+        for key, choice in selected:
+            reconcile_choice783(db, key, choice, times.get(key, ""))
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        return RedirectResponse("/calendar?review_error=" + quote(str(exc), safe="") +
+                                "#google-protocol-review783", status_code=303)
+    return RedirectResponse("/calendar?review_saved=" + str(len(selected)) +
+                            "#google-protocol-review783", status_code=303)
