@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r775-66a2e2fdfe55.json",
+  "receipt_path": "receipts/r775-install66a2e2fd.json",
   "release": 775,
-  "request_id": "r775-66a2e2fdfe55",
+  "request_id": "r775-install66a2e2fd",
   "schema": 1,
   "status": "passed",
   "target": "66a2e2fdfe55361c1a8d4ad6e87d3e9a6e140ad2"
