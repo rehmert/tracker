@@ -1,24 +1,26 @@
 {
-  "action": "dev_install",
-  "base": "66a2e2fdfe55361c1a8d4ad6e87d3e9a6e140ad2",
+  "action": "qualify",
+  "base": "03e4f6f644566bb270d0027a369083972820a602",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T15:31:58+00:00",
+  "finished_at_utc": "2026-11-24T15:43:53+00:00",
   "markers": [
-    "RELEASE_776_DEV_INSTALL=SUCCESS",
+    "RELEASE_777_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_777_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "RELEASE_777_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_777_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r776-03e4f6f64456",
-  "ref": "release/776-google-tasks-navigation-focus",
-  "release": 776,
-  "request_id": "r776-install03e4f6f6",
+  "previous_request_id": null,
+  "ref": "release/777-google-batch-title-csrf",
+  "release": 777,
+  "request_id": "r777-106ee409067c",
   "schema": 1,
-  "started_at_utc": "2026-11-24T15:31:22+00:00",
+  "started_at_utc": "2026-11-24T15:43:42+00:00",
   "status": "passed",
-  "target": "03e4f6f644566bb270d0027a369083972820a602",
+  "target": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
   "test_counts": [
-    "46 passed, 1 warning"
+    "77 passed, 1 warning"
   ]
 }
