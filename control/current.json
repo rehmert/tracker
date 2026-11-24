@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r781-install8abbd352",
-  "action": "dev_install",
+  "request_id": "r781-preflight8abbd352",
+  "action": "prod_preflight",
   "release": 781,
   "target": "8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
   "base": "8da5603569c76beb8aab94168e250235a718aef0",
   "ref": "release/781-daily-regimen-order",
-  "previous_request_id": "r781-8abbd3528ec2"
+  "previous_request_id": "r781-install8abbd352"
 }
