@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T02:30:03+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r765-install8c675806",
+  "ref": "release/765-mobile-daily-actions",
+  "release": 765,
+  "request_id": "r765-preflight8c6758",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T02:30:01+00:00",
+  "status": "passed",
+  "target": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "test_counts": []
+}
