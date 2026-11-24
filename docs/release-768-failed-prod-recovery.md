@@ -34,7 +34,11 @@ Tracker service remained active.
   qualification against installed DEV 767.
 - A root-only **manual bootstrap** on tracker-dev must first verify that
   the immutable failure receipt, GitHub main, DEV source, and installed
-  PROD source/service still match. It runs isolated regression tests and
+  PROD source/service still match. It verifies the installed host controller
+  against the signed OPS commit `76f7679534ad3d430bf21381cc0d542761bc31d7`,
+  not the older Release 745 embedded agent, and refuses unknown fingerprints.
+  The new host agent retains all OPS behavior and adds only the exact
+  failed-767 PROD recovery transition. It runs isolated regression tests and
   atomically replaces only the root-owned host release controller with
   this signed candidate, retaining a private previous copy.
   It does not install app data, deploy PROD, issue a release request, or

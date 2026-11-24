@@ -52,10 +52,20 @@ while IFS= read -r filename; do
   *) fail "Unreviewed app/data diff: $filename" ;;
  esac
 done < <(git diff --name-only "$DEV" "$TARGET")
-# Verify the old installed agent is the exact source from the failed release,
-# and the queue still has the single immutable failed PROD receipt.
-[[ "$(git hash-object "$AGENT")" == "$(git rev-parse "$DEV:scripts/tracker-release-agent745.py")" ]] ||
-  fail "Host agent differs from known installed source"
+# Signed OPS controller superseded the original Release 745 host agent.
+# Its additional DEV failure recovery must be retained, not downgraded.
+TRUSTED_OPS=76f7679534ad3d430bf21381cc0d542761bc31d7
+git fetch --no-tags origin \
+  "refs/heads/ops/tracker-release-control:refs/remotes/origin/ops/tracker-release-control"
+[[ "$(git rev-parse refs/remotes/origin/ops/tracker-release-control)" == "$TRUSTED_OPS" ]] ||
+  fail "Trusted ops controller branch changed; investigate before recovery"
+TRUSTED_BLOB="$(git rev-parse "$TRUSTED_OPS:scripts/tracker-release-agent.py")" ||
+  fail "Pinned trusted controller object unavailable"
+HOST_BLOB="$(git hash-object "$AGENT")" ||
+  fail "Cannot fingerprint installed controller"
+[[ "$HOST_BLOB" == "$TRUSTED_BLOB" ]] ||
+  fail "Host release controller does not match pinned signed ops source (fingerprint $HOST_BLOB)"
+echo "RELEASE_768_TRUSTED_HOST_CONTROLLER=OPS_PINNED_VERIFIED"
 "$PY" -B - "$FAILED" "$DEV" "$PROD" <<'PYCODE'
 import json, subprocess, sys
 req, dev, prod = sys.argv[1:]

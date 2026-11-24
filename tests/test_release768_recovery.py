@@ -165,6 +165,32 @@ def test_768_app_source_did_not_change_since_dev_766():
     assert diff and all(p.startswith(("scripts/","tests/","docs/")) for p in diff)
 
 
+def test_768_controller_derives_from_signed_ops_without_losing_dev_recovery():
+    op_commit = "76f7679534ad3d430bf21381cc0d542761bc31d7"
+    ops = subprocess.check_output([
+        "git", "show", f"{op_commit}:scripts/tracker-release-agent.py"
+    ], cwd=ROOT, text=True)
+    target = (SCRIPTS/"tracker-release-agent745.py").read_text()
+    assert "if status == 'failed' and previous['action'] == 'dev_install':" in target
+    assert "clean_main(previous['base'])" in target
+    marker = "    # Exact recovery of a failed PROD deployment whose *source* was promoted"
+    assert target.count(marker) == 1
+    start = target.index(marker)
+    finish = target.index(
+        "    if status == 'failed' and previous['action'] == 'qualify':", start
+    )
+    assert target[:start] + target[finish:] == ops
+
+
+def test_768_bootstrap_checks_signed_ops_host_fingerprint():
+    src = (SCRIPTS/"tracker-recovery-bootstrap768.sh").read_text()
+    assert 'TRUSTED_OPS=76f7679534ad3d430bf21381cc0d542761bc31d7' in src
+    assert 'TRUSTED_BLOB="$(git rev-parse "$TRUSTED_OPS:scripts/tracker-release-agent.py")"' in src
+    assert '"$HOST_BLOB" == "$TRUSTED_BLOB"' in src
+    assert 'RELEASE_768_TRUSTED_HOST_CONTROLLER=OPS_PINNED_VERIFIED' in src
+    assert 'agent-before768.py' in src
+
+
 def test_768_bootstrap_is_valid_bash_before_any_privileged_action():
     bootstrap = SCRIPTS / "tracker-recovery-bootstrap768.sh"
     syntax = subprocess.run(

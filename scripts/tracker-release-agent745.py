@@ -228,11 +228,42 @@ def failure_kind(data: str) -> str:
     return 'StageCommandError'
 
 
-def safe_diagnostics(data: str) -> dict:
+def required_stage_markers(command: dict) -> tuple[str, ...]:
+    """Validated, public-safe terminal stage markers for durable receipts.
+
+    Keep this list shared by the execution-success gate and the bounded
+    diagnostic publisher. A later burst of TARGETED_* diagnostics must never
+    displace the actual qualification / installation result.
+    """
+    release = command['release']
+    action = command['action']
+    if action == 'qualify':
+        return (f'RELEASE_{release}_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY',
+                f'RELEASE_{release}_EXIT_STATUS=0')
+    if action == 'dev_install':
+        return (f'RELEASE_{release}_DEV_INSTALL=SUCCESS',)
+    if action == 'prod_preflight':
+        return ('PREFLIGHT=PASSED',)
+    if action == 'prod_deploy':
+        return ('DEV_CONTROLLED_RELEASE=SUCCESS',
+                f'PROD_INSTALLED_COMMIT={command["target"]}')
+    raise GateError('Unsupported release stage')
+
+
+def safe_diagnostics(
+    data: str, *, command: dict | None = None, status: str | None = None,
+) -> dict:
+    """Bounded safe receipt: terminal markers first, diagnostic markers next.
+
+    All candidates must match the existing strict allowlist. Never publish
+    raw lines, user data, exception details or arbitrarily long marker lists.
+    """
     markers, failures, counts = [], [], []
+    seen = set()
     for line in data.splitlines():
         stripped = line.strip()
-        if MARKER.fullmatch(stripped) and len(markers) < 45:
+        if MARKER.fullmatch(stripped) and stripped not in seen:
+            seen.add(stripped)
             markers.append(stripped)
         match = TEST_FAIL.match(stripped)
         if match and len(failures) < 12:
@@ -240,23 +271,30 @@ def safe_diagnostics(data: str) -> dict:
         count = COUNTS.search(stripped)
         if count and len(counts) < 8:
             counts.append(count.group(1))
-    return {'markers': markers, 'failed_tests': failures, 'test_counts': counts}
+    priority = (
+        required_stage_markers(command)
+        if status == 'passed' and command is not None else ()
+    )
+    # Execution validation already required every terminal marker verbatim.
+    # If a future marker falls outside our safe allowlist, fail closed rather
+    # than silently publishing a misleading 'passed' receipt.
+    if any(value not in seen for value in priority):
+        raise GateError('Validated success marker missing from sanitized receipt')
+    ordered = list(priority)
+    required = set(priority)
+    ordered.extend(marker for marker in markers if marker not in required)
+    return {'markers': ordered[:45], 'failed_tests': failures, 'test_counts': counts}
 
 
 def validate_success(command: dict, output: str) -> None:
     action = command['action']
     target = command['target']
     lines = output.splitlines()
-    if action == 'qualify':
-        required = ['RELEASE_%s_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY' % command['release'],
-                    'RELEASE_%s_EXIT_STATUS=0' % command['release']]
-    elif action == 'dev_install':
-        required = ['RELEASE_%s_DEV_INSTALL=SUCCESS' % command['release']]
+    required = list(required_stage_markers(command))
+    if action == 'dev_install':
         clean_main(target)
     elif action == 'prod_preflight':
-        required = ['PREFLIGHT=PASSED', 'DRY_RUN=PASSED (no approval, push, or deployment performed)']
-    else:
-        required = ['DEV_CONTROLLED_RELEASE=SUCCESS', f'PROD_INSTALLED_COMMIT={target}']
+        required.append('DRY_RUN=PASSED (no approval, push, or deployment performed)')
     for expected in required:
         if expected not in lines:
             raise GateError('Expected success marker missing: ' + expected.split('=', 1)[0])
@@ -352,7 +390,7 @@ def execute(command: dict) -> dict:
         'started_at_utc': started,
         'finished_at_utc': utcnow(),
         'failure_category': failure or None,
-        **safe_diagnostics(output),
+        **safe_diagnostics(output, command=command, status=status),
     }
     return receipt
 
@@ -394,6 +432,23 @@ def validate_control_transition(previous: dict, current: dict, prior_receipt: di
         if expected_base and current['base'] != expected_base:
             raise GateError('Command changed previously approved stage base')
         return
+    # A DEV install can fail after partial deployment. Only a definitive
+    # immutable failure with a nonzero exit permits replacing it with a NEW
+    # qualification of the same release and base. Verify the installed DEV
+    # checkout and running service before allowing the control history forward.
+    # Do not allow this recovery for unknown, blocked or PROD stages.
+    if status == 'failed' and previous['action'] == 'dev_install':
+        if (type(prior_receipt.get('exit_code')) is int
+                and prior_receipt['exit_code'] != 0
+                and current['action'] == 'qualify'
+                and current['release'] == previous['release']
+                and current['base'] == previous['base']
+                and current['ref'] == previous['ref']
+                and current['target'] != previous['target']):
+            clean_main(previous['base'])
+            return
+        raise GateError('Failed DEV install requires a new pinned qualification and intact DEV')
+
     # Exact recovery of a failed PROD deployment whose *source* was promoted
     # but whose remote pre-install schema guard failed before DB backup or code
     # installation. The failed receipt remains immutable. A distinct release
