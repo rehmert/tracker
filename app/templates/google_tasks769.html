@@ -2,6 +2,9 @@
 {% block title %}Google Tasks Sync{% endblock %}
 {% block content %}
 <h1>Google Tasks Sync</h1>
+{% set google_review_rows = pending %}
+{% include '_google_protocol_review783.html' %}
+<p><a class="button" href="/calendar#google-protocol-review783">Review on calendar</a></p>
 <p class="note">Tracker owns schedules. Google Tasks supplies checkboxes in Google Calendar.
 Google's public API supports dates but not due times; scheduled 24-hour time appears in titles.</p>
 <p><a href="/regimen">Medications &amp; supplements</a> ·
@@ -74,16 +77,6 @@ Changes appear on the next sync.</p>
 </div>
 <p class="note">Include/Exclude takes effect separately. Save your title edits before changing inclusion.</p>
 {% endif %}
-<h2>Protocol completions requiring review</h2>
-<p class="note">Google checkboxes never subtract vial or blend inventory. Review completed
-protocol tasks against actual administrations in Tracker before recording a dose.
-Medication/supplement completions are imported at the scheduled date, preserving
-Google's completion timestamp in notes. Verify delayed check-offs.</p>
-{% for link in pending %}
-<div class="card"><strong>{{ link.scheduled_on }}</strong> · Protocol item #{{ link.source_id }}
- · {{ link.scheduled_time or 'time unspecified' }} ·
- <a href="/doses">Review dose and vial</a></div>
-{% else %}<p class="note">No completed Google protocol tasks awaiting review.</p>{% endfor %}
 <p class="note">A deleted Google task is not silently recreated. Reopening a completed task
 does not automatically delete an existing Tracker intake; correct it in Tracker if needed.
 DEV and PROD use separately labeled Google task lists.</p>
