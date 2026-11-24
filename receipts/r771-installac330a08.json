@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "a236ef996c725a231b6420ebf41dd63bf506e8bc",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T14:03:01+00:00",
+  "markers": [
+    "RELEASE_771_DEV_INSTALL=SUCCESS",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r771-ac330a08ffa4",
+  "ref": "release/771-google-tasks-prod-schema-catchup",
+  "release": 771,
+  "request_id": "r771-installac330a08",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T14:02:32+00:00",
+  "status": "passed",
+  "target": "ac330a08ffa4ff49ca86e034b9aa81f4e583a8c7",
+  "test_counts": [
+    "67 passed"
+  ]
+}
