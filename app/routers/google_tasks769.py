@@ -1,4 +1,5 @@
 """Google Tasks OAuth connection and user-controlled sync settings (Release 769)."""
+import re
 import secrets
 from datetime import datetime, timedelta
 from urllib.parse import quote
@@ -31,6 +32,16 @@ def _notice(message, *, error=False):
                             quote(str(message), safe=""), status_code=303)
 
 
+
+def _title_sources774(db: Session):
+    """Use identical source visibility for bulk editing and the settings page."""
+    schedules = list(db.scalars(select(RegimenSchedule).order_by(RegimenSchedule.id)))
+    protocols = list(db.scalars(
+        select(Protocol).where(Protocol.is_active.is_(True)).order_by(Protocol.id)
+    ))
+    return schedules, protocols
+
+
 @router.get(BASE)
 def settings769(request: Request, db: Session = Depends(get_scoped_db390)):
     conn = db.get(GoogleTasksConnection769, 1)
@@ -38,14 +49,11 @@ def settings769(request: Request, db: Session = Depends(get_scoped_db390)):
     title_overrides = {
         (x.kind, x.source_id): x.title for x in db.scalars(select(GoogleTasksTitle773))
     }
-    schedules = list(db.scalars(select(RegimenSchedule).order_by(RegimenSchedule.id)))
     # Only active protocols are eligible for Google Tasks publishing controls.
-    protocols = list(db.scalars(
-        select(Protocol).where(Protocol.is_active.is_(True)).order_by(Protocol.id)
-    ))
+    schedules, protocols = _title_sources774(db)
     sources = []
     for schedule in schedules:
-        if schedule.item and schedule.item.kind in KINDS:
+        if schedule.item and schedule.item.kind in ("medication", "supplement"):
             sources.append({
                 "kind": schedule.item.kind, "id": schedule.id,
                 "name": schedule.item.name, "detail": schedule.amount,
@@ -160,6 +168,70 @@ def toggle_source769(kind: str, source_id: int,
         value = "included"
     db.commit()
     return _notice("Schedule " + value + " in future Google Tasks sync.")
+
+
+
+@router.post(BASE + "/titles")
+async def save_all_titles774(request: Request, db: Session = Depends(get_scoped_db390)):
+    """Validate the complete visible form, then commit every title in one transaction.
+
+    A changed source list (such as deactivation while the page was open)
+    rejects the stale form rather than silently dropping or deleting titles.
+    """
+    schedules, protocols = _title_sources774(db)
+    editable = {
+        (schedule.item.kind, schedule.id)
+        for schedule in schedules
+        if schedule.item and schedule.item.kind in ("medication", "supplement")
+    }
+    editable.update(
+        ("protocol", item.id)
+        for protocol in protocols
+        for item in protocol.items
+    )
+
+    form = await request.form()
+    titles = {}
+    for field, value in form.multi_items():
+        match = re.fullmatch(r"title_(medication|supplement|protocol)_([1-9][0-9]*)", field)
+        if not match or not isinstance(value, str):
+            raise HTTPException(400, "Unexpected Google Tasks title field")
+        key = (match.group(1), int(match.group(2)))
+        if key in titles:
+            raise HTTPException(400, "Duplicate Google Tasks title field")
+        if any(ord(ch) < 32 or ord(ch) == 127 for ch in value):
+            raise HTTPException(400, "Google Tasks titles must be one line")
+        cleaned = " ".join(value.split())
+        if len(cleaned) > 80:
+            raise HTTPException(400, "Google Tasks titles must be 80 characters or less")
+        titles[key] = cleaned
+
+    if set(titles) != editable:
+        raise HTTPException(409, "Schedules changed; reload Google Tasks settings and retry")
+
+    existing = {
+        (row.kind, row.source_id): row
+        for row in db.scalars(select(GoogleTasksTitle773))
+    }
+    changed = 0
+    for key, cleaned in titles.items():
+        row = existing.get(key)
+        if not cleaned:
+            if row is not None:
+                db.delete(row)
+                changed += 1
+        elif row is None:
+            db.add(GoogleTasksTitle773(kind=key[0], source_id=key[1], title=cleaned))
+            changed += 1
+        elif row.title != cleaned:
+            row.title = cleaned
+            changed += 1
+
+    db.commit()
+    return _notice(
+        f"Saved {changed} Google Tasks title change(s). "
+        "Existing open tasks update on the next sync."
+    )
 
 
 @router.post(BASE + "/title/{kind}/{source_id}")

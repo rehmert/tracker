@@ -45,26 +45,35 @@ onsubmit="return confirm('Disconnect locally? Existing Google tasks will remain.
 and inactive schedules do not create dated tasks. Only active protocols are listed;
 inactive and what-if protocols are never published. You can also set a short
 Google-only title; leave it blank to use Tracker's default name and dose.
-The scheduled time stays in 24-hour format; full details remain in task notes.
+Edit as many titles as needed, then use Save all titles once. The scheduled time
+stays in 24-hour format; full details remain in task notes.
 Changes appear on the next sync.</p>
+{% if sources %}
+<form id="google-task-titles-form" method="post" action="/integrations/google-tasks/titles"></form>
+<div class="ux-shortcuts"><button type="submit" form="google-task-titles-form">Save all titles</button></div>
+{% endif %}
 <div style="display:grid;gap:.6rem">
 {% for s in sources %}
 <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
  <div style="flex:1 1 15rem;min-width:0"><strong>{{ s.name }}</strong> · {{ s.detail }}
  <div class="note">{{ s.kind|capitalize }} · {{ 'Active' if s.active else 'Inactive' }} ·
  {{ 'Excluded' if s.excluded else 'Included' }}</div>
- <form method="post" action="/integrations/google-tasks/title/{{ s.kind }}/{{ s.id }}" style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:end;margin-top:.5rem">
-  <label for="task-title-{{ s.kind }}-{{ s.id }}" style="flex:1 1 12rem">Google Tasks title
-   <input id="task-title-{{ s.kind }}-{{ s.id }}" name="title" type="text" maxlength="80"
+ <label for="task-title-{{ s.kind }}-{{ s.id }}" style="display:block;margin-top:.5rem">Google Tasks title
+   <input id="task-title-{{ s.kind }}-{{ s.id }}" form="google-task-titles-form"
+    name="title_{{ s.kind }}_{{ s.id }}" type="text" maxlength="80"
     autocomplete="off" value="{{ s.custom_title }}" placeholder="Optional short title"
-    style="width:100%;box-sizing:border-box"></label>
-  <button type="submit">Save title</button>
- </form></div>
+    style="width:100%;box-sizing:border-box"></label></div>
  <form method="post" action="/integrations/google-tasks/source/{{ s.kind }}/{{ s.id }}">
  <button type="submit">{{ 'Include' if s.excluded else 'Exclude' }}</button></form>
 </div>
 {% else %}<p>No saved schedules yet.</p>{% endfor %}
 </div>
+{% if sources %}
+<div class="ux-shortcuts" style="margin-top:.6rem">
+<button type="submit" form="google-task-titles-form">Save all titles</button>
+</div>
+<p class="note">Include/Exclude takes effect separately. Save your title edits before changing inclusion.</p>
+{% endif %}
 <h2>Protocol completions requiring review</h2>
 <p class="note">Google checkboxes never subtract vial or blend inventory. Review completed
 protocol tasks against actual administrations in Tracker before recording a dose.
