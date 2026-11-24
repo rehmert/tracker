@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T13:11:09+00:00",
+  "finished_at_utc": "2026-11-24T13:12:35+00:00",
   "markers": [
-    "RELEASE_768_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_768_EXIT_STATUS=0",
+    "RELEASE_768_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_768_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_768_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r768-62a78b4f0b79",
   "ref": "release/768-prod-relative-data-path-recovery",
   "release": 768,
-  "request_id": "r768-62a78b4f0b79",
+  "request_id": "r768-install62a78b4f",
   "schema": 1,
-  "started_at_utc": "2026-11-24T13:11:01+00:00",
+  "started_at_utc": "2026-11-24T13:12:01+00:00",
   "status": "passed",
   "target": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
   "test_counts": [
