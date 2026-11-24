@@ -1,10 +1,10 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r777-preflight106ee4.json",
+  "receipt_path": "receipts/r777-deploy106ee409.json",
   "release": 777,
-  "request_id": "r777-preflight106ee4",
+  "request_id": "r777-deploy106ee409",
   "schema": 1,
   "status": "passed",
   "target": "106ee409067c2bab2adfc8ee08dc78eada5b8062"
