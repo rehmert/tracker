@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T15:18:31+00:00",
+  "markers": [
+    "RELEASE_774_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_774_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_774_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_774_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/774-google-tasks-bulk-title-save",
+  "release": 774,
+  "request_id": "r774-30684374acc0",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T15:18:22+00:00",
+  "status": "passed",
+  "target": "30684374acc094bab456f70938340ebce19b8f57",
+  "test_counts": [
+    "56 passed, 1 warning"
+  ]
+}
