@@ -104,3 +104,38 @@ def test_vitals_jinja_and_js_contract():
     assert 'data-vitals-weight-unit="{{ unit }}"' in template
     assert "row.dataset.vitalsWhen" in js
     assert "table.dataset.vitalsWeightUnit" in js
+
+
+def test_784_notes_links_and_initial_five_rows(vitals_client, monkeypatch):
+    from app import charts, services
+    import re
+
+    client, engine = vitals_client
+    now = datetime.now()
+    with Session(engine) as db:
+        for i in range(8):
+            db.add(VitalReading(measured_at=now-timedelta(hours=i+1),
+                                weight_kg=80, notes="Full synthetic note" if i == 0 else ""))
+        db.commit()
+    events = [charts.Event(now-timedelta(hours=i+1), "dose", "Test dose", f"Group {i}") for i in range(8)]
+    events.append(charts.Event(now-timedelta(hours=20), "dose", "Older dose", "Group 0"))
+    monkeypatch.setattr(services, "events_between", lambda *args: list(reversed(events)))
+    page = client.get("/vitals?days=7&events=1")
+    assert page.status_code == 200
+    readings = re.findall(r'<tr id="vital-reading-\d+"[^>]*>', page.text)
+    assert len(readings) == 9
+    assert sum(" hidden" not in row for row in readings) == 5
+    doses = page.text.split('data-vitals-dose-table', 1)[1].split("</table>", 1)[0]
+    assert doses.count("<tr") == 8
+    assert doses.count("<tr hidden>") == 3
+    assert "<td>Group 0</td><td class=\"n\">2</td>" in doses
+    assert doses.index("Group 0") < doses.index("Group 7")
+    notes = re.findall(r'<td class="vitals-notes783"[^>]*>(.*?)</td>', page.text, flags=re.S)
+    assert sum("More</a>" in note for note in notes) == 1
+    assert all(not note or "More</a>" in note for note in notes)
+    href = re.search(r'href="(/vitals/\d+/edit\?days=7&amp;events=1#vital-notes784)"', notes[0])
+    assert href
+    detail = client.get(href.group(1).replace("&amp;", "&").split("#")[0])
+    assert detail.status_code == 200
+    assert 'id="vital-notes784"' in detail.text
+    assert "Full synthetic note" in detail.text
