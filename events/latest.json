@@ -1,11 +1,11 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r766-install45263b96.json",
-  "release": 766,
-  "request_id": "r766-install45263b96",
+  "receipt_path": "receipts/r767-5d23aaf4f7e7.json",
+  "release": 767,
+  "request_id": "r767-5d23aaf4f7e7",
   "schema": 1,
   "status": "passed",
-  "target": "45263b9659232b6ac6a922da38599f92842a32d8"
+  "target": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13"
 }
