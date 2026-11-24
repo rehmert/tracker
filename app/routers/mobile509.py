@@ -16,6 +16,7 @@ from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from ..today import schedule_summary
 from ..daily_summary674 import snapshot674
+from ..today_priorities765 import missing_coa_count765, passed_date_examples765
 
 router = APIRouter()
 
@@ -85,6 +86,8 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         if exc.status_code not in (403, 503):
             raise
     daily674 = snapshot674(db, today, food_engine)
+    no_coa_count = missing_coa_count765(db)
+    passed_date_vials = passed_date_examples765(db, today, limit=4)
 
     return render(
         request, "mobile_today509.html",
@@ -95,6 +98,8 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         summary=summary,
         recent_doses=recent_doses,
         daily674=daily674,
+        no_coa_count=no_coa_count,
+        passed_date_vials=passed_date_vials,
         recent_vitals=recent_vitals,
         last_weight=(
             metrics.weight_from_kg(weight_row.weight_kg, config.WEIGHT_UNIT)

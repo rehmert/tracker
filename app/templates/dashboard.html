@@ -105,7 +105,7 @@
     {% if due_items %}
     <li class="tracker-attention-item">
       <a class="tracker-attention-link"
-         href="#today-heading">
+         href="/mobile#mobile-schedule-heading">
 
         <span class="tracker-attention-icon"
               aria-hidden="true">!</span>
@@ -173,7 +173,7 @@
     {% if missing_start_items %}
     <li class="tracker-attention-item">
       <a class="tracker-attention-link"
-         href="/protocols">
+         href="/mobile#today765-missing-start">
 
         <span class="tracker-attention-icon"
               aria-hidden="true">◷</span>
@@ -273,7 +273,7 @@
     </a>
 
     <a class="tracker-status-card"
-       href="#today-heading"
+       href="/mobile#mobile-schedule-heading"
        data-attention="{{ 'true' if due_today else 'false' }}">
       <span class="tracker-status-label">
         Today's doses
@@ -348,7 +348,7 @@
     <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/box.svg' %}</span>Stock value on hand</dt><dd>{{ inventory_value|money }}</dd></div>
     <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/wallet.svg' %}</span>Total spent (landed)</dt><dd>{{ total_spend|money }}</dd></div>
     <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/layers.svg' %}</span>Vials in stock</dt><dd>{{ active|length }}</dd></div>
-    <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/file.svg' %}</span>Vials with no COA</dt><dd>{{ no_coa }}</dd></div>
+    <div><dt><span class="metric-icon" aria-hidden="true">{% include 'icons/file.svg' %}</span>Vials with no COA</dt><dd><a href="/vials?status=non_discarded&amp;coa=missing#tracker-vials-sortable">{{ no_coa }}</a></dd></div>
   </dl>
 </section>
 

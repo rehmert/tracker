@@ -1,0 +1,63 @@
+/* Release 765: compact, action-oriented Today attention review. */
+.tracker-daily509 .today765-priorities {
+  margin: .65rem 0;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: .85rem;
+  background: var(--surface, #fff);
+  padding: .75rem;
+  min-width: 0;
+}
+.tracker-daily509 .today765-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .35rem;
+  margin-bottom: .55rem;
+}
+.tracker-daily509 .today765-header h2 { margin: 0; font-size: 1.12rem; }
+.tracker-daily509 .today765-header span { font-size: .8rem; opacity: .78; }
+.tracker-daily509 .today765-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+.tracker-daily509 .today765-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: .4rem;
+  padding: .7rem;
+  border: 1px solid var(--rule, #cbd5e1);
+  border-radius: .65rem;
+  color: inherit;
+  background: var(--surface, #fff);
+  overflow-wrap: anywhere;
+}
+.tracker-daily509 a.today765-card {
+  min-height: 68px;
+  text-decoration: none;
+}
+.tracker-daily509 .today765-card strong { font-size: .95rem; line-height: 1.35; }
+.tracker-daily509 .today765-card small { font-size: .8rem; line-height: 1.4; }
+.tracker-daily509 .today765-card a,
+.tracker-daily509 .today765-specific a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+  font-weight: 650;
+  color: var(--ink, #19313c);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.tracker-daily509 .today765-specific { display: flex; flex-direction: column; }
+.tracker-daily509 .today765-detail summary { cursor: pointer; min-height: 44px; padding: .65rem 0; }
+.tracker-daily509 .today765-priorities a:focus-visible,
+.tracker-daily509 .today765-priorities summary:focus-visible {
+  outline: 3px solid var(--tracker-brand-blue, #1686df);
+  outline-offset: 2px;
+}
+@media (max-width: 389px) {
+  .tracker-daily509 .today765-grid { grid-template-columns: minmax(0, 1fr); }
+}

@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="/static/css/tracker-mobile-workflows601.css?v=601">
 <link rel="stylesheet" href="/static/css/tracker-productivity674.css?v=674">
 <link rel="stylesheet" href="/static/css/tracker-today695.css?v=695">
+<link rel="stylesheet" href="/static/css/tracker-today-priorities765.css?v=765">
 <script defer src="/static/js/tracker-mobile-daily509.js?v=509"></script>
 
 <div class="tracker-daily509" data-mobile-daily509>
@@ -39,6 +40,68 @@
     <a href="/regimen#reg635-today">Log Supplements / Meds</a>
     <a href="/quick-entry">All Actions</a>
   </nav>
+
+  {# Release 765: one compact action-oriented review, never a second recording bar. #}
+  {% set priority_count765 =
+      (1 if due else 0)
+      + (1 if no_coa_count else 0)
+      + (1 if daily674.inventory_attention else 0)
+      + (1 if summary.missing_start else 0) %}
+  {% if priority_count765 %}
+  <section class="today765-priorities" id="today765-priorities"
+           aria-labelledby="today765-heading">
+    <div class="today765-header">
+      <h2 id="today765-heading">Needs Attention</h2>
+      <span>{{ priority_count765 }} categor{{ 'y' if priority_count765 == 1 else 'ies' }}</span>
+    </div>
+    <div class="today765-grid">
+      {% if due %}
+      <a class="today765-card" href="#mobile-schedule-heading" data-today765-kind="due">
+        <strong>{{ due|length }} due today</strong>
+        <small>Review each scheduled administration below</small>
+      </a>
+      {% endif %}
+      {% if no_coa_count %}
+      <a class="today765-card"
+         href="/vials?status=non_discarded&amp;coa=missing#tracker-vials-sortable"
+         data-today765-kind="coa">
+        <strong>{{ no_coa_count }} vial{{ '' if no_coa_count == 1 else 's' }} without COAs</strong>
+        <small>Open only the affected vial records</small>
+      </a>
+      {% endif %}
+      {% if daily674.inventory_attention %}
+      <div class="today765-card" data-today765-kind="dates">
+        <strong>{{ daily674.inventory_attention }} vial{{ '' if daily674.inventory_attention == 1 else 's' }} with passed dates</strong>
+        <a href="/inventory-data-quality?issue=expired">Review expired inventory</a>
+        {% if passed_date_vials %}
+        <details class="today765-detail">
+          <summary>Open specific vials</summary>
+          <div class="today765-specific">
+            {% for vial in passed_date_vials %}
+            <a href="/vials/{{ vial.id }}">{{ vial.compound.name }} · #{{ vial.id }}</a>
+            {% endfor %}
+            {% if daily674.inventory_attention > passed_date_vials|length %}
+            <small>Showing {{ passed_date_vials|length }} of {{ daily674.inventory_attention }} active vials with passed dates.</small>
+            {% endif %}
+          </div>
+        </details>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% if summary.missing_start %}
+      <div class="today765-card" id="today765-missing-start" data-today765-kind="start">
+        <strong>{{ summary.missing_start|length }} active protocol{{ '' if summary.missing_start|length == 1 else 's' }} missing start dates</strong>
+        <small>Open the exact schedules to set their dates</small>
+        <div class="today765-specific">
+          {% for protocol in summary.missing_start %}
+          <a href="/protocols/{{ protocol.id }}">{{ protocol.name }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
 
   <section class="ux674-dashboard" aria-label="Daily command center">
     <div class="ux674-dashboard-head">
