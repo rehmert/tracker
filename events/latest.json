@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r778-install666ee107.json",
+  "receipt_path": "receipts/r778-preflight666ee1.json",
   "release": 778,
-  "request_id": "r778-install666ee107",
+  "request_id": "r778-preflight666ee1",
   "schema": 1,
   "status": "passed",
   "target": "666ee1076b77e723e414df208312ef51e123e635"
