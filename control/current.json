@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r768-install62a78b4f",
-  "action": "dev_install",
+  "request_id": "r768-preflight62a78b",
+  "action": "prod_preflight",
   "release": 768,
   "target": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
-  "base": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
+  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
   "ref": "release/768-prod-relative-data-path-recovery",
-  "previous_request_id": "r768-62a78b4f0b79"
+  "previous_request_id": "r768-install62a78b4f"
 }
