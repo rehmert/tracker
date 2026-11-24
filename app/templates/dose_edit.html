@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% block title %}Edit dose{% endblock %}{% block content %}
 <link rel="stylesheet" href="/static/css/tracker-mobile-log373.css?v=373">
-<script src="/static/js/tracker-time24-371.js?v=371" defer></script><h1>Edit dose #{{ dose.id }}</h1><p>{{ dose.vial.compound.name }} · currently vial #{{ dose.vial_id }}</p>
+<script src="/static/js/tracker-time24-371.js?v=779" defer></script><h1>Edit dose #{{ dose.id }}</h1><p>{{ dose.vial.compound.name }} · currently vial #{{ dose.vial_id }}</p>
 <form method="post" action="/doses/{{ dose.id }}/edit" id="tracker-dose-correction-form" class="grid">
 <label class="field wide"><span>Vial used for this dose</span>
 <select name="vial_id" required>

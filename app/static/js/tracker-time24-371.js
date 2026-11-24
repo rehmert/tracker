@@ -10,6 +10,15 @@
   const validStamp =
     /^(\d{4}-\d{2}-\d{2})T([0-9]{2}:[0-9]{2})$/;
 
+  function normalizeClock(raw) {
+    const value = String(raw || '').trim();
+    if (validClock.test(value)) return value;
+    if (!/^\\d{3,4}$/.test(value)) return null;
+    const compact = value.padStart(4, '0');
+    const normalized = compact.slice(0, 2) + ':' + compact.slice(2);
+    return validClock.test(normalized) ? normalized : null;
+  }
+
   const pad = number =>
     String(number).padStart(2, '0');
 
@@ -60,14 +69,15 @@
     time.className = 'tracker-time24-clock';
     time.setAttribute(
       'aria-label',
-      'Time (24-hour HH:MM)'
+      'Time (24-hour HHMM or HH:MM)'
     );
-    time.setAttribute('placeholder', 'HH:MM');
+    time.setAttribute('placeholder', 'HHMM or HH:MM');
     time.setAttribute('inputmode', 'numeric');
     time.setAttribute('autocomplete', 'off');
     time.setAttribute(
       'pattern',
-      '(?:[01][0-9]|2[0-3]):[0-5][0-9]'
+      '(?:(?:[01][0-9]|2[0-3]):[0-5][0-9]|' +
+      '(?:[01][0-9]|2[0-3])[0-5][0-9]|[0-9][0-5][0-9])'
     );
     time.maxLength = 5;
     time.required = original.required;
@@ -94,7 +104,7 @@
     const hint = document.createElement('small');
     hint.className = 'tracker-time24-hint';
     hint.textContent =
-      '24-hour clock (00:00–23:59)';
+      '24-hour time: 0730 or 07:30 (no AM/PM)';
 
     label.insertBefore(layout, original);
     label.insertBefore(hint, original);
@@ -123,8 +133,8 @@
       const partial =
         Boolean(date.value) !== Boolean(time.value);
 
-      const correctTime =
-        !time.value || validClock.test(time.value);
+      const canonical = normalizeClock(time.value);
+      const correctTime = !time.value || Boolean(canonical);
 
       date.setCustomValidity(
         partial && !date.value ? 'Choose a date.' : ''
@@ -132,16 +142,16 @@
 
       time.setCustomValidity(
         !correctTime || (partial && !time.value)
-          ? 'Enter a time in 24-hour HH:MM format.'
+          ? 'Enter 3–4 digits (e.g. 930 or 2130) or HH:MM.'
           : ''
       );
 
       const good = Boolean(
-        date.value && validClock.test(time.value)
+        date.value && canonical
       );
 
       const value = good
-        ? `${date.value}T${time.value}`
+        ? `${date.value}T${canonical}`
         : '';
 
       if (original.value === value) return;
@@ -159,10 +169,19 @@
       syncing = false;
     }
 
+    function formatVisibleTime() {
+      const canonical = normalizeClock(time.value);
+      if (canonical) time.value = canonical;
+      writeOriginal();
+    }
+
     for (const control of [date, time]) {
       control.addEventListener('input', writeOriginal);
-      control.addEventListener('change', writeOriginal);
+      control.addEventListener('change',
+        control === time ? formatVisibleTime : writeOriginal);
     }
+    time.addEventListener('blur', formatVisibleTime);
+    form.addEventListener('submit', formatVisibleTime);
 
     original.addEventListener(
       'change', readOriginal

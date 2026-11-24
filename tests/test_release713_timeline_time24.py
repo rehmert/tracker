@@ -79,7 +79,7 @@ def test_713_timeline_displays_only_recorded_blend_units():
 
 def test_713_global_time_assets_and_all_native_time_fields_are_covered():
     base = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
-    assert base.count("tracker-time24-global713.js?v=713") == 1
+    assert base.count("tracker-time24-global713.js?v=779") == 1
     assert base.count("tracker-time24-global713.css?v=713") == 1
     assert base.count("<html lang=\"en\">") == 1
 
@@ -118,7 +118,7 @@ def test_713_existing_24_hour_adapter_and_native_timestamp_contract_retained():
     doses = (ROOT / "app/templates/doses.html").read_text()
     assert 'name="taken_at"' in doses
     assert 'type="datetime-local"' in doses
-    assert 'tracker-time24-371.js?v=371' in doses
+    assert 'tracker-time24-371.js?v=779' in doses
     assert 'data-timeline-source="blend"' in doses
     assert "{{ r.draw.entered_unit or 'mL' }}" in doses
     assert '{{ r.draw.volume_ml|num }} mL withdrawn' not in doses

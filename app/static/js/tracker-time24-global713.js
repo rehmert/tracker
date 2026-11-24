@@ -14,6 +14,17 @@
   const clockPattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
   const stampPattern = /^(\d{4}-\d{2}-\d{2})T([0-2]\d:[0-5]\d)(?::00)?$/;
 
+  // Accept HH:MM and colon-free 24-hour clock values such as 0730 or 930.
+  // Three digits mean HMM; four mean HHMM. Invalid 24:00/23:60 are rejected.
+  const normalizeClock = raw => {
+    const value = String(raw || '').trim();
+    if (clockPattern.test(value)) return value;
+    if (!/^\\d{3,4}$/.test(value)) return null;
+    const hhmm = value.padStart(4, '0');
+    const formatted = hhmm.slice(0, 2) + ':' + hhmm.slice(2);
+    return clockPattern.test(formatted) ? formatted : null;
+  };
+
   const pad = n => String(n).padStart(2, '0');
   const localNow = () => {
     const d = new Date();
@@ -33,16 +44,18 @@
     const clock = document.createElement('input');
     clock.type = 'text';
     clock.className = 'tracker-time24-clock tracker-time24-input713';
-    clock.placeholder = 'HH:MM';
+    clock.placeholder = 'HHMM or HH:MM';
     clock.inputMode = 'numeric';
     clock.autocomplete = 'off';
     clock.maxLength = 5;
-    clock.pattern = '(?:[01][0-9]|2[0-3]):[0-5][0-9]';
+    clock.pattern =
+      '(?:(?:[01][0-9]|2[0-3]):[0-5][0-9]|' +
+      '(?:[01][0-9]|2[0-3])[0-5][0-9]|[0-9][0-5][0-9])';
     clock.required = original.required;
     clock.disabled = original.disabled;
     clock.readOnly = original.readOnly;
-    clock.setAttribute('aria-label', 'Time (24-hour HH:MM)');
-    clock.title = '24-hour time, 00:00–23:59; no AM or PM';
+    clock.setAttribute('aria-label', 'Time (24-hour HHMM or HH:MM)');
+    clock.title = 'Enter 0730, 930, 2130 or 07:30 (24-hour time)';
 
     let date = null;
     let container = null;
@@ -75,7 +88,7 @@
       parent.insertBefore(container, original);
       const hint = document.createElement('small');
       hint.className = 'tracker-time24-hint';
-      hint.textContent = '24-hour clock (00:00–23:59)';
+      hint.textContent = '24-hour time: 0730 or 07:30 (no AM/PM)';
       parent.insertBefore(hint, original);
     } else {
       parent.insertBefore(clock, original);
@@ -107,7 +120,9 @@
     }
 
     function writeOriginal() {
-      const validTime = !clock.value || clockPattern.test(clock.value);
+      const canonical = normalizeClock(clock.value);
+      const validTime = !clock.value || clockPattern.test(clock.value) ||
+        Boolean(canonical);
       const partial = isDateTime &&
         Boolean(date.value) !== Boolean(clock.value);
       if (date) {
@@ -117,13 +132,13 @@
       }
       clock.setCustomValidity(
         (!validTime || (partial && !clock.value))
-          ? 'Enter time as HH:MM (00:00–23:59), without AM or PM.'
+          ? 'Enter 3–4 digits (e.g. 930 or 2130) or HH:MM (00:00–23:59).'
           : ''
       );
-      const good = clockPattern.test(clock.value) &&
+      const good = Boolean(canonical) &&
         (!isDateTime || Boolean(date.value));
       const next = good
-        ? (isDateTime ? date.value + 'T' : '') + clock.value
+        ? (isDateTime ? date.value + 'T' : '') + canonical
         : '';
       if (next === original.value) return;
       syncing = true;
@@ -134,10 +149,18 @@
       syncing = false;
     }
 
+    function formatVisibleClock() {
+      const canonical = normalizeClock(clock.value);
+      if (canonical) clock.value = canonical;
+      writeOriginal();
+    }
+
     for (const input of [date, clock].filter(Boolean)) {
       input.addEventListener('input', writeOriginal);
-      input.addEventListener('change', writeOriginal);
+      input.addEventListener('change',
+        input === clock ? formatVisibleClock : writeOriginal);
     }
+    clock.addEventListener('blur', formatVisibleClock);
     original.addEventListener('input', readOriginal);
     original.addEventListener('change', readOriginal);
     // Existing PK/calendar JS sometimes assigns .value without an event.
@@ -153,6 +176,9 @@
     }
     if (form) {
       form.addEventListener('reset', () => queueMicrotask(readOriginal));
+      // Also normalize on keyboard-driven submit without losing the
+      // original named field used by HTMX/normal POST handlers.
+      form.addEventListener('submit', formatVisibleClock);
     }
     readOriginal();
   }
