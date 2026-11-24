@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T13:13:31+00:00",
+  "finished_at_utc": "2026-11-24T13:14:59+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+    "PROMOTED_COMMIT=62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r768-install62a78b4f",
+  "previous_request_id": "r768-preflight62a78b",
   "ref": "release/768-prod-relative-data-path-recovery",
   "release": 768,
-  "request_id": "r768-preflight62a78b",
+  "request_id": "r768-deploy62a78b4f",
   "schema": 1,
-  "started_at_utc": "2026-11-24T13:13:29+00:00",
+  "started_at_utc": "2026-11-24T13:14:22+00:00",
   "status": "passed",
   "target": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
   "test_counts": []
