@@ -1,23 +1,20 @@
 {
-  "action": "prod_deploy",
-  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
-  "exit_code": 1,
+  "action": "qualify",
+  "base": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
+  "exit_code": 2,
   "failed_tests": [],
-  "failure_category": "PromotionOrDeploymentGate",
-  "finished_at_utc": "2026-11-24T04:08:07+00:00",
+  "failure_category": "ShellSyntax",
+  "finished_at_utc": "2026-11-24T13:07:23+00:00",
   "markers": [
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
-    "PROMOTED_COMMIT=5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
-    "REMOTE_DEPLOY_EXIT_STATUS=1"
+    "RELEASE_768_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r767-preflight5d23aa",
-  "ref": "release/767-prod-device-schema-guard",
-  "release": 767,
-  "request_id": "r767-deploy5d23aaf4",
+  "previous_request_id": null,
+  "ref": "release/768-prod-relative-data-path-recovery",
+  "release": 768,
+  "request_id": "r768-46b467f8adff",
   "schema": 1,
-  "started_at_utc": "2026-11-24T04:08:01+00:00",
+  "started_at_utc": "2026-11-24T13:07:22+00:00",
   "status": "failed",
-  "target": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
+  "target": "46b467f8adff703037ce55aef9d57d996986d385",
   "test_counts": []
 }
