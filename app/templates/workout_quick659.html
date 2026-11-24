@@ -122,15 +122,17 @@
             <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
           {% endif %}
         </div>
-        <nav class="workout766-handoff" aria-label="Quick routine machine navigation">
-          {% if previous_machine %}
-          <a href="/workouts/quick?machine={{ previous_machine.id }}">← {{ previous_machine.name }}</a>
-          {% endif %}
-          {% if next_machine %}
-          <a class="workout766-next" href="/workouts/quick?machine={{ next_machine.id }}">Next: {{ next_machine.name }} →</a>
-          {% endif %}
+        <div class="workout766-handoff">
+          <nav class="workout662-nav" aria-label="Quick routine machine navigation">
+            {% if previous_machine %}
+            <a href="/workouts/quick?machine={{ previous_machine.id }}">← Previous: {{ previous_machine.name }}</a>
+            {% endif %}
+            {% if next_machine %}
+            <a class="workout662-next" href="/workouts/quick?machine={{ next_machine.id }}">Next Machine: {{ next_machine.name }} →</a>
+            {% endif %}
+          </nav>
           <span id="workout766-connection" role="status" aria-live="polite"></span>
-        </nav>
+        </div>
         <div class="workout659-prior">
           {% if last %}
             <span>Last recorded</span>
