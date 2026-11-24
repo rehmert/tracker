@@ -74,8 +74,9 @@ def _matching_entry(db, schedule_id, day):
 def _import_completed_regimen(db, link, remote):
     if link.imported_entry_id:
         return
+    if not reserve_inventory_write(db):
+        raise GoogleTasksError769("Tracker database busy; sync deferred")
     if _matching_entry(db, link.source_id, link.scheduled_on):
-        # Existing manual entry must never be overwritten by Google.
         return
     schedule = db.get(RegimenSchedule, link.source_id)
     if schedule is None or schedule.item.kind != link.kind:
@@ -91,10 +92,6 @@ def _import_completed_regimen(db, link, remote):
     # Associate to the original scheduled day; preserve the Google completion
     # instant in notes, since checking a task later is not proof of dose time.
     taken_at = datetime.combine(link.scheduled_on, local.time().replace(tzinfo=None))
-    if not reserve_inventory_write(db):
-        raise GoogleTasksError769("Tracker database busy; sync deferred")
-    if _matching_entry(db, schedule.id, link.scheduled_on):
-        return
     marker = "Google Tasks completion (" + link.key + ")"
     entry = RegimenEntry(
         item_id=schedule.item_id, schedule_id=schedule.id, logged_at=taken_at,
@@ -174,6 +171,7 @@ def _sync_locked769(db):
                 link.removed = True
                 continue
             link.last_status = remote.get("status", "needsAction")
+            db.commit()  # Close read transaction before reserved regimen write.
             if link.last_status == "completed":
                 if link.kind == "protocol":
                     counts["pending_protocols"] += 1

@@ -51,8 +51,10 @@ from .routers import user_management479
 from .routers import user_db_status389
 from .routers import inventory_timeline
 from .routers import regimen635
+from .routers import google_tasks769
 from .routers import regimen_catalog636
 from .routers import coa_test_type_catalog652
+from . import google_tasks_models769  # noqa: F401 - additive Google Tasks tables
 from . import progress_models762  # noqa: F401 - additive progress tables
 from . import device_models766  # noqa: F401 - additive per-workspace device-day table
 from .routers import progress762
@@ -89,7 +91,17 @@ async def lifespan(_app: FastAPI):
         conn.exec_driver_sql("""CREATE TABLE IF NOT EXISTS tracker_schema_migrations
             (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
         conn.exec_driver_sql("INSERT OR IGNORE INTO tracker_schema_migrations(name) VALUES ('tracker_phases_1_3_v2')")
-    yield
+    import asyncio
+    from .google_tasks_background769 import loop769
+    job = asyncio.create_task(loop769())
+    try:
+        yield
+    finally:
+        job.cancel()
+        try:
+            await job
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(
@@ -320,6 +332,7 @@ app.include_router(user_management479.router)
 app.include_router(user_db_status389.router)
 app.include_router(inventory_timeline.router)
 app.include_router(regimen635.router)
+app.include_router(google_tasks769.router)
 app.include_router(regimen_catalog636.router)
 app.include_router(coa_test_type_catalog652.router)
 app.include_router(workouts654.router)

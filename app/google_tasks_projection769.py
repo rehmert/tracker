@@ -48,7 +48,7 @@ def schedule_sources769(db):
         .order_by(RegimenSchedule.id)
     ))
     protocols = list(db.scalars(
-        select(Protocol).options(selectinload(Protocol.items).selectinload("compound"))
+        select(Protocol).options(selectinload(Protocol.items))
         .order_by(Protocol.id)
     ))
     return schedules, protocols
