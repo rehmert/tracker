@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r768-46b467f8adff",
+  "request_id": "r768-25b0a0aadf18",
   "action": "qualify",
   "release": 768,
-  "target": "46b467f8adff703037ce55aef9d57d996986d385",
+  "target": "25b0a0aadf1893d01bdaa314c736bd1c6a0e9859",
   "base": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
   "ref": "release/768-prod-relative-data-path-recovery",
   "previous_request_id": null
