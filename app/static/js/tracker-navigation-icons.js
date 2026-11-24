@@ -194,6 +194,7 @@
     '/vendor-prices': 'tag',
 
     '/vitals': 'heart',
+    '/integrations/google-tasks': 'clipboard',
     '/labs': 'flask',
     '/health-timeline': 'heart',
     '/health-insights': 'heart',
