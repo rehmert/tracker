@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Google Tasks Sync{% endblock %}
+{% block content %}
+<h1>Google Tasks Sync</h1>
+<p class="note">Tracker owns schedules. Google Tasks supplies checkboxes in Google Calendar.
+Google's public API supports dates but not due times; scheduled 24-hour time appears in titles.</p>
+<p><a href="/regimen">Medications &amp; supplements</a> ·
+<a href="/protocols">Protocols</a> · <a href="/doses">Record protocol dose</a></p>
+<p><strong>Environment:</strong> {{ instance or 'Unconfigured' }} ·
+<strong>Google connection:</strong> {{ 'Connected' if connected else 'Not connected' }} ·
+<strong>Auto sync:</strong> {{ 'Enabled' if enabled else 'Paused' }}</p>
+{% if last_sync %}<p>Last completed sync: {{ last_sync|utc_dt }}</p>{% endif %}
+{% if last_error %}<p role="alert" class="note">Last sync issue: {{ last_error }}</p>{% endif %}
+{% if not configured %}
+<p role="status" class="note">OAuth setup required on this host:
+<code>TRACKER_GOOGLE_TASKS_CLIENT_ID</code>,
+<code>TRACKER_GOOGLE_TASKS_CLIENT_SECRET</code>, and
+<code>TRACKER_GOOGLE_TASKS_REDIRECT_URI</code>.
+Use distinct DEV/PROD redirects. No client secrets belong in GitHub.</p>
+{% else %}
+<div class="ux-shortcuts">
+{% if not connected %}
+<form method="post" action="/integrations/google-tasks/connect">
+<button type="submit">Connect Google account</button></form>
+{% else %}
+<form method="post" action="/integrations/google-tasks/enabled">
+<input type="hidden" name="enabled" value="{{ '' if enabled else 'yes' }}">
+<button type="submit">{{ 'Pause sync' if enabled else 'Enable sync' }}</button></form>
+{% if enabled %}
+<form method="post" action="/integrations/google-tasks/sync">
+<button type="submit">Sync now</button></form>
+{% endif %}
+<form method="post" action="/integrations/google-tasks/disconnect"
+onsubmit="return confirm('Disconnect locally? Existing Google tasks will remain.');">
+<button type="submit">Disconnect</button></form>
+{% endif %}
+</div>
+{% endif %}
+<h2>Included schedules</h2>
+<p class="note">Exclude any individual medication, supplement or protocol schedule. PRN
+and inactive schedules do not create dated tasks. Changes appear on the next sync.</p>
+<div style="display:grid;gap:.6rem">
+{% for s in sources %}
+<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+ <div><strong>{{ s.name }}</strong> · {{ s.detail }}
+ <div class="note">{{ s.kind|capitalize }} · {{ 'Active' if s.active else 'Inactive' }} ·
+ {{ 'Excluded' if s.excluded else 'Included' }}</div></div>
+ <form method="post" action="/integrations/google-tasks/source/{{ s.kind }}/{{ s.id }}">
+ <button type="submit">{{ 'Include' if s.excluded else 'Exclude' }}</button></form>
+</div>
+{% else %}<p>No saved schedules yet.</p>{% endfor %}
+</div>
+<h2>Protocol completions requiring review</h2>
+<p class="note">Google checkboxes never subtract vial or blend inventory. Review completed
+protocol tasks against actual administrations in Tracker before recording a dose.
+Medication/supplement completions are imported at the scheduled date, preserving
+Google's completion timestamp in notes. Verify delayed check-offs.</p>
+{% for link in pending %}
+<div class="card"><strong>{{ link.scheduled_on }}</strong> · Protocol item #{{ link.source_id }}
+ · {{ link.scheduled_time or 'time unspecified' }} ·
+ <a href="/doses">Review dose and vial</a></div>
+{% else %}<p class="note">No completed Google protocol tasks awaiting review.</p>{% endfor %}
+<p class="note">A deleted Google task is not silently recreated. Reopening a completed task
+does not automatically delete an existing Tracker intake; correct it in Tracker if needed.
+DEV and PROD use separately labeled Google task lists.</p>
+{% endblock %}
