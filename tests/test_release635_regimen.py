@@ -265,3 +265,27 @@ def test_edit_does_not_allow_duplicate_schedule_on_same_day(env):
     assert "err=" in response.headers["location"]
     with Session() as db:
         assert db.get(RegimenEntry, 2).schedule_id is None
+
+
+def test_daily_regimen_orders_by_time_then_case_insensitive_name(env):
+    client, _ = env
+    for name, kind, at_time in (
+        ("Zinc", "supplement", "08:00"),
+        ("Untimed Z", "medication", ""),
+        ("Evening", "medication", "20:00"),
+        ("alpha", "medication", "08:00"),
+        ("Morning", "supplement", "06:00"),
+        ("Untimed A", "supplement", ""),
+    ):
+        item(client, name, kind)
+    for ident, at_time in enumerate(("08:00", "", "20:00", "08:00", "06:00", ""), 1):
+        assert "err=" not in schedule(client, item_id=ident, at_time=at_time).headers["location"]
+    log(client, item_id=4, schedule_id="4")
+    page = client.get("/regimen?day=2026-11-15")
+    assert page.status_code == 200
+    import re
+    daily = page.text.split('id="reg635-today"', 1)[1].split("</section>", 1)[0]
+    assert re.findall(r"<h3>([^<]+)</h3>", daily) == [
+        "Morning", "alpha", "Zinc", "Evening", "Untimed A", "Untimed Z",
+    ]
+    assert "Recorded for this date" in daily
