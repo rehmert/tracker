@@ -1,5 +1,6 @@
 from ..inventory_lock import reserve_inventory_write
 from fastapi import APIRouter, Depends, Form, Request, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -10,6 +11,15 @@ from ..models import CATEGORIES, Compound, ProtocolItem, Vial, page_compounds
 from ..templating import render
 
 router = APIRouter()
+
+
+@router.get("/compounds/title-names")
+def compound_title_names(db: Session = Depends(get_scoped_db390)):
+    """Read-only current-workspace catalog for compound-aware headings."""
+    names = list(db.scalars(select(Compound.name).order_by(Compound.name)))
+    return JSONResponse(
+        {"names": names}, headers={"Cache-Control": "private, no-store"},
+    )
 
 
 @router.get("/compounds")

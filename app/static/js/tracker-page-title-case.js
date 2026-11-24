@@ -47,6 +47,31 @@
     bp: "BP"
   });
 
+  // Never reformat a compound-bearing title; names are user-defined.
+  let compoundPatterns = null;
+
+  function isCompoundTitle(value) {
+    return compoundPatterns !== null && compoundPatterns.some(
+      function (pattern) { return pattern.test(value); }
+    );
+  }
+
+  function setCompoundNames(names) {
+    compoundPatterns = names
+      .filter(function (name) {
+        return typeof name === "string" && name.trim().length > 0;
+      })
+      .map(function (name) {
+        const escaped = name.trim()
+          .replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")
+          .replace(/\s+/g, "\\s+");
+        // Require full names, not substrings of longer identifiers.
+        return new RegExp(
+          "(^|[^A-Za-z0-9])" + escaped + "(?=$|[^A-Za-z0-9])", "i"
+        );
+      });
+  }
+
   function titleCase(value) {
     const cased = value.replace(/[A-Za-z]+/g, function (word) {
       const lower = word.toLowerCase();
@@ -79,6 +104,9 @@
     )) {
       return;
     }
+
+    // Examine the entire heading, including nested inline markup.
+    if (isCompoundTitle(element.textContent || "")) return;
 
     const walker = document.createTreeWalker(
       element,
@@ -154,7 +182,7 @@
       }
     }
 
-    if (document.title) {
+    if (document.title && !isCompoundTitle(document.title)) {
       const updated = titleCase(document.title);
 
       if (updated !== document.title) {
@@ -177,28 +205,34 @@
   }
 
   function initialize() {
-    apply(document);
+    // First obtain the catalog. Formatting before this completes can
+    // irrevocably change intentional compound capitalization.
+    fetch("/compounds/title-names", {
+      credentials: "same-origin",
+      cache: "no-store"
+    }).then(function (response) {
+      if (!response.ok) throw new Error("Compound names unavailable");
+      return response.json();
+    }).then(function (data) {
+      if (!data || !Array.isArray(data.names)) {
+        throw new Error("Invalid compound catalog");
+      }
+      setCompoundNames(data.names);
+      apply(document);
 
-    const main = document.getElementById(
-      "main-content"
-    );
-
-    if (main) {
-      const observer = new MutationObserver(
-        scheduleApply
-      );
-
-      observer.observe(main, {
-        childList: true,
-        subtree: true,
-        characterData: true
-      });
-    }
-
-    document.addEventListener(
-      "htmx:afterSwap",
-      scheduleApply
-    );
+      const main = document.getElementById("main-content");
+      if (main) {
+        const observer = new MutationObserver(scheduleApply);
+        observer.observe(main, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+      }
+      document.addEventListener("htmx:afterSwap", scheduleApply);
+    }).catch(function () {
+      // If the private catalog is unavailable, leave original titles intact.
+    });
   }
 
   if (document.readyState === "loading") {
