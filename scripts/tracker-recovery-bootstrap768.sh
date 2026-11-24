@@ -54,8 +54,7 @@ while IFS= read -r filename; do
 done < <(git diff --name-only "$DEV" "$TARGET")
 # Verify the old installed agent is the exact source from the failed release,
 # and the queue still has the single immutable failed PROD receipt.
-[[ "$(git hash-object "$AGENT")" ==
-   "$(git rev-parse "$DEV:scripts/tracker-release-agent745.py")" ]] ||
+[[ "$(git hash-object "$AGENT")" == "$(git rev-parse "$DEV:scripts/tracker-release-agent745.py")" ]] ||
   fail "Host agent differs from known installed source"
 "$PY" -B - "$FAILED" "$DEV" "$PROD" <<'PYCODE'
 import json, subprocess, sys
@@ -134,13 +133,11 @@ NEW="$STATE/.agent768.$$.new"
 [[ ! -e "$NEW" && ! -L "$NEW" ]] || fail "Staged agent exists"
 install -o root -g root -m 0700 \
   "$WORK/scripts/tracker-release-agent745.py" "$NEW"
-[[ "$(git hash-object "$NEW")" ==
-   "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
+[[ "$(git hash-object "$NEW")" == "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
  fail "Staged controller hash differs from qualified SHA"
 mv -f "$NEW" "$AGENT"
 [[ "$(stat -c '%u:%a' "$AGENT")" == 0:700 &&
-   "$(git hash-object "$AGENT")" ==
-   "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
+   "$(git hash-object "$AGENT")" == "$(git rev-parse "$TARGET:scripts/tracker-release-agent745.py")" ]] ||
  fail "Installed controller verification failed"
 echo "RELEASE_768_CONTROLLER_RECOVERY_BOOTSTRAP=SUCCESS"
 echo "RELEASE_768_PROD=UNCHANGED"
