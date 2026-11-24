@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "afe947d0c019f2994165f3ea27d17793ad9d5f28",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T22:27:37+00:00",
+  "markers": [
+    "RELEASE_785_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_785_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_785_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_785_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/785-vitals-event-pagination",
+  "release": 785,
+  "request_id": "r785-fcd7ca0dac3c",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T22:27:22+00:00",
+  "status": "passed",
+  "target": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb",
+  "test_counts": [
+    "16 passed, 1 warning"
+  ]
+}
