@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r764-1b72897158aa.json",
+  "receipt_path": "receipts/r764-install1b728971.json",
   "release": 764,
-  "request_id": "r764-1b72897158aa",
+  "request_id": "r764-install1b728971",
   "schema": 1,
   "status": "passed",
   "target": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366"
