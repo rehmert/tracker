@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "9f3e1154f30d5b2711957f51c675006f666d3440",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T13:55:25+00:00",
+  "markers": [
+    "RELEASE_770_DEV_INSTALL=SUCCESS",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r770-a236ef996c72",
+  "ref": "release/770-google-tasks-prod-only-guard",
+  "release": 770,
+  "request_id": "r770-installa236ef99",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T13:54:47+00:00",
+  "status": "passed",
+  "target": "a236ef996c725a231b6420ebf41dd63bf506e8bc",
+  "test_counts": [
+    "68 passed, 1 warning"
+  ]
+}
