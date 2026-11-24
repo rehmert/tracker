@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r765-install8c675806.json",
+  "receipt_path": "receipts/r765-preflight8c6758.json",
   "release": 765,
-  "request_id": "r765-install8c675806",
+  "request_id": "r765-preflight8c6758",
   "schema": 1,
   "status": "passed",
   "target": "8c67580611fd945d9ae83f8015f071a24ab6fee5"
