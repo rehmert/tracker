@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r775-66a2e2fdfe55",
-  "action": "qualify",
+  "request_id": "r775-install66a2e2fd",
+  "action": "dev_install",
   "release": 775,
   "target": "66a2e2fdfe55361c1a8d4ad6e87d3e9a6e140ad2",
   "base": "30684374acc094bab456f70938340ebce19b8f57",
   "ref": "release/775-google-tasks-navigation",
-  "previous_request_id": null
+  "previous_request_id": "r775-66a2e2fdfe55"
 }
