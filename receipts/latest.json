@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
+  "action": "qualify",
+  "base": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T15:50:22+00:00",
+  "finished_at_utc": "2026-11-24T16:11:43+00:00",
   "markers": [
-    "DEV_CONTROLLED_RELEASE=SUCCESS",
-    "PROD_INSTALLED_COMMIT=106ee409067c2bab2adfc8ee08dc78eada5b8062",
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=106ee409067c2bab2adfc8ee08dc78eada5b8062",
-    "PROMOTED_COMMIT=106ee409067c2bab2adfc8ee08dc78eada5b8062",
+    "RELEASE_778_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_778_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=106ee409067c2bab2adfc8ee08dc78eada5b8062",
-    "REMOTE_DEPLOY_EXIT_STATUS=0"
+    "RELEASE_778_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_778_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r777-preflight106ee4",
-  "ref": "release/777-google-batch-title-csrf",
-  "release": 777,
-  "request_id": "r777-deploy106ee409",
+  "previous_request_id": null,
+  "ref": "release/778-regimen-contextual-save-return",
+  "release": 778,
+  "request_id": "r778-666ee1076b77",
   "schema": 1,
-  "started_at_utc": "2026-11-24T15:49:48+00:00",
+  "started_at_utc": "2026-11-24T16:11:12+00:00",
   "status": "passed",
-  "target": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
-  "test_counts": []
+  "target": "666ee1076b77e723e414df208312ef51e123e635",
+  "test_counts": [
+    "58 passed, 2 warnings"
+  ]
 }
