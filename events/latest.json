@@ -1,10 +1,10 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r782-preflightedb79241.json",
+  "receipt_path": "receipts/r782-prodedb79241.json",
   "release": 782,
-  "request_id": "r782-preflightedb79241",
+  "request_id": "r782-prodedb79241",
   "schema": 1,
   "status": "passed",
   "target": "edb792410539e5186e5b6c186d5b5c7ce8d137a5"
