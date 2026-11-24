@@ -1,24 +1,27 @@
 {
-  "action": "dev_install",
-  "base": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-24T15:20:04+00:00",
-  "markers": [
-    "RELEASE_774_DEV_INSTALL=SUCCESS",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+  "action": "qualify",
+  "base": "30684374acc094bab456f70938340ebce19b8f57",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release775_google_tasks_navigation.py"
   ],
-  "previous_request_id": "r774-30684374acc0",
-  "ref": "release/774-google-tasks-bulk-title-save",
-  "release": 774,
-  "request_id": "r774-install30684374",
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-24T15:25:21+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_775_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_775_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_775_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/775-google-tasks-navigation",
+  "release": 775,
+  "request_id": "r775-693c386d7328",
   "schema": 1,
-  "started_at_utc": "2026-11-24T15:19:27+00:00",
-  "status": "passed",
-  "target": "30684374acc094bab456f70938340ebce19b8f57",
+  "started_at_utc": "2026-11-24T15:25:12+00:00",
+  "status": "failed",
+  "target": "693c386d7328b4029eadd3c017db9a53aa4c69d8",
   "test_counts": [
-    "56 passed, 1 warning"
+    "65 passed, 1 warning"
   ]
 }

@@ -1,0 +1,27 @@
+{
+  "action": "qualify",
+  "base": "30684374acc094bab456f70938340ebce19b8f57",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_release775_google_tasks_navigation.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-24T15:25:21+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_775_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_775_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_775_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/775-google-tasks-navigation",
+  "release": 775,
+  "request_id": "r775-693c386d7328",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T15:25:12+00:00",
+  "status": "failed",
+  "target": "693c386d7328b4029eadd3c017db9a53aa4c69d8",
+  "test_counts": [
+    "65 passed, 1 warning"
+  ]
+}
