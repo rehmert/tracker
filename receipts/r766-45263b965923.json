@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T03:07:59+00:00",
+  "markers": [
+    "RELEASE_766_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_766_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_766_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_766_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/766-mobile-recipes-device-trends",
+  "release": 766,
+  "request_id": "r766-45263b965923",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T03:07:42+00:00",
+  "status": "passed",
+  "target": "45263b9659232b6ac6a922da38599f92842a32d8",
+  "test_counts": [
+    "85 passed, 1 warning"
+  ]
+}
