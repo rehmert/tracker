@@ -38,7 +38,7 @@ def test_767_not_allowed_to_downgrade_or_reuse_dev_766_target():
 
 def test_767_signed_prod_remote_stages_guard_before_runner():
     content = REMOTE_PATH.read_text(encoding="utf-8")
-    start = content.index('if [[ "$RELEASE" == 767 ]]')
+    start = content.index('if [[ "$RELEASE" == 767 || "$RELEASE" == 768 ]]')
     guard = content.index('PYTHONPATH="$APP" "$APP/.venv/bin/python" "$BACKUP_GUARD"')
     runner = content.index('bash "$RUNNER"')
     assert start < guard < runner
