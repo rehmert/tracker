@@ -1,11 +1,11 @@
 {
-  "action": "prod_deploy",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r773-deployff9946bc.json",
-  "release": 773,
-  "request_id": "r773-deployff9946bc",
+  "receipt_path": "receipts/r774-30684374acc0.json",
+  "release": 774,
+  "request_id": "r774-30684374acc0",
   "schema": 1,
   "status": "passed",
-  "target": "ff9946bc6edd4e3091d389a50202b170c93c78ce"
+  "target": "30684374acc094bab456f70938340ebce19b8f57"
 }
