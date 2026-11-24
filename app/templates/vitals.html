@@ -8,10 +8,10 @@
 
 <link
   rel="stylesheet"
-  href="/static/css/tracker-vitals-tools.css?v=784"
+  href="/static/css/tracker-vitals-tools.css?v=785"
 >
 <script
-  src="/static/js/tracker-vitals-tools.js?v=784"
+  src="/static/js/tracker-vitals-tools.js?v=785"
   defer
 ></script>
 
@@ -117,7 +117,12 @@
     </div>
     <div>
       <h3>Vial, purchase and lab events</h3>
-      {% if markers %}<table><tbody>{% for e in markers %}<tr><td>{{ e.at|dt }}</td><td><b>{{ e.mark }}</b></td><td>{{ e.label }}</td></tr>{% endfor %}</tbody></table>
+      {% if markers %}<table data-vitals-marker-table><tbody>{% for e in markers %}<tr{% if loop.index > 5 %} hidden{% endif %}><td>{{ e.at|dt }}</td><td><b>{{ e.mark }}</b></td><td>{{ e.label }}</td></tr>{% endfor %}</tbody></table>
+      <nav class="vitals-pager784" data-marker-pager aria-label="Vial, purchase and lab events pagination" hidden>
+        <button type="button" data-marker-prev>Previous</button>
+        <span data-marker-page role="status" aria-live="polite"></span>
+        <button type="button" data-marker-next>Next</button>
+      </nav>
       {% else %}<p class="empty">None.</p>{% endif %}
     </div>
   </div>
