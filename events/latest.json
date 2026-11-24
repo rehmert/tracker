@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r770-a236ef996c72.json",
+  "receipt_path": "receipts/r770-installa236ef99.json",
   "release": 770,
-  "request_id": "r770-a236ef996c72",
+  "request_id": "r770-installa236ef99",
   "schema": 1,
   "status": "passed",
   "target": "a236ef996c725a231b6420ebf41dd63bf506e8bc"
