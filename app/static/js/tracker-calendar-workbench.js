@@ -26,7 +26,7 @@
       for (const item of events) {
         const status = item.dataset.calendarStatus;
         const matchesStatus = filter === 'all' || status === filter ||
-          (filter === 'needs-action' && (status === 'due' || status === 'unrecorded'));
+          (filter === 'needs-action' && (status === 'due' || status === 'unrecorded' || status === 'pending_review'));
         const matchesText = !query || normalize(item.dataset.calendarSearch).includes(query);
         const show = matchesStatus && matchesText;
         item.hidden = !show;
@@ -41,7 +41,7 @@
       for (const row of reviewRows) {
         const status = row.dataset.calendarStatus;
         const matchesStatus = filter === 'all' || status === filter ||
-          (filter === 'needs-action' && (status === 'due' || status === 'unrecorded'));
+          (filter === 'needs-action' && (status === 'due' || status === 'unrecorded' || status === 'pending_review'));
         const matchesText = !query || normalize(row.dataset.calendarSearch).includes(query);
         const show = matchesStatus && matchesText;
         row.hidden = !show;
