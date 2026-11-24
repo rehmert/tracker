@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T20:23:52+00:00",
+  "markers": [
+    "RELEASE_782_DEV_INSTALL=SUCCESS",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r782-edb792410539",
+  "ref": "release/782-compact-gym",
+  "release": 782,
+  "request_id": "r782-installedb79241",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T20:23:11+00:00",
+  "status": "passed",
+  "target": "edb792410539e5186e5b6c186d5b5c7ce8d137a5",
+  "test_counts": [
+    "22 passed, 1 warning"
+  ]
+}
