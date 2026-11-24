@@ -1,11 +1,11 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r784-installafe947d0.json",
-  "release": 784,
-  "request_id": "r784-installafe947d0",
+  "receipt_path": "receipts/r785-fcd7ca0dac3c.json",
+  "release": 785,
+  "request_id": "r785-fcd7ca0dac3c",
   "schema": 1,
   "status": "passed",
-  "target": "afe947d0c019f2994165f3ea27d17793ad9d5f28"
+  "target": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb"
 }
