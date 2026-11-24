@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T14:03:54+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r771-installac330a08",
+  "ref": "release/771-google-tasks-prod-schema-catchup",
+  "release": 771,
+  "request_id": "r771-preflightac330a",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T14:03:52+00:00",
+  "status": "passed",
+  "target": "ac330a08ffa4ff49ca86e034b9aa81f4e583a8c7",
+  "test_counts": []
+}
