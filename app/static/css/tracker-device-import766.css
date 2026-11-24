@@ -1,0 +1,15 @@
+/* Release 766: mobile-safe daily device import and record management */
+.device766-page {max-width:68rem;margin:0 auto;}
+.device766-nav {display:flex;gap:.75rem;flex-wrap:wrap;}
+.device766-nav a {display:inline-flex;align-items:center;min-height:44px;}
+.device766-form {display:grid;gap:.7rem;border:1px solid var(--border,#8998a7);border-radius:.7rem;padding:1rem;margin:1rem 0;}
+.device766-form>label {display:grid;gap:.3rem;}
+.device766-form input:not([type=checkbox]){box-sizing:border-box;width:100%;min-width:0;min-height:48px;}
+.device766-form summary{cursor:pointer;min-height:44px;}
+.device766-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem;}
+.device766-grid label{display:grid;min-width:0;}
+.device766-form .device766-check{display:flex;align-items:start;gap:.5rem;}
+.device766-form button,.device766-record button{min-height:48px;}
+.device766-record{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;border:1px solid var(--border,#8998a7);border-radius:.65rem;padding:.7rem;margin:.4rem 0;}
+.device766-record small{display:block;font-size:.8rem;}
+@media(max-width:480px){.device766-grid{grid-template-columns:minmax(0,1fr)}.device766-record form{width:100%}.device766-record button{width:100%}}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Device Summary Import{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-device-import766.css?v=766">
+<section class="device766-page">
+  <nav class="device766-nav" aria-label="Device navigation">
+    <a href="/progress">Progress</a>
+    <a href="/reports/trends">Weekly Trends</a>
+    <a href="/mobile">Today</a>
+  </nav>
+  <h1>Device Data · Daily Summary</h1>
+  <p class="note">Import or record daily step counts, sleep hours, resting heart rate, or daily average glucose. These are recorded device estimates, not direct data integrations or raw CGM samples.</p>
+  {% if request.query_params.get('added') is not none %}
+  <p role="status">Added {{ request.query_params.get('added') }} · Updated {{ request.query_params.get('updated') }} · Skipped {{ request.query_params.get('skipped') }} matching source/date records.</p>
+  {% endif %}
+  {% if request.query_params.get('deleted') %}<p role="status">Daily device record deleted.</p>{% endif %}
+  <form method="post" action="/device-import" enctype="multipart/form-data"
+        class="device766-form">
+    <label>Device / source
+      <input name="source" maxlength="80" required placeholder="Wearable CSV / manual">
+    </label>
+    <label>Daily-summary CSV
+      <input name="uploaded" type="file" accept=".csv,text/csv">
+    </label>
+    <p class="note">CSV header: <code>date,steps,sleep_hours,resting_bpm,glucose_avg_mgdl</code>. Date is YYYY-MM-DD. Leave optional cells empty if unreported. Maximum 2,000 rows or 256 KiB. The file is processed privately and not stored.</p>
+    <details>
+      <summary>Or enter one day manually</summary>
+      <div class="device766-grid">
+        <label>Day <input type="date" name="day" max="{{ today|default('') }}"></label>
+        <label>Steps <input type="number" name="steps" min="0" max="100000" inputmode="numeric"></label>
+        <label>Sleep hours <input type="number" name="sleep_hours" min="0" max="24" step="any" inputmode="decimal"></label>
+        <label>Resting BPM <input type="number" name="resting_bpm" min="20" max="250" step="any" inputmode="decimal"></label>
+        <label>Glucose avg (mg/dL) <input type="number" name="glucose_avg_mgdl" min="20" max="650" step="any" inputmode="decimal"></label>
+      </div>
+    </details>
+    <label class="device766-check"><input type="checkbox" name="replace" value="true"> Replace matching source/date records with supplied values</label>
+    <p class="note">Without Replace, imported dates already present for the same source are skipped. With Replace, empty values become unknown; importing a second source does not overwrite the first.</p>
+    <button class="primary" type="submit">Review and Import Daily Summaries</button>
+  </form>
+  <h2>Recent imported days</h2>
+  {% for item in rows %}
+  <article class="device766-record">
+    <div><strong>{{ item.measured_on }} · {{ item.source }}</strong>
+      <small>Steps: {{ item.steps if item.steps is not none else '—' }} · Sleep: {{ item.sleep_hours if item.sleep_hours is not none else '—' }} h</small>
+      <small>Resting: {{ item.resting_bpm if item.resting_bpm is not none else '—' }} bpm · Glucose avg: {{ item.glucose_avg_mgdl if item.glucose_avg_mgdl is not none else '—' }} mg/dL</small>
+    </div>
+    <form method="post" action="/device-import/{{ item.id }}/delete"
+          onsubmit="return confirm('Delete this imported device day?')">
+      <button type="submit">Delete</button>
+    </form>
+  </article>
+  {% else %}<p class="note">No device summaries recorded yet.</p>{% endfor %}
+</section>
+{% endblock %}
