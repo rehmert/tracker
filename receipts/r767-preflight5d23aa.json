@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T04:07:09+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r767-install5d23aaf4",
+  "ref": "release/767-prod-device-schema-guard",
+  "release": 767,
+  "request_id": "r767-preflight5d23aa",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T04:07:07+00:00",
+  "status": "passed",
+  "target": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
+  "test_counts": []
+}
