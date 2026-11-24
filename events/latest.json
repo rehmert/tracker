@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r772-install47642b46.json",
+  "receipt_path": "receipts/r772-preflight47642b.json",
   "release": 772,
-  "request_id": "r772-install47642b46",
+  "request_id": "r772-preflight47642b",
   "schema": 1,
   "status": "passed",
   "target": "47642b465b1cb98f40aab2ce68c6a7526394298d"
