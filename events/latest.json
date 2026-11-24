@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r768-62a78b4f0b79.json",
+  "receipt_path": "receipts/r768-install62a78b4f.json",
   "release": 768,
-  "request_id": "r768-62a78b4f0b79",
+  "request_id": "r768-install62a78b4f",
   "schema": 1,
   "status": "passed",
   "target": "62a78b4f0b79f2f6762976c1231cab2f5f593f25"
