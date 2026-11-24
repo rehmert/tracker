@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "47642b465b1cb98f40aab2ce68c6a7526394298d",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T14:46:59+00:00",
+  "markers": [
+    "RELEASE_773_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_773_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_773_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_773_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/773-google-tasks-custom-titles",
+  "release": 773,
+  "request_id": "r773-ff9946bc6edd",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T14:46:52+00:00",
+  "status": "passed",
+  "target": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
+  "test_counts": [
+    "63 passed, 1 warning"
+  ]
+}
