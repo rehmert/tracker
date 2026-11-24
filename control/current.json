@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r765-install8c675806",
-  "action": "dev_install",
+  "request_id": "r765-preflight8c6758",
+  "action": "prod_preflight",
   "release": 765,
   "target": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
   "base": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
   "ref": "release/765-mobile-daily-actions",
-  "previous_request_id": "r765-8c67580611fd"
+  "previous_request_id": "r765-install8c675806"
 }
