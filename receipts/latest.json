@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T15:48:54+00:00",
+  "finished_at_utc": "2026-11-24T15:50:22+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=106ee409067c2bab2adfc8ee08dc78eada5b8062",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=106ee409067c2bab2adfc8ee08dc78eada5b8062",
+    "PROMOTED_COMMIT=106ee409067c2bab2adfc8ee08dc78eada5b8062",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=106ee409067c2bab2adfc8ee08dc78eada5b8062",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r777-install106ee409",
+  "previous_request_id": "r777-preflight106ee4",
   "ref": "release/777-google-batch-title-csrf",
   "release": 777,
-  "request_id": "r777-preflight106ee4",
+  "request_id": "r777-deploy106ee409",
   "schema": 1,
-  "started_at_utc": "2026-11-24T15:48:52+00:00",
+  "started_at_utc": "2026-11-24T15:49:48+00:00",
   "status": "passed",
   "target": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
   "test_counts": []
