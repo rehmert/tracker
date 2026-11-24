@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="/static/css/tracker-daily-flow559.css?v=559">
 <!-- Release 690: final Dashboard-only density override after shared 685/686 and 688/689. -->
 <link rel="stylesheet" href="/static/css/tracker-overview-density690.css?v=690">
+{% if google_pending_count %}<section class="card" id="google-pending-dashboard783" role="status"><h2>{{ google_pending_count }} Google Tasks administration{{ 's' if google_pending_count != 1 else '' }} pending review</h2><p>Checked off in Google Tasks; inventory or existing logs still need reconciliation.</p><a class="button primary" href="/calendar#google-protocol-review783">Review administrations</a></section>{% endif %}
 <section class="tracker-daily-flow559"
          aria-labelledby="tracker-daily-flow559-title">
   <div class="tracker-daily-flow559-head">
