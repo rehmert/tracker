@@ -3,6 +3,7 @@
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workout-gym-bundle745.css?v=745">
 <link rel="stylesheet" href="/static/css/tracker-gym-handoff766.css?v=766">
+<link rel="stylesheet" href="/static/css/tracker-gym-compact782.css?v=782">
 <script defer src="/static/js/tracker-gym-handoff766.js?v=766"></script>
 <script src="/static/js/tracker-workouts659.js?v=667" defer></script>
 <script src="/static/js/tracker-workouts662.js?v=662" defer></script>
@@ -17,6 +18,7 @@
 {% endblock %}
 {% block content %}
 <section class="workout659" id="workout659-root"
+         data-compact782="{{ 'active' if active and equipment else 'idle' }}"
          data-session-id="{{ active.id if active else '' }}"
          data-last-set-id="{{ last.id if last else '' }}"
          data-logged="{{ 'yes' if request.query_params.get('logged') == '1' else 'no' }}"
@@ -25,10 +27,9 @@
     <div>
       <nav class="ux675-actions ux675-gym-top" aria-label="Workout navigation">
         <a href="/workouts">← Workouts</a>
-        <a href="/workouts/analytics">Progress</a>
         <details class="ux675-more">
           <summary>More</summary>
-          <div><a href="/workouts/insights">Insights</a><a href="/workouts/calendar">Calendar</a>
+          <div><a href="/workouts/analytics">Progress</a><a href="/workouts/insights">Insights</a><a href="/workouts/calendar">Calendar</a>
             <a href="/workouts/backfill">Log Past Workout</a></div>
         </details>
       </nav>
@@ -71,6 +72,7 @@
       <section class="workout659-progress" aria-label="Routine progress">
         <strong>{{ routine.name }}</strong>
         <span>{{ routine_logged }} of {{ routine_total }} exercises logged</span>
+        <details class="gym782-disclosure"><summary>Routine tools</summary>
         <nav class="ux675-actions ux675-compact" aria-label="Routine tools">
           <a href="/workouts/routines/{{ routine.id }}/program">Goals</a>
           <details class="ux675-more"><summary>More</summary><div>
@@ -78,10 +80,13 @@
             <a href="/workouts/routines/{{ routine.id }}/schedule">Schedule</a>
           </div></details>
         </nav>
+      </details>
       </section>
     {% endif %}
 
     <section class="workout659-panel">
+      <details class="workout662-directory" id="workout662-directory">
+        <summary>Change Machine ({{ equipment|length }})</summary>
       <form action="/workouts/quick" method="get" class="workout659-machine-picker">
         <label for="workout659-machine-select">Current machine</label>
         <div class="workout659-picker-row">
@@ -95,8 +100,7 @@
           <button type="submit">Go</button>
         </div>
       </form>
-      <details class="workout662-directory" id="workout662-directory">
-        <summary>Find Machine ({{ equipment|length }})</summary>
+
         <label for="workout662-search">Search machine or gym</label>
         <input id="workout662-search" type="search" maxlength="140"
                autocomplete="off" placeholder="Search equipment…">
@@ -116,7 +120,7 @@
           <h2 data-no-title-case>{{ machine.name }}</h2>
           <p class="workout659-muted">{{ machine.gym }}{% if machine.seat_setting %} · Seat {{ machine.seat_setting }}{% endif %}</p>
           {% if machine.setup_notes %}
-            <p class="workout659-notes">{{ machine.setup_notes }}</p>
+            <details class="gym782-disclosure"><summary>Machine setup notes</summary><p class="workout659-notes">{{ machine.setup_notes }}</p></details>
           {% endif %}
           {% if routine and plan_item_id and current_goal and current_goal.setup_note and not frozen_goal %}
             <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
@@ -143,6 +147,7 @@
           <a class="ux675-inline-action" href="/workouts/equipment/{{ machine.id }}/progress">Progress</a>
         </div>
         {% if routine and plan_item_id and frozen_goal %}
+          <details class="gym782-disclosure"><summary>Goal: {{ goal_progress667.credited_sets }}/{{ frozen_goal.target_sets }} · {{ frozen_goal.target_reps }} reps × {{ frozen_goal.target_weight_lb }} lb</summary>
           <aside id="workout667-active-goal" class="workout667-active-goal"
                  data-planned-lb="{{ frozen_goal.target_weight_lb }}"
                  data-planned-reps="{{ frozen_goal.target_reps }}"
@@ -162,12 +167,13 @@
             {% endif %}
             <button type="button" id="workout667-use-goal">Use planned weight &amp; reps</button>
             <p class="workout667-goal-hint">Copies values into editable inputs only. Never logs a set automatically.</p>
-          </aside>
+          </aside></details>
         {% elif routine and plan_item_id and current_goal and current_goal.target_sets is not none %}
           <p class="workout667-goal-hint">Goals saved after this workout began apply to your next session, not retroactively to this one.</p>
         {% endif %}
         {% if routine and plan_item_id %}
           {% if not frozen_goal %}
+          <details class="gym782-disclosure"><summary>Planned targets</summary>
           <aside id="workout666-targets" class="workout666-targets"
                  data-routine-id666="{{ routine.id }}"
                  data-item-id666="{{ plan_item_id }}"
@@ -184,10 +190,11 @@
               <div><dt>Planned weight</dt><dd data-target666="weight">—</dd></div>
             </dl>
             <p class="workout666-targets-note">Browser-only intentions, not logged sets. Logging values below stay independent.</p>
-          </aside>
+          </aside></details>
           {% endif %}
         {% endif %}
         {% if progression674 %}
+        <details class="gym782-disclosure"><summary>Suggested: {{ "%.1f"|format(progression674.weight) }} lb × {{ progression674.reps }}</summary>
         <aside class="ux674-progress" aria-label="Optional training progression">
           <strong>Next-session idea</strong>
           <p>{{ "%.1f"|format(progression674.weight) }} lb × {{ progression674.reps }} reps
@@ -196,7 +203,7 @@
           <button type="button" id="workout674-use-progression"
                   data-weight674="{{ progression674.weight }}"
                   data-reps674="{{ progression674.reps }}">Use suggested values</button>
-        </aside>
+        </aside></details>
         {% endif %}
         <form method="post" action="/workouts/quick/sets"
               class="workout659-log-form" id="workout659-log-form">
@@ -223,34 +230,37 @@
               </div>
             </div>
           </div>
+          <details class="gym782-disclosure"><summary>Fine adjustments &amp; effort</summary>
           <div class="workout662-adjustments" aria-label="Additional set adjustments">
             <button type="button" data-step659="weight" data-delta659="-2.5" aria-label="Decrease weight by 2.5 pounds">−2.5 lb</button>
             <button type="button" data-step659="weight" data-delta659="2.5" aria-label="Increase weight by 2.5 pounds">+2.5 lb</button>
             <button type="button" data-step659="reps" data-delta659="-5" aria-label="Decrease repetitions by 5">−5 reps</button>
             <button type="button" data-step659="reps" data-delta659="5" aria-label="Increase repetitions by 5">+5 reps</button>
           </div>
+          <label class="workout659-effort">Effort 1–10 (optional)
+            <input type="number" name="effort" min="1" max="10" step="1"
+                   inputmode="numeric" value="{{ last.effort if last and last.effort is not none else '' }}">
+          </label>
+          </details>
           <fieldset class="workout667-set-kind" aria-label="Recorded set type">
             <legend>Set type</legend>
             <label><input type="radio" name="set_type" value="working" checked> Working set</label>
             <label><input type="radio" name="set_type" value="warmup"> Warm-up set</label>
           </fieldset>
-          <label class="workout659-effort">Effort 1–10 (optional)
-            <input type="number" name="effort" min="1" max="10" step="1"
-                   inputmode="numeric" value="{{ last.effort if last and last.effort is not none else '' }}">
-          </label>
           <button class="primary workout659-main-button" type="submit" id="workout659-save">Save Set</button>
           <button type="reset" class="workout662-restore">
             {{ 'Restore last recorded values' if last else 'Clear entries' }}
           </button>
         </form>
         {% if last %}
+          <details class="gym782-disclosure"><summary>Repeat last set</summary>
           <form method="post" action="/workouts/quick/repeat" class="workout659-repeat">
             <input type="hidden" name="equipment_id" value="{{ machine.id }}">
             <input type="hidden" name="source_set_id" value="{{ last.id }}">
             <button type="submit" class="workout659-main-button workout659-repeat-button">
               Repeat Last Set — {{ '%.1f'|format(last.weight_lb) }} lb × {{ last.reps }}
             </button>
-          </form>
+          </form></details>
         {% endif %}
 
       {% endif %}
@@ -276,6 +286,7 @@
     </section>
 
     {% if machine %}
+      <details class="gym782-disclosure gym782-more"><summary>More machine tools</summary>
         <details class="workout659-panel">
           <summary>Load Setup</summary>
           <p class="workout659-muted">Choose stack, plates, dumbbells, or added bodyweight. These settings explain load only; recorded values never change.</p>
@@ -324,13 +335,15 @@
           <p id="workout668-draft-status" role="status" aria-live="polite"></p>
           </div>
         </details>
+      </details>
     {% endif %}
 
+    <details class="gym782-disclosure gym782-more"><summary>Manage workout</summary>
     {% include "_workout_quick_tools722.html" %}
+    </details>
 
     {% if routine and grouped668 %}
-      <section class="workout659-panel" aria-label="Planned Supersets and Circuits">
-        <h2>Planned Training Groups</h2>
+      <details class="workout659-panel gym782-disclosure" aria-label="Planned Supersets and Circuits"><summary>Planned Training Groups</summary>
         <p class="workout659-muted">Planned order only · Log each set yourself.</p>
         {% for group in grouped668 %}
           <details>
@@ -348,7 +361,7 @@
             {% endif %}
           </details>
         {% endfor %}
-      </section>
+      </details>
     {% endif %}
 
 
@@ -377,8 +390,10 @@
           <button type="submit">Finish Workout</button>
         </details>
       </form>
+      <details class="gym782-disclosure"><summary>Other workout actions</summary>
       <a class="ux675-inline-action" href="/workouts">All Workouts</a>
       <a class="ux675-inline-action" href="/workouts/sessions/{{ active.id }}#workout719-delete-{{ active.id }}">Delete Accidental Workout</a>
+      </details>
     </section>
   {% endif %}
 </section>
