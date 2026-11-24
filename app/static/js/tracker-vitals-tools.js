@@ -3,7 +3,44 @@
 
   const STORAGE_KEY = 'tracker.vitals.table.v1';
 
+  const PAGE_SIZE = 5;
+
+  // Pagination only changes presentation. Matching rows remain available for
+  // comparisons, search and export, regardless of the current page.
+  function pager(kind, getRows, allRows) {
+    const nav = document.querySelector('[data-' + kind + '-pager]');
+    let page = 0;
+    const prev = nav?.querySelector('[data-' + kind + '-prev]');
+    const next = nav?.querySelector('[data-' + kind + '-next]');
+    const label = nav?.querySelector('[data-' + kind + '-page]');
+    function draw() {
+      const matching = getRows();
+      const pages = Math.max(1, Math.ceil(matching.length / PAGE_SIZE));
+      page = Math.max(0, Math.min(page, pages - 1));
+      const start = page * PAGE_SIZE;
+      const visible = new Set(matching.slice(start, start + PAGE_SIZE));
+      for (const row of allRows) row.hidden = !visible.has(row);
+      if (nav) {
+        nav.hidden = matching.length <= PAGE_SIZE;
+        prev.disabled = page === 0;
+        next.disabled = page >= pages - 1;
+        label.textContent = (start + 1) + '–' + Math.min(start + PAGE_SIZE, matching.length) + ' of ' + matching.length;
+      }
+    }
+    prev?.addEventListener('click', () => { page--; draw(); });
+    next?.addEventListener('click', () => { page++; draw(); });
+    return {
+      reset(target) {
+        const index = target ? getRows().indexOf(target) : -1;
+        page = index >= 0 ? Math.floor(index / PAGE_SIZE) : 0;
+        draw();
+      }
+    };
+  }
+
   function initialize() {
+    const doseRows = Array.from(document.querySelectorAll('[data-vitals-dose-table] tbody tr'));
+    if (doseRows.length) pager('dose', () => doseRows, doseRows).reset();
     const table = document.querySelector(
       '[data-vitals-table]'
     );
@@ -311,28 +348,23 @@
       }
     }
 
+    let matchingRows = [];
     function visibleRows() {
-      return rows.filter(
-        row => !row.hidden
-      );
+      // Historical name: all matching rows, not just this page.
+      return [...matchingRows];
     }
+    const readingPager = pager('reading', visibleRows, rows);
 
-    function update() {
+    function update(target = null) {
       const invalidDates = Boolean(from?.value && through?.value &&
         from.value > through.value);
       if (dateError) dateError.hidden = !invalidDates;
       const sorted = [...rows].sort(compareRows);
 
-      for (const row of sorted) {
-        row.hidden = !(
-          !invalidDates &&
-          matchesType(row) &&
-          matchesSearch(row) &&
-          matchesDates(row)
-        );
-
-        tbody.appendChild(row);
-      }
+      matchingRows = sorted.filter(row => !invalidDates &&
+        matchesType(row) && matchesSearch(row) && matchesDates(row));
+      for (const row of sorted) tbody.appendChild(row);
+      readingPager.reset(rows.includes(target) ? target : null);
 
       const visible = visibleRows().length;
 
@@ -443,7 +475,9 @@
       search.focus();
     });
 
-    update();
+    const target = rows.find(row => '#' + row.id === location.hash);
+    update(target);
+    if (target && !target.hidden) target.scrollIntoView({block: 'nearest'});
   }
 
   if (document.readyState === 'loading') {
