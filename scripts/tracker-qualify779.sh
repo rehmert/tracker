@@ -38,6 +38,7 @@ while IFS= read -r path; do
   scripts/tracker-time24-check371.cjs|\
   scripts/tracker-time24-check779.cjs|\
   tests/test_release713_timeline_time24.py|\
+  tests/browser/test_global_time24_713.py|\
   tests/test_release779_compact_time.py|\
   docs/release-779-compact-military-time.md|\
   docs/ux-time-entry.md|\
@@ -81,7 +82,8 @@ import ast
 from pathlib import Path
 from jinja2 import Environment
 for path in ("tests/test_release779_compact_time.py",
-             "tests/test_release713_timeline_time24.py"):
+             "tests/test_release713_timeline_time24.py",
+             "tests/browser/test_global_time24_713.py"):
  ast.parse(Path(path).read_text(encoding="utf-8"), filename=path)
 for path in ("app/templates/base.html", "app/templates/doses.html",
              "app/templates/dose_edit.html", "app/templates/vitals.html",
