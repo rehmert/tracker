@@ -93,9 +93,9 @@ def resolve_data_dir768(root: Path, env: Path) -> Path:
         raise ValueError("Trusted environment file unavailable")
     path = root / "data"
     for line in env.read_text(encoding="utf-8").splitlines():
-        match = re.match(r"^\\s*(?:export\\s+)?TRACKER_DATA_DIR\\s*=(.*)$", line)
+        match = re.match(r"^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$", line)
         if match and match.group(1).strip():
-            path = Path(match.group(1).strip().strip("\\\"'"))
+            path = Path(match.group(1).strip().strip("\"'"))
     # Match the service's WorkingDirectory=/opt/tracker. Tracker's
     # config uses Path(...).resolve() after resolving the process CWD.
     if not path.is_absolute():
