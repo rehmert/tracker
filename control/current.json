@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r774-install30684374",
-  "action": "dev_install",
-  "release": 774,
-  "target": "30684374acc094bab456f70938340ebce19b8f57",
-  "base": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
-  "ref": "release/774-google-tasks-bulk-title-save",
-  "previous_request_id": "r774-30684374acc0"
+  "request_id": "r775-693c386d7328",
+  "action": "qualify",
+  "release": 775,
+  "target": "693c386d7328b4029eadd3c017db9a53aa4c69d8",
+  "base": "30684374acc094bab456f70938340ebce19b8f57",
+  "ref": "release/775-google-tasks-navigation",
+  "previous_request_id": null
 }
