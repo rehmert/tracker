@@ -114,7 +114,7 @@ def resolve_data_dir(root: Path, env: Path) -> Path:
     for line in env.read_text(encoding="utf-8").splitlines():
         match = re.match(r"^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$", line)
         if match and match.group(1).strip():
-            path = Path(match.group(1).strip().strip("\\\"'"))
+            path = Path(match.group(1).strip().strip(chr(34) + chr(39)))
     if not path.is_absolute():
         path = root / path
     if path.is_symlink():
