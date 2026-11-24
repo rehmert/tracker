@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r768-62a78b4f0b79",
-  "action": "qualify",
+  "request_id": "r768-install62a78b4f",
+  "action": "dev_install",
   "release": 768,
   "target": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
   "base": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
   "ref": "release/768-prod-relative-data-path-recovery",
-  "previous_request_id": null
+  "previous_request_id": "r768-62a78b4f0b79"
 }
