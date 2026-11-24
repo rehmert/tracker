@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T16:16:14+00:00",
+  "finished_at_utc": "2026-11-24T16:17:34+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=666ee1076b77e723e414df208312ef51e123e635",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=666ee1076b77e723e414df208312ef51e123e635",
+    "PROMOTED_COMMIT=666ee1076b77e723e414df208312ef51e123e635",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=666ee1076b77e723e414df208312ef51e123e635",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r778-install666ee107",
+  "previous_request_id": "r778-preflight666ee1",
   "ref": "release/778-regimen-contextual-save-return",
   "release": 778,
-  "request_id": "r778-preflight666ee1",
+  "request_id": "r778-deploy666ee107",
   "schema": 1,
-  "started_at_utc": "2026-11-24T16:16:12+00:00",
+  "started_at_utc": "2026-11-24T16:17:09+00:00",
   "status": "passed",
   "target": "666ee1076b77e723e414df208312ef51e123e635",
   "test_counts": []
