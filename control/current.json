@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r785-fcd7ca0dac3c",
-  "action": "qualify",
+  "request_id": "r785-installfcd7ca0d",
+  "action": "dev_install",
   "release": 785,
   "target": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb",
   "base": "afe947d0c019f2994165f3ea27d17793ad9d5f28",
   "ref": "release/785-vitals-event-pagination",
-  "previous_request_id": null
+  "previous_request_id": "r785-fcd7ca0dac3c"
 }
