@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r766-install45263b96",
-  "action": "dev_install",
-  "release": 766,
-  "target": "45263b9659232b6ac6a922da38599f92842a32d8",
-  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
-  "ref": "release/766-mobile-recipes-device-trends",
-  "previous_request_id": "r766-45263b965923"
+  "request_id": "r767-5d23aaf4f7e7",
+  "action": "qualify",
+  "release": 767,
+  "target": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
+  "base": "45263b9659232b6ac6a922da38599f92842a32d8",
+  "ref": "release/767-prod-device-schema-guard",
+  "previous_request_id": null
 }
