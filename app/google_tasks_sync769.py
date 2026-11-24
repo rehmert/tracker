@@ -257,3 +257,73 @@ def sync_once769():
                     raise
     except BlockingIOError:
         return {"status": "busy", "created": 0, "imported": 0, "pending_protocols": 0}
+
+
+def _sync_completions_locked780(db):
+    """Read only previously linked Google tasks; import completed intakes.
+
+    This deliberately does not create task lists, project 14 days, update
+    titles, push tasks, or delete Google resources. The normal 5-minute sync
+    retains those responsibilities and performs eventual full reconciliation.
+    """
+    conn = db.get(GoogleTasksConnection769, 1)
+    if not configured769() or not conn or not conn.enabled or not conn.refresh_token:
+        return {"status": "disabled", "created": 0, "imported": 0, "pending_protocols": 0}
+
+    links = list(db.scalars(select(GoogleTasksLink769).where(
+        GoogleTasksLink769.removed.is_(False),
+        GoogleTasksLink769.last_status != "completed",
+    )))
+    saved_lists = {row.kind: row.list_id for row in db.scalars(select(GoogleTasksList769))}
+    # Never create a list on a fast poll. Full reconciliation takes care of
+    # missing lists and links.
+    pending = [link for link in links
+               if link.kind in saved_lists and
+               link.list_id == saved_lists[link.kind]]
+    counts = {"status": "ok", "created": 0, "imported": 0, "pending_protocols": 0}
+    if not pending:
+        return counts
+
+    client = TasksClient769(conn.refresh_token)
+    try:
+        kinds = {link.kind for link in pending}
+        remote_by_kind = {
+            kind: {task["id"]: task for task in client.tasks(saved_lists[kind])
+                   if isinstance(task, dict) and task.get("id")}
+            for kind in kinds
+        }
+        for link in pending:
+            remote = remote_by_kind[link.kind].get(link.task_id)
+            if not remote or remote.get("deleted") or remote.get("status") != "completed":
+                continue
+            link.last_status = "completed"
+            db.commit()  # Close read transaction before reserved regimen write.
+            if link.kind == "protocol":
+                counts["pending_protocols"] += 1
+            elif link.kind in ("medication", "supplement"):
+                before = link.imported_entry_id
+                _import_completed_regimen(db, link, remote)
+                if before is None and link.imported_entry_id is not None:
+                    counts["imported"] += 1
+        db.commit()
+        return counts
+    finally:
+        client.close()
+
+
+def sync_completions_once780():
+    """Fast, non-overlapping completion-only pass using the existing lock."""
+    try:
+        with exclusive769():
+            with SessionLocal() as db:
+                try:
+                    return _sync_completions_locked780(db)
+                except GoogleTasksError769 as exc:
+                    conn = db.get(GoogleTasksConnection769, 1)
+                    db.rollback()
+                    if conn:
+                        conn.last_error = str(exc)[:160]
+                        db.commit()
+                    raise
+    except BlockingIOError:
+        return {"status": "busy", "created": 0, "imported": 0, "pending_protocols": 0}
