@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "8da5603569c76beb8aab94168e250235a718aef0",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T16:59:34+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r781-install8abbd352",
+  "ref": "release/781-daily-regimen-order",
+  "release": 781,
+  "request_id": "r781-preflight8abbd352",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T16:59:32+00:00",
+  "status": "passed",
+  "target": "8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
+  "test_counts": []
+}
