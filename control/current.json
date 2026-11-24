@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r764-deploy1b728971",
-  "action": "prod_deploy",
-  "release": 764,
-  "target": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
-  "base": "99e10eef2125e74b4315f3ee89dc546ae22d7524",
-  "ref": "release/764-compound-title-case",
-  "previous_request_id": "r764-preflight1b7289"
+  "request_id": "r765-8c67580611fd",
+  "action": "qualify",
+  "release": 765,
+  "target": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "base": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
+  "ref": "release/765-mobile-daily-actions",
+  "previous_request_id": null
 }
