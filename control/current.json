@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r768-deploy62a78b4f",
-  "action": "prod_deploy",
-  "release": 768,
-  "target": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
-  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
-  "ref": "release/768-prod-relative-data-path-recovery",
-  "previous_request_id": "r768-preflight62a78b"
+  "request_id": "r769-9f3e1154f30d",
+  "action": "qualify",
+  "release": 769,
+  "target": "9f3e1154f30d5b2711957f51c675006f666d3440",
+  "base": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+  "ref": "release/769-google-tasks-medications-supplements-protocols",
+  "previous_request_id": null
 }
