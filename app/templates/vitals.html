@@ -8,10 +8,10 @@
 
 <link
   rel="stylesheet"
-  href="/static/css/tracker-vitals-tools.css?v=20261103-dates"
+  href="/static/css/tracker-vitals-tools.css?v=783"
 >
 <script
-  src="/static/js/tracker-vitals-tools.js?v=20261103-dates"
+  src="/static/js/tracker-vitals-tools.js?v=783"
   defer
 ></script>
 
@@ -31,6 +31,7 @@
   <a href="#quick-vitals-weight">Weight</a>
   <a href="#quick-vitals-bp">Blood pressure</a>
   <a href="#quick-vitals-pulse">Pulse</a>
+  <a href="#vitals-readings">Edit Readings</a>
 </nav>
 <p class="note">Record a reading above, or review your measurements below.</p>
 <details class="tracker-flow696-guide">
@@ -119,7 +120,7 @@
 {% endif %}
 
 <section>
-  <h2>Readings</h2>
+  <h2 id="vitals-readings">Readings</h2>
 
 <div class="vitals-toolbar" data-vitals-toolbar>
   <label>
@@ -192,16 +193,22 @@
   </div>
   <p class="note">Comparison values use only readings matching the table filters; a metric can have fewer observations than the total. These are arithmetic comparisons, not medical interpretations. Averages are per reading, not per day, so several readings on one day weigh more than a single one.</p>
   <div class="scroll"><table data-vitals-table data-vitals-weight-unit="{{ unit }}">
-    <thead><tr><th>When</th><th class="n">Weight ({{ unit }})</th><th class="n">Blood pressure</th><th class="n">Pulse</th><th>Context</th><th>Notes</th><th></th></tr></thead>
+    <thead><tr><th>When</th><th class="n">Weight ({{ unit }})</th><th class="n">Blood pressure</th><th class="n">Pulse</th><th>Context</th><th>Notes</th><th>Actions</th></tr></thead>
     <tbody>
     {% for r in rows %}
-    <tr data-vitals-when="{{ r.measured_at.isoformat() }}">
+    <tr id="vital-reading-{{ r.id }}" data-vitals-when="{{ r.measured_at.isoformat() }}">
       <td>{{ r.measured_at|dt }}</td>
       <td class="n">{{ weight_unit_display(r.weight_kg)|n1 }}</td>
       <td class="n">{% if r.systolic %}{{ r.systolic }}/{{ r.diastolic }}{% else %}—{% endif %}</td>
       <td class="n">{{ r.pulse_bpm if r.pulse_bpm else '—' }}</td>
-      <td>{{ r.context or '—' }}</td><td>{{ r.notes or '—' }}</td>
-      <td><form method="get" action="/vitals/{{ r.id }}/edit" style="display:inline"><input type="hidden" name="days" value="{{ days }}"><input type="hidden" name="events" value="{{ 1 if events_on else 0 }}"><button type="submit">Edit</button></form> <button type="button" style="color:var(--brick)" hx-delete="/vitals/{{ r.id }}" hx-confirm="Delete this reading?">Delete</button></td>
+      <td>{{ r.context or '—' }}</td>
+      <td class="vitals-notes783" data-vitals-full-notes="{{ r.notes or '' }}">
+        {% set words = (r.notes or '').split() %}
+        {% if words|length > 4 %}
+        <details><summary>{{ words[:4]|join(' ') }}… <span class="vitals-more783">More</span><span class="vitals-less783">Less</span></summary><div class="vitals-note-full783">{{ r.notes }}</div></details>
+        {% else %}{{ r.notes or '—' }}{% endif %}
+      </td>
+      <td class="vitals-actions783"><form method="get" action="/vitals/{{ r.id }}/edit" style="display:inline"><input type="hidden" name="days" value="{{ days }}"><input type="hidden" name="events" value="{{ 1 if events_on else 0 }}"><button type="submit">Edit</button></form> <button type="button" style="color:var(--brick)" hx-delete="/vitals/{{ r.id }}" hx-confirm="Delete this reading?">Delete</button></td>
     </tr>
     {% else %}<tr><td colspan="7" class="empty">No readings in this range.</td></tr>{% endfor %}
     </tbody>
