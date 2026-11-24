@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T16:11:43+00:00",
+  "finished_at_utc": "2026-11-24T16:13:37+00:00",
   "markers": [
-    "RELEASE_778_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_778_EXIT_STATUS=0",
+    "RELEASE_778_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_778_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_778_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r778-666ee1076b77",
   "ref": "release/778-regimen-contextual-save-return",
   "release": 778,
-  "request_id": "r778-666ee1076b77",
+  "request_id": "r778-install666ee107",
   "schema": 1,
-  "started_at_utc": "2026-11-24T16:11:12+00:00",
+  "started_at_utc": "2026-11-24T16:12:38+00:00",
   "status": "passed",
   "target": "666ee1076b77e723e414df208312ef51e123e635",
   "test_counts": [
