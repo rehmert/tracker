@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r777-deploy106ee409",
-  "action": "prod_deploy",
-  "release": 777,
-  "target": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
-  "base": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
-  "ref": "release/777-google-batch-title-csrf",
-  "previous_request_id": "r777-preflight106ee4"
+  "request_id": "r778-666ee1076b77",
+  "action": "qualify",
+  "release": 778,
+  "target": "666ee1076b77e723e414df208312ef51e123e635",
+  "base": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
+  "ref": "release/778-regimen-contextual-save-return",
+  "previous_request_id": null
 }
