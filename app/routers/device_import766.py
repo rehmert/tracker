@@ -141,7 +141,7 @@ def device_page766(
         .order_by(DeviceDay766.measured_on.desc(), DeviceDay766.id.desc())
         .limit(100)
     ))
-    return render(request, "device_import766.html", rows=rows)
+    return render(request, "device_import766.html", rows=rows, today=date.today().isoformat())
 
 
 @router.post("/device-import")
