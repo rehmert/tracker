@@ -1,0 +1,30 @@
+{
+  "action": "qualify",
+  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_workouts659.py",
+    "tests/test_workouts659.py",
+    "tests/test_workouts662.py",
+    "tests/test_workouts662.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-24T03:06:48+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_766_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_766_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_766_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/766-mobile-recipes-device-trends",
+  "release": 766,
+  "request_id": "r766-90306669eb8a",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T03:06:32+00:00",
+  "status": "failed",
+  "target": "90306669eb8ac9b35dbc739e44a1cd5ea4de7d80",
+  "test_counts": [
+    "81 passed, 1 warning"
+  ]
+}
