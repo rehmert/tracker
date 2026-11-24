@@ -1,10 +1,10 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r783-preflightb22e9599.json",
+  "receipt_path": "receipts/r783-prodb22e9599.json",
   "release": 783,
-  "request_id": "r783-preflightb22e9599",
+  "request_id": "r783-prodb22e9599",
   "schema": 1,
   "status": "passed",
   "target": "b22e9599ff260f26c08294c93d75b189ba48e7f2"
