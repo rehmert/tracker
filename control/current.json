@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r782-preflightedb79241",
-  "action": "prod_preflight",
+  "request_id": "r782-prodedb79241",
+  "action": "prod_deploy",
   "release": 782,
   "target": "edb792410539e5186e5b6c186d5b5c7ce8d137a5",
   "base": "8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
   "ref": "release/782-compact-gym",
-  "previous_request_id": "r782-installedb79241"
+  "previous_request_id": "r782-preflightedb79241"
 }
