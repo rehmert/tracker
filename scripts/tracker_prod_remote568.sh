@@ -156,6 +156,30 @@ if [[ "$RELEASE" == 767 || "$RELEASE" == 768 ]]; then
     fail "Release 767 PROD schema review or verified pre-install backup failed"
   echo "RELEASE_767_PROD_SCHEMA_BACKUP=PASSED"
 fi
+# Release 771 is a DEV-770-qualified code-only hardening step, but its
+# PROD 768 catch-up introduces the four Release 769 additive Tasks tables.
+# The legacy runner does not recognize this independently named model module.
+# Enforce the signed exact-source review and complete verified preinstall
+# backup/isolated restore BEFORE invoking that runner.
+if [[ "$RELEASE" == 771 ]]; then
+  [[ "$BASE" == 62a78b4f0b79f2f6762976c1231cab2f5f593f25 ]] ||
+    fail "Release 771 requires exact installed PROD Release 768 baseline"
+  GUARD_REL=scripts/tracker-prod-google-schema771.py
+  EXPECTED_GUARD="$(git rev-parse "$TARGET:$GUARD_REL")" ||
+    fail "Signed Google schema guard missing"
+  [[ "$EXPECTED_GUARD" =~ ^[0-9a-f]{40}$ ]] ||
+    fail "Invalid Google schema guard object"
+  GOOGLE_GUARD="$STAGE/pre-google-schema771.py"
+  git show "$TARGET:$GUARD_REL" > "$GOOGLE_GUARD" ||
+    fail "Cannot stage signed Google schema guard"
+  [[ -f "$GOOGLE_GUARD" && ! -L "$GOOGLE_GUARD" &&
+     "$(git hash-object "$GOOGLE_GUARD")" == "$EXPECTED_GUARD" ]] ||
+    fail "Pinned Google schema guard integrity failure"
+  PYTHONPATH="$APP" "$APP/.venv/bin/python" "$GOOGLE_GUARD" \
+    --app "$APP" --base "$BASE" --target "$TARGET" ||
+    fail "Release 771 PROD Google schema review and backup failed"
+  echo "RELEASE_771_PROD_SCOPED=PASSED"
+fi
 bash "$RUNNER" \
   --instance PROD \
   --base "$BASE" \
