@@ -1,0 +1,16 @@
+/* Release 766 recipe builder phone-first form and saved version management. */
+.recipe766-page {max-width:66rem;margin:0 auto;min-width:0;}
+.recipe766-nav {display:flex;flex-wrap:wrap;gap:.5rem;}
+.recipe766-nav a,.recipe766-record a {display:inline-flex;align-items:center;min-height:44px;}
+.recipe766-form {border:1px solid var(--border,#8998a7);border-radius:.75rem;padding:1rem;display:grid;gap:.6rem;margin:1rem 0;}
+.recipe766-form>label {display:grid;gap:.2rem;}
+.recipe766-ingredients {display:grid;gap:.55rem;}
+.recipe766-ingredient {display:grid;grid-template-columns:minmax(0,2fr) minmax(6rem,1fr);gap:.5rem;align-items:end;}
+.recipe766-ingredient label{display:grid;gap:.25rem;min-width:0;}
+.recipe766-ingredient select,.recipe766-ingredient input,.recipe766-form>label input {width:100%;min-width:0;min-height:48px;box-sizing:border-box;}
+.recipe766-form button,.recipe766-record button {min-height:48px;}
+.recipe766-record {border:1px solid var(--border,#8998a7);border-radius:.7rem;padding:.8rem;margin:.5rem 0;display:grid;gap:.4rem;min-width:0;}
+.recipe766-record small {display:block;opacity:.78;}
+.recipe766-record nav{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;}
+.recipe766-record nav form {margin:0;}
+@media(max-width:480px){.recipe766-ingredient {grid-template-columns:minmax(0,1fr);} .recipe766-form{padding:.7rem;}}

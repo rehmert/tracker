@@ -311,6 +311,8 @@ app.include_router(food_review378.router)
 app.include_router(food_week379.router)
 app.include_router(food_search380.router)
 app.include_router(food_duplicates629.router)
+from .routers import food_recipes766
+app.include_router(food_recipes766.router)
 app.include_router(session_login385.router)
 app.include_router(account_security386.router)
 app.include_router(user_management479.router)
