@@ -11,6 +11,7 @@
 .reg635-day{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
 .reg635-card{border:1px solid var(--border, #80808055);border-radius:10px;padding:1rem}
 .reg635-card h3{margin-top:0}
+[id^="reg635-schedule-"],[id^="reg635-item-"],#reg635-add-schedule{scroll-margin-top:5rem}
 .reg635-actions{display:flex;gap:.5rem;flex-wrap:wrap}
 .reg635-actions>details[open]{flex-basis:100%;min-width:0;order:2}
 .reg635-actions>details[open]>.reg635-form{min-width:0}
@@ -184,7 +185,7 @@ summary.reg737-native-disclosure{
 
 <section class="card" id="reg635-catalog">
 <h2>Catalog</h2>
-<details><summary class="reg737-native-disclosure"><strong>Add supplement or medication</strong></summary>
+<details id="reg635-add-item" {% if return_focus == 'add-item' %}open{% endif %}><summary class="reg737-native-disclosure"><strong>Add supplement or medication</strong></summary>
   <form method="post" action="/regimen/items" class="reg635-form" data-reg636-catalog>
     <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}">{{ kind|capitalize }}</option>{% endfor %}</select></label>
     <label class="field">Name <input name="name" maxlength="160" required></label>
@@ -230,7 +231,7 @@ summary.reg737-native-disclosure{
 </details>
 <div class="reg635-grid">
 {% for item in items %}
-<article class="reg635-card">
+<article class="reg635-card" id="reg635-item-{{ item.id }}">
   <h3>{{ item.name }} {% if not item.active %}<small>(Archived)</small>{% endif %}</h3>
   <p>{{ item.kind|capitalize }}{% if item.strength %} · {{ item.strength }}{% endif %}{% if item.form %} · {{ item.form }}{% endif %}</p>
   {% if item.ingredient %}<p>Ingredient: {{ item.ingredient }}</p>{% endif %}
@@ -264,7 +265,7 @@ summary.reg737-native-disclosure{
     </details>
   {% endif %}
   <div class="reg635-actions ux673-action-row reg733-action-row" data-reg732-item-actions data-reg733-item-actions>
-  <details class="reg733-edit-panel"><summary class="reg733-edit-trigger reg734-macd-action" data-reg733-edit>Edit {{ item.kind }}</summary>
+  <details class="reg733-edit-panel" {% if return_focus == 'item-' ~ item.id %}open{% endif %}><summary class="reg733-edit-trigger reg734-macd-action" data-reg733-edit>Edit {{ item.kind }}</summary>
     <form method="post" action="/regimen/items/{{ item.id }}/edit" class="reg635-form" data-reg636-catalog>
       <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}" {% if kind == item.kind %}selected{% endif %}>{{ kind|capitalize }}</option>{% endfor %}</select></label>
       <label class="field">Name <input name="name" value="{{ item.name }}" required maxlength="160"></label>
@@ -332,7 +333,7 @@ summary.reg737-native-disclosure{
 <section class="card" id="reg635-schedules">
 <h2>Schedules &amp; protocols</h2>
 <p class="note">Regimen schedules are independent from injectable PK protocols. Monday=0 through Sunday=6 for weekly schedules. Every-N-days is anchored to the selected start date. As-needed entries are never shown as automatically due.</p>
-<details><summary class="reg737-native-disclosure"><strong>Add schedule</strong></summary>
+<details id="reg635-add-schedule" {% if return_focus == 'add-schedule' %}open{% endif %}><summary class="reg737-native-disclosure"><strong>Add schedule</strong></summary>
 {% if items %}
 <form method="post" action="/regimen/schedules" class="reg635-form">
 <label class="field">Item <select name="item_id" data-reg731-item>{% for item in items if item.active %}<option value="{{ item.id }}" data-reg731-kind="{{ item.kind }}" data-reg731-strength="{{ tablet_strengths.get(item.id, '') }}">{{ item.name }}</option>{% endfor %}</select></label>
@@ -376,12 +377,12 @@ summary.reg737-native-disclosure{
 </details>
 <div class="reg635-grid">
 {% for schedule in schedules %}
-<article class="reg635-card">
+<article class="reg635-card" id="reg635-schedule-{{ schedule.id }}">
 <h3>{{ schedule.item.name }}{% if not schedule.active %} (Stopped){% endif %}</h3>
 <p>{{ schedule.amount }} · {{ schedule.cadence }}{% if schedule.cadence == 'weekly' %} ({{ schedule.weekdays }}){% endif %}{% if schedule.cadence == 'interval' %} (every {{ schedule.interval_days }} days){% endif %}{% if schedule.at_time %} · {{ schedule.at_time }}{% endif %}</p>
 <p class="note">{{ schedule.start_on }}{% if schedule.end_on %} – {{ schedule.end_on }}{% endif %}{% if schedule.meal %} · {{ schedule.meal }}{% endif %}</p>
 <div class="reg635-actions ux673-action-row reg733-action-row" data-reg733-schedule-actions>
-<details class="reg733-edit-panel"><summary class="reg733-edit-trigger reg734-macd-action" data-reg733-edit>Edit schedule</summary>
+<details class="reg733-edit-panel" {% if return_focus == 'schedule-' ~ schedule.id %}open{% endif %}><summary class="reg733-edit-trigger reg734-macd-action" data-reg733-edit>Edit schedule</summary>
 <form method="post" action="/regimen/schedules/{{ schedule.id }}/edit" class="reg635-form">
 <label class="field">Cadence <select name="cadence">{% for cadence in ['daily','weekly','interval','prn'] %}<option value="{{ cadence }}" {% if schedule.cadence == cadence %}selected{% endif %}>{{ cadence }}</option>{% endfor %}</select></label>
 <label class="field">Weekdays (0–6) <input name="weekdays" value="{{ schedule.weekdays }}"></label>

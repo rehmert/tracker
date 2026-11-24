@@ -272,13 +272,29 @@ def _get(db, kind, ident):
     return obj
 
 
-def _redirect(day=None, msg="", err=""):
+def _redirect(day=None, msg="", err="", focus=""):
+    """Post/redirect/get, returning to the relevant regimen form after reload.
+
+    The URL fragment is appended *after* flash_redirect's query string so
+    browsers scroll to the saved record without weakening the PRG workflow.
+    """
+    if focus and not re.fullmatch(
+        r"(?:schedule|item)-[1-9][0-9]*|add-schedule|add-item|schedules|catalog",
+        focus,
+    ):
+        raise ValueError("Invalid regimen return destination")
     back = "/regimen" + (f"?day={day.isoformat()}" if day else "")
-    return services.flash_redirect(back, msg=msg, err=err)
+    if focus:
+        back += ("&" if "?" in back else "?") + f"focus={focus}"
+    response = services.flash_redirect(back, msg=msg, err=err)
+    if focus:
+        response.headers["location"] += f"#reg635-{focus}"
+    return response
 
 
 @router.get("/regimen")
-def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scoped_db390)):
+def regimen_page(request: Request, day: str = "", focus: str = "",
+                 db: Session = Depends(get_scoped_db390)):
     try:
         selected = _day(day, date.today())
     except ValueError:
@@ -346,7 +362,7 @@ def regimen_page(request: Request, day: str = "", db: Session = Depends(get_scop
         tablet_plans=tablet_plans, tablet_entries=tablet_entries,
         tablet_strengths=tablet_strengths, tablet_fmt=tablets731.format_number,
         schedule_counts=schedule_counts, entry_counts=entry_counts,
-        schedule_entry_counts=schedule_entry_counts,
+        schedule_entry_counts=schedule_entry_counts, return_focus=focus,
     )
 
 
@@ -357,16 +373,16 @@ async def create_item(request: Request, db: Session = Depends(get_scoped_db390))
         values = _item_values(form)
         facts = _facts_values(form)
     except ValueError as exc:
-        return _redirect(err=str(exc))
+        return _redirect(err=str(exc), focus="add-item")
     if not reserve_inventory_write(db):
-        return _redirect(err="Database is busy.")
+        return _redirect(err="Database is busy.", focus="add-item")
     item = RegimenItem(**values)
     db.add(item)
     db.flush()
     _store_facts(db, item.id, facts)
     _audit(db, "regimen_item", item.id, "create", after=values)
     db.commit()
-    return _redirect(msg="Catalog item added.")
+    return _redirect(msg="Catalog item added.", focus=f"item-{item.id}")
 
 
 @router.post("/regimen/items/{item_id}/edit")
@@ -376,9 +392,9 @@ async def edit_item(item_id: int, request: Request, db: Session = Depends(get_sc
         values = _item_values(form)
         facts = _facts_values(form)
     except ValueError as exc:
-        return _redirect(err=str(exc))
+        return _redirect(err=str(exc), focus=f"item-{item_id}")
     if not reserve_inventory_write(db):
-        return _redirect(err="Database is busy.")
+        return _redirect(err="Database is busy.", focus=f"item-{item_id}")
     item = _get(db, "item", item_id)
     before = {key: getattr(item, key) for key in values}
     before["active"] = item.active
@@ -391,7 +407,7 @@ async def edit_item(item_id: int, request: Request, db: Session = Depends(get_sc
     if before != after:
         _audit(db, "regimen_item", item.id, "edit", before, after)
     db.commit()
-    return _redirect(msg="Catalog item updated.")
+    return _redirect(msg="Catalog item updated.", focus=f"item-{item_id}")
 
 
 @router.post("/regimen/items/{item_id}/archive")
@@ -522,12 +538,12 @@ async def create_schedule(request: Request, db: Session = Depends(get_scoped_db3
         tablet_plan = _schedule_tablet(form, item)
         values = _schedule_values(form, tablet_plan=tablet_plan)
     except (ValueError, TypeError) as exc:
-        return _redirect(err=str(exc))
+        return _redirect(err=str(exc), focus="add-schedule")
     if not reserve_inventory_write(db):
-        return _redirect(err="Database is busy.")
+        return _redirect(err="Database is busy.", focus="add-schedule")
     if not item.active:
         db.rollback()
-        return _redirect(err="Cannot schedule an archived item.")
+        return _redirect(err="Cannot schedule an archived item.", focus="add-schedule")
     schedule = RegimenSchedule(item_id=item_id, **values)
     db.add(schedule)
     db.flush()
@@ -536,7 +552,7 @@ async def create_schedule(request: Request, db: Session = Depends(get_scoped_db3
         item_id=item_id, cadence=values["cadence"], amount=values["amount"]
     ))
     db.commit()
-    return _redirect(msg="Schedule created.")
+    return _redirect(msg="Schedule created.", focus=f"schedule-{schedule.id}")
 
 
 @router.post("/regimen/schedules/{schedule_id}/edit")
@@ -547,9 +563,9 @@ async def edit_schedule(schedule_id: int, request: Request, db: Session = Depend
         tablet_plan = _schedule_tablet(form, schedule.item)
         values = _schedule_values(form, tablet_plan=tablet_plan)
     except ValueError as exc:
-        return _redirect(err=str(exc))
+        return _redirect(err=str(exc), focus=f"schedule-{schedule_id}")
     if not reserve_inventory_write(db):
-        return _redirect(err="Database is busy.")
+        return _redirect(err="Database is busy.", focus=f"schedule-{schedule_id}")
     before = {key: getattr(schedule, key) for key in values}
     before["active"] = schedule.active
     for key, value in values.items():
@@ -564,7 +580,7 @@ async def edit_schedule(schedule_id: int, request: Request, db: Session = Depend
     if before != after:
         _audit(db, "regimen_schedule", schedule.id, "edit", encode(before), encode(after))
     db.commit()
-    return _redirect(msg="Schedule updated.")
+    return _redirect(msg="Schedule updated.", focus=f"schedule-{schedule_id}")
 
 
 @router.post("/regimen/schedules/{schedule_id}/stop")
@@ -578,7 +594,7 @@ def stop_schedule(schedule_id: int, db: Session = Depends(get_scoped_db390)):
         _audit(db, "regimen_schedule", schedule.id, "stop",
                {"active": True}, {"active": False})
     db.commit()
-    return _redirect(msg="Schedule stopped; historical entries retained.")
+    return _redirect(msg="Schedule stopped; historical entries retained.", focus=f"schedule-{schedule_id}")
 
 
 @router.post("/regimen/schedules/{schedule_id}/delete")
@@ -587,15 +603,15 @@ async def delete_schedule(schedule_id: int, request: Request,
     """Delete accidental empty schedules; retain any schedule with actual intake."""
     form = await request.form()
     if str(form.get("confirm_delete", "")) != "delete":
-        return _redirect(err="Confirm schedule deletion.")
+        return _redirect(err="Confirm schedule deletion.", focus=f"schedule-{schedule_id}")
     if not reserve_inventory_write(db):
-        return _redirect(err="Database is busy.")
+        return _redirect(err="Database is busy.", focus=f"schedule-{schedule_id}")
     schedule = _get(db, "schedule", schedule_id)
     if db.scalar(select(RegimenEntry.id).where(
         RegimenEntry.schedule_id == schedule.id
     ).limit(1)) is not None:
         db.rollback()
-        return _redirect(err="Schedule has recorded intake; stop it to preserve history.")
+        return _redirect(err="Schedule has recorded intake; stop it to preserve history.", focus=f"schedule-{schedule_id}")
     _audit(db, "regimen_schedule", schedule.id, "delete", before={
         "item_id": schedule.item_id, "cadence": schedule.cadence,
         "amount": schedule.amount, "active": schedule.active,
@@ -603,7 +619,7 @@ async def delete_schedule(schedule_id: int, request: Request,
     _store_tablet_plan(db, schedule.id, None)
     db.delete(schedule)
     db.commit()
-    return _redirect(msg="Schedule deleted; audit preserved.")
+    return _redirect(msg="Schedule deleted; audit preserved.", focus="schedules")
 
 
 def _entry_values(form, db, *, existing=None):
