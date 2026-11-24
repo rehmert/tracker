@@ -1,0 +1,36 @@
+<section id="google-protocol-review783" class="card" aria-labelledby="google-protocol-review-heading783">
+  <h2 id="google-protocol-review-heading783">Google Tasks — pending administrations ({{ google_review_rows|length }})</h2>
+  {% if request.query_params.get('review_error') %}<p class="error" role="alert">{{ request.query_params.get('review_error') }}</p>{% endif %}
+  {% if request.query_params.get('review_saved') %}<p role="status">Selected administrations reconciled.</p>{% endif %}
+  {% if google_review_rows %}
+  <p class="note">Already checked off in Google. Match an existing log or confirm the actual source, amount and time. Do not administer another dose just to clear a task.</p>
+  <form method="post" action="/integrations/google-tasks/reconcile">
+    {% for row in google_review_rows %}
+    {% set link = row.link %}
+    <div class="card" style="margin:.5rem 0">
+      <strong>{% if row.item %}{{ row.item.compound.name }} · {{ row.item.protocol.name }}{% else %}Former protocol item #{{ link.source_id }}{% endif %}</strong>
+      <p>{{ link.scheduled_on }} · {{ link.scheduled_time or 'No scheduled time' }}{% if row.item %} · Current plan: {{ row.item.amount_value|num_input }} {{ row.item.amount_unit }}{% endif %}</p>
+      <p class="note">{{ row.reason }}</p>
+      <label class="field"><span>Reconcile with</span>
+        <select name="choice_{{ link.key }}">
+          <option value="">Leave pending</option>
+          {% for value, label in row.choices %}<option value="{{ value }}">Existing log: {{ label }}</option>{% endfor %}
+          {% for vial in row.vials %}<option value="vial:{{ vial.id }}">Record planned amount — {{ vial.label or ('Vial #' ~ vial.id) }}</option>{% endfor %}
+        </select>
+      </label>
+      {% if row.vials %}
+      <label class="field"><span>Actual administration time (verify before saving)</span>
+        <input type="datetime-local" name="when_{{ link.key }}" value="{{ row.when }}">
+      </label>
+      {% endif %}
+      {% if row.item %}
+      <a class="button" href="/dose-workspace?compound_id={{ row.item.compound_id }}&amp;planned_date={{ link.scheduled_on }}&amp;planned_time={{ link.scheduled_time|urlencode }}&amp;planned_amount={{ row.item.amount_value }}&amp;planned_unit={{ row.item.amount_unit|urlencode }}">Review in Dose Workspace</a>
+      <a class="button" href="/doses?compound_id={{ row.item.compound_id }}&amp;history_date={{ link.scheduled_on }}#dose-history-unified614">Recorded history</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+    <label><input type="checkbox" name="confirm" value="yes" required> I verified the selected administrations, amounts, sources and times.</label>
+    <button type="submit" class="primary">Save selected reconciliations</button>
+  </form>
+  {% else %}<p>No outstanding Google protocol completions.</p>{% endif %}
+</section>
