@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r777-106ee409067c",
-  "action": "qualify",
+  "request_id": "r777-install106ee409",
+  "action": "dev_install",
   "release": 777,
   "target": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
   "base": "03e4f6f644566bb270d0027a369083972820a602",
   "ref": "release/777-google-batch-title-csrf",
-  "previous_request_id": null
+  "previous_request_id": "r777-106ee409067c"
 }
