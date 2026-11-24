@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r778-preflight666ee1",
-  "action": "prod_preflight",
+  "request_id": "r778-deploy666ee107",
+  "action": "prod_deploy",
   "release": 778,
   "target": "666ee1076b77e723e414df208312ef51e123e635",
   "base": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
   "ref": "release/778-regimen-contextual-save-return",
-  "previous_request_id": "r778-install666ee107"
+  "previous_request_id": "r778-preflight666ee1"
 }
