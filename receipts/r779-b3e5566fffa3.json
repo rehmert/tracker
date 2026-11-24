@@ -1,0 +1,22 @@
+{
+  "action": "qualify",
+  "base": "666ee1076b77e723e414df208312ef51e123e635",
+  "exit_code": 1,
+  "failed_tests": [],
+  "failure_category": "AssetImpactPreflight",
+  "finished_at_utc": "2026-11-24T16:25:15+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=FAILED",
+    "RELEASE_779_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_779_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/779-colon-free-24h-entry",
+  "release": 779,
+  "request_id": "r779-b3e5566fffa3",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T16:25:12+00:00",
+  "status": "failed",
+  "target": "b3e5566fffa32cfa4d5d2e2cad69c2090bb7a575",
+  "test_counts": []
+}
