@@ -172,7 +172,7 @@ def test_768_bootstrap_is_valid_bash_before_any_privileged_action():
     )
     assert syntax.returncode == 0, syntax.stderr
     # A comparison must not break immediately after '==' inside [[ ]].
-    assert "==\\n" not in bootstrap.read_text()
+    assert "==\n" not in bootstrap.read_text()
 
 
 def test_768_bootstrap_changes_only_host_agent_after_isolated_checks():
