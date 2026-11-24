@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r767-5d23aaf4f7e7",
-  "action": "qualify",
+  "request_id": "r767-install5d23aaf4",
+  "action": "dev_install",
   "release": 767,
   "target": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
   "base": "45263b9659232b6ac6a922da38599f92842a32d8",
   "ref": "release/767-prod-device-schema-guard",
-  "previous_request_id": null
+  "previous_request_id": "r767-5d23aaf4f7e7"
 }
