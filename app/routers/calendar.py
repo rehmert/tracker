@@ -17,6 +17,7 @@ from ..templating import render
 from .. import calendar as cal
 from ..services import vial_views
 from ..calendar_vial_math756 import vial_choices756
+from ..google_protocol_review783 import pending_links783, review_rows783
 
 router = APIRouter()
 
@@ -82,13 +83,15 @@ def calendar_status_counts(days: list[dict]) -> dict[str, int]:
             continue
         for event in day["events"]:
             status = event.get("status")
-            if status in counts:
+            if status == "pending_review":
+                counts[status] = counts.get(status, 0) + 1
+            elif status in counts:
                 counts[status] += 1
     return counts
 
 
 
-_REVIEW_STATUSES = frozenset(("unrecorded", "due", "upcoming"))
+_REVIEW_STATUSES = frozenset(("unrecorded", "due", "upcoming", "pending_review"))
 
 
 def calendar_review_items(days: list[dict]) -> list[dict]:
@@ -206,6 +209,13 @@ def _month_events(shown: date, db: Session):
                 'blend_id': draw.blend_id,
             })
     events = reconcile(planned, actual, today)
+    pending = {(x.source_id, x.scheduled_on, x.scheduled_time or "") for x in pending_links783(db)}
+    for day, entries in events.items():
+        for event in entries:
+            if (event.get("protocol_item_id"), day, event.get("dose_time") or "") in pending:
+                event["google_pending"] = True
+                if event["status"] in ("due", "upcoming", "unrecorded"):
+                    event["status"] = "pending_review"
     return first, end, events, missing_start
 
 
@@ -226,7 +236,7 @@ def calendar_page(request: Request, month: str = '', db: Session = Depends(get_s
     review_items = calendar_review_items(days)
     return render(request, 'calendar.html', days=days, shown=shown,
                   today=date.today(), status_counts=status_counts,
-                  review_items=review_items,
+                  review_items=review_items, google_review_rows=review_rows783(db),
                   calendar_total=sum(status_counts.values()),
                   exclusions=list(db.scalars(select(ProjectionExclusion).order_by(ProjectionExclusion.scheduled_on.desc(), ProjectionExclusion.id.desc()))),
                   missing_start=missing_start,
@@ -247,6 +257,7 @@ def export_calendar_review_csv(month: str = '', db: Session = Depends(get_scoped
         'unrecorded': 'No matching log',
         'due': 'Due today',
         'upcoming': 'Upcoming',
+        'pending_review': 'Google completed; pending review',
     }
     output = StringIO(newline='')
     writer = csv.writer(output)
