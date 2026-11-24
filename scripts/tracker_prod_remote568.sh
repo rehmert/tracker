@@ -7,7 +7,7 @@ APP=/opt/tracker
 ROOT=/etc/tracker-release
 fail() { echo "REMOTE_FAIL: $*" >&2; exit 1; }
 STAGE=""
-trap 'rc=$?; if [[ -n "$STAGE" ]]; then rm -f -- "$STAGE/runner.sh" "$STAGE/pre-schema-backup767.py" "$STAGE/pre-google-schema771.py" || true; rmdir -- "$STAGE" || true; fi; echo "REMOTE_DEPLOY_EXIT_STATUS=$rc"' EXIT
+trap 'rc=$?; if [[ -n "$STAGE" ]]; then rm -f -- "$STAGE/runner.sh" "$STAGE/pre-schema-backup767.py" "$STAGE/pre-google-schema771.py" "$STAGE/pre-google-titles773.py" || true; rmdir -- "$STAGE" || true; fi; echo "REMOTE_DEPLOY_EXIT_STATUS=$rc"' EXIT
 
 [[ $# -eq 3 ]] || fail "Expected exact base, target and release"
 BASE="$1"
@@ -179,6 +179,29 @@ if [[ "$RELEASE" == 771 ]]; then
     --app "$APP" --base "$BASE" --target "$TARGET" ||
     fail "Release 771 PROD Google schema review and backup failed"
   echo "RELEASE_771_PROD_SCOPED=PASSED"
+fi
+# Release 773 introduces one new independent Google Tasks title table.
+# The shared runner's legacy migration matcher does not inspect this module.
+# Signed exact-source review, database verification and a complete private
+# restore-tested backup MUST precede installing the target on PROD.
+if [[ "$RELEASE" == 773 ]]; then
+  [[ "$BASE" == 47642b465b1cb98f40aab2ce68c6a7526394298d ]] ||
+    fail "Release 773 requires exact installed PROD 772 baseline"
+  GUARD_REL=scripts/tracker-prod-google-titles773.py
+  EXPECTED_GUARD="$(git rev-parse "$TARGET:$GUARD_REL")" ||
+    fail "Signed Google title schema guard unavailable"
+  [[ "$EXPECTED_GUARD" =~ ^[0-9a-f]{40}$ ]] ||
+    fail "Invalid signed guard object"
+  TITLE_GUARD="$STAGE/pre-google-titles773.py"
+  git show "$TARGET:$GUARD_REL" > "$TITLE_GUARD" ||
+    fail "Cannot stage signed Google title schema guard"
+  [[ -f "$TITLE_GUARD" && ! -L "$TITLE_GUARD" &&
+     "$(git hash-object "$TITLE_GUARD")" == "$EXPECTED_GUARD" ]] ||
+    fail "Pinned Google title schema guard integrity failure"
+  PYTHONPATH="$APP" "$APP/.venv/bin/python" "$TITLE_GUARD" \
+    --app "$APP" --base "$BASE" --target "$TARGET" ||
+    fail "Release 773 verified PROD schema backup failed"
+  echo "RELEASE_773_PROD_SCHEMA_BACKUP=PASSED"
 fi
 bash "$RUNNER" \
   --instance PROD \
