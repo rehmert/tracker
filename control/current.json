@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r771-4432af2202d7",
+  "request_id": "r771-ac330a08ffa4",
   "action": "qualify",
   "release": 771,
-  "target": "4432af2202d7fdc89d2091529ae522c61cea6159",
+  "target": "ac330a08ffa4ff49ca86e034b9aa81f4e583a8c7",
   "base": "a236ef996c725a231b6420ebf41dd63bf506e8bc",
   "ref": "release/771-google-tasks-prod-schema-catchup",
   "previous_request_id": null
