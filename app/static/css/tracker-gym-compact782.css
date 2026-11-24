@@ -1,0 +1,52 @@
+/* Scoped to Rapid Gym; keep all native actions and inputs. */
+#workout659-root .gym782-disclosure {margin:.25rem 0;min-width:0}
+#workout659-root .gym782-disclosure > summary {display:list-item;cursor:pointer;min-height:44px;padding:.6rem .2rem;box-sizing:border-box;font-weight:650;overflow-wrap:anywhere}
+#workout659-root .gym782-more {border-top:1px solid var(--rule,#8998a7)}
+#workout659-root .gym782-disclosure > summary:focus-visible {outline:2px solid var(--teal,#1265ad);outline-offset:2px}
+@media(max-width:760px){
+ #workout659-root[data-compact782="active"] {padding:0;margin-bottom:1rem}
+ #workout659-root[data-compact782="active"] .workout659-header {gap:.25rem;align-items:center}
+ #workout659-root[data-compact782="active"] .workout659-header h1 {font-size:1.15rem;margin:.15rem 0}
+ #workout659-root[data-compact782="active"] .workout659-header .workout659-muted {font-size:.78rem;margin:.15rem 0}
+ #workout659-root[data-compact782="active"] .workout659-state {font-size:.75rem;padding:.2rem .4rem}
+ #workout659-root .ux675-gym-top {margin:.15rem 0;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #workout659-root .workout659-panel {padding:.6rem;margin:.4rem 0}
+ #workout659-root .workout659-progress {padding:.35rem .5rem;gap:.15rem .5rem;align-items:center}
+ #workout659-root .workout659-progress .gym782-disclosure {flex-basis:100%;margin:0}
+ #workout659-root .workout662-directory {margin:0;padding:0 .35rem}
+ #workout659-root .workout662-directory summary {min-height:44px;box-sizing:border-box;padding:.55rem 0}
+ #workout659-root .workout659-machine-heading {margin-top:.35rem}
+ #workout659-root .workout659-machine-heading h2 {margin:.15rem 0;font-size:1.25rem}
+ #workout659-root .workout659-machine-heading p {margin:.15rem 0;font-size:.85rem}
+ #workout659-root .workout659-prior {flex-direction:row;flex-wrap:wrap;align-items:center;gap:.15rem .45rem;padding:.25rem .45rem;margin:.25rem 0}
+ #workout659-root .workout659-prior strong {font-size:1rem}
+ #workout659-root .workout659-prior span {font-size:.8rem}
+ #workout659-root .workout659-prior a {margin-left:auto;font-size:.8rem;padding:.25rem .4rem}
+ #workout659-root .workout766-handoff {margin:.25rem 0;gap:.15rem}
+ #workout659-root .workout766-handoff a {flex:1 1 0;min-height:44px;padding:.25rem;font-size:.8rem}
+ #workout659-root #workout766-connection {font-size:.72rem}
+ #workout659-root .workout659-number-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;margin:.35rem 0}
+ #workout659-root .workout659-number-control > label {font-size:.85rem;margin-bottom:.15rem}
+ #workout659-root .workout659-stepper {gap:2px}
+ #workout659-root .workout659-stepper button {flex:0 0 44px;min-width:44px;min-height:44px;padding:0;font-size:.85rem}
+ #workout659-root .workout659-stepper input {flex:1 1 0;width:0;min-width:0;padding:0 2px;font-size:16px}
+ #workout659-root .workout667-set-kind {margin:.25rem 0;padding:0 .25rem;gap:0 .5rem;border:0}
+ #workout659-root .workout667-set-kind legend {font-size:.8rem}
+ #workout659-root .workout667-set-kind label {font-size:.85rem;min-height:44px}
+ #workout659-root .workout667-set-kind input {min-height:0}
+ #workout659-root .workout659-main-button {min-height:48px!important}
+ #workout659-root .workout659-rest-panel {display:grid;grid-template-columns:1fr 1fr;gap:.25rem .5rem;align-items:center}
+ #workout659-root .workout659-rest-header {grid-column:1/-1;gap:.25rem}
+ #workout659-root .workout659-rest-header h2 {font-size:1rem;margin:0}
+ #workout659-root #workout659-rest-display {font-size:2rem;margin:.1rem 0;text-align:left}
+ #workout659-root #workout659-rest-status {grid-column:1/-1;grid-row:3;font-size:.78rem;margin:0}
+ #workout659-root .workout659-rest-buttons {gap:.25rem}
+ #workout659-root .workout659-rest-buttons button {font-size:.8rem;padding:.2rem;min-width:0;min-height:44px}
+ #workout659-root .workout659-logged p {margin:.25rem 0;font-size:.85rem}
+ #workout659-root .workout659-logged h2 {font-size:1rem}
+}
+@media(max-width:350px){
+ #workout659-root .workout659-number-grid {grid-template-columns:1fr}
+ #workout659-root .workout659-rest-panel {grid-template-columns:1fr}
+ #workout659-root #workout659-rest-status {grid-row:auto}
+}
