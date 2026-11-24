@@ -98,6 +98,27 @@ time.value = '09:15';
 time.dispatchEvent({type:'input'});
 assert.equal(original.value, '2026-11-04T09:15');
 
+time.value = '0730';
+time.dispatchEvent({type:'input'});
+assert.equal(original.value, '2026-11-04T07:30');
+time.dispatchEvent({type:'blur'});
+assert.equal(time.value, '07:30');
+
+time.value = '930';
+time.dispatchEvent({type:'input'});
+assert.equal(original.value, '2026-11-04T09:30');
+time.dispatchEvent({type:'change'});
+assert.equal(time.value, '09:30');
+
+time.value = '2130';
+time.dispatchEvent({type:'input'});
+assert.equal(original.value, '2026-11-04T21:30');
+
+time.value = '2400';
+time.dispatchEvent({type:'input'});
+assert.equal(original.value, '');
+assert(time.invalid);
+
 time.value = '29:15';
 time.dispatchEvent({type:'input'});
 assert.equal(original.value, '');
