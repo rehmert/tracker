@@ -16,6 +16,7 @@ from ..dashboard_forecast752 import build_dashboard_forecasts752
 from ..models import DoseLog, Vial, VitalReading, Protocol
 from ..templating import render
 from ..units import to_base, parse_unit, UnitError
+from ..google_protocol_review783 import pending_links783
 
 router = APIRouter()
 
@@ -202,7 +203,7 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
         metric_sparklines=metric_sparklines,
         today_summary=today_summary, dashboard_upcoming=dashboard_upcoming,
         recent_administrations=recent_administrations,
-        now_date=today_date,
+        now_date=today_date, google_pending_count=len(pending_links783(db)),
         workout_summary=workout_dashboard661(
             db, today_date, page=workout_page or 1,
             expanded=workout_page is not None,
