@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r776-03e4f6f64456.json",
+  "receipt_path": "receipts/r776-install03e4f6f6.json",
   "release": 776,
-  "request_id": "r776-03e4f6f64456",
+  "request_id": "r776-install03e4f6f6",
   "schema": 1,
   "status": "passed",
   "target": "03e4f6f644566bb270d0027a369083972820a602"
