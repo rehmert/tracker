@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r769-9f3e1154f30d",
-  "action": "qualify",
+  "request_id": "r769-install9f3e1154",
+  "action": "dev_install",
   "release": 769,
   "target": "9f3e1154f30d5b2711957f51c675006f666d3440",
   "base": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
   "ref": "release/769-google-tasks-medications-supplements-protocols",
-  "previous_request_id": null
+  "previous_request_id": "r769-9f3e1154f30d"
 }
