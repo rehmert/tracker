@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r779-de07ebbbf0e7",
-  "action": "qualify",
+  "request_id": "r779-installde07ebbb",
+  "action": "dev_install",
   "release": 779,
   "target": "de07ebbbf0e7e2095bdcb2996ce3f4cb776e3205",
   "base": "666ee1076b77e723e414df208312ef51e123e635",
   "ref": "release/779-colon-free-24h-entry",
-  "previous_request_id": null
+  "previous_request_id": "r779-de07ebbbf0e7"
 }
