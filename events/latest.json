@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r778-666ee1076b77.json",
+  "receipt_path": "receipts/r778-install666ee107.json",
   "release": 778,
-  "request_id": "r778-666ee1076b77",
+  "request_id": "r778-install666ee107",
   "schema": 1,
   "status": "passed",
   "target": "666ee1076b77e723e414df208312ef51e123e635"
