@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r766-90306669eb8a",
+  "request_id": "r766-45263b965923",
   "action": "qualify",
   "release": 766,
-  "target": "90306669eb8ac9b35dbc739e44a1cd5ea4de7d80",
+  "target": "45263b9659232b6ac6a922da38599f92842a32d8",
   "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
   "ref": "release/766-mobile-recipes-device-trends",
   "previous_request_id": null
