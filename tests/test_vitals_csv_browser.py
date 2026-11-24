@@ -277,3 +277,33 @@ def test_785_event_pagination_is_independent(browser):
     assert markers.first.inner_text() == "Event 5"
     assert not errors, errors
     page.close()
+
+
+def test_786_compact_vitals_rows_preserve_mobile_actions(browser):
+    page = browser.new_page(viewport={"width": 1100, "height": 800})
+    css = ROOT / "app/static/css/tracker-vitals-tools.css"
+    rows = "".join(
+        f'<tr data-vitals-when="2026-11-{i:02d}T08:00:00"><td>Day {i}</td><td>180</td>'
+        '<td>120/80</td><td>70</td><td>Context</td><td class="vitals-notes783"><a href="#note">More</a></td>'
+        '<td class="vitals-actions783"><form style="display:inline"><button>Edit</button></form><button>Delete</button></td></tr>'
+        for i in range(8, 0, -1)
+    )
+    markup = html(rows).replace("<body>", '<body><main id="main-content">').replace("</body>", "</main></body>")
+    page.set_content(markup)
+    page.add_style_tag(content="table { border-collapse:collapse; font-size:16px; } td,th { padding:10px; line-height:1.5; } button { padding:8px; }")
+    page.add_style_tag(path=str(css))
+    page.add_script_tag(path=str(SCRIPT))
+    for selector in ("[data-vitals-table]", "[data-vitals-dose-table]", "[data-vitals-marker-table]"):
+        table = page.locator(selector)
+        cell = table.locator("tbody tr:not([hidden]) td").first
+        assert float(cell.evaluate("(el) => parseFloat(getComputedStyle(el).paddingTop)")) <= 3
+        assert table.locator("tbody tr:not([hidden])").count() == 5
+        assert table.locator("tbody tr[hidden]").first.bounding_box() is None
+    assert page.locator("[data-vitals-table] tbody tr:not([hidden])").first.bounding_box()["height"] <= 36
+    page.set_viewport_size({"width": 390, "height": 800})
+    reading = page.locator("[data-vitals-table] tbody tr:not([hidden])").first
+    assert reading.bounding_box()["height"] <= 125
+    assert reading.locator("button").first.bounding_box()["height"] >= 44
+    page.locator("[data-marker-next]").click()
+    assert page.locator("[data-vitals-marker-table] tbody tr:not([hidden])").count() == 5
+    page.close()
