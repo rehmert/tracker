@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r772-deploy47642b46",
-  "action": "prod_deploy",
-  "release": 772,
-  "target": "47642b465b1cb98f40aab2ce68c6a7526394298d",
-  "base": "ac330a08ffa4ff49ca86e034b9aa81f4e583a8c7",
-  "ref": "release/772-google-tasks-active-protocols-only",
-  "previous_request_id": "r772-preflight47642b"
+  "request_id": "r773-ff9946bc6edd",
+  "action": "qualify",
+  "release": 773,
+  "target": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
+  "base": "47642b465b1cb98f40aab2ce68c6a7526394298d",
+  "ref": "release/773-google-tasks-custom-titles",
+  "previous_request_id": null
 }
