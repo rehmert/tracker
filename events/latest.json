@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r773-installff9946bc.json",
+  "receipt_path": "receipts/r773-preflightff9946.json",
   "release": 773,
-  "request_id": "r773-installff9946bc",
+  "request_id": "r773-preflightff9946",
   "schema": 1,
   "status": "passed",
   "target": "ff9946bc6edd4e3091d389a50202b170c93c78ce"
