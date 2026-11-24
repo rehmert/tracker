@@ -144,6 +144,13 @@ def test_768_controller_continues_to_forbid_generic_failed_deploys():
         agent.validate_control_transition(old, recovery_command(), receipt)
 
 
+def test_768_promoter_retains_705_no_environment_path_contract():
+    source = (SCRIPTS / "tracker_promote568.py").read_text()
+    assert '"/etc/tracker.env"' not in source
+    assert '"if not path.is_absolute():" not in source' in source
+    assert '"path = root / path" not in source' in source
+
+
 def test_768_promoter_requires_exact_existing_main_and_prod_base():
     target = subprocess.check_output(["git", "rev-parse", "HEAD"],
                                      cwd=ROOT, text=True).strip()

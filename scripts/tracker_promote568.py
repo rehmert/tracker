@@ -269,7 +269,9 @@ def recovery_768_main_allowed(main: str, target: str, base: str) -> bool:
             return False
         source = git("show", f"{target}:scripts/tracker-prod-schema-backup767.py")
         if ("def resolve_data_dir768(" not in source
-                or 'return resolve_data_dir768(Path("/opt/tracker"), Path("/etc/tracker.env"))' not in source):
+                or "if not path.is_absolute():" not in source
+                or "path = root / path" not in source
+                or "return resolve_data_dir768(" not in source):
             return False
         remote_guard = git("show", f"{target}:scripts/tracker_prod_remote568.sh")
         if '[[ "$RELEASE" == 767 || "$RELEASE" == 768 ]]' not in remote_guard:
