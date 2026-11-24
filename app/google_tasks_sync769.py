@@ -1,8 +1,7 @@
 """Workspace-local Google Tasks reconciliation.
 
-No background network calls until OAuth and explicit enablement. Only regimen
-intakes are imported automatically. Protocol completions are recorded as pending
-inventory reconciliation; projecting a dose never selects or consumes vials.
+No background network calls until OAuth and explicit enablement. Regimen intakes and strictly unambiguous user-completed protocol tasks
+are reconciled. Other protocol completions require review.
 """
 import fcntl
 import hashlib
@@ -23,6 +22,7 @@ from .google_tasks_projection769 import projected769, KINDS
 from .models import RegimenEntry, RegimenSchedule, RegimenTabletSchedule731, RegimenTabletEntry731
 from .routers.regimen635 import _audit, _entry_snapshot
 from .inventory_lock import reserve_inventory_write
+from .google_protocol_review783 import auto_reconcile783
 
 EASTERN = ZoneInfo("America/New_York")
 LIST_NAMES = {
@@ -170,11 +170,15 @@ def _sync_locked769(db):
             if not remote or remote.get("deleted"):
                 link.removed = True
                 continue
+            was_completed = link.last_status == "completed"
             link.last_status = remote.get("status", "needsAction")
             db.commit()  # Close read transaction before reserved regimen write.
             if link.last_status == "completed":
                 if link.kind == "protocol":
-                    counts["pending_protocols"] += 1
+                    if not was_completed:
+                        auto_reconcile783(db, link.key, remote, _fingerprint)
+                    if link.imported_entry_id is None:
+                        counts["pending_protocols"] += 1
                 elif link.kind in ("medication", "supplement"):
                     before = link.imported_entry_id
                     _import_completed_regimen(db, link, remote)
@@ -299,7 +303,9 @@ def _sync_completions_locked780(db):
             link.last_status = "completed"
             db.commit()  # Close read transaction before reserved regimen write.
             if link.kind == "protocol":
-                counts["pending_protocols"] += 1
+                auto_reconcile783(db, link.key, remote, _fingerprint)
+                if link.imported_entry_id is None:
+                    counts["pending_protocols"] += 1
             elif link.kind in ("medication", "supplement"):
                 before = link.imported_entry_id
                 _import_completed_regimen(db, link, remote)
