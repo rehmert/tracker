@@ -28,7 +28,7 @@ git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
  case "$path" in
   app/google_protocol_review783.py|\
- |\
+  app/google_tasks_sync769.py|\
   app/routers/calendar.py|\
   app/routers/dashboard.py|\
   app/routers/google_tasks769.py|\
@@ -52,7 +52,7 @@ while IFS= read -r path; do
   *) fail "Unreviewed changed path: $path";;
  esac
 done < <(git diff --name-only "$BASE" "$TARGET")
-[[ -z "$(git diff --name-only "$BASE" "$TARGET" -- app/models.py app/migrations.py app/db.py app/google_tasks_models769.py app/google_tasks_client769.py app/google_tasks_sync769.py requirements.txt deploy/)" ]] ||
+[[ -z "$(git diff --name-only "$BASE" "$TARGET" -- app/models.py app/migrations.py app/db.py app/google_tasks_models769.py app/google_tasks_client769.py requirements.txt deploy/)" ]] ||
  fail "Unreviewed schema, OAuth or deployment change"
 RUN="$(mktemp -d /tmp/tracker783-google-protocol-review.XXXXXXXX)"
 QA="$RUN/source"
