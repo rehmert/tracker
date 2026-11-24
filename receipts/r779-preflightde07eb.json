@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "666ee1076b77e723e414df208312ef51e123e635",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T16:31:24+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r779-installde07ebbb",
+  "ref": "release/779-colon-free-24h-entry",
+  "release": 779,
+  "request_id": "r779-preflightde07eb",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T16:31:22+00:00",
+  "status": "passed",
+  "target": "de07ebbbf0e7e2095bdcb2996ce3f4cb776e3205",
+  "test_counts": []
+}
