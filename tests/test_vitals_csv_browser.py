@@ -40,6 +40,9 @@ def html(table_rows):
         <th>Pulse</th><th>Context</th><th>Notes</th><th>Actions</th></tr></thead>
         <tbody>{table_rows}</tbody>
       </table>
+      <nav data-reading-pager hidden><button data-reading-prev>Previous</button><span data-reading-page></span><button data-reading-next>Next</button></nav>
+      <table data-vitals-dose-table><tbody>{''.join(f'<tr><td>Dose group {i}</td></tr>' for i in range(8))}</tbody></table>
+      <nav data-dose-pager hidden><button data-dose-prev>Previous</button><span data-dose-page></span><button data-dose-next>Next</button></nav>
     </body></html>"""
 
 
@@ -190,5 +193,48 @@ def test_compare_uses_timestamps_not_table_sort_order(browser):
     page.locator("[data-vitals-sort]").select_option("date-asc")
     assert page.locator("[data-vitals-weight-compare]").inner_text() == original_summary
     assert "183.0 → 180.0 lb (-3.0 lb)" in original_summary
+    assert not errors, errors
+    page.close()
+
+
+def test_784_independent_pagers_and_all_matching_export(browser):
+    page = browser.new_page(accept_downloads=True)
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    rows = "".join(
+        f'<tr id="vital-reading-{i}" data-vitals-when="2026-11-{i:02d}T08:00:00">'
+        f'<td>Day {i}</td><td>{170+i}</td><td>120/80</td><td>70</td><td>Context</td>'
+        f'<td data-vitals-full-notes="Hidden note {i}">More</td><td>Edit</td></tr>'
+        for i in range(12, 0, -1)
+    )
+    page.set_content(html(rows))
+    page.add_script_tag(path=str(SCRIPT))
+    readings = page.locator("[data-vitals-table] tbody tr:not([hidden])")
+    doses = page.locator("[data-vitals-dose-table] tbody tr:not([hidden])")
+    assert readings.count() == doses.count() == 5
+    assert readings.first.get_attribute("id") == "vital-reading-12"
+    assert page.locator("[data-reading-page]").inner_text() == "1–5 of 12"
+    page.locator("[data-reading-next]").click()
+    assert readings.first.get_attribute("id") == "vital-reading-7"
+    assert doses.first.inner_text() == "Dose group 0"
+    page.locator("[data-dose-next]").click()
+    assert doses.count() == 3
+    assert readings.first.get_attribute("id") == "vital-reading-7"
+    page.locator("[data-reading-next]").click()
+    assert readings.count() == 2
+    assert page.locator("[data-reading-next]").is_disabled()
+    with page.expect_download() as info:
+        page.locator("[data-vitals-export]").click()
+    data = list(csv.reader(io.StringIO(Path(info.value.path()).read_text(encoding="utf-8-sig"))))
+    assert len(data) == 13
+    assert data[1][5] == "Hidden note 12"
+    assert data[-1][5] == "Hidden note 1"
+    page.locator("[data-vitals-search]").fill("Hidden note 1")
+    assert readings.count() == 4
+    assert page.locator("[data-reading-pager]").is_hidden()
+    assert doses.count() == 3
+    page.locator("[data-vitals-reset]").click()
+    assert readings.count() == 5
+    assert readings.first.get_attribute("id") == "vital-reading-12"
     assert not errors, errors
     page.close()
