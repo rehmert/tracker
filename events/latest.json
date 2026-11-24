@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r782-edb792410539.json",
+  "receipt_path": "receipts/r782-installedb79241.json",
   "release": 782,
-  "request_id": "r782-edb792410539",
+  "request_id": "r782-installedb79241",
   "schema": 1,
   "status": "passed",
   "target": "edb792410539e5186e5b6c186d5b5c7ce8d137a5"
