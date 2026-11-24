@@ -43,7 +43,7 @@ def test_calendar_html_renders_workbench_and_today_link():
         'id="calendar-grid"',
         'tracker-calendar-workbench.js?v=783',
         'tracker-calendar-bundle742.css?v=742',
-        'Due and not logged',
+        'Due, not logged or pending review',
         'Unmatched Logs',
     ):
         assert marker in response.text, marker
