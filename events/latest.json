@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r774-30684374acc0.json",
+  "receipt_path": "receipts/r774-install30684374.json",
   "release": 774,
-  "request_id": "r774-30684374acc0",
+  "request_id": "r774-install30684374",
   "schema": 1,
   "status": "passed",
   "target": "30684374acc094bab456f70938340ebce19b8f57"
