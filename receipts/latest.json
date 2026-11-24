@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T20:29:03+00:00",
+  "finished_at_utc": "2026-11-24T20:43:01+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=edb792410539e5186e5b6c186d5b5c7ce8d137a5",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=edb792410539e5186e5b6c186d5b5c7ce8d137a5",
+    "PROMOTED_COMMIT=edb792410539e5186e5b6c186d5b5c7ce8d137a5",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=edb792410539e5186e5b6c186d5b5c7ce8d137a5",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r782-installedb79241",
+  "previous_request_id": "r782-preflightedb79241",
   "ref": "release/782-compact-gym",
   "release": 782,
-  "request_id": "r782-preflightedb79241",
+  "request_id": "r782-prodedb79241",
   "schema": 1,
-  "started_at_utc": "2026-11-24T20:29:01+00:00",
+  "started_at_utc": "2026-11-24T20:42:32+00:00",
   "status": "passed",
   "target": "edb792410539e5186e5b6c186d5b5c7ce8d137a5",
   "test_counts": []
