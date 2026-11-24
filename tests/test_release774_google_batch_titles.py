@@ -231,7 +231,7 @@ def test_777_csrf_does_not_permit_unexpected_fields_or_bad_title(env):
     assert response.status_code == 400
     assert overrides(Factory) == {("protocol", 2): "Preserve hidden"}
     response = client.post(BATCH, data={
-        **fields(med="bad\\nvalue"), "csrf_token": "synthetic-token",
+        **fields(med="bad" + chr(10) + "value"), "csrf_token": "synthetic-token",
     })
     assert response.status_code == 400
     assert overrides(Factory) == {("protocol", 2): "Preserve hidden"}
