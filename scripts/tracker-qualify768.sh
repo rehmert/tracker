@@ -89,8 +89,8 @@ PYCODE
 from pathlib import Path
 from jinja2 import Environment
 remote = Path("scripts/tracker_prod_remote568.sh").read_text(encoding="utf-8")
-guard = Path("scripts/tracker-prod-schema-backup768.py").read_text(encoding="utf-8")
-assert "RELEASE_768_PROD_SCHEMA_BACKUP=PASSED" in remote
+guard = Path("scripts/tracker-prod-schema-backup767.py").read_text(encoding="utf-8")
+assert "RELEASE_767_PROD_SCHEMA_BACKUP=PASSED" in remote
 assert 'bash "$RUNNER"' in remote
 assert "review_source" in guard and "verify_backup" in guard
 assert "resolve_data_dir768" in guard

@@ -179,6 +179,7 @@ def test_768_bootstrap_changes_only_host_agent_after_isolated_checks():
     assert "git push" not in src
     assert "tracker-release-agent.service" in src
     assert "RELEASE_768_FAILED_RECEIPT=IMMUTABLY_VERIFIED" in src
+    assert "RELEASE_768_PROD_STILL_765=VERIFIED" in src
 
 
 def test_768_remote_guard_accepts_only_the_two_reviewed_versions():

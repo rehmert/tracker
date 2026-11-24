@@ -114,12 +114,11 @@ mkdir -m 0700 "$STAGE/data"
  "$PY" -B - <<'PYCODE'
 import ast
 from pathlib import Path
-for p in ("scripts/tracker-release-agent745.py",
-          "scripts/tracker-promote568.py",
-          "scripts/tracker-prod-schema-backup767.py"):
-    if not Path(p).is_file():
-        if "tracker-promote568" in p:
-            p="scripts/tracker_promote568.py"
+for p in (
+    "scripts/tracker-release-agent745.py",
+    "scripts/tracker_promote568.py",
+    "scripts/tracker-prod-schema-backup767.py",
+):
     ast.parse(Path(p).read_text(), filename=p)
 print("RELEASE_768_BOOTSTRAP_SOURCE=VALIDATED")
 PYCODE
