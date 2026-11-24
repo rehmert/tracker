@@ -41,6 +41,8 @@
   function initialize() {
     const doseRows = Array.from(document.querySelectorAll('[data-vitals-dose-table] tbody tr'));
     if (doseRows.length) pager('dose', () => doseRows, doseRows).reset();
+    const markerRows = Array.from(document.querySelectorAll('[data-vitals-marker-table] tbody tr'));
+    if (markerRows.length) pager('marker', () => markerRows, markerRows).reset();
     const table = document.querySelector(
       '[data-vitals-table]'
     );
