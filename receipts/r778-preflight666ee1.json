@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T16:16:14+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r778-install666ee107",
+  "ref": "release/778-regimen-contextual-save-return",
+  "release": 778,
+  "request_id": "r778-preflight666ee1",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T16:16:12+00:00",
+  "status": "passed",
+  "target": "666ee1076b77e723e414df208312ef51e123e635",
+  "test_counts": []
+}
