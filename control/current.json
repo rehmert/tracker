@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r765-deploy8c675806",
-  "action": "prod_deploy",
-  "release": 765,
-  "target": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
-  "base": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
-  "ref": "release/765-mobile-daily-actions",
-  "previous_request_id": "r765-preflight8c6758"
+  "request_id": "r766-90306669eb8a",
+  "action": "qualify",
+  "release": 766,
+  "target": "90306669eb8ac9b35dbc739e44a1cd5ea4de7d80",
+  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "ref": "release/766-mobile-recipes-device-trends",
+  "previous_request_id": null
 }
