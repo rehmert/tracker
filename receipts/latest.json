@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "47642b465b1cb98f40aab2ce68c6a7526394298d",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T15:00:14+00:00",
+  "finished_at_utc": "2026-11-24T15:01:37+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=ff9946bc6edd4e3091d389a50202b170c93c78ce",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=ff9946bc6edd4e3091d389a50202b170c93c78ce",
+    "PROMOTED_COMMIT=ff9946bc6edd4e3091d389a50202b170c93c78ce",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=ff9946bc6edd4e3091d389a50202b170c93c78ce",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r773-installff9946bc",
+  "previous_request_id": "r773-preflightff9946",
   "ref": "release/773-google-tasks-custom-titles",
   "release": 773,
-  "request_id": "r773-preflightff9946",
+  "request_id": "r773-deployff9946bc",
   "schema": 1,
-  "started_at_utc": "2026-11-24T15:00:12+00:00",
+  "started_at_utc": "2026-11-24T15:01:09+00:00",
   "status": "passed",
   "target": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
   "test_counts": []
