@@ -139,3 +139,20 @@ def test_784_notes_links_and_initial_five_rows(vitals_client, monkeypatch):
     assert detail.status_code == 200
     assert 'id="vital-notes784"' in detail.text
     assert "Full synthetic note" in detail.text
+
+
+def test_785_event_rows_newest_first_and_initial_five(vitals_client, monkeypatch):
+    from app import charts, services
+    client, _ = vitals_client
+    now = datetime.now()
+    events = [charts.Event(now-timedelta(hours=i+1), "marker", f"Event {i}", mark="P")
+              for i in range(8)]
+    monkeypatch.setattr(services, "events_between", lambda *args: list(reversed(events)))
+    page = client.get("/vitals?days=7&events=1")
+    assert page.status_code == 200
+    table = page.text.split("data-vitals-marker-table", 1)[1].split("</table>", 1)[0]
+    assert table.count("<tr") == 8
+    assert table.count("<tr hidden>") == 3
+    assert table.index("Event 0") < table.index("Event 7")
+    assert "data-marker-prev" in page.text and "data-marker-next" in page.text
+    assert "data-vitals-marker-table" not in client.get("/vitals?days=7&events=0").text
