@@ -7,7 +7,7 @@ APP=/opt/tracker
 ROOT=/etc/tracker-release
 fail() { echo "REMOTE_FAIL: $*" >&2; exit 1; }
 STAGE=""
-trap 'rc=$?; if [[ -n "$STAGE" ]]; then rm -f -- "$STAGE/runner.sh" "$STAGE/pre-schema-backup767.py" || true; rmdir -- "$STAGE" || true; fi; echo "REMOTE_DEPLOY_EXIT_STATUS=$rc"' EXIT
+trap 'rc=$?; if [[ -n "$STAGE" ]]; then rm -f -- "$STAGE/runner.sh" "$STAGE/pre-schema-backup767.py" "$STAGE/pre-google-schema771.py" || true; rmdir -- "$STAGE" || true; fi; echo "REMOTE_DEPLOY_EXIT_STATUS=$rc"' EXIT
 
 [[ $# -eq 3 ]] || fail "Expected exact base, target and release"
 BASE="$1"

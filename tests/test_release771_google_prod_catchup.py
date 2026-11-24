@@ -27,7 +27,7 @@ def test_771_exact_768_to_qualified_771_source_review():
 
 @pytest.mark.parametrize("base", ["", "f" * 40, "9f3e1154f30d5b2711957f51c675006f666d3440"])
 def test_771_other_prod_bases_are_rejected(base):
-    with pytest.raises(ValueError, match="exact installed PROD"):
+    with pytest.raises(ValueError, match="PROD 768"):
         guard.review_source(ROOT, base, target_sha())
 
 

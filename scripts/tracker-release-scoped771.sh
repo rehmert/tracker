@@ -11,7 +11,9 @@ export PYTHONPATH="$ROOT" PYTHONDONTWRITEBYTECODE=1
  tests/test_release771_google_prod_catchup.py \
  tests/test_release770_google_prod_guard.py \
  tests/test_release769_google_tasks.py \
- tests/test_release767_prod_schema_backup.py \
+ tests/test_release767_prod_schema_backup.py::test_767_signed_prod_remote_stages_guard_before_runner \
+ tests/test_release767_prod_schema_backup.py::test_767_backup_refuses_every_nonprod_host_before_live_io \
+ tests/test_release767_prod_schema_backup.py::test_767_backup_strict_integrity_complete_archive_and_pruning_contract \
  tests/test_release568_ops_tooling.py \
  tests/test_release705_promotion_catchup.py \
  tests/test_release745_controller.py \
