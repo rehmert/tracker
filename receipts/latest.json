@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "99e10eef2125e74b4315f3ee89dc546ae22d7524",
+  "action": "qualify",
+  "base": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T01:29:03+00:00",
+  "finished_at_utc": "2026-11-24T02:13:29+00:00",
   "markers": [
-    "DEV_CONTROLLED_RELEASE=SUCCESS",
-    "PROD_INSTALLED_COMMIT=1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
-    "PROMOTED_COMMIT=1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
+    "RELEASE_765_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_765_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
-    "REMOTE_DEPLOY_EXIT_STATUS=0"
+    "RELEASE_765_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_765_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r764-preflight1b7289",
-  "ref": "release/764-compound-title-case",
-  "release": 764,
-  "request_id": "r764-deploy1b728971",
+  "previous_request_id": null,
+  "ref": "release/765-mobile-daily-actions",
+  "release": 765,
+  "request_id": "r765-8c67580611fd",
   "schema": 1,
-  "started_at_utc": "2026-11-24T01:28:29+00:00",
+  "started_at_utc": "2026-11-24T02:13:22+00:00",
   "status": "passed",
-  "target": "1b72897158aa91aa6f2de6eda2908ae4b9e4d366",
-  "test_counts": []
+  "target": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "test_counts": [
+    "35 passed, 1 warning"
+  ]
 }
