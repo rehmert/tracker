@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r780-8da5603569c7",
-  "action": "qualify",
+  "request_id": "r780-install8da56035",
+  "action": "dev_install",
   "release": 780,
   "target": "8da5603569c76beb8aab94168e250235a718aef0",
   "base": "de07ebbbf0e7e2095bdcb2996ce3f4cb776e3205",
   "ref": "release/780-google-tasks-fast-completions",
-  "previous_request_id": null
+  "previous_request_id": "r780-8da5603569c7"
 }
