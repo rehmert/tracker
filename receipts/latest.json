@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "b22e9599ff260f26c08294c93d75b189ba48e7f2",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T22:20:46+00:00",
+  "finished_at_utc": "2026-11-24T22:22:22+00:00",
   "markers": [
-    "RELEASE_784_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_784_EXIT_STATUS=0",
+    "RELEASE_784_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_784_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_784_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r784-afe947d0c019",
   "ref": "release/784-vitals-pagination",
   "release": 784,
-  "request_id": "r784-afe947d0c019",
+  "request_id": "r784-installafe947d0",
   "schema": 1,
-  "started_at_utc": "2026-11-24T22:20:32+00:00",
+  "started_at_utc": "2026-11-24T22:21:40+00:00",
   "status": "passed",
   "target": "afe947d0c019f2994165f3ea27d17793ad9d5f28",
   "test_counts": [
