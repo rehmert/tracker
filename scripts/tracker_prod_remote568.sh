@@ -7,7 +7,7 @@ APP=/opt/tracker
 ROOT=/etc/tracker-release
 fail() { echo "REMOTE_FAIL: $*" >&2; exit 1; }
 STAGE=""
-trap 'rc=$?; if [[ -n "$STAGE" ]]; then rm -f -- "$STAGE/runner.sh" || true; rmdir -- "$STAGE" || true; fi; echo "REMOTE_DEPLOY_EXIT_STATUS=$rc"' EXIT
+trap 'rc=$?; if [[ -n "$STAGE" ]]; then rm -f -- "$STAGE/runner.sh" "$STAGE/pre-schema-backup767.py" || true; rmdir -- "$STAGE" || true; fi; echo "REMOTE_DEPLOY_EXIT_STATUS=$rc"' EXIT
 
 [[ $# -eq 3 ]] || fail "Expected exact base, target and release"
 BASE="$1"
@@ -127,6 +127,31 @@ elif [[ "$RELEASE" == 760 ]]; then
   [[ "$BASE" == bb83f1a59de3defd5fe6d0bc83ad09ed4d0cfdac ]] ||
     fail "Release 760 schema catch-up requires exact installed PROD 755 base"
   DEPLOY_EXTRA=(--reviewed-vial-758 --db-migration)
+fi
+# 767 promotes the already-qualified 766 data model. Its new independent
+# module is not covered by the older runner's schema-file allowlist.
+# Before any source installation, enforce an exact-reviewed additive schema,
+# strict present-upload integrity, a complete private database/upload archive,
+# and isolated restore verification. Never treat normal code-only release
+# backups as a substitute for this migration barrier.
+if [[ "$RELEASE" == 767 ]]; then
+  [[ "$BASE" == 8c67580611fd945d9ae83f8015f071a24ab6fee5 ]] ||
+    fail "Release 767 requires exact installed PROD Release 765 baseline"
+  BACKUP_REL=scripts/tracker-prod-schema-backup767.py
+  EXPECTED_BACKUP="$(git rev-parse "$TARGET:$BACKUP_REL")" ||
+    fail "Signed Release 767 backup guard missing"
+  [[ "$EXPECTED_BACKUP" =~ ^[0-9a-f]{40}$ ]] ||
+    fail "Invalid Release 767 backup-guard object"
+  BACKUP_GUARD="$STAGE/pre-schema-backup767.py"
+  git show "$TARGET:$BACKUP_REL" > "$BACKUP_GUARD" ||
+    fail "Unable to stage signed schema/backup guard"
+  [[ -f "$BACKUP_GUARD" && ! -L "$BACKUP_GUARD" &&
+    "$(git hash-object "$BACKUP_GUARD")" == "$EXPECTED_BACKUP" ]] ||
+    fail "Pinned Release 767 backup-guard integrity mismatch"
+  PYTHONPATH="$APP" "$APP/.venv/bin/python" "$BACKUP_GUARD" \
+    --app "$APP" --base "$BASE" --target "$TARGET" ||
+    fail "Release 767 PROD schema review or verified pre-install backup failed"
+  echo "RELEASE_767_PROD_SCHEMA_BACKUP=PASSED"
 fi
 bash "$RUNNER" \
   --instance PROD \
