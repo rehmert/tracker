@@ -230,6 +230,12 @@
               </div>
             </div>
           </div>
+          <fieldset class="workout667-set-kind" aria-label="Recorded set type">
+            <legend>Set type</legend>
+            <label><input type="radio" name="set_type" value="working" checked> Working set</label>
+            <label><input type="radio" name="set_type" value="warmup"> Warm-up set</label>
+          </fieldset>
+          <button class="primary workout659-main-button" type="submit" id="workout659-save">Save Set</button>
           <details class="gym782-disclosure"><summary>Fine adjustments &amp; effort</summary>
           <div class="workout662-adjustments" aria-label="Additional set adjustments">
             <button type="button" data-step659="weight" data-delta659="-2.5" aria-label="Decrease weight by 2.5 pounds">−2.5 lb</button>
@@ -241,16 +247,10 @@
             <input type="number" name="effort" min="1" max="10" step="1"
                    inputmode="numeric" value="{{ last.effort if last and last.effort is not none else '' }}">
           </label>
-          </details>
-          <fieldset class="workout667-set-kind" aria-label="Recorded set type">
-            <legend>Set type</legend>
-            <label><input type="radio" name="set_type" value="working" checked> Working set</label>
-            <label><input type="radio" name="set_type" value="warmup"> Warm-up set</label>
-          </fieldset>
-          <button class="primary workout659-main-button" type="submit" id="workout659-save">Save Set</button>
           <button type="reset" class="workout662-restore">
             {{ 'Restore last recorded values' if last else 'Clear entries' }}
           </button>
+          </details>
         </form>
         {% if last %}
           <details class="gym782-disclosure"><summary>Repeat last set</summary>
@@ -283,6 +283,20 @@
         <button type="button" id="workout659-rest-start">Start / Restart</button>
         <button type="button" id="workout659-rest-reset">Reset</button>
       </div>
+    </section>
+
+    <section class="workout659-end">
+      <form method="post" action="/workouts/quick/finish" class="tracker-flow696-finish">
+        <button type="submit" class="primary" formaction="/workouts/finish-review">Finish &amp; Review</button>
+        <details>
+          <summary>Other finish option</summary>
+          <button type="submit">Finish Workout</button>
+        </details>
+      </form>
+      <details class="gym782-disclosure"><summary>Other workout actions</summary>
+      <a class="ux675-inline-action" href="/workouts">All Workouts</a>
+      <a class="ux675-inline-action" href="/workouts/sessions/{{ active.id }}#workout719-delete-{{ active.id }}">Delete Accidental Workout</a>
+      </details>
     </section>
 
     {% if machine %}
@@ -382,19 +396,6 @@
         {% endif %}
       </section>
     {% endif %}
-    <section class="workout659-end">
-      <form method="post" action="/workouts/quick/finish" class="tracker-flow696-finish">
-        <button type="submit" class="primary" formaction="/workouts/finish-review">Finish &amp; Review</button>
-        <details>
-          <summary>Other finish option</summary>
-          <button type="submit">Finish Workout</button>
-        </details>
-      </form>
-      <details class="gym782-disclosure"><summary>Other workout actions</summary>
-      <a class="ux675-inline-action" href="/workouts">All Workouts</a>
-      <a class="ux675-inline-action" href="/workouts/sessions/{{ active.id }}#workout719-delete-{{ active.id }}">Delete Accidental Workout</a>
-      </details>
-    </section>
   {% endif %}
 </section>
 {% endblock %}
