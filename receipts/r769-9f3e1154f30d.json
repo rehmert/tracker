@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T13:44:27+00:00",
+  "markers": [
+    "RELEASE_769_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_769_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_769_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_769_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/769-google-tasks-medications-supplements-protocols",
+  "release": 769,
+  "request_id": "r769-9f3e1154f30d",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T13:44:12+00:00",
+  "status": "passed",
+  "target": "9f3e1154f30d5b2711957f51c675006f666d3440",
+  "test_counts": [
+    "89 passed, 1 warning"
+  ]
+}

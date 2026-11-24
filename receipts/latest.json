@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "action": "qualify",
+  "base": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T13:14:59+00:00",
+  "finished_at_utc": "2026-11-24T13:44:27+00:00",
   "markers": [
-    "DEV_CONTROLLED_RELEASE=SUCCESS",
-    "PROD_INSTALLED_COMMIT=62a78b4f0b79f2f6762976c1231cab2f5f593f25",
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=62a78b4f0b79f2f6762976c1231cab2f5f593f25",
-    "PROMOTED_COMMIT=62a78b4f0b79f2f6762976c1231cab2f5f593f25",
+    "RELEASE_769_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_769_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=62a78b4f0b79f2f6762976c1231cab2f5f593f25",
-    "REMOTE_DEPLOY_EXIT_STATUS=0"
+    "RELEASE_769_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_769_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r768-preflight62a78b",
-  "ref": "release/768-prod-relative-data-path-recovery",
-  "release": 768,
-  "request_id": "r768-deploy62a78b4f",
+  "previous_request_id": null,
+  "ref": "release/769-google-tasks-medications-supplements-protocols",
+  "release": 769,
+  "request_id": "r769-9f3e1154f30d",
   "schema": 1,
-  "started_at_utc": "2026-11-24T13:14:22+00:00",
+  "started_at_utc": "2026-11-24T13:44:12+00:00",
   "status": "passed",
-  "target": "62a78b4f0b79f2f6762976c1231cab2f5f593f25",
-  "test_counts": []
+  "target": "9f3e1154f30d5b2711957f51c675006f666d3440",
+  "test_counts": [
+    "89 passed, 1 warning"
+  ]
 }
