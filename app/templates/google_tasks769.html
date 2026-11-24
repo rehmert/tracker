@@ -11,13 +11,17 @@ Google's public API supports dates but not due times; scheduled 24-hour time app
 <strong>Auto sync:</strong> {{ 'Enabled' if enabled else 'Paused' }}</p>
 {% if last_sync %}<p>Last completed sync: {{ last_sync|utc_dt }}</p>{% endif %}
 {% if last_error %}<p role="alert" class="note">Last sync issue: {{ last_error }}</p>{% endif %}
-{% if not configured %}
+{% if not production_access %}
+<p role="status" class="note"><strong>DEV: Google Tasks is disabled.</strong>
+OAuth connection, token refresh, and live Google API access are blocked on this
+instance. Only mock-based tests are permitted; no Google Calendar tasks are created.</p>
+{% elif not configured %}
 <p role="status" class="note">OAuth setup required on this host:
 <code>TRACKER_GOOGLE_TASKS_CLIENT_ID</code>,
 <code>TRACKER_GOOGLE_TASKS_CLIENT_SECRET</code>, and
 <code>TRACKER_GOOGLE_TASKS_REDIRECT_URI</code>.
 Use distinct DEV/PROD redirects. No client secrets belong in GitHub.</p>
-{% else %}
+{% elif production_access %}
 <div class="ux-shortcuts">
 {% if not connected %}
 <form method="post" action="/integrations/google-tasks/connect">

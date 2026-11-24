@@ -3,6 +3,7 @@ import os
 from urllib.parse import urlencode, quote
 
 import httpx
+from . import config
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -14,7 +15,15 @@ class GoogleTasksError769(Exception):
     """A sanitized sync error: no URL, HTTP body or credentials."""
 
 
+def require_production770():
+    """Fail closed for all live OAuth and Google Tasks network entry points."""
+    if config.instance_label() != "PROD":
+        raise GoogleTasksError769("Live Google Tasks is forbidden outside PROD")
+
+
 def configured769():
+    if config.instance_label() != "PROD":
+        return None
     client_id = os.getenv("TRACKER_GOOGLE_TASKS_CLIENT_ID", "").strip()
     secret = os.getenv("TRACKER_GOOGLE_TASKS_CLIENT_SECRET", "").strip()
     redirect = os.getenv("TRACKER_GOOGLE_TASKS_REDIRECT_URI", "").strip()
@@ -26,6 +35,7 @@ def configured769():
 
 
 def authorization_url769(state):
+    require_production770()
     settings = configured769()
     if not settings:
         raise GoogleTasksError769("Google OAuth is not configured")
@@ -39,6 +49,7 @@ def authorization_url769(state):
 
 
 def token_exchange769(data):
+    require_production770()
     settings = configured769()
     if not settings:
         raise GoogleTasksError769("Google OAuth is not configured")
@@ -61,6 +72,7 @@ def token_exchange769(data):
 
 class TasksClient769:
     def __init__(self, refresh_token):
+        require_production770()
         if not refresh_token:
             raise GoogleTasksError769("Google Tasks is not connected")
         token = token_exchange769({"grant_type": "refresh_token", "refresh_token": refresh_token})
@@ -72,6 +84,7 @@ class TasksClient769:
         self._http.close()
 
     def request(self, method, path, *, body=None, params=None):
+        require_production770()
         if not path.startswith("/") or path.startswith("//"):
             raise GoogleTasksError769("Invalid Tasks resource")
         try:

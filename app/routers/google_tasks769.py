@@ -69,11 +69,14 @@ def settings769(request: Request, db: Session = Depends(get_scoped_db390)):
         last_error=conn.last_error if conn else "",
         sources=sources, pending=pending,
         instance=config.instance_label(),
+        production_access=config.instance_label() == "PROD",
     )
 
 
 @router.post(BASE + "/connect")
 def begin_connect769(db: Session = Depends(get_scoped_db390)):
+    if config.instance_label() != "PROD":
+        return _notice("DEV cannot connect to Google Tasks.", error=True)
     if not configured769():
         return _notice("Configure the private Google OAuth client settings on this host first.", error=True)
     conn = connection769(db)
@@ -87,6 +90,8 @@ def begin_connect769(db: Session = Depends(get_scoped_db390)):
 @router.get(BASE + "/callback")
 def callback769(state: str = "", code: str = "", error: str = "",
                 db: Session = Depends(get_scoped_db390)):
+    if config.instance_label() != "PROD":
+        raise HTTPException(403, "Google authorization is disabled outside PROD")
     conn = db.get(GoogleTasksConnection769, 1)
     valid = bool(conn and state and secrets.compare_digest(conn.oauth_state or "", state)
                  and conn.oauth_state_at
@@ -150,6 +155,8 @@ def toggle_source769(kind: str, source_id: int,
 
 @router.post(BASE + "/sync")
 def run_sync769(db: Session = Depends(get_scoped_db390)):
+    if config.instance_label() != "PROD":
+        return _notice("DEV cannot synchronize with Google Tasks.", error=True)
     db.rollback()
     try:
         result = sync_once769()

@@ -46,9 +46,9 @@ TRACKER_GOOGLE_TASKS_CLIENT_SECRET=<google-client-secret>
 TRACKER_GOOGLE_TASKS_REDIRECT_URI=https://<private-dns-host>/integrations/google-tasks/callback
 ```
 
-Use distinct DEV and PROD redirect URIs, and HTTPS DNS names that resolve only
-inside the private network (public exposure is not required). Register each
-exact URI with Google. Never commit the credentials to GitHub. Without these
+Configure OAuth only on PROD. A Release 770 guard prohibits live Google OAuth,
+token refresh, and Tasks API calls on DEV even when copied PROD tokens or
+credentials exist. Never commit credentials to GitHub. Without these
 values, the integration stays disabled, with no Google API calls.
 Testing-mode Google OAuth refresh tokens can expire in seven days; configure
 the consent/publishing status appropriately before relying on background sync.
@@ -71,8 +71,8 @@ account in automated tests.
 ## DEV checklist
 
 1. Open /integrations/google-tasks. Verify the disabled configuration state.
-2. Configure private DEV OAuth credentials/redirect URI.
-3. Connect a Google test account, confirm dedicated DEV-only lists.
+2. Do not configure DEV Google credentials. Verify blocked DEV OAuth/API access.
+3. Exercise only synthetic mock-backed Tasks clients and isolated datasets.
 4. Confirm daily/weekly/interval schedules and staged protocol dates; exclude
    one schedule and ensure only future open tasks are removed.
 5. Complete a regimen task from Google Calendar and confirm a single audited
