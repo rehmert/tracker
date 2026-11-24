@@ -43,6 +43,8 @@ def html(table_rows):
       <nav data-reading-pager hidden><button data-reading-prev>Previous</button><span data-reading-page></span><button data-reading-next>Next</button></nav>
       <table data-vitals-dose-table><tbody>{''.join(f'<tr><td>Dose group {i}</td></tr>' for i in range(8))}</tbody></table>
       <nav data-dose-pager hidden><button data-dose-prev>Previous</button><span data-dose-page></span><button data-dose-next>Next</button></nav>
+      <table data-vitals-marker-table><tbody>{''.join(f'<tr><td>Event {i}</td></tr>' for i in range(12))}</tbody></table>
+      <nav data-marker-pager hidden><button data-marker-prev>Previous</button><span data-marker-page></span><button data-marker-next>Next</button></nav>
     </body></html>"""
 
 
@@ -236,5 +238,42 @@ def test_784_independent_pagers_and_all_matching_export(browser):
     page.locator("[data-vitals-reset]").click()
     assert readings.count() == 5
     assert readings.first.get_attribute("id") == "vital-reading-12"
+    assert not errors, errors
+    page.close()
+
+
+def test_785_event_pagination_is_independent(browser):
+    page = browser.new_page()
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    rows = "".join(
+        f'<tr data-vitals-when="2026-11-{i:02d}T08:00:00"><td>Day {i}</td><td>180</td>'
+        '<td>120/80</td><td>70</td><td>Context</td><td></td><td>Edit</td></tr>'
+        for i in range(12, 0, -1)
+    )
+    page.set_content(html(rows))
+    page.add_script_tag(path=str(SCRIPT))
+    markers = page.locator("[data-vitals-marker-table] tbody tr:not([hidden])")
+    doses = page.locator("[data-vitals-dose-table] tbody tr:not([hidden])")
+    readings = page.locator("[data-vitals-table] tbody tr:not([hidden])")
+    assert markers.count() == doses.count() == readings.count() == 5
+    assert markers.first.inner_text() == "Event 0"
+    assert page.locator("[data-marker-prev]").is_disabled()
+    assert page.locator("[data-marker-page]").inner_text() == "1–5 of 12"
+    page.locator("[data-marker-next]").click()
+    assert markers.first.inner_text() == "Event 5"
+    page.locator("[data-marker-next]").click()
+    assert markers.count() == 2
+    assert page.locator("[data-marker-next]").is_disabled()
+    page.locator("[data-dose-next]").click()
+    page.locator("[data-reading-next]").click()
+    assert markers.first.inner_text() == "Event 10"
+    page.locator("[data-marker-prev]").click()
+    assert markers.count() == 5
+    assert markers.first.inner_text() == "Event 5"
+    assert doses.first.inner_text() == "Dose group 5"
+    assert readings.first.locator("td").first.inner_text() == "Day 7"
+    page.locator("[data-vitals-reset]").click()
+    assert markers.first.inner_text() == "Event 5"
     assert not errors, errors
     page.close()
