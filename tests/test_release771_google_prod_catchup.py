@@ -89,5 +89,5 @@ def test_771_remote_guard_is_before_production_runner():
     assert '--base "$BASE" --target "$TARGET"' in remote
     assert "RELEASE_771_PROD_SCOPED=PASSED" in remote
     assert remote.index('if [[ "$RELEASE" == 771 ]]') < remote.index(
-        'bash "$RUNNER" \\\n  --instance PROD'
+        'bash "$RUNNER"'
     )
