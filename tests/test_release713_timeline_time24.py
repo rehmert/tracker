@@ -86,7 +86,7 @@ def test_713_global_time_assets_and_all_native_time_fields_are_covered():
     script = (ROOT / "app/static/js/tracker-time24-global713.js").read_text()
     for phrase in (
         'input[type="datetime-local"], input[type="time"]',
-        "clock.placeholder = 'HH:MM'",
+        "clock.placeholder = 'HHMM or HH:MM'",
         "clock.pattern =",
         "original.hidden = true",
         "original.required = false",
