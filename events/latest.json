@@ -1,10 +1,10 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r771-preflightac330a.json",
+  "receipt_path": "receipts/r771-deployac330a08.json",
   "release": 771,
-  "request_id": "r771-preflightac330a",
+  "request_id": "r771-deployac330a08",
   "schema": 1,
   "status": "passed",
   "target": "ac330a08ffa4ff49ca86e034b9aa81f4e583a8c7"
