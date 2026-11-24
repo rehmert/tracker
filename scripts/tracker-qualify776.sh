@@ -65,7 +65,7 @@ mkdir -m 700 "$RUN/data"
 cd "$QA"
 export TRACKER_DATA_DIR="$RUN/data" PYTHONPATH="$QA" PYTHONDONTWRITEBYTECODE=1
 for file in scripts/tracker-qualify776.sh scripts/tracker-install776.sh scripts/tracker-release-scoped776.sh scripts/tracker-release.sh; do bash -n "$file"; done
-node --check app/static/js/tracker_focus.js
+node --check app/static/tracker_focus.js
 "$PY" -B - <<'PYCODE'
 import ast
 from pathlib import Path
