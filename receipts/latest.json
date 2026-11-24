@@ -1,24 +1,26 @@
 {
-  "action": "dev_install",
-  "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
+  "action": "qualify",
+  "base": "45263b9659232b6ac6a922da38599f92842a32d8",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T03:10:27+00:00",
+  "finished_at_utc": "2026-11-24T04:04:49+00:00",
   "markers": [
-    "RELEASE_766_DEV_INSTALL=SUCCESS",
+    "RELEASE_767_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_767_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "RELEASE_767_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_767_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r766-45263b965923",
-  "ref": "release/766-mobile-recipes-device-trends",
-  "release": 766,
-  "request_id": "r766-install45263b96",
+  "previous_request_id": null,
+  "ref": "release/767-prod-device-schema-guard",
+  "release": 767,
+  "request_id": "r767-5d23aaf4f7e7",
   "schema": 1,
-  "started_at_utc": "2026-11-24T03:09:42+00:00",
+  "started_at_utc": "2026-11-24T04:04:42+00:00",
   "status": "passed",
-  "target": "45263b9659232b6ac6a922da38599f92842a32d8",
+  "target": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
   "test_counts": [
-    "85 passed, 1 warning"
+    "46 passed, 1 warning"
   ]
 }
