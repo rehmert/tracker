@@ -27,7 +27,7 @@ def test_vitals_date_filter_controls_render():
         'data-vitals-table',
         'data-vitals-export',
         'id="vitals-table-filter-help"',
-        'tracker-vitals-tools.css?v=785',
+        'tracker-vitals-tools.css?v=786',
         'tracker-vitals-tools.js?v=785',
         "They do not change the charts or rolling 7-/30-day summaries.",
     ):
