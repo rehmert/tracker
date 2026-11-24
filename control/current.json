@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r779-deployde07ebbb",
-  "action": "prod_deploy",
-  "release": 779,
-  "target": "de07ebbbf0e7e2095bdcb2996ce3f4cb776e3205",
-  "base": "666ee1076b77e723e414df208312ef51e123e635",
-  "ref": "release/779-colon-free-24h-entry",
-  "previous_request_id": "r779-preflightde07eb"
+  "request_id": "r780-8da5603569c7",
+  "action": "qualify",
+  "release": 780,
+  "target": "8da5603569c76beb8aab94168e250235a718aef0",
+  "base": "de07ebbbf0e7e2095bdcb2996ce3f4cb776e3205",
+  "ref": "release/780-google-tasks-fast-completions",
+  "previous_request_id": null
 }
