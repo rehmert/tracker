@@ -100,3 +100,26 @@
 @media(max-width:780px) {
   .vitals-filter-overview { grid-template-columns:1fr; }
 }
+
+/* Release 783: bounded notes and accessible row actions. */
+[data-vitals-table] .vitals-notes783 { width: 12rem; max-width: 12rem; white-space: normal; overflow-wrap: anywhere; }
+.vitals-notes783 details { margin: 0; padding: 0; border: 0; }
+.vitals-notes783 summary { cursor: pointer; overflow-wrap: anywhere; }
+.vitals-more783, .vitals-less783 { text-decoration: underline; color: var(--teal, #1265ad); }
+.vitals-less783, .vitals-notes783 details[open] .vitals-more783 { display: none; }
+.vitals-notes783 details[open] .vitals-less783 { display: inline; }
+.vitals-note-full783 { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: .35rem; }
+@media (max-width: 760px) {
+  [data-vitals-table] { display:block; width:100%; min-width:0; }
+  [data-vitals-table] thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  [data-vitals-table] tbody { display:grid; gap:.55rem; }
+  [data-vitals-table] tbody tr { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--rule,#ccc); border-radius:8px; padding:.55rem; gap:.35rem; }
+  [data-vitals-table] tbody td { display:block; min-width:0; padding:.25rem; text-align:left; white-space:normal; overflow-wrap:anywhere; border:0; }
+  [data-vitals-table] td:nth-child(1), [data-vitals-table] td:nth-child(5), [data-vitals-table] td:nth-child(6), [data-vitals-table] td:nth-child(7) { grid-column:1/-1; }
+  [data-vitals-table] td:nth-child(2)::before { content:"Weight "; }
+  [data-vitals-table] td:nth-child(3)::before { content:"BP "; }
+  [data-vitals-table] td:nth-child(4)::before { content:"Pulse "; }
+  [data-vitals-table] .vitals-notes783 { width:auto; max-width:100%; }
+  [data-vitals-table] .vitals-actions783 { display:flex; flex-wrap:wrap; gap:.4rem; }
+  [data-vitals-table] .vitals-actions783 button { min-height:44px; }
+}
