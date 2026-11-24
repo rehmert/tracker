@@ -165,6 +165,16 @@ def test_768_app_source_did_not_change_since_dev_766():
     assert diff and all(p.startswith(("scripts/","tests/","docs/")) for p in diff)
 
 
+def test_768_bootstrap_is_valid_bash_before_any_privileged_action():
+    bootstrap = SCRIPTS / "tracker-recovery-bootstrap768.sh"
+    syntax = subprocess.run(
+        ["bash", "-n", str(bootstrap)], capture_output=True, text=True
+    )
+    assert syntax.returncode == 0, syntax.stderr
+    # A comparison must not break immediately after '==' inside [[ ]].
+    assert "==\\n" not in bootstrap.read_text()
+
+
 def test_768_bootstrap_changes_only_host_agent_after_isolated_checks():
     src = (SCRIPTS/"tracker-recovery-bootstrap768.sh").read_text()
     assert "RELEASE_768_CONTROLLER_RECOVERY_BOOTSTRAP=SUCCESS" in src
