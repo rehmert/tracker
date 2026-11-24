@@ -115,16 +115,15 @@ def test_783_existing_dose_is_matched_without_second_withdrawal(scenario):
     assert len(list(db.scalars(select(DoseLog)))) == 1
 
 
-def test_783_vitals_four_word_preview_and_full_note_contract():
+def test_783_vitals_edit_actions_and_full_note_contract():
     template = (ROOT / "app/templates/vitals.html").read_text()
     Environment().parse(template)
-    assert "words[:4]|join(' ')" in template
-    assert "words|length > 4" in template
+    assert "#vital-notes784" in template
+    assert "words[:4]" not in template
     assert 'data-vitals-full-notes="{{ r.notes or' in template
     assert 'href="#vitals-readings"' in template
     assert 'class="vitals-actions783"' in template
     js = (ROOT / "app/static/js/tracker-vitals-tools.js").read_text()
     assert js.count("cell.dataset.vitalsFullNotes ?? cell.textContent") == 2
     css = (ROOT / "app/static/css/tracker-vitals-tools.css").read_text()
-    assert "max-width: 12rem" in css
-    assert "white-space: pre-wrap" in css
+    assert ".vitals-notes783 { width:1%" in css
