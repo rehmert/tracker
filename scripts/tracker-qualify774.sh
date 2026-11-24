@@ -17,7 +17,7 @@ TARGET="$1"
 cd "$APP"
 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
 [[ "$(git branch --show-current)" == main && "$(git rev-parse HEAD)" == "$BASE" &&
- -z "$(git status --porcelain)" ]] || fail "Clean installed DEV 771 required"
+ -z "$(git status --porcelain)" ]] || fail "Clean installed DEV 773 required"
 systemctl is-active --quiet tracker.service || fail "DEV service inactive"
 exec 9>/run/lock/tracker774-google-batch-qa.lock
 flock -n 9 || fail "Concurrent Release 774 qualification"
