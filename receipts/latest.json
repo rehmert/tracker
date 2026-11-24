@@ -1,24 +1,20 @@
 {
-  "action": "dev_install",
-  "base": "03e4f6f644566bb270d0027a369083972820a602",
+  "action": "prod_preflight",
+  "base": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T15:45:27+00:00",
+  "finished_at_utc": "2026-11-24T15:48:54+00:00",
   "markers": [
-    "RELEASE_777_DEV_INSTALL=SUCCESS",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r777-106ee409067c",
+  "previous_request_id": "r777-install106ee409",
   "ref": "release/777-google-batch-title-csrf",
   "release": 777,
-  "request_id": "r777-install106ee409",
+  "request_id": "r777-preflight106ee4",
   "schema": 1,
-  "started_at_utc": "2026-11-24T15:44:48+00:00",
+  "started_at_utc": "2026-11-24T15:48:52+00:00",
   "status": "passed",
   "target": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
-  "test_counts": [
-    "77 passed, 1 warning"
-  ]
+  "test_counts": []
 }

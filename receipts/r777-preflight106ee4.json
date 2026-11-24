@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "ff9946bc6edd4e3091d389a50202b170c93c78ce",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T15:48:54+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r777-install106ee409",
+  "ref": "release/777-google-batch-title-csrf",
+  "release": 777,
+  "request_id": "r777-preflight106ee4",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T15:48:52+00:00",
+  "status": "passed",
+  "target": "106ee409067c2bab2adfc8ee08dc78eada5b8062",
+  "test_counts": []
+}
