@@ -281,10 +281,9 @@ def update_reading(
 
     db.commit()
 
-    return services.flash_redirect(
-        return_url,
-        msg="Reading updated successfully.",
-    )
+    response = services.flash_redirect(return_url, msg="Reading updated successfully.")
+    response.headers["location"] += f"#vital-reading-{rid}"
+    return response
 
 
 @router.delete("/vitals/{rid}")
