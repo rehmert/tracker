@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "8da5603569c76beb8aab94168e250235a718aef0",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T16:59:34+00:00",
+  "finished_at_utc": "2026-11-24T17:02:45+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
+    "PROMOTED_COMMIT=8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r781-install8abbd352",
+  "previous_request_id": "r781-preflight8abbd352",
   "ref": "release/781-daily-regimen-order",
   "release": 781,
-  "request_id": "r781-preflight8abbd352",
+  "request_id": "r781-prod8abbd352",
   "schema": 1,
-  "started_at_utc": "2026-11-24T16:59:32+00:00",
+  "started_at_utc": "2026-11-24T17:02:12+00:00",
   "status": "passed",
   "target": "8abbd3528ec2ddd0e2f225e62a09a0850d5d95c7",
   "test_counts": []
