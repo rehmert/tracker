@@ -8,10 +8,10 @@
 
 <link
   rel="stylesheet"
-  href="/static/css/tracker-vitals-tools.css?v=783"
+  href="/static/css/tracker-vitals-tools.css?v=784"
 >
 <script
-  src="/static/js/tracker-vitals-tools.js?v=783"
+  src="/static/js/tracker-vitals-tools.js?v=784"
   defer
 ></script>
 
@@ -107,7 +107,12 @@
   <div class="cols">
     <div>
       <h3>Logged doses in range</h3>
-      {% if dose_counts %}<table><tbody>{% for name, n in dose_counts.items() %}<tr><td>{{ name }}</td><td class="n">{{ n }}</td></tr>{% endfor %}</tbody></table>
+      {% if dose_counts %}<table data-vitals-dose-table><tbody>{% for name, n in dose_counts.items() %}<tr{% if loop.index > 5 %} hidden{% endif %}><td>{{ name }}</td><td class="n">{{ n }}</td></tr>{% endfor %}</tbody></table>
+      <nav class="vitals-pager784" data-dose-pager aria-label="Logged doses pagination" hidden>
+    <button type="button" data-dose-prev>Previous</button>
+    <span data-dose-page role="status" aria-live="polite"></span>
+    <button type="button" data-dose-next>Next</button>
+  </nav>
       {% else %}<p class="empty">None.</p>{% endif %}
     </div>
     <div>
@@ -196,22 +201,22 @@
     <thead><tr><th>When</th><th class="n">Weight ({{ unit }})</th><th class="n">Blood pressure</th><th class="n">Pulse</th><th>Context</th><th>Notes</th><th>Actions</th></tr></thead>
     <tbody>
     {% for r in rows %}
-    <tr id="vital-reading-{{ r.id }}" data-vitals-when="{{ r.measured_at.isoformat() }}">
+    <tr id="vital-reading-{{ r.id }}" data-vitals-when="{{ r.measured_at.isoformat() }}"{% if loop.index > 5 %} hidden{% endif %}>
       <td>{{ r.measured_at|dt }}</td>
       <td class="n">{{ weight_unit_display(r.weight_kg)|n1 }}</td>
       <td class="n">{% if r.systolic %}{{ r.systolic }}/{{ r.diastolic }}{% else %}—{% endif %}</td>
       <td class="n">{{ r.pulse_bpm if r.pulse_bpm else '—' }}</td>
       <td>{{ r.context or '—' }}</td>
-      <td class="vitals-notes783" data-vitals-full-notes="{{ r.notes or '' }}">
-        {% set words = (r.notes or '').split() %}
-        {% if words|length > 4 %}
-        <details><summary>{{ words[:4]|join(' ') }}… <span class="vitals-more783">More</span><span class="vitals-less783">Less</span></summary><div class="vitals-note-full783">{{ r.notes }}</div></details>
-        {% else %}{{ r.notes or '—' }}{% endif %}
-      </td>
+      <td class="vitals-notes783" data-vitals-full-notes="{{ r.notes or '' }}">{% if r.notes and r.notes.strip() %}<a href="/vitals/{{ r.id }}/edit?days={{ days }}&amp;events={{ 1 if events_on else 0 }}#vital-notes784" aria-label="More: view reading notes">More</a>{% endif %}</td>
       <td class="vitals-actions783"><form method="get" action="/vitals/{{ r.id }}/edit" style="display:inline"><input type="hidden" name="days" value="{{ days }}"><input type="hidden" name="events" value="{{ 1 if events_on else 0 }}"><button type="submit">Edit</button></form> <button type="button" style="color:var(--brick)" hx-delete="/vitals/{{ r.id }}" hx-confirm="Delete this reading?">Delete</button></td>
     </tr>
     {% else %}<tr><td colspan="7" class="empty">No readings in this range.</td></tr>{% endfor %}
     </tbody>
   </table></div>
+  <nav class="vitals-pager784" data-reading-pager aria-label="Readings pagination" hidden>
+    <button type="button" data-reading-prev>Previous</button>
+    <span data-reading-page role="status" aria-live="polite"></span>
+    <button type="button" data-reading-next>Next</button>
+  </nav>
 </section>
 {% endblock %}
