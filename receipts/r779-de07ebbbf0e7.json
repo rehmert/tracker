@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "666ee1076b77e723e414df208312ef51e123e635",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T16:27:37+00:00",
+  "markers": [
+    "RELEASE_779_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_779_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_779_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_779_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/779-colon-free-24h-entry",
+  "release": 779,
+  "request_id": "r779-de07ebbbf0e7",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T16:27:01+00:00",
+  "status": "passed",
+  "target": "de07ebbbf0e7e2095bdcb2996ce3f4cb776e3205",
+  "test_counts": [
+    "60 passed, 2 warnings"
+  ]
+}
