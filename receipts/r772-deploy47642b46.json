@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "ac330a08ffa4ff49ca86e034b9aa81f4e583a8c7",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T14:35:11+00:00",
+  "markers": [
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=47642b465b1cb98f40aab2ce68c6a7526394298d",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=47642b465b1cb98f40aab2ce68c6a7526394298d",
+    "PROMOTED_COMMIT=47642b465b1cb98f40aab2ce68c6a7526394298d",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=47642b465b1cb98f40aab2ce68c6a7526394298d",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r772-preflight47642b",
+  "ref": "release/772-google-tasks-active-protocols-only",
+  "release": 772,
+  "request_id": "r772-deploy47642b46",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T14:34:38+00:00",
+  "status": "passed",
+  "target": "47642b465b1cb98f40aab2ce68c6a7526394298d",
+  "test_counts": []
+}
