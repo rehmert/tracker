@@ -1,0 +1,29 @@
+/* Release 766 cross-domain trend report, print and phone card layout */
+.trends766-page{max-width:100%;min-width:0;}
+.trends766-links{display:flex;flex-wrap:wrap;gap:.75rem;}
+.trends766-links a{display:inline-flex;min-height:44px;align-items:center;}
+.trends766-filter{display:flex;flex-wrap:wrap;gap:.5rem;align-items:end;margin:.75rem 0;}
+.trends766-filter label{display:grid;gap:.2rem;}
+.trends766-filter button,.trends766-filter select,.trends766-filter a{min-height:44px;}
+.trends766-filter a{display:inline-flex;align-items:center;}
+.trends766-scroll{overflow-x:auto;}
+.trends766-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;}
+.trends766-table th,.trends766-table td{padding:.45rem;border-bottom:1px solid var(--border,#8998a7);text-align:right;white-space:nowrap;}
+.trends766-table th:first-child{text-align:left;}
+.trends766-table small{font-size:.75rem;opacity:.8;}
+@media(max-width:760px){
+ .trends766-table thead{display:none;}
+ .trends766-table tbody{display:grid;gap:.7rem;}
+ .trends766-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.15rem;border:1px solid var(--border,#8998a7);border-radius:.7rem;padding:.6rem;}
+ .trends766-table tr th{grid-column:1/-1;text-align:left;font-weight:750;}
+ .trends766-table tr td{display:flex;flex-direction:column;white-space:normal;text-align:left;overflow-wrap:anywhere;}
+ .trends766-table tr td:before{content:attr(data-label);font-size:.75rem;opacity:.78;}
+}
+@media print{
+ .trends766-links,.trends766-filter{display:none!important;}
+ .trends766-table thead{display:table-header-group;}
+ .trends766-table tbody{display:table-row-group;}
+ .trends766-table tr{display:table-row;border:none;}
+ .trends766-table tr td{display:table-cell;white-space:nowrap;}
+ .trends766-table tr td:before{display:none;}
+}

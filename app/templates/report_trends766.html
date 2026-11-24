@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Weekly Integrated Trends{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/tracker-trends766.css?v=766">
+<section class="trends766-page">
+  <nav class="trends766-links" aria-label="Report actions">
+    <a href="/progress">Body Progress</a>
+    <a href="/reports">Consolidated Reports</a>
+    <a href="/device-import">Import Device Days</a>
+  </nav>
+  <h1>Weekly Integrated Trends</h1>
+  <p class="note">Recorded measurements and actual activity, grouped by Monday-start weeks. All averages use logged sample days, not unrecorded days or interpolated values. Date windows may contain partial first and last weeks. Similar trends do not establish causation.</p>
+  <form method="get" action="/reports/trends" class="trends766-filter">
+    <label>Window
+      <select name="days">
+      {% for choice in available %}
+        <option value="{{ choice }}" {% if choice == days %}selected{% endif %}>{{ choice }} days</option>
+      {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Apply</button>
+    <a href="/reports/trends.csv?days={{ days }}">Export CSV</a>
+    <button type="button" onclick="window.print()">Print Report</button>
+  </form>
+  <p class="note">{{ units.date_start }} – {{ units.date_end }} · Weight {{ units.weight }} · Waist {{ units.waist }}. {% if not units.food_available %}Food unavailable in this workspace; protein averages omitted.{% else %}Protein averages include only days where all logged foods have reported protein values.{% endif %}</p>
+  <div class="trends766-scroll">
+    <table class="trends766-table">
+      <caption>Weekly recorded observations and coverage</caption>
+      <thead><tr>
+        <th>Week starting</th><th>Weight avg</th><th>Waist avg</th>
+        <th>Workouts</th><th>Doses</th><th>Protein/day</th>
+        <th>Steps/day</th><th>Sleep/day</th><th>Resting BPM</th><th>Glucose avg</th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+      <tr>
+        <th>{{ r.week }}</th>
+        <td data-label="Weight">{{ r.weight if r.weight is not none else '—' }} <small>{{ r.weight_days }}d</small></td>
+        <td data-label="Waist">{{ r.waist if r.waist is not none else '—' }} <small>{{ r.waist_days }}d</small></td>
+        <td data-label="Workouts">{{ r.workouts }}</td>
+        <td data-label="Doses">{{ r.doses }}</td>
+        <td data-label="Protein">{{ r.protein if r.protein is not none else '—' }} <small>{{ r.protein_days }}d</small></td>
+        <td data-label="Steps">{{ r.steps if r.steps is not none else '—' }} <small>{{ r.step_days }}d</small></td>
+        <td data-label="Sleep">{{ r.sleep if r.sleep is not none else '—' }} <small>{{ r.sleep_days }}d</small></td>
+        <td data-label="Resting">{{ r.rest if r.rest is not none else '—' }} <small>{{ r.rest_days }}d</small></td>
+        <td data-label="Glucose">{{ r.glucose if r.glucose is not none else '—' }} <small>{{ r.glucose_days }}d</small></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Workouts count completed sessions; doses count logged dose events. Device days are grouped by date; when multiple sources overlap, the newest nonempty value for each metric wins without adding duplicate steps. Food coverage excludes incomplete nutrition days. To visualize continuous weight, waist, workout and lab trends, use the existing <a href="/progress">Progress dashboard</a>.</p>
+</section>
+{% endblock %}
