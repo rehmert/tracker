@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r779-b3e5566fffa3",
+  "request_id": "r779-de07ebbbf0e7",
   "action": "qualify",
   "release": 779,
-  "target": "b3e5566fffa32cfa4d5d2e2cad69c2090bb7a575",
+  "target": "de07ebbbf0e7e2095bdcb2996ce3f4cb776e3205",
   "base": "666ee1076b77e723e414df208312ef51e123e635",
   "ref": "release/779-colon-free-24h-entry",
   "previous_request_id": null
