@@ -19,7 +19,7 @@
   const normalizeClock = raw => {
     const value = String(raw || '').trim();
     if (clockPattern.test(value)) return value;
-    if (!/^\\d{3,4}$/.test(value)) return null;
+    if (!/^\d{3,4}$/.test(value)) return null;
     const hhmm = value.padStart(4, '0');
     const formatted = hhmm.slice(0, 2) + ':' + hhmm.slice(2);
     return clockPattern.test(formatted) ? formatted : null;

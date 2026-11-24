@@ -13,7 +13,7 @@
   function normalizeClock(raw) {
     const value = String(raw || '').trim();
     if (validClock.test(value)) return value;
-    if (!/^\\d{3,4}$/.test(value)) return null;
+    if (!/^\d{3,4}$/.test(value)) return null;
     const compact = value.padStart(4, '0');
     const normalized = compact.slice(0, 2) + ':' + compact.slice(2);
     return validClock.test(normalized) ? normalized : null;
