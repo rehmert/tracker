@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r767-preflight5d23aa",
-  "action": "prod_preflight",
+  "request_id": "r767-deploy5d23aaf4",
+  "action": "prod_deploy",
   "release": 767,
   "target": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13",
   "base": "8c67580611fd945d9ae83f8015f071a24ab6fee5",
   "ref": "release/767-prod-device-schema-guard",
-  "previous_request_id": "r767-install5d23aaf4"
+  "previous_request_id": "r767-preflight5d23aa"
 }
