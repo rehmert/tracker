@@ -394,6 +394,31 @@ def validate_control_transition(previous: dict, current: dict, prior_receipt: di
         if expected_base and current['base'] != expected_base:
             raise GateError('Command changed previously approved stage base')
         return
+    # Exact recovery of a failed PROD deployment whose *source* was promoted
+    # but whose remote pre-install schema guard failed before DB backup or code
+    # installation. The failed receipt remains immutable. A distinct release
+    # must undergo fresh full stage sequencing and a verified PROD preflight.
+    # This one-off exception does not apply to any other failed deployment.
+    if (
+        status == 'failed' and previous['action'] == 'prod_deploy'
+        and previous['release'] == 767
+        and previous['request_id'] == 'r767-deploy5d23aaf4'
+        and previous['target'] == '5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13'
+        and previous['base'] == '8c67580611fd945d9ae83f8015f071a24ab6fee5'
+        and previous['ref'] == 'release/767-prod-device-schema-guard'
+        and prior_receipt.get('exit_code') == 1
+        and prior_receipt.get('failure_category') == 'PromotionOrDeploymentGate'
+        and 'PROMOTED_COMMIT=5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13'
+            in prior_receipt.get('markers', [])
+        and 'REMOTE_DEPLOY_EXIT_STATUS=1' in prior_receipt.get('markers', [])
+        and current['action'] == 'qualify'
+        and current['release'] == 768
+        and current['base'] == previous['target']
+        and current['ref'] == 'release/768-prod-relative-data-path-recovery'
+        and current['target'] not in (previous['target'], previous['base'])
+        and current['previous_request_id'] is None
+    ):
+        return
     if status == 'failed' and previous['action'] == 'qualify':
         if (current['action'] == 'qualify'
                 and current['release'] == previous['release']

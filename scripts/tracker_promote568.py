@@ -44,6 +44,12 @@ RECOVERY_677_PROD_BASE = "2e8f65d7c61c522a5ab01f78cd3783e15559ece3"
 RECOVERY_705_MAIN = "24cb9ec47417e001c3f96dfed630e3b8b0264d93"
 RECOVERY_705_PROD_FLOOR = "4d752be1a62ffa8a5feba78a50033e980a30b26c"
 RECOVERY_705_REF = "refs/remotes/origin/release/705-csrf-dependency-closeout"
+# Release 768 only: GitHub main was promoted to 767, but the immutable
+# r767-deploy5d23aaf4 receipt failed *before* any PROD install. PROD remains
+# at Release 765. A new SHA fixes the validated relative data directory.
+RECOVERY_768_MAIN = "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13"
+RECOVERY_768_PROD_BASE = "8c67580611fd945d9ae83f8015f071a24ab6fee5"
+RECOVERY_768_REF = "refs/remotes/origin/release/768-prod-relative-data-path-recovery"
 RECOVERY_705_ALLOWED = frozenset({
     "docs/release-705-csrf-dependency-closeout.md",
     "scripts/tracker-browser-preview705.sh",
@@ -241,6 +247,38 @@ def recovery_705_prod_lag_allowed(main: str, target: str, base: str) -> bool:
     return True
 
 
+def recovery_768_main_allowed(main: str, target: str, base: str) -> bool:
+    """Exact, audited 767-promoted/765-installed recovery, never a generic skip."""
+    if (main != RECOVERY_768_MAIN or base != RECOVERY_768_PROD_BASE
+            or not SHA.fullmatch(target) or target == main):
+        return False
+    try:
+        if git("rev-parse", RECOVERY_768_REF) != target:
+            return False
+        for ancestor, descendant in (
+            (base, main), (main, target),
+        ):
+            run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
+                 "merge-base", "--is-ancestor", ancestor, descendant])
+        paths = set(git("diff", "--name-only", main, target).splitlines())
+        # The already DEV-qualified 766 app bytes must remain untouched.
+        if not paths or any(
+            not path.startswith(("scripts/", "docs/", "tests/"))
+            for path in paths
+        ):
+            return False
+        source = git("show", f"{target}:scripts/tracker-prod-schema-backup767.py")
+        if ("def resolve_data_dir768(" not in source
+                or 'return resolve_data_dir768(Path("/opt/tracker"), Path("/etc/tracker.env"))' not in source):
+            return False
+        remote_guard = git("show", f"{target}:scripts/tracker_prod_remote568.sh")
+        if '[[ "$RELEASE" == 767 || "$RELEASE" == 768 ]]' not in remote_guard:
+            return False
+    except (subprocess.CalledProcessError, OSError, ValueError):
+        return False
+    return True
+
+
 def preflight(release: int, target: str, base: str, ref: str) -> None:
     if os.geteuid() != 0 or output(["hostname", "-s"]) != "tracker-dev":
         raise ReleaseError("Run as root on tracker-dev only")
@@ -271,8 +309,11 @@ def preflight(release: int, target: str, base: str, ref: str) -> None:
     allowed_705 = release == 705 and recovery_705_prod_lag_allowed(
         main, target, base
     )
+    allowed_768 = release == 768 and recovery_768_main_allowed(
+        main, target, base
+    )
     if main not in (base, target) and not (
-        allowed_648 or allowed_677 or allowed_705
+        allowed_648 or allowed_677 or allowed_705 or allowed_768
     ):
         raise ReleaseError(f"GitHub main changed unexpectedly: {main}")
     if allowed_648:
@@ -281,6 +322,8 @@ def preflight(release: int, target: str, base: str, ref: str) -> None:
         print(f"PROD_RECOVERY_677_ANCESTOR_VERIFIED={main}", flush=True)
     if allowed_705:
         print(f"PROD_CATCHUP_705_FROM_MAIN={main}", flush=True)
+    if allowed_768:
+        print(f"PROD_RECOVERY_768_PROMOTED_MAIN={main}", flush=True)
     if git("rev-parse", f"refs/remotes/origin/{ref}") != target:
         raise ReleaseError("Release branch differs from exact qualified commit")
     run([
@@ -352,7 +395,8 @@ def promote(target: str, base: str) -> None:
     main = git("rev-parse", "origin/main")
     if (main == base or recovery_648_main_allowed(main, target, base)
             or recovery_677_main_allowed(main, target, base)
-            or recovery_705_prod_lag_allowed(main, target, base)):
+            or recovery_705_prod_lag_allowed(main, target, base)
+            or recovery_768_main_allowed(main, target, base)):
         # Ordinary fast-forward only. Never rewrite GitHub main history.
         run(["git", "-c", f"safe.directory={APP}", "-C", str(APP),
              "push", "origin", f"{target}:refs/heads/main"])

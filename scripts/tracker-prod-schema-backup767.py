@@ -82,24 +82,37 @@ def review_source(root: Path, base: str, target: str) -> None:
         raise ValueError("Device table registration or startup creation absent")
 
 
-def live_data_dir() -> Path:
-    root = Path("/opt/tracker")
-    path = root / "data"
-    env = Path("/etc/tracker.env")
+def resolve_data_dir768(root: Path, env: Path) -> Path:
+    """Resolve exactly as the Tracker service resolves TRACKER_DATA_DIR.
+
+    In particular, a relative value is relative to WorkingDirectory
+    (/opt/tracker), not the Python script's temporary staging directory.
+    Do not allow a symlink for the resulting live database or data directory.
+    """
     if not env.is_file() or env.is_symlink():
         raise ValueError("Trusted environment file unavailable")
+    path = root / "data"
     for line in env.read_text(encoding="utf-8").splitlines():
-        match = re.match(r"^\s*(?:export\s+)?TRACKER_DATA_DIR\s*=(.*)$", line)
+        match = re.match(r"^\\s*(?:export\\s+)?TRACKER_DATA_DIR\\s*=(.*)$", line)
         if match and match.group(1).strip():
-            path = Path(match.group(1).strip().strip("\"'"))
-    if not path.is_absolute() or path.is_symlink():
-        raise ValueError("Invalid live Tracker data directory")
+            path = Path(match.group(1).strip().strip("\\\"'"))
+    # Match the service's WorkingDirectory=/opt/tracker. Tracker's
+    # config uses Path(...).resolve() after resolving the process CWD.
+    if not path.is_absolute():
+        path = root / path
+    if path.is_symlink():
+        raise ValueError("Live Tracker data directory may not be symlinked")
     path = path.resolve()
-    if path == Path("/") or not path.joinpath("tracker.db").is_file():
+    database = path / "tracker.db"
+    if path == Path("/") or not path.is_dir() or not database.is_file():
         raise ValueError("Live Tracker SQLite database missing")
-    if path.joinpath("tracker.db").is_symlink():
+    if database.is_symlink():
         raise ValueError("Live database may not be symlinked")
     return path
+
+
+def live_data_dir() -> Path:
+    return resolve_data_dir768(Path("/opt/tracker"), Path("/etc/tracker.env"))
 
 
 def verify_pre_schema_database(path: Path) -> None:

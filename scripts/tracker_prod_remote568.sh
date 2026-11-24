@@ -128,13 +128,16 @@ elif [[ "$RELEASE" == 760 ]]; then
     fail "Release 760 schema catch-up requires exact installed PROD 755 base"
   DEPLOY_EXTRA=(--reviewed-vial-758 --db-migration)
 fi
+# 767/768 promote the DEV-qualified 766 data model.
+# 768 is a separately reconciled recovery of failed 767; no replay of its
+# failed deployment request or record is permitted.
 # 767 promotes the already-qualified 766 data model. Its new independent
 # module is not covered by the older runner's schema-file allowlist.
 # Before any source installation, enforce an exact-reviewed additive schema,
 # strict present-upload integrity, a complete private database/upload archive,
 # and isolated restore verification. Never treat normal code-only release
 # backups as a substitute for this migration barrier.
-if [[ "$RELEASE" == 767 ]]; then
+if [[ "$RELEASE" == 767 || "$RELEASE" == 768 ]]; then
   [[ "$BASE" == 8c67580611fd945d9ae83f8015f071a24ab6fee5 ]] ||
     fail "Release 767 requires exact installed PROD Release 765 baseline"
   BACKUP_REL=scripts/tracker-prod-schema-backup767.py
