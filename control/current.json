@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r785-installfcd7ca0d",
-  "action": "dev_install",
+  "request_id": "r785-preflightfcd7ca0d",
+  "action": "prod_preflight",
   "release": 785,
   "target": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb",
-  "base": "afe947d0c019f2994165f3ea27d17793ad9d5f28",
+  "base": "b22e9599ff260f26c08294c93d75b189ba48e7f2",
   "ref": "release/785-vitals-event-pagination",
-  "previous_request_id": "r785-fcd7ca0dac3c"
+  "previous_request_id": "r785-installfcd7ca0d"
 }
