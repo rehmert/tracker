@@ -93,4 +93,4 @@ def test_775_documented_batch_edit_guideline_is_preserved():
         encoding="utf-8"
     )
     assert "single Save all action" in policy
-    assert "Commit the group atomically" in policy
+    assert "Commit the group atomically" in " ".join(policy.split())
