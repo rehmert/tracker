@@ -68,7 +68,8 @@ def vitals_page(request: Request, days: int = 90, events: int = 1,
     ev = services.events_between(db, x_start, now) if events else []
     markers = sorted((e for e in ev if e.kind == "marker"), key=lambda e: e.at, reverse=True)
     dose_counts: dict[str, int] = {}
-    for e in ev:
+    # Keep the per-compound totals, ordered by latest logged dose.
+    for e in sorted(ev, key=lambda e: e.at, reverse=True):
         if e.kind == "dose":
             dose_counts[e.group] = dose_counts.get(e.group, 0) + 1
     return render(
