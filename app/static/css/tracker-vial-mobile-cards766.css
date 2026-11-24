@@ -1,0 +1,18 @@
+/* Release 766: compact inventory list, existing full table retained. */
+.vial766-mobile-cards { display:none; }
+@media (max-width:760px) {
+  .vial766-mobile-cards { display:block; margin: .5rem 0; }
+  .vial766-mobile-header {display:flex;justify-content:space-between;align-items:baseline;gap:.4rem;flex-wrap:wrap;}
+  .vial766-mobile-header h2 {font-size:1.1rem;margin:.3rem 0;}
+  .vial766-card {border:1px solid var(--border,#8998a7);border-radius:.65rem;margin:.4rem 0;padding:.1rem .65rem;min-width:0;}
+  .vial766-card summary {display:flex;align-items:center;justify-content:space-between;gap:.45rem;min-height:60px;cursor:pointer;overflow-wrap:anywhere;}
+  .vial766-card summary > span:first-child {display:flex;flex-direction:column;gap:.15rem;min-width:0;}
+  .vial766-card summary small {font-size:.8rem;opacity:.8;}
+  .vial766-amount {font-weight:700;white-space:normal;text-align:right;font-variant-numeric:tabular-nums;}
+  .vial766-card-body {padding:.4rem 0 .6rem;}
+  .vial766-card-body p {margin:.2rem 0;}
+  .vial766-card-body a {display:inline-flex;align-items:center;min-height:48px;font-weight:700;}
+  #vial766-full-toggle {display:block;width:100%;min-height:48px;margin:.6rem 0;}
+  #vial766-full-table:not(.vial766-open) {display:none !important;}
+  #vial766-full-toggle:focus-visible,.vial766-card summary:focus-visible {outline:3px solid var(--accent,#2563eb);outline-offset:2px;}
+}

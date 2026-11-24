@@ -7,6 +7,8 @@
 <link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
 <script defer src="/static/js/tracker-vial-jumps603.js?v=603"></script>
 <script defer src="/static/js/tracker-vial-mobile601.js?v=601"></script>
+<link rel="stylesheet" href="/static/css/tracker-vial-mobile-cards766.css?v=766">
+<script defer src="/static/js/tracker-vial-mobile-cards766.js?v=766"></script>
 <script defer src="/static/js/tracker-bulk-selection.js?v=bulk-selection-batch-20261101"></script>
 <script defer src="/static/js/tracker-vial-label-sheets447.js?v=447"></script>
 <link rel="stylesheet" href="/static/css/tracker-bulk-editor-guided.css?v=20261103b">
@@ -710,7 +712,38 @@ document.addEventListener("DOMContentLoaded", () => {
   </p>
 </div>
 <!-- END_TRACKER_STAGE34_ATTENTION -->
-<div class="scroll"><table id="tracker-vials-sortable">
+<section class="vial766-mobile-cards" id="vial766-mobile-cards"
+         aria-label="Compact vial inventory">
+  <div class="vial766-mobile-header">
+    <h2>Vials · Compact View</h2>
+    <small>{{ vials|length }} matching inventory records</small>
+  </div>
+  {% for v in (vials|sort(attribute='id')|sort(attribute='compound.name'))[:50] %}
+  {% set d = views[v.id] %}
+  <details class="vial766-card">
+    <summary>
+      <span><strong data-no-title-case>{{ v.compound.name }}</strong>
+        <small>#{{ v.id }} · {{ v.status|replace('_',' ') }}{% if v.label %} · {{ v.label }}{% endif %}</small>
+      </span>
+      <span class="vial766-amount">{{ d.remaining_base|amt(d.dim) }}</span>
+    </summary>
+    <div class="vial766-card-body">
+      <p>Remaining {{ d.remaining_base|amt(d.dim) }} of {{ d.content_base|amt(d.dim) }}</p>
+      <p>COA: {{ 'Attached' if v.all_coas else 'Missing' }}{% if v.lot %} · Lot {{ v.lot }}{% endif %}</p>
+      <p>{{ v.purchase.vendor if v.purchase and v.purchase.vendor else 'No vendor recorded' }}</p>
+      <a href="/vials/{{ v.id }}">Open Vial #{{ v.id }}</a>
+    </div>
+  </details>
+  {% else %}
+    <p class="note">No vials match these filters.</p>
+  {% endfor %}
+  {% if vials|length > 50 %}
+  <p class="note">Showing the first 50 sorted vials. Open the full table for all {{ vials|length }} records.</p>
+  {% endif %}
+  <button type="button" id="vial766-full-toggle" aria-controls="vial766-full-table"
+          aria-expanded="false">Show Full Table and Bulk Selection</button>
+</section>
+<div class="scroll" id="vial766-full-table"><table id="tracker-vials-sortable">
   <thead><tr><th><input type="checkbox" id="bulk-all" aria-label="Select all visible vials"></th><th data-vial-sort="compound" aria-sort="none"><button type="button" class="vial-sort-button">Compound</button></th><th data-vial-sort="vial" aria-sort="none"><button type="button" class="vial-sort-button">Vial</button></th><th data-vial-sort="remaining" aria-sort="none"><button type="button" class="vial-sort-button">Remaining</button></th><th class="n" data-vial-sort="amount" aria-sort="none"><button type="button" class="vial-sort-button">Amount left</button></th><th class="n" data-vial-sort="landed" aria-sort="none"><button type="button" class="vial-sort-button">Landed cost</button></th><th data-vial-sort="cost" aria-sort="none"><button type="button" class="vial-sort-button">Cost</button></th><th data-vial-sort="coa" aria-sort="none"><button type="button" class="vial-sort-button">COA</button></th><th data-vial-sort="status" aria-sort="none"><button type="button" class="vial-sort-button">Status</button></th><th data-vial-sort="vendor" aria-sort="none"><button type="button" class="vial-sort-button">Vendor</button></th></tr></thead>
   <tbody>
   {% for v in vials|sort(attribute='id')|sort(attribute='compound.name') %}{% set d = views[v.id] %}
