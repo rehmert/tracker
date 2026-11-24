@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "de07ebbbf0e7e2095bdcb2996ce3f4cb776e3205",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-24T16:40:17+00:00",
+  "markers": [
+    "RELEASE_780_DEV_INSTALL=SUCCESS",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r780-8da5603569c7",
+  "ref": "release/780-google-tasks-fast-completions",
+  "release": 780,
+  "request_id": "r780-install8da56035",
+  "schema": 1,
+  "started_at_utc": "2026-11-24T16:39:42+00:00",
+  "status": "passed",
+  "target": "8da5603569c76beb8aab94168e250235a718aef0",
+  "test_counts": [
+    "56 passed, 1 warning"
+  ]
+}
