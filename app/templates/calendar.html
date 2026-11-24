@@ -4,12 +4,13 @@
 <link rel="stylesheet" href="/static/css/tracker-calendar-bundle742.css?v=742">
 
 <script src="/static/js/tracker-calendar-views374.js?v=374" defer></script>
-<script src="/static/js/tracker-calendar-workbench.js?v=20261103c" defer></script>
+<script src="/static/js/tracker-calendar-workbench.js?v=783" defer></script>
 <script src="/static/js/tracker-calendar-day-context.js?v=20261103" defer></script>
 <script src="/static/js/tracker-calendar-day-navigation.js?v=20261103" defer></script>
 <script src="/static/js/tracker-calendar-vial756.js?v=756" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 <h1>Protocol calendar</h1>
+{% if google_review_rows or request.query_params.get('review_saved') or request.query_params.get('review_error') %}{% include '_google_protocol_review783.html' %}{% endif %}
 <nav class="tracker-macd741-actions" aria-label="Calendar schedule management">
 <a class="tracker-macd741-action" href="/protocols">Manage protocols</a>
 <a class="tracker-macd741-action" href="#calendar-review-agenda">Review projected events</a>
@@ -28,6 +29,7 @@
 <section class="calendar-workbench" id="calendar-workbench" aria-label="Calendar tools">
   <div class="calendar-summary" aria-label="Current month entry totals">
     <div><strong>{{ status_counts['due'] }}</strong><span>Due Today</span></div>
+    {% if status_counts.get('pending_review') %}<div><strong>{{ status_counts['pending_review'] }}</strong><span>Google Pending Review</span></div>{% endif %}
     <div><strong>{{ status_counts['upcoming'] }}</strong><span>Upcoming</span></div>
     <div><strong>{{ status_counts['unrecorded'] }}</strong><span>Not Logged</span></div>
     <div><strong>{{ status_counts['recorded'] }}</strong><span>Matched Logs</span></div>
@@ -40,7 +42,8 @@
     <label class="field" for="calendar-status-filter"><span>Show</span>
       <select id="calendar-status-filter" aria-controls="calendar-grid">
         <option value="all">All entries</option>
-        <option value="needs-action">Due and not logged</option>
+        <option value="needs-action">Due, not logged or pending review</option>
+        <option value="pending_review">Google pending review</option>
         <option value="due">Due today</option>
         <option value="upcoming">Upcoming</option>
         <option value="unrecorded">Not logged</option>
@@ -75,6 +78,7 @@
         <td>
           {% if x.status == 'unrecorded' %}<span class="calendar-review-status unrecorded">No matching log</span>
           {% elif x.status == 'due' %}<span class="calendar-review-status due">Due today</span>
+          {% elif x.status == 'pending_review' %}<a class="button" href="#google-protocol-review783">Google completed · Review</a>
           {% else %}<span class="calendar-review-status upcoming">Upcoming</span>{% endif %}
         </td>
         <td><strong>{{ x.name }}</strong><small>{{ x.protocol }}</small></td>
@@ -94,7 +98,7 @@
     </table>
   </div>
 </details>
-<p class="ux-legend" aria-label="Calendar legend"><span>✓ Recorded on date (not verified)</span><span>! No matching log</span><span>◉ Due today</span><span>○ Upcoming</span></p>
+<p class="ux-legend" aria-label="Calendar legend"><span>✓ Recorded on date (not verified)</span><span>! No matching log</span><span>◉ Due today</span><span>○ Upcoming</span><span>↻ Google completed · Review</span></p>
 <nav id="calendar-matching-day-navigation"
      aria-label="Navigate dates with matching calendar entries">
   <button type="button"
@@ -120,9 +124,11 @@
   {% elif x.status == 'extra' %}<div class="calendar-event recorded" title="Recorded dose without a matching planned entry">✓ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(unmatched log)</small></div>
   <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;history_date={{ d.date.isoformat() }}#dose-history-unified614">Review recorded history</a>
   {% if x.blend_id %}<a class="tag" href="/blends/{{ x.blend_id }}" aria-label="View source blend for {{ x.name }}">View source blend #{{ x.blend_id }}</a>{% endif %}
+  {% elif x.status == 'pending_review' %}<div class="calendar-event" style="border:2px solid var(--teal,#1265ad)">↻ {{ x.name }} · {{ x.dose }} · {{ x.dose_time or '' }} <small>Google completed — pending review</small></div>
   {% elif x.status == 'unrecorded' %}<div class="calendar-event calendar-unrecorded" title="Past projected entry with no matching dose log">! {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(not recorded)</small></div>
   {% elif x.status == 'due' %}<div class="calendar-event projected" title="Projected for today">◉ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(today)</small></div>
   {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>({{ x.protocol }})</small></div>{% endif %}
+{% if x.google_pending %}<a class="button" href="#google-protocol-review783">Reconcile Google completion</a>{% endif %}
 {% if x.status in ('due', 'upcoming', 'unrecorded') %}
   <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;planned_date={{ d.date.isoformat() }}&amp;planned_time={{ x.dose_time or '' }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit }}">Log this dose</a>
   <a class="tag"
