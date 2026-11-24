@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r775-693c386d7328",
+  "request_id": "r775-66a2e2fdfe55",
   "action": "qualify",
   "release": 775,
-  "target": "693c386d7328b4029eadd3c017db9a53aa4c69d8",
+  "target": "66a2e2fdfe55361c1a8d4ad6e87d3e9a6e140ad2",
   "base": "30684374acc094bab456f70938340ebce19b8f57",
   "ref": "release/775-google-tasks-navigation",
   "previous_request_id": null
