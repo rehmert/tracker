@@ -95,7 +95,7 @@ def test_713_all_native_time_fields_use_24hour_text_controls(scheme):
                 stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_PROXYCOUNT"
                 assert page.locator(".tracker-time24-input713").count() == count, path
                 stage = "PAGE_" + path.strip("/").replace("/", "_").upper() + "_SCRIPT"
-                assert "tracker-time24-global713.js?v=713" in page.content()
+                assert "tracker-time24-global713.js?v=779" in page.content()
 
             stage = "PK_PROGRAMMATIC_SYNC"
             pk_response = page.goto(base + "/pk", wait_until="networkidle")
