@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "edb792410539e5186e5b6c186d5b5c7ce8d137a5",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T22:13:14+00:00",
+  "finished_at_utc": "2026-11-24T22:15:27+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=b22e9599ff260f26c08294c93d75b189ba48e7f2",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=b22e9599ff260f26c08294c93d75b189ba48e7f2",
+    "PROMOTED_COMMIT=b22e9599ff260f26c08294c93d75b189ba48e7f2",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=b22e9599ff260f26c08294c93d75b189ba48e7f2",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r783-installb22e9599",
+  "previous_request_id": "r783-preflightb22e9599",
   "ref": "release/783-google-protocol-review",
   "release": 783,
-  "request_id": "r783-preflightb22e9599",
+  "request_id": "r783-prodb22e9599",
   "schema": 1,
-  "started_at_utc": "2026-11-24T22:13:12+00:00",
+  "started_at_utc": "2026-11-24T22:15:00+00:00",
   "status": "passed",
   "target": "b22e9599ff260f26c08294c93d75b189ba48e7f2",
   "test_counts": []
