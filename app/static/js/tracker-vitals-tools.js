@@ -205,7 +205,7 @@
       return Array.from(row.cells)
         .slice(0, 6)
         .some(cell =>
-          cell.textContent
+          (cell.dataset.vitalsFullNotes ?? cell.textContent)
             .toLocaleLowerCase()
             .includes(query)
         );
@@ -370,7 +370,7 @@
       const data = visibleRows().map(row => {
         const values = Array.from(row.cells)
           .slice(0, 6)
-          .map(cell => cell.textContent.trim());
+          .map(cell => cell.dataset.vitalsFullNotes ?? cell.textContent.trim());
         // Export the unambiguous local timestamp stored with the rendered row,
         // not the localized display text.
         values[0] = row.dataset.vitalsWhen || values[0];
