@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r767-5d23aaf4f7e7.json",
+  "receipt_path": "receipts/r767-install5d23aaf4.json",
   "release": 767,
-  "request_id": "r767-5d23aaf4f7e7",
+  "request_id": "r767-install5d23aaf4",
   "schema": 1,
   "status": "passed",
   "target": "5d23aaf4f7e7fa4b54c1d5535a622bdd9e9aac13"
