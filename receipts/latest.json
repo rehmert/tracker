@@ -1,24 +1,20 @@
 {
-  "action": "dev_install",
-  "base": "afe947d0c019f2994165f3ea27d17793ad9d5f28",
+  "action": "prod_preflight",
+  "base": "b22e9599ff260f26c08294c93d75b189ba48e7f2",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-24T22:29:16+00:00",
+  "finished_at_utc": "2026-11-24T22:33:34+00:00",
   "markers": [
-    "RELEASE_785_DEV_INSTALL=SUCCESS",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r785-fcd7ca0dac3c",
+  "previous_request_id": "r785-installfcd7ca0d",
   "ref": "release/785-vitals-event-pagination",
   "release": 785,
-  "request_id": "r785-installfcd7ca0d",
+  "request_id": "r785-preflightfcd7ca0d",
   "schema": 1,
-  "started_at_utc": "2026-11-24T22:28:32+00:00",
+  "started_at_utc": "2026-11-24T22:33:32+00:00",
   "status": "passed",
   "target": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb",
-  "test_counts": [
-    "16 passed, 1 warning"
-  ]
+  "test_counts": []
 }
