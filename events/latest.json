@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r786-8d78d2a01d51.json",
+  "receipt_path": "receipts/r786-install8d78d2a0.json",
   "release": 786,
-  "request_id": "r786-8d78d2a01d51",
+  "request_id": "r786-install8d78d2a0",
   "schema": 1,
   "status": "passed",
   "target": "8d78d2a01d5150102add2682e9fca51d60ea2790"
