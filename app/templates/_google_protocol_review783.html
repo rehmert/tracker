@@ -24,13 +24,13 @@
       </label>
       {% endif %}
       {% if row.item %}
-      <a class="button" href="/dose-workspace?compound_id={{ row.item.compound_id }}&amp;planned_date={{ link.scheduled_on }}&amp;planned_time={{ link.scheduled_time|urlencode }}&amp;planned_amount={{ row.item.amount_value }}&amp;planned_unit={{ row.item.amount_unit|urlencode }}">Review in Dose Workspace</a>
-      <a class="button" href="/doses?compound_id={{ row.item.compound_id }}&amp;history_date={{ link.scheduled_on }}#dose-history-unified614">Recorded history</a>
+      <a class="tracker-ui-action" href="/dose-workspace?compound_id={{ row.item.compound_id }}&amp;planned_date={{ link.scheduled_on }}&amp;planned_time={{ link.scheduled_time|urlencode }}&amp;planned_amount={{ row.item.amount_value }}&amp;planned_unit={{ row.item.amount_unit|urlencode }}">Review in Dose Workspace</a>
+      <a class="tracker-ui-action" href="/doses?compound_id={{ row.item.compound_id }}&amp;history_date={{ link.scheduled_on }}#dose-history-unified614">Recorded history</a>
       {% endif %}
     </div>
     {% endfor %}
     <label><input type="checkbox" name="confirm" value="yes" required> I verified the selected administrations, amounts, sources and times.</label>
-    <button type="submit" class="primary">Save selected reconciliations</button>
+    <button type="submit" class="tracker-ui-action tracker-ui-action--primary">Save selected reconciliations</button>
   </form>
   {% else %}<p>No outstanding Google protocol completions.</p>{% endif %}
 </section>
