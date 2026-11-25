@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-25T17:08:02+00:00",
+  "finished_at_utc": "2026-11-25T17:10:27+00:00",
   "markers": [
-    "RELEASE_786_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_786_EXIT_STATUS=0",
+    "RELEASE_786_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_786_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_786_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r786-8d78d2a01d51",
   "ref": "release/786-calendar-quick-dose",
   "release": 786,
-  "request_id": "r786-8d78d2a01d51",
+  "request_id": "r786-install8d78d2a0",
   "schema": 1,
-  "started_at_utc": "2026-11-25T17:07:52+00:00",
+  "started_at_utc": "2026-11-25T17:09:49+00:00",
   "status": "passed",
   "target": "8d78d2a01d5150102add2682e9fca51d60ea2790",
   "test_counts": [
