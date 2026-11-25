@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "b0b46bfb06bd90d9cf9332756795c3554c25030e",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-25T17:50:54+00:00",
+  "finished_at_utc": "2026-11-25T17:53:20+00:00",
   "markers": [
-    "RELEASE_788_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_788_EXIT_STATUS=0",
+    "RELEASE_788_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_788_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_788_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r788-758915673fb2",
   "ref": "release/788-google-single-confirm",
   "release": 788,
-  "request_id": "r788-758915673fb2",
+  "request_id": "r788-install75891567",
   "schema": 1,
-  "started_at_utc": "2026-11-25T17:50:42+00:00",
+  "started_at_utc": "2026-11-25T17:52:40+00:00",
   "status": "passed",
   "target": "758915673fb20da26d4bdbca2239c87928fe2f70",
   "test_counts": [

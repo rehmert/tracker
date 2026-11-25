@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "b0b46bfb06bd90d9cf9332756795c3554c25030e",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-25T17:53:20+00:00",
+  "markers": [
+    "RELEASE_788_DEV_INSTALL=SUCCESS",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r788-758915673fb2",
+  "ref": "release/788-google-single-confirm",
+  "release": 788,
+  "request_id": "r788-install75891567",
+  "schema": 1,
+  "started_at_utc": "2026-11-25T17:52:40+00:00",
+  "status": "passed",
+  "target": "758915673fb20da26d4bdbca2239c87928fe2f70",
+  "test_counts": [
+    "13 passed, 1 warning"
+  ]
+}
