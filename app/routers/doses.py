@@ -421,7 +421,9 @@ def preview(request: Request, vial_id: str = Form(""), amount: str = Form(""),
 async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str = Form(""),
                 amount: float = Form(...), unit: str = Form(...), kind: str = Form("dose"),
                 site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""), submission_token: str = Form(""),
-                db: Session = Depends(get_scoped_db390), planned_compound_id: int | None = Form(None)):
+                db: Session = Depends(get_scoped_db390), planned_compound_id: int | None = Form(None),
+                calendar_item_id: int | None = Form(None), calendar_date: str = Form(""),
+                calendar_snapshot: str = Form(""), calendar_clock: str = Form("")):
     def reject_dose(message: str):
         """Release the inventory reservation before returning an error."""
         db.rollback()
@@ -436,6 +438,25 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
         db.rollback()
         return reject_dose("Inventory is busy. Please wait a moment and retry.")
     submitted_form = await request.form()
+    calendar_return = ""
+    if calendar_item_id is not None:
+        from ..calendar_quick_dose786 import quick_plan786, calendar_return786, parse_clock786
+        try:
+            day = date.fromisoformat(calendar_date)
+            plan = quick_plan786(db, calendar_item_id, day)
+            source = plan["source"]
+            if not source or not calendar_snapshot or plan["snapshot"] != calendar_snapshot:
+                raise ValueError("Schedule or inventory changed. Return to Calendar and reopen this dose.")
+            if (vial_id != source["key"] or amount != source["amount"] or unit != source["unit"]
+                    or kind != "dose" or notes or use_remaining or not submission_token
+                    or any(k == "supply_id_used" or k.startswith("supply_qty_")
+                           for k in submitted_form)):
+                raise ValueError("Quick entry accepts changes to time and injection site only.")
+            taken_at = parse_clock786(calendar_clock, day).isoformat(timespec="minutes")
+            planned_compound_id = plan["event"]["compound_id"]
+            calendar_return = calendar_return786(day)
+        except (ValueError, TypeError, OverflowError) as exc:
+            return reject_dose(str(exc))
     supply_payload = sorted((k, str(v)) for k, v in submitted_form.multi_items()
                             if k == "supply_id_used" or k.startswith("supply_qty_"))
     payload = {"supplies": supply_payload, "vial_id": vial_id, "taken_at": taken_at, "amount": amount, "unit": unit, "kind": kind, "site": site, "notes": notes, "use_remaining": use_remaining}
@@ -501,6 +522,10 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
         if submission_token:
             idempotency.record(db, submission_token, "dose_create", digest)
         db.commit()
+        if calendar_return:
+            if request.headers.get("HX-Request", "").lower() == "true":
+                return HTMLResponse("", headers={"HX-Redirect": calendar_return})
+            return RedirectResponse(calendar_return, status_code=303)
         # Legacy BlendDose rows remain distinct from DoseLog; a completed
         # mixture draw appears exactly once in the combined timeline.
         if request.headers.get("HX-Request", "").lower() == "true":
@@ -550,6 +575,10 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
     if submission_token:
         idempotency.record(db, submission_token, "dose_create", digest)
     db.commit()
+    if calendar_return:
+        if request.headers.get("HX-Request", "").lower() == "true":
+            return HTMLResponse("", headers={"HX-Redirect": calendar_return})
+        return RedirectResponse(calendar_return, status_code=303)
     # Issue a new one-use submission token only AFTER the database commits.
     # HX-Trigger-After-Settle fires after the form's existing HTMX reset.
     # A rejected or replayed request never receives a fresh token.
