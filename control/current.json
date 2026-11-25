@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r786-install8d78d2a0",
-  "action": "dev_install",
-  "release": 786,
-  "target": "8d78d2a01d5150102add2682e9fca51d60ea2790",
-  "base": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb",
-  "ref": "release/786-calendar-quick-dose",
-  "previous_request_id": "r786-8d78d2a01d51"
+  "request_id": "r787-b0b46bfb06bd",
+  "action": "qualify",
+  "release": 787,
+  "target": "b0b46bfb06bd90d9cf9332756795c3554c25030e",
+  "base": "8d78d2a01d5150102add2682e9fca51d60ea2790",
+  "ref": "release/787-calendar-action-buttons",
+  "previous_request_id": null
 }
