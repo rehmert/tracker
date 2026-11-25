@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "8d78d2a01d5150102add2682e9fca51d60ea2790",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-25T17:21:36+00:00",
+  "markers": [
+    "RELEASE_787_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_787_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_787_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_787_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/787-calendar-action-buttons",
+  "release": 787,
+  "request_id": "r787-b0b46bfb06bd",
+  "schema": 1,
+  "started_at_utc": "2026-11-25T17:21:22+00:00",
+  "status": "passed",
+  "target": "b0b46bfb06bd90d9cf9332756795c3554c25030e",
+  "test_counts": [
+    "28 passed, 1 warning"
+  ]
+}
