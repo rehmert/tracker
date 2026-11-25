@@ -1,5 +1,6 @@
 /* Calendar and calendar quick dose: all controls share the existing Tracker
    action primitive. Keep native link navigation and native form submission. */
+.calendar-actions787 { display: contents; }
 #main-content .calendar-actions787 :is(.tracker-ui-action, .tracker-calendar-views button) {
   box-sizing: border-box;
   display: inline-flex;
