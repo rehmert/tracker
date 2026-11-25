@@ -8,7 +8,7 @@ from . import idempotency, services, units as U
 from .blend_dose_unified710 import (
     constituent_concentrations710, resolve_blend_draw710,
 )
-from .models import Vial, Blend, ProtocolItem
+from .models import Vial, Blend
 
 _OPEN = ("due", "unrecorded")
 
@@ -57,6 +57,7 @@ def quick_plan786(db, item_id, day):
                 source=None, reason="", snapshot="")
     if day > date.today():
         plan["reason"] = "This date is in the future. Record an administration after it occurs."
+        plan["manual_url"] = ""
         return plan
     if event["status"] not in _OPEN:
         plan["reason"] = "This dose is already recorded or requires reconciliation. Return to Calendar."
