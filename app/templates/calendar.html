@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Protocol calendar{% endblock %}
+{% block title %}Protocol calendar</div>
+{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-calendar-bundle742.css?v=742">
 
@@ -9,23 +10,25 @@
 <script src="/static/js/tracker-calendar-day-navigation.js?v=20261103" defer></script>
 <script src="/static/js/tracker-calendar-vial756.js?v=756" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
+<link rel="stylesheet" href="/static/css/tracker-calendar-actions787.css?v=787">
+<div class="calendar-actions787">
 <h1>Protocol calendar</h1>
 {% if google_review_rows or request.query_params.get('review_saved') or request.query_params.get('review_error') %}{% include '_google_protocol_review783.html' %}{% endif %}
 <nav class="tracker-macd741-actions" aria-label="Calendar schedule management">
-<a class="tracker-macd741-action" href="/protocols">Manage protocols</a>
-<a class="tracker-macd741-action" href="#calendar-review-agenda">Review projected events</a>
-<a class="tracker-macd741-action" href="#calendar-exclusions741">Hidden projections</a>
+<a class="tracker-ui-action" href="/protocols">Manage protocols</a>
+<a class="tracker-ui-action" href="#calendar-review-agenda">Review projected events</a>
+<a class="tracker-ui-action" href="#calendar-exclusions741">Hidden projections</a>
 </nav>
 <p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
 <p class="note">For mg-based plans, choose the actual vial on an event to see its recorded mg/mL concentration, calculated mL withdrawal and U-100 syringe markings. Calculations depend on vial records; verify labels and measurable syringe increments. Previewing does not record an administration.</p>
 {% if missing_start %}<section><h2>Start dates needed</h2><p class="note">These active protocols have no start date, so no doses are projected for them:</p>
-{% for p in missing_start %}<p><a href="/protocols/{{ p.id }}">{{ p.name }}</a> — set a start date</p>{% endfor %}</section>{% endif %}
+{% for p in missing_start %}<p><a class="tracker-ui-action" href="/protocols/{{ p.id }}">{{ p.name }}</a> — set a start date</p>{% endfor %}</section>{% endif %}
 <form method="get" action="/calendar" class="inline">
 <label class="field"><span>Month</span><input type="month" name="month" value="{{ shown.strftime('%Y-%m') }}"></label>
-<button type="submit">Show calendar</button>
-<a class="button" href="/calendar/export.ics?month={{ shown.strftime('%Y-%m') }}">Export month (.ics)</a>
+<button class="tracker-ui-action" type="submit">Show calendar</button>
+<a class="tracker-ui-action" href="/calendar/export.ics?month={{ shown.strftime('%Y-%m') }}">Export month (.ics)</a>
 </form>
-<p class="row"><a href="/calendar?month={{ previous }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a href="/calendar?month={{ next_month }}">Next →</a></p>
+<p class="row"><a class="tracker-ui-action" href="/calendar?month={{ previous }}">← Previous</a> <strong>{{ shown.strftime('%B %Y') }}</strong> <a class="tracker-ui-action" href="/calendar?month={{ next_month }}">Next →</a></p>
 <section class="calendar-workbench" id="calendar-workbench" aria-label="Calendar tools">
   <div class="calendar-summary" aria-label="Current month entry totals">
     <div><strong>{{ status_counts['due'] }}</strong><span>Due Today</span></div>
@@ -52,10 +55,10 @@
       </select>
     </label>
     <div class="calendar-actions">
-      <a class="button" id="calendar-jump-today" href="/calendar?month={{ today.strftime('%Y-%m') }}#calendar-day-{{ today.isoformat() }}">Today</a>
-      <button type="button" id="calendar-reset-filters">Clear Filters</button>
-      <button type="button" id="calendar-print">Print</button>
-      <a class="button" id="calendar-review-export" href="/calendar/review.csv?month={{ shown.strftime('%Y-%m') }}">Export review CSV</a>
+      <a class="tracker-ui-action" id="calendar-jump-today" href="/calendar?month={{ today.strftime('%Y-%m') }}#calendar-day-{{ today.isoformat() }}">Today</a>
+      <button class="tracker-ui-action" type="button" id="calendar-reset-filters">Clear Filters</button>
+      <button class="tracker-ui-action" type="button" id="calendar-print">Print</button>
+      <a class="tracker-ui-action" id="calendar-review-export" href="/calendar/review.csv?month={{ shown.strftime('%Y-%m') }}">Export review CSV</a>
     </div>
   </div>
   <p id="calendar-filter-summary" role="status" aria-live="polite">Showing {{ calendar_total }} of {{ calendar_total }} entries in this month.</p>
@@ -73,22 +76,22 @@
       {% for item in review_items %}
       {% set x = item.event %}
       <tr class="calendar-review-row" data-calendar-status="{{ x.status }}" data-calendar-search="{{ (x.name ~ ' ' ~ (x.protocol|default('', true)))|e }}">
-        <td><a href="#calendar-day-{{ item.date.isoformat() }}"><time datetime="{{ item.date.isoformat() }}">{{ item.date.strftime('%a %b %d') }}</time></a></td>
+        <td><a class="tracker-ui-action" href="#calendar-day-{{ item.date.isoformat() }}"><time datetime="{{ item.date.isoformat() }}">{{ item.date.strftime('%a %b %d') }}</time></a></td>
         <td>{{ x.dose_time or 'Not set' }}</td>
         <td>
           {% if x.status == 'unrecorded' %}<span class="calendar-review-status unrecorded">No matching log</span>
           {% elif x.status == 'due' %}<span class="calendar-review-status due">Due today</span>
-          {% elif x.status == 'pending_review' %}<a class="button" href="#google-protocol-review783">Google completed · Review</a>
+          {% elif x.status == 'pending_review' %}<a class="tracker-ui-action" href="#google-protocol-review783">Google completed · Review</a>
           {% else %}<span class="calendar-review-status upcoming">Upcoming</span>{% endif %}
         </td>
         <td><strong>{{ x.name }}</strong><small>{{ x.protocol }}</small></td>
         <td>{{ x.dose }}</td>
         <td class="calendar-review-actions">
-          <a class="tag" href="/calendar/log-dose?protocol_item_id={{ x.protocol_item_id }}&amp;scheduled_on={{ item.date.isoformat() }}">Log this dose</a>
-          <a class="tag" href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ item.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">Choose vial first</a>
+          <a class="tracker-ui-action tracker-ui-action--primary" href="/calendar/log-dose?protocol_item_id={{ x.protocol_item_id }}&amp;scheduled_on={{ item.date.isoformat() }}">Log this dose</a>
+          <a class="tracker-ui-action" href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ item.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">Choose vial first</a>
           {% set scheduled_on = item.date %}
           {% include "_calendar_vial_units756.html" %}
-          <a class="tracker-macd741-action" href="/protocols/{{ x.protocol_id }}">Edit schedule</a>
+          <a class="tracker-ui-action" href="/protocols/{{ x.protocol_id }}">Edit schedule</a>
         </td>
       </tr>
       {% else %}
@@ -101,10 +104,10 @@
 <p class="ux-legend" aria-label="Calendar legend"><span>✓ Recorded on date (not verified)</span><span>! No matching log</span><span>◉ Due today</span><span>○ Upcoming</span><span>↻ Google completed · Review</span></p>
 <nav id="calendar-matching-day-navigation"
      aria-label="Navigate dates with matching calendar entries">
-  <button type="button"
+  <button class="tracker-ui-action" type="button"
           id="calendar-previous-matching-day"
           disabled>← Previous day</button>
-  <button type="button"
+  <button class="tracker-ui-action" type="button"
           id="calendar-next-matching-day"
           disabled>Next day →</button>
   <p id="calendar-matching-day-status"
@@ -119,25 +122,25 @@
 {% for x in d.events %}
 <div class="calendar-activity" data-calendar-status="{{ x.status }}" data-calendar-search="{{ (x.name ~ ' ' ~ (x.protocol|default('', true)))|e }}">
   {% if x.status == 'recorded' %}<div class="calendar-event recorded" title="A dose was recorded on this date for this compound; amount and timing have not been verified">✓ {{ x.name }} · {{ x.actual_dose }} <small>({{ x.protocol }})</small></div>
-  <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;history_date={{ d.date.isoformat() }}#dose-history-unified614">Review recorded history</a>
-  {% if x.actual_blend_id %}<a class="tag" href="/blends/{{ x.actual_blend_id }}" aria-label="View source blend for {{ x.name }}">View source blend #{{ x.actual_blend_id }}</a>{% endif %}
+  <a class="tracker-ui-action" href="/doses?compound_id={{ x.compound_id }}&amp;history_date={{ d.date.isoformat() }}#dose-history-unified614">Review recorded history</a>
+  {% if x.actual_blend_id %}<a class="tracker-ui-action" href="/blends/{{ x.actual_blend_id }}" aria-label="View source blend for {{ x.name }}">View source blend #{{ x.actual_blend_id }}</a>{% endif %}
   {% elif x.status == 'extra' %}<div class="calendar-event recorded" title="Recorded dose without a matching planned entry">✓ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(unmatched log)</small></div>
-  <a class="tag" href="/doses?compound_id={{ x.compound_id }}&amp;history_date={{ d.date.isoformat() }}#dose-history-unified614">Review recorded history</a>
-  {% if x.blend_id %}<a class="tag" href="/blends/{{ x.blend_id }}" aria-label="View source blend for {{ x.name }}">View source blend #{{ x.blend_id }}</a>{% endif %}
+  <a class="tracker-ui-action" href="/doses?compound_id={{ x.compound_id }}&amp;history_date={{ d.date.isoformat() }}#dose-history-unified614">Review recorded history</a>
+  {% if x.blend_id %}<a class="tracker-ui-action" href="/blends/{{ x.blend_id }}" aria-label="View source blend for {{ x.name }}">View source blend #{{ x.blend_id }}</a>{% endif %}
   {% elif x.status == 'pending_review' %}<div class="calendar-event" style="border:2px solid var(--teal,#1265ad)">↻ {{ x.name }} · {{ x.dose }} · {{ x.dose_time or '' }} <small>Google completed — pending review</small></div>
   {% elif x.status == 'unrecorded' %}<div class="calendar-event calendar-unrecorded" title="Past projected entry with no matching dose log">! {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(not recorded)</small></div>
   {% elif x.status == 'due' %}<div class="calendar-event projected" title="Projected for today">◉ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>(today)</small></div>
   {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>({{ x.protocol }})</small></div>{% endif %}
-{% if x.google_pending %}<a class="button" href="#google-protocol-review783">Reconcile Google completion</a>{% endif %}
+{% if x.google_pending %}<a class="tracker-ui-action" href="#google-protocol-review783">Reconcile Google completion</a>{% endif %}
 {% if x.status in ('due', 'upcoming', 'unrecorded') %}
-  <a class="tag" href="/calendar/log-dose?protocol_item_id={{ x.protocol_item_id }}&amp;scheduled_on={{ d.date.isoformat() }}">Log this dose</a>
-  <a class="tag"
+  <a class="tracker-ui-action tracker-ui-action--primary" href="/calendar/log-dose?protocol_item_id={{ x.protocol_item_id }}&amp;scheduled_on={{ d.date.isoformat() }}">Log this dose</a>
+  <a class="tracker-ui-action"
      href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ d.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">
     Choose vial first
   </a>
   {% set scheduled_on = d.date %}
   {% include "_calendar_vial_units756.html" %}
-  <a class="tracker-macd741-action" href="/protocols/{{ x.protocol_id }}">Edit schedule</a>
+  <a class="tracker-ui-action" href="/protocols/{{ x.protocol_id }}">Edit schedule</a>
   <form method="post" action="/calendar/exclude" class="inline" onsubmit="return confirm('Hide this projected dose? Actual administration records will not be changed.');">
     <input type="hidden" name="protocol_item_id" value="{{ x.protocol_item_id }}">
     <input type="hidden" name="scheduled_on" value="{{ d.date.isoformat() }}">
@@ -145,7 +148,7 @@
       <option value="once">This projection only</option>
       <option value="onward">This and all later projections in this schedule</option>
     </select>
-    <button type="submit" class="tag">Hide projection</button>
+    <button type="submit" class="tracker-ui-action">Hide projection</button>
   </form>
   {% endif %}
 </div>
@@ -159,7 +162,7 @@
 {% for rule in exclusions %}
 <div class="row">
   <span>{{ rule.item.protocol.name }} · {{ rule.item.compound.name }} · {{ rule.scheduled_on }} · {{ 'This date onward' if rule.scope == 'onward' else 'One date' }}</span>
-  <form method="post" action="/calendar/exclusions/{{ rule.id }}/restore"><button type="submit">Restore</button></form>
+  <form method="post" action="/calendar/exclusions/{{ rule.id }}/restore"><button class="tracker-ui-action" type="submit">Restore</button></form>
 </div>
 {% else %}<p>No hidden projections.</p>{% endfor %}
 </details>
