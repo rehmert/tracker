@@ -1,0 +1,50 @@
+/* Calendar and calendar quick dose: all controls share the existing Tracker
+   action primitive. Keep native link navigation and native form submission. */
+#main-content .calendar-actions787 :is(.tracker-ui-action, .tracker-calendar-views button) {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-height: 36px;
+  min-width: 0;
+  padding: .35rem .6rem;
+  border: 1px solid var(--rule,#cbd5e1);
+  border-radius: .75rem;
+  background: var(--surface,#fff);
+  color: var(--ink,#192c31);
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#main-content .calendar-actions787 :is(.tracker-ui-action--primary, .tracker-calendar-views button[aria-pressed="true"]) {
+  background: var(--teal,#1265ad);
+  border-color: var(--teal,#1265ad);
+  color: var(--teal-ink,#fff);
+}
+#main-content .calendar-actions787 :is(.tracker-ui-action, .tracker-calendar-views button):focus-visible {
+  outline: 3px solid var(--teal,#1265ad);
+  outline-offset: 2px;
+}
+#main-content .calendar-actions787 .tracker-ui-action:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+#main-content .calendar-actions787 :is(.calendar-activity,.calendar-review-actions) > .tracker-ui-action {
+  margin: .15rem .15rem .15rem 0;
+}
+@media(max-width:760px) {
+  #main-content .calendar-actions787 :is(.tracker-ui-action,.tracker-calendar-views button) {
+    min-height: 44px;
+  }
+}
+@media print {
+  #main-content .calendar-actions787 :is(.calendar-activity,.calendar-review-actions) .tracker-ui-action {
+    display: none !important;
+  }
+}
