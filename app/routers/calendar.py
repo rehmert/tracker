@@ -1,5 +1,5 @@
 """Calendar view: reconciles recorded doses with projected protocol dates.
-Never writes dose logs or changes inventory. Reconciliation is a same-day,
+Calendar projections never write dose logs or change inventory. Reconciliation is a same-day,
 same-compound association; it does not claim clinical equivalence of amounts.
 """
 from datetime import date, datetime, timedelta, timezone
@@ -217,6 +217,24 @@ def _month_events(shown: date, db: Session):
                 if event["status"] in ("due", "upcoming", "unrecorded"):
                     event["status"] = "pending_review"
     return first, end, events, missing_start
+
+
+@router.get('/calendar/log-dose')
+def calendar_quick_dose786(request: Request, protocol_item_id: int,
+                           scheduled_on: date, db: Session = Depends(get_scoped_db390)):
+    from .doses import INJECTION_SITES
+    from ..calendar_quick_dose786 import quick_plan786, calendar_return786
+    from .. import idempotency
+    try:
+        plan = quick_plan786(db, protocol_item_id, scheduled_on)
+    except ValueError as exc:
+        return render(request, "calendar_quick_dose786.html", plan=None,
+                      error=str(exc), return_url=calendar_return786(scheduled_on))
+    return render(request, "calendar_quick_dose786.html", plan=plan, error="",
+                  return_url=calendar_return786(scheduled_on),
+                  sites=INJECTION_SITES,
+                  clock=plan["event"].get("dose_time") or datetime.now().strftime("%H:%M"),
+                  submission_token=idempotency.new_token())
 
 
 @router.get('/calendar')
