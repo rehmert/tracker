@@ -29,8 +29,7 @@
       {% endif %}
     </div>
     {% endfor %}
-    <label><input type="checkbox" name="confirm" value="yes" required> I verified the selected administrations, amounts, sources and times.</label>
-    <button type="submit" class="tracker-ui-action tracker-ui-action--primary">Save selected reconciliations</button>
+    <button type="submit" name="confirm" value="yes" class="tracker-ui-action tracker-ui-action--primary">Save selected reconciliations</button>
   </form>
   {% else %}<p>No outstanding Google protocol completions.</p>{% endif %}
 </section>
