@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "fcd7ca0dac3ca41c56ed0fff83624676714c2ffb",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-25T17:32:17+00:00",
+  "markers": [
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=b0b46bfb06bd90d9cf9332756795c3554c25030e",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=b0b46bfb06bd90d9cf9332756795c3554c25030e",
+    "PROMOTED_COMMIT=b0b46bfb06bd90d9cf9332756795c3554c25030e",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=b0b46bfb06bd90d9cf9332756795c3554c25030e",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r787-preflightb0b46bfb",
+  "ref": "release/787-calendar-action-buttons",
+  "release": 787,
+  "request_id": "r787-prodb0b46bfb",
+  "schema": 1,
+  "started_at_utc": "2026-11-25T17:31:49+00:00",
+  "status": "passed",
+  "target": "b0b46bfb06bd90d9cf9332756795c3554c25030e",
+  "test_counts": []
+}
