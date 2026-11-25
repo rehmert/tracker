@@ -54,7 +54,7 @@ def test_787_calendar_and_quick_dose_actions_are_real_styled_controls(width):
                     selectors = ["a:has-text('Log this dose')", "a:has-text('Choose vial first')",
                                  "a:has-text('Edit schedule')", "button:has-text('Hide projection')"]
                 for selector in selectors:
-                    control = scope.locator(selector).filter(visible=True).first
+                    control = scope.locator(selector + ":visible").first
                     assert control.count() == 1, selector
                     style = control.evaluate("""el => {
                         const s=getComputedStyle(el);
