@@ -127,3 +127,68 @@ def test_783_vitals_edit_actions_and_full_note_contract():
     assert js.count("cell.dataset.vitalsFullNotes ?? cell.textContent") == 2
     css = (ROOT / "app/static/css/tracker-vitals-tools.css").read_text()
     assert ".vitals-notes783 { width:1%" in css
+
+
+def test_788_save_button_is_the_only_confirmation_and_records_once(scenario):
+    from types import SimpleNamespace
+    from html.parser import HTMLParser
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.routers import google_tasks769 as google
+
+    db, key, vid, _, day = scenario
+    env = Environment(autoescape=True)
+    env.filters["num_input"] = str
+    template = env.from_string((ROOT / "app/templates/_google_protocol_review783.html").read_text())
+    html = template.render(request=SimpleNamespace(query_params={}),
+                           google_review_rows=review_rows783(db))
+
+    class Controls(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.confirm = []
+            self.checkboxes = []
+
+        def handle_starttag(self, tag, attrs):
+            a = dict(attrs)
+            if a.get("type") == "checkbox":
+                self.checkboxes.append(a)
+            if a.get("name") == "confirm":
+                self.confirm.append((tag, a))
+
+    controls = Controls()
+    controls.feed(html)
+    assert not controls.checkboxes
+    assert len(controls.confirm) == 1
+    tag, button = controls.confirm[0]
+    assert tag == "button" and button["type"] == "submit"
+    assert button["value"] == "yes"
+    assert "tracker-ui-action" in button["class"].split()
+    engine = db.get_bind()
+    db.rollback()
+    app = FastAPI()
+    app.include_router(google.router)
+
+    def scoped():
+        with Session(engine) as session:
+            yield session
+
+    app.dependency_overrides[google.get_scoped_db390] = scoped
+    path = "/integrations/google-tasks/reconcile"
+    fields = {f"choice_{key}": f"vial:{vid}", f"when_{key}": day.isoformat() + "T00:00"}
+    with TestClient(app, follow_redirects=False) as client:
+        assert client.post(path, data=fields).status_code == 400
+        accepted = dict(fields, **{button["name"]: button["value"]})
+        empty = dict(accepted, **{f"choice_{key}": ""})
+        assert client.post(path, data=empty).status_code == 400
+        response = client.post(path, data=accepted)
+        assert response.status_code == 303
+        assert "review_saved=1" in response.headers["location"]
+        replay = client.post(path, data=accepted)
+        assert replay.status_code == 303
+        assert "review_error=" in replay.headers["location"]
+    db.expire_all()
+    records = list(db.scalars(select(DoseLog)))
+    assert len(records) == 1 and records[0].amount_base == 1000
+    assert not pending_links783(db)
+    assert vial_views(db, [db.get(Vial, vid)])[vid].remaining_base == 9000
