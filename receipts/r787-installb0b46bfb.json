@@ -1,0 +1,24 @@
+{
+  "action": "dev_install",
+  "base": "8d78d2a01d5150102add2682e9fca51d60ea2790",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-25T17:24:04+00:00",
+  "markers": [
+    "RELEASE_787_DEV_INSTALL=SUCCESS",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r787-b0b46bfb06bd",
+  "ref": "release/787-calendar-action-buttons",
+  "release": 787,
+  "request_id": "r787-installb0b46bfb",
+  "schema": 1,
+  "started_at_utc": "2026-11-25T17:23:22+00:00",
+  "status": "passed",
+  "target": "b0b46bfb06bd90d9cf9332756795c3554c25030e",
+  "test_counts": [
+    "28 passed, 1 warning"
+  ]
+}
