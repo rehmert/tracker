@@ -1,18 +1,27 @@
 {
   "action": "qualify",
   "base": "9f79787956726e105d55906483b7e851db5106fa",
-  "exit_code": 2,
-  "failed_tests": [],
-  "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-26T18:33:02+00:00",
-  "markers": [],
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_headings531.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-26T18:36:10+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_793_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_793_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_793_EXIT_STATUS=1"
+  ],
   "previous_request_id": null,
   "ref": "release/793-design-system",
   "release": 793,
-  "request_id": "r793-8f61f00c5e88",
+  "request_id": "r793-56f716ca2fb5",
   "schema": 1,
-  "started_at_utc": "2026-11-26T18:33:01+00:00",
+  "started_at_utc": "2026-11-26T18:34:49+00:00",
   "status": "failed",
-  "target": "8f61f00c5e884716ef3ad9bec3dff96b323bebeb",
-  "test_counts": []
+  "target": "56f716ca2fb58235dd458f822e2ab6ae3aa329b3",
+  "test_counts": [
+    "76 passed, 1 warning"
+  ]
 }
