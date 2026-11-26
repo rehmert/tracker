@@ -28,7 +28,7 @@
   {# Release 695: one visible recording bar, directly below today's status. #}
   <nav class="tracker-daily-glance601" aria-label="Today's status">
     <a class="tracker-ui-action" href="#mobile-schedule-heading"><strong>{{ due|length }}</strong> due today</a>
-    <a href="#mobile-schedule-heading"><strong>{{ recorded|length }}</strong> recorded today</a>
+    <a class="tracker-ui-action" href="#mobile-schedule-heading"><strong>{{ recorded|length }}</strong> recorded today</a>
     <a class="tracker-ui-action" href="#mobile-upcoming-heading"><strong>{{ summary.upcoming|length }}</strong> projected next 7 days</a>
   </nav>
 
@@ -159,7 +159,7 @@
   </section>
 
   <details class="tracker-more790"><summary>Review &amp; planning tools</summary>
-    <nav class="tracker-ui-actions" aria-label="Daily review shortcuts">
+    <nav class="tracker-ui-actions tracker-review-actions791" aria-label="Daily review shortcuts">
       {{ action('/progress','Progress') }}{{ action('/calendar','Calendar') }}{{ action('/replenishment-review','Inventory Needs') }}{{ action('/labs','Lab Results') }}{{ action('/reports/trends','Weekly Trends') }}{{ action('/device-import','Device Import') }}
     </nav></details>
 
