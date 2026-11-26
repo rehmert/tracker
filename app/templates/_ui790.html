@@ -1,0 +1,28 @@
+{# Shared, semantic action controls: GET anchors, native POST buttons. #}
+{% macro action(href, label, primary=false) -%}
+<a class="tracker-ui-action{% if primary %} tracker-ui-action--primary{% endif %}" href="{{ href }}">{{ label }}</a>
+{%- endmacro %}
+{% macro submit(label, primary=true) -%}
+<button type="submit" class="tracker-ui-action{% if primary %} tracker-ui-action--primary{% endif %}">{{ label }}</button>
+{%- endmacro %}
+{% macro quick_actions() -%}
+<nav class="tracker-ui-actions tracker-quick-actions790" aria-label="Quick logging">
+  <a href="/food#food-quick-log" class="tracker-ui-action">Log Food</a>
+  <a href="/food#food-water" class="tracker-ui-action" data-quick790-open="water">Log Water</a>
+  <a href="/mobile#mobile-quick-vitals" class="tracker-ui-action" data-quick790-open="weight">Log Vitals</a>
+  <a href="/doses#quick-dose-entry" class="tracker-ui-action">Log Dose</a>
+  <a href="/regimen#reg635-today" class="tracker-ui-action">Log Supplements / Meds</a>
+  <a href="/workouts/quick" class="tracker-ui-action">Log Workout Set</a>
+</nav>
+{%- endmacro %}
+{% macro scheduled_action(event, day, origin="") -%}
+{% if event.status in ('due', 'unrecorded') %}
+{{ action('/calendar/log-dose?protocol_item_id=' ~ event.protocol_item_id ~ '&scheduled_on=' ~ day ~ ('&return_to=' ~ origin if origin else ''), 'Log this dose', true) }}
+{% elif event.google_pending or event.status == 'pending_review' %}
+{{ action(('#google-protocol-review783' if origin == 'today' else '/calendar#google-protocol-review783'), 'Review Google completion', true) }}
+{% elif event.status == 'upcoming' %}
+{{ action('/calendar?month=' ~ day.strftime('%Y-%m') ~ '#calendar-day-' ~ day, 'View scheduled dose') }}
+{% elif event.status in ('recorded', 'extra') %}
+{{ action('/doses?compound_id=' ~ event.compound_id ~ '&history_date=' ~ day ~ '#dose-history-unified614', 'Review history') }}
+{% endif %}
+{%- endmacro %}
