@@ -357,7 +357,9 @@ def regimen_page(request: Request, day: str = "", focus: str = "",
         product_facts=product_facts,
         product_facts_display=product_facts_display,
         due=due, recorded=recorded, entries=entries, history=history,
-        day=selected, prev_day=selected - timedelta(days=1),
+        day=selected, regimen_now=datetime.now().strftime("%H:%M"),
+        regimen_entries={e.schedule_id: e for e in entries if e.schedule_id is not None},
+        prev_day=selected - timedelta(days=1),
         next_day=selected + timedelta(days=1), today=date.today(),
         kinds=KINDS, meals=MEALS,
         tablet_plans=tablet_plans, tablet_entries=tablet_entries,
@@ -700,12 +702,21 @@ def _entry_snapshot(entry):
 @router.post("/regimen/entries")
 async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
     form = await request.form()
+    def back(day=None, msg="", err=""):
+        if form.get("return_to") == "today":
+            response = services.flash_redirect("/mobile", msg=msg, err=err)
+            response.headers["location"] += "#regimen-today790"
+            return response
+        response = _redirect(day, msg=msg, err=err)
+        if form.get("return_to") == "regimen":
+            response.headers["location"] += "#reg635-today"
+        return response
     try:
         values, tablet_dose = _entry_values(form, db)
     except ValueError as exc:
-        return _redirect(err=str(exc))
+        return back(err=str(exc))
     if not reserve_inventory_write(db):
-        return _redirect(err="Database is busy.")
+        return back(err="Database is busy.")
     if values["schedule_id"] is not None:
         day_start = datetime.combine(values["logged_at"].date(), datetime.min.time())
         existing = db.scalar(select(RegimenEntry.id).where(
@@ -715,14 +726,14 @@ async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
         ).limit(1))
         if existing is not None:
             db.rollback()
-            return _redirect(values["logged_at"].date(), err="Already logged for this schedule and day. Edit the existing entry instead.")
+            return back(values["logged_at"].date(), err="Already logged for this schedule and day. Edit the existing entry instead.")
     entry = RegimenEntry(**values)
     db.add(entry)
     db.flush()
     _store_tablet_entry(db, entry.id, tablet_dose)
     _audit(db, "regimen_entry", entry.id, "create", after=_entry_snapshot(entry))
     db.commit()
-    return _redirect(values["logged_at"].date(), msg="Intake recorded.")
+    return back(values["logged_at"].date(), msg="Intake recorded.")
 
 
 @router.post("/regimen/entries/{entry_id}/edit")
