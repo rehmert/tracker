@@ -1,18 +1,26 @@
 {
   "action": "qualify",
   "base": "0a5ba934a415451ad462bc7594cd4178d558d20d",
-  "exit_code": 2,
+  "exit_code": 0,
   "failed_tests": [],
-  "failure_category": "StageCommandError",
-  "finished_at_utc": "2026-11-26T14:07:43+00:00",
-  "markers": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-26T14:11:11+00:00",
+  "markers": [
+    "RELEASE_792_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_792_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_792_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_792_INSTALLED_DEV=UNMODIFIED"
+  ],
   "previous_request_id": null,
   "ref": "release/792-consolidated-workspaces",
   "release": 792,
-  "request_id": "r792-43c816391106",
+  "request_id": "r792-9f7978795672",
   "schema": 1,
-  "started_at_utc": "2026-11-26T14:07:42+00:00",
-  "status": "failed",
-  "target": "43c81639110686c23ff23361529a72ffcf7b5088",
-  "test_counts": []
+  "started_at_utc": "2026-11-26T14:10:20+00:00",
+  "status": "passed",
+  "target": "9f79787956726e105d55906483b7e851db5106fa",
+  "test_counts": [
+    "95 passed, 1 warning"
+  ]
 }
