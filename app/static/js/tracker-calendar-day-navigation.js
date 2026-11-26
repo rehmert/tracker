@@ -36,8 +36,9 @@
     let matching = [];
 
     function currentIndex() {
+      const date = grid.dataset.calendarAnchor;
       const id = window.location.hash.slice(1);
-      return matching.findIndex(day => day.id === id);
+      return matching.findIndex(day => date ? day.dataset.calendarDate === date : day.id === id);
     }
 
     function update() {
@@ -80,9 +81,11 @@
       let targetIndex;
 
       if (index < 0) {
-        targetIndex = direction > 0
-          ? 0
-          : matching.length - 1;
+        const date = grid.dataset.calendarAnchor;
+        const nearest = direction > 0
+          ? matching.findIndex(day => day.dataset.calendarDate > date)
+          : matching.findLastIndex(day => day.dataset.calendarDate < date);
+        targetIndex = nearest >= 0 ? nearest : (direction > 0 ? 0 : matching.length - 1);
       } else {
         targetIndex = (
           index + direction + matching.length
@@ -94,6 +97,8 @@
       // The existing day-context script highlights
       // the selected calendar hash target.
       window.location.hash = target.id;
+      // Reveal the target synchronously before scrolling or focusing it.
+      grid.dispatchEvent(new Event("tracker:calendar-select-date"));
 
       if (!target.hasAttribute("tabindex")) {
         target.setAttribute("tabindex", "-1");
@@ -126,6 +131,7 @@
     );
 
     window.addEventListener("hashchange", update);
+    grid.addEventListener("tracker:calendar-date-changed", update);
 
     update();
   }
