@@ -29,19 +29,21 @@ def test_theme_is_the_last_global_stylesheet_and_shared_with_mobile():
     assert 'background:var(--teal,#1265ad)' in mobile
     assert 'color:var(--teal-ink,#fff)' in mobile
     assert 'outline:3px solid var(--tracker-brand-blue,#1686df)' in mobile
-    assert 'tracker-mobile-daily509.css?v=510' in (config.BASE_DIR / 'templates' / 'mobile_today509.html').read_text()
+    assert 'tracker-design-system793.css?v=793' in base
 
 
-def test_missing_custom_theme_uses_blue_light_and_dark_defaults(client, tmp_path, monkeypatch):
+def test_missing_custom_theme_uses_shared_design_system_defaults(client, tmp_path, monkeypatch):
     monkeypatch.setattr(theme510, "THEME_FILE", tmp_path / "not-created.css")
     response = client.get("/ui/theme.css")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/css")
     assert response.headers["cache-control"] == "private, no-store"
     assert response.headers["x-tracker-theme-source"] == "default"
-    assert "--teal: #1265ad" in response.text
-    assert "--teal: #79b8f7" in response.text
-    assert ":root[data-theme=\"dark\"]" in response.text
+    assert "--tracker-theme-default: 1" in response.text
+    css = (config.BASE_DIR / "static/css/tracker-design-system793.css").read_text()
+    assert "--teal:#0e716c" in css
+    assert "--teal:#6bd5ca" in css
+    assert ':root[data-theme="dark"]' in css
 
 
 def test_theme_changes_appear_on_next_request_without_restart(client, tmp_path, monkeypatch):
@@ -92,7 +94,7 @@ def test_user_selected_appearance_is_unchanged():
     assert "tracker-theme" in javascript
     assert "localStorage" in javascript
     assert "dataset.theme" in javascript
-    css = theme510.DEFAULT_FILE.read_text()
+    css = (config.BASE_DIR / "static/css/tracker-design-system793.css").read_text()
     assert ':root[data-theme="light"]' in css
     assert ':root[data-theme="dark"]' in css
 
@@ -131,4 +133,4 @@ def test_authenticated_css_is_private_and_rejects_invalid_credentials(
     assert response.headers["cache-control"] == "private, no-store"
     assert response.headers["vary"] == "Cookie, Authorization"
     assert response.headers["x-tracker-theme-source"] == "default"
-    assert "--tracker-brand-blue" in response.text
+    assert "--tracker-theme-default: 1" in response.text
