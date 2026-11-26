@@ -20,6 +20,7 @@ from .. import regimen_tablets731 as tablets731
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from .. import services
+from ..daily_workspace790 import regimen_stamp790
 
 router = APIRouter()
 KINDS = ("supplement", "medication")
@@ -357,7 +358,8 @@ def regimen_page(request: Request, day: str = "", focus: str = "",
         product_facts=product_facts,
         product_facts_display=product_facts_display,
         due=due, recorded=recorded, entries=entries, history=history,
-        day=selected, regimen_now=datetime.now().strftime("%H:%M"),
+        day=selected, regimen_snapshots={s.id: regimen_stamp790(s, tablet_plans.get(s.id), selected) for s in due},
+        regimen_now=datetime.now().strftime("%H:%M"),
         regimen_entries={e.schedule_id: e for e in entries if e.schedule_id is not None},
         prev_day=selected - timedelta(days=1),
         next_day=selected + timedelta(days=1), today=date.today(),
@@ -711,12 +713,21 @@ async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
         if form.get("return_to") == "regimen":
             response.headers["location"] += "#reg635-today"
         return response
-    try:
-        values, tablet_dose = _entry_values(form, db)
-    except ValueError as exc:
-        return back(err=str(exc))
     if not reserve_inventory_write(db):
         return back(err="Database is busy.")
+    try:
+        values, tablet_dose = _entry_values(form, db)
+        if form.get("scheduled_quick790") == "yes":
+            day = _day(form.get("scheduled_day790"))
+            schedule = db.get(RegimenSchedule, values["schedule_id"]) if values["schedule_id"] else None
+            plan = db.get(RegimenTabletSchedule731, schedule.id) if schedule else None
+            if (not schedule or not schedule.item.active or not due_on(schedule, day)
+                    or day != values["logged_at"].date() or values["logged_at"] > datetime.now()
+                    or form.get("schedule_snapshot790") != regimen_stamp790(schedule, plan, day)):
+                raise ValueError("Schedule or administration time changed. Reload and review the intake.")
+    except ValueError as exc:
+        db.rollback()
+        return back(err=str(exc))
     if values["schedule_id"] is not None:
         day_start = datetime.combine(values["logged_at"].date(), datetime.min.time())
         existing = db.scalar(select(RegimenEntry.id).where(
@@ -734,6 +745,67 @@ async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
     _audit(db, "regimen_entry", entry.id, "create", after=_entry_snapshot(entry))
     db.commit()
     return back(values["logged_at"].date(), msg="Intake recorded.")
+
+
+@router.post("/regimen/entries/batch790")
+async def log_batch790(request: Request, db: Session = Depends(get_scoped_db390)):
+    """Explicitly selected due schedules only; atomic and duplicate-safe."""
+    form = await request.form()
+    origin = form.get("return_to", "")
+    day = date.today()
+
+    def back(msg="", err=""):
+        if origin == "today":
+            response = services.flash_redirect("/mobile", msg=msg, err=err)
+            response.headers["location"] += "#regimen-today790"
+        else:
+            response = _redirect(day, msg=msg, err=err)
+            response.headers["location"] += "#reg635-today"
+        return response
+
+    if origin not in ("today", "regimen"):
+        raise HTTPException(400, "Invalid return destination.")
+    try:
+        day = _day(form.get("scheduled_day790"))
+        stamp = datetime.fromisoformat(str(form.get("logged_at", "")))
+        selected = [int(str(value)) for value in form.getlist("schedule_id")]
+        if (not 1 <= len(selected) <= 100 or len(set(selected)) != len(selected)
+                or stamp.tzinfo is not None or stamp.date() != day or stamp > datetime.now()):
+            raise ValueError("Select 1–100 distinct intakes and a valid actual time.")
+    except (ValueError, TypeError):
+        return back(err="Select scheduled intakes and a valid administration time.")
+    if not reserve_inventory_write(db):
+        return back(err="Database is busy.")
+    try:
+        start = datetime.combine(day, datetime.min.time())
+        recorded = set(db.scalars(select(RegimenEntry.schedule_id).where(
+            RegimenEntry.schedule_id.in_(selected), RegimenEntry.logged_at >= start,
+            RegimenEntry.logged_at < start + timedelta(days=1))))
+        if recorded:
+            raise ValueError("An intake is already recorded. Reload before saving.")
+        for sid in selected:
+            schedule = db.get(RegimenSchedule, sid)
+            plan = db.get(RegimenTabletSchedule731, sid)
+            if (not schedule or not schedule.item.active or not due_on(schedule, day)
+                    or form.get("snapshot_" + str(sid)) != regimen_stamp790(schedule, plan, day)):
+                raise ValueError("A selected schedule changed. Reload and review.")
+            values, tablet_dose = _entry_values({
+                "item_id": schedule.item_id, "schedule_id": sid,
+                "logged_at": stamp.isoformat(timespec="minutes"), "outcome": "taken",
+                "amount": schedule.amount, "meal": schedule.meal or "", "notes": "",
+                "tablet_mode": "tablet" if plan else "manual",
+                "tablet_count": tablets731.format_number(plan.tablets_planned) if plan else "",
+            }, db)
+            entry = RegimenEntry(**values)
+            db.add(entry)
+            db.flush()
+            _store_tablet_entry(db, entry.id, tablet_dose)
+            _audit(db, "regimen_entry", entry.id, "create", after=_entry_snapshot(entry))
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        return back(err=str(exc))
+    return back(msg=f"{len(selected)} intakes recorded.")
 
 
 @router.post("/regimen/entries/{entry_id}/edit")
