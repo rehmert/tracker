@@ -313,10 +313,14 @@ async def reconcile_protocols783(request: Request, db: Session = Depends(get_sco
     form = await request.form()
     if form.get("confirm") != "yes" or len(form.getlist("confirm")) != 1:
         raise HTTPException(400, "Confirm the selected actual administrations first.")
+    origin = form.get("return_to", "")
+    if origin not in ("", "today") or len(form.getlist("return_to")) > 1:
+        raise HTTPException(400, "Invalid return destination.")
+    back = "/mobile" if origin == "today" else "/calendar"
     choices = {}
     times = {}
     for field, value in form.multi_items():
-        if field in (CSRF_FIELD_NAME, "confirm"):
+        if field in (CSRF_FIELD_NAME, "confirm", "return_to"):
             continue
         target = choices if field.startswith("choice_") else times if field.startswith("when_") else None
         key = field.split("_", 1)[-1]
@@ -333,7 +337,7 @@ async def reconcile_protocols783(request: Request, db: Session = Depends(get_sco
         db.commit()
     except ValueError as exc:
         db.rollback()
-        return RedirectResponse("/calendar?review_error=" + quote(str(exc), safe="") +
+        return RedirectResponse(back + "?review_error=" + quote(str(exc), safe="") +
                                 "#google-protocol-review783", status_code=303)
-    return RedirectResponse("/calendar?review_saved=" + str(len(selected)) +
+    return RedirectResponse(back + "?review_saved=" + str(len(selected)) +
                             "#google-protocol-review783", status_code=303)
