@@ -51,6 +51,8 @@ def test_787_calendar_and_quick_dose_actions_are_real_styled_controls(width):
                     assert scope.locator("form[hx-post='/doses'] button[type=submit]").count() == 1
                 else:
                     assert scope.locator(f'a[href="{path}"]').count() >= 1
+                    assert scope.locator("a:has-text('Choose vial first'):visible").count() == 0
+                    scope.locator("details.tracker-more790").evaluate_all("nodes => nodes.forEach(n => n.open = true)")
                     selectors = ["a:has-text('Log this dose')", "a:has-text('Choose vial first')",
                                  "a:has-text('Edit schedule')", "button:has-text('Hide projection')"]
                 for selector in selectors:
