@@ -10,8 +10,10 @@ def test_focus_controls_present():
 
 def test_focus_preserves_critical_navigation_and_active_page():
     script = (ROOT / 'app/static/tracker_focus.js').read_text()
-    for route in ('/mobile', '/calendar', '/doses', '/vials', '/workouts', '/food', '/vitals', '/labs', '/regimen'):
-        assert repr(route) in script
+    from app.navigation import NAVIGATION
+    routes = {href for _, _, links in NAVIGATION for href, _, primary in links if primary}
+    assert {'/mobile', '/calendar', '/doses', '/vials', '/workouts', '/food', '/vitals', '/labs', '/regimen'} <= routes
+    assert "item.dataset.navPrimary === 'yes'" in script
     assert 'active.has(href)' in script
     assert 'localStorage' in script
 
