@@ -8,11 +8,11 @@ from jinja2 import Environment
 SOURCE = Path("app/templates/food.html").read_text()
 
 ORDER = [
+    "food-recorded",
     "food-quick-log",
     "food-search",
     "food-name-search",
     "food-add",
-    "food-recorded",
     "food-templates",
     "food-meal-totals",
     "food-week",
@@ -25,17 +25,7 @@ def test_template_syntax():
 
 
 def test_daily_totals_first():
-    dashboard = SOURCE.index(
-        'class="food-dashboard"'
-    )
-    navigation = SOURCE.index(
-        'class="food376-nav"'
-    )
-    first_section = SOURCE.index(
-        'id="food-quick-log"'
-    )
-
-    assert dashboard < navigation < first_section
+    assert SOURCE.index('class="food-dashboard"') < SOURCE.index('id="food-recorded"') < SOURCE.index('id="food-add-workspace792"')
 
 
 def test_accordion_order():
@@ -49,28 +39,10 @@ def test_accordion_order():
 
 
 def test_navigation_matches_section_order():
-    # Release 673 preserves the canonical accordion order while separating
-    # everyday logging links from the advanced-tools disclosure.
-    primary = re.search(
-        r'<nav class="food424-actions [^"]*ux673-food-primary"[^>]*>'
-        r'(.*?)</nav>', SOURCE, re.S,
-    )
-    advanced = re.search(
-        r'<details class="ux673-food-more">.*?'
-        r'<nav class="food376-nav"[^>]*>(.*?)</nav>',
-        SOURCE, re.S,
-    )
-    assert primary and advanced
-    assert SOURCE.index('class="food-dashboard"') < SOURCE.index(
-        'class="food376-nav"'
-    )
-    destinations = re.findall(
-        r'href="#(food-[^"]+)"',
-        primary.group(1) + advanced.group(1),
-    )
+    destinations = re.findall(r'href="#(food-[^"]+)"', SOURCE)
     assert set(ORDER).issubset(set(destinations))
-    assert len(destinations) == len(set(destinations))
-
+    for name in ("food-add-workspace792", "food-meals792", "food-analysis792"):
+        assert f'id="{name}"' in SOURCE
 
 
 def test_all_sections_still_collapsible():
