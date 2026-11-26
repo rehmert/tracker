@@ -9,20 +9,19 @@ APP = ROOT / "app"
 
 def test_776_google_tasks_is_default_everyday_navigation_destination():
     focus = (APP / "static/tracker_focus.js").read_text(encoding="utf-8")
-    start = focus.index("const ESSENTIAL = new Set([")
-    end = focus.index("]);", start)
-    essential = focus[start:end]
-    assert "'/integrations/google-tasks'" in essential
-    assert "'/regimen'" in essential
-    assert "ESSENTIAL.has(href)" in focus
+    from app.navigation import NAVIGATION
+    essential = {href for _, _, links in NAVIGATION for href, _, primary in links if primary}
+    assert "/integrations/google-tasks" in essential
+    assert "/regimen" in essential
+    assert "item.dataset.navPrimary === 'yes'" in focus
     assert "let enabled = true;" in focus
 
 
 def test_776_navigation_cache_refresh_and_sidebar_link_survive():
     base = (APP / "templates/base.html").read_text(encoding="utf-8")
     Environment().parse(base)
-    assert '/static/tracker_focus.js?v=790' in base
-    assert "('/regimen','Supplements & Medications'),('/integrations/google-tasks','Google Tasks')" in base
+    assert '/static/tracker_focus.js?v=793' in base
+    assert 'data-nav-primary=' in base
     assert 'id="sidebar-open"' in base
 
 
