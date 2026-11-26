@@ -123,7 +123,7 @@
   <!-- Release 749: content-sized portrait drawer with full-height scrolling. -->
   <link rel="stylesheet" href="/static/css/tracker-mobile-drawer749.css?v=749">
   <link rel="stylesheet" href="/static/css/tracker-compact-actions791.css?v=791">
-  {% if path in ("/food","/workouts/quick","/vials","/blends","/purchases","/protocols","/inventory-health","/progress","/health-insights","/health-timeline","/vitals","/labs","/reports/trends") %}
+  {% if path in ("/food","/workouts/quick","/vials","/blends","/purchases","/protocols","/inventory-health","/planning-hub","/regimen","/progress","/health-insights","/health-timeline","/vitals","/labs","/reports/trends") %}
   <link rel="stylesheet" href="/static/css/tracker-workspaces792.css?v=792">
   <script defer src="/static/js/tracker-workspaces792.js?v=792"></script>
   {% endif %}
@@ -255,6 +255,12 @@
     <div id="tracker-page-jump-slot"></div>
     {% if msg %}<p class="flash ok" role="status">{{ msg }}</p>{% endif %}
     {% if err %}<p class="flash error" role="alert">{{ err }}</p>{% endif %}
+    {% if path in ("/","/mobile") %}
+    <nav class="tracker-ui-actions tracker-home-views794" aria-label="Home workspace">
+      <a class="tracker-ui-action{% if path == '/mobile' %} tracker-ui-action--primary{% endif %}" href="/mobile"{% if path == '/mobile' %} aria-current="page"{% endif %}>Today</a>
+      <a class="tracker-ui-action{% if path == '/' %} tracker-ui-action--primary{% endif %}" href="/"{% if path == '/' %} aria-current="page"{% endif %}>Overview</a>
+    </nav>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 </div>
