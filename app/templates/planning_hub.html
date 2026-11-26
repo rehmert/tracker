@@ -6,6 +6,8 @@
 
 {% endblock %}
 {% block content %}
+{% from "_ui790.html" import action %}
+<h1>Forecast comparison</h1>{{ action("/planning-hub","Back to forecast priorities",true) }}
 
 
 <!-- TRACKER_RELEASE_209_216 -->
@@ -534,7 +536,7 @@ not medication dosing or administration decisions.
 <!-- END_RELEASE_169_176 -->
 
 <section style="max-width:1500px">
-<h1>Inventory planning hub</h1>
+<h2>Inventory planning hub</h2>
 <p class="muted">Read-only comparison of schedule-aware demand and average-frequency estimates. No inventory changes or dosing recommendations.</p>
 <p><a href="/protocol-coverage">Coverage</a> · <a href="/inventory-forecast">Average forecast</a> · <a href="/forecast-horizons">Horizons</a> · <a href="/forecast-audit">Shared-stock audit</a> · <a href="/scheduled-forecast">Scheduled forecast</a> · <a href="/planning-hub.csv">Export CSV</a></p>
 {% if warnings %}<div class="card" style="padding:1rem"><h2>Schedule warnings</h2><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></div>{% endif %}
