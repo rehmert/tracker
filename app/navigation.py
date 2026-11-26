@@ -84,4 +84,4 @@ def current_navigation(path):
 
 
 def directory_groups():
-    return [(title, [(label, href) for href, label, _ in links]) for _, title, links in NAVIGATION]
+    return [(title, ([('Overview', '/')] if key == 'Today' else []) + [(label, href) for href, label, _ in links]) for key, title, links in NAVIGATION]
