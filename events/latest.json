@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r790-958bdbf87112.json",
+  "receipt_path": "receipts/r790-install958bdbf8.json",
   "release": 790,
-  "request_id": "r790-958bdbf87112",
+  "request_id": "r790-install958bdbf8",
   "schema": 1,
   "status": "passed",
   "target": "958bdbf87112cafab5eb89ddbd7491bc8eae6c2a"
