@@ -55,7 +55,7 @@ def test_775_protocol_and_regimen_google_tasks_actions_are_prominent():
     regimen = read("regimen635.html")
     assert protocol.count('href="' + URL + '"') == 1
     assert regimen.count('href="' + URL + '"') == 1
-    assert 'class="ux-shortcuts"' in regimen
+    assert 'aria-label="Regimen views"' in regimen
     assert 'href="' + URL + '"' in protocol
     assert 'href="' + URL + '"' in regimen
     assert 'Google Tasks sync settings</a></p>' not in protocol
