@@ -86,8 +86,8 @@ def test_701_existing_three_quick_save_forms_and_security_are_unchanged():
     assert 'credentials: "same-origin"' in JS
     assert "new FormData(form)" in JS
     assert "localStorage" not in JS
-    assert 'tracker-mobile-quick528.js?v=528' in BASE
-    assert 'tracker-mobile-quick528.css?v=528' in BASE
+    assert 'tracker-mobile-quick528.js?v=790' in BASE
+    assert 'tracker-mobile-quick528.css?v=790' in BASE
 
 
 def test_701_template_and_mobile_grid_maintain_accessible_controls():
