@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-26T13:53:34+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r791-install0a5ba934",
+  "ref": "release/791-compact-daily-actions",
+  "release": 791,
+  "request_id": "r791-preflight0a5ba934",
+  "schema": 1,
+  "started_at_utc": "2026-11-26T13:53:32+00:00",
+  "status": "passed",
+  "target": "0a5ba934a415451ad462bc7594cd4178d558d20d",
+  "test_counts": []
+}

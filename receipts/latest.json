@@ -1,24 +1,20 @@
 {
-  "action": "dev_install",
-  "base": "958bdbf87112cafab5eb89ddbd7491bc8eae6c2a",
+  "action": "prod_preflight",
+  "base": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-26T13:50:57+00:00",
+  "finished_at_utc": "2026-11-26T13:53:34+00:00",
   "markers": [
-    "RELEASE_791_DEV_INSTALL=SUCCESS",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r791-0a5ba934a415",
+  "previous_request_id": "r791-install0a5ba934",
   "ref": "release/791-compact-daily-actions",
   "release": 791,
-  "request_id": "r791-install0a5ba934",
+  "request_id": "r791-preflight0a5ba934",
   "schema": 1,
-  "started_at_utc": "2026-11-26T13:49:50+00:00",
+  "started_at_utc": "2026-11-26T13:53:32+00:00",
   "status": "passed",
   "target": "0a5ba934a415451ad462bc7594cd4178d558d20d",
-  "test_counts": [
-    "19 passed, 1 warning"
-  ]
+  "test_counts": []
 }
