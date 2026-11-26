@@ -12,7 +12,7 @@ def test_529_stylesheet_is_last_static_css():
     base = BASE.read_text()
 
     link = "/static/css/tracker-spacing529.css?v=529"
-    previous = "/static/css/tracker-mobile-quick528.css?v=528"
+    previous = "/static/css/tracker-mobile-quick528.css?v=790"
 
     assert base.count(link) == 1
     assert base.index(previous) < base.index(link)
