@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r790-958bdbf87112",
-  "action": "qualify",
+  "request_id": "r790-install958bdbf8",
+  "action": "dev_install",
   "release": 790,
   "target": "958bdbf87112cafab5eb89ddbd7491bc8eae6c2a",
   "base": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
   "ref": "release/790-integrated-daily-workspace",
-  "previous_request_id": null
+  "previous_request_id": "r790-958bdbf87112"
 }
