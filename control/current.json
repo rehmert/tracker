@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r791-install0a5ba934",
-  "action": "dev_install",
+  "request_id": "r791-preflight0a5ba934",
+  "action": "prod_preflight",
   "release": 791,
   "target": "0a5ba934a415451ad462bc7594cd4178d558d20d",
-  "base": "958bdbf87112cafab5eb89ddbd7491bc8eae6c2a",
+  "base": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
   "ref": "release/791-compact-daily-actions",
-  "previous_request_id": "r791-0a5ba934a415"
+  "previous_request_id": "r791-install0a5ba934"
 }
