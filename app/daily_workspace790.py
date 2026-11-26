@@ -25,6 +25,17 @@ def summary790(db, day, days_ahead=7):
     }
 
 
+def regimen_stamp790(schedule, plan, day):
+    from .idempotency import payload_hash
+    tablet = ([plan.tablet_strength_mg, plan.prescribed_dose_mg, plan.tablets_planned]
+              if plan else None)
+    return payload_hash([schedule.id, schedule.item_id, schedule.item.name,
+                         schedule.item.active, schedule.active, schedule.amount,
+                         schedule.at_time, schedule.meal, schedule.cadence,
+                         schedule.start_on, schedule.end_on, schedule.weekdays,
+                         schedule.interval_days, day, tablet])
+
+
 def regimen790(db, day):
     from datetime import datetime
     from sqlalchemy import select
@@ -37,9 +48,11 @@ def regimen790(db, day):
     start = datetime.combine(day, datetime.min.time())
     entries = list(db.scalars(select(RegimenEntry).where(
         RegimenEntry.logged_at >= start, RegimenEntry.logged_at < start + timedelta(days=1))))
+    plans = {p.schedule_id: p for p in db.scalars(select(RegimenTabletSchedule731))}
     return dict(regimen_day=day, regimen_due=due,
                 regimen_recorded={e.schedule_id for e in entries if e.schedule_id is not None},
                 regimen_entries={e.schedule_id: e for e in entries if e.schedule_id is not None},
-                regimen_tablet_plans={p.schedule_id: p for p in db.scalars(select(RegimenTabletSchedule731))},
+                regimen_tablet_plans=plans,
+                regimen_snapshots={s.id: regimen_stamp790(s, plans.get(s.id), day) for s in due},
                 regimen_meals=MEALS, tablet_fmt=format_number,
                 regimen_now=datetime.now().strftime("%H:%M"))
