@@ -39,3 +39,12 @@
 .tracker-daily790 #google-protocol-review783 .tracker-ui-action {margin:.15rem}
 .tracker-daily790 .tracker-daily-form-status {margin:.25rem 0}
 @media(max-width:760px){.tracker-regimen790 .reg635-grid {grid-template-columns:minmax(0,1fr)}}
+
+.tracker-regimen790 .reg635-form input[type=checkbox] {width:auto;max-width:1.25rem;margin-right:.3rem}
+.tracker-regimen790 :is(.field input,.field select) {min-height:44px;font-size:16px}
+.tracker-daily790 .tracker-daily-heading {flex-wrap:wrap}
+.tracker-daily790 .tracker-daily-heading .tracker-ui-action {white-space:normal}
+.tracker-daily790 :is(.today765-specific,.today765-card) .tracker-ui-action {text-decoration:none}
+.tracker-daily790 :is(.tracker-daily-section,.today765-priorities) [id] {scroll-margin-top:5rem}
+.tracker-daily790 .tracker-daily-list .tracker-ui-action {text-decoration:none}
+.tracker-daily790 .tracker-daily-footer a {min-height:44px}
