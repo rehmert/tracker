@@ -1,5 +1,5 @@
-{% extends "base.html" %}{% block title %}Peptide blends{% endblock %}{% block content %}
-<h1>Peptide blends</h1>
+{% extends "base.html" %}{% block title %}Peptide blends{% endblock %}{% block content %}{% from "_workspace792.html" import inventory %}
+<h1>Peptide blends</h1>{{ inventory("blends") }}
 <p><a href="/reconstitution-calculator">Single-vial and premixed-blend calculator →</a></p>
 <p>Choose source vials, enter the target amount for each compound, preview, then record quantities you actually prepared. A preview never changes inventory. Recorded blends remain separate from original source vials.</p>
 <details class="card" id="blend-review-guide618">
@@ -8,7 +8,9 @@
   <p><a href="#blend-form">Open blend form</a> · <a href="/vials">Review source vials</a> · <a href="/inventory-health">Review inventory findings</a> · <a href="/calendar">Calendar</a></p>
   <p class="note">Preview is not a transaction. Only the existing confirmed recording action updates inventory; this guide cannot submit the form.</p>
 </details>
-<div class="ux-callout"><strong>Two steps:</strong> Select source vials and target amounts, then preview. When the displayed plan matches the volumes and transfers actually performed, choose Record. Recording deducts stock and, for dry sources, records the confirmed reconstitution volumes.</div><section class="card"><h2>Create a blend</h2><p class="note">1 · Choose sources and targets. 2 · Preview and confirm actual quantities, then record.</p>
+<nav class="tracker-workspace-tabs792" aria-label="Blend actions"><a class="tracker-ui-action tracker-ui-action--primary" href="#create-blend792">Create blend</a><a class="tracker-ui-action" href="#waterfall">Waterfall</a><a class="tracker-ui-action" href="#recorded-blends792">Recorded blends</a></nav>
+<section class="card" id="recorded-blends792"><h2>Recorded blends</h2><div class="scroll"><table class="blend-table"><thead><tr><th>Blend</th><th>Compounds</th><th>Remaining</th><th>Status</th></tr></thead><tbody>{% for b in blends %}<tr><td><a href="/blends/{{ b.id }}">{{ b.label }}</a></td><td>{% for c in b.components %}{{ c.compound.name }}{% if not loop.last %}, {% endif %}{% endfor %}</td><td>{{ remaining[b.id]|num }} mL</td><td>{{ b.status }}</td></tr>{% else %}<tr><td colspan="4">No blends recorded.</td></tr>{% endfor %}</tbody></table></div></section>
+<details class="tracker-workspace-panel792" id="create-blend792"><summary>Create a blend</summary><p class="note">1 · Choose sources and targets. 2 · Preview and confirm actual quantities, then record.</p>
 <form method="post" action="/blends" class="grid" id="blend-form" data-confirm-inventory="true"><input type="hidden" name="submission_token" value="{{ submission_token }}"><input type="hidden" name="confirmed_actual" value="">
 <label class="field"><span>Destination vial label</span><input name="label" required placeholder="Blend #1"></label>
 <label class="field"><span>Number of destination vials</span><input name="destination_count" type="number" min="1" max="100" step="1" value="1" required></label>
@@ -26,9 +28,9 @@
 <button type="button" id="preview-reconstitution">Calculate maximum complete draws (what-if)</button>
 <div id="reconstitution-preview" class="card" aria-live="polite" hidden></div></div>
 <div class="wide"><button type="button" id="preview-blend">Preview blend</button> <button class="primary" id="record-blend" type="submit" disabled title="Preview the current entries first">Record confirmed blend</button><p id="blend-review-status" class="note" role="status" aria-live="polite">Preview the current entries to enable recording.</p><div id="blend-preview" class="card" aria-live="polite" hidden></div></div>
-</form></section>
-<section class="card" id="waterfall">
-<h2>Waterfall reconstitution · 2–6 vials</h2>
+</form></details>
+<details class="tracker-workspace-panel792" id="waterfall">
+<summary>Waterfall reconstitution · 2–6 vials</summary>
 <p>Record one measured initial BAC volume carried through multiple <strong>dry, unused vials of the same compound</strong>. The resulting solution is represented by one blend record and the original vial inventory is consumed. Nominal math assumes complete transfers and ignores powder displacement and handling loss. This does not establish sterility or compatibility.</p>
 <form id="waterfall-form" method="post" action="/blends/waterfall/record" class="grid" data-confirm-inventory="true">
 <input type="hidden" name="submission_token" value="{{ waterfall_token }}">
@@ -53,8 +55,7 @@
 <option value="{{ v.id }}" data-compound="{{ v.compound_id }}">#{{ v.id }} · {{ v.compound.name|truncate(15, True, "…") }} · {{ v.lot or "—" }} · {{ d.remaining_base|amt(d.dim) }}</option>
 {% endif %}{% endfor %}
 </select></label><button class="waterfall-remove" type="button">Remove</button></div></template>
-</section>
-<section class="card"><h2>Recorded blends</h2><div class="scroll"><table class="blend-table"><thead><tr><th>Blend</th><th>Compounds</th><th>Remaining</th><th>Status</th></tr></thead><tbody>{% for b in blends %}<tr><td><a href="/blends/{{ b.id }}">{{ b.label }}</a></td><td>{% for c in b.components %}{{ c.compound.name }}{% if not loop.last %}, {% endif %}{% endfor %}</td><td>{{ remaining[b.id]|num }} mL</td><td>{{ b.status }}</td></tr>{% else %}<tr><td colspan="4">No blends recorded.</td></tr>{% endfor %}</tbody></table></div></section>
+</details>
 <template id="blend-row-template"><tr><td><select aria-label="Source vial" name="source_id" required><option value="">Select vial</option>{% for v in vials %}{% set d = views[v.id] %}{% if d.remaining_base > 0 %}<option value="{{ v.id }}" data-unit="{{ v.content_unit }}" data-liquid="{{ 1 if v.volume_ml else 0 }}">#{{ v.id }} · {{ {"tirzepatide":"Tirz","retatrutide":"Reta","semaglutide":"Sema","tesamorelin":"Tesa","ipamorelin":"Ipa","somatropin":"HGH","bpc-157":"BPC-157","ghk-cu":"GHK-Cu","mots-c":"MOTS-C","ss-31":"SS-31","nad+":"NAD+"}.get(v.compound.name|lower, v.compound.name|truncate(12, True, "…")) }} · {{ v.purchase.vendor if v.purchase and v.purchase.vendor else "—" }} · {{ v.lot or "—" }} · {{ d.remaining_base|amt(d.dim) }}</option>{% endif %}{% endfor %}</select></td><td><input aria-label="Transfer amount" type="number" name="transfer_amount" min="0.000001" step="any" placeholder="Calculated for preview"></td><td><select aria-label="Transfer unit" name="transfer_unit">{% for u in units %}<option value="{{ u }}">{{ u }}</option>{% endfor %}</select></td><td><input aria-label="Target amount" type="number" name="target_amount" min="0.000001" step="any" required></td><td><select aria-label="Target unit" name="target_unit">{% for u in units %}<option value="{{ u }}">{{ u }}</option>{% endfor %}</select></td><td><input type="number" name="source_bac_ml" min="0" step="any" value="0.5" title="BAC volume to reconstitute the entire dry source vial; enter 0 for an already-liquid vial"></td><td><button type="button" class="remove-source">Remove</button></td></tr></template>
 <style>
 .blend-source-table:not(.manual-mode) th:nth-child(2),.blend-source-table:not(.manual-mode) th:nth-child(3),.blend-source-table:not(.manual-mode) td:nth-child(2),.blend-source-table:not(.manual-mode) td:nth-child(3){display:none}
