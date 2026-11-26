@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Request
 from ..templating import render
 router = APIRouter()
-GROUPS = [('Daily workflow', [('Dashboard', '/'), ('Calendar', '/calendar'), ('Quick entry', '/quick-entry'), ('Dose log', '/doses'), ('Dose workspace', '/dose-workspace'), ('Activity timeline', '/activity')]), ('Protocols', [('Protocols', '/protocols'), ('Protocol tools', '/protocol-tools'), ('PK simulator', '/pk'), ('Blends', '/blends')]), ('Inventory and purchasing', [('Vials', '/vials'), ('Inventory health', '/inventory-health'), ('Inventory alerts', '/inventory-alerts'), ('Inventory timeline', '/inventory-timeline'), ('Inventory insights', '/inventory-intelligence'), ('Reconcile inventory', '/reconciliation'), ('Purchases', '/purchases'), ('Purchase analysis', '/purchase-analysis'), ('Vendor prices', '/vendor-prices'), ('Supplies', '/supplies'), ('COAs', '/coas')]), ('Health and records', [('Vitals', '/vitals'), ('Lab results', '/labs'), ('Health insights', '/health-insights'), ('Health timeline', '/health-timeline'), ('Health records', '/record-explorer/health'), ('Notes', '/pages'), ('Notes history', '/record-explorer/notes')]), ('Administration', [('Maintenance review', '/maintenance-review'), ('Data integrity', '/data-integrity'), ('Backups', '/backups'), ('Audit history', '/audit-history'), ('Reports', '/reports'), ('Exports', '/exports'), ('Database explorer', '/record-explorer/database')])]
+from ..navigation import directory_groups
 @router.get("/workflow-hub")
 def workflow_hub(request: Request):
-    return render(request, "workflow_hub.html", groups=GROUPS)
+    return render(request, "workflow_hub.html", groups=directory_groups())
