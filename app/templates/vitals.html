@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Vitals{% endblock %}
 {% block content %}
+{% from "_workspace792.html" import health %}
 <link rel="stylesheet" href="/static/css/tracker-android-log374.css?v=374">
 <script src="/static/js/tracker-android-log374.js?v=374" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-mobile-log373.css?v=373">
@@ -25,7 +26,7 @@
         src="/static/js/tracker-vitals-quick-focus.js?v=20261103"></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 
-<h1>Vitals</h1>
+<h1>Vitals</h1>{{ health("vitals", days) }}
 <nav class="tracker-mobile-log-links" aria-label="Quick vitals logging">
   <a href="#quick-vitals-entry">New reading</a>
   <a href="#quick-vitals-weight">Weight</a>
