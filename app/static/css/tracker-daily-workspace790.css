@@ -48,3 +48,7 @@
 .tracker-daily790 :is(.tracker-daily-section,.today765-priorities) [id] {scroll-margin-top:5rem}
 .tracker-daily790 .tracker-daily-list .tracker-ui-action {text-decoration:none}
 .tracker-daily790 .tracker-daily-footer a {min-height:44px}
+
+@media(max-width:760px) {
+  .tracker-save790 {position:sticky;bottom:calc(4.5rem + env(safe-area-inset-bottom,0px));z-index:5;background:var(--surface,#fff);padding:.5rem 0}
+}
