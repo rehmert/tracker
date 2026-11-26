@@ -3,11 +3,6 @@
   const KEY = 'tracker.navigation.focus.v1';
   // Daily destinations only. Advanced pages remain accessible by search and
   // direct URL; the current page stays in the sidebar even when advanced.
-  const ESSENTIAL = new Set([
-    '/mobile', '/calendar', '/quick-entry', '/doses', '/vials',
-    '/workouts', '/food', '/vitals', '/labs', '/regimen',
-    '/integrations/google-tasks', '/protocols', '/progress'
-  ]);
   function init() {
     const toggle = document.getElementById('tracker-focus-toggle');
     const nav = document.getElementById('nav-sortable');
@@ -28,7 +23,7 @@
         let visible = 0;
         section.querySelectorAll('li[data-nav-key]').forEach(item => {
           const href = item.dataset.navKey;
-          const show = !enabled || ESSENTIAL.has(href) || active.has(href);
+          const show = !enabled || item.dataset.navPrimary === 'yes' || active.has(href);
           item.classList.toggle('tracker-focus-hidden', !show);
           if (show) visible++;
         });
