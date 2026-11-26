@@ -23,10 +23,9 @@
 <link rel="stylesheet" href="/static/css/tracker-overview-density690.css?v=690">
 {% if google_pending_count %}<section class="card" id="google-pending-dashboard783" role="status"><h2>{{ google_pending_count }} Google Tasks administration{{ 's' if google_pending_count != 1 else '' }} pending review</h2><p>Checked off in Google Tasks; inventory or existing logs still need reconciliation.</p><a class="button primary" href="/calendar#google-protocol-review783">Review administrations</a></section>{% endif %}
 <section class="tracker-daily-flow559" aria-labelledby="tracker-daily-flow559-title">
-  <div class="tracker-daily-flow559-head"><h2 id="tracker-daily-flow559-title">Daily workspace</h2><p>Record in Today; use this Dashboard for overview and trends.</p></div>
-  {{ action('/mobile','Open Today',true) }}
+  <div class="tracker-daily-flow559-head tracker-daily-heading791"><h2 id="tracker-daily-flow559-title">Daily workspace</h2>{{ action('/mobile','Open Today',true) }}</div>
   {{ quick_actions() }}
-  <details class="tracker-more790"><summary>Review tools</summary><nav class="tracker-ui-actions" aria-label="Everyday workflow shortcuts">
+  <details class="tracker-more790"><summary>Review tools</summary><nav class="tracker-ui-actions tracker-review-actions791" aria-label="Everyday workflow shortcuts">
     {{ action('/calendar','Calendar') }}{{ action('/dose-workspace','Dose Workspace') }}{{ action('/replenishment-review','Inventory') }}{{ action('/labs','Lab Results') }}{{ action('/progress','Progress') }}{{ action('/vials','Vial Inventory') }}
   </nav></details>
 </section>
