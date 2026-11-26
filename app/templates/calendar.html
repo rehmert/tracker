@@ -18,8 +18,10 @@
 <a class="tracker-ui-action" href="#calendar-review-agenda">Review projected events</a>
 <a class="tracker-ui-action" href="#calendar-exclusions741">Hidden projections</a>
 </nav>
-<p class="note">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</p>
-<p class="note">For mg-based plans, choose the actual vial on an event to see its recorded mg/mL concentration, calculated mL withdrawal and U-100 syringe markings. Calculations depend on vial records; verify labels and measurable syringe increments. Previewing does not record an administration.</p>
+<details class="calendar-explanation791" id="calendar-explanation791">
+  <summary><span class="calendar-explanation791-preview">Active protocols project from their saved start dates. Same-day, same-compound dose logs are matched to projected entries. A matching entry does not establish that the amount or timing was correct. Calendar events never create dose logs or consume inventory.</span><span class="calendar-explanation791-toggle"><span class="calendar-explanation791-more">More…</span><span class="calendar-explanation791-less">Less</span></span></summary>
+  <p class="note">For mg-based plans, choose the actual vial on an event to see its recorded mg/mL concentration, calculated mL withdrawal and U-100 syringe markings. Calculations depend on vial records; verify labels and measurable syringe increments. Previewing does not record an administration.</p>
+</details>
 {% if missing_start %}<section><h2>Start dates needed</h2><p class="note">These active protocols have no start date, so no doses are projected for them:</p>
 {% for p in missing_start %}<p><a class="tracker-ui-action" href="/protocols/{{ p.id }}">{{ p.name }}</a> — set a start date</p>{% endfor %}</section>{% endif %}
 <form method="get" action="/calendar" class="inline">
