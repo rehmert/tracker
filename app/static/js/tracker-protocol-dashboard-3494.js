@@ -96,7 +96,7 @@
 
     status.value = allowedStatuses.has(saved.status)
       ? saved.status
-      : 'all';
+      : 'active';
 
     sort.value = allowedSorts.has(saved.sort)
       ? saved.sort
