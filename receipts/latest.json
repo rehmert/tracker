@@ -1,24 +1,20 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "base": "0a5ba934a415451ad462bc7594cd4178d558d20d",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-26T14:14:11+00:00",
+  "finished_at_utc": "2026-11-26T14:32:34+00:00",
   "markers": [
-    "RELEASE_792_DEV_INSTALL=SUCCESS",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r792-9f7978795672",
+  "previous_request_id": "r792-install9f797879",
   "ref": "release/792-consolidated-workspaces",
   "release": 792,
-  "request_id": "r792-install9f797879",
+  "request_id": "r792-preflight9f797879",
   "schema": 1,
-  "started_at_utc": "2026-11-26T14:12:52+00:00",
+  "started_at_utc": "2026-11-26T14:32:32+00:00",
   "status": "passed",
   "target": "9f79787956726e105d55906483b7e851db5106fa",
-  "test_counts": [
-    "95 passed, 1 warning"
-  ]
+  "test_counts": []
 }
