@@ -1,7 +1,7 @@
 """Unified read-only inventory planning dashboard."""
 import csv
 import io
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from ..scoped_db390 import get_scoped_db390
@@ -164,7 +164,22 @@ def _planning_expiry_comparison(db, scheduled_rows, horizons):
 from .fefo_forecast import build_fefo
 
 @router.get("/planning-hub")
-def planning_hub(request: Request, db: Session = Depends(get_scoped_db390)):
+def planning_hub(request: Request, db: Session = Depends(get_scoped_db390),
+                 horizon: int = Query(28), compound: str = Query("", max_length=120),
+                 category: str = Query("all"), view: str = Query("priorities")):
+    if view != "details":
+        from .planning_priorities import priority_rows, summary
+        from .fefo_forecast import HORIZONS as fefo_horizons
+        if horizon not in fefo_horizons:
+            horizon = 28
+        if category not in ("all", "shortage", "expiration", "review"):
+            category = "all"
+        source, warnings = build_fefo(db)
+        return render(request, "inventory_planning794.html",
+                      rows=priority_rows(source, horizon, compound, category),
+                      totals=summary(priority_rows(source, horizon)),
+                      warnings=warnings, horizon=horizon, horizons=fefo_horizons,
+                      compound=compound, category=category)
     rows, warnings, unmatched = build_planning(db)
     expiry_comparisons, unmatched_expiry = _planning_expiry_comparison(db, rows, HORIZONS)
     fefo_rows, fefo_warnings = build_fefo(db)
