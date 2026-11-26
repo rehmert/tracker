@@ -3,7 +3,7 @@
   <div class="tracker-daily-heading"><h2>Supplements &amp; medications</h2>{{ action('/regimen?day=' ~ regimen_day ~ '#reg635-today','Manage intake') if regimen_origin == 'today' else '' }}</div>
   {% set pending = regimen_due | rejectattr('id', 'in', regimen_recorded) | list %}
   <p class="note">{{ pending|length }} remaining · {{ regimen_due|length - pending|length }} recorded</p>
-  {% if pending %}
+  {% if pending and regimen_day <= today %}
   <div class="reg635-grid">
     {% for schedule in pending %}
     <article class="reg635-card">
@@ -11,6 +11,9 @@
       <p>{{ schedule.amount }}{% if schedule.at_time %} · Scheduled {{ schedule.at_time }}{% endif %}</p>
       {% set stamp = regimen_day ~ 'T' ~ (regimen_now if regimen_day == today else (schedule.at_time or regimen_now)) %}
       <form method="post" action="/regimen/entries" class="reg635-form" data-regimen-quick790>
+        <input type="hidden" name="scheduled_quick790" value="yes">
+        <input type="hidden" name="scheduled_day790" value="{{ regimen_day }}">
+        <input type="hidden" name="schedule_snapshot790" value="{{ regimen_snapshots.get(schedule.id) }}">
         <input type="hidden" name="item_id" value="{{ schedule.item_id }}">
         <input type="hidden" name="schedule_id" value="{{ schedule.id }}">
         <input type="hidden" name="return_to" value="{{ regimen_origin }}">
@@ -35,6 +38,21 @@
     </article>
     {% endfor %}
   </div>
+  {% if pending|length > 1 %}
+    <details class="tracker-more790"><summary>Log multiple intakes</summary>
+      <form method="post" action="/regimen/entries/batch790" class="reg635-form">
+        <input type="hidden" name="return_to" value="{{ regimen_origin }}">
+        <input type="hidden" name="scheduled_day790" value="{{ regimen_day }}">
+        <label class="field">Actual time for selected intakes <input type="datetime-local" name="logged_at" required value="{{ regimen_day }}T{{ regimen_now }}"></label>
+        {% for schedule in pending %}
+          <label><input type="checkbox" name="schedule_id" value="{{ schedule.id }}"> {{ schedule.item.name }} · {{ schedule.amount }}</label>
+          <input type="hidden" name="snapshot_{{ schedule.id }}" value="{{ regimen_snapshots.get(schedule.id) }}">
+        {% endfor %}
+        {{ submit('Log selected intakes') }}
+      </form>
+    </details>
+    {% endif %}
+  {% elif pending %}<p>Scheduled for this date; record after actual intake.</p>
   {% else %}<p>No remaining scheduled intake for this date.</p>{% endif %}
   {% if regimen_recorded %}
   <details class="tracker-more790"><summary>Recorded intake</summary>
