@@ -1,24 +1,27 @@
 {
-  "action": "dev_install",
-  "base": "9f79787956726e105d55906483b7e851db5106fa",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-26T18:43:39+00:00",
-  "markers": [
-    "RELEASE_793_DEV_INSTALL=SUCCESS",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+  "action": "qualify",
+  "base": "8dafeb3eab7355780719c24c6de3d18d30b2d1bc",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_workflow_consolidation794.py"
   ],
-  "previous_request_id": "r793-8dafeb3eab73",
-  "ref": "release/793-design-system",
-  "release": 793,
-  "request_id": "r793-install8dafeb3e",
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-26T19:06:34+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_794_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_794_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_794_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/794-workflow-consolidation",
+  "release": 794,
+  "request_id": "r794-5399e32d9581",
   "schema": 1,
-  "started_at_utc": "2026-11-26T18:41:49+00:00",
-  "status": "passed",
-  "target": "8dafeb3eab7355780719c24c6de3d18d30b2d1bc",
+  "started_at_utc": "2026-11-26T19:05:22+00:00",
+  "status": "failed",
+  "target": "5399e32d9581ecce0e032e88e206888d9c5406e9",
   "test_counts": [
-    "77 passed, 1 warning"
+    "118 passed, 1 warning"
   ]
 }
