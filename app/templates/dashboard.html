@@ -21,16 +21,17 @@
 <link rel="stylesheet" href="/static/css/tracker-daily-flow559.css?v=559">
 <!-- Release 690: final Dashboard-only density override after shared 685/686 and 688/689. -->
 <link rel="stylesheet" href="/static/css/tracker-overview-density690.css?v=690">
+<header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div></header>
 {% if google_pending_count %}<section class="card" id="google-pending-dashboard783" role="status"><h2>{{ google_pending_count }} Google Tasks administration{{ 's' if google_pending_count != 1 else '' }} pending review</h2><p>Checked off in Google Tasks; inventory or existing logs still need reconciliation.</p><a class="button primary" href="/calendar#google-protocol-review783">Review administrations</a></section>{% endif %}
 <section class="tracker-daily-flow559" aria-labelledby="tracker-daily-flow559-title">
   <div class="tracker-daily-flow559-head tracker-daily-heading791"><h2 id="tracker-daily-flow559-title">Daily workspace</h2>{{ action('/mobile','Open Today',true) }}</div>
   {{ quick_actions() }}
   <details class="tracker-more790"><summary>Review tools</summary><nav class="tracker-ui-actions tracker-review-actions791" aria-label="Everyday workflow shortcuts">
-    {{ action('/calendar','Calendar') }}{{ action('/dose-workspace','Dose Workspace') }}{{ action('/replenishment-review','Inventory') }}{{ action('/labs','Lab Results') }}{{ action('/progress','Progress') }}{{ action('/vials','Vial Inventory') }}
+    {{ action('/calendar','Calendar') }}{{ action('/doses#dose-history','Administration history') }}{{ action('/planning-hub','Forecast & planning') }}{{ action('/labs','Lab Results') }}{{ action('/progress','Progress') }}{{ action('/vials','Vial Inventory') }}
   </nav></details>
 </section>
 {% include '_workout_dashboard661.html' %}
-<header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div></header>
+
 
 {% set tracker_attention_due =
     today_summary.today
