@@ -8,10 +8,10 @@
 {%- endmacro %}
 
 {% macro inventory(current) -%}
-{{ tabs([('/vials?status=in_use','In use','in_use'),('/vials?status=sealed','Stock','stock'),('/blends','Blends','blends'),('/inventory-health','Needs attention','attention'),('/purchases','Purchases','purchases'),('/protocols','Protocols','protocols')], current, 'Inventory & planning workspace') }}
+{{ tabs([('/vials?status=in_use','In use','in_use'),('/vials?status=sealed','Stock','stock'),('/blends','Blends','blends'),('/inventory-health','Needs attention','attention'),('/purchases','Purchases','purchases'),('/protocols','Protocols','protocols'),('/planning-hub','Forecast','forecast')], current, 'Inventory & planning workspace') }}
 <details class="tracker-workspace-more792">
 <summary>More inventory &amp; planning tools</summary>
-{{ tabs([('/vials?status=active','All active vials','active'),('/vials?status=non_discarded&coa=missing','Missing COAs','coa'),('/supplies','Supplies','supplies'),('/inventory-forecast','Forecast','forecast'),('/inventory-alerts','Alerts','alerts'),('/replenishment-review','Replenishment','replenishment'),('/vendor-prices','Vendor prices','prices'),('/coas','Certificates','certificates'),('/reconciliation','Reconcile','reconcile'),('/reconstitution-calculator','Calculator','calculator'),('/pk','PK simulator','pk')], current, 'Advanced inventory tools') }}
+{{ tabs([('/vials?status=active','All active vials','active'),('/vials?status=non_discarded&coa=missing','Missing COAs','coa'),('/supplies','Supplies','supplies'),('/inventory-forecast','Average forecast','average'),('/inventory-alerts','Alerts','alerts'),('/replenishment-review','Replenishment','replenishment'),('/vendor-prices','Vendor prices','prices'),('/coas','Certificates','certificates'),('/reconciliation','Reconcile','reconcile'),('/reconstitution-calculator','Calculator','calculator'),('/pk','PK simulator','pk')], current, 'Advanced inventory tools') }}
 </details>
 {%- endmacro %}
 
