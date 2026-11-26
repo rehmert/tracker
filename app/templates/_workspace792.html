@@ -19,5 +19,7 @@
 {# The four common ranges have the same semantics. Do not silently relabel
    route-specific windows as equivalent. All-time is deliberately not mapped. #}
 {% set shared = days if days in (30,90,180,365) else 90 %}
-{{ tabs([('/progress?days=' ~ shared,'Progress','progress'),('/vitals?days=' ~ shared,'Vitals','vitals'),('/labs','Labs','labs'),('/health-timeline?days=' ~ shared,'Timeline','timeline'),('/health-insights?days=' ~ shared,'Clinical trends','insights'),('/reports/trends?days=' ~ (28 if shared == 30 else (180 if shared == 180 else 90)),'Weekly trends','weekly')], current, 'Health workspace') }}
+{% set weekly = 28 if shared == 30 else (180 if shared == 180 else 90) %}
+{% set suffix = ' (' ~ shared ~ 'd)' if shared != days else '' %}
+{{ tabs([('/progress?days=' ~ shared,'Progress' ~ suffix,'progress'),('/vitals?days=' ~ shared,'Vitals' ~ suffix,'vitals'),('/labs?days=' ~ shared,'Labs','labs'),('/health-timeline?days=' ~ shared,'Timeline' ~ suffix,'timeline'),('/health-insights?days=' ~ shared,'Clinical trends' ~ suffix,'insights'),('/reports/trends?days=' ~ weekly,'Weekly trends' ~ (' (' ~ weekly ~ 'd)' if weekly != days else ''),'weekly')], current, 'Health workspace') }}
 {%- endmacro %}
