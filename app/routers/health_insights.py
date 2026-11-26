@@ -11,7 +11,7 @@ from ..models import LabReport, LabResult, VitalReading
 from ..templating import render
 
 router = APIRouter()
-RANGES = {30: "30 days", 90: "90 days", 365: "1 year", 1095: "3 years", 3650: "All"}
+RANGES = {30: "30 days", 90: "90 days", 180: "6 months", 365: "1 year", 1095: "3 years", 3650: "All"}
 
 
 def _lab_choices(db: Session):
