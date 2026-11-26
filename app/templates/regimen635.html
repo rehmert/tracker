@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Supplements &amp; Medications{% endblock %}
 {% block content %}
+{% from "_ui790.html" import action %}
 <h1>Supplements &amp; Medications</h1>
-<nav class="ux-shortcuts" aria-label="Regimen tools"><a href="/integrations/google-tasks">Google Tasks settings</a></nav>
+<nav class="tracker-ui-actions" aria-label="Regimen views">{{ action("#reg635-today","Daily intake",true) }}{{ action("#reg635-schedules","Manage schedules") }}{{ action("#reg635-catalog","Catalog") }}{{ action("#reg635-history","Intake history") }}</nav>
+<nav class="ux-shortcuts" aria-label="Regimen tools"><a class="tracker-ui-action" href="/integrations/google-tasks">Google Tasks settings</a></nav>
 <p class="note">Your personal regimen: catalog, planned schedules, and actual intake. No doses are recommended or automatically marked taken. Meal associations do not change Food Journal nutrient totals.</p>
 <style>
 .reg635-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:1rem}
@@ -94,50 +96,20 @@ summary.reg737-native-disclosure{
 <section class="card" id="reg635-today">
   <div class="reg635-day">
     <h2>Daily regimen — {{ day }}</h2>
-    <a href="/regimen?day={{ prev_day }}">Previous day</a>
-    <a href="/regimen?day={{ today }}">Today</a>
-    <a href="/regimen?day={{ next_day }}">Next day</a>
-    <a href="/food?day={{ day }}">Food Journal</a>
-    <a href="/doses">Injectable dose log</a>
+    <a class="tracker-ui-action" href="/regimen?day={{ prev_day }}">Previous day</a>
+    <a class="tracker-ui-action" href="/regimen?day={{ today }}">Today</a>
+    <a class="tracker-ui-action" href="/regimen?day={{ next_day }}">Next day</a>
+    <a class="tracker-ui-action" href="/food?day={{ day }}">Food Journal</a>
+    <a class="tracker-ui-action" href="/doses">Injectable dose log</a>
   </div>
-  <p class="note">Due means planned, not administered. A logged intake is the only confirmation.</p>
-  {% if due %}
-  <div class="reg635-grid">
-    {% for schedule in due %}
-    <article class="reg635-card">
-      <h3>{{ schedule.item.name }}</h3>
-      <p>{{ schedule.amount }}{% if schedule.at_time %} · {{ schedule.at_time }}{% endif %}{% if schedule.meal %} · With {{ schedule.meal }}{% endif %}</p>
-      <p class="note">{{ schedule.item.kind|capitalize }} · {{ schedule.cadence }}{% if schedule.id in recorded %} · Recorded for this date{% endif %}</p>
-      {% if schedule.id not in recorded %}
-      <form method="post" action="/regimen/entries" class="reg635-form">
-        <input type="hidden" name="item_id" value="{{ schedule.item_id }}">
-        <input type="hidden" name="schedule_id" value="{{ schedule.id }}">
-        <label class="field">Recorded at <input type="datetime-local" name="logged_at" required value="{{ day }}T{{ schedule.at_time or '09:00' }}"></label>
-        <label class="field">Result <select name="outcome"><option value="taken">Taken</option><option value="skipped">Skipped</option></select></label>
-        {% set dose_plan = tablet_plans.get(schedule.id) %}
-        {% if dose_plan %}
-        <input type="hidden" name="tablet_mode" value="tablet">
-        <div class="reg731-panel" data-reg731-due data-reg731-strength="{{ tablet_fmt(dose_plan.tablet_strength_mg) }}" data-reg731-prescribed="{{ tablet_fmt(dose_plan.prescribed_dose_mg) }}">
-          <strong>Ordered {{ tablet_fmt(dose_plan.prescribed_dose_mg) }} mg from {{ tablet_fmt(dose_plan.tablet_strength_mg) }} mg/tablet</strong>
-          <label class="field">Tablets actually taken (½ = 0.5)
-            <input name="tablet_count" type="number" min="0.25" max="20" step="0.25" inputmode="decimal" value="{{ tablet_fmt(dose_plan.tablets_planned) }}" data-reg731-count>
-          </label>
-          <output data-reg731-preview aria-live="polite" role="status"></output>
-        </div>
-        {% else %}
-        <label class="field">Actual amount <input name="amount" value="{{ schedule.amount }}" maxlength="80"></label>
-        {% endif %}
-        <label class="field">Meal (optional) <select name="meal">{% for meal in meals %}<option value="{{ meal }}" {% if meal == schedule.meal %}selected{% endif %}>{{ meal|capitalize if meal else 'None' }}</option>{% endfor %}</select></label>
-        <label class="field">Notes <input name="notes" maxlength="2000"></label>
-        <button class="primary">Record</button>
-      </form>
-      {% else %}
-      <p>Already logged. Use the history below to correct it.</p>
-      {% endif %}
-    </article>
-    {% endfor %}
-  </div>
-  {% else %}<p>No scheduled items due on this day. PRN medications are logged manually below.</p>{% endif %}
+  {% set regimen_day=day %}
+  {% set regimen_due=due %}
+  {% set regimen_recorded=recorded %}
+  {% set regimen_tablet_plans=tablet_plans %}
+  {% set regimen_meals=meals %}
+  {% set regimen_origin='regimen' %}
+  {% include '_regimen_today790.html' %}
+
 </section>
 
 <section class="card">
@@ -184,7 +156,7 @@ summary.reg737-native-disclosure{
 </section>
 
 <section class="card" id="reg635-catalog">
-<h2>Catalog</h2>
+<details class="tracker-more790" {% if return_focus and ('item' in return_focus or return_focus == 'catalog') %}open{% endif %}><summary><strong>Catalog</strong></summary>
 <details id="reg635-add-item" {% if return_focus == 'add-item' %}open{% endif %}><summary class="reg737-native-disclosure"><strong>Add supplement or medication</strong></summary>
   <form method="post" action="/regimen/items" class="reg635-form" data-reg636-catalog>
     <label class="field">Type <select name="kind">{% for kind in kinds %}<option value="{{ kind }}">{{ kind|capitalize }}</option>{% endfor %}</select></label>
@@ -328,10 +300,10 @@ summary.reg737-native-disclosure{
 </article>
 {% else %}<p>No supplements or medications have been entered.</p>{% endfor %}
 </div>
-</section>
+</details></section>
 
 <section class="card" id="reg635-schedules">
-<h2>Schedules &amp; protocols</h2>
+<details class="tracker-more790" {% if return_focus and ('schedule' in return_focus) %}open{% endif %}><summary><strong>Schedules &amp; protocols</strong></summary>
 <p class="note">Regimen schedules are independent from injectable PK protocols. Monday=0 through Sunday=6 for weekly schedules. Every-N-days is anchored to the selected start date. As-needed entries are never shown as automatically due.</p>
 <details id="reg635-add-schedule" {% if return_focus == 'add-schedule' %}open{% endif %}><summary class="reg737-native-disclosure"><strong>Add schedule</strong></summary>
 {% if items %}
@@ -436,10 +408,10 @@ summary.reg737-native-disclosure{
 </article>
 {% else %}<p>No schedules have been created.</p>{% endfor %}
 </div>
-</section>
+</details></section>
 
 <section class="card" id="reg635-history">
-<h2>Intake history</h2>
+<details class="tracker-more790" {% if false %}open{% endif %}><summary><strong>Intake history</strong></summary>
 <p class="note">The 50 most recent actual records. You can correct or delete each one; Tracker preserves an audit entry for every change.</p>
 <div class="reg635-history"><table><thead><tr><th>Date/time</th><th>Item</th><th>Result</th><th>Amount</th><th>Meal</th><th>Actions</th></tr></thead><tbody>
 {% for entry in history %}
@@ -490,7 +462,7 @@ summary.reg737-native-disclosure{
 </td></tr>
 {% else %}<tr><td colspan="6">No intake has been recorded.</td></tr>{% endfor %}
 </tbody></table></div>
-</section>
+</details></section>
 <script defer src="/static/js/tracker-regimen-catalog636.js?v=730"></script>
 <script defer src="/static/js/tracker-regimen-facts639.js?v=639"></script>
 <script defer src="/static/js/tracker-regimen-tablets731.js?v=731"></script>
