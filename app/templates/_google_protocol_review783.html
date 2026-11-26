@@ -5,6 +5,7 @@
   {% if google_review_rows %}
   <p class="note">Already checked off in Google. Match an existing log or confirm the actual source, amount and time. Do not administer another dose just to clear a task.</p>
   <form method="post" action="/integrations/google-tasks/reconcile">
+    {% if google_return_to == "today" %}<input type="hidden" name="return_to" value="today">{% endif %}
     {% for row in google_review_rows %}
     {% set link = row.link %}
     <div class="card" style="margin:.5rem 0">
