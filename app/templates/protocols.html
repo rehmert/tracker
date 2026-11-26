@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Protocols{% endblock %}
 {% block content %}
+{% from "_workspace792.html" import inventory %}
 <link rel="stylesheet" href="/static/css/tracker-integrated-macd741.css?v=741">
 
 <link rel="stylesheet"
@@ -8,10 +9,10 @@
 <script src="/static/js/tracker-protocol-dashboard-3494.js"
         defer></script>
 
-<h1>Protocols</h1>
+<h1>Protocols</h1>{{ inventory("protocols") }}
 <p class="note">Protocols can be active schedules or hypothetical what-if plans. Saving a protocol does not record an administration or consume inventory.</p>
 <p class="note">Next planned shows the nearest non-hidden calendar projection within 60 days, not a confirmed or recorded administration. Inventory checks use recorded quantities, unit conversions and recorded expiration/beyond-use dates as of the planned day. They do not confirm sterility, clinical suitability, or future stock. Choose vial opens the read-only workspace; Review suggested vial preselects one candidate for manual confirmation. Neither action records anything.</p>
-<nav class="ux-shortcuts" aria-label="Protocol workflow"><a href="/calendar">View schedule</a><a href="/doses">Record a dose</a><a href="/pk">Simulate exposure</a><a href="/integrations/google-tasks">Google Tasks settings</a></nav>
+<nav class="tracker-workspace-tabs792" aria-label="Protocol workflow"><a class="tracker-ui-action tracker-ui-action--primary" href="#new-protocol">New protocol</a><a class="tracker-ui-action" href="/calendar">Calendar</a><a class="tracker-ui-action" href="/doses">Record dose</a><a class="tracker-ui-action" href="/integrations/google-tasks">Google Tasks</a></nav>
 
 <details class="card" id="protocol-review-guide618">
   <summary><strong>Protocol workflow · review before activation</strong></summary>
@@ -33,7 +34,7 @@
     <span>Status</span>
     <select data-protocol-status>
       <option value="all">All protocols</option>
-      <option value="active">Active</option>
+      <option value="active" selected>Active</option>
       <option value="what-if">What-if</option>
     </select>
   </label>
@@ -94,11 +95,11 @@
   {% else %}<tr><td colspan="7" class="empty">No protocols yet. Create one below to start planning.</td></tr>{% endfor %}
   </tbody>
 </table></div>
-<section>
-  <h2>New protocol</h2>
+<details class="tracker-workspace-panel792" id="new-protocol">
+  <summary>New protocol</summary>
   <form method="post" action="/protocols" class="inline">
     <label class="field"><span>Name</span><input name="name" value="New plan" required></label>
     <button class="primary">Create</button>
   </form>
-</section>
+</details>
 {% endblock %}
