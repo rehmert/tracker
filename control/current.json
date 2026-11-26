@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r789-preflight9c8ae0b4",
-  "action": "prod_preflight",
+  "request_id": "r789-prod9c8ae0b4",
+  "action": "prod_deploy",
   "release": 789,
   "target": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
   "base": "758915673fb20da26d4bdbca2239c87928fe2f70",
   "ref": "release/789-calendar-day-navigation",
-  "previous_request_id": "r789-install9c8ae0b4"
+  "previous_request_id": "r789-preflight9c8ae0b4"
 }
