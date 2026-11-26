@@ -1,35 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Purchases{% endblock %}
 {% block content %}
+{% from "_workspace792.html" import inventory %}
 <link rel="stylesheet" href="/static/css/tracker-purchase-history-review.css?v=20261103">
 <script src="/static/js/tracker-purchase-history-review.js?v=603" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-inventory-mobile603.css?v=603">
 <link rel="stylesheet" href="/static/css/tracker-action-nav675.css?v=675">
 <script defer src="/static/js/tracker-purchase-mobile603.js?v=603"></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
-<h1>Purchases</h1>
-<nav class="ux675-actions ux-shortcuts" aria-label="Purchase actions">
-  <a class="ux675-primary" href="#new-purchase">New Order</a>
-  <a href="#purchase-history">History</a>
-  <a href="/vendor-prices">Prices</a>
-  <details class="ux675-more"><summary>More</summary><div>
-    <a href="/vials">Vials</a><a href="/supplies">Supplies</a>
-    <a href="/inventory-health">Inventory Health</a>
-  </div></details>
-</nav>
+<h1>Purchases</h1>{{ inventory("purchases") }}
+<nav class="tracker-workspace-tabs792" aria-label="Purchase actions"><a class="tracker-ui-action tracker-ui-action--primary" href="#new-purchase">New order</a><a class="tracker-ui-action" href="#purchase-history">Order history / receiving</a><a class="tracker-ui-action" href="/vendor-prices">Prices</a></nav>
 <p class="note">Save the order, then add vials or supplies. An order alone adds no stock.</p>
 <details id="purchase-review-guide618" class="card">
   <summary><strong>Order Steps</strong></summary>
   <p class="note">1. Enter vendor + order details. 2. Save. 3. Add inventory. 4. Review costs.</p>
 </details>
 <!-- Release 696: put the primary new-order form ahead of the history table. -->
-<section>
-  <h2 id="new-purchase">New Order</h2><p class="note">Save first; add inventory next.</p>
+<details class="tracker-workspace-panel792" id="new-purchase">
+  <summary>New order</summary><p class="note">Save first; add inventory next.</p>
   <form method="post" action="/purchases" class="grid"><input type="hidden" name="submission_token" value="{{ submission_token }}">
     <label class="field"><span>Vendor</span><input name="vendor" required></label>
     <label class="field"><span>Date</span><input type="date" name="purchased_on" value="{{ today }}"></label>
     <label class="field"><span>Order reference</span><input name="order_ref"></label>
-    <details class="purchase-optional603 wide" data-mobile-optional603 open>
+    <details class="purchase-optional603 wide" data-mobile-optional603>
       <summary>Shipping, tax, discount &amp; notes (optional)</summary>
       <div class="purchase-optional-grid603">
         <label class="field"><span>Shipping ({{ currency }})</span><input name="shipping" type="number" step="0.01" min="0" value="0"></label>
@@ -40,7 +33,7 @@
     </details>
     <div><button class="primary">Save, then add items</button></div>
   </form>
-</section>
+</details>
 
 <section id="purchase-history" aria-labelledby="purchase-history-title">
   <h2 id="purchase-history-title">Purchase history</h2>
