@@ -23,3 +23,23 @@ def summary790(db, day, days_ahead=7):
                      for e in events[d] if e["status"] in ("upcoming", "pending_review")],
         "missing_start": list(missing.values()),
     }
+
+
+def regimen790(db, day):
+    from datetime import datetime
+    from sqlalchemy import select
+    from .models import RegimenSchedule, RegimenEntry, RegimenTabletSchedule731
+    from .routers.regimen635 import due_on, MEALS
+    from .regimen_tablets731 import format_number
+    schedules = list(db.scalars(select(RegimenSchedule)))
+    due = sorted((s for s in schedules if s.item.active and due_on(s, day)),
+                 key=lambda s: (not bool(s.at_time), s.at_time or "", s.item.name.casefold(), s.id))
+    start = datetime.combine(day, datetime.min.time())
+    entries = list(db.scalars(select(RegimenEntry).where(
+        RegimenEntry.logged_at >= start, RegimenEntry.logged_at < start + timedelta(days=1))))
+    return dict(regimen_day=day, regimen_due=due,
+                regimen_recorded={e.schedule_id for e in entries if e.schedule_id is not None},
+                regimen_entries={e.schedule_id: e for e in entries if e.schedule_id is not None},
+                regimen_tablet_plans={p.schedule_id: p for p in db.scalars(select(RegimenTabletSchedule731))},
+                regimen_meals=MEALS, tablet_fmt=format_number,
+                regimen_now=datetime.now().strftime("%H:%M"))
