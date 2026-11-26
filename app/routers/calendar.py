@@ -132,7 +132,7 @@ def _parse_month(month: str) -> date:
     return shown
 
 
-def _month_events(shown: date, db: Session):
+def _month_events(shown: date, db: Session, *, include_vial_choices=True):
     today = date.today()
     first, end = cal.month_bounds(shown.year, shown.month)
     planned = {}
@@ -143,11 +143,11 @@ def _month_events(shown: date, db: Session):
     # implicitly selected: the Calendar requires an explicit selection.
     stocked = list(db.scalars(select(Vial).where(
         Vial.status.in_(("sealed", "in_use"))
-    ).order_by(Vial.id)))
+    ).order_by(Vial.id))) if include_vial_choices else []
     by_compound = {}
     for vial in stocked:
         by_compound.setdefault(vial.compound_id, []).append(vial)
-    stock_views = vial_views(db, stocked)
+    stock_views = vial_views(db, stocked) if include_vial_choices else {}
     for protocol in protocols:
         if protocol.start_date is None:
             missing_start.append({'id': protocol.id, 'name': protocol.name})
@@ -160,7 +160,7 @@ def _month_events(shown: date, db: Session):
                 if first <= when < end and (protocol.end_date is None or when <= protocol.end_date) and not excluded(rules, item.id, when):
                     options, notice = vial_choices756(
                         item, when, by_compound.get(item.compound_id, []),
-                        stock_views)
+                        stock_views) if include_vial_choices else ([], "")
                     planned.setdefault(when, []).append({
                         'protocol_id': protocol.id, 'protocol_item_id': item.id, 'compound_id': item.compound_id, 'amount_value': item.amount_value, 'amount_unit': item.amount_unit,
                         'name': item.compound.name, 'protocol': protocol.name,
@@ -221,17 +221,18 @@ def _month_events(shown: date, db: Session):
 
 @router.get('/calendar/log-dose')
 def calendar_quick_dose786(request: Request, protocol_item_id: int,
-                           scheduled_on: date, db: Session = Depends(get_scoped_db390)):
+                           scheduled_on: date, db: Session = Depends(get_scoped_db390),
+                           return_to: str = ""):
     from .doses import INJECTION_SITES
-    from ..calendar_quick_dose786 import quick_plan786, calendar_return786
+    from ..calendar_quick_dose786 import quick_plan786, calendar_return786, dose_return790
     from .. import idempotency
     try:
         plan = quick_plan786(db, protocol_item_id, scheduled_on)
     except ValueError as exc:
         return render(request, "calendar_quick_dose786.html", plan=None,
-                      error=str(exc), return_url=calendar_return786(scheduled_on))
+                      error=str(exc), return_url=dose_return790(scheduled_on, return_to), return_to=return_to)
     return render(request, "calendar_quick_dose786.html", plan=plan, error="",
-                  return_url=calendar_return786(scheduled_on),
+                  return_url=dose_return790(scheduled_on, return_to), return_to=return_to,
                   sites=INJECTION_SITES,
                   clock=plan["event"].get("dose_time") or datetime.now().strftime("%H:%M"),
                   submission_token=idempotency.new_token())
