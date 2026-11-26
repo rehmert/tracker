@@ -275,3 +275,61 @@ async def log_meal_template(template_id: int, request: Request, db_engine=Depend
             })
 
     return food_redirect(day, "food-recorded")
+
+
+def _meal_copy_rows792(db, source, meal):
+    return db.execute(text("""
+        SELECT e.id, e.product_id, e.servings, p.name, p.serving_description, p.nutrients
+        FROM tracker_food_entries e
+        JOIN tracker_food_products p ON p.id=e.product_id
+        WHERE e.eaten_on=:day AND e.meal=:meal ORDER BY e.id LIMIT 31
+    """), {"day": source, "meal": meal}).mappings().all()
+
+
+def _meal_copy_stamp792(day, source, meal, rows):
+    from ..idempotency import payload_hash
+    return payload_hash([day, source, meal, [dict(row) for row in rows]])
+
+
+def prior_meals792(day, db_engine):
+    """Preview existing portions only; never create a template or modify food."""
+    source = (date.fromisoformat(day) - timedelta(days=1)).isoformat()
+    result = []
+    with db_engine.connect() as db:
+        existing = set(db.execute(text("""
+            SELECT DISTINCT meal FROM tracker_food_entries WHERE eaten_on=:day
+        """), {"day": day}).scalars())
+        for meal in ("Breakfast", "Lunch", "Dinner", "Snack"):
+            if meal in existing:
+                continue
+            rows = _meal_copy_rows792(db, source, meal)
+            if rows and len(rows) <= 30 and all(0 < r["servings"] <= 100 for r in rows):
+                result.append(dict(meal=meal, rows=rows, source=source,
+                    snapshot=_meal_copy_stamp792(day, source, meal, rows)))
+    return result
+
+
+@router.post("/food/meal/copy-prior792")
+async def copy_prior_meal792(request: Request, db_engine=Depends(get_food_read_engine406)):
+    form = await request.form()
+    day = selected_day(form.get("day"))
+    meal = str(form.get("meal", ""))
+    if meal not in MEALS:
+        raise HTTPException(422, "Select a valid meal")
+    source = (date.fromisoformat(day) - timedelta(days=1)).isoformat()
+    with db_engine.begin() as db:
+        # Serialize the destination existence check with the inserts.
+        db.exec_driver_sql("BEGIN IMMEDIATE")
+        if db.execute(text("""
+            SELECT 1 FROM tracker_food_entries WHERE eaten_on=:day AND meal=:meal LIMIT 1
+        """), {"day": day, "meal": meal}).first():
+            raise HTTPException(409, "Destination meal already has entries. No foods copied.")
+        rows = _meal_copy_rows792(db, source, meal)
+        if (not rows or len(rows) > 30 or any(not 0 < r["servings"] <= 100 for r in rows)
+                or form.get("snapshot") != _meal_copy_stamp792(day, source, meal, rows)):
+            raise HTTPException(409, "Prior meal changed or is unavailable. Reload and review.")
+        db.execute(text("""
+            INSERT INTO tracker_food_entries (product_id, eaten_on, meal, servings)
+            VALUES (:product, :day, :meal, :servings)
+        """), [dict(product=r["product_id"], day=day, meal=meal, servings=r["servings"]) for r in rows])
+    return food_redirect(day, "food-recorded")
