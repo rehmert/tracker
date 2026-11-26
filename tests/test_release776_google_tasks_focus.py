@@ -21,7 +21,7 @@ def test_776_google_tasks_is_default_everyday_navigation_destination():
 def test_776_navigation_cache_refresh_and_sidebar_link_survive():
     base = (APP / "templates/base.html").read_text(encoding="utf-8")
     Environment().parse(base)
-    assert '/static/tracker_focus.js?v=776' in base
+    assert '/static/tracker_focus.js?v=790' in base
     assert "('/regimen','Supplements & Medications'),('/integrations/google-tasks','Google Tasks')" in base
     assert 'id="sidebar-open"' in base
 
