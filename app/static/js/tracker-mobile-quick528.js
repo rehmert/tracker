@@ -88,8 +88,6 @@
     }
 
     function open() {
-      if (!mobile.matches) return;
-
       lastFocus = document.activeElement;
       overlay.hidden = false;
 
@@ -97,9 +95,8 @@
         "tracker-quick528-open"
       );
 
-      trigger.setAttribute(
-        "aria-expanded", "true"
-      );
+      trigger.setAttribute("aria-expanded", "true");
+      document.getElementById("ux-add-toggle")?.setAttribute("aria-expanded", "true");
 
       showChoices();
 
@@ -117,9 +114,8 @@
         "tracker-quick528-open"
       );
 
-      trigger.setAttribute(
-        "aria-expanded", "false"
-      );
+      trigger.setAttribute("aria-expanded", "false");
+      document.getElementById("ux-add-toggle")?.setAttribute("aria-expanded", "false");
 
       if (lastFocus?.isConnected) {
         lastFocus.focus({preventScroll: true});
@@ -169,15 +165,16 @@
       )?.focus({preventScroll: true});
     }
 
-    trigger.addEventListener("click", event => {
-      // Desktop retains the existing /quick-entry link.
-      if (!mobile.matches) return;
-
-      event.preventDefault();
-
-      if (overlay.hidden) open();
-      else close();
-    });
+    for (const opener of [trigger, ...document.querySelectorAll("[data-quick790-open]")]) {
+      opener.addEventListener("click", event => {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        if (!overlay.hidden) { close(); return; }
+        open();
+        const kind = opener.dataset.quick790Open;
+        if (forms.some(form => form.dataset.quick528Form === kind)) choose(kind);
+      });
+    }
 
     overlay.querySelector(
       "[data-quick528-close]"
