@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r793-8dafeb3eab73",
-  "action": "qualify",
+  "request_id": "r793-install8dafeb3e",
+  "action": "dev_install",
   "release": 793,
   "target": "8dafeb3eab7355780719c24c6de3d18d30b2d1bc",
   "base": "9f79787956726e105d55906483b7e851db5106fa",
   "ref": "release/793-design-system",
-  "previous_request_id": null
+  "previous_request_id": "r793-8dafeb3eab73"
 }
