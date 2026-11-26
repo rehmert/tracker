@@ -8,8 +8,7 @@ from sqlalchemy.orm import Session
 
 from .. import config, metrics, services, charts
 from ..sparklines import sparkline
-from ..today import schedule_summary
-from ..projection_exclusions import exclusions_for
+from ..daily_workspace790 import summary790
 from ..scoped_db390 import get_scoped_db390
 from ..workout_dashboard661 import workout_dashboard661
 from ..dashboard_forecast752 import build_dashboard_forecasts752
@@ -164,8 +163,7 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
         DoseLog.taken_at >= datetime.combine(today_date - timedelta(days=7), datetime.min.time()),
         DoseLog.taken_at < datetime.combine(today_date + timedelta(days=1), datetime.min.time())
     ).order_by(DoseLog.taken_at.desc())))
-    today_summary = schedule_summary(protocols, recent_week, today_date,
-                                     exclusions=exclusions_for(db, [item.id for p in protocols for item in p.items]))
+    today_summary = summary790(db, today_date)
     # Dashboard only: tomorrow through the following three calendar days.
     # Keep schedule_summary's seven-day projection for mobile and calendar.
     dashboard_upcoming = [
