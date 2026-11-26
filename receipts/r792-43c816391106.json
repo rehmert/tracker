@@ -1,0 +1,18 @@
+{
+  "action": "qualify",
+  "base": "0a5ba934a415451ad462bc7594cd4178d558d20d",
+  "exit_code": 2,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-26T14:07:43+00:00",
+  "markers": [],
+  "previous_request_id": null,
+  "ref": "release/792-consolidated-workspaces",
+  "release": 792,
+  "request_id": "r792-43c816391106",
+  "schema": 1,
+  "started_at_utc": "2026-11-26T14:07:42+00:00",
+  "status": "failed",
+  "target": "43c81639110686c23ff23361529a72ffcf7b5088",
+  "test_counts": []
+}
