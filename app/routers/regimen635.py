@@ -709,6 +709,11 @@ async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
             response = services.flash_redirect("/mobile", msg=msg, err=err)
             response.headers["location"] += "#regimen-today790"
             return response
+        if day is None and form.get("scheduled_quick790") == "yes":
+            try:
+                day = _day(form.get("scheduled_day790"))
+            except ValueError:
+                pass
         response = _redirect(day, msg=msg, err=err)
         if form.get("return_to") == "regimen":
             response.headers["location"] += "#reg635-today"
