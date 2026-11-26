@@ -265,7 +265,7 @@ def test_766_exact_mobile_contracts_and_existing_action_paths():
     assert gym.index('class="workout766-handoff"') < gym.index('id="workout659-log-form"')
     assert 'id="workout659-save"' in gym
     assert 'workout668-draft-save' in gym
-    assert "tracker-gym-handoff766.js?v=766" in gym
+    assert "tracker-gym-handoff766.js?v=794" in gym
     assert "tracker-vial-mobile-cards766.js?v=766" in vials
     assert main.index("app.include_router(report_trends766.router)") < main.index("app.include_router(consolidated_reports.router)")
     for name in ("tracker-vial-mobile-cards766","tracker-gym-handoff766",
