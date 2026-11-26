@@ -107,11 +107,11 @@ def test_complete_data_shows_remaining_and_overage():
 
 def test_original_nine_accordion_contract():
     original = [
+        'food-recorded',
         'food-quick-log',
         'food-search',
         'food-name-search',
         'food-add',
-        'food-recorded',
         'food-templates',
         'food-meal-totals',
         'food-week',
@@ -138,8 +138,8 @@ def test_target_editor_is_independent():
     assert TEMPLATE.count('action="/food/targets"') == 1
 
     assert (
-        TEMPLATE.index('id="food-targets"')
-        < TEMPLATE.index('id="food-quick-log"')
+        TEMPLATE.index('id="food-analysis792"')
+        < TEMPLATE.index('id="food-targets"')
     )
 
 
