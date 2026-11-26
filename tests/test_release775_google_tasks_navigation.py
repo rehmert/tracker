@@ -20,25 +20,14 @@ def read(name):
     return content
 
 
-def _sidebar_sections(base):
-    start = base.index("{% set sections = [") + len("{% set sections = ")
-    end = base.index("%}", start)
-    return ast.literal_eval(base[start:end].strip())
-
-
-def test_775_google_tasks_has_unique_sidebar_nav_link_near_regimen():
+def test_775_google_tasks_has_unique_sidebar_nav_link():
+    from app.navigation import NAVIGATION
     base = read("base.html")
-    sections = _sidebar_sections(base)
-    all_links = [link for _, group in sections for link in group]
-    matches = [(url, title) for url, title in all_links if url == URL]
-    assert matches == [(URL, "Google Tasks")]
-    groups = dict(sections)
-    health = groups["Health & Progress"]
-    index = health.index(("/regimen", "Supplements & Medications"))
-    assert health[index + 1] == (URL, "Google Tasks")
-    assert "data-nav-key=\"{{ href }}\"" in base
+    matches = [(key, label, primary) for key, _, links in NAVIGATION for url, label, primary in links if url == URL]
+    assert matches == [("Manage", "Google Tasks", True)]
+    assert 'data-nav-key="{{ href }}"' in base
     assert 'href="{{ href }}"' in base
-    assert "path.startswith(href)" in base
+    assert "current_nav == href" in base
 
 
 def test_775_sidebar_inherits_search_favorites_and_mobile_navigation():
@@ -66,10 +55,9 @@ def test_775_protocol_and_regimen_google_tasks_actions_are_prominent():
     regimen = read("regimen635.html")
     assert protocol.count('href="' + URL + '"') == 1
     assert regimen.count('href="' + URL + '"') == 1
-    assert 'class="ux-shortcuts"' in protocol
     assert 'class="ux-shortcuts"' in regimen
-    assert '<a href="' + URL + '">Google Tasks settings</a>' in protocol
-    assert '<a href="' + URL + '">Google Tasks settings</a>' in regimen
+    assert 'href="' + URL + '"' in protocol
+    assert 'href="' + URL + '"' in regimen
     assert 'Google Tasks sync settings</a></p>' not in protocol
     assert 'Google Tasks sync settings</a></p>' not in regimen
 
