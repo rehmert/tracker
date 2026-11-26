@@ -1,0 +1,29 @@
+/* Use the existing shared action component, without globally restyling
+   record links, navigation or third-party elements. */
+.tracker-quick-actions790 {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));gap:.4rem;margin:.45rem 0}
+.tracker-quick-actions790 a {width:100%;min-height:44px}
+.tracker-daily790 .tracker-ui-actions {margin:.4rem 0}
+.tracker-daily790 .tracker-daily-list>li {align-items:center}
+.tracker-daily790 .tracker-daily-list>li>div {min-width:0;overflow-wrap:anywhere}
+.tracker-daily790 details>summary,.tracker-more790>summary {cursor:pointer;min-height:44px;padding:.45rem .25rem;font-weight:650}
+.tracker-daily790 details[open]>summary,.tracker-more790[open]>summary {margin-bottom:.25rem}
+.tracker-daily790 .tracker-daily-section {margin:.55rem 0}
+.tracker-daily790 .tracker-quick-actions790 {margin:.65rem 0}
+.tracker-daily790 .tracker-ui-action,.tracker-more790 .tracker-ui-action {max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.tracker-regimen790 .reg635-card {padding:.65rem}
+.tracker-regimen790 .reg635-card h3,.tracker-regimen790 .reg635-card p {margin:.15rem 0}
+.tracker-regimen790 .reg635-card form {gap:.35rem;margin-top:.4rem}
+.tracker-regimen790 .reg635-card form>details {border:0;padding:0;margin:0}
+.tracker-regimen790 .reg635-card form>details[open] {padding:.35rem}
+.tracker-regimen790 .reg635-card form>details .field {margin:.35rem 0}
+.tracker-regimen790 .tracker-ui-action {max-width:100%}
+.tracker-more790 {min-width:0}
+.tracker-more790 summary {display:list-item}
+#ux-add-toggle.tracker-ui-action {text-decoration:none}
+@media (max-width:760px) {
+  .tracker-quick-actions790 {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tracker-daily790 .tracker-daily-list>li {flex-wrap:wrap}
+  .tracker-daily790 .tracker-daily-list>li>.tracker-ui-action {flex-shrink:0}
+  .tracker-regimen790 .reg635-grid {grid-template-columns:minmax(0,1fr)}
+  .tracker-regimen790 .reg635-card form>button {width:100%}
+}
