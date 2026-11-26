@@ -120,6 +120,7 @@
               </span>
               {% endfor %}
             </span>
+            {% if c.previous %}<small>Previous: {{ c.previous.res.value|num }} {{ c.previous.res.unit }}{% if c.previous.delta is not none %} · Change {{ c.previous.delta|signed_decimal }} {{ c.res.unit }}{% if c.previous.res.unit != c.res.unit %} (converted){% endif %}{% else %} · Change unavailable (different units){% endif %}</small>{% endif %}
             <small>Latest draw {{ c.rep.drawn_on|dt }}{% if c.res.ref_low is not none %} · printed range {{ c.res.ref_low|num }} to {{ c.res.ref_high|num }}{% if c.status %} · {{ c.status }} that range{% endif %}{% endif %}</small>
           </span>
         </summary>
