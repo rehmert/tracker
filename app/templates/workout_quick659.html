@@ -33,7 +33,7 @@
             <a href="/workouts/backfill">Log Past Workout</a></div>
         </details>
       </nav>
-      <h1>Gym Mode</h1>
+      <h1>Rapid Gym Mode</h1>
       {% if not active %}<p class="workout659-muted">One machine at a time · Completed sets only.</p>{% endif %}
     </div>
     {% if active %}
@@ -96,7 +96,8 @@
             <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
           {% endif %}
         </div>
-      <details class="workout662-directory" id="workout662-directory">
+      {% endif %}
+      <details class="workout662-directory" id="workout662-directory" {% if not machine %}open{% endif %}>
         <summary>Change Machine ({{ equipment|length }})</summary>
       <form action="/workouts/quick" method="get" class="workout659-machine-picker">
         <label for="workout659-machine-select">Current machine</label>
@@ -126,6 +127,7 @@
           {% endfor %}
         </nav>
       </details>
+      {% if machine %}
         <div class="workout766-handoff">
           <nav class="workout662-nav" aria-label="Quick routine machine navigation">
             {% if previous_machine %}
