@@ -3,7 +3,7 @@
 {% block content %}
 {% from "_ui790.html" import action %}
 <h1>Supplements &amp; Medications</h1>
-<nav class="tracker-workspace-tabs792" aria-label="Regimen views">{{ action("#reg635-today","Daily intake",true) }}{{ action("#reg635-schedules","Schedules") }}{{ action("#reg635-add-schedule","Add schedule") }}{{ action("#reg635-add-item","Add medication / supplement") }}{{ action("#reg635-catalog","Catalog") }}{{ action("#reg635-history","History") }}{{ action("/integrations/google-tasks","Google Tasks settings") }}</nav>
+<nav class="ux-shortcuts tracker-workspace-tabs792" aria-label="Regimen views">{{ action("#reg635-today","Daily intake",true) }}{{ action("#reg635-schedules","Schedules") }}{{ action("#reg635-add-schedule","Add schedule") }}{{ action("#reg635-add-item","Add medication / supplement") }}{{ action("#reg635-catalog","Catalog") }}{{ action("#reg635-history","History") }}<a class="tracker-ui-action" href="/integrations/google-tasks">Google Tasks settings</a></nav>
 <p class="note">Your personal regimen: catalog, planned schedules, and actual intake. No doses are recommended or automatically marked taken. Meal associations do not change Food Journal nutrient totals.</p>
 <style>
 .reg635-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:1rem}
@@ -204,6 +204,7 @@ summary.reg737-native-disclosure{
 {% for item in items %}
 <article class="reg635-card" id="reg635-item-{{ item.id }}">
   <h3>{{ item.name }} {% if not item.active %}<small>(Archived)</small>{% endif %}</h3>
+  {% if item.active %}{{ action('/regimen?day=' ~ day ~ '&schedule_item=' ~ item.id ~ '#reg635-add-schedule','Add schedule') }}{% endif %}
   <p>{{ item.kind|capitalize }}{% if item.strength %} · {{ item.strength }}{% endif %}{% if item.form %} · {{ item.form }}{% endif %}</p>
   {% if item.ingredient %}<p>Ingredient: {{ item.ingredient }}</p>{% endif %}
   {% if item.instructions %}<p>{{ item.instructions }}</p>{% endif %}
@@ -307,7 +308,7 @@ summary.reg737-native-disclosure{
 <details id="reg635-add-schedule" {% if return_focus == 'add-schedule' %}open{% endif %}><summary class="reg737-native-disclosure"><strong>Add schedule</strong></summary>
 {% if items %}
 <form method="post" action="/regimen/schedules" class="reg635-form">
-<label class="field">Item <select name="item_id" data-reg731-item>{% for item in items if item.active %}<option value="{{ item.id }}" data-reg731-kind="{{ item.kind }}" data-reg731-strength="{{ tablet_strengths.get(item.id, '') }}">{{ item.name }}</option>{% endfor %}</select></label>
+<label class="field">Item <select name="item_id" data-reg731-item>{% for item in items if item.active %}<option value="{{ item.id }}" data-reg731-kind="{{ item.kind }}" data-reg731-strength="{{ tablet_strengths.get(item.id, '') }}" {% if item.id == schedule_item %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></label>
 <label class="field">Cadence <select name="cadence"><option value="daily">Daily</option><option value="weekly">Selected weekdays</option><option value="interval">Every N days</option><option value="prn">As needed (PRN)</option></select></label>
 <label class="field">Weekdays (0–6, comma separated) <input name="weekdays" placeholder="0,1,2,3,4"></label>
 <label class="field">Interval days <input name="interval_days" type="number" min="1" max="365"></label>
