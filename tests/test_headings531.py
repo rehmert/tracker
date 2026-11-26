@@ -9,7 +9,8 @@ HTML = ROOT / "app/templates/base.html"
 
 def test_headings531_loaded_after_spacing530():
     html = HTML.read_text()
-    assert html.count("tracker-headings531.css?v=531") == 1
+    assert html.count("tracker-design-system793.css?v=793") == 1
+    assert "tracker-headings531.css?v=531" not in html
     assert html.index("tracker-spacing-dense.css?v=1") < html.index(
         "tracker-headings531.css?v=531"
     )
