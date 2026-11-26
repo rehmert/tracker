@@ -27,3 +27,15 @@
   .tracker-regimen790 .reg635-grid {grid-template-columns:minmax(0,1fr)}
   .tracker-regimen790 .reg635-card form>button {width:100%}
 }
+
+.tracker-regimen790 .reg635-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:.5rem}
+.tracker-regimen790 .reg635-card {border:1px solid var(--rule,#cbd5e1);border-radius:.75rem;min-width:0}
+.tracker-regimen790 .reg635-form {display:grid;min-width:0}
+.tracker-regimen790 .reg635-form :is(input,select) {max-width:100%;min-width:0}
+.tracker-regimen790 .reg731-panel {min-width:0}
+.tracker-regimen790 .reg731-panel output {display:block}
+.calendar-actions787 .tracker-more790 {margin:.25rem 0;max-width:100%;white-space:normal}
+.calendar-actions787 .tracker-more790>summary {display:list-item;border:1px solid var(--rule,#cbd5e1);border-radius:.75rem;background:var(--surface,#fff);padding:.4rem .6rem}
+.tracker-daily790 #google-protocol-review783 .tracker-ui-action {margin:.15rem}
+.tracker-daily790 .tracker-daily-form-status {margin:.25rem 0}
+@media(max-width:760px){.tracker-regimen790 .reg635-grid {grid-template-columns:minmax(0,1fr)}}
