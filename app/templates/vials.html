@@ -20,7 +20,7 @@
 <script defer src="/static/js/tracker-bulk-field-finder.js?v=20261104-b37"></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
 <!-- TRACKER_BULK_CONSOLIDATED -->
-<h1>Vials</h1>{{ inventory("in_use" if status == "in_use" else ("stock" if status == "sealed" else ("coa" if coa == "missing" else ("active" if status == "active" else "")))) }}<p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p>
+<h1>Vials</h1>{{ inventory("coa" if coa == "missing" else ("in_use" if status == "in_use" else ("stock" if status == "sealed" else ("active" if status == "active" else "")))) }}<p class="note">Vials are physical inventory. Add purchased stock through <a href="/purchases">Purchases</a>; view forecasts and warnings under Inventory Health.</p>
 <nav class="tracker-vial-jumps603" aria-label="Vials actions and sections">
   <a class="tracker-flow696-primary" href="#tracker-vials-sortable">Inventory list</a>
   <a href="#tracker-vial-find-panel">Find vial</a>
