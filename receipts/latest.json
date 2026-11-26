@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "0a5ba934a415451ad462bc7594cd4178d558d20d",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-26T14:32:34+00:00",
+  "finished_at_utc": "2026-11-26T14:38:09+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=9f79787956726e105d55906483b7e851db5106fa",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=9f79787956726e105d55906483b7e851db5106fa",
+    "PROMOTED_COMMIT=9f79787956726e105d55906483b7e851db5106fa",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=9f79787956726e105d55906483b7e851db5106fa",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r792-install9f797879",
+  "previous_request_id": "r792-preflight9f797879",
   "ref": "release/792-consolidated-workspaces",
   "release": 792,
-  "request_id": "r792-preflight9f797879",
+  "request_id": "r792-prod9f797879",
   "schema": 1,
-  "started_at_utc": "2026-11-26T14:32:32+00:00",
+  "started_at_utc": "2026-11-26T14:37:42+00:00",
   "status": "passed",
   "target": "9f79787956726e105d55906483b7e851db5106fa",
   "test_counts": []
