@@ -1,0 +1,8 @@
+/* Shared Today / Overview tabs, not another global visual palette. */
+#main-content .tracker-home-views794 {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.35rem;max-width:24rem;margin:.25rem 0 .55rem;
+}
+#main-content .tracker-home-views794>a {min-width:0;min-height:36px;flex:none}
+@media(max-width:760px){#main-content .tracker-home-views794 {max-width:none}#main-content .tracker-home-views794>a{min-height:44px}}
+@media print {#main-content .tracker-home-views794{display:none}}
