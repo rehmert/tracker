@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="/static/css/tracker-labs-overview.css?v=726">
 <script src="/static/js/tracker-labs-overview.js?v=20261108-497" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
-<h1>Lab results</h1>{{ health("labs") }}
+<h1>Lab results</h1>{{ health("labs", request.query_params.get("days", "90")|int(90)) }}
 <p class="note">Add reports and find saved results here. Trends appear below your reports.</p>
 <details class="tracker-flow696-guide">
   <summary>About lab data and printed reference ranges</summary>
