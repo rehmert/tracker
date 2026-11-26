@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Health timeline{% endblock %}
 {% block content %}
+{% from "_workspace792.html" import health %}
 <link rel="stylesheet" href="/static/css/tracker-health-timeline.css?v=20261101-batch2">
 <script src="/static/js/tracker-health-timeline-dates.js?v=20261101-batch2" defer></script>
 <header class="r5-heading">
@@ -8,8 +9,8 @@
     <h1>Health timeline</h1>
     <p class="note">Measurements, recorded administrations, lab reports and active protocol dates in chronological order. What-if protocols are excluded. Timing alone does not establish causation.</p>
   </div>
-  <a class="button" href="/health-insights">View health trends</a>
 </header>
+{{ health("timeline", days) }}
 
 <section class="timeline-controls" aria-label="Timeline filters">
   <form method="get" action="/health-timeline" class="grid" id="health-timeline-filters">
