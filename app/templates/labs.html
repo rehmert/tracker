@@ -6,7 +6,11 @@
 <link rel="stylesheet" href="/static/css/tracker-labs-overview.css?v=726">
 <script src="/static/js/tracker-labs-overview.js?v=20261108-497" defer></script>
 <link rel="stylesheet" href="/static/css/tracker-integrated-flow696.css?v=696">
-<h1>Lab results</h1>{{ health("labs", request.query_params.get("days", "90")|int(90)) }}
+<h1>Lab results</h1>{{ health("labs", days if days else 0) }}
+<form method="get" action="/labs" class="inline" aria-label="Lab date range">
+<label class="field"><span>Date range</span><select name="days"><option value="0" {% if not days %}selected{% endif %}>All records</option>{% for d in (30,90,180,365) %}<option value="{{ d }}" {% if d == days %}selected{% endif %}>Last {{ d }} days</option>{% endfor %}</select></label>
+<button type="submit" class="tracker-ui-action tracker-ui-action--primary">Apply range</button>
+</form>
 <p class="note">Add reports and find saved results here. Trends appear below your reports.</p>
 <details class="tracker-flow696-guide">
   <summary>About lab data and printed reference ranges</summary>
@@ -57,7 +61,7 @@
       <td data-label="File">{{ 'yes' if r.stored_name else '—' }}</td>
       <td data-label="Manage" data-ux673-action><div class="tracker-macd741-actions"><a class="tracker-macd741-action" href="/labs/{{ r.id }}#lab-details741">Edit report</a><a class="tracker-macd741-action" href="/labs/{{ r.id }}#lab-results741">Results</a><a class="tracker-macd741-action" href="/labs/{{ r.id }}#lab-delete741">Delete</a></div></td>
     </tr>
-    {% else %}<tr><td colspan="5" class="empty">No lab reports yet.</td></tr>{% endfor %}
+    {% else %}<tr><td colspan="5" class="empty">{{ 'No lab reports in this date range.' if days else 'No lab reports yet.' }}</td></tr>{% endfor %}
     </tbody>
   </table></div>
 </section>
@@ -133,7 +137,7 @@
           {% else %}Difference unavailable: units not convertible.{% endif %}
           </p>
           {% else %}
-          <p class="meta lab499-previous">No earlier draw date recorded for this analyte.</p>
+          <p class="meta lab499-previous">No earlier draw date in the selected range for this analyte.</p>
           {% endif %}
           <p><a href="/labs/trends/{{ c.key|urlencode }}">View complete {{ c.name }} history</a></p>
         </div>
