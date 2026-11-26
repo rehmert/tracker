@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import gauge %}
+{% from "_ui790.html" import action, quick_actions, scheduled_action %}
 {% block title %}Overview{% endblock %}
 {% block page_assets %}
 <link rel="stylesheet" href="/static/css/tracker-workout-dashboard661.css?v=721">
@@ -21,30 +22,16 @@
 <!-- Release 690: final Dashboard-only density override after shared 685/686 and 688/689. -->
 <link rel="stylesheet" href="/static/css/tracker-overview-density690.css?v=690">
 {% if google_pending_count %}<section class="card" id="google-pending-dashboard783" role="status"><h2>{{ google_pending_count }} Google Tasks administration{{ 's' if google_pending_count != 1 else '' }} pending review</h2><p>Checked off in Google Tasks; inventory or existing logs still need reconciliation.</p><a class="button primary" href="/calendar#google-protocol-review783">Review administrations</a></section>{% endif %}
-<section class="tracker-daily-flow559"
-         aria-labelledby="tracker-daily-flow559-title">
-  <div class="tracker-daily-flow559-head">
-    <h2 id="tracker-daily-flow559-title">Your Daily Shortcuts</h2>
-    <p>Record the essentials or jump straight to the information you need.</p>
-  </div>
-
-  <nav class="tracker-daily-flow559-links"
-       aria-label="Everyday workflow shortcuts">
-    <a href="/calendar"><strong>Calendar</strong></a>
-    <a href="/dose-workspace"><strong>Dose Workspace</strong></a>
-    <a href="/replenishment-review"><strong>Inventory</strong></a>
-    <a href="/labs"><strong>Lab Results</strong></a>
-    <a href="/doses#quick-dose-entry"><strong>Log Dose</strong></a>
-    <a href="/food#food-quick-log"><strong>Log Food</strong></a>
-    <a href="/mobile#mobile-quick-vitals"><strong>Log Vitals</strong></a>
-    <a href="/food#food-water"><strong>Log Water</strong></a>
-    <a href="/progress"><strong>Progress</strong></a>
-    <a href="/mobile"><strong>Today</strong></a>
-    <a href="/vials"><strong>Vial Inventory</strong></a>
-  </nav>
+<section class="tracker-daily-flow559" aria-labelledby="tracker-daily-flow559-title">
+  <div class="tracker-daily-flow559-head"><h2 id="tracker-daily-flow559-title">Daily workspace</h2><p>Record in Today; use this Dashboard for overview and trends.</p></div>
+  {{ action('/mobile','Open Today',true) }}
+  {{ quick_actions() }}
+  <details class="tracker-more790"><summary>Review tools</summary><nav class="tracker-ui-actions" aria-label="Everyday workflow shortcuts">
+    {{ action('/calendar','Calendar') }}{{ action('/dose-workspace','Dose Workspace') }}{{ action('/replenishment-review','Inventory') }}{{ action('/labs','Lab Results') }}{{ action('/progress','Progress') }}{{ action('/vials','Vial Inventory') }}
+  </nav></details>
 </section>
 {% include '_workout_dashboard661.html' %}
-<header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div><div class="hero-actions"><a class="dashboard-action" href="/doses">+ Record dose</a><a class="dashboard-action secondary" href="/vitals">+ Add vitals</a></div></header>
+<header class="dashboard-hero"><div><p class="eyebrow">PERSONAL HEALTH WORKSPACE</p><h1>Overview</h1><p class="hero-subtitle">Your records, protocols and trends in one place.</p></div></header>
 
 {% set tracker_attention_due =
     today_summary.today
@@ -383,8 +370,8 @@
       {% if today_summary.today %}
       <ul>{% for e in today_summary.today %}
         <li>{{ e.name }} — {{ e.dose }}
-          <span class="tag">{{ 'Recorded' if e.status == 'recorded' else ('Recorded (unscheduled)' if e.status == 'extra' else 'Due') }}</span>
-          {% if e.protocol %}<small>{{ e.protocol }}</small>{% endif %} {% if e.status == 'due' %}<a href="/doses?compound_id={{ e.compound_id }}&amp;planned_date={{ now_date }}&amp;planned_time={{ e.dose_time or '' }}&amp;planned_amount={{ e.amount_value }}&amp;planned_unit={{ e.amount_unit }}">Log dose</a> <a class="tag" data-dashboard-dose-handoff="1" href="/dose-workspace?compound_id={{ e.compound_id }}&amp;planned_date={{ now_date }}&amp;planned_time={{ e.dose_time or '' }}&amp;planned_amount={{ e.amount_value }}&amp;planned_unit={{ e.amount_unit }}">Choose vial first</a>{% endif %}
+          <span class="tag">{{ 'Recorded' if e.status == 'recorded' else ('Recorded (unscheduled)' if e.status == 'extra' else ('Pending review' if e.status == 'pending_review' else 'Due')) }}</span>
+          {% if e.protocol %}<small>{{ e.protocol }}</small>{% endif %} {{ scheduled_action(e, now_date, 'dashboard') }}
         </li>
       {% endfor %}</ul>
       {% else %}<p class="empty">No administrations scheduled or recorded today.</p>{% endif %}
@@ -393,7 +380,7 @@
       <h3>Upcoming · next 3 days</h3>
       {% if dashboard_upcoming %}
       <ul>{% for day, e in dashboard_upcoming %}
-        <li><strong>{{ day.strftime('%b %d') }}</strong> — {{ e.name }} {{ e.dose }} <small>{{ e.protocol }}</small> <a href="/doses?compound_id={{ e.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ e.dose_time or '' }}&amp;planned_amount={{ e.amount_value }}&amp;planned_unit={{ e.amount_unit }}">Log dose</a> <a class="tag" data-dashboard-dose-handoff="1" href="/dose-workspace?compound_id={{ e.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ e.dose_time or '' }}&amp;planned_amount={{ e.amount_value }}&amp;planned_unit={{ e.amount_unit }}">Choose vial first</a></li>
+        <li><strong>{{ day.strftime('%b %d') }}</strong> — {{ e.name }} {{ e.dose }} <small>{{ e.protocol }}</small> {{ scheduled_action(e, day, 'dashboard') }}</li>
       {% endfor %}</ul>
       {% else %}<p class="empty">No projected administrations in the next 3 days.</p>{% endif %}
     </div>
