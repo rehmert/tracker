@@ -1,0 +1,18 @@
+{
+  "action": "qualify",
+  "base": "9f79787956726e105d55906483b7e851db5106fa",
+  "exit_code": 2,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-26T18:33:02+00:00",
+  "markers": [],
+  "previous_request_id": null,
+  "ref": "release/793-design-system",
+  "release": 793,
+  "request_id": "r793-8f61f00c5e88",
+  "schema": 1,
+  "started_at_utc": "2026-11-26T18:33:01+00:00",
+  "status": "failed",
+  "target": "8f61f00c5e884716ef3ad9bec3dff96b323bebeb",
+  "test_counts": []
+}
