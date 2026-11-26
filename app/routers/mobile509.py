@@ -13,7 +13,7 @@ from .. import config, metrics
 from ..models import DoseLog, Protocol, VitalReading
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
-from ..daily_workspace790 import summary790
+from ..daily_workspace790 import summary790, regimen790
 from ..google_protocol_review783 import review_rows783
 from ..daily_summary674 import snapshot674
 from ..today_priorities765 import missing_coa_count765, passed_date_examples765
@@ -82,6 +82,7 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         unit=config.WEIGHT_UNIT,
         summary=summary,
         google_review_rows=review_rows783(db),
+        regimen_origin='today', **regimen790(db, today),
         recent_doses=recent_doses,
         daily674=daily674,
         no_coa_count=no_coa_count,
