@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Quick entry{% endblock %}
 {% block content %}
+{% from "_ui790.html" import quick_actions %}
 
 <link rel="stylesheet"
       href="/static/css/tracker-quick-entry.css?v=20261103-fastpaths">
@@ -24,18 +25,13 @@
   <nav class="tracker-quick-fast-paths"
        aria-label="Jump directly to a recording workflow">
     <span class="tracker-quick-fast-heading">Quick Actions</span>
-    <div class="tracker-quick-fast-primary604">
-      <a href="/mobile">Today</a>
-      <a href="/food#food-quick-log">Log Food</a>
-      <a href="/food#food-water">Log Water</a>
-      <a href="/doses#quick-dose-entry">Log Dose</a>
-      <a href="/vitals#quick-vitals-entry">Log Vitals</a>
-      <a href="/supplies#tracker-stock-section">Use Supplies</a>
-    </div>
+    {{ quick_actions() }}
     <details class="tracker-quick-fast-more604">
       <summary>More Actions</summary>
       <div class="tracker-quick-fast-secondary604">
-        <a href="/health-insights">Progress</a>
+        <a href="/progress">Progress</a>
+        <a href="/mobile">Today</a>
+        <a href="/supplies#tracker-stock-section">Use Supplies</a>
         <a href="/replenishment-review">Stock Needs</a>
         <a href="/mobile#mobile-quick-vitals">Quick Vitals</a>
         <a href="/vitals#quick-vitals-weight">Weight</a>
