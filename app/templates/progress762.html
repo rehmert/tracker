@@ -2,17 +2,17 @@
 {% block title %}Progress dashboard{% endblock %}
 {% block page_assets %}<link rel="stylesheet" href="/static/css/tracker-progress762.css?v=762"><script src="/static/js/tracker-progress763.js?v=763" defer></script>{% endblock %}
 {% block content %}
+{% from "_workspace792.html" import health %}
 <div class="progress762">
 <header class="progress762-head">
  <div><p class="eyebrow">LONGITUDINAL HEALTH</p><h1>Progress Dashboard</h1>
  <p class="note">Recorded observations and independent trends—not a body-fat verdict, clinical diagnosis, or composite score.</p></div>
- <a class="button" href="/vitals">+ Log weight / vitals</a>
-<a class="button" href="/reports/trends">Cross-domain weekly trends</a>
-<a class="button" href="/device-import">Import device summaries</a>
+ 
 </header>
-<nav class="progress762-jumps" aria-label="Progress sections">
- <a href="#measure">+ Measurements</a><a href="#composition">+ Body composition</a>
- <a href="#function">+ Function</a><a href="#marker">+ Event</a><a href="#progress-settings">Preferences</a>
+{{ health("progress", days) }}
+<nav class="tracker-workspace-tabs792 progress762-jumps" aria-label="Progress sections">
+ <a class="tracker-ui-action" href="/mobile#mobile-quick-vitals" data-quick790-open="weight">Log vitals</a><a class="tracker-ui-action" href="#measure">Measurements</a><a class="tracker-ui-action" href="#composition">Body composition</a>
+ <a class="tracker-ui-action" href="#function">Function</a><a class="tracker-ui-action" href="#marker">Events</a><a class="tracker-ui-action" href="#progress-settings">Preferences</a><a class="tracker-ui-action" href="/device-import">Import device</a>
 </nav>
 <form method="get" action="/progress" class="progress762-filter">
  <label>Time range<select name="days">{% for value, label in ranges.items() %}
@@ -51,11 +51,11 @@
  <ul>{% for item in summary.evidence %}<li>{{ item }}</li>{% endfor %}</ul>
  <p class="note">A changing scale, circumference, BIA value or resistance does not, by itself, prove fat loss or muscle growth. Hormones, hydration, glycogen and implant-related BIA error can influence estimates.</p>
 </section>
-<section class="progress762-section">
+<section class="progress762-section tracker-deferred-chart792">
  <h2>Weight trend</h2><div class="chartbox">{{ weight_chart|safe }}</div>
  <p class="note">Dots are recorded measurements. Seven- and 28-day averages require at least 3 and 7 distinct logged days respectively. Missing days are not filled in; long gaps are not interpreted as continuous weight loss.</p>
 </section>
-<section class="progress762-section">
+<section class="progress762-section tracker-deferred-chart792">
  <h2>Waist circumference</h2><div class="chartbox">{{ waist_chart|safe }}</div>
  <p class="note">Measure relaxed, at the navel, at the end of a normal exhalation. Use the same tape placement and time of day. Arm or thigh circumference decreases are not definitive evidence of muscle loss.</p>
 </section>
@@ -147,7 +147,7 @@
  {% for row in functional %}<tr><td>{{row.measured_on}}</td><td>{{row.knee_pain if row.knee_pain is not none else '—'}}</td><td>{{row.shoulder_pain if row.shoulder_pain is not none else '—'}}</td><td>{{row.walking_minutes if row.walking_minutes is not none else '—'}} min</td><td class="progress762-actions"><a class="button" href="/progress?days={{days}}&edit_kind=function&edit_id={{row.id}}#function">Edit</a><form method="post" action="/progress/function/{{row.id}}/delete" onsubmit="return confirm('Delete this observation?')"><button type="submit">Delete</button></form></td></tr>{% endfor %}</tbody></table></div>
  {% else %}<p class="empty">No functional observations. Optional: track joint pain, walking, recovery or a repeatable sit-to-stand test.</p>{% endif %}
 </section>
-<section class="progress762-section">
+<section class="progress762-section tracker-deferred-chart792">
  <h2>Protein &amp; nutrition</h2>
  <div class="chartbox">{{protein_chart|safe}}</div>
  <p>{% if protein_avg is not none %}Mean protein on {{complete_food_days}} day(s) with protein values for every logged item: <strong>{{'%.1f'|format(protein_avg)}} g/day</strong>
