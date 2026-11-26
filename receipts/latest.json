@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "958bdbf87112cafab5eb89ddbd7491bc8eae6c2a",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-26T13:48:12+00:00",
+  "finished_at_utc": "2026-11-26T13:50:57+00:00",
   "markers": [
-    "RELEASE_791_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_791_EXIT_STATUS=0",
+    "RELEASE_791_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_791_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_791_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r791-0a5ba934a415",
   "ref": "release/791-compact-daily-actions",
   "release": 791,
-  "request_id": "r791-0a5ba934a415",
+  "request_id": "r791-install0a5ba934",
   "schema": 1,
-  "started_at_utc": "2026-11-26T13:47:32+00:00",
+  "started_at_utc": "2026-11-26T13:49:50+00:00",
   "status": "passed",
   "target": "0a5ba934a415451ad462bc7594cd4178d558d20d",
   "test_counts": [
