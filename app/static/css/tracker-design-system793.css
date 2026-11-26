@@ -1,0 +1,67 @@
+/* Tracker design system: canonical visual tokens and common components.
+   Layout/density and domain-specific geometry remain independently scoped.
+   The server-managed theme follows this file and may override brand tokens. */
+:root,:root[data-theme="light"] {
+  --paper:#f2f5f7; --surface:#ffffff; --ink:#182734; --muted:#4c6070;
+  --rule:#d5dee5; --wash:#e8eef2; --teal:#0e716c; --teal-ink:#ffffff;
+  --amber:#965b0a; --brick:#aa263d;
+  --tracker-brand-blue:#0e716c; --tracker-brand-deep:#0a5551;
+  --tracker-brand-soft:#dcefed; --tracker-brand-border:#afceca; --tracker-brand-focus:#a6d5d0;
+  --tracker-success:#176b46; --tracker-error:var(--brick);
+  --tracker-card-shadow:0 1px 3px #1827340d;
+}
+:root[data-theme="dark"] {
+  --paper:#101820; --surface:#1b2733; --ink:#edf2f6; --muted:#afbfcd;
+  --rule:#344552; --wash:#273747; --teal:#6bd5ca; --teal-ink:#102b2a;
+  --amber:#f6c36b; --brick:#ff9ba8;
+  --tracker-brand-blue:#6bd5ca; --tracker-brand-deep:#9be7df;
+  --tracker-brand-soft:#233e40; --tracker-brand-border:#395e60; --tracker-brand-focus:#427c78;
+  --tracker-success:#8ce0b1; --tracker-error:var(--brick);
+  --tracker-card-shadow:none;
+}
+:root {--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:var(--sans);
+ --tracker-radius:10px;--tracker-control-radius:7px;--tracker-focus-ring:2px solid var(--teal);
+ --border:var(--rule);--accent:var(--teal);--text:var(--ink);--hover:var(--wash);}
+html,body {background:var(--paper);color:var(--ink)}
+#main-content h1 {font-family:var(--sans);font-weight:730;font-size:clamp(1.5rem,2.15vw,1.85rem);letter-spacing:-.035em}
+#main-content .dashboard-hero h1 {font-size:clamp(1.75rem,2.65vw,2.2rem)}
+#main-content .tracker-daily-hero h1 {font-size:clamp(1.55rem,4.4vw,1.95rem)}
+#main-content :is(h2,h3,h4) {font-family:var(--sans);font-weight:680;letter-spacing:-.025em}
+#main-content :is(.stats dd,.dashboard-metrics dd,.tracker-ui-card__value) {font-variant-numeric:tabular-nums;letter-spacing:-.035em}
+#main-content :is(.card,.dashboard-panel,.tracker-ui-card,.today-card,.tracker-daily-section,.workout659-panel,.progress762-section,.labcard,.chartbox) {
+  background:var(--surface);border-color:var(--rule);border-radius:var(--tracker-radius);box-shadow:var(--tracker-card-shadow)
+}
+#main-content :is(.tracker-ui-action,.btn,button:not(.link):not([role="switch"])) {border-radius:var(--tracker-control-radius)}
+#main-content :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea) {
+  border-radius:var(--tracker-control-radius);border-color:var(--rule);font-family:var(--sans)
+}
+#main-content .scroll {border-radius:var(--tracker-control-radius);border-color:var(--rule)}
+#main-content table th {background:var(--wash);color:var(--ink);font-weight:650}
+#main-content table td {border-color:var(--rule)}
+#main-content .chart .line {stroke-width:2}
+#main-content .chart .axis {fill:var(--muted)}
+#main-content .chart .gl {stroke:var(--rule)}
+#main-content :is(.flash,.tracker-ui-feedback) {border-radius:var(--tracker-control-radius)}
+#main-content .flash.ok {color:var(--tracker-success)}
+#main-content .flash.error {color:var(--tracker-error)}
+#app-sidebar.rail {background:var(--surface);border-color:var(--rule)}
+#app-sidebar .nav-links a[aria-current="page"] {background:var(--tracker-brand-soft);color:var(--ink);box-shadow:inset 3px 0 var(--teal)}
+#app-sidebar .nav-links a[aria-current="page"] > .tracker-nav-icon {color:var(--teal)}
+#app-sidebar .nav-section-toggle {font-weight:650;letter-spacing:.01em}
+#app-sidebar .brand {font-family:var(--sans);font-weight:800;letter-spacing:-.045em}
+#main-content .workspace-toolbar {border-color:var(--rule)}
+:where(a,button,input,select,textarea,summary,[role="button"]):focus-visible {outline:var(--tracker-focus-ring);outline-offset:2px}
+:where(progress,input[type=checkbox],input[type=radio]) {accent-color:var(--teal)}
+::selection {background:var(--tracker-brand-focus);color:var(--ink)}
+.tracker-mobile-dock-icon svg {display:block;width:1.35rem;height:1.35rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:760px) {
+ .tracker-mobile-dock {background:var(--surface);border-color:var(--rule);box-shadow:0 -2px 12px #0001}
+ .tracker-mobile-dock a[aria-current="page"],.tracker-mobile-dock button[aria-expanded="true"] {color:var(--teal);background:var(--tracker-brand-soft)}
+ .tracker-mobile-dock #tracker-mobile-add528 {color:var(--teal);font-weight:750}
+}
+@media print {
+ #main-content :is(.card,.dashboard-panel,.tracker-ui-card,.chartbox) {box-shadow:none}
+}
+@media(prefers-reduced-motion:reduce) {
+ #main-content :is(.tracker-ui-action,.card,.dashboard-panel) {transition:none}
+}
