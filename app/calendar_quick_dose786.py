@@ -17,6 +17,14 @@ def calendar_return786(day):
     return f"/calendar?month={day:%Y-%m}#calendar-day-{day.isoformat()}"
 
 
+def dose_return790(day, origin=""):
+    if origin == "today":
+        return "/mobile#mobile-schedule-heading"
+    if origin == "dashboard":
+        return "/#today-heading"
+    return calendar_return786(day)
+
+
 def manual_url786(event, day):
     return "/doses?" + urlencode(dict(
         compound_id=event["compound_id"], planned_date=day.isoformat(),
