@@ -11,10 +11,10 @@ from sqlalchemy.orm import Session
 
 from .. import config, metrics
 from ..models import DoseLog, Protocol, VitalReading
-from ..projection_exclusions import exclusions_for
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
-from ..today import schedule_summary
+from ..daily_workspace790 import summary790
+from ..google_protocol_review783 import review_rows783
 from ..daily_summary674 import snapshot674
 from ..today_priorities765 import missing_coa_count765, passed_date_examples765
 
@@ -26,22 +26,7 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
     """Small, useful and non-mutating snapshot of actuals and planned items."""
     now = datetime.now()
     today = now.date()
-    start = datetime.combine(today - timedelta(days=7), datetime.min.time())
-    end = datetime.combine(today + timedelta(days=1), datetime.min.time())
-
-    protocols = list(db.scalars(select(Protocol).order_by(Protocol.name)))
-    recent_week = list(db.scalars(
-        select(DoseLog).where(
-            DoseLog.kind == "dose",
-            DoseLog.taken_at >= start,
-            DoseLog.taken_at < end,
-        ).order_by(DoseLog.taken_at.desc(), DoseLog.id.desc())
-    ))
-    item_ids = [item.id for protocol in protocols for item in protocol.items]
-    summary = schedule_summary(
-        protocols, recent_week, today,
-        exclusions=exclusions_for(db, item_ids),
-    )
+    summary = summary790(db, today)
 
     recent_doses = list(db.scalars(
         select(DoseLog)
@@ -96,6 +81,7 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         instance=config.instance_label(),
         unit=config.WEIGHT_UNIT,
         summary=summary,
+        google_review_rows=review_rows783(db),
         recent_doses=recent_doses,
         daily674=daily674,
         no_coa_count=no_coa_count,
