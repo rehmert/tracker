@@ -22,3 +22,8 @@ Use the established exact-SHA DEV-first release workflow and change-scoped tests
 - Validate actual rendered desktop and mobile workflows, not just CSS class presence. Do not introduce global styling overrides to fix one page.
 
 - Action collections must use available horizontal space: compact responsive grids or wrapping rows, never a full-width vertical stack when multiple controls fit. Test rendered button positions at desktop and phone widths, including compact density. Collapse long explanatory copy to one line with an accessible More/Less disclosure while preserving its full text.
+
+## Design system and navigation (Release 793)
+- Use app/navigation.py as the single registry of sidebar destinations and focused visibility. Preserve URLs, stable category keys and user-specific favorites; group tools by purpose rather than implementation history.
+- Use tracker-design-system793.css for shared visual tokens, semantic color, type hierarchy and surface/control treatment. Do not add a competing palette or icon system. Maintain server-managed theme overrides, explicit environment identity and keyboard/touch accessibility.
+- Default to focused everyday destinations; advanced tools must remain searchable and reachable. Validate rendered geometry, accessibility and actions in light and dark themes across phone and desktop.
