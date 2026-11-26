@@ -20,3 +20,5 @@ Use the established exact-SHA DEV-first release workflow and change-scoped tests
 - Preserve date, search/filter context and relevant return anchors after saves. Prefer batch editing for multiple independent changes; no implicit batch recording.
 - Use 24-hour time and accept colonless HHMM where supported. Keep recent lists short with access to full history. Make pending vs recorded state explicit.
 - Validate actual rendered desktop and mobile workflows, not just CSS class presence. Do not introduce global styling overrides to fix one page.
+
+- Action collections must use available horizontal space: compact responsive grids or wrapping rows, never a full-width vertical stack when multiple controls fit. Test rendered button positions at desktop and phone widths, including compact density. Collapse long explanatory copy to one line with an accessible More/Less disclosure while preserving its full text.
