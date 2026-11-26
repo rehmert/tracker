@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_workspace792.html" import inventory %}
+{% from "_ui790.html" import action, submit %}
+{% block title %}Inventory forecast & planning{% endblock %}
+{% block content %}
+<h1>Inventory forecast &amp; planning</h1>
+{{ inventory("forecast") }}
+<nav class="tracker-workspace-tabs792" aria-label="Inventory planning views">
+{{ action('/planning-hub','Priorities',true) }}
+{{ action('/replenishment-review','Replenishment') }}
+{{ action('/planning-hub?view=details','Compare forecasts') }}
+{{ action('/inventory-data-quality','Data quality') }}
+</nav>
+<p class="note">Schedule-aware, expiration-aware estimates. Projections do not change stock or record administrations.</p>
+<form method="get" action="/planning-hub" class="grid" aria-label="Forecast filters">
+<label class="field"><span>Horizon</span><select name="horizon">{% for h in horizons %}<option value="{{ h }}" {% if h == horizon %}selected{% endif %}>{{ h }} days</option>{% endfor %}</select></label>
+<label class="field"><span>Compound</span><input type="search" name="compound" value="{{ compound }}" placeholder="All compounds"></label>
+<label class="field"><span>Priority</span><select name="category">{% for key,label in [('all','All'),('shortage','Shortages'),('expiration','Expiration exposure'),('review','Data review')] %}<option value="{{ key }}" {% if category == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<div class="tracker-ui-actions">{{ submit('Apply filters') }}{{ action('/planning-hub','Reset') }}</div>
+</form>
+<dl class="stats" aria-label="Planning summary for all compounds">
+<div><dt>Shortage groups</dt><dd>{{ totals.shortages }}</dd></div>
+<div><dt>Expiration exposure</dt><dd>{{ totals.expirations }}</dd></div>
+<div><dt>Data review</dt><dd>{{ totals.reviews }}</dd></div>
+<div><dt>First projected shortage</dt><dd class="sm">{{ totals.first_shortage or 'None identified' }}</dd></div>
+</dl>
+{% if warnings %}<details class="tracker-workspace-panel792"><summary>Forecast warnings ({{ warnings|length }})</summary><ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul></details>{% endif %}
+<div class="panel-heading"><h2>Prioritized inventory · {{ horizon }} days</h2>{{ action('/planning-priorities.csv?horizon=' ~ horizon ~ '&compound=' ~ (compound|urlencode) ~ '&category=' ~ category,'Export filtered CSV') }}</div>
+<div class="scroll"><table class="ux673-card-table">
+<thead><tr><th>Compound</th><th>Priority</th><th class="n">Dated stock</th><th class="n">Demand</th><th class="n">Shortage</th><th>First shortage</th><th class="n">Expiration loss</th><th class="n">Remaining</th><th>Details</th></tr></thead>
+<tbody>{% for r in rows %}<tr>
+<td data-label="Compound"><strong>{{ r.compound }}</strong> <small>{{ r.unit }}</small></td>
+<td data-label="Priority">{{ r.status }}{% if r.incomplete %}<br><small>Provisional</small>{% endif %}</td>
+<td data-label="Dated stock" class="n">{{ r.dated_stock|num }}</td>
+<td data-label="Demand" class="n">{{ r.demand|num }}</td>
+<td data-label="Shortage" class="n">{{ r.shortage|num }}</td>
+<td data-label="First shortage">{{ r.first_shortage or '—' }}</td>
+<td data-label="Expiration loss" class="n">{{ r.expired|num }}</td>
+<td data-label="Remaining" class="n">{{ r.remaining|num }}</td>
+<td data-label="Details"><details><summary>Review</summary>
+<p>Unknown-date stock: {{ r.unknown_stock|num }} {{ r.unit }} · already expired: {{ r.expired_existing|num }} {{ r.unit }}</p>
+<p>{{ r.undated_vials }} undated vials · {{ r.expired_vials }} expired vials.</p>
+<p>{{ r.reliability }}{% if r.provisional_shortage %}; shortage may be understated{% endif %}.</p>
+<p>Demand-rate coverage: {{ r.coverage|n1 if r.coverage is not none else '—' }} days (not a depletion date).</p>
+{{ action('/inventory-data-quality','Review stock dates') }}
+</details></td>
+</tr>{% else %}<tr><td colspan="9">No matching forecast records.</td></tr>{% endfor %}</tbody>
+</table></div>
+<details class="tracker-workspace-panel792"><summary>Forecast methods &amp; advanced reports</summary>
+<p class="note">FEFO allocates dated eligible stock by expiration. Undated and already expired inventory is excluded; incomplete schedules make estimates provisional. The average-rate and scheduled-demand reports use different assumptions.</p>
+<nav class="tracker-workspace-tabs792" aria-label="Advanced forecast methods">
+{{ action('/inventory-forecast','Average forecast') }}{{ action('/scheduled-forecast','Scheduled demand') }}{{ action('/fefo-forecast','Detailed FEFO') }}{{ action('/expiry-exposure','Expiry exposure') }}{{ action('/forecast-horizons','Horizons') }}{{ action('/forecast-audit','Shared stock audit') }}{{ action('/protocol-coverage','Protocol coverage') }}{{ action('/planning-priorities?horizon=' ~ horizon ~ '&compound=' ~ (compound|urlencode) ~ '&category=' ~ category,'Full priority report') }}{{ action('/planning-hub.csv','Comparison CSV') }}
+</nav></details>
+{% endblock %}
