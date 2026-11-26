@@ -163,7 +163,7 @@ def food_page(
     )
     favorite_ids = {item["id"] for item in favorites}
     from .food_bundle376 import (
-        search_products, weekly_summary, meal_templates
+        search_products, weekly_summary, meal_templates, prior_meals792
     )
     query = q.strip()[:100]
     search_results = (
@@ -193,7 +193,7 @@ def food_page(
         favorites=favorites, recent=recent,
         favorite_ids=favorite_ids,
         search_query=query, search_results=search_results,
-        week=week, templates=templates,
+        week=week, templates=templates, prior_meals=prior_meals792(day, db_engine),
         meals=meals, nutrient_week=nutrient_week,
         previous_day=(chosen - timedelta(days=1)).isoformat(),
         next_day=(chosen + timedelta(days=1)).isoformat(),
