@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r791-prod0a5ba934",
-  "action": "prod_deploy",
-  "release": 791,
-  "target": "0a5ba934a415451ad462bc7594cd4178d558d20d",
-  "base": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
-  "ref": "release/791-compact-daily-actions",
-  "previous_request_id": "r791-preflight0a5ba934"
+  "request_id": "r792-43c816391106",
+  "action": "qualify",
+  "release": 792,
+  "target": "43c81639110686c23ff23361529a72ffcf7b5088",
+  "base": "0a5ba934a415451ad462bc7594cd4178d558d20d",
+  "ref": "release/792-consolidated-workspaces",
+  "previous_request_id": null
 }
