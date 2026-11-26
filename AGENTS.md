@@ -10,3 +10,13 @@ Every user-facing action must look like a button. Do not place raw text links or
 - When touching a workflow, inspect neighboring actions and normalize inconsistent controls in that scope. Validate rendered desktop and mobile controls, not just class names.
 
 Use the established exact-SHA DEV-first release workflow and change-scoped tests. Never promote to PROD without explicit authorization.
+
+## Daily UX and mobile contract (Release 790)
+
+- One authoritative schedule projection and reconciliation path; Today, Dashboard and Calendar must agree. Use the same scheduled-dose form from every entry point, preserve the originating context, and never assume an ambiguous inventory source.
+- Default to daily tasks, not administrative tools. Keep historical and advanced tools reachable by stable links, search and disclosures.
+- Populate known fields, keep optional fields collapsed, and use one explicit Save action for routine recording. Do not add redundant confirmation gates. Retain genuine validation, duplicate prevention, inventory safeguards and destructive-action review.
+- Use shared Jinja action/submit components, consistent chevrons, accessible names, keyboard focus, responsive 44px touch targets and matching primary/secondary controls. Keep native GET links and POST forms.
+- Preserve date, search/filter context and relevant return anchors after saves. Prefer batch editing for multiple independent changes; no implicit batch recording.
+- Use 24-hour time and accept colonless HHMM where supported. Keep recent lists short with access to full history. Make pending vs recorded state explicit.
+- Validate actual rendered desktop and mobile workflows, not just CSS class presence. Do not introduce global styling overrides to fix one page.
