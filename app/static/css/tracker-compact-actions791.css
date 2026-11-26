@@ -1,0 +1,129 @@
+/* Shared workflow grids: override the generic flex action row, including
+   the <=390px full-width fallback, only for navigational action collections. */
+#main-content nav:is(.tracker-quick-actions790,.tracker-review-actions791,.tracker-daily-footer) {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));
+  align-items:stretch;
+  gap:.32rem;
+  width:100%;
+  min-width:0;
+  margin:.3rem 0;
+}
+#main-content nav:is(.tracker-quick-actions790,.tracker-review-actions791,.tracker-daily-footer)>a {
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  min-width:0;
+  max-width:none;
+  min-height:36px;
+  margin:0;
+  padding:.32rem .45rem;
+  text-align:center;
+  text-decoration:none;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  font-size:.875rem;
+  line-height:1.2;
+}
+#main-content .tracker-daily-heading791 {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:.25rem .5rem;
+}
+#main-content .tracker-daily-heading791 h2 {margin:0}
+#main-content .tracker-daily-heading791>a {min-height:36px;padding:.32rem .55rem}
+#main-content .tracker-daily-glance601 {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.32rem;
+}
+#main-content .tracker-daily-glance601>a {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  max-width:none;
+  width:100%;
+  min-height:44px;
+  padding:.32rem .35rem;
+  margin:0;
+  text-align:center;
+  white-space:normal;
+  font-size:.8rem;
+  line-height:1.2;
+  grid-column:auto;
+}
+#main-content .calendar-explanation791 {
+  min-width:0;
+  padding:0;
+  margin:.2rem 0 .45rem;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+#main-content .calendar-explanation791>summary {
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+  min-width:0;
+  margin:0;
+  padding:0;
+  color:var(--muted,#62717d);
+  font-size:.85rem;
+  font-weight:400;
+  line-height:1.4;
+  list-style:none;
+  cursor:pointer;
+}
+#main-content .calendar-explanation791>summary::-webkit-details-marker {display:none}
+#main-content .calendar-explanation791>summary::marker {content:""}
+#main-content .calendar-explanation791>summary::after {content:none}
+#main-content .calendar-explanation791-preview {
+  flex:1 1 auto;
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#main-content .calendar-explanation791-toggle {
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:44px;
+  min-height:32px;
+  padding:0 .15rem;
+  color:var(--accent,var(--teal,#1265ad));
+  text-decoration:underline;
+  font-weight:650;
+}
+#main-content .calendar-explanation791-less,
+#main-content .calendar-explanation791[open] .calendar-explanation791-more {display:none}
+#main-content .calendar-explanation791[open] .calendar-explanation791-less {display:inline}
+#main-content .calendar-explanation791[open] .calendar-explanation791-preview {
+  white-space:normal;
+  overflow:visible;
+}
+#main-content .calendar-explanation791>summary:focus-visible {outline:2px solid var(--teal,#1265ad);outline-offset:2px}
+#main-content .calendar-explanation791>p {margin:.25rem 0}
+@media(max-width:760px) {
+  #main-content nav:is(.tracker-quick-actions790,.tracker-review-actions791,.tracker-daily-footer) {
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,6.5rem),1fr));
+    gap:.3rem;
+  }
+  #main-content nav:is(.tracker-quick-actions790,.tracker-review-actions791,.tracker-daily-footer)>a {
+    min-height:44px;
+    padding:.3rem .25rem;
+    font-size:.8rem;
+  }
+  #main-content .tracker-daily-heading791>a,
+  #main-content .calendar-explanation791-toggle {min-height:44px}
+}
+@media print {
+  #main-content .calendar-explanation791 {display:none}
+}
