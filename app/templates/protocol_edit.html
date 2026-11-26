@@ -1,19 +1,21 @@
 {% extends "base.html" %}
 {% block title %}{{ p.name }}{% endblock %}
-{% block content %}<p><a href="/protocols/{{ p.id }}/history">View version history</a></p>
+{% block content %}{% from "_ui790.html" import action %}
 <h1>{{ p.name }}</h1>
-<nav class="ux-shortcuts" aria-label="Protocol navigation">
-  <a href="/protocols">All protocols</a>
-  <a href="/calendar">View schedule</a>
-  <a href="/doses">Record an actual dose</a>
+<nav class="tracker-workspace-tabs792" aria-label="Protocol navigation">
+  {{ action('/protocols','All protocols') }}
+  {{ action('#protoform','Edit schedule',true) }}
+  {{ action('/calendar','Calendar') }}
+  {{ action('#protocol-analysis794','PK analysis') }}
+  {{ action('/protocols/' ~ p.id ~ '/history','Version history') }}
 </nav>
 <section><p><strong>Status:</strong> {{ "Active — included in dashboard forecasts" if p.is_active else "What-if — excluded from dashboard forecasts" }}</p>
 <form method="post" action="/protocols/{{ p.id }}/active"><button type="submit">{{ "Mark as what-if" if p.is_active else "Mark as active" }}</button></form>
 <p class="note">Mark active only for a protocol you are currently following. Forecasts are estimates, not dose recommendations.</p>
 <p class="note">Calendar projections begin on the start date, stop at the optional end date, and never change inventory. A start date is required for projections.</p></section>
-<p class="note">To escalate a compound, add multiple rows for the same compound with consecutive week ranges (e.g., weeks 1–4 and 5–8). An empty End week means ongoing. Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows and dates; Save &amp; add another stores them and opens a new row.</p>
+<details class="tracker-workspace-panel792"><summary>Schedule options and examples</summary><p class="note">To escalate a compound, add multiple rows for the same compound with consecutive week ranges (e.g., weeks 1–4 and 5–8). An empty End week means ongoing. Change any amount, unit or frequency and the results update as you type. Save protocol stores the current rows and dates; Save &amp; add another stores them and opens a new row.</p>
 
-<p class="note">Optional schedule: select weekdays using checkboxes. Set frequency to weekly and the count to the number of selected days. Use ↑ Copy to inherit days, time and fasting from the previous row, or Apply first schedule to all rows. Time is local. Fasting hours are informational, not medical instructions. Leave days unselected for frequency-based projections. The 84-hour preset alternates morning/evening when a dose time is set; weekday checkboxes must be cleared.</p>
+<p class="note">Optional schedule: select weekdays using checkboxes. Set frequency to weekly and the count to the number of selected days. Use ↑ Copy to inherit days, time and fasting from the previous row, or Apply first schedule to all rows. Time is local. Fasting hours are informational, not medical instructions. Leave days unselected for frequency-based projections. The 84-hour preset alternates morning/evening when a dose time is set; weekday checkboxes must be cleared.</p></details>
 <form id="protoform" method="post" action="/protocols/{{ p.id }}/save" novalidate
       hx-post="/protocols/{{ p.id }}/calc" hx-trigger="load, input delay:250ms, change" hx-target="#results">
   <div class="grid">
@@ -179,6 +181,7 @@
 </section>
 
 
+<details class="tracker-workspace-panel792" id="protocol-analysis794" {% if not p.is_active %}open{% endif %}><summary>PK analysis, comparisons &amp; what-if experiments</summary>
 <section class="card" id="protocolExposureSection"
          data-protocol-id="{{ p.id }}">
   <h2>Modeled exposure</h2>
@@ -415,6 +418,7 @@
     <p id="pkExpDisclaimer" class="note"></p>
   </div>
 </section>
+</details>
 
 <link rel="stylesheet"
       href="/static/css/tracker-pk-workbench.css?v=bundle72">
