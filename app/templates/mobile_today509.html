@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/static/css/tracker-today695.css?v=695">
 <link rel="stylesheet" href="/static/css/tracker-today-priorities765.css?v=765">
 <script defer src="/static/js/tracker-mobile-daily509.js?v=509"></script>
+<script defer src="/static/js/tracker-regimen-tablets731.js?v=731"></script>
 
 <div class="tracker-daily509 tracker-daily790" data-mobile-daily509>
   {% set due = summary.today | selectattr('status', 'equalto', 'due') | list %}
@@ -26,9 +27,9 @@
 
   {# Release 695: one visible recording bar, directly below today's status. #}
   <nav class="tracker-daily-glance601" aria-label="Today's status">
-    <a href="#mobile-schedule-heading"><strong>{{ due|length }}</strong> due today</a>
+    <a class="tracker-ui-action" href="#mobile-schedule-heading"><strong>{{ due|length }}</strong> due today</a>
     <a href="#mobile-schedule-heading"><strong>{{ recorded|length }}</strong> recorded today</a>
-    <a href="#mobile-upcoming-heading"><strong>{{ summary.upcoming|length }}</strong> projected next 7 days</a>
+    <a class="tracker-ui-action" href="#mobile-upcoming-heading"><strong>{{ summary.upcoming|length }}</strong> projected next 7 days</a>
   </nav>
 
   {{ quick_actions() }}
@@ -127,7 +128,7 @@
 
   <section class="ux674-dashboard" aria-label="Daily command center">
     <div class="ux674-dashboard-head">
-      <h2>Daily Command Center</h2>
+      <h2>Today’s totals</h2>
       <a class="tracker-ui-action" href="/data-quality">Review Data Quality</a>
     </div>
     <div class="ux674-summary">
@@ -135,7 +136,7 @@
         <strong>{{ daily674.food.count if daily674.food.available else '—' }}</strong>
         <span>Foods logged</span>
         <small>{{ daily674.food.coverage }}</small>
-        <a href="/food" class="ux695-summary-link">Food Journal</a>
+        <a href="/food" class="tracker-ui-action">Food Journal</a>
       </article>
       <article>
         <strong>{{ daily674.food.calories if daily674.food.calories is not none else '—' }}</strong>
@@ -145,14 +146,14 @@
       <article><strong>{{ daily674.sets_today }}</strong><span>Sets today</span>
         <small>{{ daily674.workout_today }} workout(s) started</small>
         {% if daily674.last_workout %}
-          <a class="ux695-summary-link" href="/workouts/sessions/{{ daily674.last_workout.id }}/review">Recent Workout</a>
+          <a class="tracker-ui-action" href="/workouts/sessions/{{ daily674.last_workout.id }}/review">Recent Workout</a>
         {% else %}
-          <a class="ux695-summary-link" href="/workouts">Workout History</a>
+          <a class="tracker-ui-action" href="/workouts">Workout History</a>
         {% endif %}
       </article>
       <article><strong>{{ daily674.inventory_attention }}</strong><span>Vials with passed dates</span>
         <small>Review dates; not a safety determination</small>
-        <a class="ux695-summary-link" href="/inventory-data-quality">Review Vial Dates</a>
+        <a class="tracker-ui-action" href="/inventory-data-quality">Review Vial Dates</a>
       </article>
     </div>
   </section>
