@@ -295,12 +295,15 @@ def _redirect(day=None, msg="", err="", focus=""):
 
 @router.get("/regimen")
 def regimen_page(request: Request, day: str = "", focus: str = "",
-                 db: Session = Depends(get_scoped_db390)):
+                 db: Session = Depends(get_scoped_db390), schedule_item: int | None = None):
     try:
         selected = _day(day, date.today())
     except ValueError:
         selected = date.today()
     items = list(db.scalars(select(RegimenItem).order_by(RegimenItem.kind, RegimenItem.name, RegimenItem.id)))
+    schedule_item = schedule_item if any(i.id == schedule_item and i.active for i in items) else None
+    if schedule_item is not None:
+        focus = "add-schedule"
     product_facts_display = {
         facts.item_id: {
             "brand": facts.brand,
@@ -367,7 +370,7 @@ def regimen_page(request: Request, day: str = "", focus: str = "",
         tablet_plans=tablet_plans, tablet_entries=tablet_entries,
         tablet_strengths=tablet_strengths, tablet_fmt=tablets731.format_number,
         schedule_counts=schedule_counts, entry_counts=entry_counts,
-        schedule_entry_counts=schedule_entry_counts, return_focus=focus,
+        schedule_entry_counts=schedule_entry_counts, return_focus=focus, schedule_item=schedule_item,
     )
 
 
