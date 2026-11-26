@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "9f79787956726e105d55906483b7e851db5106fa",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-26T18:40:02+00:00",
+  "markers": [
+    "RELEASE_793_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_793_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_793_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_793_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/793-design-system",
+  "release": 793,
+  "request_id": "r793-8dafeb3eab73",
+  "schema": 1,
+  "started_at_utc": "2026-11-26T18:38:42+00:00",
+  "status": "passed",
+  "target": "8dafeb3eab7355780719c24c6de3d18d30b2d1bc",
+  "test_counts": [
+    "77 passed, 1 warning"
+  ]
+}
