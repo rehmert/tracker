@@ -423,7 +423,8 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
                 site: str = Form(""), notes: str = Form(""), use_remaining: str = Form(""), submission_token: str = Form(""),
                 db: Session = Depends(get_scoped_db390), planned_compound_id: int | None = Form(None),
                 calendar_item_id: int | None = Form(None), calendar_date: str = Form(""),
-                calendar_snapshot: str = Form(""), calendar_clock: str = Form("")):
+                calendar_snapshot: str = Form(""), calendar_clock: str = Form(""),
+                calendar_origin: str = Form("")):
     def reject_dose(message: str):
         """Release the inventory reservation before returning an error."""
         db.rollback()
@@ -440,7 +441,7 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
     submitted_form = await request.form()
     calendar_return = ""
     if calendar_item_id is not None:
-        from ..calendar_quick_dose786 import quick_plan786, calendar_return786, parse_clock786
+        from ..calendar_quick_dose786 import quick_plan786, dose_return790, parse_clock786
         try:
             day = date.fromisoformat(calendar_date)
             plan = quick_plan786(db, calendar_item_id, day)
@@ -454,7 +455,7 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
                 raise ValueError("Quick entry accepts changes to time and injection site only.")
             taken_at = parse_clock786(calendar_clock, day).isoformat(timespec="minutes")
             planned_compound_id = plan["event"]["compound_id"]
-            calendar_return = calendar_return786(day)
+            calendar_return = dose_return790(day, calendar_origin)
         except (ValueError, TypeError, OverflowError) as exc:
             return reject_dose(str(exc))
     supply_payload = sorted((k, str(v)) for k, v in submitted_form.multi_items()
