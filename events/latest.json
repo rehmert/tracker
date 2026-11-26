@@ -1,11 +1,11 @@
 {
-  "action": "dev_install",
+  "action": "qualify",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r790-install958bdbf8.json",
-  "release": 790,
-  "request_id": "r790-install958bdbf8",
+  "receipt_path": "receipts/r791-0a5ba934a415.json",
+  "release": 791,
+  "request_id": "r791-0a5ba934a415",
   "schema": 1,
   "status": "passed",
-  "target": "958bdbf87112cafab5eb89ddbd7491bc8eae6c2a"
+  "target": "0a5ba934a415451ad462bc7594cd4178d558d20d"
 }
