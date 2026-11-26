@@ -61,8 +61,10 @@ def test_701_mobile_sheet_adds_existing_direct_paths_in_correct_order():
     assert parser.buttons == ["weight", "bp", "water"]
     assert tuple(parser.anchors) == EXPECTED_LINKS
     for href, title in EXPECTED_LINKS[3:5]:
-        assert f'href="{href}"' in TODAY
-        assert f'href="{href}"' in QUICK
+        shared = (ROOT / "app/templates/_ui790.html").read_text()
+        assert f'href="{href}"' in shared
+        assert "{{ quick_actions() }}" in TODAY
+        assert "{{ quick_actions() }}" in QUICK
         assert SHEET.count(f'href="{href}"') == 1
         assert title in SHEET
     assert "data-quick528-choices" in SHEET
