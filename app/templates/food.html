@@ -26,7 +26,7 @@
 <a href="/food?day={{ next_day }}">Next →</a>
 </nav>
 <form method="get" action="/food" class="food-date"><label>Day <input type="date" name="day" value="{{ day }}"></label><button>Show</button></form>
-<nav class="tracker-workspace-tabs792" aria-label="Food Journal primary actions">
+<nav class="food424-actions food-mobile-actions602 ux673-food-primary tracker-workspace-tabs792" aria-label="Food Journal primary actions">
 <a class="tracker-ui-action tracker-ui-action--primary" href="#food-quick-log">Add food</a>
 <a class="tracker-ui-action" href="#food-water">Water</a>
 <a class="tracker-ui-action" href="#food-recorded">Meals today</a>
@@ -268,8 +268,8 @@
     </div>
   </details>
 </section>
-<details open id="food-recorded" class="food382-accordion" data-food382-section="food-recorded">
-<summary>Recorded Meals<span class="food382-chevron" aria-hidden="true"></span></summary>
+<details id="food-recorded" class="food382-accordion" data-food382-section="food-recorded" open>
+<summary>Recorded Meals ({{ entries|length }})<span class="food382-chevron" aria-hidden="true"></span></summary>
 <div class="food382-content">
 {% for e in entries %}
 <article class="food-log-row food375-record">
@@ -398,11 +398,11 @@ Save Nutrition Correction
 </div>
 </details>
 
-<details class="tracker-workspace-panel792" id="food-add-workspace792"><summary>Add food · favorites, search or scan</summary>
+<details class="tracker-workspace-panel792" id="food-add-workspace792" {% if search_query %}open{% endif %}><summary>Add food · favorites, search or scan</summary>
 <nav class="tracker-workspace-tabs792" aria-label="Choose food entry method">
 <a class="tracker-ui-action" href="#food-quick-log">Favorites &amp; recent</a><a class="tracker-ui-action" href="#food-search">Saved foods</a><a class="tracker-ui-action" href="#food-name-search">Food database</a><a class="tracker-ui-action" href="#food-add">Scan / manual</a>
 </nav>
-<details open id="food-quick-log" class="food375-section food382-accordion" data-food382-section="food-quick-log">
+<details id="food-quick-log" class="food375-section food382-accordion" data-food382-section="food-quick-log" open>
 <summary>Quick Log / Favorites<span class="food382-chevron" aria-hidden="true"></span></summary>
 <div class="food382-content">
 <h2>Quick Log</h2>
