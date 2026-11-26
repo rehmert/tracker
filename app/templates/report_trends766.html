@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Weekly Integrated Trends{% endblock %}
 {% block content %}
+{% from "_workspace792.html" import health %}
 <link rel="stylesheet" href="/static/css/tracker-trends766.css?v=766">
 <section class="trends766-page">
   <nav class="trends766-links" aria-label="Report actions">
@@ -8,7 +9,7 @@
     <a href="/reports">Consolidated Reports</a>
     <a href="/device-import">Import Device Days</a>
   </nav>
-  <h1>Weekly Integrated Trends</h1>
+  <h1>Weekly Integrated Trends</h1>{{ health("weekly", days) }}
   <p class="note">Recorded measurements and actual activity, grouped by Monday-start weeks. All averages use logged sample days, not unrecorded days or interpolated values. Date windows may contain partial first and last weeks. Similar trends do not establish causation.</p>
   <form method="get" action="/reports/trends" class="trends766-filter">
     <label>Window
