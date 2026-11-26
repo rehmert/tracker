@@ -34,14 +34,14 @@ def test_sidebar_renders_formatted_labels_and_stable_keys():
         for token in (
             '>Workflow Hub</span>',
             '>Reconstitution Calculator</span>',
-            '>Inventory Tools</span>',
+            '>Inventory</span>',
             '>FEFO Forecast</span>',
             '>SQLite Viewer</span>',
-            '>COAs</span>',
+            '>Certificates (COAs)</span>',
             'title="Reconstitution Calculator"',
             'aria-label="Move Reconstitution Calculator up"',
-            'data-section="Inventory tools"',
-            'data-group="Inventory tools"',
+            'data-section="Inventory"',
+            'data-group="Inventory"',
             'data-nav-key="/reconstitution-calculator"',
         ):
             assert token in html, token
