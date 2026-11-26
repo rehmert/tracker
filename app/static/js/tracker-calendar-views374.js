@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const modes=[['day','Day',1],['week','Week',7],['two-weeks','2 weeks',14],['month','Month',0]];
  const today=[new Date().getFullYear(),String(new Date().getMonth()+1).padStart(2,'0'),String(new Date().getDate()).padStart(2,'0')].join('-'),current=days.some(x=>x.dataset.calendarDate===today)?today:(days.find(x=>!x.classList.contains('outside'))||days[0]).dataset.calendarDate;
  function hashDay(){return days.find(d=>'#'+d.id===window.location.hash);}
- let anchor=hashDay()?.dataset.calendarDate||current;let mode=localStorage.getItem('tracker.calendar.view')|| (matchMedia('(max-width:760px)').matches?'week':'month');
+ let anchor=hashDay()?.dataset.calendarDate||current;let mode=localStorage.getItem('tracker.calendar.view')|| (matchMedia('(max-width:760px)').matches?'day':'month');
  if(!modes.some(x=>x[0]===mode))mode='month';
  const label=document.createElement('p');label.setAttribute('role','status');label.setAttribute('aria-live','polite');
  function apply(){
