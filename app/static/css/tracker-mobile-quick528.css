@@ -1,4 +1,4 @@
-/* Release 528: mobile-only quick-add bottom sheet. */
+/* Shared quick-add dialog: bottom sheet on phones, centered on desktop. */
 
 .tracker-quick528-overlay[hidden],
 .tracker-quick528-sheet [hidden] {
@@ -9,7 +9,7 @@
   display: none;
 }
 
-@media (max-width: 760px) {
+@media screen {
   .tracker-quick528-overlay:not([hidden]) {
     display: flex;
     position: fixed;
@@ -154,9 +154,8 @@
 }
 
 @media (min-width: 761px) {
-  .tracker-quick528-overlay {
-    display: none !important;
-  }
+  .tracker-quick528-overlay:not([hidden]) { align-items: center; }
+  .tracker-quick528-sheet { border-radius: 1rem; max-height: 90dvh; }
 }
 
 @media print {
