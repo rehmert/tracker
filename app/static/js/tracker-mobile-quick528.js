@@ -20,10 +20,6 @@
 
     if (!trigger || !overlay || !sheet) return;
 
-    const mobile = window.matchMedia(
-      "(max-width:760px)"
-    );
-
     const choices = overlay.querySelector(
       "[data-quick528-choices]"
     );
@@ -252,9 +248,6 @@
       }
     });
 
-    mobile.addEventListener?.("change", () => {
-      if (!mobile.matches) close();
-    });
 
     for (const form of forms) {
       form.addEventListener(
