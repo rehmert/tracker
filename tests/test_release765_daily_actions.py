@@ -93,9 +93,9 @@ def test_765_templates_preserve_early_single_recording_bar():
     css = (ROOT / "app/static/css/tracker-today-priorities765.css").read_text()
     Environment().parse(mobile)
     Environment().parse(dashboard)
-    assert mobile.count('class="tracker-daily-actions"') == 1
+    assert mobile.count('{{ quick_actions() }}') == 1
     assert mobile.count('class="ux674-dashboard"') == 1
-    assert mobile.index('class="tracker-daily-actions"') < mobile.index('id="today765-priorities"') < mobile.index('class="ux674-dashboard"')
+    assert mobile.index('{{ quick_actions() }}') < mobile.index('id="today765-priorities"') < mobile.index('class="ux674-dashboard"')
     assert "tracker-today-priorities765.css?v=765" in mobile
     assert 'href="' + VIAL_DRILLDOWN + '"' in mobile
     assert 'href="/inventory-data-quality?issue=expired"' in mobile
