@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r792-9f7978795672",
-  "action": "qualify",
+  "request_id": "r792-install9f797879",
+  "action": "dev_install",
   "release": 792,
   "target": "9f79787956726e105d55906483b7e851db5106fa",
   "base": "0a5ba934a415451ad462bc7594cd4178d558d20d",
   "ref": "release/792-consolidated-workspaces",
-  "previous_request_id": null
+  "previous_request_id": "r792-9f7978795672"
 }
