@@ -1,10 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Protocol calendar</div>
-{% endblock %}
+{% block title %}Protocol calendar{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-calendar-bundle742.css?v=742">
 
-<script src="/static/js/tracker-calendar-views374.js?v=789" defer></script>
+<script src="/static/js/tracker-calendar-views374.js?v=790" defer></script>
 <script src="/static/js/tracker-calendar-workbench.js?v=783" defer></script>
 <script src="/static/js/tracker-calendar-day-context.js?v=20261103" defer></script>
 <script src="/static/js/tracker-calendar-day-navigation.js?v=789" defer></script>
@@ -87,11 +86,13 @@
         <td><strong>{{ x.name }}</strong><small>{{ x.protocol }}</small></td>
         <td>{{ x.dose }}</td>
         <td class="calendar-review-actions">
-          <a class="tracker-ui-action tracker-ui-action--primary" href="/calendar/log-dose?protocol_item_id={{ x.protocol_item_id }}&amp;scheduled_on={{ item.date.isoformat() }}">Log this dose</a>
+          {% if x.status in ('due', 'unrecorded') %}<a class="tracker-ui-action tracker-ui-action--primary" href="/calendar/log-dose?protocol_item_id={{ x.protocol_item_id }}&amp;scheduled_on={{ item.date.isoformat() }}">Log this dose</a>{% endif %}
+          <details class="tracker-more790"><summary>More actions</summary>
           <a class="tracker-ui-action" href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ item.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">Choose vial first</a>
           {% set scheduled_on = item.date %}
           {% include "_calendar_vial_units756.html" %}
           <a class="tracker-ui-action" href="/protocols/{{ x.protocol_id }}">Edit schedule</a>
+          </details>
         </td>
       </tr>
       {% else %}
@@ -133,7 +134,8 @@
   {% else %}<div class="calendar-event projected" title="Future projected entry">○ {{ x.name }} · {{ x.dose }}{% if x.dose_time %} · {{ x.dose_time }}{% endif %}{% if x.fasting_hours is defined and x.fasting_hours is not none %} · Fast {{ x.fasting_hours|num_input }}h{% endif %} <small>({{ x.protocol }})</small></div>{% endif %}
 {% if x.google_pending %}<a class="tracker-ui-action" href="#google-protocol-review783">Reconcile Google completion</a>{% endif %}
 {% if x.status in ('due', 'upcoming', 'unrecorded') %}
-  <a class="tracker-ui-action tracker-ui-action--primary" href="/calendar/log-dose?protocol_item_id={{ x.protocol_item_id }}&amp;scheduled_on={{ d.date.isoformat() }}">Log this dose</a>
+  {% if x.status in ('due', 'unrecorded') %}<a class="tracker-ui-action tracker-ui-action--primary" href="/calendar/log-dose?protocol_item_id={{ x.protocol_item_id }}&amp;scheduled_on={{ d.date.isoformat() }}">Log this dose</a>{% endif %}
+  <details class="tracker-more790"><summary>More actions</summary>
   <a class="tracker-ui-action"
      href="/dose-workspace?compound_id={{ x.compound_id }}&amp;planned_date={{ d.date.isoformat() }}&amp;planned_time={{ (x.dose_time or '')|urlencode }}&amp;planned_amount={{ x.amount_value }}&amp;planned_unit={{ x.amount_unit|urlencode }}">
     Choose vial first
@@ -150,6 +152,7 @@
     </select>
     <button type="submit" class="tracker-ui-action">Hide projection</button>
   </form>
+  </details>
   {% endif %}
 </div>
 {% endfor %}
@@ -166,4 +169,5 @@
 </div>
 {% else %}<p>No hidden projections.</p>{% endfor %}
 </details>
+</div>
 {% endblock %}
