@@ -33,8 +33,8 @@
             <a href="/workouts/backfill">Log Past Workout</a></div>
         </details>
       </nav>
-      <h1>Rapid Gym Mode</h1>
-      <p class="workout659-muted">One machine at a time · Completed sets only.</p>
+      <h1>Gym Mode</h1>
+      {% if not active %}<p class="workout659-muted">One machine at a time · Completed sets only.</p>{% endif %}
     </div>
     {% if active %}
       <span class="workout659-state">Workout active</span>
@@ -85,6 +85,17 @@
     {% endif %}
 
     <section class="workout659-panel">
+      {% if machine %}
+        <div class="workout659-machine-heading">
+          <h2 data-no-title-case>{{ machine.name }}</h2>
+          <p class="workout659-muted">{{ machine.gym }}{% if machine.seat_setting %} · Seat {{ machine.seat_setting }}{% endif %}</p>
+          {% if machine.setup_notes %}
+            <details class="gym782-disclosure"><summary>Machine setup notes</summary><p class="workout659-notes">{{ machine.setup_notes }}</p></details>
+          {% endif %}
+          {% if routine and plan_item_id and current_goal and current_goal.setup_note and not frozen_goal %}
+            <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
+          {% endif %}
+        </div>
       <details class="workout662-directory" id="workout662-directory">
         <summary>Change Machine ({{ equipment|length }})</summary>
       <form action="/workouts/quick" method="get" class="workout659-machine-picker">
@@ -115,17 +126,6 @@
           {% endfor %}
         </nav>
       </details>
-      {% if machine %}
-        <div class="workout659-machine-heading">
-          <h2 data-no-title-case>{{ machine.name }}</h2>
-          <p class="workout659-muted">{{ machine.gym }}{% if machine.seat_setting %} · Seat {{ machine.seat_setting }}{% endif %}</p>
-          {% if machine.setup_notes %}
-            <details class="gym782-disclosure"><summary>Machine setup notes</summary><p class="workout659-notes">{{ machine.setup_notes }}</p></details>
-          {% endif %}
-          {% if routine and plan_item_id and current_goal and current_goal.setup_note and not frozen_goal %}
-            <p class="workout667-goal-note"><strong>Exercise setup:</strong> {{ current_goal.setup_note }}</p>
-          {% endif %}
-        </div>
         <div class="workout766-handoff">
           <nav class="workout662-nav" aria-label="Quick routine machine navigation">
             {% if previous_machine %}
@@ -136,6 +136,7 @@
             {% endif %}
           </nav>
           <span id="workout766-connection" role="status" aria-live="polite"></span>
+          <p id="workout668-sync-status" class="workout792-sync" role="status" aria-live="polite"></p>
         </div>
         <div class="workout659-prior">
           {% if last %}
@@ -144,7 +145,7 @@
           {% else %}
             <span>No previous set on this machine</span>
           {% endif %}
-          <a class="ux675-inline-action" href="/workouts/equipment/{{ machine.id }}/progress">Progress</a>
+          <a class="ux675-inline-action" href="/workouts/equipment/{{ machine.id }}/progress">Progress</a><span class="workout792-set-count">{{ machine_sets|length }} set{{ "" if machine_sets|length == 1 else "s" }} this session</span>
         </div>
         {% if routine and plan_item_id and frozen_goal %}
           <details class="gym782-disclosure"><summary>Goal: {{ goal_progress667.credited_sets }}/{{ frozen_goal.target_sets }} · {{ frozen_goal.target_reps }} reps × {{ frozen_goal.target_weight_lb }} lb</summary>
@@ -253,14 +254,14 @@
           </details>
         </form>
         {% if last %}
-          <details class="gym782-disclosure"><summary>Repeat last set</summary>
+          <div class="workout792-repeat">
           <form method="post" action="/workouts/quick/repeat" class="workout659-repeat">
             <input type="hidden" name="equipment_id" value="{{ machine.id }}">
             <input type="hidden" name="source_set_id" value="{{ last.id }}">
             <button type="submit" class="workout659-main-button workout659-repeat-button">
               Repeat Last Set — {{ '%.1f'|format(last.weight_lb) }} lb × {{ last.reps }}
             </button>
-          </form></details>
+          </form></div>
         {% endif %}
 
       {% endif %}
@@ -285,6 +286,22 @@
       </div>
     </section>
 
+    {% if machine %}
+      <section class="workout659-panel workout659-logged">
+        <h2 data-no-title-case>This session on {{ machine.name }} ({{ machine_sets|length }} shown)</h2>
+        {% for entry in machine_sets %}
+          <p><strong>{{ '%.1f'|format(entry.weight_lb) }} lb × {{ entry.reps }}</strong>
+            {% if entry.effort is not none %} · effort {{ entry.effort }}/10{% endif %}
+            <span> · {{ entry.performed_at|dt }}</span>
+          </p>
+        {% else %}
+          <p class="workout659-muted">No sets recorded on this machine during this workout yet.</p>
+        {% endfor %}
+        {% if machine_sets %}
+          <p><a class="ux675-inline-action" href="/workouts#workout-sets657">Edit Earlier Set</a></p>
+        {% endif %}
+      </section>
+    {% endif %}
     <section class="workout659-end">
       <form method="post" action="/workouts/quick/finish" class="tracker-flow696-finish">
         <button type="submit" class="primary" formaction="/workouts/finish-review">Finish &amp; Review</button>
@@ -345,7 +362,7 @@
           <button type="button" id="workout668-sync-now">Synchronize Pending Sets</button>
           <button type="button" id="workout668-queue-discard">Discard All Pending Sets</button>
           <button type="button" id="workout668-draft-clear">Delete Draft</button>
-          <p id="workout668-sync-status" role="status" aria-live="polite"></p>
+
           <p id="workout668-draft-status" role="status" aria-live="polite"></p>
           </div>
         </details>
@@ -380,22 +397,6 @@
 
 
 
-    {% if machine %}
-      <section class="workout659-panel workout659-logged">
-        <h2 data-no-title-case>This session on {{ machine.name }} ({{ machine_sets|length }} shown)</h2>
-        {% for entry in machine_sets %}
-          <p><strong>{{ '%.1f'|format(entry.weight_lb) }} lb × {{ entry.reps }}</strong>
-            {% if entry.effort is not none %} · effort {{ entry.effort }}/10{% endif %}
-            <span> · {{ entry.performed_at|dt }}</span>
-          </p>
-        {% else %}
-          <p class="workout659-muted">No sets recorded on this machine during this workout yet.</p>
-        {% endfor %}
-        {% if machine_sets %}
-          <p><a class="ux675-inline-action" href="/workouts#workout-sets657">Edit Earlier Set</a></p>
-        {% endif %}
-      </section>
-    {% endif %}
   {% endif %}
 </section>
 {% endblock %}
