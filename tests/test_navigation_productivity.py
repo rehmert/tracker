@@ -27,7 +27,7 @@ def test_navigation_controls_and_stable_identifiers():
             'id="tracker-clear-recent"',
             'id="tracker-expand-nav"',
             'id="tracker-collapse-nav"',
-            'data-section="Inventory tools"',
+            'data-section="Inventory"',
             'data-nav-key="/reconstitution-calculator"',
             "tracker-nav-productivity.js?v=20261103-release",
         ):
