@@ -1,0 +1,48 @@
+{% from "_ui790.html" import action, submit %}
+<section class="card tracker-regimen790" id="regimen-today790">
+  <div class="tracker-daily-heading"><h2>Supplements &amp; medications</h2>{{ action('/regimen?day=' ~ regimen_day ~ '#reg635-today','Manage intake') if regimen_origin == 'today' else '' }}</div>
+  {% set pending = regimen_due | rejectattr('id', 'in', regimen_recorded) | list %}
+  <p class="note">{{ pending|length }} remaining · {{ regimen_due|length - pending|length }} recorded</p>
+  {% if pending %}
+  <div class="reg635-grid">
+    {% for schedule in pending %}
+    <article class="reg635-card">
+      <h3>{{ schedule.item.name }}</h3>
+      <p>{{ schedule.amount }}{% if schedule.at_time %} · Scheduled {{ schedule.at_time }}{% endif %}</p>
+      {% set stamp = regimen_day ~ 'T' ~ (regimen_now if regimen_day == today else (schedule.at_time or regimen_now)) %}
+      <form method="post" action="/regimen/entries" class="reg635-form" data-regimen-quick790>
+        <input type="hidden" name="item_id" value="{{ schedule.item_id }}">
+        <input type="hidden" name="schedule_id" value="{{ schedule.id }}">
+        <input type="hidden" name="return_to" value="{{ regimen_origin }}">
+        <p class="note">Record as taken at {{ stamp[11:] }} unless adjusted.</p>
+        <details><summary>Adjust time, amount or outcome</summary>
+          <label class="field">Recorded at <input type="datetime-local" name="logged_at" required value="{{ stamp }}"></label>
+          <label class="field">Result <select name="outcome"><option value="taken">Taken</option><option value="skipped">Skipped</option></select></label>
+          {% set dose_plan = regimen_tablet_plans.get(schedule.id) %}
+          {% if dose_plan %}
+            <input type="hidden" name="tablet_mode" value="tablet">
+            <div class="reg731-panel" data-reg731-due data-reg731-strength="{{ tablet_fmt(dose_plan.tablet_strength_mg) }}" data-reg731-prescribed="{{ tablet_fmt(dose_plan.prescribed_dose_mg) }}">
+              <strong>Ordered {{ tablet_fmt(dose_plan.prescribed_dose_mg) }} mg from {{ tablet_fmt(dose_plan.tablet_strength_mg) }} mg/tablet</strong>
+              <label class="field">Tablets actually taken (½ = 0.5)<input name="tablet_count" type="number" min="0.25" max="20" step="0.25" inputmode="decimal" value="{{ tablet_fmt(dose_plan.tablets_planned) }}" data-reg731-count></label>
+              <output data-reg731-preview aria-live="polite" role="status"></output>
+            </div>
+          {% else %}<label class="field">Actual amount <input name="amount" value="{{ schedule.amount }}" maxlength="80"></label>{% endif %}
+          <label class="field">Meal (optional) <select name="meal">{% for meal in regimen_meals %}<option value="{{ meal }}" {% if meal == schedule.meal %}selected{% endif %}>{{ meal|capitalize if meal else 'None' }}</option>{% endfor %}</select></label>
+          <label class="field">Notes <input name="notes" maxlength="2000"></label>
+        </details>
+        {{ submit('Log intake') }}
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<p>No remaining scheduled intake for this date.</p>{% endif %}
+  {% if regimen_recorded %}
+  <details class="tracker-more790"><summary>Recorded intake</summary>
+    <ul>{% for schedule in regimen_due if schedule.id in regimen_recorded %}
+      {% set entry = regimen_entries.get(schedule.id) %}
+      <li>{{ schedule.item.name }} · {{ entry.outcome if entry else 'Recorded' }}{% if entry and entry.amount %} · {{ entry.amount }}{% endif %}</li>
+    {% endfor %}</ul>
+    {{ action('/regimen?day=' ~ regimen_day ~ '#reg635-history','Edit intake history') }}
+  </details>
+  {% endif %}
+</section>
