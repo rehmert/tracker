@@ -727,6 +727,18 @@ unknown, not zero.
 <summary>Meal Templates<span class="food382-chevron" aria-hidden="true"></span></summary>
 <div class="food382-content">
 <h2>Meal Templates</h2>
+{% if prior_meals %}
+<details class="tracker-workspace-panel792"><summary>Copy a meal from {{ prior_meals[0].source }}</summary>
+<p class="note">Review the foods and portions. Copy only if you ate the same meal; only an empty destination meal can be filled.</p>
+{% for meal in prior_meals %}
+<article class="food375-item">
+<strong>{{ meal.meal }}</strong>
+<ul>{% for row in meal.rows %}<li>{{ row.name }} · {{ row.servings }} × {{ row.serving_description }}</li>{% endfor %}</ul>
+<form method="post" action="/food/meal/copy-prior792"><input type="hidden" name="day" value="{{ day }}"><input type="hidden" name="meal" value="{{ meal.meal }}"><input type="hidden" name="snapshot" value="{{ meal.snapshot }}"><button class="tracker-ui-action tracker-ui-action--primary" type="submit">Copy {{ meal.meal }}</button></form>
+</article>
+{% endfor %}
+</details>
+{% endif %}
 <details>
 <summary>Save a Meal From This Day</summary>
 <p class="note">Copies all foods, portions and nutrients logged
