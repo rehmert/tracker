@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_ui790.html" import action, quick_actions, scheduled_action %}
 {% block title %}Today{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-mobile-daily509.css?v=510">
@@ -9,7 +10,7 @@
 <link rel="stylesheet" href="/static/css/tracker-today-priorities765.css?v=765">
 <script defer src="/static/js/tracker-mobile-daily509.js?v=509"></script>
 
-<div class="tracker-daily509" data-mobile-daily509>
+<div class="tracker-daily509 tracker-daily790" data-mobile-daily509>
   {% set due = summary.today | selectattr('status', 'equalto', 'due') | list %}
   {% set recorded = summary.today | selectattr('status', 'equalto', 'recorded') | list %}
   <header class="tracker-daily-hero">
@@ -30,17 +31,42 @@
     <a href="#mobile-upcoming-heading"><strong>{{ summary.upcoming|length }}</strong> projected next 7 days</a>
   </nav>
 
-  <nav class="tracker-daily-actions" aria-label="Record today">
-    <a href="#mobile-quick-vitals"
-       class="tracker-daily-action-primary">Log Vitals</a>
-    <a href="/doses#quick-dose-entry">Log Dose</a>
-    <a href="/food#food-quick-log">Log Food</a>
-    <a href="/food#food-water">Log Water</a>
-    <a href="/workouts/quick">Log Workout Set</a>
-    <a href="/regimen#reg635-today">Log Supplements / Meds</a>
-    <a href="/quick-entry">All Actions</a>
-  </nav>
+  {{ quick_actions() }}
 
+  <section class="tracker-daily-section" aria-labelledby="mobile-schedule-heading">
+    <div class="tracker-daily-heading">
+      <h2 id="mobile-schedule-heading">Today's Administrations</h2>
+      {{ action('/calendar','Calendar') }}
+    </div>
+    {% set pending = summary.today | selectattr('status','equalto','pending_review') | list %}
+    {% set completed = summary.today | rejectattr('status','in',['due','pending_review']) | list %}
+    <p class="tracker-daily-summary">{{ due|length }} due · {{ pending|length }} pending review · {{ completed|length }} recorded</p>
+    {% if due or pending %}
+    <ul class="tracker-daily-list">
+      {% for item in summary.today if item.status in ('due','pending_review') %}
+      <li><div><strong>{{ item.name }}</strong><span>{{ item.dose }}{% if item.dose_time %} · {{ item.dose_time }}{% endif %}</span>{% if item.protocol %}<small>{{ item.protocol }}</small>{% endif %}</div>
+        {{ scheduled_action(item, today, 'today') }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="tracker-daily-empty">No remaining scheduled doses today.</p>{% endif %}
+    {% if completed %}
+    <details class="tracker-more790">
+      <summary>Recorded today ({{ completed|length }})</summary>
+      <ul class="tracker-daily-list">
+        {% for item in completed %}
+        <li><div><strong>{{ item.name }}</strong><span>{{ item.actual_dose or item.dose }}{% if item.dose_time %} · {{ item.dose_time }}{% endif %}</span><small>{{ 'Matched record' if item.status == 'recorded' else 'Unscheduled record' }}</small></div>{{ scheduled_action(item, today, 'today') }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+    {% if summary.missing_start %}<p class="tracker-daily-note">Some protocols need start dates. {{ action('/protocols','Review protocols') }}</p>{% endif %}
+  </section>
+  {% if google_review_rows or request.query_params.get('review_error') or request.query_params.get('review_saved') %}
+    {% set google_return_to = 'today' %}
+    {% include '_google_protocol_review783.html' %}
+  {% endif %}
+  {% include '_regimen_today790.html' %}
   {# Release 765: one compact action-oriented review, never a second recording bar. #}
   {% set priority_count765 =
       (1 if due else 0)
@@ -48,12 +74,8 @@
       + (1 if daily674.inventory_attention else 0)
       + (1 if summary.missing_start else 0) %}
   {% if priority_count765 %}
-  <section class="today765-priorities" id="today765-priorities"
-           aria-labelledby="today765-heading">
-    <div class="today765-header">
-      <h2 id="today765-heading">Needs Attention</h2>
-      <span>{{ priority_count765 }} categor{{ 'y' if priority_count765 == 1 else 'ies' }}</span>
-    </div>
+  <details class="today765-priorities tracker-more790" id="today765-priorities">
+    <summary id="today765-heading">Needs Attention ({{ priority_count765 }})</summary>
     <div class="today765-grid">
       {% if due %}
       <a class="today765-card" href="#mobile-schedule-heading" data-today765-kind="due">
@@ -72,13 +94,13 @@
       {% if daily674.inventory_attention %}
       <div class="today765-card" data-today765-kind="dates">
         <strong>{{ daily674.inventory_attention }} vial{{ '' if daily674.inventory_attention == 1 else 's' }} with passed dates</strong>
-        <a href="/inventory-data-quality?issue=expired">Review expired inventory</a>
+        <a class="tracker-ui-action" href="/inventory-data-quality?issue=expired">Review expired inventory</a>
         {% if passed_date_vials %}
         <details class="today765-detail">
           <summary>Open specific vials</summary>
           <div class="today765-specific">
             {% for vial in passed_date_vials %}
-            <a href="/vials/{{ vial.id }}">{{ vial.compound.name }} · #{{ vial.id }}</a>
+            <a class="tracker-ui-action" href="/vials/{{ vial.id }}">{{ vial.compound.name }} · #{{ vial.id }}</a>
             {% endfor %}
             {% if daily674.inventory_attention > passed_date_vials|length %}
             <small>Showing {{ passed_date_vials|length }} of {{ daily674.inventory_attention }} active vials with passed dates.</small>
@@ -94,19 +116,19 @@
         <small>Open the exact schedules to set their dates</small>
         <div class="today765-specific">
           {% for protocol in summary.missing_start %}
-          <a href="/protocols/{{ protocol.id }}">{{ protocol.name }}</a>
+          <a class="tracker-ui-action" href="/protocols/{{ protocol.id }}">{{ protocol.name }}</a>
           {% endfor %}
         </div>
       </div>
       {% endif %}
     </div>
-  </section>
+  </details>
   {% endif %}
 
   <section class="ux674-dashboard" aria-label="Daily command center">
     <div class="ux674-dashboard-head">
       <h2>Daily Command Center</h2>
-      <a href="/data-quality">Review Data Quality</a>
+      <a class="tracker-ui-action" href="/data-quality">Review Data Quality</a>
     </div>
     <div class="ux674-summary">
       <article>
@@ -135,52 +157,15 @@
     </div>
   </section>
 
-  <nav class="tracker-daily-flow559-compact"
-       aria-label="Daily review shortcuts">
-    <a href="/health-insights">Progress</a>
-    <a href="/calendar">Calendar</a>
-    <a href="/replenishment-review">Inventory Needs</a>
-    <a href="/labs">Lab Results</a>
-    <a href="/reports/trends">Weekly Trends</a>
-    <a href="/device-import">Device Import</a>
-  </nav>
-
-  <section class="tracker-daily-section" aria-labelledby="mobile-schedule-heading">
-    <div class="tracker-daily-heading">
-      <h2 id="mobile-schedule-heading">Today's Administrations</h2>
-      <a href="/calendar">Calendar</a>
-    </div>
-    <p class="tracker-daily-note">Scheduled items are projections only. A dose is recorded only when you save it in the dose log.</p>
-    <p class="tracker-daily-summary">{{ recorded|length }} matched recorded · {{ due|length }} due</p>
-    {% if summary.today %}
-      <ul class="tracker-daily-list">
-        {% for item in summary.today %}
-        <li>
-          <div>
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.dose }}{% if item.dose_time %} · {{ item.dose_time }}{% endif %}</span>
-            {% if item.protocol %}<small>{{ item.protocol }}</small>{% endif %}
-          </div>
-          {% if item.status == 'due' %}
-          <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ today.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review &amp; Log</a>
-          {% else %}
-          <span class="tracker-daily-pill">{{ 'Recorded' if item.status == 'recorded' else 'Unscheduled record' }}</span>
-          {% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="tracker-daily-empty">No administrations scheduled or recorded today.</p>
-    {% endif %}
-    {% if summary.missing_start %}
-      <p class="tracker-daily-note">Some active protocols have no start date and cannot be projected. <a href="/protocols">Review protocols</a>.</p>
-    {% endif %}
-  </section>
+  <details class="tracker-more790"><summary>Review &amp; planning tools</summary>
+    <nav class="tracker-ui-actions" aria-label="Daily review shortcuts">
+      {{ action('/progress','Progress') }}{{ action('/calendar','Calendar') }}{{ action('/replenishment-review','Inventory Needs') }}{{ action('/labs','Lab Results') }}{{ action('/reports/trends','Weekly Trends') }}{{ action('/device-import','Device Import') }}
+    </nav></details>
 
   <section class="tracker-daily-section" aria-labelledby="mobile-latest-heading">
     <div class="tracker-daily-heading">
       <h2 id="mobile-latest-heading">Latest Readings</h2>
-      <a href="/vitals">History</a>
+      <a class="tracker-ui-action" href="/vitals">History</a>
     </div>
     <div class="tracker-daily-metrics">
       <a href="#mobile-quick-vitals" data-daily-mode-link="weight">
@@ -205,7 +190,7 @@
   <section id="mobile-quick-vitals" class="tracker-daily-section" aria-labelledby="mobile-record-heading">
     <div class="tracker-daily-heading">
       <h2 id="mobile-record-heading">Record Vitals</h2>
-      <a href="/vitals#quick-vitals-entry">Full Vitals</a>
+      <a class="tracker-ui-action" href="/vitals#quick-vitals-entry">Full Vitals</a>
     </div>
     <p class="tracker-daily-note">Enter any combination of readings. Blood pressure requires both numbers. Saving creates one actual record.</p>
     <div class="tracker-daily-mode" role="group" aria-label="Choose measurement to enter">
@@ -260,10 +245,10 @@
     </form>
   </section>
 
-  <section class="tracker-daily-section" aria-labelledby="mobile-recent-heading">
+  <details class="tracker-daily-section tracker-more790" aria-labelledby="mobile-recent-heading"><summary>Recent doses</summary>
     <div class="tracker-daily-heading">
       <h2 id="mobile-recent-heading">Recent Doses</h2>
-      <a href="/doses#dose-history">Dose History</a>
+      <a class="tracker-ui-action" href="/doses#dose-history">Dose History</a>
     </div>
     {% if recent_doses %}
     <ul class="tracker-daily-list">
@@ -273,20 +258,20 @@
           <strong>{{ dose.vial.compound.name }}</strong>
           <span>{{ dose.entered_value|num }} {{ dose.entered_unit }} · {{ dose.taken_at|dt }}</span>
         </div>
-        <a href="/doses?repeat_from={{ dose.id }}#quick-dose-entry">Prepare Similar</a>
+        <a class="tracker-ui-action" href="/doses?repeat_from={{ dose.id }}#quick-dose-entry">Prepare Similar</a>
       </li>
       {% endfor %}
     </ul>
     <p class="tracker-daily-note">Prepare Similar prefills a new draft. It does not repeat or save an administration until reviewed and submitted.</p>
     {% else %}
-    <p class="tracker-daily-empty">No doses recorded yet. <a href="/doses#quick-dose-entry">Record your first dose</a>.</p>
+    <p class="tracker-daily-empty">No doses recorded yet. <a class="tracker-ui-action" href="/doses#quick-dose-entry">Record your first dose</a>.</p>
     {% endif %}
-  </section>
+  </details>
 
-  <section class="tracker-daily-section" aria-labelledby="mobile-upcoming-heading">
+  <details class="tracker-daily-section tracker-more790" aria-labelledby="mobile-upcoming-heading"><summary>Next 7 days</summary>
     <div class="tracker-daily-heading">
       <h2 id="mobile-upcoming-heading">Next 7 Days</h2>
-      <a href="/calendar">Full Calendar</a>
+      <a class="tracker-ui-action" href="/calendar">Full Calendar</a>
     </div>
     {% if summary.upcoming %}
     <p class="tracker-daily-note">{{ summary.upcoming|length }} projected administration{{ '' if summary.upcoming|length == 1 else 's' }} over the next 7 days{% if summary.upcoming|length > 8 %} · First 8 shown below{% endif %}.</p>
@@ -297,7 +282,7 @@
           <strong>{{ day.strftime('%a %b %-d') }} · {{ item.name }}</strong>
           <span>{{ item.dose }} · {{ item.protocol }}</span>
         </div>
-        <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review</a>
+        {{ scheduled_action(item, day, 'today') }}
       </li>
       {% endfor %}
     </ul>
@@ -311,7 +296,7 @@
             <strong>{{ day.strftime('%a %b %-d') }} · {{ item.name }}</strong>
             <span>{{ item.dose }} · {{ item.protocol }}</span>
           </div>
-          <a href="/doses?compound_id={{ item.compound_id }}&amp;planned_date={{ day.isoformat() }}&amp;planned_time={{ item.dose_time or '' }}&amp;planned_amount={{ item.amount_value }}&amp;planned_unit={{ item.amount_unit }}">Review</a>
+          {{ scheduled_action(item, day, 'today') }}
         </li>
         {% endfor %}
       </ul>
@@ -320,12 +305,12 @@
     {% else %}
     <p class="tracker-daily-empty">Nothing projected for the coming week.</p>
     {% endif %}
-  </section>
+  </details>
 
-  <section class="tracker-daily-section" aria-labelledby="mobile-vitals-history-heading">
+  <details class="tracker-daily-section tracker-more790" aria-labelledby="mobile-vitals-history-heading"><summary>Recent vital readings</summary>
     <div class="tracker-daily-heading">
       <h2 id="mobile-vitals-history-heading">Recent Vital Readings</h2>
-      <a href="/vitals">All Vitals</a>
+      <a class="tracker-ui-action" href="/vitals">All Vitals</a>
     </div>
     {% if recent_vitals %}
     <ul class="tracker-daily-list">
@@ -339,20 +324,20 @@
             {% if reading.pulse_bpm is not none %} · Pulse {{ reading.pulse_bpm }}{% endif %}
           </span>
         </div>
-        <a href="/vitals/{{ reading.id }}/edit">View</a>
+        <a class="tracker-ui-action" href="/vitals/{{ reading.id }}/edit">View</a>
       </li>
       {% endfor %}
     </ul>
     {% else %}
     <p class="tracker-daily-empty">No vital readings yet.</p>
     {% endif %}
-  </section>
+  </details>
 
   <nav class="tracker-daily-footer" aria-label="Additional Tracker areas">
-    <a href="/food">Food Journal</a>
-    <a href="/vials">Inventory</a>
-    <a href="/health-timeline">Health Timeline</a>
-    <a href="/">Desktop Overview</a>
+    <a class="tracker-ui-action" href="/food">Food Journal</a>
+    <a class="tracker-ui-action" href="/vials">Inventory</a>
+    <a class="tracker-ui-action" href="/health-timeline">Health Timeline</a>
+    <a class="tracker-ui-action" href="/">Desktop Overview</a>
   </nav>
 </div>
 {% endblock %}
