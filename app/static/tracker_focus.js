@@ -6,7 +6,7 @@
   const ESSENTIAL = new Set([
     '/mobile', '/calendar', '/quick-entry', '/doses', '/vials',
     '/workouts', '/food', '/vitals', '/labs', '/regimen',
-    '/integrations/google-tasks'
+    '/integrations/google-tasks', '/protocols', '/progress'
   ]);
   function init() {
     const toggle = document.getElementById('tracker-focus-toggle');
