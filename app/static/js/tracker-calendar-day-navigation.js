@@ -84,7 +84,7 @@
         const date = grid.dataset.calendarAnchor;
         const nearest = direction > 0
           ? matching.findIndex(day => day.dataset.calendarDate > date)
-          : matching.findLastIndex(day => day.dataset.calendarDate < date);
+          : matching.reduce((last, day, index) => day.dataset.calendarDate < date ? index : last, -1);
         targetIndex = nearest >= 0 ? nearest : (direction > 0 ? 0 : matching.length - 1);
       } else {
         targetIndex = (
