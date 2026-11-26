@@ -1,0 +1,23 @@
+{# Stable canonical routes; no competing entry or write endpoints. #}
+{% macro tabs(items, current, label) -%}
+<nav class="tracker-workspace-tabs792" aria-label="{{ label }}">
+{% for href, name, key in items %}
+<a class="tracker-ui-action{% if key == current %} tracker-ui-action--primary{% endif %}" href="{{ href }}"{% if key == current %} aria-current="page"{% endif %}>{{ name }}</a>
+{% endfor %}
+</nav>
+{%- endmacro %}
+
+{% macro inventory(current) -%}
+{{ tabs([('/vials?status=in_use','In use','in_use'),('/vials?status=sealed','Stock','stock'),('/blends','Blends','blends'),('/inventory-health','Needs attention','attention'),('/purchases','Purchases','purchases'),('/protocols','Protocols','protocols')], current, 'Inventory & planning workspace') }}
+<details class="tracker-workspace-more792">
+<summary>More inventory &amp; planning tools</summary>
+{{ tabs([('/vials?status=active','All active vials','active'),('/vials?status=non_discarded&coa=missing','Missing COAs','coa'),('/supplies','Supplies','supplies'),('/inventory-forecast','Forecast','forecast'),('/inventory-alerts','Alerts','alerts'),('/replenishment-review','Replenishment','replenishment'),('/vendor-prices','Vendor prices','prices'),('/coas','Certificates','certificates'),('/reconciliation','Reconcile','reconcile'),('/reconstitution-calculator','Calculator','calculator'),('/pk','PK simulator','pk')], current, 'Advanced inventory tools') }}
+</details>
+{%- endmacro %}
+
+{% macro health(current, days=90) -%}
+{# The four common ranges have the same semantics. Do not silently relabel
+   route-specific windows as equivalent. All-time is deliberately not mapped. #}
+{% set shared = days if days in (30,90,180,365) else 90 %}
+{{ tabs([('/progress?days=' ~ shared,'Progress','progress'),('/vitals?days=' ~ shared,'Vitals','vitals'),('/labs','Labs','labs'),('/health-timeline?days=' ~ shared,'Timeline','timeline'),('/health-insights?days=' ~ shared,'Clinical trends','insights'),('/reports/trends?days=' ~ (28 if shared == 30 else (180 if shared == 180 else 90)),'Weekly trends','weekly')], current, 'Health workspace') }}
+{%- endmacro %}
