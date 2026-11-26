@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Log scheduled dose</div>
-{% endblock %}
+{% block title %}Log scheduled dose{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/css/tracker-calendar-actions787.css?v=787">
 <div class="calendar-actions787">
@@ -19,6 +18,7 @@
     <form method="post" action="/doses" hx-post="/doses" hx-target="#form-msg"
           hx-on::before-request="this.querySelector('button[type=submit]').disabled=true"
           hx-on::after-request="this.querySelector('button[type=submit]').disabled=false">
+      <input type="hidden" name="calendar_origin" value="{{ return_to if return_to in ('today', 'dashboard') else '' }}">
       <input type="hidden" name="calendar_item_id" value="{{ plan.event.protocol_item_id }}">
       <input type="hidden" name="calendar_date" value="{{ plan.day.isoformat() }}">
       <input type="hidden" name="calendar_snapshot" value="{{ plan.snapshot }}">
@@ -47,11 +47,12 @@
       <p class="note" role="status">{{ plan.reason }}</p>
       <div class="tracker-ui-actions">
         {% if plan.manual_url %}<a class="tracker-ui-action" href="{{ plan.manual_url }}">Full dose log</a>{% endif %}
-        <a class="tracker-ui-action" href="{{ return_url }}">Back to calendar</a>
+        <a class="tracker-ui-action" href="{{ return_url }}">Back</a>
       </div>
     {% endif %}
   {% else %}
-    <a class="tracker-ui-action" href="{{ return_url }}">Back to calendar</a>
+    <a class="tracker-ui-action" href="{{ return_url }}">Back</a>
   {% endif %}
 </section>
+</div>
 {% endblock %}
