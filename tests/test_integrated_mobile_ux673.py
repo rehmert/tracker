@@ -13,7 +13,7 @@ def test_673_single_five_destination_mobile_dock_and_existing_quick_sheet():
     dock = html.split('<nav class="tracker-mobile-dock"', 1)[1].split("</nav>", 1)[0]
     assert dock.count("<a ") == 4
     assert dock.count("<button ") == 1
-    for url in ('href="/"', 'href="/mobile"', 'href="/quick-entry"',
+    for url in ('href="/calendar"', 'href="/mobile"', 'href="/quick-entry"',
                 'href="/workouts/quick"'):
         assert url in dock
     assert 'id="tracker-mobile-more"' in dock
@@ -29,12 +29,13 @@ def test_673_single_five_destination_mobile_dock_and_existing_quick_sheet():
 
 def test_673_food_focus_preserves_every_existing_capability():
     html = (TPL / "food.html").read_text(encoding="utf-8")
-    fast = html.split('class="food424-actions food-mobile-actions602 ux673-food-primary"', 1)[1]
+    fast = html.split('class="food424-actions food-mobile-actions602 ux673-food-primary tracker-workspace-tabs792"', 1)[1]
     fast = fast.split("</nav>", 1)[0]
-    assert fast.count("<a ") == 4
-    for anchor in ("#food-quick-log", "#food-add", "#food-water", "#food-recorded"):
+    assert fast.count("<a ") == 5
+    for anchor in ("#food-quick-log", "#food-water", "#food-recorded", "#food-meals792", "#food-analysis792"):
         assert f'href="{anchor}"' in fast
-    assert '<details class="ux673-food-more">' in html
+    assert 'id="food-add-workspace792"' in html
+    assert 'href="#food-add"' in html
     for target in ("#food-search", "#food-name-search", "#food-templates",
                    "#food-meal-totals", "#food-week", "#food-nutrient-week",
                    "#food-targets", "/food/duplicates"):
