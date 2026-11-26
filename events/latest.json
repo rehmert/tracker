@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r792-9f7978795672.json",
+  "receipt_path": "receipts/r792-install9f797879.json",
   "release": 792,
-  "request_id": "r792-9f7978795672",
+  "request_id": "r792-install9f797879",
   "schema": 1,
   "status": "passed",
   "target": "9f79787956726e105d55906483b7e851db5106fa"
