@@ -48,8 +48,8 @@ def test_528_mobile_sheet_is_accessible(client):
         'id="tracker-mobile-quick528"'
     ) == 1
 
-    assert "tracker-mobile-quick528.js?v=528" in markup
-    assert "tracker-mobile-quick528.css?v=528" in markup
+    assert "tracker-mobile-quick528.js?v=790" in markup
+    assert "tracker-mobile-quick528.css?v=790" in markup
 
 
 def test_528_weight_save_returns_edit_link(client):
