@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-26T13:34:44+00:00",
+  "markers": [
+    "RELEASE_790_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_790_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_790_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_790_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/790-integrated-daily-workspace",
+  "release": 790,
+  "request_id": "r790-958bdbf87112",
+  "schema": 1,
+  "started_at_utc": "2026-11-26T13:34:12+00:00",
+  "status": "passed",
+  "target": "958bdbf87112cafab5eb89ddbd7491bc8eae6c2a",
+  "test_counts": [
+    "98 passed, 1 warning"
+  ]
+}

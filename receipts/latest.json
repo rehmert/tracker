@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "758915673fb20da26d4bdbca2239c87928fe2f70",
+  "action": "qualify",
+  "base": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-26T13:17:24+00:00",
+  "finished_at_utc": "2026-11-26T13:34:44+00:00",
   "markers": [
-    "DEV_CONTROLLED_RELEASE=SUCCESS",
-    "PROD_INSTALLED_COMMIT=9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
-    "PROMOTED_COMMIT=9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
+    "RELEASE_790_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_790_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
-    "REMOTE_DEPLOY_EXIT_STATUS=0"
+    "RELEASE_790_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_790_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r789-preflight9c8ae0b4",
-  "ref": "release/789-calendar-day-navigation",
-  "release": 789,
-  "request_id": "r789-prod9c8ae0b4",
+  "previous_request_id": null,
+  "ref": "release/790-integrated-daily-workspace",
+  "release": 790,
+  "request_id": "r790-958bdbf87112",
   "schema": 1,
-  "started_at_utc": "2026-11-26T13:16:58+00:00",
+  "started_at_utc": "2026-11-26T13:34:12+00:00",
   "status": "passed",
-  "target": "9c8ae0b40dbb0e4e9500b378c8240376a46d58e6",
-  "test_counts": []
+  "target": "958bdbf87112cafab5eb89ddbd7491bc8eae6c2a",
+  "test_counts": [
+    "98 passed, 1 warning"
+  ]
 }
