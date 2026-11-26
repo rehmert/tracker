@@ -16,9 +16,9 @@ def test_722_first_set_and_repeat_before_secondary_tools():
     assert '{% if active and not equipment %}' in html
     markers = (
         'workout659-machine-picker',
+        'workout662-nav',
         'id="workout659-log-form"',
         'workout659-repeat-button',
-        'workout662-nav',
         'Rest Timer',
         '<summary>Load Setup</summary>',
         'Offline &amp; Draft Tools',
