@@ -6,7 +6,7 @@ from itertools import zip_longest
 
 from datetime import date, datetime, timedelta
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -34,8 +34,11 @@ RANGES = {365: "1 year", 1095: "3 years", 3650: "All"}
 BLANK_ROW = {"analyte": "", "value": "", "unit": "", "ref_low": "", "ref_high": ""}
 
 
-def _groups(db: Session) -> dict[str, list[tuple[LabResult, LabReport]]]:
-    rows = db.execute(select(LabResult, LabReport).join(LabReport, LabResult.report_id == LabReport.id)).all()
+def _groups(db: Session, cutoff: date | None = None) -> dict[str, list[tuple[LabResult, LabReport]]]:
+    query = select(LabResult, LabReport).join(LabReport, LabResult.report_id == LabReport.id)
+    if cutoff is not None:
+        query = query.where(LabReport.drawn_on >= cutoff)
+    rows = db.execute(query).all()
     groups: dict[str, list[tuple[LabResult, LabReport]]] = {}
     for res, rep in rows:
         groups.setdefault(labs.analyte_key(res.analyte), []).append((res, rep))
@@ -81,9 +84,15 @@ def previous_draw499(items, latest):
 
 
 @router.get("/labs")
-def labs_index(request: Request, db: Session = Depends(get_scoped_db390)):
+def labs_index(request: Request, db: Session = Depends(get_scoped_db390),
+               days: int | None = Query(None)):
+    # Preserve the historical all-records default; explicit shared health
+    # ranges filter both reports and trend cards by the same inclusive dates.
+    if days not in (30, 90, 180, 365):
+        days = None
+    cutoff = date.today() - timedelta(days=days - 1) if days else None
     cards = []
-    for key, items in _groups(db).items():
+    for key, items in _groups(db, cutoff).items():
         res, rep = max(items, key=lambda it: (it[1].drawn_on, it[0].id))
         sr = labs.build_series(res.analyte, _points(items))
         svg = charts.line_chart(
@@ -100,8 +109,11 @@ def labs_index(request: Request, db: Session = Depends(get_scoped_db390)):
                       "previous": previous_draw499(items, (res, rep)),
                       "status": labs.range_status(res.value, res.ref_low, res.ref_high)})
     cards.sort(key=lambda c: (c["name"].casefold(), c["key"]))
-    reports = list(db.scalars(select(LabReport).order_by(LabReport.drawn_on.desc(), LabReport.id.desc())))
-    return render(request, "labs.html", cards=cards, reports=reports)
+    query = select(LabReport)
+    if cutoff is not None:
+        query = query.where(LabReport.drawn_on >= cutoff)
+    reports = list(db.scalars(query.order_by(LabReport.drawn_on.desc(), LabReport.id.desc())))
+    return render(request, "labs.html", cards=cards, reports=reports, days=days)
 
 
 def _form(request: Request, db: Session, rows=None, values=None, error=None, copied_from=None):
