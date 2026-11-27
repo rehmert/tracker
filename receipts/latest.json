@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T17:17:43+00:00",
+  "finished_at_utc": "2026-11-27T17:19:11+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=a0eefe4e7bbe2dad72c6c62677741333f1801faa",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=a0eefe4e7bbe2dad72c6c62677741333f1801faa",
+    "PROMOTED_COMMIT=a0eefe4e7bbe2dad72c6c62677741333f1801faa",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=a0eefe4e7bbe2dad72c6c62677741333f1801faa",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r804-deva0eefe4e7bbe",
+  "previous_request_id": "r804-prea0eefe4e7bbe",
   "ref": "release/804-visual-mobile-personalization",
   "release": 804,
-  "request_id": "r804-prea0eefe4e7bbe",
+  "request_id": "r804-proda0eefe4e7bbe",
   "schema": 1,
-  "started_at_utc": "2026-11-27T17:17:41+00:00",
+  "started_at_utc": "2026-11-27T17:18:37+00:00",
   "status": "passed",
   "target": "a0eefe4e7bbe2dad72c6c62677741333f1801faa",
   "test_counts": []
