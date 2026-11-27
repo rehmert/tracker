@@ -51,7 +51,7 @@ def worker(args):
         counts[0] += 1
         counts[1] += (time.perf_counter()-context._bench_start)*1000
     result = {}
-    with TestClient(app, follow_redirects=False, auth=("benchmark","synthetic-only")) as client:
+    with TestClient(app, follow_redirects=False) as client:
         with SessionLocal() as db:
             today = date.today()
             for i in range(12):
@@ -75,7 +75,7 @@ def worker(args):
             for i in range(args.warmup+args.samples):
                 counts[:] = [0,0.0]
                 start = time.perf_counter()
-                response = client.get(route)
+                response = client.get(route, auth=("benchmark","synthetic-only"))
                 elapsed = (time.perf_counter()-start)*1000
                 if response.status_code != 200:
                     raise RuntimeError(f"Route {route}: HTTP {response.status_code}")
@@ -104,7 +104,7 @@ def compare(args):
                 source = Path(tmp)/"source"
                 data = Path(tmp)/"data"
                 data.mkdir(mode=0o700)
-                subprocess.run(["git","-C",str(root),"worktree","add","--detach",str(source),sha],check=True,stdout=subprocess.DEVNULL)
+                subprocess.run(["git","-c","safe.directory="+str(root),"-C",str(root),"worktree","add","--detach",str(source),sha],check=True,stdout=subprocess.DEVNULL)
                 try:
                     env = {"PATH":"/usr/bin:/bin","HOME":tmp,"PYTHONPATH":str(source),
                            "TRACKER_DATA_DIR":str(data),"TRACKER_USER":"benchmark",
@@ -114,7 +114,7 @@ def compare(args):
                         cwd=source,env=env,text=True,timeout=900)
                     pair[label] = json.loads(raw.splitlines()[-1])
                 finally:
-                    subprocess.run(["git","-C",str(root),"worktree","remove","--force",str(source)],check=True)
+                    subprocess.run(["git","-c","safe.directory="+str(root),"-C",str(root),"worktree","remove","--force",str(source)],check=True)
         report["runs"].append(pair)
     rows = []
     for route in ROUTES:
