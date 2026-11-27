@@ -10,10 +10,16 @@ def test_shared_assets_are_loaded():
     assert (ROOT / 'app/static/release36_40.css').exists()
     assert (ROOT / 'app/static/release36_40.js').exists()
 
-def test_inventory_tools_are_separate_navigation_group():
+def test_inventory_issues_has_one_canonical_inventory_navigation_entry():
+    # Release 793 consolidated the old Inventory tools group.
+    from app.navigation import NAVIGATION, current_navigation
+    groups = [(key, title, label, primary)
+              for key, title, links in NAVIGATION
+              for href, label, primary in links if href == "/inventory-health"]
+    assert groups == [("Inventory", "Inventory", "Inventory issues", True)]
+    assert current_navigation("/inventory-health") == "/inventory-health"
     base = (ROOT / 'app/templates/base.html').read_text()
-    assert "('Inventory tools'," in base
-    assert base.count("('/inventory-health','Inventory health')") == 1
+    assert "{% for section, group_label, links in tracker_navigation %}" in base
 
 def test_inventory_health_explains_non_mutating_diagnostics():
     html = (ROOT / 'app/templates/inventory_health.html').read_text()

@@ -280,12 +280,28 @@ def test_daily_regimen_orders_by_time_then_case_insensitive_name(env):
         item(client, name, kind)
     for ident, at_time in enumerate(("08:00", "", "20:00", "08:00", "06:00", ""), 1):
         assert "err=" not in schedule(client, item_id=ident, at_time=at_time).headers["location"]
-    log(client, item_id=4, schedule_id="4")
-    page = client.get("/regimen?day=2026-11-15")
-    assert page.status_code == 200
     import re
-    daily = page.text.split('id="reg635-today"', 1)[1].split("</section>", 1)[0]
+
+    def daily_section():
+        page = client.get("/regimen?day=2026-11-15")
+        assert page.status_code == 200
+        return page.text.split('id="regimen-today790"', 1)[1].split("</section>", 1)[0]
+
+    daily = daily_section()
     assert re.findall(r"<h3>([^<]+)</h3>", daily) == [
         "Morning", "alpha", "Zinc", "Evening", "Untimed A", "Untimed Z",
     ]
-    assert "Recorded for this date" in daily
+    assert "6 remaining" in daily
+
+    # Recorded intakes are removed from the pending cards and shown separately.
+    assert "err=" not in log(client, item_id=1, schedule_id="1").headers["location"]
+    assert "err=" not in log(client, item_id=4, schedule_id="4").headers["location"]
+    daily = daily_section()
+    assert re.findall(r"<h3>([^<]+)</h3>", daily) == [
+        "Morning", "Evening", "Untimed A", "Untimed Z",
+    ]
+    assert "4 remaining" in daily and "2 recorded" in daily
+    recorded = daily.split("<summary>Recorded intake</summary>", 1)[1].split("</ul>", 1)[0]
+    assert re.findall(r"<li>([^<]+)</li>", recorded) == [
+        "alpha · taken · 1 capsule", "Zinc · taken · 1 capsule",
+    ]
