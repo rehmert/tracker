@@ -9,7 +9,7 @@ def test_598_explanations_are_accessible_and_unmodified_content_can_expand():
     css = (ROOT / "app/static/css/tracker-section-explanations598.css").read_text()
     js = (ROOT / "app/static/js/tracker-section-explanations598.js").read_text()
     assert 'tracker-section-explanations598.css?v=598' in base
-    assert 'tracker-section-explanations598.js?v=598' in base
+    assert 'tracker-section-explanations598.js?v=798' in base
     assert 'main section > p.note' in js
     assert "paragraph.closest('[role=\"alert\"]')" in js
     assert 'while (paragraph.firstChild) content.appendChild(paragraph.firstChild)' in js
