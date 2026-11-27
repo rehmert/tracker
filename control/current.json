@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r797-pre5d52af77cdcc",
-  "action": "prod_preflight",
+  "request_id": "r797-prod5d52af77cdcc",
+  "action": "prod_deploy",
   "release": 797,
   "target": "5d52af77cdccfdfe02248f59662f1ee37e6227ce",
   "base": "ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
   "ref": "release/797-daily-calendar-performance",
-  "previous_request_id": "r797-dev5d52af77cdcc"
+  "previous_request_id": "r797-pre5d52af77cdcc"
 }
