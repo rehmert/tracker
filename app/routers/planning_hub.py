@@ -175,9 +175,12 @@ def planning_hub(request: Request, db: Session = Depends(get_scoped_db390),
         if category not in ("all", "shortage", "expiration", "review"):
             category = "all"
         source, warnings = build_fefo(db)
+        all_rows = priority_rows(source, horizon)
+        visible_rows = (priority_rows(source, horizon, compound, category)
+                        if compound.strip() or category != "all" else all_rows)
         return render(request, "inventory_planning794.html",
-                      rows=priority_rows(source, horizon, compound, category),
-                      totals=summary(priority_rows(source, horizon)),
+                      rows=visible_rows,
+                      totals=summary(all_rows),
                       warnings=warnings, horizon=horizon, horizons=fefo_horizons,
                       compound=compound, category=category)
     rows, warnings, unmatched = build_planning(db)
