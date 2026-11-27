@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "55ba6d9233c1864a737095057ecb5afaf091962f",
+  "action": "qualify",
+  "base": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T03:16:54+00:00",
+  "finished_at_utc": "2026-11-27T03:37:54+00:00",
   "markers": [
-    "DEV_CONTROLLED_RELEASE=SUCCESS",
-    "PROD_INSTALLED_COMMIT=98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
-    "PROMOTED_COMMIT=98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
+    "RELEASE_800_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_800_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
-    "REMOTE_DEPLOY_EXIT_STATUS=0"
+    "RELEASE_800_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_800_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r799-pre98509bce1bbc",
-  "ref": "release/799-code-consolidation",
-  "release": 799,
-  "request_id": "r799-prod98509bce1bbc",
+  "previous_request_id": null,
+  "ref": "release/800-performance-benchmarks",
+  "release": 800,
+  "request_id": "r800-0283ec3642a0",
   "schema": 1,
-  "started_at_utc": "2026-11-27T03:16:27+00:00",
+  "started_at_utc": "2026-11-27T03:37:52+00:00",
   "status": "passed",
-  "target": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
-  "test_counts": []
+  "target": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb",
+  "test_counts": [
+    "1 passed"
+  ]
 }
