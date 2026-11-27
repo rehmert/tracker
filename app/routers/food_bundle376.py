@@ -93,7 +93,7 @@ def search_products(query, db_engine=None):
     return [dict(item) for item in rows]
 
 
-def weekly_summary(day, db_engine=None):
+def weekly_summary(day, db_engine=None, *, rows=None):
     """Seven days of logged totals, ending on selected day."""
     end = date.fromisoformat(selected_day(day))
     start = end - timedelta(days=6)
@@ -101,17 +101,18 @@ def weekly_summary(day, db_engine=None):
     selected_engine = (
         food.engine if db_engine is None else db_engine
     )
-    with selected_engine.connect() as db:
-        rows = db.execute(text("""
-            SELECT e.eaten_on, e.servings, p.nutrients
-            FROM tracker_food_entries e
-            JOIN tracker_food_products p
-                ON p.id=e.product_id
-            WHERE e.eaten_on BETWEEN :start AND :end
-        """), {
-            "start": start.isoformat(),
-            "end": end.isoformat(),
-        }).all()
+    if rows is None:
+        with selected_engine.connect() as db:
+            rows = db.execute(text("""
+                SELECT e.eaten_on, e.servings, p.nutrients
+                FROM tracker_food_entries e
+                JOIN tracker_food_products p
+                    ON p.id=e.product_id
+                WHERE e.eaten_on BETWEEN :start AND :end
+            """), {
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+            }).all()
 
     keys = ("energy", "proteins", "carbohydrates", "fat")
     days = {}
