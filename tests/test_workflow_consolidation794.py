@@ -127,8 +127,8 @@ def test_794_gym_guard_covers_directory_routine_links_and_native_picker():
         browser=p.chromium.launch(headless=True,executable_path=os.environ.get("TRACKER_TEST_CHROMIUM_PATH") or None)
         try:
             page=browser.new_page()
-            page.route("**/*",lambda route:route.fulfill(status=200,content_type="text/html",body=markup))
-            page.goto("http://tracker.test/workouts/quick?machine=1")
+            page.route("**/*",lambda route:route.abort())
+            page.set_content(markup)
             page.add_script_tag(content=(ROOT/"app/static/js/tracker-gym-handoff766.js").read_text())
             page.evaluate("window.confirmCount=0;window.confirm=()=>{window.confirmCount++;return false}")
             page.locator('input[name="reps"]').fill("9")
