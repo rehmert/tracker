@@ -1,0 +1,18 @@
+{
+  "action": "qualify",
+  "base": "dcb74fffa61ce9f7591841cbdb77f13dc1188e52",
+  "exit_code": 2,
+  "failed_tests": [],
+  "failure_category": "StageCommandError",
+  "finished_at_utc": "2026-11-27T08:19:13+00:00",
+  "markers": [],
+  "previous_request_id": null,
+  "ref": "release/802-comprehensive-performance",
+  "release": 802,
+  "request_id": "r802-197405ee09a4",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T08:19:12+00:00",
+  "status": "failed",
+  "target": "197405ee09a4317bfa5b9bdeb442aee478b6d75d",
+  "test_counts": []
+}
