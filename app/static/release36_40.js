@@ -21,6 +21,7 @@
     if (!body || !head) return;
     const original = Array.from(body.rows);
     if (original.length < 2 || original.some(row => row.querySelector('input[type=checkbox], form'))) return;
+    table.dataset.trackerEnhancedTable = 'yes';
     const toolbar = document.createElement('div');
     toolbar.className = 'ux-table-tools';
     const label = document.createElement('label');
@@ -67,13 +68,17 @@
   // Disable repeat submits on ordinary POST forms, without interfering with HTMX.
   document.querySelectorAll('form[method="post"]:not([hx-post])').forEach(form=>{
     form.addEventListener('submit',event=>{
-      if(event.defaultPrevented)return;
+      // The newer tracked-form lifecycle owns these forms. Keep the legacy
+      // fallback for opt-outs and explicit discard forms only.
+      if(event.defaultPrevented || form.dataset.trackerSubmitManaged==='yes')return;
+      if(form.closest('[hx-get],[hx-post],[hx-put],[hx-patch],[hx-delete],[data-hx-get],[data-hx-post],[data-hx-put],[data-hx-patch],[data-hx-delete]'))return;
       if(!form.checkValidity())return;
       const submitter=event.submitter;
       if(form.dataset.uxSubmitting==='yes'){event.preventDefault();return;}
       form.dataset.uxSubmitting='yes';
       if(submitter){const status=document.createElement('span');status.className='ux-form-status';status.setAttribute('role','status');status.textContent='Saving…';submitter.after(status);}
-      // Browser can restore a page from bfcache after a submission.
+      // Another handler may cancel the submit after this listener runs.
+      setTimeout(()=>{if(event.defaultPrevented){delete form.dataset.uxSubmitting;form.querySelectorAll('.ux-form-status').forEach(node=>node.remove());}},0);
     });
   });
   window.addEventListener('pageshow',()=>{

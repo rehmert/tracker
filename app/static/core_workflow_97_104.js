@@ -35,7 +35,8 @@
       title.insertAdjacentElement('afterend', nav);
     }
     main.querySelectorAll('table').forEach(function (table) {
-      if (table.dataset.coreWorkflowTable) return;
+      // Explicit sortable/filterable tables already have their own controls.
+      if (table.dataset.coreWorkflowTable || table.dataset.trackerEnhancedTable === 'yes') return;
       table.dataset.coreWorkflowTable = '1';
       if (!table.tBodies.length || !table.tBodies[0].rows.length) return;
       var rows = Array.from(table.tBodies[0].rows);

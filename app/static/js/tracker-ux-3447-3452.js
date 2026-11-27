@@ -18,6 +18,7 @@
   const state = {
     dirtyForms: new Set(),
     submittingForms: new WeakSet(),
+    submissionCleanup: new Map(),
     initializedForms: new WeakSet(),
     initializedTables: new WeakSet(),
     initializedMessages: new WeakSet()
@@ -293,6 +294,11 @@
     }
 
     state.initializedForms.add(form);
+    // The legacy guard remains the fallback for deliberate discard forms.
+    // Native tracked POST forms use only this lifecycle.
+    const managesNativePost = form.method === 'post' &&
+      !isHTMXForm(form) && !form.matches('[data-tracker-discard-changes]');
+    if (managesNativePost) form.dataset.trackerSubmitManaged = 'yes';
 
     let baseline = snapshot(form);
 
@@ -388,29 +394,42 @@
         )
       );
 
+      const priorAria = buttons.map(button => button.getAttribute('aria-disabled'));
       buttons.forEach(button => {
         button.dataset.trackerPending = 'true';
-        button.setAttribute(
-          'aria-disabled',
-          'true'
-        );
+        button.setAttribute('aria-disabled', 'true');
       });
+      const status = document.createElement('span');
+      status.className = 'ux-form-status';
+      status.setAttribute('role', 'status');
+      status.textContent = 'Saving…';
+      if (event.submitter && event.submitter.form === form) event.submitter.after(status);
+      else form.append(status);
 
       state.dirtyForms.delete(form);
       form.classList.remove(
         CONFIG.dirtyClass
       );
 
-      setTimeout(() => {
+      function unlock(restoreDirty) {
+        if (state.submissionCleanup.get(form) !== unlock) return;
+        state.submissionCleanup.delete(form);
         state.submittingForms.delete(form);
-
-        buttons.forEach(button => {
+        status.remove();
+        buttons.forEach((button, index) => {
           delete button.dataset.trackerPending;
-          button.removeAttribute(
-            'aria-disabled'
-          );
+          if (priorAria[index] === null) button.removeAttribute('aria-disabled');
+          else button.setAttribute('aria-disabled', priorAria[index]);
         });
-      }, CONFIG.submitUnlockMs);
+        if (restoreDirty && form.isConnected) updateDirty();
+      }
+      state.submissionCleanup.set(form, unlock);
+      // A later confirmation or client handler can cancel a native submit.
+      // Restore the prior dirty state and retry immediately in that case.
+      setTimeout(() => { if (event.defaultPrevented) unlock(true); }, 0);
+      // Retain the older permanent native POST lock until navigation/history
+      // restoration, rather than letting a slow write be submitted again.
+      if (!managesNativePost) setTimeout(() => unlock(false), CONFIG.submitUnlockMs);
     });
 
     /*
@@ -437,6 +456,10 @@
       updateDirty();
     };
   }
+
+  window.addEventListener('pageshow', () => {
+    for (const unlock of state.submissionCleanup.values()) unlock(true);
+  });
 
   /*
    * Stage 34.48: Unsaved changes.

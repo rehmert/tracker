@@ -301,3 +301,35 @@ def test_763_schema_production_review_on_pinned_candidate():
     invalid = subprocess.run(cmd[:5] + [target, "--target", target],
                              capture_output=True, text=True, check=False)
     assert invalid.returncode != 0
+
+
+def test_806_progress_context_and_invalid_edit_rollback(progress_client762):
+    from urllib.parse import urlsplit, parse_qs
+    client, engine, _ = progress_client762
+    today = date.today().isoformat()
+    query = "days=30&markers=1&reps=10"
+    response = client.post("/progress/measure/save?" + query,
+        data={"measured_on":today,"unit":"cm","waist_navel":"100"},
+        follow_redirects=False)
+    location = urlsplit(response.headers["location"])
+    assert response.status_code == 303 and location.fragment == "measure"
+    assert parse_qs(location.query) == {"days":["30"],"markers":["1"],"reps":["10"],
+                                        "msg":["Progress record saved."]}
+    with Session(engine) as db:
+        rid = db.scalar(select(ProgressMeasure762)).id
+    response = client.post("/progress/measure/save?" + query,
+        data={"record_id":rid,"measured_on":today,"unit":"cm","waist_navel":"105","hip":"NaN"},
+        follow_redirects=False)
+    parts = urlsplit(response.headers["location"])
+    args = parse_qs(parts.query)
+    assert parts.fragment == "measure" and args["edit_id"] == [str(rid)]
+    assert args["markers"] == ["1"] and "err" in args
+    with Session(engine) as db:
+        assert db.get(ProgressMeasure762,rid).waist_navel == 100
+    rendered = client.get("/progress?" + query)
+    assert rendered.status_code == 200
+    assert 'action="/progress/measure/save?days=30&amp;markers=1&amp;reps=10"' in rendered.text
+    response = client.post(f"/progress/measure/{rid}/delete?" + query,follow_redirects=False)
+    assert parse_qs(urlsplit(response.headers["location"]).query)["days"] == ["30"]
+    with Session(engine) as db:
+        assert db.get(ProgressMeasure762,rid) is None

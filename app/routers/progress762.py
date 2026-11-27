@@ -69,7 +69,7 @@ def _progress_filters806(values):
 
 def _progress_redirect806(request, section, *, msg="", err="", edit_id=None):
     filters = _progress_filters806(request.query_params)
-    if err and edit_id and section in KINDS762:
+    if err and edit_id and 0 < edit_id <= 2**63 - 1 and section in KINDS762:
         filters.update(edit_kind=section, edit_id=edit_id)
     if err or msg:
         filters["err" if err else "msg"] = err or msg
@@ -371,7 +371,7 @@ def progress762(
         "reps": selected_reps, "analyte": chosen_analyte,
     }))
     edit_model = KINDS762.get(edit_kind)
-    editing = db.get(edit_model, edit_id) if edit_model and edit_id > 0 else None
+    editing = db.get(edit_model, edit_id) if edit_model and 0 < edit_id <= 2**63 - 1 else None
     return render(request, "progress762.html",
         days=days, ranges=RANGES762, markers=bool(markers), now=today, settings=settings,
         progress_query=progress_query,
@@ -446,7 +446,7 @@ async def save_progress762(kind: str, request: Request,
     rid = 0
     try:
         rid = int(form.get("record_id") or 0)
-        if rid < 0:
+        if not 0 <= rid <= 2**63 - 1:
             raise ValueError("Invalid record ID.")
         item = db.get(model, rid) if rid else model()
         if item is None:

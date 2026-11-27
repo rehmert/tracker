@@ -27,7 +27,7 @@ git merge-base --is-ancestor "$BASE" "$TARGET" || fail "Non-descendant target"
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
  case "$path" in
-  app/progress_calc762.py|app/routers/progress762.py|app/templates/progress762.html|docs/release-806-comprehensive-optimization.md|tests/test_progress_optimization806.py|scripts/tracker-benchmark806.py|scripts/tracker-install806.sh|scripts/tracker-qualify806.sh|scripts/tracker-release-scoped806.sh) ;;
+  app/static/release36_40.js|app/static/js/tracker-ux-3447-3452.js|app/static/core_workflow_97_104.js|app/templates/base.html|app/templates/inventory_health.html|tests/test_release762_progress.py|tests/test_shared_optimization806.py|app/progress_calc762.py|app/routers/progress762.py|app/templates/progress762.html|docs/release-806-comprehensive-optimization.md|tests/test_progress_optimization806.py|scripts/tracker-benchmark806.py|scripts/tracker-install806.sh|scripts/tracker-qualify806.sh|scripts/tracker-release-scoped806.sh) ;;
   *) fail "Unreviewed changed path: $path";;
  esac
 done < <(git diff --name-only "$BASE" "$TARGET")
@@ -61,7 +61,7 @@ for file in scripts/tracker-qualify806.sh scripts/tracker-install806.sh scripts/
 "$PY" -B - <<'PYCODE'
 import ast
 from pathlib import Path
-for path in ["app/progress_calc762.py", "app/routers/progress762.py", "tests/test_progress_optimization806.py", "scripts/tracker-benchmark806.py"]:
+for path in ["app/progress_calc762.py", "app/routers/progress762.py", "tests/test_progress_optimization806.py", "tests/test_shared_optimization806.py", "tests/test_release762_progress.py", "scripts/tracker-benchmark806.py"]:
  ast.parse(Path(path).read_text(encoding="utf-8"), filename=path)
 print("RELEASE_806_SYNTAX=PASSED")
 PYCODE

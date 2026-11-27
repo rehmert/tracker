@@ -8,16 +8,16 @@
 <section><h2>Health summary</h2><p><strong>{{ errors }}</strong> errors &nbsp; · &nbsp; <strong>{{ warnings }}</strong> warnings &nbsp; · &nbsp; <strong>{{ total_findings }}</strong> total findings</p><p><a href="/reconciliation">Reconcile supplies</a> · <a href="/data-integrity">Data integrity details</a> · <a href="/inventory-intelligence">Inventory insights</a></p></section>
 <section id="inventory-health-findings616">
 <h2>Findings</h2>
-<form method="get" action="/inventory-health" class="inline" aria-label="Inventory finding filters">
+<form method="get" action="/inventory-health#inventory-health-findings616" class="inline" aria-label="Inventory finding filters">
   <label class="field"><span>Severity</span><select name="severity">
     <option value="all" {% if severity == 'all' %}selected{% endif %}>All findings</option>
     <option value="error" {% if severity == 'error' %}selected{% endif %}>Errors</option>
     <option value="warning" {% if severity == 'warning' %}selected{% endif %}>Warnings</option>
   </select></label>
   <button type="submit">Apply filter</button>
-  <a href="/inventory-health#inventory-health-findings616">Clear filter</a>
+  <a href="/inventory-health#inventory-health-findings616" class="tracker-ui-action">Clear filter</a>
 </form>
 <p class="note">Showing {{ issues|length }} of {{ total_findings }} findings. Severity filtering does not change stock or audit history.</p>
 <p><a href="/audit-history">Review change history</a> · <a href="/inventory-alerts">Inventory alerts</a> · <a href="/vials">Review vials</a> · <a href="/reconciliation">Supply reconciliation</a></p>
-{% if issues %}<div class="scroll" data-enhanced-table><table><thead><tr><th>Severity</th><th>Finding</th><th>Review</th></tr></thead><tbody>{% for level,message,href in issues %}<tr><td><span class="tag">{{ level }}</span></td><td>{{ message }}</td><td><a href="{{ href }}">Review</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="flash ok">{% if total_findings %}No findings match the selected severity.{% else %}No findings from the current checks.{% endif %}</p>{% endif %}</section>
+{% if issues %}<div class="scroll" data-enhanced-table><table><thead><tr><th>Severity</th><th>Finding</th><th>Review</th></tr></thead><tbody>{% for level,message,href in issues %}<tr><td><span class="tag">{{ level }}</span></td><td>{{ message }}</td><td><a href="{{ href }}" class="tracker-ui-action">Review</a></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="flash ok">{% if total_findings %}No findings match the selected severity.{% else %}No findings from the current checks.{% endif %}</p>{% endif %}</section>
 {% endblock %}

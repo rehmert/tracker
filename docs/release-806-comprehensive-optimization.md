@@ -5,3 +5,8 @@
 - Existing workspace-scoped progress data, manual markers, food/workout coverage, Google Tasks, time entry and inventory idempotency unchanged. No migrations, external AI or production deployment.
 - This increment does not exhaust the requested cross-module optimization; no speculative global asset cleanup, clinical autofill or refactoring.
 Acceptance: change Progress filters one at a time, edit/cancel/save/delete a measurement and verify context and flash. Review trend and weekly coverage.
+
+## Shared workflow corrections
+- Keep a single native POST submission lock for tracked forms; legacy fallback remains for explicit opt-outs/discard. Cancelled submit attempts release the lock, restore dirty state and permit retry. History restoration clears pending UI. HTMX retains its own lifecycle.
+- Inventory Health uses only the explicit sortable/filterable table enhancement; redundant generic search is skipped when the first enhancer succeeds. Generic tables retain their existing fallback. Severity filter returns to the findings anchor; Review and Clear use the shared action style.
+- Added offline browser coverage for submission retry, duplicate prevention, HTMX exclusions, and one-filter behavior at the supported viewport widths; added API coverage of progress context and invalid edit rollback.
