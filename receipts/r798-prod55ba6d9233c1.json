@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "5d52af77cdccfdfe02248f59662f1ee37e6227ce",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T03:06:45+00:00",
+  "markers": [
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=55ba6d9233c1864a737095057ecb5afaf091962f",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=55ba6d9233c1864a737095057ecb5afaf091962f",
+    "PROMOTED_COMMIT=55ba6d9233c1864a737095057ecb5afaf091962f",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=55ba6d9233c1864a737095057ecb5afaf091962f",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r798-pre55ba6d9233c1",
+  "ref": "release/798-frontend-performance",
+  "release": 798,
+  "request_id": "r798-prod55ba6d9233c1",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T03:06:12+00:00",
+  "status": "passed",
+  "target": "55ba6d9233c1864a737095057ecb5afaf091962f",
+  "test_counts": []
+}
