@@ -81,24 +81,27 @@ def simulate_fefo(stock, events, today, horizon_days):
     expired = 0.0
     first_shortage = None
 
-    def expire_through(day):
-        nonlocal expired
+    cursor = 0
 
-        for vial in vials:
-            if vial["expiry"] <= day and vial["remaining"] > 0:
+    def expire_through(day):
+        nonlocal expired, cursor
+
+        while cursor < len(vials) and vials[cursor]["expiry"] <= day:
+            vial = vials[cursor]
+            if vial["remaining"] > 0:
                 expired += vial["remaining"]
                 vial["remaining"] = 0.0
+            cursor += 1
 
     for when, amount in scheduled:
         expire_through(when)
 
         needed = amount
 
-        for vial in vials:
-            if needed <= 0:
-                break
-
+        while needed > 0 and cursor < len(vials):
+            vial = vials[cursor]
             if vial["remaining"] <= 0:
+                cursor += 1
                 continue
 
             taken = min(vial["remaining"], needed)
@@ -106,6 +109,8 @@ def simulate_fefo(stock, events, today, horizon_days):
             vial["remaining"] -= taken
             needed -= taken
             consumed += taken
+            if vial["remaining"] <= 0:
+                cursor += 1
 
         if needed > 1e-9:
             shortage += needed
