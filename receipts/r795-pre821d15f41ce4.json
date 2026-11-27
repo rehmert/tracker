@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "fdcdd999891589c3125853c052494330308c8298",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T02:21:03+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r795-dev821d15f41ce4",
+  "ref": "release/795-labs-performance",
+  "release": 795,
+  "request_id": "r795-pre821d15f41ce4",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T02:21:01+00:00",
+  "status": "passed",
+  "target": "821d15f41ce42e3ed6855ad126f991e644e22eec",
+  "test_counts": []
+}
