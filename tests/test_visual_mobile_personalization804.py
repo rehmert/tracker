@@ -101,12 +101,12 @@ def test_804_browser_mobile_and_personalization(width, theme, density):
                 dock_ok = page.locator(".tracker-mobile-dock a, .tracker-mobile-dock button").evaluate_all(
                     "nodes => nodes.every(el => el.getBoundingClientRect().height >= 44)"
                 )
-                print(f"\\nTARGETED_804_W{width}_DOCK={'PASSED' if dock_ok else 'FAILED'}", flush=True)
+                print(f"\nTARGETED_804_W{width}_DOCK={'PASSED' if dock_ok else 'FAILED'}", flush=True)
                 assert dock_ok
                 density_ok = page.locator("#workspace-settings-panel .density-options button").evaluate_all(
                     "nodes => nodes.every(el => el.getBoundingClientRect().height >= 44)"
                 )
-                print(f"\\nTARGETED_804_W{width}_DENSITY={'PASSED' if density_ok else 'FAILED'}", flush=True)
+                print(f"\nTARGETED_804_W{width}_DENSITY={'PASSED' if density_ok else 'FAILED'}", flush=True)
                 assert density_ok
             else:
                 expect(page.locator(".tracker-mobile-dock")).to_be_hidden()
