@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from sqlalchemy import select
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session, selectinload
+from ..protocol_queries import protocol_read_query
 from ..scoped_db390 import get_scoped_db390
 from ..models import Protocol, ProtocolItem, ProjectionExclusion, DoseLog, Vial, Blend, BlendDose, BlendComponent
 from ..blend_administration_view import blend_dose_components
@@ -140,7 +141,7 @@ def _month_events(shown: date, db: Session, *, include_vial_choices=True):
     today = date.today()
     first, end = cal.month_bounds(shown.year, shown.month)
     planned = {}
-    protocols = list(db.scalars(select(Protocol).where(Protocol.is_active.is_(True)).options(selectinload(Protocol.items).selectinload(ProtocolItem.compound))))
+    protocols = list(db.scalars(protocol_read_query(active_only=True)))
     rules = exclusions_for(db, [item.id for protocol in protocols for item in protocol.items])
     missing_start = []
     # One read-only stock snapshot for all projected dates. No vial is
