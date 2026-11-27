@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r796-prodff0ddbaaf332",
-  "action": "prod_deploy",
-  "release": 796,
-  "target": "ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
-  "base": "821d15f41ce42e3ed6855ad126f991e644e22eec",
-  "ref": "release/796-inventory-performance",
-  "previous_request_id": "r796-preff0ddbaaf332"
+  "request_id": "r798-9deb4e98bf47",
+  "action": "qualify",
+  "release": 798,
+  "target": "9deb4e98bf473bf108b905dbc000124033ab7345",
+  "base": "ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
+  "ref": "release/798-daily-calendar-performance",
+  "previous_request_id": null
 }
