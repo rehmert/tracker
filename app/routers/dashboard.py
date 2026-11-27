@@ -4,7 +4,7 @@ from math import isfinite
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import config, metrics, services, charts
 from ..sparklines import sparkline
@@ -12,7 +12,7 @@ from ..daily_workspace790 import summary790
 from ..scoped_db390 import get_scoped_db390
 from ..workout_dashboard661 import workout_dashboard661
 from ..dashboard_forecast752 import build_dashboard_forecasts752
-from ..models import DoseLog, Vial, VitalReading, Protocol
+from ..models import DoseLog, Vial, VitalReading, Protocol, ProtocolItem
 from ..templating import render
 from ..units import to_base, parse_unit, UnitError
 from ..google_protocol_review783 import pending_links783
@@ -23,9 +23,9 @@ router = APIRouter()
 @router.get("/")
 def home(request: Request, workout_page: int | None = Query(default=None, ge=1, le=100000),
          db: Session = Depends(get_scoped_db390)):
-    protocols = list(db.scalars(select(Protocol).order_by(Protocol.name)))
+    protocols = list(db.scalars(select(Protocol).where(Protocol.is_active.is_(True)).options(selectinload(Protocol.items).selectinload(ProtocolItem.compound)).order_by(Protocol.name)))
     inventory_by_compound = defaultdict(float)
-    vials = list(db.scalars(select(Vial).order_by(Vial.id.desc())))
+    vials = list(db.scalars(select(Vial).options(selectinload(Vial.compound), selectinload(Vial.purchase)).order_by(Vial.id.desc())))
     views = services.vial_views(db, vials)
     active = [(v, views[v.id]) for v in vials if v.status in ("sealed", "in_use")]
     low = [(v, d) for v, d in active if v.status == "in_use" and d.pct_remaining < 20]
@@ -162,7 +162,7 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
         DoseLog.kind == 'dose',
         DoseLog.taken_at >= datetime.combine(today_date - timedelta(days=7), datetime.min.time()),
         DoseLog.taken_at < datetime.combine(today_date + timedelta(days=1), datetime.min.time())
-    ).order_by(DoseLog.taken_at.desc())))
+    ).order_by(DoseLog.taken_at.desc()).limit(5)))
     today_summary = summary790(db, today_date)
     # Dashboard only: tomorrow through the following three calendar days.
     # Keep schedule_summary's seven-day projection for mobile and calendar.
