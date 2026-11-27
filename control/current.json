@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r802-prod4c47ff1f9de4",
-  "action": "prod_deploy",
-  "release": 802,
-  "target": "4c47ff1f9de4523659c09d63ebd5de44477982a8",
-  "base": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
-  "ref": "release/802-comprehensive-performance",
-  "previous_request_id": "r802-pre4c47ff1f9de4"
+  "request_id": "r803-3e51216bc720",
+  "action": "qualify",
+  "release": 803,
+  "target": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
+  "base": "4c47ff1f9de4523659c09d63ebd5de44477982a8",
+  "ref": "release/803-workflow-navigation",
+  "previous_request_id": null
 }
