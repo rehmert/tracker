@@ -4,6 +4,7 @@ No clinical diagnosis, synthetic body-fat calculation or unmeasured interpolatio
 Weight averages use one actual reading per calendar date; both window coverage
 and duration are explicit. Strength comparisons require one machine and exact reps.
 """
+from bisect import bisect_left, bisect_right
 from datetime import datetime, date, time, timedelta
 from math import isfinite
 from statistics import mean
@@ -17,11 +18,17 @@ def daily_weights762(rows):
     return sorted(observed.items())
 
 def moving762(observed, days, *, min_samples=1):
+    # Preserve exact statistics.mean and inclusive calendar windows.
+    ordered = sorted(observed, key=lambda row: row[0])
+    dates = [d for d, _ in ordered]
+    values = [v for _, v in ordered]
+    span = timedelta(days=days - 1)
     result = []
     for day, _ in observed:
-        values = [v for d, v in observed if day - timedelta(days=days - 1) <= d <= day]
-        if len(values) >= min_samples:
-            result.append((datetime.combine(day, time(12)), mean(values), len(values)))
+        lo = bisect_left(dates, day - span)
+        hi = bisect_right(dates, day)
+        if hi - lo >= min_samples:
+            result.append((datetime.combine(day, time(12)), mean(values[lo:hi]), hi - lo))
     return result
 
 def interval_average762(observed, end, days, offset=0):
@@ -67,8 +74,8 @@ def weight_report762(observed, today, initial=None, goal=None):
     pct_lost = 100 * lost / first if lost is not None and first > 0 else None
     denominator = first - goal if first is not None and goal is not None else None
     goal_pct = 100 * lost / denominator if denominator is not None and denominator > 0 and lost is not None else None
-    # A plateau requires 4 weeks with adequate weekly coverage AND a minimal
-    # change in the fitted 28-day observations. This is descriptive, not diagnostic.
+    # Require four adequately sampled weeks with minimal variation across
+    # all weekly means, not just matching endpoints. Descriptive only.
     recent = [(d, v) for d, v in observed if today - timedelta(days=27) <= d <= today]
     weeks = [
         [v for d, v in recent if today - timedelta(days=(7*i+6)) <= d <= today-timedelta(days=7*i)]
@@ -76,12 +83,14 @@ def weight_report762(observed, today, initial=None, goal=None):
     ]
     plateau = None
     if latest is not None and all(len(x) >= 3 for x in weeks):
-        plateau = abs(mean(weeks[0])-mean(weeks[3])) < 0.005 * latest
+        weekly_means = [mean(w) for w in weeks]
+        plateau = max(weekly_means) - min(weekly_means) < 0.005 * latest
     return {
         "latest": latest, "first": first, "lost": lost, "remaining": remaining,
         "pct_lost": pct_lost, "goal_pct": goal_pct,
         "avg7": avg7, "avg28": avg28, "n7": n7, "n28": n28,
         "d7": d7, "d28": d28, "plateau": plateau,
+        "plateau_week_counts": tuple(len(w) for w in weeks),
         "latest_date": observed[-1][0] if observed else None,
     }
 

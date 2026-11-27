@@ -8,6 +8,8 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, time, timedelta
 import json
 import math
+from urllib.parse import urlencode
+from starlette.responses import RedirectResponse
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, text
@@ -40,6 +42,40 @@ FUNCTION_FIELDS762 = {
     "sit_to_stand_reps": (0, 1000), "recovery": (1, 5),
 }
 INTEGER_FIELDS762 = {"knee_pain", "shoulder_pain", "sit_to_stand_reps", "recovery"}
+
+
+def _progress_filters806(values):
+    """Allow only recognized display filters, never a return URL."""
+    filters = {}
+    for key, allowed in (("days", RANGES762), ("markers", (0, 1)),
+                         ("reps", range(1, 201))):
+        try:
+            number = int(values.get(key, ""))
+        except (ValueError, TypeError, OverflowError):
+            continue
+        if number in allowed:
+            filters[key] = number
+    try:
+        machine = int(values.get("machine", ""))
+        if 0 < machine <= 2**63 - 1:
+            filters["machine"] = machine
+    except (ValueError, TypeError, OverflowError):
+        pass
+    analyte = values.get("analyte", "")
+    if isinstance(analyte, str) and 0 < len(analyte) <= 256:
+        filters["analyte"] = analyte
+    return filters
+
+
+def _progress_redirect806(request, section, *, msg="", err="", edit_id=None):
+    filters = _progress_filters806(request.query_params)
+    if err and edit_id and section in KINDS762:
+        filters.update(edit_kind=section, edit_id=edit_id)
+    if err or msg:
+        filters["err" if err else "msg"] = err or msg
+    query = urlencode(filters)
+    return RedirectResponse("/progress" + ("?" + query if query else "") + "#" + section,
+                            status_code=303)
 
 
 def _number762(raw, low, high, *, integer=False):
@@ -330,10 +366,15 @@ def progress762(
     checklist = _checklist762(today, frequencies, observed, measure_all,
         comp_all, function_all, marker_all, list(sessions.values()), labs_rows)
     summary = interpret762(weight, waist_delta, strength_status)
+    progress_query = urlencode(_progress_filters806({
+        "days": days, "markers": int(bool(markers)), "machine": selected_machine,
+        "reps": selected_reps, "analyte": chosen_analyte,
+    }))
     edit_model = KINDS762.get(edit_kind)
     editing = db.get(edit_model, edit_id) if edit_model and edit_id > 0 else None
     return render(request, "progress762.html",
         days=days, ranges=RANGES762, markers=bool(markers), now=today, settings=settings,
+        progress_query=progress_query,
         unit=config.WEIGHT_UNIT, tape_unit=tape_unit, display_weight=display_weight,
         weight=weight, weight_chart=weight_chart, waist_chart=waist_chart,
         waist_delta=_display762(waist_delta, tape_unit), waist_details=waist_details,
@@ -381,7 +422,7 @@ async def save_settings762(request: Request, db: Session = Depends(get_scoped_db
             value = _number762(form.get("freq_" + key), 0, 365, integer=True)
             frequencies[key] = 0 if value is None else value
     except ValueError as exc:
-        return services.flash_redirect("/progress#progress-settings", err=str(exc))
+        return _progress_redirect806(request, "progress-settings", err=str(exc))
     setting = _settings762(db)
     if setting is None:
         setting = ProgressSettings762(id=1)
@@ -392,7 +433,7 @@ async def save_settings762(request: Request, db: Session = Depends(get_scoped_db
     setting.measurement_unit = tape_unit
     setting.frequencies_json = json.dumps(frequencies, sort_keys=True)
     db.commit()
-    return services.flash_redirect("/progress#progress-settings", msg="Progress preferences saved.")
+    return _progress_redirect806(request, "progress-settings", msg="Progress preferences saved.")
 
 
 @router.post("/progress/{kind}/save")
@@ -402,6 +443,7 @@ async def save_progress762(kind: str, request: Request,
     if model is None:
         raise HTTPException(404)
     form = await request.form()
+    rid = 0
     try:
         rid = int(form.get("record_id") or 0)
         if rid < 0:
@@ -467,15 +509,16 @@ async def save_progress762(kind: str, request: Request,
             item.label = label
             item.notes = str(form.get("notes", "")).strip()[:2000]
     except (ValueError, OverflowError) as exc:
-        return services.flash_redirect("/progress#" + kind, err=str(exc))
+        db.rollback()
+        return _progress_redirect806(request, kind, err=str(exc), edit_id=rid if rid > 0 else None)
     if not rid:
         db.add(item)
     db.commit()
-    return services.flash_redirect("/progress#" + kind, msg="Progress record saved.")
+    return _progress_redirect806(request, kind, msg="Progress record saved.")
 
 
 @router.post("/progress/{kind}/{rid}/delete")
-async def delete_progress762(kind: str, rid: int,
+async def delete_progress762(kind: str, rid: int, request: Request,
                              db: Session = Depends(get_scoped_db390)):
     model = KINDS762.get(kind)
     if model is None:
@@ -485,4 +528,4 @@ async def delete_progress762(kind: str, rid: int,
         raise HTTPException(404, "Measurement not found.")
     db.delete(item)
     db.commit()
-    return services.flash_redirect("/progress#" + kind, msg="Progress record deleted.")
+    return _progress_redirect806(request, kind, msg="Progress record deleted.")
