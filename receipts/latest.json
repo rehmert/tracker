@@ -1,22 +1,26 @@
 {
   "action": "qualify",
   "base": "5d52af77cdccfdfe02248f59662f1ee37e6227ce",
-  "exit_code": 1,
+  "exit_code": 0,
   "failed_tests": [],
-  "failure_category": "AssetImpactPreflight",
-  "finished_at_utc": "2026-11-27T02:56:11+00:00",
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T02:58:19+00:00",
   "markers": [
-    "RELEASE_604_IMPACT_PREFLIGHT=FAILED",
-    "RELEASE_798_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_798_EXIT_STATUS=1"
+    "RELEASE_798_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_798_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_798_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_798_INSTALLED_DEV=UNMODIFIED"
   ],
   "previous_request_id": null,
   "ref": "release/798-frontend-performance",
   "release": 798,
-  "request_id": "r798-b8baa84f0c70",
+  "request_id": "r798-55ba6d9233c1",
   "schema": 1,
-  "started_at_utc": "2026-11-27T02:56:09+00:00",
-  "status": "failed",
-  "target": "b8baa84f0c70f6d719fdd261dbec2747e751c6f9",
-  "test_counts": []
+  "started_at_utc": "2026-11-27T02:57:52+00:00",
+  "status": "passed",
+  "target": "55ba6d9233c1864a737095057ecb5afaf091962f",
+  "test_counts": [
+    "30 passed, 1 warning"
+  ]
 }
