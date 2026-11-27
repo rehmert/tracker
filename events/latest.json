@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r803-dev3e51216bc720.json",
+  "receipt_path": "receipts/r803-pre3e51216bc720.json",
   "release": 803,
-  "request_id": "r803-dev3e51216bc720",
+  "request_id": "r803-pre3e51216bc720",
   "schema": 1,
   "status": "passed",
   "target": "3e51216bc720d0a87465d072771fefe9b1e15d3a"
