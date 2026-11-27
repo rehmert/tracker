@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r794-devfdcdd9998915",
-  "action": "dev_install",
+  "request_id": "r794-prefdcdd9998915",
+  "action": "prod_preflight",
   "release": 794,
   "target": "fdcdd999891589c3125853c052494330308c8298",
-  "base": "8dafeb3eab7355780719c24c6de3d18d30b2d1bc",
+  "base": "9f79787956726e105d55906483b7e851db5106fa",
   "ref": "release/794-workflow-consolidation",
-  "previous_request_id": "r794-fdcdd9998915"
+  "previous_request_id": "r794-devfdcdd9998915"
 }
