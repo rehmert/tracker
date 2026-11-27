@@ -1,19 +1,27 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "base": "9f79787956726e105d55906483b7e851db5106fa",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T02:04:14+00:00",
+  "finished_at_utc": "2026-11-27T02:05:35+00:00",
   "markers": [
-    "PREFLIGHT=PASSED"
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=fdcdd999891589c3125853c052494330308c8298",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=fdcdd999891589c3125853c052494330308c8298",
+    "PROMOTED_COMMIT=fdcdd999891589c3125853c052494330308c8298",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=fdcdd999891589c3125853c052494330308c8298",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
   ],
-  "previous_request_id": "r794-devfdcdd9998915",
+  "previous_request_id": "r794-prefdcdd9998915",
   "ref": "release/794-workflow-consolidation",
   "release": 794,
-  "request_id": "r794-prefdcdd9998915",
+  "request_id": "r794-deployfdcdd99989",
   "schema": 1,
-  "started_at_utc": "2026-11-27T02:04:12+00:00",
+  "started_at_utc": "2026-11-27T02:05:08+00:00",
   "status": "passed",
   "target": "fdcdd999891589c3125853c052494330308c8298",
   "test_counts": []
