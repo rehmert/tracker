@@ -36,6 +36,7 @@
   let active = null;
   let pending = false;
   let initialHashHandled = false;
+  let refreshPending = false;
 
   function visible(element) {
     if (
@@ -50,8 +51,10 @@
       return false;
     }
 
-    const details = element.closest("details");
-    return !details || details.open;
+    for (let details = element.closest("details"); details; details = details.parentElement?.closest("details")) {
+      if (!details.open && !details.querySelector(":scope > summary")?.contains(element)) return false;
+    }
+    return true;
   }
 
   function collect() {
@@ -286,19 +289,20 @@
     scheduleUpdate();
   });
 
-  document.addEventListener(
-    "htmx:afterSwap",
-    function () {
-      requestAnimationFrame(refresh);
-    }
-  );
+  function scheduleRefresh() {
+    if (refreshPending) return;
+    refreshPending = true;
+    requestAnimationFrame(function () {
+      refreshPending = false;
+      refresh();
+    });
+  }
 
-  document.addEventListener(
-    "htmx:afterSettle",
-    function () {
-      requestAnimationFrame(refresh);
-    }
-  );
+  document.addEventListener("htmx:afterSwap", scheduleRefresh);
+  document.addEventListener("htmx:afterSettle", scheduleRefresh);
+  main.addEventListener("toggle", function (event) {
+    if (event.target.tagName === "DETAILS") scheduleRefresh();
+  }, true);
 
   window.addEventListener(
     "pageshow", refresh

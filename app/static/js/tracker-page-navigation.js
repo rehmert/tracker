@@ -65,8 +65,9 @@
     }
 
     // Exclude headings in closed disclosure panels.
-    const details = element.closest("details");
-    if (details && !details.open) return false;
+    for (let details = element.closest("details"); details; details = details.parentElement?.closest("details")) {
+      if (!details.open && !details.querySelector(":scope > summary")?.contains(element)) return false;
+    }
 
     return true;
   }
@@ -171,7 +172,12 @@
     scheduleRefresh
   );
 
-  window.addEventListener("pageshow", updateTop);
+  // Native disclosures do not emit HTMX events. Keep the existing jump list in sync.
+  main.addEventListener("toggle", function (event) {
+    if (event.target.tagName === "DETAILS") scheduleRefresh();
+  }, true);
+
+  window.addEventListener("pageshow", scheduleRefresh);
 
   refresh();
   updateTop();
