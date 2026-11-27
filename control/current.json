@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r799-98509bce1bbc",
-  "action": "qualify",
+  "request_id": "r799-dev98509bce1bbc",
+  "action": "dev_install",
   "release": 799,
   "target": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
   "base": "55ba6d9233c1864a737095057ecb5afaf091962f",
   "ref": "release/799-code-consolidation",
-  "previous_request_id": null
+  "previous_request_id": "r799-98509bce1bbc"
 }
