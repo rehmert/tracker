@@ -45,6 +45,18 @@ def _groups(db: Session, cutoff: date | None = None) -> dict[str, list[tuple[Lab
     return groups
 
 
+def _analyte_items(db: Session, key: str):
+    # Match distinct stored spellings with the existing Python normalization,
+    # including Unicode whitespace and aliases. Only hydrate matching results.
+    names = [name for (name,) in db.execute(select(LabResult.analyte).distinct())
+             if labs.analyte_key(name) == key]
+    if not names:
+        return []
+    query = (select(LabResult, LabReport)
+             .join(LabReport, LabResult.report_id == LabReport.id)
+             .where(LabResult.analyte.in_(names)))
+    return db.execute(query).all()
+
 def _points(items) -> list[labs.Point]:
     return [labs.Point(rep.drawn_on, res.value, res.unit, res.ref_low, res.ref_high)
             for res, rep in items]
@@ -392,7 +404,7 @@ async def create_report(request: Request, drawn_on: str = Form(""), lab_name: st
 @router.get("/labs/analyte")
 def analyte_page(request: Request, name: str, days: int = 3650, events: int = 1,
                  db: Session = Depends(get_scoped_db390)):
-    items = _groups(db).get(labs.analyte_key(name))
+    items = _analyte_items(db, labs.analyte_key(name))
     if not items:
         raise HTTPException(404, "No results for that analyte")
     days = days if days in RANGES else 3650
@@ -771,7 +783,7 @@ def analyte_history500(items):
 def analyte_trend(analyte_key: str, request: Request, db: Session = Depends(get_scoped_db390)):
     from urllib.parse import unquote
     key = unquote(analyte_key)
-    items = _groups(db).get(key)
+    items = _analyte_items(db, key)
     if not items:
         raise HTTPException(404, "Analyte not found")
     latest, _ = max(items, key=lambda item: (item[1].drawn_on, item[0].id))
@@ -803,7 +815,7 @@ def export_analyte_history500(
     """Export recorded data and unit-safe comparisons without writes."""
     from urllib.parse import unquote
 
-    items = _groups(db).get(unquote(analyte_key))
+    items = _analyte_items(db, unquote(analyte_key))
     if not items:
         raise HTTPException(404, "Analyte not found")
     rows, unit = analyte_history500(items)
