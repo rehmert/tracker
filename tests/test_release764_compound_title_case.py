@@ -176,7 +176,7 @@ def test_764_assets_and_opt_outs_are_preserved():
     base = (ROOT / "app/templates/base.html").read_text()
     js = JS_PATH.read_text()
     assert base.count("tracker-page-title-case.js") == 1
-    assert "tracker-page-title-case.js?v=764" in base
+    assert "tracker-page-title-case.js?v=798" in base
     assert 'isCompoundTitle(element.textContent || "")' in js
     assert 'document.title && !isCompoundTitle(document.title)' in js
     assert "htmx:afterSwap" in js
