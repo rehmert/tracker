@@ -84,6 +84,21 @@
   #workspace-settings-panel .tracker-preference-details804 .nav-sort-controls select {flex:1 1 9rem}
   #workspace-settings-panel .tracker-preference-details804 .nav-sort-controls button {flex:0 1 auto}
 }
+/* At 320px, keep the three density choices readable rather than allowing
+   the legacy nowrap/flex sizing to produce undersized hit areas. */
+@media (max-width:359px) {
+  #main-content #workspace-settings-panel :is(.density-options,.theme-options) > button {
+    box-sizing:border-box;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:48px;
+    padding:.5rem .15rem;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    line-height:1.25;
+  }
+}
 @media (prefers-reduced-motion:reduce) {
   #workspace-settings-panel .tracker-preference-details804 > summary::after {transition:none}
 }
