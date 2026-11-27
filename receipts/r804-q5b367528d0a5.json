@@ -1,0 +1,33 @@
+{
+  "action": "qualify",
+  "base": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_visual_mobile_personalization804.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-27T16:20:19+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_804_IMPACT_PREFLIGHT=PASSED",
+    "TARGETED_804_PANEL_VISIBLE=PASSED",
+    "TARGETED_804_SUMMARY=PASSED",
+    "TARGETED_804_ADVANCED_OPEN=PASSED",
+    "TARGETED_804_FOCUS_CHANGE=PASSED",
+    "TARGETED_804_PANEL_GEOMETRY=PASSED",
+    "TARGETED_804_RENDERED_COMPLETE=PASSED",
+    "RELEASE_804_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_804_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/804-visual-mobile-personalization",
+  "release": 804,
+  "request_id": "r804-q5b367528d0a5",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T16:19:42+00:00",
+  "status": "failed",
+  "target": "5b367528d0a5a3ece073f72c6bbe0418aace5f1d",
+  "test_counts": [
+    "20 passed, 1 warning"
+  ]
+}
