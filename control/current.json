@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r797-prod5d52af77cdcc",
-  "action": "prod_deploy",
-  "release": 797,
-  "target": "5d52af77cdccfdfe02248f59662f1ee37e6227ce",
-  "base": "ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
-  "ref": "release/797-daily-calendar-performance",
-  "previous_request_id": "r797-pre5d52af77cdcc"
+  "request_id": "r798-b8baa84f0c70",
+  "action": "qualify",
+  "release": 798,
+  "target": "b8baa84f0c70f6d719fdd261dbec2747e751c6f9",
+  "base": "5d52af77cdccfdfe02248f59662f1ee37e6227ce",
+  "ref": "release/798-frontend-performance",
+  "previous_request_id": null
 }
