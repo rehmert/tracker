@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r803-pre3e51216bc720",
-  "action": "prod_preflight",
+  "request_id": "r803-prod3e51216bc720",
+  "action": "prod_deploy",
   "release": 803,
   "target": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
   "base": "4c47ff1f9de4523659c09d63ebd5de44477982a8",
   "ref": "release/803-workflow-navigation",
-  "previous_request_id": "r803-dev3e51216bc720"
+  "previous_request_id": "r803-pre3e51216bc720"
 }
