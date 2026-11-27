@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r805-prod8f12563f1584",
-  "action": "prod_deploy",
-  "release": 805,
-  "target": "8f12563f1584f1812abe907d2b6f530e63674df8",
-  "base": "a0eefe4e7bbe2dad72c6c62677741333f1801faa",
-  "ref": "release/805-section-navigation-reliability",
-  "previous_request_id": "r805-pre8f12563f1584"
+  "request_id": "r806-qbb9c58549bd4",
+  "action": "qualify",
+  "release": 806,
+  "target": "bb9c58549bd4b67dcf44fc685fb81c7e87749a23",
+  "base": "8f12563f1584f1812abe907d2b6f530e63674df8",
+  "ref": "release/806-comprehensive-optimization",
+  "previous_request_id": null
 }
