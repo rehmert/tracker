@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T03:49:25+00:00",
+  "markers": [
+    "RELEASE_801_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_801_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_801_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_801_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/801-benchmark-compatibility",
+  "release": 801,
+  "request_id": "r801-dcb74fffa61c",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T03:49:22+00:00",
+  "status": "passed",
+  "target": "dcb74fffa61ce9f7591841cbdb77f13dc1188e52",
+  "test_counts": [
+    "2 passed, 1 warning"
+  ]
+}

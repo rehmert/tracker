@@ -1,24 +1,26 @@
 {
-  "action": "dev_install",
-  "base": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
+  "action": "qualify",
+  "base": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T03:40:07+00:00",
+  "finished_at_utc": "2026-11-27T03:49:25+00:00",
   "markers": [
-    "RELEASE_800_DEV_INSTALL=SUCCESS",
+    "RELEASE_801_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_801_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "RELEASE_801_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_801_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r800-0283ec3642a0",
-  "ref": "release/800-performance-benchmarks",
-  "release": 800,
-  "request_id": "r800-dev0283ec3642a0",
+  "previous_request_id": null,
+  "ref": "release/801-benchmark-compatibility",
+  "release": 801,
+  "request_id": "r801-dcb74fffa61c",
   "schema": 1,
-  "started_at_utc": "2026-11-27T03:39:41+00:00",
+  "started_at_utc": "2026-11-27T03:49:22+00:00",
   "status": "passed",
-  "target": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb",
+  "target": "dcb74fffa61ce9f7591841cbdb77f13dc1188e52",
   "test_counts": [
-    "1 passed"
+    "2 passed, 1 warning"
   ]
 }
