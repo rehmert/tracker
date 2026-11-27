@@ -132,14 +132,22 @@ def test_794_gym_guard_covers_directory_routine_links_and_native_picker():
             page.add_script_tag(content=(ROOT/"app/static/js/tracker-gym-handoff766.js").read_text())
             page.evaluate("window.confirmCount=0;window.confirm=()=>{window.confirmCount++;return false}")
             page.locator('input[name="reps"]').fill("9")
+            # Count each action atomically in the browser, independent of
+            # fixture setup or Playwright focus/input events.
             for ident in ("next","directory","routine"):
-                assert page.locator("#"+ident).evaluate("el => !el.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}))")
-            assert page.evaluate("window.confirmCount") == 3
+                assert page.locator("#"+ident).evaluate("""el => {
+                    const before = window.confirmCount;
+                    const canceled = !el.dispatchEvent(new MouseEvent('click',{
+                        bubbles:true,cancelable:true,button:0
+                    }));
+                    return canceled && window.confirmCount === before + 1;
+                }"""), ident
+            page.evaluate("window.confirmCount=0")
             assert page.locator("form.workout659-machine-picker").evaluate("""form=>{
                 form.querySelector('select').value='2';
                 return !form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
             }""")
             assert page.locator('select[name="machine"]').input_value() == "1"
-            assert page.evaluate("window.confirmCount") == 4
+            assert page.evaluate("window.confirmCount") == 1
         finally:
             browser.close()
