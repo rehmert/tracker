@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T17:17:43+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r804-deva0eefe4e7bbe",
+  "ref": "release/804-visual-mobile-personalization",
+  "release": 804,
+  "request_id": "r804-prea0eefe4e7bbe",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T17:17:41+00:00",
+  "status": "passed",
+  "target": "a0eefe4e7bbe2dad72c6c62677741333f1801faa",
+  "test_counts": []
+}
