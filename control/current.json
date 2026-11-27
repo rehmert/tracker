@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r799-prod98509bce1bbc",
-  "action": "prod_deploy",
-  "release": 799,
-  "target": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
-  "base": "55ba6d9233c1864a737095057ecb5afaf091962f",
-  "ref": "release/799-code-consolidation",
-  "previous_request_id": "r799-pre98509bce1bbc"
+  "request_id": "r800-0283ec3642a0",
+  "action": "qualify",
+  "release": 800,
+  "target": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb",
+  "base": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
+  "ref": "release/800-performance-benchmarks",
+  "previous_request_id": null
 }
