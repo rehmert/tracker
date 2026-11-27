@@ -1,10 +1,10 @@
 {
-  "action": "prod_preflight",
+  "action": "prod_deploy",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r795-pre821d15f41ce4.json",
+  "receipt_path": "receipts/r795-prod821d15f41ce4.json",
   "release": 795,
-  "request_id": "r795-pre821d15f41ce4",
+  "request_id": "r795-prod821d15f41ce4",
   "schema": 1,
   "status": "passed",
   "target": "821d15f41ce42e3ed6855ad126f991e644e22eec"
