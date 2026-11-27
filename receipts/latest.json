@@ -1,28 +1,30 @@
 {
-  "action": "prod_deploy",
-  "base": "4c47ff1f9de4523659c09d63ebd5de44477982a8",
-  "exit_code": 0,
-  "failed_tests": [],
-  "failure_category": null,
-  "finished_at_utc": "2026-11-27T15:45:22+00:00",
-  "markers": [
-    "DEV_CONTROLLED_RELEASE=SUCCESS",
-    "PROD_INSTALLED_COMMIT=3e51216bc720d0a87465d072771fefe9b1e15d3a",
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=3e51216bc720d0a87465d072771fefe9b1e15d3a",
-    "PROMOTED_COMMIT=3e51216bc720d0a87465d072771fefe9b1e15d3a",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=3e51216bc720d0a87465d072771fefe9b1e15d3a",
-    "REMOTE_DEPLOY_EXIT_STATUS=0"
+  "action": "qualify",
+  "base": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
+  "exit_code": 1,
+  "failed_tests": [
+    "tests/test_visual_mobile_personalization804.py",
+    "tests/test_visual_mobile_personalization804.py",
+    "tests/test_visual_mobile_personalization804.py",
+    "tests/test_visual_mobile_personalization804.py"
   ],
-  "previous_request_id": "r803-pre3e51216bc720",
-  "ref": "release/803-workflow-navigation",
-  "release": 803,
-  "request_id": "r803-prod3e51216bc720",
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-27T16:17:58+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_804_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_804_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_804_EXIT_STATUS=1"
+  ],
+  "previous_request_id": null,
+  "ref": "release/804-visual-mobile-personalization",
+  "release": 804,
+  "request_id": "r804-q72caf3d434a9",
   "schema": 1,
-  "started_at_utc": "2026-11-27T15:44:52+00:00",
-  "status": "passed",
-  "target": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
-  "test_counts": []
+  "started_at_utc": "2026-11-27T16:15:21+00:00",
+  "status": "failed",
+  "target": "72caf3d434a9491ceeb695dd39e3c7562091d36d",
+  "test_counts": [
+    "17 passed, 1 warning"
+  ]
 }
