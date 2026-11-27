@@ -26,7 +26,7 @@ def home(request: Request, workout_page: int | None = Query(default=None, ge=1, 
          db: Session = Depends(get_scoped_db390)):
     protocols = list(db.scalars(protocol_read_query(active_only=True).order_by(Protocol.name)))
     inventory_by_compound = defaultdict(float)
-    vials = list(db.scalars(select(Vial).options(selectinload(Vial.compound), selectinload(Vial.purchase)).order_by(Vial.id.desc())))
+    vials = list(db.scalars(select(Vial).options(selectinload(Vial.compound), selectinload(Vial.purchase), selectinload(Vial.coa), selectinload(Vial.linked_coas)).order_by(Vial.id.desc())))
     views = services.vial_views(db, vials)
     active = [(v, views[v.id]) for v in vials if v.status in ("sealed", "in_use")]
     low = [(v, d) for v, d in active if v.status == "in_use" and d.pct_remaining < 20]
