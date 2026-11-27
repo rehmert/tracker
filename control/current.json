@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r804-proda0eefe4e7bbe",
-  "action": "prod_deploy",
-  "release": 804,
-  "target": "a0eefe4e7bbe2dad72c6c62677741333f1801faa",
-  "base": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
-  "ref": "release/804-visual-mobile-personalization",
-  "previous_request_id": "r804-prea0eefe4e7bbe"
+  "request_id": "r805-q8f12563f1584",
+  "action": "qualify",
+  "release": 805,
+  "target": "8f12563f1584f1812abe907d2b6f530e63674df8",
+  "base": "a0eefe4e7bbe2dad72c6c62677741333f1801faa",
+  "ref": "release/805-section-navigation-reliability",
+  "previous_request_id": null
 }
