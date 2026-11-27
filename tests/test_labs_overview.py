@@ -701,3 +701,48 @@ def test_527_recent_values_are_available_before_graph_expansion():
     )
     assert "Release 527: reclaim unused desktop space" in css
     assert ':root:not([data-density="compact"])' in css
+
+
+def test_795_report_counts_without_lazy_result_queries(lab_overview_client):
+    from sqlalchemy import event
+    client, engine = lab_overview_client
+    with Session(engine) as db:
+        for i in range(12):
+            report = LabReport(drawn_on=date.today(), lab_name=f"Synthetic {i}")
+            report.results = [LabResult(analyte="TSH", value=1, unit="mIU/L")]
+            db.add(report)
+        db.add(LabReport(drawn_on=date.today(), lab_name="Empty"))
+        db.commit()
+    statements = []
+    def capture(conn, cursor, statement, parameters, context, executemany):
+        statements.append(statement.lower())
+    event.listen(engine, "before_cursor_execute", capture)
+    try:
+        response = client.get("/labs?days=30")
+    finally:
+        event.remove(engine, "before_cursor_execute", capture)
+    assert response.status_code == 200
+    assert response.text.count('data-lab-report-results="1"') == 12
+    assert response.text.count('data-lab-report-results="0"') == 1
+    result_queries = [s for s in statements if "from lab_results" in s]
+    assert len(result_queries) == 1
+
+
+def test_795_analyte_lookup_preserves_aliases_and_limits_hydration(lab_overview_client):
+    from app.routers.labs import _analyte_items, _groups
+    _, engine = lab_overview_client
+    with Session(engine) as db:
+        report = LabReport(drawn_on=date.today(), lab_name="Synthetic")
+        report.results = [LabResult(analyte=name, value=1, unit="ng/dL")
+                          for name in (" Testosterone ", "TOTAL\tTESTOSTERONE",
+                                       "testosterone, total", "TSH", "Ferritin")]
+        db.add(report)
+        db.commit()
+    with Session(engine) as db:
+        expected = {r.id for r, _ in _groups(db)["testosterone"]}
+    with Session(engine) as db:
+        actual = _analyte_items(db, "testosterone")
+        assert {r.id for r, _ in actual} == expected
+        assert len(actual) == 3
+        assert sum(isinstance(obj, LabResult) for obj in db.identity_map.values()) == 3
+        assert _analyte_items(db, "missing") == []
