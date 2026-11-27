@@ -130,6 +130,12 @@ def totals_for(day, db_engine=None):
            JOIN tracker_food_products p ON p.id=e.product_id WHERE e.eaten_on=:day"""), {"day":day}).all()
     return {k: round(sum(to_float(json.loads(n).get(k))*s for n,s in records),2) for k in NUTRIENTS}
 
+def summarize_food_rows802(rows):
+    totals = {key: round(sum(to_float(row["parsed_nutrients"].get(key))*row["servings"] for row in rows), 2) for key in NUTRIENTS}
+    coverage = {key: sum(row["parsed_nutrients"].get(key) is not None for row in rows) for key in NUTRIENTS}
+    return totals, coverage, len(rows)
+
+
 @router.get("/food")
 def food_page(
     request: Request,
@@ -152,11 +158,10 @@ def food_page(
             ON p.id=e.product_id WHERE e.eaten_on=:d ORDER BY e.id DESC"""),{"d":day}).mappings().all()
         targets = dict(db.execute(text("SELECT nutrient,value FROM tracker_food_targets")).all())
     rows = [dict(r) for r in records]
-    total = totals_for(day, db_engine=db_engine)
+    for row in rows:
+        row['parsed_nutrients'] = json.loads(row['nutrients'])
+    total, coverage, food_count = summarize_food_rows802(rows)
     water = water_report(day, db_engine)
-    coverage, food_count = nutrient_coverage(
-        day, db_engine=db_engine
-    )
     from .food_quick375 import saved_foods
     favorites, recent = saved_foods(
         db_engine=db_engine
@@ -176,8 +181,6 @@ def food_page(
     meals = meal_summary(day, db_engine=db_engine)
     from .food_week379 import week_details
     nutrient_week = week_details(day, db_engine=db_engine)
-    for row in rows:
-        row["parsed_nutrients"] = json.loads(row["nutrients"])
 
     from .food_preview384 import attach_previews
     attach_previews(rows)
