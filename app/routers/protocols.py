@@ -6,7 +6,7 @@ from html import escape
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from .. import calc, services, units as U
 from ..scoped_db390 import get_scoped_db390
@@ -156,7 +156,7 @@ def _horizon(text: str) -> float:
 def protocols_page(request: Request, db: Session = Depends(get_scoped_db390)):
     refs = services.compound_refs(db)
     protocols = list(db.scalars(
-        select(Protocol).order_by(Protocol.updated_at.desc())
+        select(Protocol).options(selectinload(Protocol.items).selectinload(ProtocolItem.compound)).order_by(Protocol.updated_at.desc())
     ))
     # One read for all hidden-projection rules, not one query per protocol.
     item_ids = [
