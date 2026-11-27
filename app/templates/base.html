@@ -146,7 +146,7 @@
     <a class="brand" href="/">Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</a>
 
     <div class="nav-scroll">
-      <ul class="nav-links nav-pinned"><li data-nav-key="/"><a href="/" title="Overview" {% if path == '/' %}aria-current="page"{% endif %}><span class="nav-dot"></span><span class="nav-text">Dashboard</span></a></li></ul>
+      <ul class="nav-links nav-pinned"><li data-nav-key="/mobile"><a href="/mobile" title="Today" {% if path == '/mobile' %}aria-current="page"{% endif %}><span class="nav-dot" aria-hidden="true"></span><span class="nav-text">Today</span></a></li><li data-nav-key="/"><a href="/" title="Overview" {% if path == '/' %}aria-current="page"{% endif %}><span class="nav-dot"></span><span class="nav-text">Dashboard</span></a></li></ul>
       <div id="nav-favorites" class="nav-favorites" hidden><div class="nav-section-title">★ Favorites</div><ul class="nav-links" id="nav-favorite-links"></ul></div>
       {% set current_nav = tracker_current_navigation(path) %}
 
@@ -165,7 +165,7 @@
     </div>
   </nav>
   <main id="main-content" tabindex="-1">
-    <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</span><a href="/" aria-label="Overview">Overview</a></div>
+    <div class="mobile-topbar"><button type="button" id="sidebar-open" aria-label="Open navigation" aria-expanded="false" aria-controls="app-sidebar">☰</button><span>Tracker{% if instance %}<span class="tracker-instance tracker-instance--{{ instance|lower }}" aria-label="{{ 'Development' if instance == 'DEV' else 'Production' }} instance">{{ instance }}</span>{% endif %}</span><a href="/" aria-label="Dashboard">Dashboard</a></div>
     <nav class="tracker-mobile-dock" aria-label="Mobile quick navigation">
       <a href="/mobile" {% if path.startswith('/mobile') %}aria-current="page"{% endif %}>
         <span class="tracker-mobile-dock-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10h-6v-7H9v7H3z"/></svg></span><span>Today</span>
@@ -195,8 +195,8 @@
       </form>
       {% endif %}
       <div class="ux-add-menu"><a href="/quick-entry" id="ux-add-toggle" class="tracker-ui-action" data-quick790-open="all" aria-controls="tracker-mobile-quick528" aria-expanded="false">+ Log</a></div>
-      <button type="button" class="workspace-search" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search Tracker (Ctrl+K)">⌕ <span>Search Tracker</span> <kbd>Ctrl K</kbd></button>
-      <div class="workspace-nav-find" id="page-finder-container"><div class="nav-find"><input id="nav-filter" type="search" placeholder="Find a page…" aria-label="Filter navigation links"><div id="page-finder-results" class="page-finder-results" role="listbox" aria-label="Matching pages" hidden></div></div></div>
+      <button type="button" class="workspace-search" id="command-open" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" title="Search Tracker (Ctrl+K)">⌕ <span>Search Records</span> <kbd>Ctrl K</kbd></button>
+      <div class="workspace-nav-find" id="page-finder-container"><div class="nav-find"><input id="nav-filter" type="search" placeholder="Go to page…" aria-label="Filter navigation links"><div id="page-finder-results" class="page-finder-results" role="listbox" aria-label="Matching pages" hidden></div></div></div>
       <details class="workspace-recent" id="tracker-recent-pages" hidden>
         <summary>Recent Pages</summary>
         <div class="workspace-recent-panel">
@@ -259,7 +259,7 @@
     {% if path in ("/","/mobile") %}
     <nav class="tracker-ui-actions tracker-home-views794" aria-label="Home workspace">
       <a class="tracker-ui-action{% if path == '/mobile' %} tracker-ui-action--primary{% endif %}" href="/mobile"{% if path == '/mobile' %} aria-current="page"{% endif %}>Today</a>
-      <a class="tracker-ui-action{% if path == '/' %} tracker-ui-action--primary{% endif %}" href="/"{% if path == '/' %} aria-current="page"{% endif %}>Overview</a>
+      <a class="tracker-ui-action{% if path == '/' %} tracker-ui-action--primary{% endif %}" href="/"{% if path == '/' %} aria-current="page"{% endif %}>Dashboard</a>
     </nav>
     {% endif %}
     {% block content %}{% endblock %}
