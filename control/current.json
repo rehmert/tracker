@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r804-qa0eefe4e7bbe",
-  "action": "qualify",
+  "request_id": "r804-deva0eefe4e7bbe",
+  "action": "dev_install",
   "release": 804,
   "target": "a0eefe4e7bbe2dad72c6c62677741333f1801faa",
   "base": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
   "ref": "release/804-visual-mobile-personalization",
-  "previous_request_id": null
+  "previous_request_id": "r804-qa0eefe4e7bbe"
 }
