@@ -18,7 +18,7 @@ def test_680_link_order_and_existing_js_preserved():
     assert base.index("tracker-ui-foundation679.css?v=743") < base.index(
         "tracker-explanation-touch680.css?v=680"
     )
-    assert "tracker-section-explanations598.js?v=598" in base
+    assert "tracker-section-explanations598.js?v=798" in base
     assert "tracker-explanation598-toggle:not([hidden])" in css
     assert css.count("{") == css.count("}")
     Environment().parse(base)
