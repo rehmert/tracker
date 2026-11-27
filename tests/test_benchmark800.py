@@ -12,3 +12,14 @@ def test_statistics():
     assert result["p95_ms"]==100
     assert result["median_queries"]==4
     assert result["median_sql_ms"]==.2
+
+
+def test_installed_testclient_auth_contract():
+    from fastapi import FastAPI, Request
+    from fastapi.testclient import TestClient
+    app = FastAPI()
+    @app.get("/")
+    def endpoint(request: Request):
+        return {"auth": request.headers.get("authorization")}
+    with TestClient(app, follow_redirects=False) as client:
+        assert client.get("/", auth=("benchmark","synthetic-only")).json()["auth"].startswith("Basic ")
