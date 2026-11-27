@@ -175,12 +175,14 @@ def food_page(
         search_products(query, db_engine=db_engine)
         if query else []
     )
-    week = weekly_summary(day, db_engine=db_engine)
+    with db_engine.connect() as db:
+        week_rows = db.execute(text('SELECT e.eaten_on, e.servings, p.nutrients FROM tracker_food_entries e JOIN tracker_food_products p ON p.id=e.product_id WHERE e.eaten_on BETWEEN :start AND :end'), {'start': (chosen-timedelta(days=6)).isoformat(), 'end': day}).all()
+    week = weekly_summary(day, db_engine=db_engine, rows=week_rows)
     templates = meal_templates(db_engine=db_engine)
     from .food_review378 import meal_summary
-    meals = meal_summary(day, db_engine=db_engine)
+    meals = meal_summary(day, db_engine=db_engine, rows=[(row['meal'], row['servings'], row['nutrients']) for row in rows])
     from .food_week379 import week_details
-    nutrient_week = week_details(day, db_engine=db_engine)
+    nutrient_week = week_details(day, db_engine=db_engine, entries=week_rows, targets=targets)
 
     from .food_preview384 import attach_previews
     attach_previews(rows)
