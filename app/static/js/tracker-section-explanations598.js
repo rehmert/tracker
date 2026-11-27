@@ -44,13 +44,13 @@
     }
 
     function update() {
-      for (const entry of entries) {
-        if (entry.expanded || !entry.paragraph.getClientRects().length) continue;
-        // Measure before showing the control so the control itself cannot
-        // make a genuinely single-line explanation look multi-line.
-        entry.toggle.hidden = true;
-        entry.toggle.hidden = entry.content.scrollHeight <= entry.content.clientHeight + 1;
-      }
+      // Separate layout reads from writes: avoid forcing a layout per paragraph.
+      const visible = entries.filter(entry =>
+        !entry.expanded && entry.paragraph.getClientRects().length);
+      for (const entry of visible) entry.toggle.hidden = true;
+      const fits = visible.map(entry =>
+        entry.content.scrollHeight <= entry.content.clientHeight + 1);
+      visible.forEach((entry, index) => { entry.toggle.hidden = fits[index]; });
     }
 
     requestAnimationFrame(update);
