@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r795-dev821d15f41ce4",
-  "action": "dev_install",
+  "request_id": "r795-pre821d15f41ce4",
+  "action": "prod_preflight",
   "release": 795,
   "target": "821d15f41ce42e3ed6855ad126f991e644e22eec",
   "base": "fdcdd999891589c3125853c052494330308c8298",
   "ref": "release/795-labs-performance",
-  "previous_request_id": "r795-821d15f41ce4"
+  "previous_request_id": "r795-dev821d15f41ce4"
 }
