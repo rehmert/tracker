@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "fdcdd999891589c3125853c052494330308c8298",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T02:15:59+00:00",
+  "finished_at_utc": "2026-11-27T02:17:37+00:00",
   "markers": [
-    "RELEASE_795_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_795_EXIT_STATUS=0",
+    "RELEASE_795_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_795_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_795_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r795-821d15f41ce4",
   "ref": "release/795-labs-performance",
   "release": 795,
-  "request_id": "r795-821d15f41ce4",
+  "request_id": "r795-dev821d15f41ce4",
   "schema": 1,
-  "started_at_utc": "2026-11-27T02:15:42+00:00",
+  "started_at_utc": "2026-11-27T02:16:52+00:00",
   "status": "passed",
   "target": "821d15f41ce42e3ed6855ad126f991e644e22eec",
   "test_counts": [
