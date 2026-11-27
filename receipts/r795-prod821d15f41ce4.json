@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "fdcdd999891589c3125853c052494330308c8298",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T02:23:23+00:00",
+  "markers": [
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=821d15f41ce42e3ed6855ad126f991e644e22eec",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=821d15f41ce42e3ed6855ad126f991e644e22eec",
+    "PROMOTED_COMMIT=821d15f41ce42e3ed6855ad126f991e644e22eec",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=821d15f41ce42e3ed6855ad126f991e644e22eec",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r795-pre821d15f41ce4",
+  "ref": "release/795-labs-performance",
+  "release": 795,
+  "request_id": "r795-prod821d15f41ce4",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T02:22:49+00:00",
+  "status": "passed",
+  "target": "821d15f41ce42e3ed6855ad126f991e644e22eec",
+  "test_counts": []
+}
