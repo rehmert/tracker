@@ -1,15 +1,13 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "a0eefe4e7bbe2dad72c6c62677741333f1801faa",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T17:32:49+00:00",
+  "finished_at_utc": "2026-11-27T17:35:18+00:00",
   "markers": [
-    "RELEASE_805_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_805_EXIT_STATUS=0",
+    "RELEASE_805_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_805_IMPACT_PREFLIGHT=PASSED",
     "TARGETED_804_W320_BROWSER_READY=PASSED",
     "TARGETED_804_W320_PANEL_VISIBLE=PASSED",
     "TARGETED_804_W320_SUMMARY=PASSED",
@@ -44,14 +42,14 @@
     "TARGETED_804_W1024_FOCUS_CHANGE=PASSED",
     "TARGETED_804_W1024_PANEL_GEOMETRY=PASSED",
     "TARGETED_804_W1024_RENDERED_COMPLETE=PASSED",
-    "RELEASE_805_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r805-q8f12563f1584",
   "ref": "release/805-section-navigation-reliability",
   "release": 805,
-  "request_id": "r805-q8f12563f1584",
+  "request_id": "r805-dev8f12563f1584",
   "schema": 1,
-  "started_at_utc": "2026-11-27T17:32:32+00:00",
+  "started_at_utc": "2026-11-27T17:34:32+00:00",
   "status": "passed",
   "target": "8f12563f1584f1812abe907d2b6f530e63674df8",
   "test_counts": [
