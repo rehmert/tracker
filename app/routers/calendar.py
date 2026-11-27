@@ -2,6 +2,7 @@
 Calendar projections never write dose logs or change inventory. Reconciliation is a same-day,
 same-compound association; it does not claim clinical equivalence of amounts.
 """
+from collections import defaultdict, deque
 from datetime import date, datetime, timedelta, timezone
 import csv
 from io import StringIO
@@ -53,9 +54,12 @@ def reconcile(planned, actual, today):
         events = []
         recordings = list(actual.get(day, []))
         used = set()
+        available = defaultdict(deque)
+        for idx, recording in enumerate(recordings):
+            available[recording['compound_id']].append(idx)
         for p in planned.get(day, []):
-            matched = next((idx for idx, a in enumerate(recordings)
-                            if idx not in used and a['compound_id'] == p['compound_id']), None)
+            queue = available[p['compound_id']]
+            matched = queue.popleft() if queue else None
             if matched is not None:
                 used.add(matched)
                 # Preserve the source blend only when the matched recording
@@ -136,7 +140,7 @@ def _month_events(shown: date, db: Session, *, include_vial_choices=True):
     today = date.today()
     first, end = cal.month_bounds(shown.year, shown.month)
     planned = {}
-    protocols = list(db.scalars(select(Protocol).where(Protocol.is_active.is_(True))))
+    protocols = list(db.scalars(select(Protocol).where(Protocol.is_active.is_(True)).options(selectinload(Protocol.items).selectinload(ProtocolItem.compound))))
     rules = exclusions_for(db, [item.id for protocol in protocols for item in protocol.items])
     missing_start = []
     # One read-only stock snapshot for all projected dates. No vial is
