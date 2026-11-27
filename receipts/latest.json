@@ -1,13 +1,13 @@
 {
   "action": "qualify",
   "base": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
-  "exit_code": 1,
-  "failed_tests": [
-    "tests/test_visual_mobile_personalization804.py"
-  ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-27T16:24:09+00:00",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T16:25:39+00:00",
   "markers": [
+    "RELEASE_804_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_804_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_804_IMPACT_PREFLIGHT=PASSED",
     "TARGETED_804_W320_BROWSER_READY=PASSED",
@@ -17,7 +17,8 @@
     "TARGETED_804_W320_FOCUS_CHANGE=PASSED",
     "TARGETED_804_W320_PANEL_GEOMETRY=PASSED",
     "TARGETED_804_W320_DOCK=PASSED",
-    "TARGETED_804_W320_DENSITY=FAILED",
+    "TARGETED_804_W320_DENSITY=PASSED",
+    "TARGETED_804_W320_RENDERED_COMPLETE=PASSED",
     "TARGETED_804_W390_BROWSER_READY=PASSED",
     "TARGETED_804_W390_PANEL_VISIBLE=PASSED",
     "TARGETED_804_W390_SUMMARY=PASSED",
@@ -43,18 +44,17 @@
     "TARGETED_804_W1024_FOCUS_CHANGE=PASSED",
     "TARGETED_804_W1024_PANEL_GEOMETRY=PASSED",
     "TARGETED_804_W1024_RENDERED_COMPLETE=PASSED",
-    "RELEASE_804_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_804_EXIT_STATUS=1"
+    "RELEASE_804_INSTALLED_DEV=UNMODIFIED"
   ],
   "previous_request_id": null,
   "ref": "release/804-visual-mobile-personalization",
   "release": 804,
-  "request_id": "r804-q737180eab805",
+  "request_id": "r804-qa0eefe4e7bbe",
   "schema": 1,
-  "started_at_utc": "2026-11-27T16:23:32+00:00",
-  "status": "failed",
-  "target": "737180eab805850ffab1d78efcdd44e76267ce38",
+  "started_at_utc": "2026-11-27T16:25:01+00:00",
+  "status": "passed",
+  "target": "a0eefe4e7bbe2dad72c6c62677741333f1801faa",
   "test_counts": [
-    "20 passed, 1 warning"
+    "21 passed, 1 warning"
   ]
 }
