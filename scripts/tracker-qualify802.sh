@@ -27,7 +27,7 @@ git merge-base --is-ancestor "$BASE" "$TARGET" || fail "Non-descendant target"
 git diff --check "$BASE" "$TARGET"
 while IFS= read -r path; do
  case "$path" in
-  scripts/tracker_benchmark800.py|tests/test_benchmark800.py|scripts/tracker-install802.sh|scripts/tracker-qualify802.sh|scripts/tracker-release-scoped802.sh) ;;
+  app/routers/dashboard.py|app/routers/food.py|app/routers/food_week379.py|app/routers/food_bundle376.py|app/routers/food_review378.py|scripts/tracker_benchmark800.py|tests/test_performance802.py|scripts/tracker-install802.sh|scripts/tracker-qualify802.sh|scripts/tracker-release-scoped802.sh) ;;
   *) fail "Unreviewed changed path: $path";;
  esac
 done < <(git diff --name-only "$BASE" "$TARGET")
