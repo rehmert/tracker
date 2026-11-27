@@ -1,0 +1,28 @@
+{
+  "action": "prod_deploy",
+  "base": "821d15f41ce42e3ed6855ad126f991e644e22eec",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T02:35:16+00:00",
+  "markers": [
+    "DEV_CONTROLLED_RELEASE=SUCCESS",
+    "PROD_INSTALLED_COMMIT=ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
+    "PREFLIGHT=PASSED",
+    "PROD_APPROVAL_VERIFIED=ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
+    "PROMOTED_COMMIT=ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "EXIT_STATUS=0",
+    "PROD_DEPLOY_VERIFIED=ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
+    "REMOTE_DEPLOY_EXIT_STATUS=0"
+  ],
+  "previous_request_id": "r796-preff0ddbaaf332",
+  "ref": "release/796-inventory-performance",
+  "release": 796,
+  "request_id": "r796-prodff0ddbaaf332",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T02:34:47+00:00",
+  "status": "passed",
+  "target": "ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
+  "test_counts": []
+}
