@@ -6,7 +6,7 @@
     "tests/test_workflow_consolidation794.py"
   ],
   "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-27T00:31:03+00:00",
+  "finished_at_utc": "2026-11-27T00:39:46+00:00",
   "markers": [
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_794_IMPACT_PREFLIGHT=PASSED",
@@ -17,11 +17,11 @@
   "previous_request_id": null,
   "ref": "release/794-workflow-consolidation",
   "release": 794,
-  "request_id": "r794-863d9a3655f6",
+  "request_id": "r794-02ac4ce775f9",
   "schema": 1,
-  "started_at_utc": "2026-11-27T00:29:50+00:00",
+  "started_at_utc": "2026-11-27T00:38:32+00:00",
   "status": "failed",
-  "target": "863d9a3655f66cae5f332ec9561520e62fc3f812",
+  "target": "02ac4ce775f9b01d82db25ca4c2d2d2a4528b527",
   "test_counts": [
     "118 passed, 1 warning"
   ]
