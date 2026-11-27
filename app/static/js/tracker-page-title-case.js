@@ -143,10 +143,7 @@
     });
   }
 
-  function apply(root) {
-    if (!root) return;
-
-    const selector = [
+  const selector = [
       "h1", "h2", "h3", "h4",
       ".page-title",
       ".section-title",
@@ -155,6 +152,8 @@
       ".dashboard-section-title"
     ].join(", ");
 
+  function apply(root) {
+    if (!root) return;
     const main = document.getElementById("main-content");
 
     if (main) {
@@ -222,7 +221,19 @@
 
       const main = document.getElementById("main-content");
       if (main) {
-        const observer = new MutationObserver(scheduleApply);
+        const observer = new MutationObserver(records => {
+          // Ignore unrelated form/table mutations; heading edits and inserted
+          // heading subtrees still trigger the existing coalesced refresh.
+          const relevant = records.some(record => {
+            const element = record.target.nodeType === Node.ELEMENT_NODE
+              ? record.target : record.target.parentElement;
+            if (element && element.closest(selector)) return true;
+            return Array.from(record.addedNodes).some(node =>
+              node.nodeType === Node.ELEMENT_NODE &&
+              (node.matches(selector) || node.querySelector(selector)));
+          });
+          if (relevant) scheduleApply();
+        });
         observer.observe(main, {
           childList: true,
           subtree: true,
