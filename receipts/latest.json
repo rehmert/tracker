@@ -1,15 +1,13 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "8f12563f1584f1812abe907d2b6f530e63674df8",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T18:23:14+00:00",
+  "finished_at_utc": "2026-11-27T18:26:07+00:00",
   "markers": [
-    "RELEASE_806_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_806_EXIT_STATUS=0",
+    "RELEASE_806_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_806_IMPACT_PREFLIGHT=PASSED",
     "TARGETED_804_W320_BROWSER_READY=PASSED",
     "TARGETED_804_W320_PANEL_VISIBLE=PASSED",
     "TARGETED_804_W320_SUMMARY=PASSED",
@@ -44,14 +42,14 @@
     "TARGETED_804_W1024_FOCUS_CHANGE=PASSED",
     "TARGETED_804_W1024_PANEL_GEOMETRY=PASSED",
     "TARGETED_804_W1024_RENDERED_COMPLETE=PASSED",
-    "RELEASE_806_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r806-q2d597a9907ab",
   "ref": "release/806-comprehensive-optimization",
   "release": 806,
-  "request_id": "r806-q2d597a9907ab",
+  "request_id": "r806-dev2d597a9907ab",
   "schema": 1,
-  "started_at_utc": "2026-11-27T18:22:32+00:00",
+  "started_at_utc": "2026-11-27T18:25:01+00:00",
   "status": "passed",
   "target": "2d597a9907ab3c7e1915f073ed5cd5e898e93b90",
   "test_counts": [
