@@ -41,7 +41,7 @@ def week_details(day, db_engine=None, *, entries=None, targets=None):
                 "start": start.isoformat(),
                 "end": end.isoformat(),
             }).all()
-    
+
             targets = dict(db.execute(text("""
                 SELECT nutrient, value FROM tracker_food_targets
             """)).all())
