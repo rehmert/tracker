@@ -39,10 +39,11 @@ def regimen_stamp790(schedule, plan, day):
 def regimen790(db, day):
     from datetime import datetime
     from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
     from .models import RegimenSchedule, RegimenEntry, RegimenTabletSchedule731
     from .routers.regimen635 import due_on, MEALS
     from .regimen_tablets731 import format_number
-    schedules = list(db.scalars(select(RegimenSchedule)))
+    schedules = list(db.scalars(select(RegimenSchedule).options(selectinload(RegimenSchedule.item))))
     due = sorted((s for s in schedules if s.item.active and due_on(s, day)),
                  key=lambda s: (not bool(s.at_time), s.at_time or "", s.item.name.casefold(), s.id))
     start = datetime.combine(day, datetime.min.time())
