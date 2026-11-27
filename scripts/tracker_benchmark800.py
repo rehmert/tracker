@@ -1,5 +1,7 @@
 """Isolated synthetic ASGI route benchmark. No live database or external network."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 import csv
 import html
 import json
@@ -43,18 +45,20 @@ def worker(args):
     if config.DATA_DIR != Path(os.environ["TRACKER_DATA_DIR"]).resolve():
         raise RuntimeError("Unexpected database path")
     counts = [0, 0.0]
+    lock = Lock()
     @event.listens_for(engine, "before_cursor_execute")
     def before(conn, cursor, statement, parameters, context, executemany):
         context._bench_start = time.perf_counter()
     @event.listens_for(engine, "after_cursor_execute")
     def after(conn, cursor, statement, parameters, context, executemany):
-        counts[0] += 1
-        counts[1] += (time.perf_counter()-context._bench_start)*1000
+        with lock:
+            counts[0] += 1
+            counts[1] += (time.perf_counter()-context._bench_start)*1000
     result = {}
     with TestClient(app, follow_redirects=False) as client:
         with SessionLocal() as db:
             today = date.today()
-            for i in range(12):
+            for i in range(12*args.scale):
                 compound = Compound(name=f"Synthetic compound {i}")
                 db.add(compound)
                 db.flush()
@@ -65,22 +69,30 @@ def worker(args):
                 for j in range(20):
                     db.add(Vial(compound_id=compound.id, content_value=10,
                         content_unit="mg", expires_on=today+timedelta(days=30+j)))
-            for i in range(60):
+            for i in range(60*args.scale):
                 db.add(LabReport(drawn_on=today-timedelta(days=i*3), lab_name="Synthetic",
                     results=[LabResult(analyte=f"Synthetic analyte {j}",value=10+i/10,
                         unit="mg/dL") for j in range(20)]))
             db.commit()
         for route in ROUTES:
             samples = []
-            for i in range(args.warmup+args.samples):
-                counts[:] = [0,0.0]
+            def request_once(_):
                 start = time.perf_counter()
                 response = client.get(route, auth=("benchmark","synthetic-only"))
-                elapsed = (time.perf_counter()-start)*1000
                 if response.status_code != 200:
                     raise RuntimeError(f"Route {route}: HTTP {response.status_code}")
-                if i >= args.warmup:
-                    samples.append((elapsed,*counts))
+                return (time.perf_counter()-start)*1000
+            with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
+                list(pool.map(request_once, range(args.warmup)))
+                counts[:] = [0, 0.0]
+                if args.concurrency == 1:
+                    for i in range(args.samples):
+                        counts[:] = [0, 0.0]
+                        elapsed = request_once(i)
+                        samples.append((elapsed,*counts))
+                else:
+                    latencies = list(pool.map(request_once, range(args.samples)))
+                    samples = [(elapsed, counts[0]/args.samples, counts[1]/args.samples) for elapsed in latencies]
             result[route] = summarize(samples)
     return dict(routes=result, peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 
@@ -94,7 +106,7 @@ def compare(args):
     output = Path(args.output).resolve()
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     report = {"schema":1,"baseline":args.baseline,"candidate":args.candidate,
-              "samples":args.samples,"warmup":args.warmup,"runs":[]}
+              "samples":args.samples,"warmup":args.warmup,"scale":args.scale,"concurrency":args.concurrency,"runs":[]}
     for run in range(args.runs):
         pair = {}
         for label, sha in (("baseline",args.baseline),("candidate",args.candidate))[::(-1 if run%2 else 1)]:
@@ -110,7 +122,7 @@ def compare(args):
                            "TRACKER_DATA_DIR":str(data),"TRACKER_USER":"benchmark",
                            "TRACKER_PASS":"synthetic-only","PYTHONDONTWRITEBYTECODE":"1"}
                     raw = subprocess.check_output([sys.executable,str(Path(__file__).resolve()),
-                        "--worker","--samples",str(args.samples),"--warmup",str(args.warmup)],
+                        "--worker","--samples",str(args.samples),"--warmup",str(args.warmup),"--scale",str(args.scale),"--concurrency",str(args.concurrency)],
                         cwd=source,env=env,text=True,timeout=900)
                     pair[label] = json.loads(raw.splitlines()[-1])
                 finally:
@@ -124,6 +136,7 @@ def compare(args):
             row.update({metric+"_baseline":a,metric+"_candidate":b,
                         metric+"_change_pct":100*(b-a)/a if a else None})
         row["p95_regression_flag"] = row["p95_ms_candidate"] > row["p95_ms_baseline"]*1.15
+        row["individual_p95_regression_flags"] = sum(run["candidate"]["routes"][route]["p95_ms"] > 1.15*run["baseline"]["routes"][route]["p95_ms"] for run in report["runs"])
         rows.append(row)
     report["comparison"] = rows
     (output/"report.json").write_text(json.dumps(report,indent=2)+"\n")
@@ -134,6 +147,8 @@ def compare(args):
     keys=list(rows[0])
     (output/"report.html").write_text("<!doctype html><meta charset=utf-8><title>Tracker benchmark</title><h1>Tracker synthetic ASGI benchmark</h1><table border=1><tr>"+"".join("<th>"+html.escape(k)+"</th>" for k in keys)+"</tr>"+"".join("<tr>"+"".join("<td>"+html.escape(str(round(row[k],3) if isinstance(row[k],float) else row[k]))+"</td>" for k in keys)+"</tr>" for row in rows)+"</table>")
     print(json.dumps(report))
+    if args.fail_on_regression and any(row["p95_regression_flag"] for row in rows):
+        raise SystemExit(2)
 
 
 def main():
@@ -146,6 +161,9 @@ def main():
     parser.add_argument("--warmup",type=int,default=10)
     parser.add_argument("--runs",type=int,default=3)
     parser.add_argument("--output")
+    parser.add_argument("--scale",type=int,choices=(1,2,4),default=1)
+    parser.add_argument("--concurrency",type=int,choices=(1,5,10,25),default=1)
+    parser.add_argument("--fail-on-regression",action="store_true")
     args=parser.parse_args()
     if not 1<=args.samples<=1000 or not 0<=args.warmup<=100 or not 1<=args.runs<=10:
         parser.error("Invalid sample, warmup or run count")
