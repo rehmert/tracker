@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "request_id": "r804-q72caf3d434a9",
+  "request_id": "r804-q5b367528d0a5",
   "action": "qualify",
   "release": 804,
-  "target": "72caf3d434a9491ceeb695dd39e3c7562091d36d",
+  "target": "5b367528d0a5a3ece073f72c6bbe0418aace5f1d",
   "base": "3e51216bc720d0a87465d072771fefe9b1e15d3a",
   "ref": "release/804-visual-mobile-personalization",
   "previous_request_id": null
