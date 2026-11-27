@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r798-55ba6d9233c1",
-  "action": "qualify",
+  "request_id": "r798-dev55ba6d9233c1",
+  "action": "dev_install",
   "release": 798,
   "target": "55ba6d9233c1864a737095057ecb5afaf091962f",
   "base": "5d52af77cdccfdfe02248f59662f1ee37e6227ce",
   "ref": "release/798-frontend-performance",
-  "previous_request_id": null
+  "previous_request_id": "r798-55ba6d9233c1"
 }
