@@ -14,7 +14,8 @@
     window.addEventListener("online", updateConnection);
     window.addEventListener("offline", updateConnection);
     updateConnection();
-    if (!form) return;
+    if (!form || root.dataset.gymHandoffInitialized === "true") return;
+    root.dataset.gymHandoffInitialized = "true";
     const fields = [...form.querySelectorAll("input[name], select[name], textarea[name]")].filter(x =>
       !["hidden","submit"].includes(x.type)
     );
@@ -47,6 +48,7 @@
             url.pathname === "/workouts/quick" && url.searchParams.has("machine");
         } catch (_) { /* non-navigable relative link */ }
       }
+      if (event.defaultPrevented) return;
       if (machineLink && !allowSwitch()) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -57,6 +59,7 @@
     const selector = picker?.querySelector('select[name="machine"]');
     const selected = selector?.value;
     picker?.addEventListener("submit", event => {
+      if (event.defaultPrevented) return;
       if (!allowSwitch()) {
         event.preventDefault();
         event.stopImmediatePropagation();
