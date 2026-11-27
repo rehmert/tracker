@@ -24,11 +24,12 @@ MACROS = ("energy", "proteins", "carbohydrates", "fat")
 MEAL_ORDER = ("Breakfast", "Lunch", "Dinner", "Snack")
 
 
-def meal_summary(day, db_engine=None):
+def meal_summary(day, db_engine=None, *, rows=None):
     selected_engine = (
         food.engine if db_engine is None else db_engine
     )
-    food.init_food_schema(selected_engine)
+    if rows is None:
+        food.init_food_schema(selected_engine)
     result = OrderedDict()
 
     for meal in MEAL_ORDER:
@@ -39,13 +40,14 @@ def meal_summary(day, db_engine=None):
             "reported": {key: 0 for key in MACROS},
         }
 
-    with selected_engine.connect() as db:
-        rows = db.execute(text("""
-            SELECT e.meal, e.servings, p.nutrients
-            FROM tracker_food_entries e
-            JOIN tracker_food_products p ON p.id=e.product_id
-            WHERE e.eaten_on=:day
-        """), {"day": day}).all()
+    if rows is None:
+        with selected_engine.connect() as db:
+            rows = db.execute(text("""
+                SELECT e.meal, e.servings, p.nutrients
+                FROM tracker_food_entries e
+                JOIN tracker_food_products p ON p.id=e.product_id
+                WHERE e.eaten_on=:day
+            """), {"day": day}).all()
 
     for meal, servings, packed in rows:
         if meal not in result:
