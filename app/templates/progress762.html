@@ -173,6 +173,10 @@
 </section>
 <section class="progress762-section" id="marker">
  <h2>Context / intervention timeline</h2>
+ {% if markers %}<details class="progress762-disclosure"><summary>Recorded protocol and regimen changes ({{ change_day_count }} dates)</summary>
+ <p class="note">A = UTC audit date, not treatment start or administration time. Up to {{ audit_overlay_count }} recent audit dates are eligible for chart overlays within the displayed measurement range. This is timing context, not evidence of an effect. Older or unaudited changes may be missing. Schedule identifiers are retained rather than guessing historical item names.</p>
+ {% if change_days %}<ul>{% for day in change_days %}<li><strong>{{ day.date }}</strong> · {{ day.labels|length }} recorded change(s)<ul>{% for label in day.labels[:8] %}<li>{{ label }}</li>{% endfor %}{% if day.labels|length > 8 %}<li>Additional changes in audit history.</li>{% endif %}</ul></li>{% endfor %}</ul>{% else %}<p>No matching audit dates in the selected range.</p>{% endif %}
+ <a class="tracker-ui-action" href="/audit-history">Review full audit history</a></details>{% endif %}
  <p class="note">Record meaningful exercise, nutrition and treatment changes. Markers show timing, not causation; dose logs and medication schedules remain in Tracker's existing history.</p>
  <details {% if edit_kind=='marker' %}open{% endif %} class="progress762-disclosure"><summary>{{'Edit' if edit_kind=='marker' else '+ Add'}} timeline event / photo date</summary>
  <form method="post" action="/progress/marker/save?{{ progress_query }}" class="progress762-entry">

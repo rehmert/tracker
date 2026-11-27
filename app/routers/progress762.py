@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from .. import charts, config, labs, metrics, services
 from ..food_read_engine406 import get_food_read_engine406
-from ..models import LabReport, LabResult, VitalReading
+from ..models import ChangeAudit, LabReport, LabResult, VitalReading
 from ..progress_calc762 import (daily_weights762, moving762, weight_report762,
                                 metric_change_details762, strength_trend762, interpret762)
 from ..progress_models762 import (MEASURES762, COMPOSITION762, FREQUENCIES762,
@@ -76,6 +76,51 @@ def _progress_redirect806(request, section, *, msg="", err="", edit_id=None):
     query = urlencode(filters)
     return RedirectResponse("/progress" + ("?" + query if query else "") + "#" + section,
                             status_code=303)
+
+
+def _recorded_change_days806(db, since, today):
+    """UTC audit dates, not treatment start dates or administrations.
+
+    Keep only recorded regimen changes and protocols with explicit active
+    evidence in either immutable snapshot. No interpretation of doses,
+    medication efficacy, inactive what-if plans, or unrecorded changes.
+    """
+    actions = {
+        "protocol": {"create", "update", "update_dates", "toggle_active", "delete"},
+        "regimen_item": {"create", "edit", "archive", "delete"},
+        "regimen_schedule": {"create", "edit", "stop", "delete"},
+        "regimen_tablet_schedule": {"create", "edit", "update", "delete"},
+    }
+    query = (select(ChangeAudit.created_at, ChangeAudit.entity_type,
+                    ChangeAudit.entity_id, ChangeAudit.action,
+                    ChangeAudit.before_json, ChangeAudit.after_json)
+             .where(ChangeAudit.entity_type.in_(actions),
+                    ChangeAudit.created_at >= datetime.combine(since, time.min),
+                    ChangeAudit.created_at <= datetime.combine(today, time.max))
+             .order_by(ChangeAudit.created_at, ChangeAudit.id))
+    grouped = defaultdict(list)
+    for stamp, kind, ident, action, before_raw, after_raw in db.execute(query):
+        if action not in actions[kind]:
+            continue
+        try:
+            before, after = json.loads(before_raw or "{}"), json.loads(after_raw or "{}")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(before, dict) or not isinstance(after, dict):
+            continue
+        if kind == "protocol" and not (before.get("is_active") is True or after.get("is_active") is True):
+            continue
+        label = {"protocol": "Protocol", "regimen_item": "Regimen item",
+                 "regimen_schedule": "Regimen schedule",
+                 "regimen_tablet_schedule": "Tablet schedule"}[kind]
+        # Snapshot names are historical, unlike a potentially reused current ID.
+        name = after.get("name") or before.get("name")
+        if isinstance(name, str) and name.strip():
+            label += ": " + name.strip()[:160]
+        else:
+            label += f" #{ident}"
+        grouped[stamp.date()].append(f"{label} — {action.replace('_', ' ')}")
+    return [{"date": day, "labels": labels} for day, labels in sorted(grouped.items(), reverse=True)]
 
 
 def _number762(raw, low, high, *, integer=False):
@@ -345,6 +390,13 @@ def progress762(
 
     events = [charts.Event(datetime.combine(r.measured_on, time(12)), "marker",
                            r.label, mark="M") for r in visible_marker] if markers else []
+    change_days = _recorded_change_days806(db, since, today) if markers else []
+    # Preserve space for user-created markers and group repeated changes on a
+    # date; only the most recent available audit dates are overlaid.
+    audit_overlay = change_days[:max(0, min(30, charts.MAX_MARKERS - len(events)))]
+    events.extend(charts.Event(datetime.combine(day["date"], time.min), "marker",
+                   f'{len(day["labels"])} recorded plan/catalog change(s) (UTC audit date)',
+                   mark="A") for day in audit_overlay)
     weight_chart = charts.line_chart([
         charts.Series("Recorded weight", visible_weight),
         charts.Series("7-day average", rolling7, "s2"),
@@ -374,7 +426,8 @@ def progress762(
     editing = db.get(edit_model, edit_id) if edit_model and 0 < edit_id <= 2**63 - 1 else None
     return render(request, "progress762.html",
         days=days, ranges=RANGES762, markers=bool(markers), now=today, settings=settings,
-        progress_query=progress_query,
+        progress_query=progress_query, change_days=change_days[:12],
+        change_day_count=len(change_days), audit_overlay_count=len(audit_overlay),
         unit=config.WEIGHT_UNIT, tape_unit=tape_unit, display_weight=display_weight,
         weight=weight, weight_chart=weight_chart, waist_chart=waist_chart,
         waist_delta=_display762(waist_delta, tape_unit), waist_details=waist_details,

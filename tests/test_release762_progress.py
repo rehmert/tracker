@@ -333,3 +333,34 @@ def test_806_progress_context_and_invalid_edit_rollback(progress_client762):
     assert parse_qs(urlsplit(response.headers["location"]).query)["days"] == ["30"]
     with Session(engine) as db:
         assert db.get(ProgressMeasure762,rid) is None
+
+
+def test_806_recorded_audit_context_is_read_only_and_opt_in(progress_client762):
+    import json
+    from app.models import ChangeAudit
+    from app.routers.progress762 import _recorded_change_days806
+    client, engine, _ = progress_client762
+    stamp = datetime.combine(date.today(), datetime.min.time())
+    with Session(engine) as db:
+        for kind, ident, action, before, after in (
+            ("protocol", 1, "update", {"is_active": True, "name": "QA active"}, {"is_active": True, "name": "QA active"}),
+            ("protocol", 2, "update", {"is_active": False}, {"is_active": False, "name": "QA hypothetical"}),
+            ("regimen_schedule", 7, "edit", {"amount": "1"}, {"amount": "2"}),
+            ("regimen_entry", 9, "create", {}, {}),
+        ):
+            db.add(ChangeAudit(entity_type=kind, entity_id=ident, action=action,
+                before_json=json.dumps(before), after_json=json.dumps(after), created_at=stamp))
+        db.add(VitalReading(measured_at=stamp,weight_kg=100))
+        db.commit()
+        result = _recorded_change_days806(db, date.today()-timedelta(days=29), date.today())
+        assert len(result) == 1 and len(result[0]["labels"]) == 2
+        assert "Protocol: QA active — update" in result[0]["labels"]
+        assert "Regimen schedule #7 — edit" in result[0]["labels"]
+    assert "QA active" not in client.get("/progress?markers=0").text
+    page = client.get("/progress?markers=1")
+    assert page.status_code == 200
+    assert "QA active" in page.text and "QA hypothetical" not in page.text
+    assert "UTC audit date" in page.text
+    with Session(engine) as db:
+        assert len(list(db.scalars(select(ChangeAudit)))) == 4
+        assert len(list(db.scalars(select(VitalReading)))) == 1
