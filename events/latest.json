@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r805-q8f12563f1584.json",
+  "receipt_path": "receipts/r805-dev8f12563f1584.json",
   "release": 805,
-  "request_id": "r805-q8f12563f1584",
+  "request_id": "r805-dev8f12563f1584",
   "schema": 1,
   "status": "passed",
   "target": "8f12563f1584f1812abe907d2b6f530e63674df8"
