@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 
-def week_details(day, db_engine=None):
+def week_details(day, db_engine=None, *, entries=None, targets=None):
     """Seven calendar days, retaining missing nutrient information."""
     end = date.fromisoformat(selected_day(day))
     start = end - timedelta(days=6)
@@ -29,21 +29,22 @@ def week_details(day, db_engine=None):
     selected_engine = (
         db_engine if db_engine is not None else food.engine
     )
-    food.init_food_schema(selected_engine)
-    with selected_engine.connect() as db:
-        entries = db.execute(text("""
-            SELECT e.eaten_on, e.servings, p.nutrients
-            FROM tracker_food_entries e
-            JOIN tracker_food_products p ON p.id=e.product_id
-            WHERE e.eaten_on BETWEEN :start AND :end
-        """), {
-            "start": start.isoformat(),
-            "end": end.isoformat(),
-        }).all()
-
-        targets = dict(db.execute(text("""
-            SELECT nutrient, value FROM tracker_food_targets
-        """)).all())
+    if entries is None or targets is None:
+        food.init_food_schema(selected_engine)
+        with selected_engine.connect() as db:
+            entries = db.execute(text("""
+                SELECT e.eaten_on, e.servings, p.nutrients
+                FROM tracker_food_entries e
+                JOIN tracker_food_products p ON p.id=e.product_id
+                WHERE e.eaten_on BETWEEN :start AND :end
+            """), {
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+            }).all()
+    
+            targets = dict(db.execute(text("""
+                SELECT nutrient, value FROM tracker_food_targets
+            """)).all())
 
     days = {}
 
