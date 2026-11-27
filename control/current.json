@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r802-4c47ff1f9de4",
-  "action": "qualify",
+  "request_id": "r802-dev4c47ff1f9de4",
+  "action": "dev_install",
   "release": 802,
   "target": "4c47ff1f9de4523659c09d63ebd5de44477982a8",
   "base": "dcb74fffa61ce9f7591841cbdb77f13dc1188e52",
   "ref": "release/802-comprehensive-performance",
-  "previous_request_id": null
+  "previous_request_id": "r802-4c47ff1f9de4"
 }
