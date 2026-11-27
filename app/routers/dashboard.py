@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 from .. import config, metrics, services, charts
 from ..sparklines import sparkline
 from ..daily_workspace790 import summary790
+from ..protocol_queries import protocol_read_query
 from ..scoped_db390 import get_scoped_db390
 from ..workout_dashboard661 import workout_dashboard661
 from ..dashboard_forecast752 import build_dashboard_forecasts752
@@ -23,7 +24,7 @@ router = APIRouter()
 @router.get("/")
 def home(request: Request, workout_page: int | None = Query(default=None, ge=1, le=100000),
          db: Session = Depends(get_scoped_db390)):
-    protocols = list(db.scalars(select(Protocol).where(Protocol.is_active.is_(True)).options(selectinload(Protocol.items).selectinload(ProtocolItem.compound)).order_by(Protocol.name)))
+    protocols = list(db.scalars(protocol_read_query(active_only=True).order_by(Protocol.name)))
     inventory_by_compound = defaultdict(float)
     vials = list(db.scalars(select(Vial).options(selectinload(Vial.compound), selectinload(Vial.purchase)).order_by(Vial.id.desc())))
     views = services.vial_views(db, vials)
