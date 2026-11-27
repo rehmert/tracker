@@ -1,0 +1,92 @@
+/* Release 804: token-driven refinement, mobile ergonomics and preferences.
+   No new palette; server-managed light/dark theme and compact density win. */
+#main-content :is(.card,.dashboard-panel,.today-card,.tracker-ui-card,.tracker-daily-section,.progress762-section,.labcard,.chartbox) {
+  border-radius:var(--tracker-radius,10px);
+  border-color:var(--rule);
+}
+#main-content :is(.card,.dashboard-panel,.tracker-ui-card,.tracker-daily-section,.progress762-section) > :is(h2,h3):first-child {
+  margin-top:0;
+}
+#main-content :is(.card,.dashboard-panel,.tracker-ui-card,.tracker-daily-section) > :is(.card,.tracker-ui-card,.chartbox) {
+  box-shadow:none;
+}
+#main-content :is(.stats,.dashboard-metrics) :is(dt,dd) {line-height:1.35}
+#main-content :is(.stats,.dashboard-metrics) dd {overflow-wrap:anywhere}
+#main-content .scroll {max-width:100%;overscroll-behavior-x:contain}
+#main-content table :is(th,td) {line-height:1.4}
+#main-content table th {white-space:normal}
+#main-content :is(.tracker-ui-actions,.tracker-quick-actions790,.tracker-review-actions791) > :is(a,button) {
+  overflow-wrap:anywhere;
+}
+#main-content :is(.tracker-ui-action,.btn,button):focus-visible,
+#main-content :is(input,select,textarea,summary):focus-visible {
+  outline:var(--tracker-focus-ring,2px solid var(--teal));outline-offset:2px;
+}
+#main-content #workspace-settings-panel {
+  max-height:min(78dvh,42rem);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+#workspace-settings-panel .tracker-preference-summary804 {
+  margin:.15rem 0 .7rem;
+  padding:.45rem .55rem;
+  border-radius:var(--tracker-control-radius,7px);
+  background:var(--wash);
+  color:var(--muted);
+  font-size:.84rem;
+  line-height:1.4;
+}
+#workspace-settings-panel .tracker-preference-summary804 strong {color:var(--ink);font-weight:650}
+#workspace-settings-panel .tracker-preference-details804 {
+  border-top:1px solid var(--rule);
+  padding-top:.35rem;
+  margin-top:.5rem;
+}
+#workspace-settings-panel .tracker-preference-details804 > summary {
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  cursor:pointer;min-height:40px;font-weight:650;color:var(--ink);
+  list-style:none;
+}
+#workspace-settings-panel .tracker-preference-details804 > summary::-webkit-details-marker {display:none}
+#workspace-settings-panel .tracker-preference-details804 > summary::after {
+  content:"⌄";font-size:1.1rem;line-height:1;transition:transform .15s ease;
+}
+#workspace-settings-panel .tracker-preference-details804[open] > summary::after {transform:rotate(180deg)}
+#workspace-settings-panel .tracker-preference-details804 .workspace-nav-order {min-width:0}
+#workspace-settings-panel .tracker-preference-details804 .nav-sort-controls {
+  display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;
+}
+#workspace-settings-panel .tracker-preference-details804 :is(input,select) {max-width:100%}
+#workspace-settings-panel .tracker-preference-details804 :is(.nav-pref-row,.nav-pref-check) {overflow-wrap:anywhere}
+@media (max-width:760px) {
+  #main-content {min-width:0}
+  #main-content :is(.card,.dashboard-panel,.tracker-ui-card,.tracker-daily-section,.progress762-section) {min-width:0}
+  #main-content :is(.tracker-ui-actions,.tracker-quick-actions790,.tracker-review-actions791) > :is(a,button) {
+    min-height:44px;
+  }
+  #main-content #workspace-settings-panel {
+    box-sizing:border-box;
+    max-width:calc(100vw - 1rem);
+    max-height:calc(100dvh - 6.5rem - env(safe-area-inset-bottom,0px));
+  }
+  #workspace-settings-panel :is(.density-options,.theme-options) {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:.3rem;
+  }
+  #workspace-settings-panel :is(.density-options,.theme-options) button {
+    min-width:0;min-height:44px;white-space:normal;overflow-wrap:anywhere;
+    padding:.35rem .25rem;
+  }
+  #workspace-settings-panel .tracker-preference-details804 > summary {min-height:44px}
+  #workspace-settings-panel .tracker-preference-details804 :is(button,select,.nav-pref-check) {min-height:44px}
+  #workspace-settings-panel .tracker-preference-details804 .nav-sort-controls select {flex:1 1 9rem}
+  #workspace-settings-panel .tracker-preference-details804 .nav-sort-controls button {flex:0 1 auto}
+}
+@media (prefers-reduced-motion:reduce) {
+  #workspace-settings-panel .tracker-preference-details804 > summary::after {transition:none}
+}
+@media print {
+  #main-content #workspace-settings-panel {display:none!important}
+}
