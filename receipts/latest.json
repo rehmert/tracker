@@ -1,28 +1,26 @@
 {
-  "action": "prod_deploy",
-  "base": "fdcdd999891589c3125853c052494330308c8298",
+  "action": "qualify",
+  "base": "821d15f41ce42e3ed6855ad126f991e644e22eec",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T02:23:23+00:00",
+  "finished_at_utc": "2026-11-27T02:27:56+00:00",
   "markers": [
-    "DEV_CONTROLLED_RELEASE=SUCCESS",
-    "PROD_INSTALLED_COMMIT=821d15f41ce42e3ed6855ad126f991e644e22eec",
-    "PREFLIGHT=PASSED",
-    "PROD_APPROVAL_VERIFIED=821d15f41ce42e3ed6855ad126f991e644e22eec",
-    "PROMOTED_COMMIT=821d15f41ce42e3ed6855ad126f991e644e22eec",
+    "RELEASE_796_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_796_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0",
-    "PROD_DEPLOY_VERIFIED=821d15f41ce42e3ed6855ad126f991e644e22eec",
-    "REMOTE_DEPLOY_EXIT_STATUS=0"
+    "RELEASE_796_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_796_INSTALLED_DEV=UNMODIFIED"
   ],
-  "previous_request_id": "r795-pre821d15f41ce4",
-  "ref": "release/795-labs-performance",
-  "release": 795,
-  "request_id": "r795-prod821d15f41ce4",
+  "previous_request_id": null,
+  "ref": "release/796-inventory-performance",
+  "release": 796,
+  "request_id": "r796-ff0ddbaaf332",
   "schema": 1,
-  "started_at_utc": "2026-11-27T02:22:49+00:00",
+  "started_at_utc": "2026-11-27T02:27:42+00:00",
   "status": "passed",
-  "target": "821d15f41ce42e3ed6855ad126f991e644e22eec",
-  "test_counts": []
+  "target": "ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
+  "test_counts": [
+    "28 passed, 1 warning"
+  ]
 }
