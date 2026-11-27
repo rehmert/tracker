@@ -1,10 +1,10 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r800-0283ec3642a0.json",
+  "receipt_path": "receipts/r800-dev0283ec3642a0.json",
   "release": 800,
-  "request_id": "r800-0283ec3642a0",
+  "request_id": "r800-dev0283ec3642a0",
   "schema": 1,
   "status": "passed",
   "target": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb"
