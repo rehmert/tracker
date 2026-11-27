@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r800-dev0283ec3642a0",
-  "action": "dev_install",
-  "release": 800,
-  "target": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb",
-  "base": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
-  "ref": "release/800-performance-benchmarks",
-  "previous_request_id": "r800-0283ec3642a0"
+  "request_id": "r801-dcb74fffa61c",
+  "action": "qualify",
+  "release": 801,
+  "target": "dcb74fffa61ce9f7591841cbdb77f13dc1188e52",
+  "base": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb",
+  "ref": "release/801-benchmark-compatibility",
+  "previous_request_id": null
 }
