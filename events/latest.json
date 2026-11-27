@@ -1,10 +1,10 @@
 {
-  "action": "dev_install",
+  "action": "prod_preflight",
   "event_type": "tracker-release-receipt",
   "receipt_branch": "tracker-release-receipts",
-  "receipt_path": "receipts/r804-deva0eefe4e7bbe.json",
+  "receipt_path": "receipts/r804-prea0eefe4e7bbe.json",
   "release": 804,
-  "request_id": "r804-deva0eefe4e7bbe",
+  "request_id": "r804-prea0eefe4e7bbe",
   "schema": 1,
   "status": "passed",
   "target": "a0eefe4e7bbe2dad72c6c62677741333f1801faa"
