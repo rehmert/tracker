@@ -1,0 +1,20 @@
+{
+  "action": "prod_preflight",
+  "base": "9f79787956726e105d55906483b7e851db5106fa",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T02:04:14+00:00",
+  "markers": [
+    "PREFLIGHT=PASSED"
+  ],
+  "previous_request_id": "r794-devfdcdd9998915",
+  "ref": "release/794-workflow-consolidation",
+  "release": 794,
+  "request_id": "r794-prefdcdd9998915",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T02:04:12+00:00",
+  "status": "passed",
+  "target": "fdcdd999891589c3125853c052494330308c8298",
+  "test_counts": []
+}

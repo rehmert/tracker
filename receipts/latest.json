@@ -1,24 +1,20 @@
 {
-  "action": "dev_install",
-  "base": "8dafeb3eab7355780719c24c6de3d18d30b2d1bc",
+  "action": "prod_preflight",
+  "base": "9f79787956726e105d55906483b7e851db5106fa",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T01:36:32+00:00",
+  "finished_at_utc": "2026-11-27T02:04:14+00:00",
   "markers": [
-    "RELEASE_794_DEV_INSTALL=SUCCESS",
-    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "EXIT_STATUS=0"
+    "PREFLIGHT=PASSED"
   ],
-  "previous_request_id": "r794-fdcdd9998915",
+  "previous_request_id": "r794-devfdcdd9998915",
   "ref": "release/794-workflow-consolidation",
   "release": 794,
-  "request_id": "r794-devfdcdd9998915",
+  "request_id": "r794-prefdcdd9998915",
   "schema": 1,
-  "started_at_utc": "2026-11-27T01:34:51+00:00",
+  "started_at_utc": "2026-11-27T02:04:12+00:00",
   "status": "passed",
   "target": "fdcdd999891589c3125853c052494330308c8298",
-  "test_counts": [
-    "119 passed, 1 warning"
-  ]
+  "test_counts": []
 }
