@@ -34,9 +34,20 @@
     root.addEventListener("click", event => {
       const link = event.target.closest("a[href]");
       if (!link) return;
-      const url = new URL(link.href, window.location.href);
-      if (url.origin === window.location.origin && url.pathname === "/workouts/quick" &&
-          url.searchParams.has("machine") && !allowSwitch()) {
+      const href = link.getAttribute("href");
+      // Canonical application links are root-relative. Test these without
+      // requiring browser navigation or a network origin.
+      let machineLink = false;
+      if (href.startsWith("/workouts/quick?")) {
+        machineLink = new URLSearchParams(href.split("?")[1].split("#")[0]).has("machine");
+      } else {
+        try {
+          const url = new URL(href, window.location.href);
+          machineLink = url.origin === window.location.origin &&
+            url.pathname === "/workouts/quick" && url.searchParams.has("machine");
+        } catch (_) { /* non-navigable relative link */ }
+      }
+      if (machineLink && !allowSwitch()) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
