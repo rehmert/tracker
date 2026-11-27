@@ -1,23 +1,21 @@
 {
-  "action": "qualify",
+  "action": "dev_install",
   "base": "98509bce1bbc2ce2b4880ddcc844e6a4c9a72633",
   "exit_code": 0,
   "failed_tests": [],
   "failure_category": null,
-  "finished_at_utc": "2026-11-27T03:37:54+00:00",
+  "finished_at_utc": "2026-11-27T03:40:07+00:00",
   "markers": [
-    "RELEASE_800_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
-    "RELEASE_800_EXIT_STATUS=0",
+    "RELEASE_800_DEV_INSTALL=SUCCESS",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_800_IMPACT_PREFLIGHT=PASSED",
-    "RELEASE_800_INSTALLED_DEV=UNMODIFIED"
+    "EXIT_STATUS=0"
   ],
-  "previous_request_id": null,
+  "previous_request_id": "r800-0283ec3642a0",
   "ref": "release/800-performance-benchmarks",
   "release": 800,
-  "request_id": "r800-0283ec3642a0",
+  "request_id": "r800-dev0283ec3642a0",
   "schema": 1,
-  "started_at_utc": "2026-11-27T03:37:52+00:00",
+  "started_at_utc": "2026-11-27T03:39:41+00:00",
   "status": "passed",
   "target": "0283ec3642a02add1de7bfb3ca3159e39dc2e6bb",
   "test_counts": [
