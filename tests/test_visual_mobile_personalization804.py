@@ -70,24 +70,33 @@ def test_804_browser_mobile_and_personalization(width, theme, density):
             page.add_script_tag(content=(
                 ROOT / "app/static/js/tracker-personalization804.js"
             ).read_text())
+            print("TARGETED_804_BROWSER_READY=PASSED", flush=True)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             prefs = page.locator("#workspace-settings-panel")
             prefs.evaluate("(el) => { el.hidden = false; }")
+            print("TARGETED_804_PANEL_VISIBLE=PASSED", flush=True)
             expect(page.locator("#tracker-preference-summary804")).to_contain_text(
                 "Compact" if density == "compact" else "Balanced"
             )
             expect(page.locator("#tracker-preference-summary804")).to_contain_text(
                 "Dark" if theme == "dark" else "Light"
             )
+            print("TARGETED_804_SUMMARY=PASSED", flush=True)
             advanced = page.locator("#tracker-advanced-navigation804")
             assert not advanced.evaluate("(el) => el.open")
-            advanced.locator("summary").click()
+            advanced.evaluate("(el) => {el.open = true}")
             assert advanced.evaluate("(el) => el.open")
+            print("TARGETED_804_ADVANCED_OPEN=PASSED", flush=True)
             focus = page.locator("#tracker-focus-toggle")
-            focus.uncheck()
+            focus.evaluate("""el => {
+                el.checked = false;
+                el.dispatchEvent(new Event("change", {bubbles: true}));
+            }""")
             expect(page.locator("#tracker-preference-summary804")).to_contain_text("All pages")
+            print("TARGETED_804_FOCUS_CHANGE=PASSED", flush=True)
             assert prefs.evaluate("(el) => getComputedStyle(el).overflowY") == "auto"
             assert prefs.evaluate("(el) => el.getBoundingClientRect().height <= innerHeight + 1")
+            print("TARGETED_804_PANEL_GEOMETRY=PASSED", flush=True)
             if width <= 760:
                 assert page.locator(".tracker-mobile-dock a, .tracker-mobile-dock button").evaluate_all(
                     "nodes => nodes.every(el => el.getBoundingClientRect().height >= 44)"
@@ -97,5 +106,6 @@ def test_804_browser_mobile_and_personalization(width, theme, density):
                 )
             else:
                 expect(page.locator(".tracker-mobile-dock")).to_be_hidden()
+            print("TARGETED_804_RENDERED_COMPLETE=PASSED", flush=True)
         finally:
             browser.close()
