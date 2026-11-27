@@ -92,7 +92,8 @@ def labs_index(request: Request, db: Session = Depends(get_scoped_db390),
         days = None
     cutoff = date.today() - timedelta(days=days - 1) if days else None
     cards = []
-    for key, items in _groups(db, cutoff).items():
+    groups = _groups(db, cutoff)
+    for key, items in groups.items():
         res, rep = max(items, key=lambda it: (it[1].drawn_on, it[0].id))
         sr = labs.build_series(res.analyte, _points(items))
         svg = charts.line_chart(
@@ -113,7 +114,13 @@ def labs_index(request: Request, db: Session = Depends(get_scoped_db390),
     if cutoff is not None:
         query = query.where(LabReport.drawn_on >= cutoff)
     reports = list(db.scalars(query.order_by(LabReport.drawn_on.desc(), LabReport.id.desc())))
-    return render(request, "labs.html", cards=cards, reports=reports, days=days)
+    # Count results from the already loaded groups; avoid one lazy query per report.
+    report_counts = {}
+    for items in groups.values():
+        for _, report in items:
+            report_counts[report.id] = report_counts.get(report.id, 0) + 1
+    return render(request, "labs.html", cards=cards, reports=reports, days=days,
+                  report_counts=report_counts)
 
 
 def _form(request: Request, db: Session, rows=None, values=None, error=None, copied_from=None):
