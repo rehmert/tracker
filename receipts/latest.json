@@ -1,28 +1,26 @@
 {
   "action": "qualify",
   "base": "8dafeb3eab7355780719c24c6de3d18d30b2d1bc",
-  "exit_code": 1,
-  "failed_tests": [
-    "tests/test_workflow_consolidation794.py"
-  ],
-  "failure_category": "TestAssertion",
-  "finished_at_utc": "2026-11-27T00:39:46+00:00",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T00:42:43+00:00",
   "markers": [
+    "RELEASE_794_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_794_EXIT_STATUS=0",
     "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
     "RELEASE_794_IMPACT_PREFLIGHT=PASSED",
-    "TARGETED_794_TEST_794_GYM_GUARD_COVERS_DIRECTORY_ROUTINE_LINKS_AND_NATIVE_PICKER=FAILED",
-    "RELEASE_794_INSTALLED_DEV=UNMODIFIED",
-    "RELEASE_794_EXIT_STATUS=1"
+    "RELEASE_794_INSTALLED_DEV=UNMODIFIED"
   ],
   "previous_request_id": null,
   "ref": "release/794-workflow-consolidation",
   "release": 794,
-  "request_id": "r794-02ac4ce775f9",
+  "request_id": "r794-fdcdd9998915",
   "schema": 1,
-  "started_at_utc": "2026-11-27T00:38:32+00:00",
-  "status": "failed",
-  "target": "02ac4ce775f9b01d82db25ca4c2d2d2a4528b527",
+  "started_at_utc": "2026-11-27T00:41:31+00:00",
+  "status": "passed",
+  "target": "fdcdd999891589c3125853c052494330308c8298",
   "test_counts": [
-    "118 passed, 1 warning"
+    "119 passed, 1 warning"
   ]
 }
