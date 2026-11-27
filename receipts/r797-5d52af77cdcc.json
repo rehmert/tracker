@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "ff0ddbaaf3328a6322f9bf1a7cf68d832cdfe50e",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-27T02:49:41+00:00",
+  "markers": [
+    "RELEASE_797_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_797_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_797_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_797_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/797-daily-calendar-performance",
+  "release": 797,
+  "request_id": "r797-5d52af77cdcc",
+  "schema": 1,
+  "started_at_utc": "2026-11-27T02:49:27+00:00",
+  "status": "passed",
+  "target": "5d52af77cdccfdfe02248f59662f1ee37e6227ce",
+  "test_counts": [
+    "27 passed, 1 warning"
+  ]
+}
