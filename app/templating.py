@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from fastapi.templating import Jinja2Templates
 
 from . import calc, config, units as U
-from .anatomical_sites807 import site_label
+from .anatomical_sites807 import site_label, site_geometry, SITE_BY_CODE
 from .navigation import NAVIGATION, current_navigation
 from .session_auth385 import enabled as tracker_session_login_enabled
 
@@ -100,7 +100,12 @@ templates.env.globals.update(tracker_navigation=NAVIGATION, tracker_current_navi
 tracker_session_login_enabled=tracker_session_login_enabled)
 
 
+def site_data807(code):
+    site = SITE_BY_CODE.get(code)
+    return json.dumps({"region": site.region, "views": site.views, "geometry": site_geometry(code)}) if site else ""
+
 templates.env.filters["nav_title"] = nav_title
+templates.env.filters["site_data807"] = site_data807
 
 
 def render(request, template_name: str, **ctx):
