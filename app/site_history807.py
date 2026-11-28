@@ -53,17 +53,17 @@ def protocol_for_calendar807(db, item_id):
 def physical_query807(*, compound=None, blend=None, protocol=None, route=None):
     dose = (select(literal("dose").label("source"), DoseLog.id.label("id"), DoseLog.taken_at.label("at"),
                    DoseLog.site.label("site"), Compound.name.label("name"),
-                   func.coalesce(Context.route, "").label("route"), Context.protocol_id.label("protocol"))
+                   func.coalesce(Context.route, "").label("route"), Context.protocol_id.label("protocol"), DoseLog.entered_value.label("amount"), DoseLog.entered_unit.label("unit"), literal("").label("amount_text"))
             .select_from(DoseLog).join(Vial, DoseLog.vial_id == Vial.id).join(Compound, Vial.compound_id == Compound.id)
             .outerjoin(Context, Context.dose_id == DoseLog.id).where(DoseLog.kind == "dose"))
     mixed = (select(literal("blend").label("source"), BlendDose.id.label("id"), BlendDose.taken_at.label("at"),
                     BlendDose.site.label("site"), Blend.label.label("name"),
-                    func.coalesce(Context.route, "").label("route"), Context.protocol_id.label("protocol"))
+                    func.coalesce(Context.route, "").label("route"), Context.protocol_id.label("protocol"), func.coalesce(BlendDose.entered_value, BlendDose.volume_ml).label("amount"), func.coalesce(BlendDose.entered_unit,"mL").label("unit"), literal("").label("amount_text"))
              .select_from(BlendDose).join(Blend, BlendDose.blend_id == Blend.id).outerjoin(Context, Context.blend_dose_id == BlendDose.id)
              .where(BlendDose.kind == "dose"))
     regimen = (select(literal("regimen").label("source"), RegimenEntry.id.label("id"),
                       RegimenEntry.logged_at.label("at"), Context.site.label("site"), RegimenItem.name.label("name"),
-                      Context.route.label("route"), Context.protocol_id.label("protocol"))
+                      Context.route.label("route"), Context.protocol_id.label("protocol"), literal(None).label("amount"), literal("").label("unit"), RegimenEntry.amount.label("amount_text"))
                .select_from(RegimenEntry).join(RegimenItem, RegimenEntry.item_id == RegimenItem.id)
                .join(Context, Context.regimen_entry_id == RegimenEntry.id)
                .where(RegimenEntry.outcome == "taken", RegimenItem.kind == "medication"))
