@@ -36,6 +36,12 @@
           <select name="site"><option value="">Not recorded</option>
           {% for site in sites %}<option value="{{ site }}" data-site807="{{ site|site_data807 }}">{{ site|site_label807 }}</option>{% endfor %}</select>
         </label>
+{% set selected_route807 = route807_context.route if route807_context else '' %}
+<label class="field"><span>Recorded route (optional)</span><select name="route807">
+{% for value,label in [('', 'Unspecified'),('subcutaneous','Subcutaneous'),('intramuscular','Intramuscular'),('other','Other')] %}
+<option value="{{ value }}" {% if value == selected_route807 %}selected{% endif %}>{{ label }}</option>
+{% endfor %}</select></label>
+
       </div>
       <div id="form-msg" role="status" aria-live="polite"></div>
       <div class="tracker-ui-actions tracker-save790">
