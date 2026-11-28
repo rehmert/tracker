@@ -25,6 +25,8 @@ from ..progress_models762 import (MEASURES762, COMPOSITION762, FREQUENCIES762,
     ProgressFunction762, ProgressMarker762)
 from ..scoped_db390 import get_scoped_db390
 from ..templating import render
+from ..progress_goals807 import DEFAULT_MILESTONES, milestones807, projections807, milestone_percentages807
+from ..wellness_models807 import GoalMilestonePreference807
 from ..workout_models654 import WorkoutEquipment654, WorkoutSession654, WorkoutSet654
 from ..workout_models667 import WorkoutSetType667
 
@@ -277,6 +279,10 @@ def progress762(
     weight = weight_report762(observed, today,
         settings.starting_weight_kg if settings else None,
         settings.goal_weight_kg if settings else None)
+    goal_preference = db.get(GoalMilestonePreference807, 1)
+    goal_percentages = tuple(json.loads(goal_preference.percentages_json)) if goal_preference else DEFAULT_MILESTONES
+    goal_milestones = milestones807(observed, weight["first"], settings.goal_weight_kg if settings else None, goal_percentages)
+    goal_projections = projections807(observed, today, settings.goal_weight_kg if settings else None)
     weight_convert = lambda kg: metrics.weight_from_kg(kg, config.WEIGHT_UNIT)
     display_weight = {k: weight_convert(weight[k]) if weight[k] is not None else None
                       for k in ("latest", "first", "lost", "remaining", "avg7", "avg28", "d7", "d28")}
@@ -430,6 +436,9 @@ def progress762(
         change_day_count=len(change_days), audit_overlay_count=len(audit_overlay),
         unit=config.WEIGHT_UNIT, tape_unit=tape_unit, display_weight=display_weight,
         weight=weight, weight_chart=weight_chart, waist_chart=waist_chart,
+        goal_milestones807=[dict(item, threshold=weight_convert(item['threshold'])) for item in goal_milestones],
+        goal_projections807=[dict(item, weekly_rate=weight_convert(item['weekly_rate']) if item['weekly_rate'] is not None else None) for item in goal_projections],
+        goal_percentages807=goal_percentages,
         waist_delta=_display762(waist_delta, tape_unit), waist_details=waist_details,
         latest_body_fat=latest_body_fat,
         latest_waist=_display762(latest_waist, tape_unit), waist_height=waist_height,
@@ -582,3 +591,18 @@ async def delete_progress762(kind: str, rid: int, request: Request,
     db.delete(item)
     db.commit()
     return _progress_redirect806(request, kind, msg="Progress record deleted.")
+
+@router.post("/progress/milestones807")
+async def save_milestones807(request: Request, db: Session = Depends(get_scoped_db390)):
+    form = await request.form()
+    try:
+        values = milestone_percentages807(str(form.get("percentages", "")))
+    except ValueError as exc:
+        return _progress_redirect806(request, "goal-milestones807", err=str(exc))
+    row = db.get(GoalMilestonePreference807, 1)
+    if row is None:
+        row = GoalMilestonePreference807(id=1)
+        db.add(row)
+    row.percentages_json = json.dumps(values)
+    db.commit()
+    return _progress_redirect806(request, "goal-milestones807", msg="Milestone preferences saved.")
