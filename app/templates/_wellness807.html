@@ -55,13 +55,16 @@
       <label class="field">Severity<select name="severity">{% for value in range(1,6) %}<option value="{{ value }}" {% if row and row.severity == value %}selected{% endif %}>{{ value }} — {{ ('Mild','Moderate','Marked','Severe','Very severe')[value-1] }}</option>{% endfor %}</select></label>
       <label class="field">Onset<input type="datetime-local" name="onset_at" value="{{ row.onset_at.strftime('%Y-%m-%dT%H:%M') if row else wellness_now }}" required></label>
       <label class="field">Resolved (optional)<input type="datetime-local" name="resolved_at" value="{{ row.resolved_at.strftime('%Y-%m-%dT%H:%M') if row and row.resolved_at else '' }}"></label>
+      {% set current = ("dose:" ~ row.dose_id if row and row.dose_id else ("blend:" ~ row.blend_dose_id if row and row.blend_dose_id else ("regimen:" ~ row.regimen_entry_id if row and row.regimen_entry_id else ""))) %}
+      <label class="field">Associated administration (optional)<select name="association"><option value="">None</option>{% for a in wellness_associations807 %}{% set value=a.source ~ ":" ~ a.id %}<option value="{{ value }}" {% if current==value %}selected{% endif %}>{{ a.at|dt }} · {{ a.name }}</option>{% endfor %}{% if current and current not in wellness_associations807|map(attribute="source")|list %}{% if not wellness_associations807|selectattr("source","equalto",current.split(":")[0])|selectattr("id","equalto",current.split(":")[1]|int)|list %}<option value="{{ current }}" selected>Previously associated administration</option>{% endif %}{% endif %}</select></label>
+      <label class="field">Medication period (optional)<input name="medication_period" maxlength="160" value="{{ row.medication_period if row else '' }}" placeholder="Your own period label"></label>
       <label class="field">Notes<textarea name="notes" maxlength="2000" rows="2">{{ row.notes if row else '' }}</textarea></label>
       {{ submit('Update symptom' if row else 'Record symptom') }}
     </form>
     {% if row %}{{ action('/mobile#symptoms807','Cancel edit') }}{% endif %}
     <ul class="tracker-daily-list">
       {% for item in wellness_symptoms %}
-      <li><div><strong>{{ item.symptom }} · {{ item.severity }}/5</strong><small>{{ item.onset_at|dt }} · {{ 'Resolved ' ~ (item.resolved_at|dt) if item.resolved_at else 'Ongoing / unresolved' }}</small></div>
+      <li><div><strong>{{ item.symptom }} · {{ item.severity }}/5</strong><small>{{ item.onset_at|dt }} · {{ 'Resolved ' ~ (item.resolved_at|dt) if item.resolved_at else 'Ongoing / unresolved' }}{% if item.medication_period %} · {{ item.medication_period }}{% endif %}</small></div>
       {{ action('/mobile?wellness_symptom=' ~ item.id ~ '#symptoms807','Edit') }}
       <form method="post" action="/wellness807/symptoms/{{ item.id }}/delete">{{ submit('Delete') }}</form></li>
       {% else %}<li>No reported symptoms.</li>{% endfor %}
