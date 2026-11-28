@@ -1,0 +1,36 @@
+{% if 'weight' in report807_selected %}
+<section class="report807-section"><h3>Weight and body composition</h3>
+<p>Latest recorded weight: {{ report807.weight.latest|num }} kg · 7-day average {{ report807.weight.avg7|num }} kg ({{ report807.weight.n7 }} days) · 28-day average {{ report807.weight.avg28|num }} kg ({{ report807.weight.n28 }} days).</p>
+<p>Recorded period change {{ report807.weight.period_delta|num }} kg. Plateau: {% if report807.weight.plateau is none %}Insufficient coverage{% elif report807.weight.plateau %}Broadly stable four-week observations{% else %}Not broadly stable{% endif %}.</p>
+{% if report807.measure %}<p>Latest navel waist {{ report807.measure.waist_navel|num }} cm, {{ report807.measure.measured_on }}.</p>{% else %}<p>No recorded waist measurement.</p>{% endif %}
+{% if report807.composition %}<p>{{ report807.composition.method }} estimates, {{ report807.composition.measured_on }}: body fat {{ report807.composition.body_fat_pct|num }}%, fat mass {{ report807.composition.fat_mass_kg|num }} kg, fat-free mass {{ report807.composition.fat_free_mass_kg|num }} kg.</p>{% else %}<p>No recorded composition estimates.</p>{% endif %}
+</section>{% endif %}
+{% if 'nutrition' in report807_selected %}
+<section class="report807-section"><h3>Nutrition</h3>
+<p>Average logged calories: {{ report807.nutrition.energy.average|num }} kcal ({{ report807.nutrition.energy.count }}/{{ report807.days }} days with complete calorie data among logged foods). Protein: {{ report807.nutrition.protein.average|num }} g ({{ report807.nutrition.protein.count }}/{{ report807.days }} days).</p>
+<p class="note">Logged foods may omit meals. Days without records are not zero intake.</p></section>{% endif %}
+{% if 'medication' in report807_selected %}
+<section class="report807-section"><h3>Medication, supplements and protocols</h3>
+<p>Calendar matched {{ report807.scheduled.get('recorded',0) }}; unrecorded past projections {{ report807.scheduled.get('unrecorded',0) }}; due {{ report807.scheduled.get('due',0) }}; pending review {{ report807.scheduled.get('pending_review',0) }}. Matching does not prove adherence or dose equivalence.</p>
+<p>Regimen entries: {{ report807.intake.get('taken',0) }} taken, {{ report807.intake.get('skipped',0) }} skipped.</p>
+<h4>Current recorded catalog</h4><ul>{% for row in report807.regimen %}<li>{{ row.name }} · {{ row.kind }} · {{ row.strength or 'Strength unspecified' }} · {{ row.instructions }}</li>{% else %}<li>No active entries.</li>{% endfor %}</ul>
+<h4>Documented progress events</h4><ul>{% for row in report807.changes %}<li>{{ row.measured_on }} · {{ row.label }} · {{ row.notes }}</li>{% else %}<li>No events recorded in the range.</li>{% endfor %}</ul>
+<h4>Recorded administration history (up to 200)</h4><table><thead><tr><th>Time</th><th>Source</th><th>Route</th></tr></thead><tbody>{% for row in report807.site.rows %}<tr><td>{{ row.at|dt }}</td><td>{{ row.name }}</td><td>{{ row.route or 'Unspecified' }}</td></tr>{% else %}<tr><td colspan="3">No records.</td></tr>{% endfor %}</tbody></table>
+</section>{% endif %}
+{% if 'wellness' in report807_selected %}
+<section class="report807-section"><h3>Self-reported wellness and symptoms</h3><p>{{ report807.wellness_days }}/{{ report807.days }} check-in days. Unreported values are excluded.</p>
+<table><thead><tr><th>Metric</th><th>Mean</th><th>Samples</th></tr></thead><tbody>{% for key,stat in report807.wellness.items() if stat.count %}<tr><td>{{ wellness807_metrics[key][0] }}</td><td>{{ stat.average|num }}</td><td>{{ stat.count }}</td></tr>{% else %}<tr><td colspan="3">No ratings.</td></tr>{% endfor %}</tbody></table>
+<ul>{% for row in report807.symptom_rows %}<li>{{ row.symptom }} · severity {{ row.severity }}/5 · {{ row.onset_at|dt }} · {{ 'Resolved ' ~ (row.resolved_at|dt) if row.resolved_at else 'Unresolved' }}{% if row.notes %} · {{ row.notes }}{% endif %}</li>{% else %}<li>No symptom records in range.</li>{% endfor %}</ul></section>{% endif %}
+{% if 'reactions' in report807_selected %}
+<section class="report807-section"><h3>Injection site usage and documented reactions</h3>
+<table><thead><tr><th>Recording site</th><th>Uses</th><th>Reported reactions</th><th>Reports/uses</th></tr></thead><tbody>{% for row in report807.site.stats %}<tr><td>{{ row.site|site_label807 }}</td><td>{{ row.count }}</td><td>{{ row.reactions }}</td><td>{{ row.reported }}/{{ row.count }}</td></tr>{% else %}<tr><td colspan="4">No records.</td></tr>{% endfor %}</tbody></table>
+<ul>{% for key,rows in report807.site.reports.items() %}{% for row in rows %}<li>{{ row.site|site_label807 }} · {{ row.reaction }} · {{ row.severity }}/5 · {{ row.onset_at|dt }}{% if row.resolved_at %} · resolved {{ row.resolved_at|dt }}{% endif %}{% if row.notes %} · {{ row.notes }}{% endif %}</li>{% endfor %}{% else %}<li>No reaction reports. Missing reports do not establish absence.</li>{% endfor %}</ul>
+</section>{% endif %}
+{% if 'cardio' in report807_selected %}
+<section class="report807-section"><h3>Cardiovascular</h3><p>Mean systolic {{ report807.systolic.average|num }} mmHg ({{ report807.systolic.count }} readings), diastolic {{ report807.diastolic.average|num }} mmHg ({{ report807.diastolic.count }}), pulse {{ report807.pulse.average|num }} bpm ({{ report807.pulse.count }}).</p></section>{% endif %}
+{% if 'workouts' in report807_selected %}
+<section class="report807-section"><h3>Exercise</h3><p>{{ report807.workouts }} completed workouts · {{ report807.sets }} recorded sets · {{ report807.volume|num }} lb-repetitions (recorded machine load, not total work).</p></section>{% endif %}
+{% if 'labs' in report807_selected %}
+<section class="report807-section"><h3>Laboratory monitoring</h3><table><thead><tr><th>Analyte</th><th>Latest date</th><th>Value</th><th>Prior same-unit value</th></tr></thead><tbody>{% for row in report807.lab %}<tr><td>{{ row.name }}</td><td>{{ row.date }}</td><td>{{ row.value|num }} {{ row.unit }}</td><td>{{ row.previous|num }}</td></tr>{% else %}<tr><td colspan="4">No laboratory records.</td></tr>{% endfor %}</tbody></table></section>{% endif %}
+{% if 'inventory' in report807_selected %}
+<section class="report807-section"><h3>Inventory attention</h3><p>Current active inventory with expiry or beyond-use dates through 30 days after range end (up to 100).</p><ul>{% for row in report807.expiry %}<li>Vial #{{ row.id }} {{ row.label }} · expiry {{ row.expires_on or '—' }} · beyond use {{ row.beyond_use_on or '—' }}</li>{% else %}<li>No matching dates.</li>{% endfor %}</ul></section>{% endif %}
