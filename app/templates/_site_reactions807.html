@@ -1,0 +1,25 @@
+{% from "_ui790.html" import submit %}
+{% if dose.kind == "dose" %}
+<section class="card" id="site-reactions807">
+<h2>Injection site reactions</h2>
+<p class="note">Recorded site: {{ dose.site|site_label807 }}. No report is not evidence of no reaction.</p>
+{% macro reaction_form(row) %}
+<form class="grid" method="post" action="/wellness807/reactions/{{ reaction807_source }}/{{ dose.id }}/save">
+  <input type="hidden" name="record_id" value="{{ row.id if row else '' }}">
+  <label class="field">Reaction<select name="kind">{% for kind in reaction807_types %}<option {% if row and row.reaction == kind %}selected{% endif %}>{{ kind }}</option>{% endfor %}</select></label>
+  <label class="field">Severity<select name="severity">{% for value in range(6) %}<option value="{{ value }}" {% if row and row.severity == value or not row and value == 1 %}selected{% endif %}>{{ value }} — {{ ('None','Mild','Moderate','Marked','Severe','Very severe')[value] }}</option>{% endfor %}</select></label>
+  <label class="field">Onset or assessment time<input type="datetime-local" name="onset_at" value="{{ row.onset_at.strftime('%Y-%m-%dT%H:%M') if row else reaction807_now }}" required></label>
+  <label class="field">Resolved (optional)<input type="datetime-local" name="resolved_at" value="{{ row.resolved_at.strftime('%Y-%m-%dT%H:%M') if row and row.resolved_at else '' }}"></label>
+  <label class="field wide">Notes<textarea name="notes" rows="2" maxlength="2000">{{ row.notes if row else '' }}</textarea></label>
+  {{ submit('Update reaction' if row else 'Record reaction') }}
+</form>
+{% endmacro %}
+<details><summary>Add reaction or explicitly report none</summary>{{ reaction_form(none) }}</details>
+{% for row in reaction807_rows %}
+<details><summary>{{ row.reaction }} · {{ row.severity }}/5 · {{ row.onset_at|dt }}{% if row.resolved_at %} · resolved{% endif %}</summary>
+  {{ reaction_form(row) }}
+  <form method="post" action="/wellness807/reactions/{{ reaction807_source }}/{{ dose.id }}/{{ row.id }}/delete">{{ submit('Delete reaction') }}</form>
+</details>
+{% else %}<p class="empty">Reaction status unreported.</p>{% endfor %}
+</section>
+{% endif %}
