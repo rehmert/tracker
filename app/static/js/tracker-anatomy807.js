@@ -167,7 +167,7 @@
       loadHistory();
     });
   }
-  function scan(root) { root.querySelectorAll?.('select[name="site"]').forEach(enhance); }
+  function scan(root) { root.querySelectorAll?.('select[name="site"],select[data-site807-field]').forEach(enhance); }
   document.addEventListener("DOMContentLoaded",()=>scan(document));
   document.addEventListener("htmx:afterSwap",e=>scan(e.target));
 })();
