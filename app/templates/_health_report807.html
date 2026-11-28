@@ -15,7 +15,7 @@
 <p>Regimen entries: {{ report807.intake.get('taken',0) }} taken, {{ report807.intake.get('skipped',0) }} skipped.</p>
 <h4>Current recorded catalog</h4><ul>{% for row in report807.regimen %}<li>{{ row.name }} · {{ row.kind }} · {{ row.strength or 'Strength unspecified' }} · {{ row.instructions }}</li>{% else %}<li>No active entries.</li>{% endfor %}</ul>
 <h4>Documented progress events</h4><ul>{% for row in report807.changes %}<li>{{ row.measured_on }} · {{ row.label }} · {{ row.notes }}</li>{% else %}<li>No events recorded in the range.</li>{% endfor %}</ul>
-<h4>Recorded administration history (up to 200)</h4><table><thead><tr><th>Time</th><th>Source</th><th>Route</th></tr></thead><tbody>{% for row in report807.site.rows %}<tr><td>{{ row.at|dt }}</td><td>{{ row.name }}</td><td>{{ row.route or 'Unspecified' }}</td></tr>{% else %}<tr><td colspan="3">No records.</td></tr>{% endfor %}</tbody></table>
+<h4>Recorded administration history (up to 200)</h4><table><thead><tr><th>Time</th><th>Source</th><th>Recorded amount</th><th>Route</th></tr></thead><tbody>{% for row in report807.site.rows %}<tr><td>{{ row.at|dt }}</td><td>{{ row.name }}</td><td>{{ row.amount_text or ((row.amount|num) ~ " " ~ row.unit) if row.amount is not none or row.amount_text else "Not recorded" }}</td><td>{{ row.route or 'Unspecified' }}</td></tr>{% else %}<tr><td colspan="4">No records.</td></tr>{% endfor %}</tbody></table>
 </section>{% endif %}
 {% if 'wellness' in report807_selected %}
 <section class="report807-section"><h3>Self-reported wellness and symptoms</h3><p>{{ report807.wellness_days }}/{{ report807.days }} check-in days. Unreported values are excluded.</p>
