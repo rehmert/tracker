@@ -48,6 +48,20 @@
   <p>Plateau assessment: {% if weight.plateau is sameas true %}Four weeks of adequately sampled weight observations are broadly stable.{% elif weight.plateau is sameas false %}Four weeks of adequately sampled observations do not indicate a stable trend.{% else %}Not enough consecutive weekly coverage to assess a sustained plateau.{% endif %}</p>
  </details>
 </section>
+<section class="progress762-section" id="goal-milestones807">
+ <h2>Weight milestones &amp; goal-date projections</h2>
+ <p class="note">Milestones use actual recorded weight. Projections extend observed linear trends only, not predicted outcomes; inadequate, flat or extreme trends are withheld.</p>
+ <div class="progress762-table-scroll"><table><thead><tr><th>Initial weight lost</th><th>Threshold</th><th>First recorded achievement</th></tr></thead><tbody>
+ {% for item in goal_milestones807 %}<tr><td>{{ item.percent|num }}%</td><td>{{ item.threshold|num }} {{ unit }}</td><td>{{ item.reached or 'Not recorded' }}</td></tr>{% else %}<tr><td colspan="3">Set a baseline or record weight.</td></tr>{% endfor %}
+ </tbody></table></div>
+ <details><summary>Customize milestones</summary>
+ <form method="post" action="/progress/milestones807?{{ progress_query }}">
+ <label class="field">Percentages, comma-separated<input name="percentages" value="{{ goal_percentages807|join(', ') }}"></label><button type="submit">Save milestones</button>
+ </form></details>
+ <div class="progress762-table-scroll"><table><thead><tr><th>Trend window</th><th>Recorded days</th><th>Weekly trend</th><th>Goal-date projection</th></tr></thead><tbody>
+ {% for item in goal_projections807 %}<tr><td>{{ item.days }} days</td><td>{{ item.count }}</td><td>{{ (item.weekly_rate|num ~ ' ' ~ unit) if item.weekly_rate is not none else '—' }}</td><td>{{ item.goal_date or item.reason }}</td></tr>{% endfor %}
+ </tbody></table></div>
+</section>
 <section class="progress762-section">
  <h2>Progress Summary</h2>
  <p class="progress762-interpretation">{{ summary.headline }}</p>
