@@ -17,3 +17,5 @@
 .site807-detail { display:block; width:100%; max-width:300px; height:auto; background:#f5f1eb; }
 .site807-picker > a, .site807-picker > button { margin:.25rem; }
 .site807-picker .site807-status { overflow-wrap:anywhere; }
+
+.site807-zone.site807-heat:not([aria-pressed=true]) { fill:#e39d23; stroke-width:2; }
