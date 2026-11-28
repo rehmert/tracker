@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 460">
+<!-- Original Tracker schematic. Recording zones are overlaid independently.
+     Not a scale drawing or a guide to needle placement. -->
+<defs>
+<path id="outline" d="M150 14 C124 14 115 35 120 58 L128 73 128 83 C111 83 89 81 72 94 C58 106 58 136 53 163 L40 234 44 260 56 260 67 235 87 166 95 135 105 170 99 205 96 236 90 262 94 315 105 371 110 431 105 446 124 450 136 440 144 366 148 310 150 279 152 310 156 366 164 440 176 450 195 446 190 431 195 371 206 315 210 262 204 236 201 205 195 170 205 135 213 166 233 235 244 260 256 260 260 234 247 163 C242 136 242 106 228 94 C211 81 189 83 172 83 L172 73 180 58 C185 35 176 14 150 14Z"/>
+<g id="front-half" fill="#ad5b56" stroke="#704b48" stroke-width="1.1">
+<path d="M97 92 Q75 88 65 110 L65 135 Q85 133 98 119Z"/>
+<path d="M102 93 Q120 84 148 100 L148 132 Q122 146 101 125Z"/>
+<path d="M100 132 Q114 139 124 153 L123 209 104 226 108 185Z" fill="#bf7770"/>
+<path d="M128 143 Q139 139 148 144 L148 215 Q134 220 125 212Z"/>
+<path d="M127 162 L148 163 M126 185 L148 187 M127 202 L148 203" fill="none" stroke="#e5b1a0"/>
+<path d="M98 260 Q109 247 121 266 L118 325 111 359 Q100 340 97 316Z"/>
+<path d="M125 257 Q138 256 145 273 L137 341 126 365 120 329Z" fill="#c58173"/>
+<path d="M139 310 L146 309 140 364 130 369Z" fill="#a25c59"/>
+<path d="M96 268 L104 322 112 365" fill="none" stroke="#f3d8bb" stroke-width="4"/>
+<path d="M110 375 Q119 365 131 380 L126 429 115 436Z"/>
+<path d="M70 138 L89 132 80 168 64 205 55 224 52 211Z"/>
+</g>
+<g id="rear-half" fill="#ad5b56" stroke="#704b48" stroke-width="1.1">
+<path d="M97 92 Q75 88 65 110 L65 135 Q87 133 100 118Z"/>
+<path d="M104 90 L148 83 148 173 123 155 101 118Z" fill="#b96e67"/>
+<path d="M103 130 Q117 155 146 170 L145 211 103 212 111 183Z"/>
+<path d="M99 215 Q111 202 142 214 L148 238 102 238Z" fill="#ca8a76"/>
+<path d="M99 235 Q119 217 148 238 L146 260 Q118 275 99 257Z"/>
+<path d="M103 262 Q120 255 130 278 L121 353 112 365 98 316Z"/>
+<path d="M132 272 L145 279 140 340 127 365 125 342Z" fill="#c58173"/>
+<path d="M109 375 Q120 368 130 380 L126 428 114 436Z"/>
+<path d="M70 138 L90 134 78 170 62 210 54 232 52 211Z"/>
+</g>
+<path id="profile" d="M150 14 Q122 13 119 43 L112 52 121 57 122 70 137 75 137 84 Q115 90 110 111 L119 151 116 185 115 217 105 239 108 263 126 285 132 336 137 375 140 430 128 443 128 450 158 450 168 440 165 374 176 320 179 278 194 252 194 226 180 203 178 169 186 137 189 115 Q188 93 166 83 L165 71 Q180 58 180 38 Q177 14 150 14Z"/>
+<g id="profile-muscle" fill="#ad5b56" stroke="#704b48" stroke-width="1.1">
+<path d="M112 92 Q128 84 137 92 L137 126 117 132Z"/>
+<path d="M137 91 Q151 84 163 91 L163 130 137 126Z" fill="#c58173"/>
+<path d="M163 91 Q184 89 188 116 L182 133 163 130Z"/>
+<path d="M123 134 L168 136 169 172 144 211 118 216 121 181Z" fill="#bf7770"/>
+<path d="M164 210 Q181 204 191 222 L193 240 167 239Z" fill="#c58173"/>
+<path d="M152 230 Q180 219 193 243 L190 257 170 273 151 260Z"/>
+<path d="M131 264 Q148 250 169 272 L171 320 157 360 138 351 132 319Z"/>
+<path d="M135 268 L141 318 145 357" stroke="#f3d8bb" stroke-width="4" fill="none"/>
+<path d="M139 374 Q153 363 165 377 L160 431 142 432Z"/>
+</g>
+</defs>
+<symbol id="front" viewBox="0 0 300 460"><use href="#outline" fill="#e1b99c"/><use href="#front-half"/><use href="#front-half" transform="translate(300 0) scale(-1 1)"/><circle cx="150" cy="194" r="3" fill="#805b50"/><path d="M150 142V215" stroke="#e9c3ae" stroke-width="3"/><use href="#outline" fill="#e9c6aa" fill-opacity=".18" stroke="#84685c"/></symbol>
+<symbol id="rear" viewBox="0 0 300 460"><use href="#outline" fill="#e1b99c"/><use href="#rear-half"/><use href="#rear-half" transform="translate(300 0) scale(-1 1)"/><path d="M150 85V225" stroke="#e9c3ae" stroke-width="3"/><use href="#outline" fill="#e9c6aa" fill-opacity=".18" stroke="#84685c"/></symbol>
+<symbol id="left" viewBox="0 0 300 460"><use href="#profile" fill="#e1b99c"/><use href="#profile-muscle"/><use href="#profile" fill="#e9c6aa" fill-opacity=".18" stroke="#84685c"/></symbol>
+<symbol id="right" viewBox="0 0 300 460"><g transform="translate(300 0) scale(-1 1)"><use href="#profile" fill="#e1b99c"/><use href="#profile-muscle"/><use href="#profile" fill="#e9c6aa" fill-opacity=".18" stroke="#84685c"/></g></symbol>
+</svg>
