@@ -1,0 +1,84 @@
+{% from "_ui790.html" import action, submit %}
+<section class="card" id="wellness-trends807">
+<h2>Wellness trends</h2>
+<p class="note">{{ wellness807_count }} recorded check-ins, {{ effect807_start }}–{{ effect807_end }}. Unreported values are not included in averages. Higher values are not universally better.</p>
+<div class="scroll"><table><thead><tr><th>Metric</th><th>Average</th><th>Samples</th></tr></thead><tbody>
+{% for key,field in wellness807_metrics.items() %}{% set item=wellness807_summary[key] %}
+<tr><td>{{ field[0] }}</td><td>{{ item.average|num if item.average is not none else '—' }}</td><td>{{ item.count }}</td></tr>
+{% endfor %}</tbody></table></div>
+{{ action('/mobile#wellness807','Daily check-in') }}
+</section>
+<section class="card" id="site-history807">
+<h2>Injection recording history</h2>
+<p class="note">Counts physical recorded administrations, not waste or planned events. Unreported reactions remain unknown.</p>
+<form method="get" action="/health-insights#site-history807" class="grid">
+<label class="field">Days<select name="site_days">{% for n in [7,14,30,90] %}<option value="{{ n }}" {% if (site807_end-site807_start).days+1==n %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+<label class="field">Custom start<input type="date" name="site_start"></label><label class="field">Custom end<input type="date" name="site_end"></label>
+<label class="field">Compound<select name="site_compound"><option value="">All</option>{% for row in compounds807 %}<option value="{{ row.id }}" {% if site807_filter.compound==row.id %}selected{% endif %}>{{ row.name }}</option>{% endfor %}</select></label>
+<label class="field">Blend<select name="site_blend"><option value="">All</option>{% for row in blends807 %}<option value="{{ row.id }}" {% if site807_filter.blend==row.id %}selected{% endif %}>{{ row.label }}</option>{% endfor %}</select></label>
+<label class="field">Recorded protocol<select name="site_protocol"><option value="">All</option>{% for row in protocols807 %}<option value="{{ row.id }}" {% if site807_filter.protocol==row.id %}selected{% endif %}>{{ row.name }}</option>{% endfor %}</select></label>
+<label class="field">Route<select name="site_route"><option value="all">All</option>{% for route in site807_routes %}<option value="{{ route }}" {% if site807_filter.route==route %}selected{% endif %}>{{ route|capitalize if route else 'Unspecified' }}</option>{% endfor %}</select></label>
+<label class="field">Region<select name="site_region"><option value="">All</option>{% for value,label in [('abdomen','Abdomen'),('thigh','Lateral thigh'),('shoulder','Deltoid'),('gluteal','Gluteal')] %}<option value="{{ value }}" {% if site807_filter.region==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label class="field">Reaction<select name="site_reaction"><option value="">All</option>{% for value in site807_reactions %}<option {% if site807_filter.reaction==value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+<label class="field">Severity<select name="site_severity"><option value="">All</option>{% for value in range(6) %}<option value="{{ value }}" {% if site807_filter.severity==value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+<label class="field">Map display<select name="site_heat">{% for value,label in [('usage','Usage count'),('recent','Recent seven days'),('reaction','Reported reactions')] %}<option value="{{ value }}" {% if site807_heat==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label class="field">Recording location<select name="site" data-heatmap807="{{ site807_heat }}" data-site807-auto-filter>
+<option value="">All locations</option>
+{% for code in site807_codes %}{% set stats=site807_stats.get(code.code,{}) %}<option value="{{ code.code }}" data-site807="{{ code.code|site_data807 }}" data-count807="{{ stats.get('count',0) }}" data-recent807="{{ stats.get('recent',0) }}" data-reaction807="{{ stats.get('reactions',0) }}" {% if site807_filter.site==code.code %}selected{% endif %}>{{ code.label }}</option>{% endfor %}
+{% for code in site_codes807 if not code|site_data807 %}<option value="{{ code }}" {% if site807_filter.site==code %}selected{% endif %}>{{ code|site_label807 }}</option>{% endfor %}
+</select></label>
+{{ submit('Apply site filters') }}
+</form>
+<p>{{ site807_start }}–{{ site807_end }} · {{ site807.count }} physical records{% if site807.truncated %} (limited to latest 5000; shorten the date range){% endif %}.</p>
+<div class="scroll"><table><thead><tr><th>Site</th><th>Uses</th><th>Last</th><th>Average interval</th><th>Reactions</th><th>Reporting completeness</th></tr></thead><tbody>
+{% for row in site807.stats %}<tr><td>{{ row.site|site_label807 }}</td><td>{{ row.count }}</td><td>{{ row.last|dt }}</td><td>{{ row.average_hours|num ~ ' h' if row.average_hours is not none else '—' }}</td><td>{{ row.reactions }}</td><td>{{ row.reported }}/{{ row.count }}</td></tr>{% else %}<tr><td colspan="6">No matching records.</td></tr>{% endfor %}
+</tbody></table></div>
+<details><summary>Administration history (up to 200 matching records)</summary>
+<div class="scroll"><table><thead><tr><th>Recorded</th><th>Source</th><th>Site</th><th>Route</th><th>Reaction status</th><th>Action</th></tr></thead><tbody>
+{% for row in site807.rows %}
+{% set reactions=site807.reports.get((row.source,row.id),[]) %}
+<tr><td>{{ row.at|dt }}</td><td>{{ row.name }}</td><td>{{ row.site|site_label807 }}</td><td>{{ row.route or 'Unspecified' }}</td><td>{% for item in reactions %}{{ item.reaction }}{% if not loop.last %}, {% endif %}{% else %}Unreported{% endfor %}</td>
+<td>{% if row.source=='dose' %}{{ action('/doses/' ~ row.id ~ '/edit','Review') }}{% elif row.source=='blend' %}{{ action('/doses/blends/' ~ row.id ~ '/edit','Review') }}{% else %}{{ action('/regimen#reg635-history','Review') }}{% endif %}</td></tr>
+{% else %}<tr><td colspan="6">No matching records.</td></tr>{% endfor %}</tbody></table></div>
+</details>
+</section>
+<section class="card" id="effectiveness807">
+<h2>Medication effectiveness &amp; actual administration cycles</h2>
+<p class="note">Observational comparisons only. Daily and date-only outcomes use noon as a display anchor; the actual measurement time is unknown. Exposure uses the existing PK engine, not a serum assay.</p>
+<form method="get" action="/health-insights#effectiveness807" class="grid">
+<label class="field">Compound<select name="effect_compound"><option value="">Choose</option>{% for row in compounds807 %}<option value="{{ row.id }}" {% if effect807_cid==row.id %}selected{% endif %}>{{ row.name }}</option>{% endfor %}</select></label>
+<label class="field">Outcome<select name="effect_metric">{% for key,label in effect807_choices.items() %}<option value="{{ key }}" {% if effect807_metric==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label class="field">Days<select name="effect_days">{% for n in [7,14,30,60,90] %}<option value="{{ n }}" {% if (effect807_end-effect807_start).days+1==n %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>{{ submit('Compare') }}
+</form>
+{% if effect807 %}
+<p>{{ effect807.actual_count }} mass-based actual administrations · {{ effect807.observed|length }} outcome samples · {{ effect807.paired|length }} modeled pairs. {{ effect807.reason }}</p>
+{% if effect807.model %}<p class="note">{{ effect807.model.description }}</p>{% endif %}
+<div class="chartbox">{{ effect807_outcome_chart|safe }}</div>
+<div class="chartbox">{{ effect807_exposure_chart|safe }}</div>
+<details open><summary>Outcome by elapsed hours since actual administration</summary>
+<div class="scroll"><table><thead><tr><th>Elapsed hours</th><th>Mean outcome</th><th>Samples</th></tr></thead><tbody>
+{% for row in effect807.cycles %}<tr><td>{{ row.start_hours }}–{{ row.end_hours }}</td><td>{{ row.average|num }}</td><td>{{ row.count }}</td></tr>{% else %}<tr><td colspan="3">No paired actuals.</td></tr>{% endfor %}</tbody></table></div></details>
+<details><summary>Observed administration periods</summary><p class="note">Runs are separated by recorded amount or material interval changes. Concurrent compounds and other factors may overlap; this is not an attribution of effectiveness.</p>
+<div class="scroll"><table><thead><tr><th>First–last actual</th><th>Amount</th><th>Count</th><th>Observed median interval</th><th>Outcome mean (n)</th><th>Weight change</th><th>Calories / protein</th><th>Other recorded compounds</th></tr></thead><tbody>
+{% for row in effect807.periods %}<tr><td>{{ row.start|dt }} – {{ row.end|dt }}</td><td>{{ row.amount_mg|num }} mg</td><td>{{ row.count }}</td><td>{{ row.median_hours|num ~ ' h' if row.median_hours is not none else '—' }}</td><td>{{ row.outcome_mean|num }} ({{ row.outcome_count }})</td><td>{{ row.weight_change|num }} {{ weight_unit }} ({{ row.weight_count }})</td><td>{{ row.energy_mean|num }} kcal / {{ row.protein_mean|num }} g</td><td>{{ row.concurrent|join(', ') or 'None in single-vial records' }}</td></tr>{% else %}<tr><td colspan="8">No recorded periods.</td></tr>{% endfor %}</tbody></table></div></details>
+<details><summary>Paired samples</summary><div class="scroll"><table><thead><tr><th>Observation time / anchor</th><th>Outcome</th><th>Elapsed hours</th><th>Simulated mg-equivalent</th></tr></thead><tbody>{% for row in effect807.paired[:200] %}<tr><td>{{ row.at|dt }}</td><td>{{ row.value|num }}</td><td>{{ row.hours|num }}</td><td>{{ row.exposure|num }}</td></tr>{% else %}<tr><td colspan="4">No modeled pairs.</td></tr>{% endfor %}</tbody></table></div></details>
+{% endif %}
+</section>
+<section class="card" id="weekly807">
+<h2>Weekly health intelligence</h2>
+<form method="get" action="/health-insights#weekly807" class="grid"><input type="hidden" name="weekly" value="1">
+<label class="field">Start<input type="date" name="week_start" value="{{ week807_start }}" required></label>
+<label class="field">End<input type="date" name="week_end" value="{{ week807_end }}" required></label>
+{{ submit('Generate summary') }}</form>
+{% if week807 %}{% set report807=week807 %}{% set report807_selected=['weight','nutrition','medication','wellness','reactions','cardio','workouts','labs','inventory'] %}{% include '_health_report807.html' %}{% endif %}
+</section>
+<section class="card" id="physician807">
+<h2>Printable physician summary</h2>
+<p class="note">Select only the sections you want included, particularly sensitive wellness and reaction records. Use browser printing or Save as PDF.</p>
+<form method="get" action="/health-insights/physician" class="grid">
+<label class="field">Start<input type="date" name="report_start" value="{{ week807_start }}" required></label>
+<label class="field">End<input type="date" name="report_end" value="{{ week807_end }}" required></label>
+{% for key,label in [('weight','Weight &amp; body composition'),('nutrition','Nutrition'),('medication','Medication &amp; supplements'),('wellness','Wellness &amp; symptoms'),('reactions','Site reactions'),('cardio','Blood pressure &amp; pulse'),('workouts','Exercise'),('labs','Laboratory monitoring'),('inventory','Inventory')] %}
+<label><input type="checkbox" name="section" value="{{ key }}" {% if key in ['weight','medication','cardio','labs'] %}checked{% endif %}> {{ label|replace('&amp;','&') }}</label>{% endfor %}
+{{ submit('Open printable summary') }}</form>
+</section>
