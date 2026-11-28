@@ -86,3 +86,40 @@ def next_rotation_site(sequence, last_site, last_used, excluded, minimum_hours, 
         if used is None or now - used >= timedelta(hours=minimum_hours):
             return code
     return None
+
+def site_geometry(code):
+    """SVG recording rectangles in a 300×460 schematic, not measured anatomy."""
+    site = SITE_BY_CODE.get(code)
+    if not site:
+        return {}
+    side = site.side
+    result = {}
+    if site.region == "abdomen":
+        mid = code.endswith("_mid")
+        x = (150 if mid else 174) if side == "left" else (126 if mid else 102)
+        result["front"] = (x, 174, 24, 43)
+        result[side] = (120 if mid else 144, 174, 24, 43) if side == "left" else (156 if mid else 132, 174, 24, 43)
+    elif site.region == "thigh":
+        row = {"upper": 0, "middle": 1, "lower": 2}[site.subdivision]
+        result["front"] = (178 if side == "left" else 96, 264 + row * 31, 26, 31)
+        result[side] = (134, 264 + row * 31, 32, 31)
+    elif site.region == "shoulder":
+        if site.subdivision == "anterior":
+            result["front"] = (205 if side == "left" else 67, 89, 28, 39)
+        if site.subdivision == "posterior":
+            result["rear"] = (67 if side == "left" else 205, 89, 28, 39)
+        column = {"anterior": 0, "middle": 1, "posterior": 2}[site.subdivision]
+        if side == "right":
+            column = 2 - column
+        result[side] = (111 + column * 26, 90, 26, 38)
+    elif site.region == "gluteal":
+        height, width = site.subdivision.split()
+        if side == "left":
+            x = 98 if width == "outer" else 124
+        else:
+            x = 176 if width == "outer" else 150
+        y = 220 if height == "upper" else 242
+        result["rear"] = (x, y, 26, 22)
+        if width == "outer":
+            result[side] = (170 if side == "left" else 104, y, 26, 22)
+    return result
