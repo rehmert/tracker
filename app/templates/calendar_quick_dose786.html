@@ -34,7 +34,7 @@
         </label>
         <label class="field"><span>Injection location</span>
           <select name="site"><option value="">Not recorded</option>
-          {% for site in sites %}<option value="{{ site }}">{{ site|site_label807 }}</option>{% endfor %}</select>
+          {% for site in sites %}<option value="{{ site }}" data-site807="{{ site|site_data807 }}">{{ site|site_label807 }}</option>{% endfor %}</select>
         </label>
       </div>
       <div id="form-msg" role="status" aria-live="polite"></div>
