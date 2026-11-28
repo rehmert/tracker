@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from uuid import uuid4
 
@@ -158,8 +159,11 @@ def test_711_edit_physical_blend_adjusts_volume_supplies_audit_without_vial_rows
         assert "Corrected QA711" in revised.text
         assert "Withdrawn volume" in revised.text
         timeline = client.get("/doses")
-        assert f'href="/doses/blends/{did}/edit"' in timeline.text
-        assert "0.5 mL withdrawn" in timeline.text
+        edit_link = f'href="/doses/blends/{did}/edit"'
+        row = next(row for row in re.findall(r"<tr\b[^>]*>.*?</tr>", timeline.text, re.S)
+                   if edit_link in row)
+        assert 'data-timeline-kind="waste"' in row
+        assert "<td>0.5 mL</td>" in row
         detail = client.get(f"/blends/{bid}")
         assert f'href="/doses/blends/{did}/edit"' in detail.text
 

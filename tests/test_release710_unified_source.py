@@ -1,5 +1,7 @@
 """Release 710 source contracts for unified dose workflow and safe migration."""
 import ast
+import re
+import shlex
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -149,7 +151,14 @@ def test_710_guarded_install_scripts_parse_and_keep_schema_approval():
     assert 'BLEND_710_SCHEMA_PROCEDURE=AUTHORIZED' in release
     assert 'RELEASE_710_PROD_SCOPED=PASSED' in release
     assert 'REVIEWED_BLEND_710="${20:-0}"' in release
-    assert '[[ $# -ge 12 && $# -le 20 ]]' in release
+    guard = re.search(r"\[\[ \$# -ge (\d+) &&\s+\$# -le (\d+) \]\]", release)
+    assert guard is not None
+    minimum, maximum = map(int, guard.groups())
+    invocation = next(line for line in release.splitlines() if '"$RUN/worker.sh" --worker ' in line)
+    worker_args = shlex.split(invocation)[3:]
+    assert minimum == 12
+    assert minimum <= 20 <= len(worker_args) <= maximum
+    assert worker_args[19] == "$REVIEWED_BLEND_710"
     remote = source("scripts/tracker_prod_remote568.sh")
     assert 'elif [[ "$RELEASE" == 710 ]]; then' in remote
     assert 'DEPLOY_EXTRA=(--reviewed-blend-710 --db-migration)' in remote

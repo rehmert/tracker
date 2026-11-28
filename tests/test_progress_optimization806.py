@@ -50,7 +50,8 @@ def test_progress_templates_preserve_context():
     template = (ROOT/"app/templates/progress762.html").read_text()
     import re
     actions = re.findall(r'<form method="post" action="([^"]+)"', template)
-    assert len(actions) == 9
+    assert len(actions) == 10
+    assert "/progress/milestones807?{{ progress_query }}" in actions
     assert all("?{{ progress_query }}" in action for action in actions)
     assert template.count("{{ progress_query }}&amp;edit_kind=") == 4
     assert 'action="/progress#progress-strength"' in template
