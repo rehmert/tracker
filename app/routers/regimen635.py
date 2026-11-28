@@ -21,6 +21,9 @@ from ..scoped_db390 import get_scoped_db390
 from ..templating import render
 from .. import services
 from ..daily_workspace790 import regimen_stamp790
+from ..site_history807 import ROUTES, save_context807
+from ..wellness_models807 import AdministrationContext807
+from ..anatomical_sites807 import valid_site
 
 router = APIRouter()
 KINDS = ("supplement", "medication")
@@ -361,6 +364,7 @@ def regimen_page(request: Request, day: str = "", focus: str = "",
         product_facts=product_facts,
         product_facts_display=product_facts_display,
         due=due, recorded=recorded, entries=entries, history=history,
+        injection_contexts807={r.regimen_entry_id:r for r in db.scalars(select(AdministrationContext807).where(AdministrationContext807.regimen_entry_id.in_([e.id for e in history])))},
         day=selected, regimen_snapshots={s.id: regimen_stamp790(s, tablet_plans.get(s.id), selected) for s in due},
         regimen_now=datetime.now().strftime("%H:%M"),
         regimen_entries={e.schedule_id: e for e in entries if e.schedule_id is not None},
@@ -696,6 +700,18 @@ def _entry_values(form, db, *, existing=None):
     ), dose
 
 
+def _injection_values807(form, db, values):
+    route = form.get("route807")
+    site = form.get("site807")
+    if route is None and site is None:
+        return None, None
+    if route not in ROUTES or not valid_site(site or ""):
+        raise ValueError("Unknown injection route or recording location.")
+    item = db.get(RegimenItem, values["item_id"])
+    if (route or site) and (item.kind != "medication" or values["outcome"] != "taken"):
+        raise ValueError("Injection location is only for an actual medication administration.")
+    return route, site
+
 def _entry_snapshot(entry):
     return dict(
         item_id=entry.item_id, schedule_id=entry.schedule_id,
@@ -725,6 +741,7 @@ async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
         return back(err="Database is busy.")
     try:
         values, tablet_dose = _entry_values(form, db)
+        route807, site807 = _injection_values807(form, db, values)
         if form.get("scheduled_quick790") == "yes":
             day = _day(form.get("scheduled_day790"))
             schedule = db.get(RegimenSchedule, values["schedule_id"]) if values["schedule_id"] else None
@@ -750,6 +767,7 @@ async def log_entry(request: Request, db: Session = Depends(get_scoped_db390)):
     db.add(entry)
     db.flush()
     _store_tablet_entry(db, entry.id, tablet_dose)
+    save_context807(db, "regimen", entry, route807, site=site807)
     _audit(db, "regimen_entry", entry.id, "create", after=_entry_snapshot(entry))
     db.commit()
     return back(values["logged_at"].date(), msg="Intake recorded.")
@@ -822,6 +840,7 @@ async def edit_entry(entry_id: int, request: Request, db: Session = Depends(get_
     try:
         entry = _get(db, "entry", entry_id)
         values, tablet_dose = _entry_values(form, db, existing=entry)
+        route807, site807 = _injection_values807(form, db, values)
     except ValueError as exc:
         return _redirect(err=str(exc))
     if not reserve_inventory_write(db):
@@ -841,6 +860,7 @@ async def edit_entry(entry_id: int, request: Request, db: Session = Depends(get_
     for key, value in values.items():
         setattr(entry, key, value)
     _store_tablet_entry(db, entry.id, tablet_dose)
+    save_context807(db, "regimen", entry, route807, site=site807)
     after = _entry_snapshot(entry)
     if before != after:
         _audit(db, "regimen_entry", entry.id, "edit", before, after)
