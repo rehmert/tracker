@@ -175,9 +175,11 @@ def site_analytics807(db,start,end,*,region=None,reaction_type=None,severity=Non
         reactions.extend(db.scalars(select(SiteReaction807).where(SiteReaction807.dose_id.in_(ids["dose"]))))
     if ids["blend"]:
         reactions.extend(db.scalars(select(SiteReaction807).where(SiteReaction807.blend_dose_id.in_(ids["blend"]))))
+    if ids["regimen"]:
+        reactions.extend(db.scalars(select(SiteReaction807).where(SiteReaction807.regimen_entry_id.in_(ids["regimen"]))))
     reports=defaultdict(list)
     for reaction in reactions:
-        key=("dose",reaction.dose_id) if reaction.dose_id else ("blend",reaction.blend_dose_id)
+        key=("dose",reaction.dose_id) if reaction.dose_id else (("blend",reaction.blend_dose_id) if reaction.blend_dose_id else ("regimen",reaction.regimen_entry_id))
         reports[key].append(reaction)
     if reaction_type or severity is not None:
         rows=[r for r in rows if any((not reaction_type or x.reaction==reaction_type) and
