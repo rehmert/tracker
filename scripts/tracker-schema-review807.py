@@ -4,6 +4,9 @@ import argparse
 import ast
 from pathlib import Path
 import subprocess
+import os
+import sys
+import tempfile
 
 BASE = "2d597a9907ab3c7e1915f073ed5cd5e898e93b90"
 EXPECTED = {"wellness_preferences807", "wellness_days807", "wellness_symptoms807",
@@ -37,6 +40,10 @@ def main():
               and isinstance(node.value, ast.Constant)}
     if tables != EXPECTED:
         raise SystemExit("Unexpected additive table set")
+    # Never resolve config to installed or live data.
+    temporary = tempfile.TemporaryDirectory(prefix='tracker807-schema-')
+    os.environ['TRACKER_DATA_DIR'] = temporary.name
+    sys.path.insert(0, str(args.root))
     from app.db import Base
     from app import models, wellness_models807
     import sqlalchemy
@@ -53,6 +60,8 @@ def main():
             raise SystemExit("Schema is not additive")
         if conn.exec_driver_sql("PRAGMA foreign_key_check").fetchall():
             raise SystemExit("Foreign key validation failed")
+    engine.dispose()
+    temporary.cleanup()
     print("RELEASE_807_SCHEMA_REVIEW=PASSED")
 
 if __name__ == "__main__":
