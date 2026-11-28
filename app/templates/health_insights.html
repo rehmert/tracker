@@ -16,4 +16,5 @@
 <section><h2>Blood pressure <small>({{ bp_count }} readings)</small></h2><div class="chartbox">{{ bp_chart|safe }}</div></section>
 <section><h2>Pulse <small>({{ pulse_count }} readings)</small></h2><div class="chartbox">{{ pulse_chart|safe }}</div></section>
 <section><h2>Laboratory trend</h2>{% if lab_info %}<p class="note">{{ lab_info.name }} · {{ lab_info.count }} comparable results · {{ lab_info.unit }}{% if lab_info.skipped %} · {{ lab_info.skipped }} omitted due to incompatible units{% endif %}</p><div class="chartbox">{{ lab_chart|safe }}</div>{% else %}<p class="empty">No lab measurements for this analyte and period.</p>{% endif %}<p><a href="/labs">Explore lab results →</a></p></section>
+{% include '_health_insights807.html' %}
 {% endblock %}
