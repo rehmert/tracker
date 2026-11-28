@@ -27,7 +27,7 @@
     <label class="field">Notes (optional)<textarea name="notes" rows="2" maxlength="2000">{{ wellness_row.notes if wellness_row else '' }}</textarea></label>
     {{ submit('Save check-in') }}
   </form>
-  {% if wellness_row %}<form method="post" action="/wellness807/{{ wellness_row.id }}/delete">{{ submit('Delete check-in') }}</form>{% endif %}
+  {% if wellness_row %}<form method="post" action="/wellness807/days/{{ wellness_row.id }}/delete">{{ submit('Delete check-in') }}</form>{% endif %}
   <details class="tracker-more790"><summary>Recent check-ins ({{ wellness_recent|length }})</summary>
     <ul class="tracker-daily-list">
     {% for row in wellness_recent %}<li><div><strong>{{ row.day }}</strong><span>{{ (row.values_json|from_json)|length }} ratings</span></div>{{ action('/mobile?wellness_day=' ~ row.day ~ '#wellness807','Edit') }}</li>{% else %}<li>No check-ins yet.</li>{% endfor %}
