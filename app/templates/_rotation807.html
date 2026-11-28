@@ -1,0 +1,43 @@
+{% from "_ui790.html" import submit %}
+<section class="card" id="rotation807">
+<h2>Injection recording rotation</h2>
+<p class="note">Optional recording preferences only. Protocol overrides blend, then compound, then global for the exact recorded route. An empty sequence disables that scope. No region is automatically eligible.</p>
+{% macro scope_options(current='global:0') %}
+<option value="global:0" {% if current=='global:0' %}selected{% endif %}>Global default</option>
+{% for row in rotation807_compounds %}<option value="compound:{{ row.id }}" {% if current=='compound:' ~ row.id %}selected{% endif %}>Compound · {{ row.name }}</option>{% endfor %}
+{% for row in rotation807_blends %}<option value="blend:{{ row.id }}" {% if current=='blend:' ~ row.id %}selected{% endif %}>Blend · {{ row.label }}</option>{% endfor %}
+{% for row in rotation807_protocols %}<option value="protocol:{{ row.id }}" {% if current=='protocol:' ~ row.id %}selected{% endif %}>Protocol · {{ row.name }}</option>{% endfor %}
+{% endmacro %}
+{% macro rotation_form(row) %}
+{% set parts = row.key.split(':') if row else ['global','0',''] %}
+{% set current = parts[0] ~ ':' ~ parts[1] %}
+<form method="post" action="/wellness807/rotation/save" class="grid">
+<label class="field">Scope<select name="scope">{{ scope_options(current) }}</select></label>
+<label class="field">Recorded route<select name="route">{% for route in rotation807_routes %}<option value="{{ route }}" {% if parts[2]==route %}selected{% endif %}>{{ route|capitalize if route else 'Unspecified' }}</option>{% endfor %}</select></label>
+<label class="field">Minimum hours between uses<input type="number" name="minimum_hours" min="0" max="8760" value="{{ row.minimum_hours if row else 0 }}" required></label>
+<label class="field">Recent-use highlighting (hours)<input type="number" name="recent_hours" min="0" max="8760" value="{{ row.recent_hours if row else 72 }}" required></label>
+<label class="field wide">Ordered canonical recording codes, comma separated<textarea name="sequence" rows="3" maxlength="1800">{{ (row.sequence_json|from_json)|join(', ') if row else '' }}</textarea></label>
+<details class="wide"><summary>Recording-zone codes</summary>
+<ul>{% for site in rotation807_sites %}<li><code>{{ site.code }}</code> · {{ site.label }}</li>{% endfor %}</ul>
+</details>
+{{ submit('Save rotation') }}
+</form>
+{% endmacro %}
+<details><summary>Add or replace rotation preferences</summary>{{ rotation_form(none) }}</details>
+{% for row in rotation807_rows %}
+<details><summary>{{ row.key }} · {{ (row.sequence_json|from_json)|length }} zones</summary>{{ rotation_form(row) }}
+<form method="post" action="/wellness807/rotation/delete"><input type="hidden" name="key" value="{{ row.key }}">{{ submit('Delete rotation', false) }}</form>
+</details>
+{% else %}<p class="note">No configured rotations.</p>{% endfor %}
+<details><summary>Temporarily exclude a location</summary>
+<form method="post" action="/wellness807/exclusions/save" class="grid">
+<label class="field">Recording site<select name="site">{% for site in rotation807_sites %}<option value="{{ site.code }}">{{ site.label }}</option>{% endfor %}</select></label>
+<label class="field">Exclude until<input name="until_at" type="datetime-local" required></label>
+<label class="field wide">Notes<input name="notes" maxlength="2000"></label>{{ submit('Save exclusion') }}
+</form>
+{% for row in rotation807_exclusions %}
+<p>{{ row.site|site_label807 }} · until {{ row.until_at|dt }}{% if row.notes %} · {{ row.notes }}{% endif %}</p>
+<form method="post" action="/wellness807/exclusions/{{ row.site }}/delete">{{ submit('Remove exclusion', false) }}</form>
+{% else %}<p>No exclusions recorded.</p>{% endfor %}
+</details>
+</section>
