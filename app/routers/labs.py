@@ -1,5 +1,7 @@
 import csv
 import hashlib
+import json
+from ..lab_pdf_models808 import LabTextResult808
 from starlette.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from .. import lab_pdf808
@@ -390,6 +392,7 @@ async def pdf_preview808(file: UploadFile = File(...),
     digest = hashlib.sha256(data).hexdigest()
     existing = db.scalar(select(LabReport.id).where(LabReport.sha256 == digest).limit(1))
     preview["existing_report_id"] = existing
+    preview["sha256"] = digest
     return JSONResponse(preview, headers={"Cache-Control": "no-store"})
 
 
@@ -398,7 +401,12 @@ async def create_report(request: Request, drawn_on: str = Form(""), lab_name: st
                         notes: str = Form(""), analyte: list[str] = Form(default=[]),
                         value: list[str] = Form(default=[]), unit: list[str] = Form(default=[]),
                         ref_low: list[str] = Form(default=[]), ref_high: list[str] = Form(default=[]),
-                        file: UploadFile | None = File(None), db: Session = Depends(get_scoped_db390)):
+                        file: UploadFile | None = File(None), db: Session = Depends(get_scoped_db390),
+                        pdf_rows808: str = Form(""), pdf_confirm808: str = Form(""),
+                        pdf_digest808: str = Form("")):
+    if pdf_rows808 or pdf_digest808 or pdf_confirm808:
+        return await _save_pdf808(db, file, drawn_on, lab_name, notes, pdf_rows808,
+                                  pdf_confirm808, pdf_digest808)
     values = {"drawn_on": drawn_on, "lab_name": lab_name, "notes": notes}
     results, echo, error = _parse_rows(analyte, value, unit, ref_low, ref_high)
     when = None
@@ -421,6 +429,57 @@ async def create_report(request: Request, drawn_on: str = Form(""), lab_name: st
         db.add(report)
         db.commit()
     return services.flash_redirect(f"/labs/{report.id}", msg=f"Saved {len(results)} result(s).")
+
+
+
+async def _save_pdf808(db, file, drawn_on, lab_name, notes, payload, confirm, digest):
+    if confirm != "yes" or not file or not (file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(422, "Confirm reviewed results and retain the original PDF.")
+    if len(payload) > 500_000:
+        raise HTTPException(422, "Review data exceeds size limit.")
+    try:
+        when, name, note = _edit_report_values482(drawn_on, lab_name, notes)
+        rows = lab_pdf808.validate_review(json.loads(payload))
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from None
+    data = await file.read(lab_pdf808.MAX_BYTES + 1)
+    if (not data.startswith(b"%PDF-") or len(data) > lab_pdf808.MAX_BYTES
+            or hashlib.sha256(data).hexdigest() != digest):
+        raise HTTPException(422, "PDF changed or is invalid; extract it again.")
+    if db.scalar(select(LabReport.id).where(LabReport.sha256 == digest).limit(1)) is not None:
+        raise HTTPException(409, "This exact PDF is already saved.")
+    await file.seek(0)
+    directory = attachment_directory400("labs")
+    try:
+        stored = await services.save_upload(file, directory)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+    with uploaded_transaction(db, stored, directory, services.delete_stored_file):
+        # Serialize duplicate check and insert under SQLite write lock.
+        db.rollback()
+        from sqlalchemy import text
+        db.execute(text("BEGIN IMMEDIATE"))
+        if db.scalar(select(LabReport.id).where(LabReport.sha256 == digest).limit(1)) is not None:
+            raise HTTPException(409, "This exact PDF is already saved.")
+        rep = LabReport(drawn_on=when, lab_name=name, notes=note, **stored)
+        db.add(rep)
+        db.flush()
+        for row in rows:
+            lo, hi = row["ref_low"], row["ref_high"]
+            printed = row["printed_range"] or (f"{lo} to {hi}" if lo and hi else "")
+            flag = row["flag"]
+            if row["exact"]:
+                comment = "; ".join(x for x in (
+                    "Printed range: " + row["printed_range"] if row["printed_range"] else "",
+                    "Reported flag: " + flag if flag else "") if x)
+                rep.results.append(LabResult(analyte=row["analyte"], value=float(row["value"]),
+                    unit=row["unit"], ref_low=float(lo) if lo else None,
+                    ref_high=float(hi) if hi else None, note=comment))
+            else:
+                db.add(LabTextResult808(report_id=rep.id, analyte=row["analyte"],
+                    value_text=row["value"], unit=row["unit"], printed_range=printed, flag=flag))
+        db.commit()
+    return services.flash_redirect(f"/labs/{rep.id}", msg=f"Saved {len(rows)} reviewed PDF result(s).")
 
 
 @router.get("/labs/analyte")
@@ -505,6 +564,10 @@ def export_lab_report_csv(rid: int, db: Session = Depends(get_scoped_db390)):
             _lab_csv_text(result.note),
         ])
 
+    for result in db.scalars(select(LabTextResult808).where(LabTextResult808.report_id == rid).order_by(LabTextResult808.id)):
+        rows.append([report.drawn_on.isoformat(), _lab_csv_text(report.lab_name),
+            _lab_csv_text(result.analyte), _lab_csv_text(result.value_text), _lab_csv_text(result.unit), "", "",
+            _lab_csv_text("; ".join(x for x in (result.printed_range, result.flag) if x))])
     return _lab_csv_response(
         rows, f"lab-report-{rid}-results.csv"
     )
@@ -564,7 +627,8 @@ def report_page(rid: int, request: Request, sort: str = "analyte", direction: st
     rows = [{"res": r, "status": labs.range_status(r.value, r.ref_low, r.ref_high)} for r in rep.results]
     sort = sort if sort in REPORT_SORT_COLUMNS else "analyte"
     direction = direction if direction in ("asc", "desc") else "asc"
-    return render(request, "lab_report.html", rep=rep, rows=_sort_report_rows(rows, sort, direction),
+    text_results = list(db.scalars(select(LabTextResult808).where(LabTextResult808.report_id == rid).order_by(LabTextResult808.id)))
+    return render(request, "lab_report.html", rep=rep, rows=_sort_report_rows(rows, sort, direction), text_results=text_results,
                   names=_name_options(db), sort=sort, direction=direction)
 
 
