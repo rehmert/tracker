@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% from "_ui790.html" import action %}
+{% block title %}Medication injection reactions{% endblock %}
+{% block content %}
+<h1>Medication injection reactions</h1>{{ action("/regimen#reg635-history","Back to intake history") }}
+{% include "_site_reactions807.html" %}
+{% endblock %}
