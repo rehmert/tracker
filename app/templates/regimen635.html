@@ -460,6 +460,7 @@ summary.reg737-native-disclosure{
 <button>Save correction</button>
 </form>
 </details>
+{% if entry.outcome=="taken" and injection_contexts807.get(entry.id) and (injection_contexts807[entry.id].site or injection_contexts807[entry.id].route in ["subcutaneous","intramuscular"]) %}{{ action("/wellness807/reactions/regimen/" ~ entry.id,"Site reactions") }}{% endif %}
 <form method="post" action="/regimen/entries/{{ entry.id }}/delete" onsubmit="return confirm('Delete this intake record? The audit trail remains.')"><button type="submit" class="reg734-macd-action">Delete intake</button></form>
 </div>
 </td></tr>
