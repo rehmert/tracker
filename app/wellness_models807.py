@@ -22,9 +22,14 @@ class Symptom807(Base):
         CheckConstraint("severity BETWEEN 1 AND 5", name="ck_symptom807_severity"),
         CheckConstraint("resolved_at IS NULL OR resolved_at >= onset_at", name="ck_symptom807_dates"),
         Index("ix_symptom807_onset", "onset_at"),
+        CheckConstraint("(dose_id IS NOT NULL)+(blend_dose_id IS NOT NULL)+(regimen_entry_id IS NOT NULL)<=1", name="ck_symptom807_association"),
     )
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     symptom: Mapped[str] = mapped_column(String(80), nullable=False)
+    dose_id: Mapped[int | None] = mapped_column(ForeignKey("dose_logs.id", ondelete="SET NULL"), index=True)
+    blend_dose_id: Mapped[int | None] = mapped_column(ForeignKey("blend_doses.id", ondelete="SET NULL"), index=True)
+    regimen_entry_id: Mapped[int | None] = mapped_column(ForeignKey("regimen_entries635.id", ondelete="SET NULL"), index=True)
+    medication_period: Mapped[str] = mapped_column(String(160), default="")
     severity: Mapped[int] = mapped_column(Integer, nullable=False)
     onset_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -33,15 +38,18 @@ class Symptom807(Base):
 class SiteReaction807(Base):
     __tablename__ = "site_reactions807"
     __table_args__ = (
-        CheckConstraint("(dose_id IS NOT NULL AND blend_dose_id IS NULL) OR (dose_id IS NULL AND blend_dose_id IS NOT NULL)", name="ck_reaction807_parent"),
+        CheckConstraint("(dose_id IS NOT NULL)+(blend_dose_id IS NOT NULL)+(regimen_entry_id IS NOT NULL)=1", name="ck_reaction807_parent"),
         CheckConstraint("severity BETWEEN 0 AND 5", name="ck_reaction807_severity"),
         CheckConstraint("resolved_at IS NULL OR resolved_at >= onset_at", name="ck_reaction807_dates"),
         Index("ix_reaction807_dose", "dose_id"),
         Index("ix_reaction807_blend", "blend_dose_id"),
+        Index("ix_reaction807_regimen", "regimen_entry_id"),
+        Index("ix_reaction807_site_onset", "site", "onset_at"),
     )
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     dose_id: Mapped[int | None] = mapped_column(ForeignKey("dose_logs.id", ondelete="CASCADE"), nullable=True)
     blend_dose_id: Mapped[int | None] = mapped_column(ForeignKey("blend_doses.id", ondelete="CASCADE"), nullable=True)
+    regimen_entry_id: Mapped[int | None] = mapped_column(ForeignKey("regimen_entries635.id", ondelete="CASCADE"), nullable=True)
     site: Mapped[str] = mapped_column(String(80), nullable=False)
     reaction: Mapped[str] = mapped_column(String(80), nullable=False)
     severity: Mapped[int] = mapped_column(Integer, nullable=False)
