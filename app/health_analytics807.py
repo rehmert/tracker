@@ -22,7 +22,7 @@ from .workout_models654 import WorkoutSession654, WorkoutSet654
 def actual_compound807(db, cid, start, end):
     """Use existing base amounts and blend constituent projection; mass only."""
     singles=db.execute(select(DoseLog.taken_at,DoseLog.amount_base,Vial.content_unit)
-        .join(Vial,DoseLog.vial_id==Vial.id).where(Vial.compound_id==cid,DoseLog.kind=="dose",
+        .select_from(DoseLog).join(Vial,DoseLog.vial_id==Vial.id).where(Vial.compound_id==cid,DoseLog.kind=="dose",
             DoseLog.taken_at>=start,DoseLog.taken_at<=end)).all()
     result=[(at,amount/1000) for at,amount,unit in singles
             if unit in ("mg","mcg","g") and isfinite(amount) and amount>0]
@@ -181,7 +181,7 @@ def site_analytics807(db,start,end,*,region=None,reaction_type=None,severity=Non
         reports[key].append(reaction)
     if reaction_type or severity is not None:
         rows=[r for r in rows if any((not reaction_type or x.reaction==reaction_type) and
-              (severity is None or x.severity==severity) for x in reports[(r["source"],r["id"])])]
+              (severity is None or x.severity==severity) for x in reports.get((r["source"],r["id"]),[]))]
     groups=defaultdict(list)
     for row in rows:
         groups[row["site"] or ""].append(row)
