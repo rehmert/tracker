@@ -1,0 +1,26 @@
+{
+  "action": "qualify",
+  "base": "2d597a9907ab3c7e1915f073ed5cd5e898e93b90",
+  "exit_code": 0,
+  "failed_tests": [],
+  "failure_category": null,
+  "finished_at_utc": "2026-11-28T14:35:20+00:00",
+  "markers": [
+    "RELEASE_807_QUALIFICATION=PASSED_SCOPED_NO_DEPLOY",
+    "RELEASE_807_EXIT_STATUS=0",
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_807_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_807_INSTALLED_DEV=UNMODIFIED"
+  ],
+  "previous_request_id": null,
+  "ref": "release/807-integrated-wellness-anatomy",
+  "release": 807,
+  "request_id": "r807-q4ad152879b7e",
+  "schema": 1,
+  "started_at_utc": "2026-11-28T14:34:12+00:00",
+  "status": "passed",
+  "target": "4ad152879b7e9438793f9af18cc03599a1438348",
+  "test_counts": [
+    "168 passed, 1 warning"
+  ]
+}
