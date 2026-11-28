@@ -1,0 +1,14 @@
+.physician807 { max-width:920px; margin:auto; }
+.report807-controls { display:flex; gap:.5rem; flex-wrap:wrap; }
+.report807-section { margin-block:1rem; }
+@media print {
+ body { background:white!important; color:black!important; }
+ body * { visibility:hidden; }
+ .physician807,.physician807 * { visibility:visible; }
+ .physician807 { position:absolute; inset:0 auto auto 0; width:100%; max-width:none; color:black; }
+ .report807-controls,.report807-controls * { display:none!important; }
+ .physician807 table { width:100%; border-collapse:collapse; }
+ .physician807 th,.physician807 td { border:1px solid #bbb; padding:4px; color:black!important; }
+ .physician807 tr { break-inside:avoid; }
+ .physician807 h3 { break-after:avoid; }
+}
