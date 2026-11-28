@@ -70,7 +70,9 @@ def parse_text(text):
             lower = line.lower()
             if ("result" in lower and ("test" in lower or "analyte" in lower)
                     and ("unit" in lower or "reference" in lower)):
-                active = True
+                active = not bool(re.search(r"\b(?:previous|historical|prior)\b", lower))
+                if not active:
+                    warnings.append(f"Page {page_no}: historical-result columns require manual review.")
                 continue
             if not active or len(cols) < 2:
                 continue
