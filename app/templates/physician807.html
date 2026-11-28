@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Physician summary{% endblock %}
+{% block page_assets %}<link rel="stylesheet" href="/static/css/tracker-report807.css?v=807"><script defer src="/static/js/tracker-report807.js?v=807"></script>{% endblock %}
+{% block content %}
+<main class="physician807">
+<div class="report807-controls"><a class="tracker-ui-action" href="/health-insights#physician807">Back to report options</a><button type="button" data-print807>Print / Save as PDF</button></div>
+<h1>Physician summary</h1><p>{{ report807_start }} to {{ report807_end }}</p>
+<p>Measured, recorded and self-reported values are identified in their respective sections. Calculated trends are descriptive; simulated exposure is not a measured laboratory value.</p>
+{% include '_health_report807.html' %}
+</main>
+{% endblock %}
