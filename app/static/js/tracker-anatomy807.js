@@ -85,7 +85,7 @@
       let history=null, requestId=0;
       const form=select.form;
       async function loadHistory() {
-        if(!form || location.pathname.startsWith("/secondary/")) return;
+        if(!form || select.dataset.heatmap807 || location.pathname.startsWith("/secondary/")) return;
         const id=++requestId;
         const params=new URLSearchParams();
         const source=select.dataset.source807 || form.querySelector('[name="vial_id"]')?.value || "";
@@ -120,21 +120,28 @@
       function choose(code) {
         select.value = code;
         select.dispatchEvent(new Event("change",{bubbles:true}));
+        if(select.hasAttribute('data-site807-auto-filter')) select.form?.requestSubmit();
       }
       function update() {
         map.querySelectorAll("[data-code]").forEach(el=>{
           const h=history?.sites?.[el.dataset.code];
+          const option=Array.from(select.options).find(o=>o.value===el.dataset.code);
+          const heat=select.dataset.heatmap807;
+          const amount=heat ? Number(option?.dataset[heat==="usage"?"count807":heat==="recent"?"recent807":"reaction807"]||0) : 0;
+          el.classList.toggle("site807-heat",Boolean(heat && amount));
+          if(heat && amount) el.setAttribute("fill-opacity",String(Math.min(.9,.22+Math.log1p(amount)*.17)));
           el.setAttribute("aria-pressed",String(el.dataset.code===select.value));
           el.classList.toggle("site807-recent",Boolean(h?.recent));
           el.classList.toggle("site807-excluded",Boolean(h?.excluded||h?.active_reactions));
           el.classList.toggle("site807-next",Boolean(h?.next));
           const zone=zones.find(z=>z.code===el.dataset.code);
-          const detail=[h?.recent?"recently used":"",h?.excluded?"excluded":"",h?.active_reactions?"reported reaction":"",h?.next?"next configured":"",el.dataset.code===select.value?"selected":""].filter(Boolean).join(", ");
+          const detail=[heat?amount+" "+(heat==="reaction"?"reported reactions":"uses"):"",h?.recent?"recently used":"",h?.excluded?"excluded":"",h?.active_reactions?"reported reaction":"",h?.next?"next configured":"",el.dataset.code===select.value?"selected":""].filter(Boolean).join(", ");
           el.setAttribute("aria-label",zone.label+(detail?", "+detail:""));
           el.querySelector("title").textContent=zone.label+(detail?" · "+detail:"");
         });
         status.textContent = select.selectedOptions[0]?.textContent.trim() || "Not recorded";
         showRef.disabled = !zones.some(z=>z.code===select.value);
+        historyLink.href="/health-insights?site="+encodeURIComponent(select.value)+"#site-history807";
         if(history) {
           const h=history.sites?.[select.value];
           const next=history.next_site ? history.sites[history.next_site].label : (history.configured?"No eligible location in configured sequence":"No rotation configured");
