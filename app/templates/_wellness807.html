@@ -1,0 +1,70 @@
+{% from "_ui790.html" import action, submit %}
+<section class="card tracker-daily-section" id="wellness807">
+  <div class="tracker-daily-heading"><h2>Daily Wellness</h2>{{ action('/health-insights#wellness-trends807','Trends') }}</div>
+  <p class="note">{{ wellness_day }} · {{ wellness_values|length }} ratings recorded. Blank ratings are unreported, not normal.</p>
+  <form method="get" action="/mobile#wellness807" class="grid">
+    <label class="field">Check-in date<input type="date" name="wellness_day" value="{{ wellness_day }}" max="{{ today }}" required></label>
+    <div>{{ submit('Load date') }}</div>
+  </form>
+  <form method="post" action="/wellness807/save" class="reg635-form">
+    <input type="hidden" name="day" value="{{ wellness_day }}">
+    {% for key in wellness_order %}
+      {% set field = wellness_metrics[key] %}
+      {% if field[1] %}
+      <fieldset class="wellness807-rating">
+        <legend>{{ field[0] }}</legend>
+        <div class="wellness807-options">
+        <label><input type="radio" name="{{ key }}" value="" {% if key not in wellness_values %}checked{% endif %}><span>—</span><small>Unreported</small></label>
+        {% for choice in field[1] %}
+        <label><input type="radio" name="{{ key }}" value="{{ loop.index }}" {% if wellness_values.get(key) == loop.index %}checked{% endif %}><span>{{ loop.index }}</span><small>{{ choice }}</small></label>
+        {% endfor %}
+        </div>
+      </fieldset>
+      {% else %}
+      <label class="field">{{ field[0] }}<input type="number" name="{{ key }}" min="0" max="24" step=".25" value="{{ wellness_values.get(key, '') }}" inputmode="decimal"></label>
+      {% endif %}
+    {% else %}<p class="note">Enable metrics in the preferences below.</p>{% endfor %}
+    <label class="field">Notes (optional)<textarea name="notes" rows="2" maxlength="2000">{{ wellness_row.notes if wellness_row else '' }}</textarea></label>
+    {{ submit('Save check-in') }}
+  </form>
+  {% if wellness_row %}<form method="post" action="/wellness807/{{ wellness_row.id }}/delete">{{ submit('Delete check-in') }}</form>{% endif %}
+  <details class="tracker-more790"><summary>Recent check-ins ({{ wellness_recent|length }})</summary>
+    <ul class="tracker-daily-list">
+    {% for row in wellness_recent %}<li><div><strong>{{ row.day }}</strong><span>{{ (row.values_json|from_json)|length }} ratings</span></div>{{ action('/mobile?wellness_day=' ~ row.day ~ '#wellness807','Edit') }}</li>{% else %}<li>No check-ins yet.</li>{% endfor %}
+    </ul>
+  </details>
+  <details class="tracker-more790"><summary>Wellness preferences</summary>
+    <p class="note">Enable only desired metrics. Smaller order numbers appear first.</p>
+    <form method="post" action="/wellness807/preferences">
+      {% for key, field in wellness_metrics.items() %}
+      <div class="wellness807-pref">
+        <label><input type="checkbox" name="enabled" value="{{ key }}" {% if key in wellness_order %}checked{% endif %}> {{ field[0] }}</label>
+        <label>Order <input type="number" name="rank_{{ key }}" min="1" max="{{ wellness_metrics|length }}" value="{{ wellness_order.index(key) + 1 if key in wellness_order else loop.index }}" required></label>
+      </div>
+      {% endfor %}
+      {{ submit('Save preferences') }}
+    </form>
+  </details>
+  <details id="symptoms807" class="tracker-more790" {% if wellness_symptom_edit %}open{% endif %}>
+    <summary>General symptoms</summary>
+    <p class="note">Self-reported observations, not evidence of medication causation.</p>
+    {% set row = wellness_symptom_edit %}
+    <form method="post" action="/wellness807/symptoms/save" class="reg635-form">
+      <input type="hidden" name="record_id" value="{{ row.id if row else '' }}">
+      <label class="field">Symptom<select name="kind" required>{% for kind in wellness_symptom_types %}<option {% if row and row.symptom == kind %}selected{% endif %}>{{ kind }}</option>{% endfor %}</select></label>
+      <label class="field">Severity<select name="severity">{% for value in range(1,6) %}<option value="{{ value }}" {% if row and row.severity == value %}selected{% endif %}>{{ value }} — {{ ('Mild','Moderate','Marked','Severe','Very severe')[value-1] }}</option>{% endfor %}</select></label>
+      <label class="field">Onset<input type="datetime-local" name="onset_at" value="{{ row.onset_at.strftime('%Y-%m-%dT%H:%M') if row else wellness_now }}" required></label>
+      <label class="field">Resolved (optional)<input type="datetime-local" name="resolved_at" value="{{ row.resolved_at.strftime('%Y-%m-%dT%H:%M') if row and row.resolved_at else '' }}"></label>
+      <label class="field">Notes<textarea name="notes" maxlength="2000" rows="2">{{ row.notes if row else '' }}</textarea></label>
+      {{ submit('Update symptom' if row else 'Record symptom') }}
+    </form>
+    {% if row %}{{ action('/mobile#symptoms807','Cancel edit') }}{% endif %}
+    <ul class="tracker-daily-list">
+      {% for item in wellness_symptoms %}
+      <li><div><strong>{{ item.symptom }} · {{ item.severity }}/5</strong><small>{{ item.onset_at|dt }} · {{ 'Resolved ' ~ (item.resolved_at|dt) if item.resolved_at else 'Ongoing / unresolved' }}</small></div>
+      {{ action('/mobile?wellness_symptom=' ~ item.id ~ '#symptoms807','Edit') }}
+      <form method="post" action="/wellness807/symptoms/{{ item.id }}/delete">{{ submit('Delete') }}</form></li>
+      {% else %}<li>No reported symptoms.</li>{% endfor %}
+    </ul>
+  </details>
+</section>
