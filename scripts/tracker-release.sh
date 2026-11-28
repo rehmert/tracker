@@ -81,7 +81,7 @@ cleanup() {
  exit "$code"
 }
 worker() {
- RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"; FULL_SUITE="${14:-0}"; REVIEWED_WORKOUT_654="${15:-0}"; REVIEWED_WORKOUT_655="${16:-0}"; REVIEWED_WORKOUT_667="${17:-0}"; REVIEWED_WORKOUT_668="${18:-0}"; REVIEWED_COA_691="${19:-0}"; REVIEWED_BLEND_710="${20:-0}"; REVIEWED_TABLET_731="${21:-0}"; REVIEWED_CATCHUP_735="${22:-0}"; REVIEWED_VIAL_758="${23:-0}"; REVIEWED_PROGRESS_762="${24:-0}"
+ RUN="$1"; INSTANCE="$2"; BASE="$3"; TARGET="$4"; REF="$5"; SERIAL_TESTS="$6"; DEV_FOCUSED_630="$7"; DB_MIGRATION="$8"; REVIEWED_REGIMEN_635="$9"; REVIEWED_FACTS_639="${10}"; REVIEWED_COA_643="${11}"; REVIEWED_COA_645="${12}"; REVIEWED_COA_652="${13:-0}"; FULL_SUITE="${14:-0}"; REVIEWED_WORKOUT_654="${15:-0}"; REVIEWED_WORKOUT_655="${16:-0}"; REVIEWED_WORKOUT_667="${17:-0}"; REVIEWED_WORKOUT_668="${18:-0}"; REVIEWED_COA_691="${19:-0}"; REVIEWED_BLEND_710="${20:-0}"; REVIEWED_TABLET_731="${21:-0}"; REVIEWED_CATCHUP_735="${22:-0}"; REVIEWED_VIAL_758="${23:-0}"; REVIEWED_PROGRESS_762="${24:-0}"; REVIEWED_WELLNESS_807="${25:-0}"
  [[ "$SERIAL_TESTS" == 0 ]] || fail "Invalid serial test override"
  [[ "$FULL_SUITE" == 0 || "$FULL_SUITE" == 1 ]] || fail "Invalid full-suite setting"
  QA="$RUN/source"; SAVE="$RUN/pre-deployment"; INSTALLED=0; RESTART=0; QUALIFICATION_COMPLETE=0; RESUME_645_VERIFIED=0
@@ -111,9 +111,14 @@ worker() {
  verify_prod_approval
  g merge-base --is-ancestor "$BASE" "$TARGET" || fail "Target not descended from base"
  # The hourly timer is activated by its own guarded installer.
- if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer$' | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py|app/progress_models762.py|app/workout_models654.py|app/workout_models655.py|app/workout_models667.py|app/workout_models668.py)'; then
+ if g diff --name-only "$BASE" "$TARGET" | grep -v '^deploy/tracker-backup.timer$' | grep -Eq '^(deploy/|requirements[^/]*|alembic/|alembic.ini|app/(db|models|migrations).py|app/progress_models762.py|app/wellness_models807.py|app/workout_models654.py|app/workout_models655.py|app/workout_models667.py|app/workout_models668.py)'; then
   [[ "$DB_MIGRATION" == 1 ]] || fail "Schema changes require verified migration backup"
-  if [[ "$REVIEWED_CATCHUP_735" == 1 ]]; then
+  if [[ "$REVIEWED_WELLNESS_807" == 1 ]]; then
+   [[ "$INSTANCE" == DEV && "$REF" == release/807-integrated-wellness-anatomy && "$BASE" == 2d597a9907ab3c7e1915f073ed5cd5e898e93b90 && "$REVIEWED_REGIMEN_635" == 0 && "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_COA_643" == 0 && "$REVIEWED_COA_645" == 0 && "$REVIEWED_COA_652" == 0 && "$REVIEWED_WORKOUT_654" == 0 && "$REVIEWED_WORKOUT_655" == 0 && "$REVIEWED_WORKOUT_667" == 0 && "$REVIEWED_WORKOUT_668" == 0 && "$REVIEWED_COA_691" == 0 && "$REVIEWED_BLEND_710" == 0 && "$REVIEWED_TABLET_731" == 0 && "$REVIEWED_CATCHUP_735" == 0 && "$REVIEWED_VIAL_758" == 0 && "$REVIEWED_PROGRESS_762" == 0 ]] || fail "Release 807 schema review restricted to authorized DEV baseline and sole flag"
+   g worktree add --detach "$QA" "$TARGET"
+   "$PY" "$QA/scripts/tracker-schema-review807.py" --root "$QA" --base "$BASE" --target "$TARGET" || fail "Release 807 additive schema review failed"
+   echo "RELEASE_807_SCHEMA_REVIEW=PASSED"
+  elif [[ "$REVIEWED_CATCHUP_735" == 1 ]]; then
    [[ "$INSTANCE" == PROD && "$REF" == main &&
       "$BASE" == 3718936aedfcb1b8fe243c86fe6fc7e06a7a41d2 ]] ||
       fail "Release 735 catch-up restricted to installed PROD 727"
@@ -241,7 +246,7 @@ worker() {
   else
    fail "Schema changes require a reviewed schema flag"
   fi
- elif [[ "$REVIEWED_FACTS_639" == 1 || "$REVIEWED_REGIMEN_635" == 1 || "$REVIEWED_COA_643" == 1 || "$REVIEWED_COA_645" == 1 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_COA_691" == 1 || "$REVIEWED_BLEND_710" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 || "$REVIEWED_WORKOUT_667" == 1 || "$REVIEWED_WORKOUT_668" == 1 || "$REVIEWED_TABLET_731" == 1 || "$REVIEWED_CATCHUP_735" == 1 || "$REVIEWED_VIAL_758" == 1 || "$REVIEWED_PROGRESS_762" == 1 ]]; then
+ elif [[ "$REVIEWED_FACTS_639" == 1 || "$REVIEWED_REGIMEN_635" == 1 || "$REVIEWED_COA_643" == 1 || "$REVIEWED_COA_645" == 1 || "$REVIEWED_COA_652" == 1 || "$REVIEWED_COA_691" == 1 || "$REVIEWED_BLEND_710" == 1 || "$REVIEWED_WORKOUT_654" == 1 || "$REVIEWED_WORKOUT_655" == 1 || "$REVIEWED_WORKOUT_667" == 1 || "$REVIEWED_WORKOUT_668" == 1 || "$REVIEWED_TABLET_731" == 1 || "$REVIEWED_CATCHUP_735" == 1 || "$REVIEWED_VIAL_758" == 1 || "$REVIEWED_PROGRESS_762" == 1 || "$REVIEWED_WELLNESS_807" == 1 ]]; then
   fail "Reviewed schema flag supplied without a schema change"
  fi
  if [[ "$DB_MIGRATION" == 0 ]] &&
@@ -766,11 +771,11 @@ follow_deployment_log() {
 }
 if [[ "${1:-}" == --worker ]]; then
  shift
- [[ $# -ge 12 && $# -le 24 ]] || fail "Bad worker arguments"
+ [[ $# -ge 12 &&  $# -le 25 ]] || fail "Bad worker arguments"
  worker "$@"
  exit 0
 fi
-INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; REVIEWED_COA_652=0; REVIEWED_WORKOUT_654=0; REVIEWED_WORKOUT_655=0; REVIEWED_WORKOUT_667=0; REVIEWED_WORKOUT_668=0; FULL_SUITE=0; RESUME_VERIFIED_645=0; REVIEWED_COA_691=0; REVIEWED_BLEND_710=0; REVIEWED_TABLET_731=0; REVIEWED_CATCHUP_735=0; REVIEWED_VIAL_758=0; REVIEWED_PROGRESS_762=0
+INSTANCE=''; BASE=''; TARGET=''; REF=''; FOLLOW=1; SERIAL_TESTS=0; DEV_FOCUSED_630=0; DB_MIGRATION=0; REVIEWED_REGIMEN_635=0; REVIEWED_FACTS_639=0; REVIEWED_COA_643=0; REVIEWED_COA_645=0; REVIEWED_COA_652=0; REVIEWED_WORKOUT_654=0; REVIEWED_WORKOUT_655=0; REVIEWED_WORKOUT_667=0; REVIEWED_WORKOUT_668=0; FULL_SUITE=0; RESUME_VERIFIED_645=0; REVIEWED_COA_691=0; REVIEWED_BLEND_710=0; REVIEWED_TABLET_731=0; REVIEWED_CATCHUP_735=0; REVIEWED_VIAL_758=0; REVIEWED_PROGRESS_762=0; REVIEWED_WELLNESS_807=0
 while (( $# )); do
  case "$1" in
   --detach) FOLLOW=0; shift;;
@@ -787,6 +792,7 @@ while (( $# )); do
   --reviewed-catchup-735) REVIEWED_CATCHUP_735=1; shift;;
   --reviewed-vial-758) REVIEWED_VIAL_758=1; shift;;
   --reviewed-progress-762) REVIEWED_PROGRESS_762=1; shift;;
+  --reviewed-wellness-807) REVIEWED_WELLNESS_807=1; shift;;
   --reviewed-workout-654) REVIEWED_WORKOUT_654=1; shift;;
   --reviewed-workout-655) REVIEWED_WORKOUT_655=1; shift;;
   --reviewed-workout-667) REVIEWED_WORKOUT_667=1; shift;;
@@ -829,6 +835,7 @@ if [[ "$REVIEWED_VIAL_758" == 1 ]]; then
  [[ "$INSTANCE" == DEV && "$REF" == release/758-vial-label-dose-markings ||
     "$INSTANCE" == PROD && "$REF" == main ]] || fail "Release 758 reviewed schema flag outside approved scope"
 fi
+[[ "$REVIEWED_WELLNESS_807" == 0 || ( "$DB_MIGRATION" == 1 && "$INSTANCE" == DEV && "$REF" == release/807-integrated-wellness-anatomy && "$BASE" == 2d597a9907ab3c7e1915f073ed5cd5e898e93b90 && "$REVIEWED_REGIMEN_635" == 0 && "$REVIEWED_FACTS_639" == 0 && "$REVIEWED_COA_643" == 0 && "$REVIEWED_COA_645" == 0 && "$REVIEWED_COA_652" == 0 && "$REVIEWED_WORKOUT_654" == 0 && "$REVIEWED_WORKOUT_655" == 0 && "$REVIEWED_WORKOUT_667" == 0 && "$REVIEWED_WORKOUT_668" == 0 && "$REVIEWED_COA_691" == 0 && "$REVIEWED_BLEND_710" == 0 && "$REVIEWED_TABLET_731" == 0 && "$REVIEWED_CATCHUP_735" == 0 && "$REVIEWED_VIAL_758" == 0 && "$REVIEWED_PROGRESS_762" == 0 ) ]] || fail "Release 807 requires verified DEV-only migration backup and sole schema flag"
 [[ "$REVIEWED_PROGRESS_762" == 0 || "$DB_MIGRATION" == 1 ]] ||
  fail "Progress 762 schema requires a verified migration backup"
 [[ "$REVIEWED_PROGRESS_762" == 0 || ( "$INSTANCE" == PROD &&
@@ -909,7 +916,7 @@ fi
 MEMORY_PROPERTY="MemoryMax=16G"
 echo "RELEASE_WORKER_MEMORY=$MEMORY_PROPERTY"
 systemd-run --unit="$UNIT" --collect --property="$MEMORY_PROPERTY" \
- /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645" "$REVIEWED_COA_652" "$FULL_SUITE" "$REVIEWED_WORKOUT_654" "$REVIEWED_WORKOUT_655" "$REVIEWED_WORKOUT_667" "$REVIEWED_WORKOUT_668" "$REVIEWED_COA_691" "$REVIEWED_BLEND_710" "$REVIEWED_TABLET_731" "$REVIEWED_CATCHUP_735" "$REVIEWED_VIAL_758" "$REVIEWED_PROGRESS_762"
+ /bin/bash "$RUN/worker.sh" --worker "$RUN" "$INSTANCE" "$BASE" "$TARGET" "$REF" "$SERIAL_TESTS" "$DEV_FOCUSED_630" "$DB_MIGRATION" "$REVIEWED_REGIMEN_635" "$REVIEWED_FACTS_639" "$REVIEWED_COA_643" "$REVIEWED_COA_645" "$REVIEWED_COA_652" "$FULL_SUITE" "$REVIEWED_WORKOUT_654" "$REVIEWED_WORKOUT_655" "$REVIEWED_WORKOUT_667" "$REVIEWED_WORKOUT_668" "$REVIEWED_COA_691" "$REVIEWED_BLEND_710" "$REVIEWED_TABLET_731" "$REVIEWED_CATCHUP_735" "$REVIEWED_VIAL_758" "$REVIEWED_PROGRESS_762" "$REVIEWED_WELLNESS_807"
 echo "Launched: $UNIT"
 echo "Log: $RUN/deployment.log"
 if (( FOLLOW )); then
