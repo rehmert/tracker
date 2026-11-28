@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 
 from ..audit_helpers import record, snapshot
 from ..inventory_lock import require_inventory_write
-from ..models import BlendDose, DoseLog
+from ..models import BlendDose, DoseLog, RegimenEntry
+from types import SimpleNamespace
+from ..templating import render
 from ..scoped_db390 import get_scoped_db390
 from ..wellness_models807 import WellnessPreferences807, WellnessDay807, Symptom807, SiteReaction807
 from ..wellness807 import (METRICS, SYMPTOMS, REACTIONS, checked_day, checked_notes,
@@ -18,7 +20,9 @@ from ..wellness807 import (METRICS, SYMPTOMS, REACTIONS, checked_day, checked_no
 router = APIRouter()
 DAY_FIELDS = ("day", "values_json", "notes")
 EPISODE_FIELDS = ("severity", "onset_at", "resolved_at", "notes")
-REACTION_FIELDS = ("dose_id", "blend_dose_id", "site", "reaction", *EPISODE_FIELDS)
+REACTION_FIELDS = ("dose_id", "blend_dose_id", "regimen_entry_id", "site", "reaction", *EPISODE_FIELDS)
+
+SYMPTOM_FIELDS = ("symptom", "dose_id", "blend_dose_id", "regimen_entry_id", "medication_period", *EPISODE_FIELDS)
 
 def today_context807(db, raw_day="", symptom_id=0):
     try:
@@ -30,7 +34,8 @@ def today_context807(db, raw_day="", symptom_id=0):
     recent = list(db.scalars(select(WellnessDay807).order_by(WellnessDay807.day.desc()).limit(30)))
     symptoms = list(db.scalars(select(Symptom807).order_by(Symptom807.onset_at.desc()).limit(30)))
     editing = db.get(Symptom807, symptom_id) if 0 < symptom_id <= 2**63-1 else None
-    return dict(wellness_day=day, wellness_metrics=METRICS, wellness_order=order,
+    actual,_=history807(db,datetime.now()-timedelta(days=90),datetime.now(),limit=200)
+    return dict(wellness_associations807=actual, wellness_day=day, wellness_metrics=METRICS, wellness_order=order,
                 wellness_row=row, wellness_values=json.loads(row.values_json) if row else {},
                 wellness_recent=recent, wellness_symptoms=symptoms, wellness_symptom_types=SYMPTOMS,
                 wellness_symptom_edit=editing, wellness_now=datetime.now().strftime("%Y-%m-%dT%H:%M"))
@@ -114,7 +119,24 @@ async def save_symptom807(request: Request, db: Session = Depends(get_scoped_db3
     row = db.get(Symptom807, rid) if rid else Symptom807()
     if row is None:
         raise HTTPException(404, "Symptom not found.")
-    fields = ("symptom", *EPISODE_FIELDS)
+    fields = SYMPTOM_FIELDS
+    association = str(form.get("association", ""))
+    linked = dict(dose_id=None,blend_dose_id=None,regimen_entry_id=None)
+    if association:
+        try:
+            source, ident = association.split(":",1)
+            ident = int(ident)
+            model, key = {"dose":(DoseLog,"dose_id"),"blend":(BlendDose,"blend_dose_id"),"regimen":(RegimenEntry,"regimen_entry_id")}[source]
+            parent = db.get(model, ident)
+            if parent is None or (parent.outcome != "taken" if source=="regimen" else parent.kind!="dose"):
+                raise ValueError("Unknown actual administration.")
+            linked[key]=ident
+        except (KeyError, ValueError, OverflowError):
+            raise HTTPException(422,"Unknown actual administration.") from None
+    period = str(form.get("medication_period", "")).strip()
+    if len(period)>160:
+        raise HTTPException(422,"Medication period label is too long.")
+    values.update(linked,medication_period=period)
     before = snapshot(row, fields) if rid else None
     row.symptom = str(form.get("kind"))
     for key, value in values.items():
@@ -132,19 +154,25 @@ def delete_symptom807(rid: int, db: Session = Depends(get_scoped_db390)):
     row = db.get(Symptom807, rid)
     if row is None:
         raise HTTPException(404, "Symptom not found.")
-    record(db, "symptom807", row.id, "delete", snapshot(row, ("symptom", *EPISODE_FIELDS)))
+    record(db, "symptom807", row.id, "delete", snapshot(row, SYMPTOM_FIELDS))
     db.delete(row)
     db.commit()
     return _today(anchor="symptoms807")
 
 def reaction_parent807(db, source, did):
-    model = {"dose": DoseLog, "blend": BlendDose}.get(source)
+    model = {"dose": DoseLog, "blend": BlendDose, "regimen": RegimenEntry}.get(source)
     if model is None:
         raise HTTPException(404)
     parent = db.get(model, did)
-    if parent is None or parent.kind != "dose":
+    if parent is None or (parent.outcome != "taken" if source=="regimen" else parent.kind != "dose"):
         raise HTTPException(404, "Administration not found.")
-    column = SiteReaction807.dose_id if source == "dose" else SiteReaction807.blend_dose_id
+    column = {"dose":SiteReaction807.dose_id,"blend":SiteReaction807.blend_dose_id,"regimen":SiteReaction807.regimen_entry_id}[source]
+    if source == "regimen":
+        from ..site_history807 import context807
+        context=context807(db,source,did)
+        if parent.item.kind != "medication" or not context or not (context.site or context.route in ("subcutaneous","intramuscular")):
+            raise HTTPException(404,"No recorded injectable medication administration.")
+        parent=SimpleNamespace(id=parent.id,kind="dose",site=context.site,taken_at=parent.logged_at)
     return parent, column
 
 def reaction_context807(db, source, did):
@@ -155,7 +183,7 @@ def reaction_context807(db, source, did):
                 reaction807_now=datetime.now().strftime("%Y-%m-%dT%H:%M"))
 
 def _reaction_back(source, did):
-    path = f"/doses/{did}/edit" if source == "dose" else f"/doses/blends/{did}/edit"
+    path = f"/doses/{did}/edit" if source == "dose" else (f"/doses/blends/{did}/edit" if source=="blend" else f"/wellness807/reactions/regimen/{did}")
     return RedirectResponse(path + "#site-reactions807", status_code=303)
 
 @router.post("/wellness807/reactions/{source}/{did}/save")
@@ -168,7 +196,7 @@ async def save_reaction807(source: str, did: int, request: Request, db: Session 
         _bad(exc)
     require_inventory_write(db)
     parent, column = reaction_parent807(db, source, did)
-    if values["onset_at"] < parent.taken_at:
+    if values["onset_at"] < parent.taken_at.replace(second=0,microsecond=0):
         raise HTTPException(422, "Reaction onset cannot precede the administration.")
     row = db.scalar(select(SiteReaction807).where(SiteReaction807.id == rid, column == did)) if rid else SiteReaction807()
     if row is None:
@@ -182,7 +210,9 @@ async def save_reaction807(source: str, did: int, request: Request, db: Session 
     before = snapshot(row, REACTION_FIELDS) if rid else None
     row.dose_id = did if source == "dose" else None
     row.blend_dose_id = did if source == "blend" else None
-    row.site = parent.site or ""
+    row.regimen_entry_id = did if source == "regimen" else None
+    if not rid:
+        row.site = parent.site or ""
     row.reaction = kind
     for key, value in values.items():
         setattr(row, key, value)
@@ -328,3 +358,8 @@ def site_summary807(source: str = "", route: str = "", protocol_item: int | None
         protocol = item.protocol_id
         compound = item.compound_id
     return site_snapshot807(db, datetime.now(), compound=compound, blend=blend, protocol=protocol, route=route)
+
+@router.get("/wellness807/reactions/regimen/{did}")
+def regimen_reactions807(did: int, request: Request, db: Session = Depends(get_scoped_db390)):
+    parent,_=reaction_parent807(db,"regimen",did)
+    return render(request,"regimen_reactions807.html",dose=parent,**reaction_context807(db,"regimen",did))
