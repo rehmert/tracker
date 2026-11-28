@@ -235,6 +235,12 @@
     <label class="field"><span>Type</span><select name="kind"><option value="dose">Logged dose</option><option value="waste">Wasted or discarded</option></select></label>
     <label class="check"><input type="checkbox" name="use_remaining" value="yes"> Use all remaining vial contents</label>
     <label class="field"><span>Site</span><select name="site"><option value="">Not recorded</option>{% for site in sites %}<option value="{{ site }}" data-site807="{{ site|site_data807 }}" {% if repeat_site == site %}selected{% endif %}>{{ site|site_label807 }}</option>{% endfor %}</select></label>
+{% set selected_route807 = route807_context.route if route807_context else '' %}
+<label class="field"><span>Recorded route (optional)</span><select name="route807">
+{% for value,label in [('', 'Unspecified'),('subcutaneous','Subcutaneous'),('intramuscular','Intramuscular'),('other','Other')] %}
+<option value="{{ value }}" {% if value == selected_route807 %}selected{% endif %}>{{ label }}</option>
+{% endfor %}</select></label>
+
 <details class="wide"><summary>Disposables used (optional — select only what you used)</summary>
 <div class="scroll"><table><thead><tr><th>Use</th><th>Supply</th><th>Available</th><th>Quantity used</th></tr></thead><tbody>
 {% for s in supplies %}<tr><td><input aria-label="Supply used" type="checkbox" name="supply_id_used" value="{{ s.id }}"></td><td>{{ s.name }} ({{ s.kind|replace('_',' ') }})</td><td>{{ s.remaining_qty|num }}</td><td><input aria-label="Quantity of {{ s.name }} used ({{ 'whole items' if s.kind in counted_supply_kinds else 'fractional quantities allowed' }})" type="number" name="supply_qty_{{ s.id }}" data-counted="{{ 'true' if s.kind in counted_supply_kinds else 'false' }}" min="{{ '1' if s.kind in counted_supply_kinds else '0.001' }}" step="{{ '1' if s.kind in counted_supply_kinds else 'any' }}" value="1" style="width:6rem"></td></tr>{% else %}<tr><td colspan="4">No available supplies.</td></tr>{% endfor %}
