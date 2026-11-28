@@ -1,0 +1,11 @@
+.site807-picker { margin-block: .5rem; min-width:0; }
+.site807-picker summary { cursor:pointer; }
+.site807-controls { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; margin-block:.5rem; }
+.site807-controls button { min-height:40px; }
+.site807-controls button[aria-pressed=true] { outline:2px solid currentColor; font-weight:bold; }
+.site807-map { display:block; width:100%; max-width:340px; height:auto; margin-inline:auto; background:#f5f1eb; border:1px solid #92877e; border-radius:.5rem; }
+.site807-zone { fill:#e7e2d5; fill-opacity:.28; stroke:#444; stroke-width:1.5; cursor:pointer; }
+.site807-zone:hover,.site807-zone:focus { stroke:#171717; stroke-width:3; fill-opacity:.6; outline:none; }
+.site807-zone[aria-pressed=true] { fill:#1260c5; fill-opacity:.65; stroke:#064482; stroke-width:3; }
+.site807-status { min-height:1.5em; margin-block:.4rem; }
+.site807-reference { margin-block:.4rem; }
