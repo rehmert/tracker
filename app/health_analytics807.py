@@ -15,6 +15,7 @@ from .progress_calc762 import daily_weights762, weight_report762
 from .progress_models762 import ProgressSettings762, ProgressMeasure762, ProgressComposition762, ProgressMarker762
 from .wellness_models807 import WellnessDay807, Symptom807, SiteReaction807
 from .wellness807 import METRICS, metric_summary
+from .anatomical_sites807 import SITE_BY_CODE
 from .site_history807 import history807
 from .workout_models654 import WorkoutSession654, WorkoutSet654
 
@@ -131,6 +132,10 @@ def effectiveness807(db, cid, key, start, end, nutrition=()):
     within=[a for a in actual if a[0]>=start]
     samples=cycle_samples807(observed,actual)
     periods=periods807(within)
+    all_weights=db.execute(select(VitalReading.measured_at,VitalReading.weight_kg).where(
+        VitalReading.measured_at>=start,VitalReading.measured_at<=end,VitalReading.weight_kg.is_not(None)).order_by(VitalReading.measured_at)).all()
+    all_other=db.execute(select(DoseLog.taken_at,Compound.name).select_from(DoseLog).join(Vial,Vial.id==DoseLog.vial_id)
+        .join(Compound,Compound.id==Vial.compound_id).where(Compound.id!=cid,DoseLog.kind=="dose",DoseLog.taken_at>=start,DoseLog.taken_at<=end)).all()
     for i,period in enumerate(periods):
         until=periods[i+1]["start"] if i+1<len(periods) else end+timedelta(seconds=1)
         subset=[v for at,v in observed if period["start"]<=at<until]
@@ -140,16 +145,11 @@ def effectiveness807(db, cid, key, start, end, nutrition=()):
         for field in ("energy","protein"):
             values=[r[field] for r in n if r.get("complete_"+field)]
             period[field+"_mean"]=round(mean(values),2) if values else None
-        weights=db.execute(select(VitalReading.measured_at,VitalReading.weight_kg)
-             .where(VitalReading.measured_at>=period["start"],VitalReading.measured_at<until,
-                    VitalReading.weight_kg.is_not(None)).order_by(VitalReading.measured_at)).all()
+        weights=[row for row in all_weights if period["start"]<=row[0]<until]
         period["weight_count"]=len(weights)
         period["weight_change"]=metrics.weight_from_kg(weights[-1][1]-weights[0][1],config.WEIGHT_UNIT) if len(weights)>1 else None
         # Document concurrent administration of other compounds in the period.
-        other=db.execute(select(Compound.name).join(Vial,Vial.compound_id==Compound.id)
-            .join(DoseLog,DoseLog.vial_id==Vial.id).where(Compound.id!=cid,DoseLog.kind=="dose",
-                   DoseLog.taken_at>=period["start"],DoseLog.taken_at<until).distinct()).scalars().all()
-        period["concurrent"]=sorted(other)
+        period["concurrent"]=sorted({name for at,name in all_other if period["start"]<=at<until})
     if not profile or model["needs_assumptions"]:
         paired=[]
         reason="No supported default model or explicit assumptions are required. Cycle observations remain descriptive."
@@ -163,8 +163,10 @@ def effectiveness807(db, cid, key, start, end, nutrition=()):
     return dict(observed=observed,paired=paired,cycles=cycle_summary807(samples),periods=periods,
                 model=model,actual_count=len(within),reason=reason)
 
-def site_analytics807(db,start,end,**filters):
+def site_analytics807(db,start,end,*,region=None,reaction_type=None,severity=None,**filters):
     rows,truncated=history807(db,start,end,limit=5000,**filters)
+    if region:
+        rows=[r for r in rows if r["site"] in SITE_BY_CODE and SITE_BY_CODE[r["site"]].region==region]
     ids=defaultdict(list)
     for row in rows:
         ids[row["source"]].append(row["id"])
@@ -177,6 +179,9 @@ def site_analytics807(db,start,end,**filters):
     for reaction in reactions:
         key=("dose",reaction.dose_id) if reaction.dose_id else ("blend",reaction.blend_dose_id)
         reports[key].append(reaction)
+    if reaction_type or severity is not None:
+        rows=[r for r in rows if any((not reaction_type or x.reaction==reaction_type) and
+              (severity is None or x.severity==severity) for x in reports[(r["source"],r["id"])])]
     groups=defaultdict(list)
     for row in rows:
         groups[row["site"] or ""].append(row)
