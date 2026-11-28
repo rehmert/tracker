@@ -23,7 +23,7 @@
     <select name="kind"><option value="dose" {% if dose.kind == "dose" %}selected{% endif %}>Administered</option><option value="waste" {% if dose.kind == "waste" %}selected{% endif %}>Discarded</option></select>
   </label>
   <label class="field"><span>Site</span>
-    <select name="site"><option value="">Not recorded</option>{% for value in sites %}<option value="{{ value }}" {% if dose.site == value %}selected{% endif %}>{{ value|site_label807 }}</option>{% endfor %}</select>
+    <select name="site"><option value="">Not recorded</option>{% for value in sites %}<option value="{{ value }}" data-site807="{{ value|site_data807 }}" {% if dose.site == value %}selected{% endif %}>{{ value|site_label807 }}</option>{% endfor %}</select>
   </label>
   <label class="field wide"><span>Notes</span><input name="notes" value="{{ dose.notes or '' }}"></label>
   <details class="wide" {% if used %}open{% endif %}>
