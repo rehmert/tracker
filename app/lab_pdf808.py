@@ -186,3 +186,51 @@ def parse_text(text):
                              flag=flags[0] if flags else "", source=line[:240], page=page_no))
     return dict(lab_name=lab, drawn_on=next(iter(dates)) if len(dates)==1 else "",
                 rows=rows, warnings=warnings)
+
+def validate_review(rows):
+    """Validate reviewed data independent of browser controls and source parser."""
+    from . import labs
+    if not isinstance(rows, list) or not 1 <= len(rows) <= 500:
+        raise ValueError("Review between 1 and 500 result rows.")
+    result = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("Invalid reviewed result.")
+        clean = {}
+        for field, limit in (("analyte",120),("value",80),("unit",30),
+                             ("ref_low",40),("ref_high",40),("printed_range",80),("flag",30)):
+            value = row.get(field, "")
+            if not isinstance(value, str) or len(value.strip()) > limit:
+                raise ValueError("Invalid reviewed result field.")
+            clean[field] = value.strip()
+        name, raw, unit = (clean[k] for k in ("analyte","value","unit"))
+        if not name or not raw:
+            raise ValueError("Every reviewed row needs an analyte and result.")
+        # Use existing canonical names only for known exact aliases.
+        key = labs.analyte_key(name)
+        clean["analyte"] = next((n for n in labs.COMMON_ANALYTES if labs.analyte_key(n)==key), name)
+        exact = re.fullmatch(NUM, raw)
+        qualified = re.fullmatch(r"[<>≤≥]\s*" + NUM, raw)
+        qualitative = raw.casefold() in {"negative","positive","nonreactive","non-reactive",
+                  "reactive","pending","not detected","detected","indeterminate","equivocal"}
+        if not (exact or qualified or qualitative):
+            raise ValueError("Unrecognized result format: review the measurement.")
+        if not qualitative and not unit:
+            raise ValueError("Numeric and qualified results require the printed unit.")
+        for key in ("ref_low", "ref_high"):
+            bound = clean[key]
+            if bound and (not re.fullmatch(NUM, bound) or not math.isfinite(float(bound))):
+                raise ValueError("Reference limits must be finite numbers.")
+        lo, hi = clean["ref_low"], clean["ref_high"]
+        if lo and hi and float(lo) > float(hi):
+            raise ValueError("Reference low exceeds high.")
+        if exact and not math.isfinite(float(raw)):
+            raise ValueError("Result must be finite.")
+        if clean["printed_range"] and (lo or hi):
+            raise ValueError("Use either printed range text or numeric reference limits.")
+        if not clean["printed_range"] and (lo or hi) and not (lo and hi):
+            clean["printed_range"] = ("≥" + lo) if lo else ("≤" + hi)
+            clean["ref_low"] = clean["ref_high"] = ""
+        clean["exact"] = bool(exact)
+        result.append(clean)
+    return result
