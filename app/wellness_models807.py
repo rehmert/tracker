@@ -83,3 +83,8 @@ class SiteExclusion807(Base):
     site: Mapped[str] = mapped_column(String(80), primary_key=True)
     until_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+class GoalMilestonePreference807(Base):
+    __tablename__ = "goal_milestone_preferences807"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    percentages_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
