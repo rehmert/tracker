@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "request_id": "r806-deploy2d597a9907ab",
-  "action": "prod_deploy",
-  "release": 806,
-  "target": "2d597a9907ab3c7e1915f073ed5cd5e898e93b90",
-  "base": "8f12563f1584f1812abe907d2b6f530e63674df8",
-  "ref": "release/806-comprehensive-optimization",
-  "previous_request_id": "r806-pre2d597a9907ab"
+  "request_id": "r807-q0a1120f0acfc",
+  "action": "qualify",
+  "release": 807,
+  "target": "0a1120f0acfc0b2097bb3fcb210820b4e8df3750",
+  "base": "2d597a9907ab3c7e1915f073ed5cd5e898e93b90",
+  "ref": "release/807-integrated-wellness-anatomy",
+  "previous_request_id": null
 }
