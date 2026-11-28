@@ -374,6 +374,7 @@ env -i HOME=/root PATH=/usr/local/bin:/usr/bin:/bin \
     tests/browser/test_saved_food_mobile_actions702.py \
     tests/browser/test_release723_css_parity.py \
     tests/browser/test_release726_labs_mobile.py \
+    tests/browser/test_anatomy807.py \
     tests/browser/test_release727_labs_cards.py \
     tests/browser/test_release729_lab_entry_cards.py \
     tests/browser/test_release730_medication_prefill.py \
