@@ -71,7 +71,7 @@ async def save_wellness807(request: Request, db: Session = Depends(get_scoped_db
         _bad(exc)
     return _today(day)
 
-@router.post("/wellness807/{rid}/delete")
+@router.post("/wellness807/days/{rid}/delete")
 def delete_wellness807(rid: int, db: Session = Depends(get_scoped_db390)):
     require_inventory_write(db)
     row = db.get(WellnessDay807, rid)
