@@ -13,6 +13,7 @@ from ..protocol_queries import protocol_read_query
 from ..scoped_db390 import get_scoped_db390
 from ..models import Compound, Protocol, ProtocolItem, ProtocolRevision, Vial
 from ..templating import render
+from .wellness807 import rotation_context807
 from ..audit_helpers import record, snapshot
 from ..projection_exclusions import exclusions_for
 from ..protocol_schedule_preview import preview as schedule_preview
@@ -182,7 +183,7 @@ def protocols_page(request: Request, db: Session = Depends(get_scoped_db390)):
             "schedule": schedule,
             "inventory": inventory,
         })
-    return render(request, "protocols.html", rows=rows)
+    return render(request, "protocols.html", rows=rows, **rotation_context807(db))
 
 
 @router.post("/protocols")
