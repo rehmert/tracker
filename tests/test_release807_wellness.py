@@ -166,4 +166,6 @@ def test_goal_projection_no_data_and_flat_trend():
     today=date.today()
     points=[(today-timedelta(days=i),100) for i in range(30, -1, -1)]
     projected=projections807(points,today,80)
-    assert all(p.get("date") is None for p in projected) or all(not p.get("projected") for p in projected)
+    assert all(p["goal_date"] is None for p in projected)
+    assert projected[0]["reason"]=="Flat or increasing trend"
+    assert milestones807(points,110,80)[0]["reached"]==points[0][0]
