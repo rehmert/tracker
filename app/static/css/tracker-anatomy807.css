@@ -9,3 +9,11 @@
 .site807-zone[aria-pressed=true] { fill:#1260c5; fill-opacity:.65; stroke:#064482; stroke-width:3; }
 .site807-status { min-height:1.5em; margin-block:.4rem; }
 .site807-reference { margin-block:.4rem; }
+
+.site807-zone.site807-recent:not([aria-pressed=true]) { fill:#df9a20; fill-opacity:.55; }
+.site807-zone.site807-excluded:not([aria-pressed=true]) { fill:#be3933; fill-opacity:.58; stroke-dasharray:3 2; }
+.site807-zone.site807-next { stroke:#1c773b; stroke-width:3; }
+.site807-zone[aria-pressed=true] { fill:#1260c5; stroke:#064482; }
+.site807-detail { display:block; width:100%; max-width:300px; height:auto; background:#f5f1eb; }
+.site807-picker > a, .site807-picker > button { margin:.25rem; }
+.site807-picker .site807-status { overflow-wrap:anywhere; }
