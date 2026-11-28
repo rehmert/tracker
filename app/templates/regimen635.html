@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Supplements &amp; Medications{% endblock %}
 {% block content %}
+{% from "_injectable_fields807.html" import injectable_fields %}
 {% from "_ui790.html" import action %}
 <h1>Supplements &amp; Medications</h1>
 <nav class="ux-shortcuts tracker-workspace-tabs792" aria-label="Regimen views">{{ action("#reg635-today","Daily intake",true) }}{{ action("#reg635-schedules","Schedules") }}{{ action("#reg635-add-schedule","Add schedule") }}{{ action("#reg635-add-item","Add medication / supplement") }}{{ action("#reg635-catalog","Catalog") }}{{ action("#reg635-history","History") }}<a class="tracker-ui-action" href="/integrations/google-tasks">Google Tasks settings</a></nav>
@@ -118,6 +119,7 @@ summary.reg737-native-disclosure{
     <form method="post" action="/regimen/entries" class="reg635-form">
       <label class="field">Item <select name="item_id" required data-reg731-item>{% for item in items if item.active %}<option value="{{ item.id }}" data-reg731-kind="{{ item.kind }}" data-reg731-strength="{{ tablet_strengths.get(item.id, '') }}">{{ item.name }} ({{ item.kind }})</option>{% endfor %}</select></label>
       <label class="field">Taken or skipped <select name="outcome"><option value="taken">Taken</option><option value="skipped">Skipped</option></select></label>
+      {{ injectable_fields() }}
       <label class="field">Recorded at <input type="datetime-local" name="logged_at" value="{{ day }}T09:00" required></label>
       <fieldset class="reg731-panel" data-reg731-panel data-reg731-type="entry">
   <legend>Medication tablet quantity</legend>
@@ -423,6 +425,7 @@ summary.reg737-native-disclosure{
 <input type="hidden" name="schedule_id" value="{{ entry.schedule_id or '' }}">
 <label class="field">When <input type="datetime-local" name="logged_at" value="{{ entry.logged_at.strftime('%Y-%m-%dT%H:%M') }}" required></label>
 <label class="field">Outcome <select name="outcome">{% for outcome in ['taken','skipped'] %}<option value="{{ outcome }}" {% if entry.outcome == outcome %}selected{% endif %}>{{ outcome|capitalize }}</option>{% endfor %}</select></label>
+{{ injectable_fields(injection_contexts807.get(entry.id)) }}
 {% set tablet_entry = tablet_entries.get(entry.id) %}
 <input type="hidden" name="tablet_edit_snapshot" value="yes">
 <fieldset class="reg731-panel" data-reg731-historical data-reg731-panel data-reg731-type="entry">
