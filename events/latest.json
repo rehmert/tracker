@@ -1,0 +1,11 @@
+{
+  "action": "dev_install",
+  "event_type": "tracker-release-receipt",
+  "receipt_branch": "tracker-release-receipts",
+  "receipt_path": "receipts/r807-dev4ad152879b7e.json",
+  "release": 807,
+  "request_id": "r807-dev4ad152879b7e",
+  "schema": 1,
+  "status": "passed",
+  "target": "4ad152879b7e9438793f9af18cc03599a1438348"
+}
