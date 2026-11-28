@@ -792,10 +792,10 @@ def dose_form434(request: Request):
     if not options:
         option_html = '<option value="">No available vials</option>'
 
-    from .routers.doses import INJECTION_SITES
+    from .anatomical_sites807 import INJECTION_SITES, site_label
     site_html = '<option value="">Not recorded</option>' + "".join(
         '<option value="' + escape(site, quote=True) + '">'
-        + escape(site) + '</option>'
+        + escape(site_label(site)) + '</option>'
         for site in INJECTION_SITES
     )
     token = issue_token(load_key())
