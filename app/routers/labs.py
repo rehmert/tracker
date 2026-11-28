@@ -1,4 +1,8 @@
 import csv
+import hashlib
+from starlette.concurrency import run_in_threadpool
+from fastapi.responses import JSONResponse
+from .. import lab_pdf808
 import io
 import math
 import re
@@ -369,6 +373,24 @@ async def import_existing_csv(rid: int, csv_file: UploadFile = File(...),
     rep.results.extend(results)
     db.commit()
     return services.flash_redirect(f"/labs/{rid}", msg=f"Imported {len(results)} results from CSV.")
+
+
+@router.post("/labs/pdf-preview")
+async def pdf_preview808(file: UploadFile = File(...),
+                         db: Session = Depends(get_scoped_db390)):
+    """Read-only extraction; the browser retains the original selected file."""
+    if not (file.filename or "").lower().endswith(".pdf"):
+        return JSONResponse({"error": "Select a PDF report."}, status_code=400)
+    try:
+        data = await file.read(lab_pdf808.MAX_BYTES + 1)
+        text = await run_in_threadpool(lab_pdf808.extract_text, data)
+        preview = lab_pdf808.parse_text(text)
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    digest = hashlib.sha256(data).hexdigest()
+    existing = db.scalar(select(LabReport.id).where(LabReport.sha256 == digest).limit(1))
+    preview["existing_report_id"] = existing
+    return JSONResponse(preview, headers={"Cache-Control": "no-store"})
 
 
 @router.post("/labs")
