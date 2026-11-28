@@ -17,14 +17,16 @@
       href="/static/css/tracker-lab-navigation.css?v=729">
 <script defer
         src="/static/js/tracker-lab-navigation.js?v=20261103"></script>
+<script defer src="/static/js/tracker-lab-pdf808.js?v=808"></script>
 <h1>Add a lab report</h1>
 <p class="note">
-  Choose CSV import or manual entry. The two forms create
+  Choose PDF extraction, CSV import or manual entry. The two forms create
   separate reports; use only the one you intend to save.
 </p>
 <nav class="tracker-lab-entry-jumps"
      aria-label="Lab report entry methods">
   <a href="#lab-csv-entry">Import CSV</a>
+  <a href="#lab-pdf808">Import PDF</a>
   <a href="#lab-manual-entry">Enter Manually</a>
 </nav>
 {% if source_reports %}
@@ -111,7 +113,12 @@
   <div class="grid">
     <label class="field"><span>Date drawn</span><input type="date" name="drawn_on" value="{{ v.drawn_on }}" required></label>
     <label class="field"><span>Lab</span><input name="lab_name" value="{{ v.lab_name }}" maxlength="160"></label>
-    <label class="field"><span>Copy of the report (PDF or image, optional)</span><input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
+    <label class="field" id="lab-pdf808"><span>Report PDF or image</span><input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp"></label>
+    <div class="wide"><button type="button" data-pdf-extract808>Extract PDF results</button>
+    <p class="note" data-pdf-status808 role="status" aria-live="polite">Select a PDF to extract numeric results locally, or attach a document for manual entry.</p>
+    <ul data-pdf-warnings808></ul>
+    <div data-pdf-review808 hidden><details><summary>Extracted source lines</summary><ul data-pdf-source808></ul></details>
+    <label><input type="checkbox"> I reviewed the extracted results, collection date, units, reference ranges and exclusions against the original PDF.</label></div></div>
     <label class="field wide"><span>Notes</span><input name="notes" value="{{ v.notes }}"></label>
   </div>
 
@@ -149,6 +156,7 @@
     <thead><tr><th>Analyte</th><th>Value</th><th>Unit</th><th>Printed range, low</th><th>Printed range, high</th><th></th></tr></thead>
     <tbody id="lab-rows">{% for row in rows %}{% include "_lab_row.html" %}{% endfor %}</tbody>
   </table></div>
+  <template data-pdf-row808>{% with row={"analyte":"","value":"","unit":"","ref_low":"","ref_high":""} %}{% include "_lab_row.html" %}{% endwith %}</template>
   <datalist id="analyte-names">{% for n in names %}<option value="{{ n }}">{% endfor %}</datalist>
   <p class="row tracker-form-actions704 tracker-form-actions704--lab" aria-label="Manual lab report actions">
     <button type="button" hx-get="/labs/row" hx-target="#lab-rows" hx-swap="beforeend">Add row</button>
