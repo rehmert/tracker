@@ -204,3 +204,127 @@ def delete_reaction807(source: str, did: int, rid: int, db: Session = Depends(ge
     db.delete(row)
     db.commit()
     return _reaction_back(source, did)
+
+# Rotation settings use explicit recording preferences, never anatomical suitability.
+from ..anatomical_sites807 import SITES, SITE_BY_CODE
+from ..site_history807 import ROUTES, rotation_key807, site_snapshot807, history807
+from ..wellness_models807 import RotationPreference807, SiteExclusion807
+from ..models import Compound, Blend, Protocol, Vial, ProtocolItem
+from ..wellness807 import checked_time
+
+def rotation_context807(db):
+    return dict(rotation807_sites=SITES, rotation807_routes=ROUTES,
+                rotation807_rows=list(db.scalars(select(RotationPreference807).order_by(RotationPreference807.key))),
+                rotation807_exclusions=list(db.scalars(select(SiteExclusion807).order_by(SiteExclusion807.until_at.desc()))),
+                rotation807_compounds=list(db.scalars(select(Compound).order_by(Compound.name))),
+                rotation807_blends=list(db.scalars(select(Blend).order_by(Blend.label))),
+                rotation807_protocols=list(db.scalars(select(Protocol).order_by(Protocol.name))))
+
+def _rotation_back():
+    return RedirectResponse("/protocols#rotation807", status_code=303)
+
+@router.post("/wellness807/rotation/save")
+async def save_rotation807(request: Request, db: Session = Depends(get_scoped_db390)):
+    form = await request.form()
+    require_inventory_write(db)
+    try:
+        raw = str(form.get("scope", "global:0")).split(":")
+        if len(raw) != 2:
+            raise ValueError("Invalid rotation scope.")
+        scope, ident = raw[0], int(raw[1])
+        identity = None if scope == "global" and ident == 0 else ident
+        route = str(form.get("route", ""))
+        key = rotation_key807(scope, identity, route)
+        model = {"compound": Compound, "blend": Blend, "protocol": Protocol}.get(scope)
+        if model and db.get(model, identity) is None:
+            raise ValueError("Rotation source not found.")
+        sequence = tuple(x.strip() for x in str(form.get("sequence", "")).split(",") if x.strip())
+        if len(set(sequence)) != len(sequence) or any(x not in SITE_BY_CODE for x in sequence):
+            raise ValueError("Use distinct canonical recording locations.")
+        minimum, recent = int(form.get("minimum_hours", 0)), int(form.get("recent_hours", 72))
+        if not (0 <= minimum <= 8760 and 0 <= recent <= 8760):
+            raise ValueError("Intervals must be between 0 and 8760 hours.")
+    except (ValueError, TypeError) as exc:
+        db.rollback()
+        _bad(exc)
+    row = db.get(RotationPreference807, key)
+    if row is None:
+        row = RotationPreference807(key=key, route=route)
+        db.add(row)
+    row.sequence_json, row.minimum_hours, row.recent_hours = json.dumps(sequence), minimum, recent
+    db.commit()
+    return _rotation_back()
+
+@router.post("/wellness807/rotation/delete")
+async def delete_rotation807(request: Request, db: Session = Depends(get_scoped_db390)):
+    form = await request.form()
+    require_inventory_write(db)
+    row = db.get(RotationPreference807, str(form.get("key", "")))
+    if row is None:
+        raise HTTPException(404, "Rotation not found.")
+    db.delete(row)
+    db.commit()
+    return _rotation_back()
+
+@router.post("/wellness807/exclusions/save")
+async def save_exclusion807(request: Request, db: Session = Depends(get_scoped_db390)):
+    form = await request.form()
+    require_inventory_write(db)
+    try:
+        site = str(form.get("site", ""))
+        if site not in SITE_BY_CODE:
+            raise ValueError("Choose a canonical recording location.")
+        now = datetime.now()
+        until = checked_time(form.get("until_at"), now=now+timedelta(days=365))
+        if until <= now:
+            raise ValueError("Exclusion must end in the future.")
+        notes = checked_notes(form.get("notes"))
+    except ValueError as exc:
+        db.rollback()
+        _bad(exc)
+    row = db.get(SiteExclusion807, site)
+    if row is None:
+        row = SiteExclusion807(site=site)
+        db.add(row)
+    row.until_at, row.notes = until, notes
+    db.commit()
+    return _rotation_back()
+
+@router.post("/wellness807/exclusions/{site}/delete")
+def delete_exclusion807(site: str, db: Session = Depends(get_scoped_db390)):
+    require_inventory_write(db)
+    row = db.get(SiteExclusion807, site)
+    if row is None:
+        raise HTTPException(404, "Exclusion not found.")
+    db.delete(row)
+    db.commit()
+    return _rotation_back()
+
+@router.get("/wellness807/site-summary")
+def site_summary807(source: str = "", route: str = "", protocol_item: int | None = None,
+                    db: Session = Depends(get_scoped_db390)):
+    if route not in ROUTES:
+        raise HTTPException(422, "Unknown route.")
+    compound = blend = protocol = None
+    if source:
+        from ..blend_dose_unified710 import source_identity710
+        try:
+            kind, ident = source_identity710(source)
+        except ValueError:
+            raise HTTPException(422, "Unknown source.") from None
+        if kind == "blend":
+            if db.get(Blend, ident) is None:
+                raise HTTPException(404)
+            blend = ident
+        else:
+            vial = db.get(Vial, ident)
+            if vial is None:
+                raise HTTPException(404)
+            compound = vial.compound_id
+    if protocol_item is not None:
+        item = db.get(ProtocolItem, protocol_item)
+        if item is None:
+            raise HTTPException(404)
+        protocol = item.protocol_id
+        compound = item.compound_id
+    return site_snapshot807(db, datetime.now(), compound=compound, blend=blend, protocol=protocol, route=route)
