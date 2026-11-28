@@ -26,6 +26,7 @@ from ..templating import render
 router = APIRouter()
 from ..anatomical_sites807 import INJECTION_SITES, valid_site
 from .wellness807 import reaction_context807
+from ..site_history807 import ROUTES, save_context807, context807, protocol_for_calendar807
 
 
 def _rows(db: Session, compound_id: int | None = None, limit: int = 60) -> list[dict]:
@@ -423,7 +424,7 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
                 db: Session = Depends(get_scoped_db390), planned_compound_id: int | None = Form(None),
                 calendar_item_id: int | None = Form(None), calendar_date: str = Form(""),
                 calendar_snapshot: str = Form(""), calendar_clock: str = Form(""),
-                calendar_origin: str = Form("")):
+                calendar_origin: str = Form(""), route807: str = Form("")):
     def reject_dose(message: str):
         """Release the inventory reservation before returning an error."""
         db.rollback()
@@ -460,6 +461,10 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
     supply_payload = sorted((k, str(v)) for k, v in submitted_form.multi_items()
                             if k == "supply_id_used" or k.startswith("supply_qty_"))
     payload = {"supplies": supply_payload, "vial_id": vial_id, "taken_at": taken_at, "amount": amount, "unit": unit, "kind": kind, "site": site, "notes": notes, "use_remaining": use_remaining}
+    if route807 not in ROUTES:
+        return reject_dose("Unknown administration route.")
+    if route807:
+        payload["route807"] = route807
     if planned_compound_id is not None:
         payload["planned_compound_id"] = planned_compound_id
     state, digest = idempotency.check(db, submission_token, "dose_create", payload)
@@ -509,6 +514,7 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
         )
         db.add(physical)
         db.flush()
+        save_context807(db, "blend", physical, route807, protocol_for_calendar807(db, calendar_item_id))
         manual_supplies.deduct(db, selected, blend_dose_id=physical.id)
         record(db, "blend", blend.id, "draw", after={
             "draw_id": physical.id, "kind": physical.kind,
@@ -569,6 +575,7 @@ async def create_dose(request: Request, vial_id: str = Form(...), taken_at: str 
                    notes=notes.strip())
     db.add(dose)
     db.flush()
+    save_context807(db, "dose", dose, route807, protocol_for_calendar807(db, calendar_item_id))
     manual_supplies.deduct(db, selected, dose_id=dose.id)
     if vial.status == "sealed":
         vial.status = "in_use"
@@ -673,6 +680,7 @@ def edit_page(did: int, request: Request, db: Session = Depends(get_scoped_db390
 
     return render(request, "dose_edit.html", dose=d, correction_vials=correction_vials,
                   **reaction_context807(db, "dose", did),
+                  route807_context=context807(db, "dose", did),
                   sites=INJECTION_SITES + ((d.site,) if d.site and d.site not in INJECTION_SITES else ()), supplies=supplies, used=used,
                   history=list(db.scalars(select(ChangeAudit).where(ChangeAudit.entity_type == "dose", ChangeAudit.entity_id == did).order_by(ChangeAudit.id.desc()))),
                   counted_supply_kinds=counted_supply_kinds,
@@ -681,7 +689,7 @@ def edit_page(did: int, request: Request, db: Session = Depends(get_scoped_db390
 @router.post("/doses/{did}/edit")
 async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amount: float = Form(...),
                unit: str = Form(...), kind: str = Form("dose"), site: str = Form(""),
-               notes: str = Form(""), vial_id: int | None = Form(None),
+               notes: str = Form(""), vial_id: int | None = Form(None), route807: str | None = Form(None),
                db: Session = Depends(get_scoped_db390)):
     if not reserve_inventory_write(db):
         raise HTTPException(409, "Inventory is busy. Please retry.")
@@ -727,6 +735,7 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
             destination.status = "in_use"
         d.amount_base, d.entered_value, d.entered_unit = base, amount, U.parse_unit(unit).name
         d.taken_at, d.kind, d.site, d.notes = when, ("waste" if kind == "waste" else "dose"), site, notes.strip()
+        save_context807(db, "dose", d, route807)
         after = _dose_snapshot(d, [SupplyUsage(supply_id=item.id, amount=qty) for item, qty in selected])
         db.add(ChangeAudit(entity_type="dose", entity_id=did, action="edit",
                            before_json=json.dumps(before), after_json=json.dumps(after)))
@@ -1039,6 +1048,7 @@ def edit_blend_dose711(did: int, request: Request,
     return render(
         request, "blend_dose_edit711.html", dose=draw, blend=draw.blend,
         **reaction_context807(db, "blend", did),
+        route807_context=context807(db, "blend", did),
         allowed_units=allowed, sites=INJECTION_SITES + ((draw.site,) if draw.site and draw.site not in INJECTION_SITES else ()),
         used=used_by_id, supplies=_correction_available_supplies(all_supplies, used_by_id),
         counted_supply_kinds=counted_supply_kinds,
@@ -1068,7 +1078,7 @@ async def update_blend_dose711(
     did: int, request: Request, taken_at: str = Form(""),
     amount: float = Form(...), unit: str = Form(...),
     kind: str = Form("dose"), site: str = Form(""), notes: str = Form(""),
-    db: Session = Depends(get_scoped_db390),
+    route807: str | None = Form(None), db: Session = Depends(get_scoped_db390),
 ):
     if not reserve_inventory_write(db):
         raise HTTPException(409, "Inventory is busy. Please retry.")
@@ -1104,6 +1114,7 @@ async def update_blend_dose711(
         draw.blend.status = (
             "finished" if plan["remaining_after_ml"] <= 1e-8 else "in_use"
         )
+        save_context807(db, "blend", draw, route807)
         after = _blend_dose_snapshot711(
             draw, [SupplyUsage(supply_id=item.id, amount=qty)
                    for item, qty in selected],
