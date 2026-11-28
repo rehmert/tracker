@@ -24,9 +24,7 @@ from .. import manual_supplies
 from ..templating import render
 
 router = APIRouter()
-INJECTION_SITES = ("Abdomen upper left", "Abdomen upper right", "Abdomen lower left",
-                   "Abdomen lower right", "Quadriceps left", "Quadriceps right",
-                   "Glute left", "Glute right", "Other / not recorded")
+from ..anatomical_sites807 import INJECTION_SITES, valid_site
 
 
 def _rows(db: Session, compound_id: int | None = None, limit: int = 60) -> list[dict]:
@@ -673,7 +671,7 @@ def edit_page(did: int, request: Request, db: Session = Depends(get_scoped_db390
     ]
 
     return render(request, "dose_edit.html", dose=d, correction_vials=correction_vials,
-                  sites=INJECTION_SITES, supplies=supplies, used=used,
+                  sites=INJECTION_SITES + ((d.site,) if d.site and d.site not in INJECTION_SITES else ()), supplies=supplies, used=used,
                   history=list(db.scalars(select(ChangeAudit).where(ChangeAudit.entity_type == "dose", ChangeAudit.entity_id == did).order_by(ChangeAudit.id.desc()))),
                   counted_supply_kinds=counted_supply_kinds,
                   supply_names=supply_names)
@@ -704,7 +702,7 @@ async def edit_entry(did: int, request: Request, taken_at: str = Form(""), amoun
         available = vd.remaining_base + (d.amount_base if destination.id == d.vial_id else 0)
         if not isfinite(base) or base <= 0 or base > available + 1e-7:
             raise ValueError("Amount exceeds available destination vial contents.")
-        if site and site not in INJECTION_SITES: raise ValueError("Unknown injection site.")
+        if not valid_site(site, previous=d.site): raise ValueError("Unknown injection site.")
         # Validate against stock restored from this event before mutating anything.
         original = {u.supply_id: u.amount for u in old_usage}
         for item, qty in selected:
@@ -1038,7 +1036,7 @@ def edit_blend_dose711(did: int, request: Request,
         allowed = [u for u in U.WITHDRAW_UNITS if U.parse_unit(u).dim in dimensions | {"volume"}]
     return render(
         request, "blend_dose_edit711.html", dose=draw, blend=draw.blend,
-        allowed_units=allowed, sites=INJECTION_SITES,
+        allowed_units=allowed, sites=INJECTION_SITES + ((draw.site,) if draw.site and draw.site not in INJECTION_SITES else ()),
         used=used_by_id, supplies=_correction_available_supplies(all_supplies, used_by_id),
         counted_supply_kinds=counted_supply_kinds,
         history=list(db.scalars(
@@ -1079,7 +1077,7 @@ async def update_blend_dose711(
     try:
         if kind not in ("dose", "waste"):
             raise ValueError("Choose a valid administration or discard type.")
-        if site and site not in INJECTION_SITES:
+        if not valid_site(site, previous=draw.site):
             raise ValueError("Unknown injection site.")
         when = services.parse_datetime(taken_at)
         plan = _blend_corrected_plan711(draw, amount, unit)
