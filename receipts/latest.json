@@ -2,17 +2,28 @@
   "action": "qualify",
   "base": "2d597a9907ab3c7e1915f073ed5cd5e898e93b90",
   "exit_code": 1,
-  "failed_tests": [],
-  "failure_category": "GateError",
-  "finished_at_utc": "2026-11-28T14:25:23+00:00",
-  "markers": [],
+  "failed_tests": [
+    "tests/test_progress_optimization806.py",
+    "tests/test_release711_blend_dose_corrections.py",
+    "tests/test_release710_unified_source.py"
+  ],
+  "failure_category": "TestAssertion",
+  "finished_at_utc": "2026-11-28T14:29:09+00:00",
+  "markers": [
+    "RELEASE_604_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_807_IMPACT_PREFLIGHT=PASSED",
+    "RELEASE_807_INSTALLED_DEV=UNMODIFIED",
+    "RELEASE_807_EXIT_STATUS=1"
+  ],
   "previous_request_id": null,
   "ref": "release/807-integrated-wellness-anatomy",
   "release": 807,
-  "request_id": "r807-q0a1120f0acfc",
+  "request_id": "r807-qd3ea36e38ceb",
   "schema": 1,
-  "started_at_utc": "2026-11-28T14:25:22+00:00",
+  "started_at_utc": "2026-11-28T14:28:01+00:00",
   "status": "failed",
-  "target": "0a1120f0acfc0b2097bb3fcb210820b4e8df3750",
-  "test_counts": []
+  "target": "d3ea36e38ceba96d07dd7908aba50a980de71c6d",
+  "test_counts": [
+    "165 passed, 1 warning"
+  ]
 }
