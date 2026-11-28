@@ -16,13 +16,15 @@ from ..templating import render
 from ..daily_workspace790 import summary790, regimen790
 from ..google_protocol_review783 import review_rows783
 from ..daily_summary674 import snapshot674
+from .wellness807 import today_context807
 from ..today_priorities765 import missing_coa_count765, passed_date_examples765
 
 router = APIRouter()
 
 
 @router.get("/mobile", include_in_schema=False)
-def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
+def mobile_today(request: Request, db: Session = Depends(get_scoped_db390),
+                 wellness_day: str = "", wellness_symptom: int = 0):
     """Small, useful and non-mutating snapshot of actuals and planned items."""
     now = datetime.now()
     today = now.date()
@@ -78,6 +80,7 @@ def mobile_today(request: Request, db: Session = Depends(get_scoped_db390)):
         request, "mobile_today509.html",
         now=now.strftime("%Y-%m-%dT%H:%M"),
         today=today,
+        **today_context807(db, wellness_day, wellness_symptom),
         instance=config.instance_label(),
         unit=config.WEIGHT_UNIT,
         summary=summary,
