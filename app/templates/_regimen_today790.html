@@ -1,4 +1,5 @@
 {% from "_ui790.html" import action, submit %}
+{% from "_injectable_fields807.html" import injectable_fields %}
 <section class="card tracker-regimen790" id="regimen-today790">
   <div class="tracker-daily-heading"><h2>Supplements &amp; medications</h2>{{ action('/regimen?day=' ~ regimen_day ~ '#reg635-today','Manage intake') if regimen_origin == 'today' else '' }}</div>
   {% set pending = regimen_due | rejectattr('id', 'in', regimen_recorded) | list %}
@@ -21,6 +22,7 @@
         <details><summary>Adjust time, amount or outcome</summary>
           <label class="field">Recorded at <input type="datetime-local" name="logged_at" required value="{{ stamp }}"></label>
           <label class="field">Result <select name="outcome"><option value="taken">Taken</option><option value="skipped">Skipped</option></select></label>
+          {% if schedule.item.kind == "medication" %}{{ injectable_fields() }}{% endif %}
           {% set dose_plan = regimen_tablet_plans.get(schedule.id) %}
           {% if dose_plan %}
             <input type="hidden" name="tablet_mode" value="tablet">
